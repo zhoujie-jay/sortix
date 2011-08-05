@@ -1,0 +1,11 @@
+#!/bin/sh
+if [ -f /boot/sortix.bin ]; then
+	echo "Found Sortix kernel: /boot/sortix" >&2
+
+cat << EOF
+menuentry "Sortix" {
+	multiboot /boot/sortix.bin
+}
+EOF
+fi
+

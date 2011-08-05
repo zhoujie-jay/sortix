@@ -1,0 +1,11 @@
+Package: SORTIX_PACKAGE_NAME
+Version: SORTIX_VERSION
+Section: kernel 
+Priority: optional
+Architecture: SORTIX_ARCH
+Essential: no
+Recommends: grub2, xorriso
+Provides: sortix
+Maintainer: Jonas Termansen [sortie@maxsi.org]
+Description: Sortix is a small hobby kernel developed for the heck of it.
+

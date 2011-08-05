@@ -1,0 +1,68 @@
+subdirs = @subdirs@
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = $(exec_prefix)/bin
+infodir = $(prefix)/info
+libdir = $(prefix)/lib/gnudl
+mandir = $(prefix)/man/man1
+
+PACKAGE_NAME = @PACKAGE_NAME@
+PACKAGE_VERSION = @PACKAGE_VERSION@
+PACKAGE_TARNAME = @PACKAGE_NAME@-@PACKAGE_VERSION@
+CC=@CC@
+CXX=@CXX@
+CPPFLAGS=@CPPFLAGS@
+CXXFLAGS=@CXXFLAGS@ -Wall
+LDFLAGS=@LDFLAGS@ $(LIBS)
+LIBS = @LIBS@
+INSTALL = @INSTALL@
+EXEEXT = @EXEEXT@
+HOST = @HOST@
+BINARY=mxmpp$(EXEEXT)
+
+DISTDIR:=$(PACKAGE_TARNAME)
+DISTFILES=config.guess config.h.in config.sub configure configure.ac COPYING README install-sh Makefile.in mxmpp.cpp
+
+all: $(BINARY)
+
+$(BINARY): mxmpp.cpp
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ mxmpp.cpp $(LDFLAGS) $(TARGET_ARCH)
+
+clean:
+	$(RM) $(BINARY)
+
+distclean: clean
+	$(RM) Makefile config.h config.status config.cache config.log
+	$(RM) -r $(BUILDDIR) $(DISTDIR)
+
+install: all
+	$(INSTALL) $(BINARY) $(bindir)
+
+dist: dist-gzip
+
+dist-all: dist-gzip dist-lzma dist-bzip2 dist-xz
+
+dist-gzip: $(DISTDIR)
+	$(RM) $(PACKAGE_TARNAME).tar.gz
+	tar -cf - $(DISTDIR) | gzip -9 > $(PACKAGE_TARNAME).tar.gz
+
+dist-lzma: $(DISTDIR)
+	$(RM) $(PACKAGE_TARNAME).tar.lzma
+	tar -cf - $(DISTDIR) | lzma -9 > $(PACKAGE_TARNAME).tar.lzma
+
+dist-bzip2: $(DISTDIR)
+	$(RM) $(PACKAGE_TARNAME).tar.bz2
+	tar -cf - $(DISTDIR) | bzip2 -9 > $(PACKAGE_TARNAME).tar.bz2
+
+dist-xz: $(DISTDIR)
+	$(RM) $(PACKAGE_TARNAME).tar.xz
+	tar -cf - $(DISTDIR) | xz -c > $(PACKAGE_TARNAME).tar.xz
+
+$(DISTDIR): FORCE
+	mkdir -p $(DISTDIR)
+	cp -rv $(DISTFILES) $(DISTDIR)
+
+FORCE:
+
