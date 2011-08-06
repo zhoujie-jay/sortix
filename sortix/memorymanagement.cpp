@@ -226,7 +226,7 @@ namespace Sortix
 		Table* BootstrapCreateTable(Dir* dir, addr_t where);
 		void BootstrapMap(Dir* dir, addr_t where, addr_t physical);
 		void BootstrapMapStructures(Dir* dir);
-		void SwitchDirectory(addr_t dir);
+		addr_t SwitchDirectory(addr_t dir);
 		addr_t CreateDirectory();
 	#endif
 
@@ -356,16 +356,21 @@ namespace Sortix
 			return CreateDirectory();
 		}
 
-		void SwitchAddressSpace(addr_t addrspace)
+		addr_t SwitchAddressSpace(addr_t addrspace)
 		{
 			return SwitchDirectory(addrspace);
 		}
 
-		void SwitchDirectory(addr_t dir)
+		addr_t SwitchDirectory(addr_t dir)
 		{
+			// Don't switch if we are already there.
+			if ( dir == currentDirPhysical ) { return currentDirPhysical; }
+
+			addr_t previous = currentDirPhysical;
 			asm volatile("mov %0, %%cr3":: "r"(dir));
 			currentDirPhysical = dir;
 			Flush();
+			return previous;
 		}
 
 		addr_t CreateDirectory()

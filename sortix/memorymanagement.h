@@ -41,7 +41,7 @@ namespace Sortix
 		void Init();
 		void Flush();
 		addr_t CreateAddressSpace();
-		void SwitchAddressSpace(addr_t addrspace);
+		addr_t SwitchAddressSpace(addr_t addrspace);
 		void MapKernel(addr_t where, addr_t physical);
 		bool MapUser(addr_t where, addr_t physical);
 		addr_t UnmapKernel(addr_t where);
