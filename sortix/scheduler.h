@@ -30,6 +30,23 @@ namespace Sortix
 	class Thread;
 	class Process;
 
+	class Process
+	{
+	public:
+		Process(addr_t addrspace);
+		~Process();
+
+	private:
+		addr_t _addrspace;
+
+	public:
+		addr_t GetAddressSpace() { return _addrspace; }
+
+	public:
+		bool IsSane() { return _addrspace != 0; }
+
+	};
+
 	class Thread
 	{
 	public:

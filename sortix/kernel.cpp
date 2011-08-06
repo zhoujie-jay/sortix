@@ -241,7 +241,15 @@ namespace Sortix
 
 		Thread::Entry initstart = RunApplication;
 
-		// TODO: Create a new page directory here for the first process!
+		// Create an address space for the first process.
+		addr_t addrspace = VirtualMemory::CreateAddressSpace();
+
+		// Use the new address space!
+		VirtualMemory::SwitchAddressSpace(addrspace);
+		
+		// Create the first process!
+		Process* process = new Process(addrspace);
+		if ( process == 0 ) { Panic("kernel.cpp: Could not allocate the first process!"); }
 
 		if ( initrd != NULL )
 		{
@@ -258,7 +266,7 @@ namespace Sortix
 			initstart = (Thread::Entry) loadat;
 		}
 
-		if ( Scheduler::CreateThread(NULL, initstart) == NULL )
+		if ( Scheduler::CreateThread(process, initstart) == NULL )
 		{
 			Panic("Could not create a sample thread!");
 		}

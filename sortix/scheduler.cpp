@@ -38,6 +38,16 @@ namespace Sortix
 {
 	const bool LOG_SWITCHING = false;
 
+	Process::Process(addr_t addrspace)
+	{
+		_addrspace = addrspace;
+	}
+
+	Process::~Process()
+	{
+		// TODO: Delete address space!
+	}
+
 	namespace Scheduler
 	{
 		// This is a very small thread that does absoluting nothing!
@@ -57,6 +67,9 @@ namespace Sortix
 
 	Thread::Thread(Process* process, size_t id, addr_t stack, size_t stackLength)
 	{
+		ASSERT(process != NULL);
+		ASSERT(process->IsSane());
+
 		_process = process;
 		_id = id;
 		_stack = stack;
@@ -191,8 +204,14 @@ namespace Sortix
 			firstSleeping = NULL;
 			AllocatedThreadId = 1;
 
+			// Create an address space for the idle process.
+			addr_t noopaddrspace = VirtualMemory::CreateAddressSpace();
+
+			// Create the noop process.
+			Process* noopprocess = new Process(noopaddrspace);
+
 			// Initialize the thread that does nothing.
-			NoopThread = new ((void*) NoopThreadData) Thread(NULL, 0, NULL, 0);
+			NoopThread = new ((void*) NoopThreadData) Thread(noopprocess, 0, NULL, 0);
 			NoopThread->SetState(Thread::State::NOOP);
 #ifdef PLATFORM_X86
 			NoopThread->_registers.useresp = (uint32_t) NoopThreadStack + NoopThreadStackLength;
@@ -227,6 +246,10 @@ namespace Sortix
 
 		Thread* CreateThread(Process* Process, Thread::Entry Start, void* Parameter1, void* Parameter2, size_t StackSize)
 		{
+			ASSERT(Process != NULL);
+			ASSERT(Process->IsSane());
+			ASSERT(Start != NULL);
+
 			// The current default stack size is 4096 bytes.
 			if ( StackSize == SIZE_MAX ) { StackSize = 4096; }
 
@@ -264,8 +287,9 @@ namespace Sortix
 			uintptr_t StackPos = 0x80000000UL;
 			uintptr_t MapTo = StackPos - 4096UL;
 
+			addr_t OldAddrSpace = VirtualMemory::SwitchAddressSpace(Process->GetAddressSpace());
+
 			VirtualMemory::MapUser(MapTo, PhysStack);
-			VirtualMemory::Flush();
 #else
 			uintptr_t StackPos = (uintptr_t) PhysStack + 4096;
 #endif
@@ -289,6 +313,11 @@ namespace Sortix
 
 			// Mark the thread as running, which adds it to the scheduler's linked list.
 			thread->SetState(Thread::State::RUNNABLE);
+
+#ifdef PLATFORM_VIRTUAL_MEMORY
+			// Avoid side effects by restoring the old address space.
+			VirtualMemory::SwitchAddressSpace(OldAddrSpace);
+#endif
 
 			return thread;
 		}
@@ -334,7 +363,9 @@ namespace Sortix
 					Log::PrintF("Switching from thread at 0x%p to thread at 0x%p\n", currentThread);
 				}
 
-				// TODO: If applicable, switch the virtual address space.
+				// If applicable, switch the virtual address space.
+				VirtualMemory::SwitchAddressSpace(NextThread->GetProcess()->GetAddressSpace());
+
 				currentThread = NextThread;
 
 				// Load the hardware registers of the next thread.
