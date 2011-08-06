@@ -32,66 +32,27 @@ namespace Sortix
 #ifdef MULTIBOOT_HEADER
 		void	Init(multiboot_info_t* BootInfo);
 #endif
-		void*	Get();
-		void	Put(void* Page);
-		void	GetNoCache();
-		void	PutNoCache(void* Page);
+		addr_t	Get();
+		void	Put(addr_t Page);
 	}
 
 	namespace VirtualMemory
 	{
-		// TODO: Convert these to constants!
-		#define TABLE_PRESENT		(1<<0)
-		#define TABLE_WRITABLE		(1<<1)
-		#define TABLE_USER_SPACE	(1<<2)
-		#define TABLE_RESERVED1		(1<<3) // Used internally by the CPU.
-		#define TABLE_RESERVED2		(1<<4) // Used internally by the CPU.
-		#define TABLE_ACCESSED		(1<<5)
-		#define TABLE_DIRTY			(1<<6)
-		#define TABLE_RESERVED3		(1<<7) // Used internally by the CPU.
-		#define TABLE_RESERVED4		(1<<8) // Used internally by the CPU.
-		#define TABLE_AVAILABLE1	(1<<9)
-		#define TABLE_AVAILABLE2	(1<<10)
-		#define TABLE_AVAILABLE3	(1<<11)
-		#define TABLE_FLAGS			(0xFFFUL) // Bits used for the flags.
-		#define TABLE_ADDRESS		(~0xFFFUL) // Bits used for the address.
+		void Init();
+		void Flush();
+		addr_t CreateAddressSpace();
+		void SwitchAddressSpace(addr_t addrspace);
+		void MapKernel(addr_t where, addr_t physical);
+		bool MapUser(addr_t where, addr_t physical);
+		addr_t UnmapKernel(addr_t where);
+		addr_t UnmapUser(addr_t where);
 
-		#define DIR_PRESENT			(1<<0)
-		#define DIR_WRITABLE		(1<<1)
-		#define DIR_USER_SPACE		(1<<2)
-		#define DIR_WRITE_THROUGH	(1<<3)
-		#define DIR_DISABLE_CACHE	(1<<4)
-		#define DIR_ACCESSED		(1<<5)
-		#define DIR_RESERVED1		(1<<6)
-		#define DIR_4MIB_PAGES		(1<<7)
-		#define DIR_RESERVED2		(1<<8)
-		#define DIR_AVAILABLE1		(1<<9)
-		#define DIR_AVAILABLE2		(1<<10)
-		#define DIR_AVAILABLE3		(1<<11)
-		#define DIR_FLAGS			(0xFFFUL) // Bits used for the flags.
-		#define DIR_ADDRESS			(~0xFFFUL) // Bits used for the address.
+#ifdef PLATFORM_X86
+		const addr_t heapLower = 0x80000000UL;
+		const addr_t heapUpper = 0xFF800000UL;
+#endif
 
-		struct Table
-		{
-			uintptr_t Page[4096 / sizeof(uintptr_t)];
-		};
-
-		struct Dir
-		{
-			uintptr_t Table[4096 / sizeof(uintptr_t*)];
-		};
-
-		void	Init();
-		void	SwitchDir(Dir* PhysicalDirAddr);
-		void	Map(uintptr_t Physical, uintptr_t Virtual, uintptr_t Flags);
-		void	MapUnsafe(uintptr_t Physical, uintptr_t Virtual, uintptr_t Flags);
-		void*	LookupAddr(uintptr_t Virtual);
-		void	Flush();
-		void	Fixup(Dir* Dir);
-		Dir*	NewDir();
 	}
-
-	bool ValidateUserString(const char* USER string);
 }
 
 #endif

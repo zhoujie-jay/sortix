@@ -34,7 +34,7 @@ const char* exceptions[] = { "Divide by zero", "Debug", "Non maskable interrupt"
 		if ( Regs->int_no < 32 )
 		{
 			const char* message = ( Regs->int_no < numknownexceptions ) ? exceptions[Regs->int_no] : "Unknown";
-			Sortix::PanicF("Unhandled CPU Exception id %zu '%s' at eip=0x%zx (cr2=0x%p)", Regs->int_no, message, Regs->eip, Regs->cr2);
+			Sortix::PanicF("Unhandled CPU Exception id %zu '%s' at eip=0x%zx (cr2=0x%p, err_code=0x%p)", Regs->int_no, message, Regs->eip, Regs->cr2, Regs->err_code);
 		}
 
 		if ( interrupt_handlers[Regs->int_no] != NULL )

@@ -39,9 +39,9 @@ using namespace Maxsi;
 
 namespace Sortix
 {
-	const uintptr_t KernelStart = 0x000000;
-	const size_t KernelLength = 0x200000;
-	const size_t KernelLeadingPages = KernelLength / 0x1000;
+	const addr_t KernelStart = 0x000000UL;
+	const size_t KernelLength = 0x200000UL;
+	const size_t KernelLeadingPages = KernelLength / 0x1000UL;
 
 	namespace Page
 	{
@@ -163,329 +163,367 @@ namespace Sortix
 
 	namespace VirtualMemory
 	{
+		const size_t TABLE_PRESENT		= (1<<0);
+		const size_t TABLE_WRITABLE		= (1<<1);
+		const size_t TABLE_USER_SPACE	= (1<<2);
+		const size_t TABLE_RESERVED1	= (1<<3); // Used internally by the CPU.
+		const size_t TABLE_RESERVED2	= (1<<4); // Used internally by the CPU.
+		const size_t TABLE_ACCESSED		= (1<<5);
+		const size_t TABLE_DIRTY		= (1<<6);
+		const size_t TABLE_RESERVED3	= (1<<7); // Used internally by the CPU.
+		const size_t TABLE_RESERVED4	= (1<<8); // Used internally by the CPU.
+		const size_t TABLE_AVAILABLE1	= (1<<9);
+		const size_t TABLE_AVAILABLE2	= (1<<10);
+		const size_t TABLE_AVAILABLE3	= (1<<11);
+		const size_t TABLE_FLAGS		= (0xFFFUL); // Bits used for the flags.
+		const size_t TABLE_ADDRESS		= (~0xFFFUL); // Bits used for the address.
+
+		const size_t DIR_PRESENT		= (1<<0);
+		const size_t DIR_WRITABLE		= (1<<1);
+		const size_t DIR_USER_SPACE		= (1<<2);
+		const size_t DIR_WRITE_THROUGH	= (1<<3);
+		const size_t DIR_DISABLE_CACHE	= (1<<4);
+		const size_t DIR_ACCESSED		= (1<<5);
+		const size_t DIR_RESERVED1		= (1<<6);
+		const size_t DIR_4MIB_PAGES		= (1<<7);
+		const size_t DIR_RESERVED2		= (1<<8);
+		const size_t DIR_AVAILABLE1		= (1<<9);
+		const size_t DIR_AVAILABLE2		= (1<<10);
+		const size_t DIR_AVAILABLE3		= (1<<11);
+		const size_t DIR_FLAGS			= (0xFFFUL); // Bits used for the flags.
+		const size_t DIR_ADDRESS		= (~0xFFFUL); // Bits used for the address.
+
+		const size_t ENTRIES = 4096 / sizeof(addr_t);
+
+		struct Table
+		{
+			addr_t page[ENTRIES];
+		};
+
+		struct Dir
+		{
+			addr_t table[ENTRIES];
+		};
+
 	#ifdef PLATFORM_X86
 		// These structures are always virtually mapped to these addresses.
-		Dir*		CurrentDir		=	(Dir*)		0xFFBFF000;
-		Table*		CurrentTables	=	(Table*)	0xFFC00000;
-		uintptr_t	KernelHalfStart	=				0x80000000;
-		uintptr_t	KernelHalfEnd	=				0xFFBFF000;
+		Table*	const		makingTable		=	(Table*)	0xFFBFC000UL;
+		Dir*	const		makingDir		=	(Dir*)		0xFFBFD000UL;
+		Dir*	const		kernelDir		=	(Dir*)		0xFFBFE000UL;
+		Dir*	const		currentDir		=	(Dir*)		0xFFBFF000UL;
+		Table*	const		currentTables	=	(Table*)	0xFFC00000UL;
 	#endif
 
 	#ifdef PLATFORM_X64
 		// TODO: These are dummy values!
-		Dir*		CurrentDir		=	(Dir*)		0xFACEB00C;
-		Table*		CurrentTables	=	(Table*)	0xFACEB00C;
-		uintptr_t	KernelHalfStart	=				0xFACEB00C;
-		uintptr_t	KernelHalfEnd	=				0xFACEB00C;
+		const	Dir*		currentDir		=	(Dir*)		0xFACEB00C;
+		const	Table*		currentTables	=	(Table*)	0xFACEB00C;
 	#endif
 
-		const size_t PointersPerPage = 4096 / sizeof(uintptr_t);
+		addr_t		currentDirPhysical;
 
-		size_t KernelLeadingPages;
-		Dir* CurrentDirPhys;
-		Dir* KernelDirPhys;
-		bool Virgin;
-
-		#define ENABLE_PAGING() \
-		{ \
-			size_t cr0; \
-			asm volatile("mov %%cr0, %0": "=r"(cr0)); \
-			cr0 |= 0x80000000UL; /* Enable paging! */ \
-			asm volatile("mov %0, %%cr0":: "r"(cr0)); \
-		}
-
-		#define DISABLE_PAGING() \
-		{ \
-			size_t cr0; \
-			asm volatile("mov %%cr0, %0": "=r"(cr0)); \
-			cr0 &= ~(0x80000000UL); /* Disable paging! */ \
-			asm volatile("mov %0, %%cr0":: "r"(cr0)); \
-		}
-
-		// Internally used functions
-		void IdentityPhys(uintptr_t Addr);
-		void FixupPhys(Dir* D);
-		Table* GetTablePhys(uintptr_t Addr);
-
-		void DebugTable(char* Base, Table* T)
-		{
-		#ifdef PLATFORM_X86
-			Log::PrintF("-- Recursing to table at 0x%p spanning [0x%p - 0x%p] --\n", T, Base, Base + 1024 * 0x1000 - 1);
-			for ( size_t I = 0; I < 1024; I++ )
-			{
-				uintptr_t Entry = T->Page[I];
-				if ( Entry == 0 ) { continue; }
-				Log::PrintF("[0x%p] -> [0x%p] [Flags=0x%x]\n", Base + I * 0x1000, Entry & TABLE_ADDRESS, Entry & TABLE_FLAGS);
-
-				while ( true )
-				{
-					__asm__ ( "hlt" );
-					//uint32_t Key = GKeyboard->HackGetKey();
-					//if ( Key == '\n' ) { break; }
-					//if ( Key == 0xFFFFFFFF - 25 ) { I += 23; break; }
-				}
-			}
-		#else
-			#warning "Virtual Memory is not available on this arch"
-			while(true);
-		#endif
-		}
-
-		void DebugDir(Dir* D)
-		{
-		#ifdef PLATFORM_X86
-			Log::PrintF("-- Start of debug of page dir at 0x%p --\n", D);
-			if ( (uintptr_t) D & 1 ) { Log::PrintF("-- SOMETHING IS WRONG! --\n", D); while ( true ) { __asm__ ( "hlt" ); } }
-			for ( size_t I = 0; I < 1024; I++ )
-			{
-				if ( !(D->Table[I] & DIR_PRESENT) ) { continue; }
-				Table* T = (Table*) (D->Table[I] & DIR_ADDRESS);
-				DebugTable((char*) (I * 0x40000), T);
-			}
-			Log::PrintF("-- End of debug of page dir at 0x%p --\n", D);
-		#else
-			#warning "Virtual Memory is not available on this arch"
-			while(true);
-		#endif
-		}
+	#ifdef PLATFORM_X86
+		Table* BootstrapCreateTable(Dir* dir, addr_t where);
+		void BootstrapMap(Dir* dir, addr_t where, addr_t physical);
+		void BootstrapMapStructures(Dir* dir);
+		void SwitchDirectory(addr_t dir);
+		addr_t CreateDirectory();
+	#endif
 
 		void Init()
 		{
-		#ifdef PLATFORM_X86
-			Virgin = true;
+		#ifdef PLATFORM_X86	
 
-			// Allocate a page dir and reset it.
-			CurrentDirPhys = (Dir*) Page::Get();
-			if ( CurrentDirPhys == NULL ) { Panic("memorymanagement.cpp: Could not allocate page dir"); }
-			Memory::Set(CurrentDirPhys, 0, sizeof(Dir));
+			// Initialize variables.
+			currentDirPhysical = 0;
 
-			//while ( true ) { DebugDir(CurrentDirPhys); }
+			// Allocate a page we can use for our kernel page directory.
+			Dir* dirphys = (Dir*) Page::Get();
+			if ( dirphys == NULL ) { Panic("memorymanagement.cpp: Could not allocate page dir"); }
+
+			Memory::Set(dirphys, 0, sizeof(Dir));
 
 			// Identity map the kernel.
-			for ( uintptr_t P = KernelStart; P < KernelStart + KernelLength; P += 0x1000 ) { IdentityPhys(P); }
-
-			GetTablePhys(0x400000UL);
-			GetTablePhys(0x80000000UL - 4096UL);
-
-			// Initialize all the kernel tables from 0x8000000 to 0xFFFFFFFF here!
-			for ( uintptr_t P = KernelHalfStart; P < KernelHalfEnd; P += 4096 ) { GetTablePhys(P); }
-
-			// Prepare the page dir for real usage.
-			FixupPhys(CurrentDirPhys);
-
-			//while ( true ) { DebugDir(CurrentDirPhys); }
-
-			// Now switch to the initial virtual address space.
-			SwitchDir(CurrentDirPhys);
-
-			// Remember this page dir as it is our base page dir.
-			KernelDirPhys = CurrentDirPhys;
-		#else
-			#warning "Virtual Memory is not available on this arch"
-			while(true);
-		#endif
-		}
-
-		Table* GetTablePhys(uintptr_t Addr)
-		{
-		#ifdef PLATFORM_X86
-			// Find the desired table entry, if existing.
-			uintptr_t DirIndex = Addr / 0x400000UL; // 4 MiB
-			uintptr_t T = CurrentDirPhys->Table[DirIndex] & DIR_ADDRESS;
-
-			// If the table doesn't exist, create it.
-			if ( T == NULL )
+			for ( addr_t ptr = KernelStart; ptr < KernelStart + KernelLength; ptr += 0x1000UL )
 			{
-				// Allocate a page.
-				T = (uintptr_t) Page::Get();
-		
-				// Check if anything went wrong.
-				if ( T == NULL ) { Panic("memorymanagement.cpp: Could not allocate page table"); }
-
-				// Reset the page's contents.
-				Memory::Set((void*) T, 0, sizeof(Table));
-
-				// Now add some flags
-				uintptr_t Flags = DIR_PRESENT | DIR_WRITABLE | DIR_USER_SPACE;
-				CurrentDirPhys->Table[DirIndex] = T | Flags;
+				BootstrapMap(dirphys, ptr, ptr);
 			}
 
-			return (Table*) T;
-		#else
-			#warning "Virtual Memory is not available on this arch"
-			while(true);
-			return NULL;
-		#endif
-		}
-
-		void IdentityPhys(uintptr_t Addr)
-		{
-		#ifdef PLATFORM_X86
-			Table* T = GetTablePhys(Addr);
-
-			uintptr_t Flags = TABLE_PRESENT | TABLE_WRITABLE;
-
-			size_t TableIndex = (Addr % 0x400000) / 0x1000;
-			T->Page[TableIndex] = Addr | Flags;
-		#else
-			#warning "Virtual Memory is not available on this arch"
-			while(true);
-		#endif
-		}
-
-		void FixupPhys(Dir* D)
-		{
-		#ifdef PLATFORM_X86
-			Table* SecondLastTable = GetTablePhys((uintptr_t) CurrentDir);
-
-			uintptr_t Flags = TABLE_PRESENT | TABLE_WRITABLE;
-			uintptr_t DirEntry = ((uintptr_t) D) | Flags;
-
-			SecondLastTable->Page[PointersPerPage-1] = DirEntry;
-
-			Table* LastTable = GetTablePhys((uintptr_t) CurrentTables);
-	
-			for ( size_t I = 0; I < PointersPerPage; I++ )
+			// Create every table used in the kernel half. We do it now such that
+			// any copies of the kernel dir never gets out of date.
+			for ( addr_t ptr = 0x80000000UL; ptr != 0UL; ptr += ENTRIES * 0x1000UL )
 			{
-				LastTable->Page[I] = (D->Table[I] & DIR_ADDRESS) | Flags;
-			}
-		#else
-			#warning "Virtual Memory is not available on this arch"
-			while(true);
-		#endif
-		}
-
-		void Fixup(Dir* D)
-		{
-		#ifdef PLATFORM_X86
-			uintptr_t Flags = TABLE_PRESENT | TABLE_WRITABLE;
-
-			Table* T = &CurrentTables[PointersPerPage-1];
-	
-			for ( size_t I = 0; I < PointersPerPage; I++ )
-			{
-				T->Page[I] = (D->Table[I] & DIR_ADDRESS) | Flags;
-			}
-		#else
-			#warning "Virtual Memory is not available on this arch"
-			while(true);
-		#endif
-		}
-
-		void SwitchDir(Dir* PhysicalDirAddr)
-		{
-		#ifdef PLATFORM_X86
-			// Set the new page directory.
-			CurrentDirPhys = PhysicalDirAddr;
-			asm volatile("mov %0, %%cr3":: "r"(PhysicalDirAddr));
-
-			if ( !Virgin )
-			{
-				uintptr_t Entry = ((uintptr_t) PhysicalDirAddr & DIR_ADDRESS) | TABLE_PRESENT | TABLE_WRITABLE;
-				CurrentTables[PointersPerPage-2].Page[PointersPerPage-1] = Entry;
+				BootstrapCreateTable(dirphys, ptr);
 			}
 
-			// Reset the paging flag in the cr0 register to enable paging, and flush the paging cache.
-			ENABLE_PAGING();
+			// Map the paging structures themselves.
+			BootstrapMapStructures(dirphys);
 
-			Virgin = false;
+			// We have now created a minimal virtual environment where the kernel
+			// is mapped, the paging structures are ready, and the paging
+			// structures are mapped. We are now ready to enable pages.
+
+			// Switch the current dir - this enables paging.
+			SwitchDirectory((addr_t) dirphys);
+
+			// Hello, virtual world!			
+
 		#else
 			#warning "Virtual Memory is not available on this arch"
 			while(true);
 		#endif
 		}
 
+	#ifdef PLATFORM_X86	
+		inline addr_t GetTableId(addr_t where) { return where / (4096UL * ENTRIES); }
+		inline addr_t GetPageId(addr_t where) { return ( where / 4096UL ) % ENTRIES; }
+
+		Table* BootstrapCreateTable(Dir* dir, addr_t where)
+		{
+			size_t tableid = GetTableId(where);
+			addr_t tabledesc = dir->table[tableid];
+
+			if ( tabledesc != 0 )
+			{
+				return (Table*) (tabledesc & TABLE_ADDRESS);
+			}
+			else
+			{
+				addr_t tablepage = Page::Get();
+				if ( tablepage == 0 )
+				{
+					PanicF("memorymanagement.cpp: Could not allocate bootstrap page table for 0x%p", where);
+				}
+				Memory::Set((void*) tablepage, 0, sizeof(Table));
+				tabledesc = tablepage | TABLE_PRESENT | TABLE_WRITABLE;
+				dir->table[tableid] = tabledesc;
+				ASSERT((Table*) tablepage == BootstrapCreateTable(dir, where));
+				return (Table*) tablepage;
+			}
+		}
+
+		void BootstrapMap(Dir* dir, addr_t where, addr_t physical)
+		{
+			Table* table = BootstrapCreateTable(dir, where);
+						
+			size_t pageid = GetPageId(where);
+			table->page[pageid] = physical | TABLE_PRESENT | TABLE_WRITABLE;
+		}
+
+		void BootstrapMapStructures(Dir* dir)
+		{
+			// Map the dir itself.
+			BootstrapMap(dir, (addr_t) kernelDir, (addr_t) dir);
+			BootstrapMap(dir, (addr_t) currentDir, (addr_t) dir);
+
+			// Map the tables.
+			for ( size_t i = 0; i < ENTRIES; i++ )
+			{
+				addr_t tabledesc = dir->table[i];
+				if ( tabledesc == 0 ) { continue; }
+				addr_t mapto = (addr_t) &(currentTables[i]);
+				addr_t mapfrom = (tabledesc & TABLE_ADDRESS);
+				BootstrapMap(dir, mapto, mapfrom);
+			}
+		}
+	#endif
+
+	#ifdef PLATFORM_X86
+
+		addr_t Lookup(addr_t where)
+		{
+			// Make sure we are only mapping kernel-approved pages.
+			size_t tableid = GetTableId(where);
+			addr_t tabledesc = currentDir->table[tableid];
+			if ( !(tabledesc & DIR_PRESENT) ) { return 0; }
+
+			size_t pageid = GetPageId(where);
+			return currentTables[tableid].page[pageid];			
+		}
+
+		// Enables paging and flushes the Translation Lookaside Buffer (TLB).
 		void Flush()
 		{
-		#ifdef PLATFORM_X86
-			Fixup(CurrentDir);
-
-			ENABLE_PAGING();
-		#else
-			#warning "Virtual Memory is not available on this arch"
-			while(true);
-		#endif
+			asm volatile("mov %0, %%cr3":: "r"(currentDirPhysical));
+			size_t cr0; \
+			asm volatile("mov %%cr0, %0": "=r"(cr0));
+			cr0 |= 0x80000000UL; // Enable paging!
+			asm volatile("mov %0, %%cr0":: "r"(cr0));
 		}
 
-		Dir* NewDir()
+		addr_t CreateAddressSpace()
 		{
-		#ifdef PLATFORM_X86
-			DISABLE_PAGING();
+			return CreateDirectory();
+		}
 
-			// TODO: Is the stack well defined here?!
-			Dir* Result = (Dir*) Page::Get();
+		void SwitchAddressSpace(addr_t addrspace)
+		{
+			return SwitchDirectory(addrspace);
+		}
 
-			if ( Result != NULL )
+		void SwitchDirectory(addr_t dir)
+		{
+			asm volatile("mov %0, %%cr3":: "r"(dir));
+			currentDirPhysical = dir;
+			Flush();
+		}
+
+		addr_t CreateDirectory()
+		{
+			// Allocate the thread pages we need, one for the new pagedir,
+			// and two for the last two 8 MiB of the pagedir.
+			addr_t newdir = Page::Get();
+			if ( newdir == 0 ) { return 0; }
+			addr_t newstructmap1 = Page::Get();
+			if ( newdir == 0 ) { Page::Put(newdir); return 0; }
+			addr_t newstructmap2 = Page::Get();
+			if ( newdir == 0 ) { Page::Put(newdir); Page::Put(newstructmap1); return 0; }
+
+			// Map the new pagedir, clone the kernel dir, and change the last
+			// 8 MiB, such that we can map the new page structures there.
+			MapKernel((addr_t) makingDir, newdir);
+			Memory::Copy(makingDir, kernelDir, sizeof(Dir));
+			makingDir->table[1024-2] = newstructmap1 | DIR_PRESENT | DIR_WRITABLE;
+			makingDir->table[1024-1] = newstructmap2 | DIR_PRESENT | DIR_WRITABLE;
+
+			// Build the new page structures.
+			MapKernel((addr_t) makingTable, newstructmap1);
+			Memory::Set(makingTable, 0, sizeof(Table));
+			makingTable->page[1024-2] = currentTables[1024-2].page[1024-2];
+			makingTable->page[1024-1] = newdir | TABLE_PRESENT | TABLE_WRITABLE;	
+
+			// Build the new page structures.
+			MapKernel((addr_t) makingTable, newstructmap2);
+			for ( size_t i = 0; i < 1024-2; i++ )
 			{
-				Memory::Copy(Result, KernelDirPhys, sizeof(Dir));
+				makingTable->page[i] = currentTables[1024-1].page[i];
+			}
+			makingTable->page[1024-2] = newstructmap1 | TABLE_PRESENT | TABLE_WRITABLE;
+			makingTable->page[1024-1] = newstructmap2 | TABLE_PRESENT | TABLE_WRITABLE;
+
+			return newdir;		
+		}
+
+
+
+		void MapKernel(addr_t where, addr_t physical)
+		{
+			// Make sure we are only mapping kernel-approved pages.
+			size_t tableid = GetTableId(where);
+			addr_t tabledesc = currentDir->table[tableid];
+			ASSERT(tabledesc != 0);
+			ASSERT((tabledesc & DIR_USER_SPACE) == 0);
+
+			size_t pageid = GetPageId(where);
+			addr_t pagedesc = physical | TABLE_PRESENT | TABLE_WRITABLE;
+			currentTables[tableid].page[pageid] = pagedesc;
+
+			ASSERT(Lookup(where) == pagedesc);
+
+			// TODO: Only update the single page!
+			Flush();
+		}
+
+		addr_t UnmapKernel(addr_t where)
+		{
+			// Make sure we are only unmapping kernel-approved pages.
+			size_t tableid = GetTableId(where);
+			addr_t tabledesc = currentDir->table[tableid];
+			ASSERT(tabledesc != 0);
+			ASSERT((tabledesc & DIR_USER_SPACE) == 0);
+
+			size_t pageid = GetPageId(where);
+			addr_t result = currentTables[tableid].page[pageid];
+			ASSERT((result & TABLE_PRESENT) != 0);
+			result &= TABLE_ADDRESS;
+			currentTables[tableid].page[pageid] = 0;
+
+			// TODO: Only update the single page!
+			Flush();
+
+			return result;
+		}
+
+		Table* CreateUserTable(addr_t where, bool maycreate)
+		{
+			size_t tableid = GetTableId(where);
+			addr_t tabledesc = currentDir->table[tableid];
+
+			Table* table = &(currentTables[tableid]);
+
+			if ( tabledesc == 0 )
+			{
+				ASSERT(maycreate);
+				addr_t tablepage = Page::Get();
+				if ( tablepage == 0 ) { return NULL; }
+				tabledesc = tablepage | TABLE_PRESENT | TABLE_WRITABLE | TABLE_USER_SPACE;
+				currentDir->table[tableid] = tabledesc;
+				MapKernel((addr_t) table, tablepage);
+
+				// TODO: Only update the single page!
+				Flush();
+
+				addr_t lookup = Lookup((addr_t) table) & TABLE_ADDRESS;
+				ASSERT(lookup == tablepage);
+
+				Memory::Set(table, 0, sizeof(Table));
 			}
 
-			ENABLE_PAGING();
+			// Make sure we only touch dirs permitted for use by user-space!
+			ASSERT((tabledesc & TABLE_USER_SPACE) != 0);
 
-			return Result;
-		#else
-			#warning "Virtual Memory is not available on this arch"
-			while(true);
-			return NULL;
-		#endif
+			return table;
 		}
 
-		void Map(uintptr_t Physical, uintptr_t Virtual, uintptr_t Flags)
+		bool MapUser(addr_t where, addr_t physical)
 		{
-		#ifdef PLATFORM_X86
-			// TODO: Possibly validate Physical and Virtual are aligned, and that
-			// flags uses only legal bits. Should the function then Panic?
-	
-			size_t DirIndex = Virtual / 0x400000; // 4 MiB
+			// Make sure we are only mapping user-space-approved pages.
+			Table* table = CreateUserTable(where, true);
+			if ( table == NULL ) { return false; }
 
-			// See if the required table in the dir exists.
-			if ( !(CurrentDir->Table[DirIndex] & DIR_PRESENT) )
-			{
-				Log::PrintF("3-1-1\n");
-				//DISABLE_PAGING();
-				// TODO: Is the stack well defined here?!
+			size_t pageid = GetPageId(where);
+			addr_t pagedesc = physical | TABLE_PRESENT | TABLE_WRITABLE | TABLE_USER_SPACE;
 
-				// This will create the table we need.
-				GetTablePhys(Virtual);
+			table->page[pageid] = pagedesc;
 
-				//ENABLE_PAGING();
-			}
+			Flush();
 
-			size_t TableIndex = (Virtual % 0x400000) / 0x1000;		
-		
-			CurrentTables[DirIndex].Page[TableIndex] = Physical | Flags;
-		#else
-			#warning "Virtual Memory is not available on this arch"
-			while(true);
-		#endif
+			ASSERT(Lookup(where) == pagedesc);
+
+			// TODO: Only update the single page!
+			Flush();
+
+			return true;
 		}
 
-		// Unsafe version of VirtualMemory::Map. This has no error checking, but is faster.
-		void MapUnsafe(uintptr_t Physical, uintptr_t Virtual, uintptr_t Flags)
+		addr_t UnmapUser(addr_t where)
 		{
-		#ifdef PLATFORM_X86
-			size_t DirIndex = Virtual / 0x400000; // 4 MiB
-			size_t TableIndex = (Virtual % 0x400000) / 0x1000;		
-		
-			CurrentTables[DirIndex].Page[TableIndex] = Physical | Flags;
-		#else
-			#warning "Virtual Memory is not available on this arch"
-			while(true);
-		#endif
+			// Make sure we are only mapping user-space-approved pages.
+			Table* table = CreateUserTable(where, false);
+			ASSERT(table != NULL);
+
+			size_t pageid = GetPageId(where);
+			addr_t pagedesc = table->page[pageid];
+			ASSERT((pagedesc & TABLE_PRESENT) != 0);
+			addr_t result = pagedesc & TABLE_ADDRESS;
+			table->page[pageid] = 0;
+
+			// TODO: Only update the single page!
+			Flush();
+
+			return result;
 		}
 
-		void* LookupAddr(uintptr_t Virtual)
-		{
-		#ifdef PLATFORM_X86
-			size_t DirIndex = Virtual / 0x400000; // 4 MiB
-			size_t TableIndex = (Virtual % 0x400000) / 0x1000;		
-		
-			return (void*) (CurrentTables[DirIndex].Page[TableIndex] & TABLE_ADDRESS);
-		#else
-			#warning "Virtual Memory is not available on this arch"
-			while(true);
-			return NULL;
-		#endif
-		}
+	#else
+
+		#warning "Virtual Memory is not available on this arch"
+
+		void Flush() { while(true); }
+		void SwitchDirectory(addr_t dir) { while(true); }
+		addr_t CreateDirectory() { while(true); return 0; }
+		addr_t UnmapKernel(addr_t where) { while(true); return 0; }
+		addr_t UnmapUser(addr_t where) { while(true); return 0; }
+
+	#endif
 	}
 }

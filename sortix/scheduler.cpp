@@ -55,7 +55,7 @@ namespace Sortix
 		size_t AllocatedThreadId;
 	}
 
-	Thread::Thread(Process* process, size_t id, size_t* stack, size_t stackLength)
+	Thread::Thread(Process* process, size_t id, addr_t stack, size_t stackLength)
 	{
 		_process = process;
 		_id = id;
@@ -204,17 +204,15 @@ namespace Sortix
 #endif
 
 			// Allocate and set up a stack for the kernel to use during interrupts.
-			void* KernelStackPage = Page::Get();
-			if ( KernelStackPage == NULL ) { Panic("scheduler.cpp: could not allocate kernel interrupt stack for tss!"); }
+			addr_t KernelStackPage = Page::Get();
+			if ( KernelStackPage == 0 ) { Panic("scheduler.cpp: could not allocate kernel interrupt stack for tss!"); }
 
 #ifdef PLATFORM_VIRTUAL_MEMORY
 			uintptr_t MapTo = 0x80000000;
 
-			VirtualMemory::Map((uintptr_t) KernelStackPage, MapTo, TABLE_PRESENT | TABLE_WRITABLE);
-			VirtualMemory::Flush();
+			VirtualMemory::MapKernel(MapTo, (uintptr_t) KernelStackPage);
 #endif
 
-			size_t* KernelStack = ((size_t*) KernelStackPage) + 4096 / sizeof(size_t);
 			GDT::SetKernelStack((size_t*) (MapTo+4096));
 		}
 
@@ -244,8 +242,8 @@ namespace Sortix
 
 			// Allocate a stack for this thread.
 			size_t StackLength = StackSize / sizeof(size_t);
-			size_t* PhysStack = (size_t*) Page::Get();
-			if ( PhysStack == NULL )
+			addr_t PhysStack = Page::Get();
+			if ( PhysStack == 0 )
 			{
 #ifndef PLATFORM_KERNEL_HEAP
 				Page::Put(ThreadPage);
@@ -266,7 +264,7 @@ namespace Sortix
 			uintptr_t StackPos = 0x80000000UL;
 			uintptr_t MapTo = StackPos - 4096UL;
 
-			VirtualMemory::Map((uintptr_t) PhysStack, MapTo, TABLE_PRESENT | TABLE_WRITABLE | TABLE_USER_SPACE);
+			VirtualMemory::MapUser(MapTo, PhysStack);
 			VirtualMemory::Flush();
 #else
 			uintptr_t StackPos = (uintptr_t) PhysStack + 4096;
@@ -423,7 +421,11 @@ namespace Sortix
 			// TODO: What do we do with the result parameter?
 			Thread->~Thread();
 			//Log::PrintF("<ExitedThread debug=\"2\" thread=\"%p\"/>\n", Thread);
-			Page::Put(Thread);
+#ifndef PLATFORM_KERNEL_HEAP
+			Page::Put((addr_t) Thread);
+#else
+			delete Thread;
+#endif
 			//Log::PrintF("<ExitedThread debug=\"3\" thread=\"%p\"/>\n", Thread);
 
 			if ( Thread == currentThread ) { currentThread = NULL; }

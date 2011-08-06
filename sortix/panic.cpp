@@ -38,7 +38,7 @@ namespace Sortix
 	{
 		if ( longpanic )
 		{
-			Log::Print("\e[m\e[31m\e[2J\e[H");
+			Log::Print("\e[m\e[31;40m\e[2J\e[H");
 			Log::Print("                                                       _                        ");
 			Log::Print("                                                      / \\                       ");
 			Log::Print("                  /\\    /\\                           /   \\                      ");

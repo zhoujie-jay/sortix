@@ -36,15 +36,6 @@
 
 #include <sortix/memorymanagement.h>
 #include <sortix/panic.h>
-
-namespace Sortix
-{
-	namespace VirtualMemory
-	{
-		extern uintptr_t KernelHalfStart;
-		extern uintptr_t KernelHalfEnd;
-	}
-}
 #endif
 
 #define IsGoodChunkPosition(Chunk) ((uintptr_t) Wilderness + WildernessSize <= (uintptr_t) (Chunk) && (uintptr_t) (Chunk) <= (uintptr_t) HeapStart)
@@ -188,7 +179,7 @@ namespace Maxsi
 		{
 			Memory::Set(Bins, 0, sizeof(Bins));
 #ifdef SORTIX_KERNEL			 
-			Wilderness = (byte*) Sortix::VirtualMemory::KernelHalfEnd;
+			Wilderness = (byte*) Sortix::VirtualMemory::heapUpper;
 #else
 			// TODO: This is very 32-bit specific!
 			Wilderness = (byte*) 0x80000000;
@@ -210,7 +201,7 @@ namespace Maxsi
 
 #ifdef SORTIX_KERNEL
 			// Check if the wilderness would grow larger than the kernel memory area.
-			if ( ( ((uintptr_t) Wilderness) - Sortix::VirtualMemory::KernelHalfStart ) < NeededSize ) { return false; }
+			if ( ( ((uintptr_t) Wilderness) - Sortix::VirtualMemory::heapLower ) < NeededSize ) { return false; }
 #endif
 
 			// Figure out how where the new wilderness will be.
@@ -244,9 +235,9 @@ namespace Maxsi
 				PagesLeft--;
 
 				// Get a raw unused physical page.
-				void* Page = Sortix::Page::Get();
+				addr_t Page = Sortix::Page::Get();
 
-				if ( Page == NULL )
+				if ( Page == 0 )
 				{
 					// If none is available, simply let the allocation fail
 					// and unallocate everything we did allocate so far.
@@ -254,21 +245,17 @@ namespace Maxsi
 					{
 						PagesLeft++;
 
-						uintptr_t OldVirtual = NewWilderness + 4096 * PagesLeft;
-						void* OldPage = Sortix::VirtualMemory::LookupAddr(OldVirtual);
-						Sortix::VirtualMemory::Map(0, OldVirtual, 0);
+						addr_t OldVirtual = NewWilderness + 4096 * PagesLeft;
+						addr_t OldPage = Sortix::VirtualMemory::UnmapKernel(OldVirtual);
 						Sortix::Page::Put(OldPage);
 					}
-
-					// Flash the TLB to restore everything safely.
-					Sortix::VirtualMemory::Flush();
 					return false;
 				}
 
 				// Map the physical page to a virtual one.
-				uintptr_t VirtualAddr = NewWilderness + 4096 * PagesLeft;
+				addr_t VirtualAddr = NewWilderness + 4096 * PagesLeft;
 
-				Sortix::VirtualMemory::Map((uintptr_t) Page, VirtualAddr, TABLE_PRESENT | TABLE_WRITABLE);
+				Sortix::VirtualMemory::MapKernel(VirtualAddr, Page);
 			}
 
 			// Now flush the TLB such that the new pages can be safely used.

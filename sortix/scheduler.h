@@ -37,7 +37,7 @@ namespace Sortix
 		typedef void* (*Entry)(void* Parameter);
 
 	public:
-		Thread(Process* process, size_t id, size_t* stack, size_t stackLength);
+		Thread(Process* process, size_t id, addr_t stack, size_t stackLength);
 		~Thread();
 
 	public:
@@ -46,7 +46,7 @@ namespace Sortix
 
 	private:
 		size_t _id;
-		size_t* _stack;
+		addr_t _stack;
 		size_t _stackLength;
 		Process* _process;
 		State _state;

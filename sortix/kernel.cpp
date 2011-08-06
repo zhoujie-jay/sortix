@@ -241,23 +241,21 @@ namespace Sortix
 
 		Thread::Entry initstart = RunApplication;
 
+		// TODO: Create a new page directory here for the first process!
+
 		if ( initrd != NULL )
 		{
-			void* loadptr = (void*) 0x400000;
-			uintptr_t loadint = (uintptr_t) loadptr;
+			addr_t loadat = 0x400000UL;
 
 #ifdef PLATFORM_VIRTUAL_MEMORY
 			ASSERT(initrdsize <= 4096);
-			void* apppageptr = Page::Get();
-			uintptr_t apppageint = (uintptr_t) apppageptr;
+			addr_t apppage = Page::Get();
 
-			uintptr_t flags = TABLE_PRESENT | TABLE_WRITABLE | TABLE_USER_SPACE;
-			VirtualMemory::Map(apppageint, loadint, flags);
-			VirtualMemory::Flush();
+			VirtualMemory::MapUser(loadat, apppage);
 #endif
 
-			Memory::Copy(loadptr, initrd, initrdsize);
-			initstart = (Thread::Entry) loadptr;
+			Memory::Copy((void*) loadat, initrd, initrdsize);
+			initstart = (Thread::Entry) loadat;
 		}
 
 		if ( Scheduler::CreateThread(NULL, initstart) == NULL )

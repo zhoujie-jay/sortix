@@ -141,9 +141,9 @@ OutOfMem:
 	movl $0, %eax
 	ret
 
-.globl _ZN6Sortix4Page3PutEPv
-.type _ZN6Sortix4Page3PutEPv, @function # namespace Sortix { void Paging::Free(void* Page); }
-_ZN6Sortix4Page3PutEPv:
+.globl _ZN6Sortix4Page3PutEm
+.type _ZN6Sortix4Page3PutEm, @function # namespace Sortix { void Paging::Free(void* Page); }
+_ZN6Sortix4Page3PutEm:
 	push %esi
 	mov _ZN6Sortix4Page15UnallocatedPageE, %eax # Load UnallocPage* Sortix::Page::UnallocatedPage
 	mov 0x8(%esp), %edx
