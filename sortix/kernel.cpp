@@ -255,12 +255,12 @@ namespace Sortix
 		{
 			addr_t loadat = 0x400000UL;
 
-#ifdef PLATFORM_VIRTUAL_MEMORY
-			ASSERT(initrdsize <= 4096);
-			addr_t apppage = Page::Get();
-
-			VirtualMemory::MapUser(loadat, apppage);
-#endif
+			for ( size_t i = 0; i < initrdsize; i += 4096 )
+			{
+				addr_t apppage = Page::Get();
+				if ( apppage == 0 ) { Panic("kernel.cpp: not enough memory for initrd!"); }
+				VirtualMemory::MapUser(loadat + i, apppage);
+			}
 
 			Memory::Copy((void*) loadat, initrd, initrdsize);
 			initstart = (Thread::Entry) loadat;
