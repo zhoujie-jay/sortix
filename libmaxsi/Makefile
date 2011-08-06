@@ -117,6 +117,7 @@ c/%.o: c/%.c
 	gcc -c $< -o $@ $(CFLAGS)
 
 c/h/%.h: c/hsrc/%.h
+	mkdir -p c/h
 	echo "/* WARNING: This header is generated - edits will be lost! */" > $@
 	mxmpp -I decl -I c/decl $< >> $@
 
