@@ -1,0 +1,7 @@
+*.o
+*.tmp
+*.bin
+*.iso
+*.so
+*.a
+hello
