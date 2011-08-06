@@ -118,6 +118,7 @@ c/%.o: c/%.c
 
 c/h/%.h: c/hsrc/%.h
 	mkdir -p c/h
+	mkdir -p c/h/sys
 	echo "/* WARNING: This header is generated - edits will be lost! */" > $@
 	mxmpp -I decl -I c/decl $< >> $@
 
