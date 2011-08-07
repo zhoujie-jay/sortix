@@ -34,6 +34,9 @@ namespace Sortix
 #endif
 		addr_t	Get();
 		void	Put(addr_t Page);
+
+		inline addr_t AlignDown(addr_t page) { return page & ~(0xFFFUL); } 
+		inline addr_t AlignUp(addr_t page) { return AlignDown(page + 0xFFFUL); } 
 	}
 
 	namespace VirtualMemory
