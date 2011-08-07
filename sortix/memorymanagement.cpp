@@ -24,16 +24,10 @@
 
 #include "platform.h"
 #include <libmaxsi/memory.h>
-#include "globals.h"
-#include "iprintable.h"
 #include "log.h"
 #include "panic.h"
 #include "multiboot.h"
 #include "memorymanagement.h"
-
-// Debug
-#include "iirqhandler.h"
-#include "keyboard.h"
 
 using namespace Maxsi;
 
