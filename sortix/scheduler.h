@@ -40,6 +40,8 @@ namespace Sortix
 
 	private:
 		addr_t _addrspace;
+
+	public:
 		DescriptorTable descriptors;
 
 	public:
