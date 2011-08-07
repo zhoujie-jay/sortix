@@ -31,6 +31,10 @@ cleanbuilds:
 
 everything: all deb iso jssortix
 
+# Statistics
+linecount:
+	wc -l `find | grep -E '\.h$$|\.c$$|\.cpp$$|\.s$$|\.asm$$|Makefile$$'` | sort -n
+
 # Local machine
 
 install: all
