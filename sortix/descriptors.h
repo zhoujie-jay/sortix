@@ -29,12 +29,6 @@ namespace Sortix
 {
 	class Device;
 
-	struct Description
-	{
-		nat type;
-		Device* object;
-	};
-
 	class DescriptorTable
 	{
 	public:
@@ -42,21 +36,22 @@ namespace Sortix
 		~DescriptorTable();
 
 	private:
-		int _numDescs 
-		Description* _descs;
+		int numdevices; 
+		Device** devices;
 
 	public:
+		int Allocate(Device* object);
 		int Reserve();
+		void Free(int index);
 		void UseReservation(int index, Device* object);
-		int Allocate(Device* object;
-		bool Free(int index);
 
 	public:
-		inline Description* get(int index)
+		inline Device* Get(int index)
 		{
-			if ( _numDescs <= index ) { return NULL; }
-			return _descs + index;
+			if ( numdevices <= index ) { return NULL; }
+			return devices[index];
 		}
+
 	};
 }
 

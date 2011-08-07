@@ -25,6 +25,8 @@
 #ifndef SORTIX_SCHEDULER_H
 #define SORTIX_SCHEDULER_H
 
+#include "descriptors.h"
+
 namespace Sortix
 {
 	class Thread;
@@ -38,6 +40,7 @@ namespace Sortix
 
 	private:
 		addr_t _addrspace;
+		DescriptorTable descriptors;
 
 	public:
 		addr_t GetAddressSpace() { return _addrspace; }
