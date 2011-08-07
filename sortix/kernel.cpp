@@ -253,7 +253,7 @@ namespace Sortix
 
 		if ( initrd != NULL )
 		{
-			addr_t loadat = 0x400000UL;
+			addr_t loadat = process->_endcodesection;
 
 			for ( size_t i = 0; i < initrdsize; i += 4096 )
 			{
@@ -264,6 +264,8 @@ namespace Sortix
 
 			Memory::Copy((void*) loadat, initrd, initrdsize);
 			initstart = (Thread::Entry) loadat;
+
+			process->_endcodesection += initrdsize;
 		}
 
 		if ( Scheduler::CreateThread(process, initstart) == NULL )

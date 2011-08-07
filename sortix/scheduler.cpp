@@ -41,6 +41,7 @@ namespace Sortix
 	Process::Process(addr_t addrspace)
 	{
 		_addrspace = addrspace;
+		_endcodesection = 0x400000UL;
 	}
 
 	Process::~Process()

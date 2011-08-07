@@ -43,6 +43,9 @@ namespace Sortix
 		DescriptorTable descriptors;
 
 	public:
+		addr_t _endcodesection; // HACK
+
+	public:
 		addr_t GetAddressSpace() { return _addrspace; }
 
 	public:
