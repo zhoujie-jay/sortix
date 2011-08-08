@@ -53,6 +53,10 @@ namespace Sortix
 #ifdef PLATFORM_X86
 		const addr_t heapLower = 0x80000000UL;
 		const addr_t heapUpper = 0xFF800000UL;
+
+		// Physical pages may be safely temporarily mapped to this address and a
+		// good dozen of pages onwards. Beware that this is only meant to be temporary.
+		const addr_t tempaddr = 0xFF800000UL;
 #endif
 
 	}
