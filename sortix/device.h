@@ -33,33 +33,34 @@ namespace Sortix
 	{
 	public:
 		// Flags
-		const nat READABLE = (1<<0);
-		const nat WRITABLE = (1<<1);
-		const nat SEEKABLE = (1<<2);
-		const nat SIZEABLE = (1<<3);
-		const nat BLOCK = (1<<4);
-		const nat FLAGMASK = ((1<<5)-1);
+		static const nat READABLE = (1<<0);
+		static const nat WRITABLE = (1<<1);
+		static const nat SEEKABLE = (1<<2);
+		static const nat SIZEABLE = (1<<3);
+		static const nat BLOCK = (1<<4);
+		static const nat FLAGMASK = ((1<<5)-1);
 
 		// Types
-		const nat TYPEMASK = ~FLAGMASK;
-		const nat STREAM = (1<<5);
-		const nat BUFFER = (2<<5);
-		const nat DIRECTORY = (3<<5);
-		const nat FILESYSTEM = (4<<5);
-		const nat NETWORK = (5<<5);
-		const nat SOUND = (6<<5);
-		const nat GRAPHICS = (7<<5);
-		const nat MOUSE = (8<<5);
-		const nat KEYBOARD = (9<<5);
-		const nat PRINTER = (10<<5);
-		const nat SCANNER = (11<<5);
-		const nat OTHER = TYPEMASK;
+		static const nat TYPEMASK = ~FLAGMASK;
+		static const nat STREAM = (1<<5);
+		static const nat BUFFER = (2<<5);
+		static const nat DIRECTORY = (3<<5);
+		static const nat FILESYSTEM = (4<<5);
+		static const nat NETWORK = (5<<5);
+		static const nat SOUND = (6<<5);
+		static const nat GRAPHICS = (7<<5);
+		static const nat MOUSE = (8<<5);
+		static const nat KEYBOARD = (9<<5);
+		static const nat PRINTER = (10<<5);
+		static const nat SCANNER = (11<<5);
+		static const nat VGABUFFER = (12<<5);
+		static const nat OTHER = TYPEMASK;
 
 	public:
 		volatile size_t _refCount;
 
 	public:
-		Device() { RefCount = 1; }
+		Device() { _refCount = 1; }
 		virtual ~Device() { }
 
 	private:
@@ -80,7 +81,7 @@ namespace Sortix
 		virtual nat Flags() = 0;
 
 	public:
-		bool IsType(nat type) { return Flags() & TYPEMASK == type); } 
+		bool IsType(nat type) { return (Flags() & TYPEMASK) == type; } 
 
 	};
 }

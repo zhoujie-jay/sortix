@@ -23,17 +23,19 @@
 ******************************************************************************/
 
 #include "platform.h"
+#include <libmaxsi/memory.h>
 #include "device.h"
 
 namespace Sortix
 {
-	void Device::close()
+	bool Device::Close()
 	{
 		_refCount--;
 		if ( _refCount == 0 )
 		{
 			delete this;
 		}
+		return true;
 	}
 
 	void Device::Think()
@@ -51,6 +53,4 @@ namespace Sortix
 		return true;
 	}
 }
-
-#endif
 
