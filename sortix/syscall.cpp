@@ -31,6 +31,7 @@
 #include "iprintable.h"
 #include "log.h"
 #include "panic.h"
+#include "vga.h"
 
 namespace Sortix
 {
@@ -47,7 +48,7 @@ namespace Sortix
 #endif
 		}
 
-		const size_t NumSyscalls = 5;
+		const size_t NumSyscalls = 8;
 		const Syscall Syscalls[NumSyscalls] =
 		{
 			&Scheduler::SysCreateThread,
@@ -55,6 +56,9 @@ namespace Sortix
 			&Scheduler::SysSleep,
 			&Scheduler::SysUSleep,
 			&SysStdOutPrint,
+			&VGA::SysCreateFrame,
+			&VGA::SysChangeFrame,
+			&VGA::SysDeleteFrame,
 		};
 
 		void Init()

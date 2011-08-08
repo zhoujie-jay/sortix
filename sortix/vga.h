@@ -25,8 +25,12 @@
 #ifndef SORTIX_VGA_H
 #define SORTIX_VGA_H
 
+#include "device.h"
+
 namespace Sortix
 {
+	class Process;
+
 	namespace VGA
 	{
 		// TODO: Move these to a better place
@@ -55,7 +59,36 @@ namespace Sortix
 
 			uint16_t Data[80*25];
 		};
+
+		struct UserFrame : public Frame
+		{
+			int fd;
+		};
+
+		void Init();
+
+		// System Calls.
+		void SysCreateFrame(CPU::InterruptRegisters* R);
+		void SysChangeFrame(CPU::InterruptRegisters* R);
+		void SysDeleteFrame(CPU::InterruptRegisters* R);
 	}
+
+	class DevVGAFrame : public Device
+	{
+	public:
+		virtual nat Flags();
+
+	public:
+		DevVGAFrame();
+		~DevVGAFrame();
+
+	public:
+		Process* process;
+		addr_t physical;
+		VGA::UserFrame* userframe;
+		bool onscreen;
+
+	};
 }
 
 #endif

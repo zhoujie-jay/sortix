@@ -44,8 +44,8 @@ c/h/stdio.h
 
 COMMONOBJS=c++.o thread.o io.o memory.o string.o error.o format.o
 SORTIXOBJS:=$(addprefix sortix/,$(COMMONOBJS))
-LIBMAXSIOBJS:=$(COMMONOBJS)
-HEADERS=error.h io.h memory.h platform.h string.h syscall.h thread.h types.h format.h
+LIBMAXSIOBJS:=$(COMMONOBJS) sortix-vga.o
+HEADERS=error.h io.h memory.h platform.h string.h syscall.h thread.h types.h format.h sortix-vga.h
 
 OBJS:=$(LIBMAXSIOBJS)
 BINS:=libmaxsi.so
