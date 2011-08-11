@@ -257,9 +257,6 @@ namespace Maxsi
 
 				Sortix::VirtualMemory::MapKernel(VirtualAddr, Page);
 			}
-
-			// Now flush the TLB such that the new pages can be safely used.
-			Sortix::VirtualMemory::Flush();
 #endif
 
 			// Update the wilderness information now that it is safe.
