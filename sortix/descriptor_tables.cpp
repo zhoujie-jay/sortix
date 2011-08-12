@@ -186,8 +186,8 @@ namespace Sortix
 			SetGate(45, (uint32_t) irq13, 0x08, 0x8E);
 			SetGate(46, (uint32_t) irq14, 0x08, 0x8E);
 			SetGate(47, (uint32_t) irq15, 0x08, 0x8E);
-			SetGate(128, (uint32_t) isr128, 0x08, 0x8E); // System Calls
-			SetGate(177, (uint32_t) isr177, 0x08, 0x8E); // System Calls
+			SetGate(128, (uint32_t) isr128, 0x08, 0x8E | 0x60); // System Calls
+			SetGate(177, (uint32_t) isr177, 0x08, 0x8E | 0x60); // System Calls
 
 			idt_flush((uint32_t)&idt_ptr);
 #else
@@ -203,7 +203,7 @@ namespace Sortix
 
 			idt_entries[num].sel     = sel;
 			idt_entries[num].always0 = 0;
-			idt_entries[num].flags   = flags | 0x60;
+			idt_entries[num].flags   = flags;
 		}
 	}
 }
