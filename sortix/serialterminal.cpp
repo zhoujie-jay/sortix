@@ -34,8 +34,8 @@ namespace Sortix
 	{
 		void Reset()
 		{
-			// Set the cursor to (0,0)
-			const char InitMessage[] = "\e[H";
+			// Set the cursor to (0,0) and clear the screen.
+			const char InitMessage[] = "\e[m\e[2J\e[H";
 			UART::Write(InitMessage, Maxsi::String::Length(InitMessage));
 		}
 
