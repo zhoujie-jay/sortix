@@ -29,40 +29,5 @@ namespace Sortix
 {
 	namespace X64
 	{
-		void OutPortB(uint16_t Port, uint8_t Value)
-		{
-			asm volatile ("outb %1, %0" : : "dN" (Port), "a" (Value));
-		}
-
-		void OutPortW(uint16_t Port, uint16_t Value)
-		{
-			asm volatile ("outw %1, %0" : : "dN" (Port), "a" (Value));
-		}
-
-		void OutPortL(uint16_t Port, uint32_t Value)
-		{
-			asm volatile ("outl %1, %0" : : "dN" (Port), "a" (Value));
-		}
-
-		uint8_t InPortB(uint16_t Port)
-		{
-			uint8_t Result;
-			asm volatile("inb %1, %0" : "=a" (Result) : "dN" (Port));
-			return Result;
-		}
-
-		uint16_t InPortW(uint16_t Port)
-		{
-			uint16_t Result;
-			asm volatile("inw %1, %0" : "=a" (Result) : "dN" (Port));
-			return Result;
-		}
-
-		uint32_t InPortL(uint16_t Port)
-		{
-			uint32_t Result;
-			asm volatile("inl %1, %0" : "=a" (Result) : "dN" (Port));
-			return Result;
-		}
 	}
 }

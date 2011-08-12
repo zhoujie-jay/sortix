@@ -17,7 +17,7 @@
 	You should have received a copy of the GNU General Public License along
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	x86
+	x86.h
 	CPU stuff for the x86 platform.
 
 ******************************************************************************/
@@ -25,17 +25,12 @@
 #ifndef SORTIX_X86_H
 #define SORTIX_X86_H
 
+#include "../x86-family/x86-family.h"
+
 namespace Sortix
 {
 	namespace X86
 	{
-		void OutPortB(uint16_t Port, uint8_t Value);
-		void OutPortW(uint16_t Port, uint16_t Value);
-		void OutPortL(uint16_t Port, uint32_t Value);
-		uint8_t InPortB(uint16_t Port);
-		uint16_t InPortW(uint16_t Port);
-		uint32_t InPortL(uint16_t Port);
-
 		struct InterruptRegisters
 		{
 			uint32_t cr2;
@@ -44,8 +39,6 @@ namespace Sortix
 			uint32_t int_no, err_code; // Interrupt number and error code (if applicable)
 			uint32_t eip, cs, eflags, useresp, ss; // Pushed by the processor automatically.
 		};
-
-		void Reboot();
 	}
 }
 

@@ -26,7 +26,8 @@ ifdef X86FAMILY
     CPUOBJS:=$(CPUOBJS) \
              $(CPU)/memorymanagement-asm.o \
              $(CPU)/interrupt.o \
-             $(CPU)/gdt.o
+             $(CPU)/gdt.o \
+             x86-family/x86-family.o
     CPUFLAGS:=$(CPUFLAGS) -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow
 endif
 
@@ -42,7 +43,7 @@ DEFINES:=$(DEFINES) -DPLATFORM_KERNEL_HEAP
 DEFINES:=$(DEFINES) -DINITRD
 CPPFLAGSRELEASE=-s -O3
 CPPFLAGSDEBUG=
-CPPFLAGS=-I.. $(CPUDEFINES) $(CPUFLAGS) -std=gnu++0x -Wall -Wextra -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -fno-exceptions -fno-rtti -fno-stack-protector $(DEFINES) $(CPPFLAGSRELEASE)
+CPPFLAGS=-I.. -I. $(CPUDEFINES) $(CPUFLAGS) -std=gnu++0x -Wall -Wextra -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -fno-exceptions -fno-rtti -fno-stack-protector $(DEFINES) $(CPPFLAGSRELEASE)
 OBJS=$(CPUOBJS) kernel.o descriptor_tables.o isr.o time.o log.o iprintable.o panic.o keyboard.o memorymanagement.o scheduler.o syscall.o application.o pong.o sound.o pci.o uart.o conway.o test.o http.o vgaterminal.o serialterminal.o descriptors.o device.o vga.o ../libmaxsi/libmaxsi-sortix.a
 JSOBJS:=$(subst .o,-js.o,$(OBJS))
 
