@@ -39,24 +39,24 @@ namespace Sortix
 		if ( longpanic )
 		{
 			Log::Print("\e[m\e[31;40m\e[2J\e[H");
-			Log::Print("                                                       _                        ");
-			Log::Print("                                                      / \\                       ");
-			Log::Print("                  /\\    /\\                           /   \\                      ");
-			Log::Print("                 /  \\  /  \\                          |   |                      ");
-			Log::Print("                /    \\/    \\                         |   |                      ");
-			Log::Print("               |  X    X    \\_______________________ /   |                      ");
-			Log::Print("               |                                         |                      ");
-			Log::Print("               | _________                               /                      ");
-			Log::Print("                \\                                       /                       ");
-			Log::Print("                  ------       ---------------      ---/                        ");
-			Log::Print("                       /       \\             /      \\                           ");
-			Log::Print("                      /         \\           /        \\                          ");
-			Log::Print("                     /           \\         /          \\                         ");
-			Log::Print("                    /_____________\\       /____________\\                        ");
-			Log::Print("                                                                                ");
-			Log::Print("                                                                                ");
-			Log::Print("                              RED MAXSI OF DEATH                                ");
-			Log::Print("                                                                                ");
+			Log::Print("                                                       _                        \n");
+			Log::Print("                                                      / \\                       \n");
+			Log::Print("                  /\\    /\\                           /   \\                      \n");
+			Log::Print("                 /  \\  /  \\                          |   |                      \n");
+			Log::Print("                /    \\/    \\                         |   |                      \n");
+			Log::Print("               |  X    X    \\_______________________ /   |                      \n");
+			Log::Print("               |                                         |                      \n");
+			Log::Print("               | _________                               /                      \n");
+			Log::Print("                \\                                       /                       \n");
+			Log::Print("                  ------       ---------------      ---/                        \n");
+			Log::Print("                       /       \\             /      \\                           \n");
+			Log::Print("                      /         \\           /        \\                          \n");
+			Log::Print("                     /           \\         /          \\                         \n");
+			Log::Print("                    /_____________\\       /____________\\                        \n");
+			Log::Print("                                                                                \n");
+			Log::Print("                                                                                \n");
+			Log::Print("                              RED MAXSI OF DEATH                                \n");
+			Log::Print("                                                                                \n");
 		}
 		else
 		{

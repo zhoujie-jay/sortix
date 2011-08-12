@@ -103,21 +103,21 @@ namespace Sortix
 
 	void DoMaxsiLogo()
 	{
-		Log::Print("                                                       _                        ");
-		Log::Print("                                                      / \\                       ");
-		Log::Print("                  /\\    /\\                           /   \\                      ");
-		Log::Print("                 /  \\  /  \\                          |   |                      ");
-		Log::Print("                /    \\/    \\                         |   |                      ");
-		Log::Print("               |  O    O    \\_______________________ /   |                      ");
-		Log::Print("               |                                         |                      ");
-		Log::Print("               | \\_______/                               /                      ");
-		Log::Print("                \\                                       /                       ");
-		Log::Print("                  ------       ---------------      ---/                        ");
-		Log::Print("                       /       \\             /      \\                           ");
-		Log::Print("                      /         \\           /        \\                          ");
-		Log::Print("                     /           \\         /          \\                         ");
-		Log::Print("                    /_____________\\       /____________\\                        ");
-		Log::Print("                                                                                ");
+		Log::Print("                                                       _                        \n");
+		Log::Print("                                                      / \\                       \n");
+		Log::Print("                  /\\    /\\                           /   \\                      \n");
+		Log::Print("                 /  \\  /  \\                          |   |                      \n");
+		Log::Print("                /    \\/    \\                         |   |                      \n");
+		Log::Print("               |  O    O    \\_______________________ /   |                      \n");
+		Log::Print("               |                                         |                      \n");
+		Log::Print("               | \\_______/                               /                      \n");
+		Log::Print("                \\                                       /                       \n");
+		Log::Print("                  ------       ---------------      ---/                        \n");
+		Log::Print("                       /       \\             /      \\                           \n");
+		Log::Print("                      /         \\           /        \\                          \n");
+		Log::Print("                     /           \\         /          \\                         \n");
+		Log::Print("                    /_____________\\       /____________\\                        \n");
+		Log::Print("                                                                                \n");
 	}
 
 	void DoWelcome()
@@ -188,6 +188,8 @@ namespace Sortix
 
 		// Display the boot welcome screen.
 		DoWelcome();
+
+		while(true);
 
 #ifndef JSSORTIX
 		// Search for PCI devices and load their drivers.
