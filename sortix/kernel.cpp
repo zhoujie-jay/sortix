@@ -189,8 +189,6 @@ namespace Sortix
 		// Display the boot welcome screen.
 		DoWelcome();
 
-		while(true);
-
 #ifndef JSSORTIX
 		// Search for PCI devices and load their drivers.
 		PCI::Init();
