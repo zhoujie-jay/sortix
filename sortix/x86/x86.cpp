@@ -64,5 +64,40 @@ namespace Sortix
 			asm volatile("inl %1, %0" : "=a" (Result) : "dN" (Port));
 			return Result;
 		}
+
+		void Reboot()
+		{
+			// Keyboard interface IO port: data and control.
+			const uint16_t KEYBOARD_INTERFACE = 0x64;
+
+			// Keyboard IO port.
+			const uint16_t KEYBOARD_IO = 0x60;
+
+			// Keyboard data is in buffer (output buffer is empty) (bit 0).
+			const uint8_t KEYBOARD_DATA = (1<<0);
+
+			// User data is in buffer (command buffer is empty) (bit 1).
+			const uint8_t USER_DATA = (1<<1);
+
+			// Disable interrupts.
+			asm volatile("cli");
+
+			// Clear all keyboard buffers (output and command buffers).
+			uint8_t byte;
+			do
+			{
+				byte = InPortB(KEYBOARD_INTERFACE);
+				if ( ( byte & KEYBOARD_DATA ) != 0 ) { InPortB(KEYBOARD_IO); }
+			} while ( ( byte & USER_DATA ) != 0 );
+
+			// CPU reset command.
+			uint8_t KEYBOARD_RESET_CPU = 0xFE;
+
+			// Now pulse the CPU reset line and reset.
+			OutPortB(KEYBOARD_INTERFACE, KEYBOARD_RESET_CPU);
+
+			// If that didn't work, just halt.
+			asm volatile("hlt");
+		}
 	}
 }

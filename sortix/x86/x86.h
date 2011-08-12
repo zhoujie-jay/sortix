@@ -44,6 +44,8 @@ namespace Sortix
 			uint32_t int_no, err_code; // Interrupt number and error code (if applicable)
 			uint32_t eip, cs, eflags, useresp, ss; // Pushed by the processor automatically.
 		};
+
+		void Reboot();
 	}
 }
 
