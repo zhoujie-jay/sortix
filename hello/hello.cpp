@@ -8,8 +8,10 @@ int main(int argc, char* argv[])
 	       "This program is a probably the worst text editor ever made.\n"
 	       "You are currently using the buggy USA keyboard layout.\n"
 	       "This terminal is controlled using ANSI Escape Sequences:\n"
-	       " - Type \e[32mESC [ 2 J\e[m to clear the screen\n"
+	       " - Type \e[32mESC 2 J\e[m to clear the screen\n"
 	       );
+
+	bool lastwasesc = false;
 
 	while (true)
 	{
@@ -22,11 +24,13 @@ int main(int argc, char* argv[])
 		if ( codepoint == Maxsi::Keyboard::DOWN ) { printf("\e[B"); continue; }
 		if ( codepoint == Maxsi::Keyboard::RIGHT ) { printf("\e[C"); continue; }
 		if ( codepoint == Maxsi::Keyboard::LEFT ) { printf("\e[D"); continue; }
-		if ( codepoint == Maxsi::Keyboard::ESC ) { printf("\e"); continue; }
+		if ( codepoint == Maxsi::Keyboard::ESC ) { printf("\e["); lastwasesc = true; continue; }
+		if ( lastwasesc && codepoint == '[' ) { continue; }
 		if ( codepoint >= 0x80 ) { continue; }
 
 		char msg[2]; msg[0] = codepoint; msg[1] = '\0';
 		printf(msg);
+		lastwasesc = false;
 	}
 
 	return 0;
