@@ -38,6 +38,8 @@ namespace Sortix
 	
 		void Play(nat Frequency)
 		{
+			Log::PrintF("Playing frequency %u\n", Frequency);
+
 			//Set the PIT to the desired frequency
 			uint32_t Div = 1193180 / Frequency;
 			CPU::OutPortB(0x43, 0xB6);
@@ -51,6 +53,12 @@ namespace Sortix
 			{
 				CPU::OutPortB(0x61, TMP | 3);
 			}
+		}
+
+		void SysSetFrequency(CPU::InterruptRegisters* R)
+		{
+			unsigned frequency = R->ebx;
+			if ( frequency == 0 ) { Mute(); } else { Play(frequency); }
 		}
 	}
 }

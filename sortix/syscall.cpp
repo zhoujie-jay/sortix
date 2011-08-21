@@ -33,6 +33,7 @@
 #include "panic.h"
 #include "vga.h"
 #include "keyboard.h"
+#include "sound.h"
 
 namespace Sortix
 {
@@ -49,7 +50,7 @@ namespace Sortix
 #endif
 		}
 
-		const size_t NumSyscalls = 9;
+		const size_t NumSyscalls = 10;
 		const Syscall Syscalls[NumSyscalls] =
 		{
 			&Scheduler::SysCreateThread,
@@ -61,6 +62,7 @@ namespace Sortix
 			&VGA::SysChangeFrame,
 			&VGA::SysDeleteFrame,
 			&Keyboard::SysReceieveKeystroke,
+			&Sound::SysSetFrequency,
 		};
 
 		void Init()
