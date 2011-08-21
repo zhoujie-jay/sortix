@@ -316,7 +316,7 @@ namespace Sortix
 				case 'D':
 				{
 					nat dist = ( 0 < ansiusedparams ) ? ansiparams[0] : 1;
-					if ( column < dist ) { line = 0; } else { column -= dist; }
+					if ( column < dist ) { column = 0; } else { column -= dist; }
 					break;
 				}
 				// Move to beginning of line N lines down.
