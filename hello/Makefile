@@ -38,8 +38,8 @@ hello: hello.o
 	$(LD) $(LDFLAGS) hello.o -o hello.tmp $(LIBC)
 	objcopy -O binary hello.tmp hello
 
-hello.o: hello.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -O2 -c hello.c -o hello.o
+hello.o: hello.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -O2 -c hello.cpp -o hello.o
 
 clean:
 	rm -f hello.tmp hello.o hello

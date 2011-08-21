@@ -76,7 +76,7 @@ namespace Sortix
 				// Check that we can use this kind of RAM.
 				if ( MMap->type != 1 ) { continue; }
 
-				Log::PrintF("RAM at 0x%64x\t of length 0x%64zx\n", MMap->addr, MMap->len);
+				//Log::PrintF("RAM at 0x%64x\t of length 0x%64zx\n", MMap->addr, MMap->len);
 
 				// The kernels code may split this memory area into multiple pieces.
 				struct { uintptr_t Base; size_t Length; } Entries[2]; nat Num = 1;
@@ -150,7 +150,7 @@ namespace Sortix
 			Fragmentize();
 
 #ifndef PLATFORM_SERIAL
-			Log::PrintF("%zu pages are available for paging (%zu MiB RAM)\n", PagesTotal, PagesTotal >> 8 /* * 0x1000 / 1024 / 1024*/);
+			//Log::PrintF("%zu pages are available for paging (%zu MiB RAM)\n", PagesTotal, PagesTotal >> 8 /* * 0x1000 / 1024 / 1024*/);
 #endif
 		}
 	}

@@ -235,6 +235,7 @@ namespace Sortix
 
 		void Init()
 		{
+#if 0
 			Log::Print("PCI Devices: ");
 
 			for ( nat Bus = 0; Bus < 256; Bus++ )
@@ -264,6 +265,7 @@ namespace Sortix
 			}
 
 			Log::Print("\b\b\n");
+#endif
 		}
 
 		uint32_t ReadLong(uint8_t Bus, uint8_t Slot, uint8_t Function, uint8_t Offset)
