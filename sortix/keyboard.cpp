@@ -23,8 +23,8 @@
 ******************************************************************************/
 
 #include "platform.h"
-#include "globals.h"
-#include "iprintable.h"
+#include <libmaxsi/memory.h>
+#include <libmaxsi/keyboard.h>
 #include "iirqhandler.h"
 #include "log.h"
 #include "panic.h"
@@ -33,46 +33,14 @@
 
 #include "pong.h"
 
+using namespace Maxsi::Keyboard;
+
 namespace Sortix
 {
 	namespace Keyboard
 	{
 		namespace Layouts
 		{
-			const uint32_t UNKNOWN = 0xFFFFFFFF;
-			const uint32_t ESC = 0xFFFFFFFF - 1;
-			const uint32_t CTRL = 0xFFFFFFFF - 2;
-			const uint32_t LSHFT = 0xFFFFFFFF - 3;
-			const uint32_t RSHFT = 0xFFFFFFFF - 4;
-			const uint32_t ALT = 0xFFFFFFFF - 5;
-			const uint32_t F1 = 0xFFFFFFFF - 6;
-			const uint32_t F2 = 0xFFFFFFFF - 7;
-			const uint32_t F3 = 0xFFFFFFFF - 8;
-			const uint32_t F4 = 0xFFFFFFFF - 9;
-			const uint32_t F5 = 0xFFFFFFFF - 10;
-			const uint32_t F6 = 0xFFFFFFFF - 11;
-			const uint32_t F7 = 0xFFFFFFFF - 12;
-			const uint32_t F8 = 0xFFFFFFFF - 13;
-			const uint32_t F9 = 0xFFFFFFFF - 14;
-			const uint32_t F10 = 0xFFFFFFFF - 15;
-			const uint32_t F11 = 0xFFFFFFFF - 16;
-			const uint32_t F12 = 0xFFFFFFFF - 17;
-			const uint32_t SCRLCK = 0xFFFFFFFF - 18;
-			const uint32_t HOME = 0xFFFFFFFF - 19;
-			const uint32_t UP = 0xFFFFFFFF - 20;
-			const uint32_t LEFT = 0xFFFFFFFF - 21;
-			const uint32_t RIGHT = 0xFFFFFFFF - 22;
-			const uint32_t DOWN = 0xFFFFFFFF - 23;
-			const uint32_t PGUP = 0xFFFFFFFF - 24;
-			const uint32_t PGDOWN = 0xFFFFFFFF - 25;
-			const uint32_t END = 0xFFFFFFFF - 26;
-			const uint32_t INS = 0xFFFFFFFF - 27;
-			const uint32_t DEL = 0xFFFFFFFF - 28;
-			const uint32_t CAPS = 0xFFFFFFFF - 29;
-			const uint32_t NONE = 0xFFFFFFFF - 30;
-			const uint32_t ALTGR = 0xFFFFFFFF - 31;
-			const uint32_t NUMLCK = 0xFFFFFFFF - 32;
-
 			namespace US
 			{
 				uint32_t sg[128] =
@@ -647,6 +615,11 @@ namespace Sortix
 
 		uint8_t LEDs;
 
+		size_t keystrokeQueueOffset;
+		size_t keystrokeQueueUsed;
+		size_t keystrokeQueueLength;
+		uint32_t* keystrokeQueue;
+
 		void Init()
 		{
 			// Initialize variables.
@@ -658,6 +631,30 @@ namespace Sortix
 			// If any scancodes were already pending, our interrupt handler
 			// will never be called. Let's just discard anything pending.
 			CPU::InPortB(0x60);
+
+			// Create a queue where pending keystrokes can be stored until
+			// user-space applications access them.
+			keystrokeQueueUsed = 0;
+			keystrokeQueueOffset = 0;
+			keystrokeQueueLength = 1024ULL;
+			keystrokeQueue = new uint32_t[keystrokeQueueLength];
+			if ( keystrokeQueue == NULL )
+			{
+				Panic("Could not allocate keystroke buffer");
+			}
+		}
+
+		bool QueueKeystroke(uint32_t keystroke)
+		{
+			if ( keystrokeQueueLength <= keystrokeQueueUsed ) { return false; }
+
+			size_t position = keystrokeQueueOffset + keystrokeQueueUsed;
+			position %= keystrokeQueueLength;
+			keystrokeQueueUsed++;
+			
+			keystrokeQueue[position] = keystroke;
+
+			return true;
 		}
 
 		void OnIRQ1(CPU::InterruptRegisters* Regs)
@@ -671,6 +668,11 @@ namespace Sortix
 
 			bool KeyUp = (Scancode & 0x80) > 0;
 
+			if ( KeyUp ) { CodePoint |= DEPRESSED; }
+
+			QueueKeystroke(CodePoint);
+			return;
+
 #if PONG
 			Pong::OnKeystroke(CodePoint, KeyUp); return;
 #endif
@@ -683,7 +685,7 @@ namespace Sortix
 			// Use this to debug the exact scancodes you receive!
 			//Log::PrintF("[%u/U+%x]", Scancode, CodePoint);
 
-			if ( CodePoint == Layouts::UNKNOWN ) { Log::PrintF("^%u", Scancode);return; }
+			if ( CodePoint == UNKNOWN ) { Log::PrintF("^%u", Scancode);return; }
 
 			if ( CodePoint & (1<<31) ) { return; }
 
@@ -703,6 +705,23 @@ namespace Sortix
 			CPU::OutPortB(0x60, 0xED);
 			while ( (CPU::InPortB(0x64) & (1<<1)) != 0 ) { } //loop Until zero
 			CPU::OutPortB(0x60, LEDs);
+		}
+
+		void SysReceieveKeystroke(CPU::InterruptRegisters* R)
+		{
+			uint32_t codepoint;
+			if ( keystrokeQueueUsed == 0 )
+			{
+				codepoint = 0;
+			}
+			else
+			{
+				codepoint = keystrokeQueue[keystrokeQueueOffset];
+				keystrokeQueueOffset++;
+				keystrokeQueueOffset %= keystrokeQueueLength;
+				keystrokeQueueUsed--;
+			}
+			R->eax = codepoint;
 		}
 	}
 }

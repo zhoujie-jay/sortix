@@ -51,9 +51,9 @@ const char* exceptions[] = { "Divide by zero", "Debug", "Non maskable interrupt"
 	extern "C" void irq_handler(Sortix::CPU::InterruptRegisters* Regs)
 	{
 #ifdef PLATFORM_X86
-		if ( Regs->int_no != 32 )
+		if ( Regs->int_no != 32 && Regs->int_no != 33 )
 		{
-			Sortix::Log::PrintF("IRQ eax=%u, int_no=%u, err_code=%u, eip=0x%x!\n", Regs->eax, Regs->int_no, Regs->err_code, Regs->eip);
+			//Sortix::Log::PrintF("IRQ eax=%u, int_no=%u, err_code=%u, eip=0x%x!\n", Regs->eax, Regs->int_no, Regs->err_code, Regs->eip);
 		}
 
 		if ( Regs->int_no < 32 || 48 < Regs->int_no ) { Sortix::PanicF("IRQ eax=%u, int_no=%u, err_code=%u, eip=%u!", Regs->eax, Regs->int_no, Regs->err_code, Regs->eip); }

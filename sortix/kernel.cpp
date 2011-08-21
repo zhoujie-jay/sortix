@@ -218,10 +218,6 @@ namespace Sortix
 
 		if ( BootInfo == NULL ) { Panic("kernel.cpp: The bootinfo structure was NULL. Are your bootloader multiboot compliant?"); }
 
-
-		// Initialize the keyboard.
-		Keyboard::Init();
-
 #ifdef PLATFORM_VIRTUAL_MEMORY
 		// Initialize virtual memory. TODO: This is not fully working yet.
 		VirtualMemory::Init();
@@ -232,6 +228,8 @@ namespace Sortix
 #endif
 
 #endif
+		// Initialize the keyboard.
+		Keyboard::Init();
 
 		// Initialize system calls.
 		Syscall::Init();
