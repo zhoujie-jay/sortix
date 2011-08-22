@@ -35,12 +35,29 @@ namespace Sortix
 	namespace VGA
 	{
 		uint16_t* const vga = (uint16_t* const) 0xB8000;
+		const int width = 80;
+		const int height = 80;
 
 		DevVGAFrame* currentframe;
 
 		void Init()
 		{
 			currentframe = NULL;
+		}
+
+		// Changes the position of the hardware cursor.
+		void SetCursor(nat x, nat y)
+		{
+			nat value = x + y * width;
+
+			// This sends a command to indicies 14 and 15 in the
+			// CRT Control Register of the VGA controller. These
+			// are the high and low bytes of the index that show
+			// where the hardware cursor is to be 'blinking'.
+			CPU::OutPortB(0x3D4, 14);
+			CPU::OutPortB(0x3D5, (value >> 8) & 0xFF);
+			CPU::OutPortB(0x3D4, 15);
+			CPU::OutPortB(0x3D5, (value >> 0) & 0xFF);
 		}
 
 		void SysCreateFrame(CPU::InterruptRegisters* R)
@@ -82,7 +99,7 @@ namespace Sortix
 			frame->physical = page;
 			frame->userframe = userframe;
 
-			process->_endcodesection = mapto + 0x1000;
+			process->_endcodesection = mapto + 0x1000UL;
 
 			R->eax = mapto;
 		}
@@ -106,7 +123,7 @@ namespace Sortix
 
 			// TODO: Check if userframe is actually user-space writable!
 
-			//Log::PrintF("changeframe: fd = %u, frame = 0x%p, currentframe = 0x%p\n", fd, frame, currentframe);
+			//Log::PrintF("changeframe: fd = %u, frame = 0x%p, currentframe = 0x%p, userframe = 0x%p\n", fd, frame, currentframe, frame->userframe); while(true);
 
 			// Check if we need to do anything.
 			if ( frame == currentframe ) { R->eax = 0; return; }
@@ -149,7 +166,8 @@ namespace Sortix
 			VirtualMemory::MapUser((addr_t) frame->userframe, (addr_t) vga);
 
 			frame->onscreen = true;
-			currentframe = frame;			
+			currentframe = frame;
+			SetCursor(width, height-1);	
 		}
 
 		void SysDeleteFrame(CPU::InterruptRegisters* R)

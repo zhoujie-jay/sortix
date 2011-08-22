@@ -49,30 +49,15 @@ namespace Sortix
 			COMMAND,
 		} ansimode;
 
-		// Changes the position of the hardware cursor.
-		void SetCursor(nat x, nat y)
-		{
-			nat value = x + y * width;
-
-			// This sends a command to indicies 14 and 15 in the
-			// CRT Control Register of the VGA controller. These
-			// are the high and low bytes of the index that show
-			// where the hardware cursor is to be 'blinking'.
-			CPU::OutPortB(0x3D4, 14);
-			CPU::OutPortB(0x3D5, (value >> 8) & 0xFF);
-			CPU::OutPortB(0x3D4, 15);
-			CPU::OutPortB(0x3D5, (value >> 0) & 0xFF);
-		}
-
 		void UpdateCursor()
 		{
 			if ( showcursor )
 			{
-				SetCursor(column, line);
+				VGA::SetCursor(column, line);
 			}
 			else
 			{
-				SetCursor(width, height-1);
+				VGA::SetCursor(width, height-1);
 			}
 		}
 

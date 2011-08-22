@@ -66,6 +66,7 @@ namespace Sortix
 		};
 
 		void Init();
+		void SetCursor(nat x, nat y);
 
 		// System Calls.
 		void SysCreateFrame(CPU::InterruptRegisters* R);
