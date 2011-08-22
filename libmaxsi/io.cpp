@@ -25,24 +25,49 @@
 #include "platform.h"
 #include "syscall.h"
 #include "io.h"
+#include "format.h"
 
 namespace Maxsi
 {
+	DEFN_SYSCALL1(size_t, SysPrint, 4, const char*);
+
+	size_t Print(const char* Message)
+	{
+		return SysPrint(Message);
+	}
+
+	// TODO: This namespace is hereby deprecated as it was stupid. Delete it soon.
 	namespace StdOut
 	{
-		DEFN_SYSCALL1(size_t, SysPrint, 4, const char*);
-
 		size_t Print(const char* Message)
 		{
 			return SysPrint(Message);
 		}
+	}
+
+	size_t PrintCallback(void* user, const char* string, size_t stringlen)
+	{
+		return SysPrint(string);
+	}
+
+	size_t PrintF(const char* format, ...)
+	{
+		va_list list;
+		va_start(list, format);
+		size_t result = Maxsi::Format::Virtual(PrintCallback, NULL, format, list);
+		va_end(list);
+		return result;
+	}
 
 #ifdef LIBMAXSI_LIBC
-		extern "C" int printf(const char* /*restrict*/ format, ...)
-		{
-			// TODO: The format string is currently being ignored!
-			return Print(format);
-		}
-#endif
+	extern "C" int printf(const char* /*restrict*/ format, ...)
+	{
+		va_list list;
+		va_start(list, format);
+		size_t result = Maxsi::Format::Virtual(PrintCallback, NULL, format, list);
+		va_end(list);
+		return (int) result;
 	}
+#endif
+
 }
