@@ -38,8 +38,6 @@ namespace Sortix
 	
 		void Play(nat Frequency)
 		{
-			Log::PrintF("Playing frequency %u\n", Frequency);
-
 			//Set the PIT to the desired frequency
 			uint32_t Div = 1193180 / Frequency;
 			CPU::OutPortB(0x43, 0xB6);
