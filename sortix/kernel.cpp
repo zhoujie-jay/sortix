@@ -44,6 +44,7 @@
 #include "uart.h"
 #include "serialterminal.h"
 #include "vgaterminal.h"
+#include "elf.h"
 
 using namespace Maxsi;
 
@@ -251,19 +252,14 @@ namespace Sortix
 
 		if ( initrd != NULL )
 		{
-			addr_t loadat = process->_endcodesection;
-
-			for ( size_t i = 0; i < initrdsize; i += 4096 )
+			initstart = (Thread::Entry) ELF::Construct(initrd, initrdsize);
+			if ( initstart == NULL )
 			{
-				addr_t apppage = Page::Get();
-				if ( apppage == 0 ) { Panic("kernel.cpp: not enough memory for initrd!"); }
-				VirtualMemory::MapUser(loadat + i, apppage);
+				Panic("kernel.cpp: Could not construct ELF program");
 			}
 
-			Memory::Copy((void*) loadat, initrd, initrdsize);
-			initstart = (Thread::Entry) loadat;
-
-			process->_endcodesection += initrdsize;
+			// HACK: This should be determined from other information!
+			process->_endcodesection = 0x400000UL;
 		}
 
 		if ( Scheduler::CreateThread(process, initstart) == NULL )
