@@ -46,12 +46,15 @@ namespace Sortix
 			size_t ContinuousPages;
 		};
 
+		// Refers to private assembly functions.
+		addr_t GetPrivate();
+		void PutPrivate(addr_t page);
 		void Fragmentize();
 
 		UnallocPage* volatile UnallocatedPage; // Must have this name and namespace due to assembly.
-		size_t PagesTotal;
-		//size_t PagesUsed;
-		//size_t PagesFree;
+		size_t pagesTotal;
+		size_t pagesUsed;
+		size_t pagesFree;
 
 		const size_t UnallocPageMagic = 0xABBAACDC; // Must this value due to assembly
 
@@ -59,7 +62,7 @@ namespace Sortix
 		void Init(multiboot_info_t* BootInfo)
 		{
 			UnallocatedPage = NULL;
-			PagesTotal = 0;
+			pagesTotal = 0;
 
 			if ( !( BootInfo->flags & MULTIBOOT_INFO_MEM_MAP ) )
 			{
@@ -136,22 +139,69 @@ namespace Sortix
 					Page->Next = UnallocatedPage;
 					Page->ContinuousPages = Entries[I].Length - 1;
 
-					PagesTotal += Entries[I].Length;
+					pagesTotal += Entries[I].Length;
 
 					UnallocatedPage = Page;	
 				}
 			}
 
-			if ( PagesTotal == 0 ) { Panic("memorymanagement.cpp: no RAM were available for paging"); }
+			if ( pagesTotal == 0 ) { Panic("memorymanagement.cpp: no RAM were available for paging"); }
 
 			// Alright, time to make our linked list into a lot of small entries.
 			// This speeds up the system when it's fully up and running. It only
 			// takes a few miliseconds to run this operation on my laptop.
 			Fragmentize();
 
+			pagesFree = pagesTotal;
+			pagesUsed = 0;
+
+			ASSERT(pagesFree + pagesUsed == pagesTotal);
+
 #ifndef PLATFORM_SERIAL
 			//Log::PrintF("%zu pages are available for paging (%zu MiB RAM)\n", PagesTotal, PagesTotal >> 8 /* * 0x1000 / 1024 / 1024*/);
 #endif
+		}
+
+		addr_t Get()
+		{
+			addr_t result = GetPrivate();
+
+			if ( result != 0 )
+			{
+				ASSERT(pagesFree > 0);
+				pagesUsed++;
+				pagesFree--;
+			}
+			else
+			{
+				ASSERT(pagesFree == 0);
+			}
+
+			ASSERT(pagesFree + pagesUsed == pagesTotal);
+			return result;
+		}
+
+		void Put(addr_t page)
+		{
+			pagesFree++;
+			pagesUsed--;
+			
+			PutPrivate(page);
+		}
+
+		void Insert(addr_t page)
+		{
+			pagesFree++;
+			pagesTotal++;
+	
+			PutPrivate(page);
+		}
+
+		void GetStats(size_t* pagesize, size_t* numfree, size_t* numused)
+		{
+			*pagesize = 4096UL;
+			*numfree = pagesFree;
+			*numused = pagesUsed;
 		}
 	}
 

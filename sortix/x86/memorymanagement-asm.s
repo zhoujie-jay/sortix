@@ -83,9 +83,9 @@ FragDone:
 	pop %ebx
 	ret	
 
-.globl _ZN6Sortix4Page3GetEv
-.type _ZN6Sortix4Page3GetEv, @function # namespace Sortix { void Paging::Allocate(); }
-_ZN6Sortix4Page3GetEv:
+.globl _ZN6Sortix4Page10GetPrivateEv
+.type _ZN6Sortix4Page10GetPrivateEv, @function # namespace Sortix { void Paging::Allocate(); }
+_ZN6Sortix4Page10GetPrivateEv:
 	# Load the front of our linked list.
 	mov _ZN6Sortix4Page15UnallocatedPageE, %eax # Load UnallocPage* Sortix::Page::UnallocatedPage
 
@@ -141,9 +141,9 @@ OutOfMem:
 	movl $0, %eax
 	ret
 
-.globl _ZN6Sortix4Page3PutEm
-.type _ZN6Sortix4Page3PutEm, @function # namespace Sortix { void Paging::Free(void* Page); }
-_ZN6Sortix4Page3PutEm:
+.globl _ZN6Sortix4Page10PutPrivateEm
+.type _ZN6Sortix4Page10PutPrivateEm, @function # namespace Sortix { void Paging::Free(void* Page); }
+_ZN6Sortix4Page10PutPrivateEm:
 	push %esi
 	mov _ZN6Sortix4Page15UnallocatedPageE, %eax # Load UnallocPage* Sortix::Page::UnallocatedPage
 	mov 0x8(%esp), %edx

@@ -85,7 +85,8 @@ namespace Sortix
 	// (there is no RAM). You can then add memory where you desire. You can take
 	// a physical page and put it in several places, and you can even add
 	// permissions to it (read-only, read-write, kernel-only). Naturally, the
-	// amount of physical pages is a limit (out of memory).
+	// amount of physical pages is a limit (out of memory), but using swapping
+	// and a not-RAM storage unit, we could have potentially much more memory.
 	//
 	// There can exist several virtual address spaces, and it is possible for
 	// them to share physical pages. Each process in the system has its own
