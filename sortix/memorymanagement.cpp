@@ -563,6 +563,66 @@ namespace Sortix
 			return result;
 		}
 
+		bool MapRangeKernel(addr_t where, size_t bytes)
+		{
+			for ( addr_t page = where; page < where + bytes; page += 4096UL )
+			{
+				addr_t physicalpage = Page::Get();
+				if ( physicalpage == 0 )
+				{
+					while ( where < page )
+					{
+						page -= 4096UL;
+						physicalpage = UnmapKernel(page);
+						Page::Put(physicalpage);
+					}
+					return false;
+				}
+
+				MapKernel(where, physicalpage);
+			}
+
+			return true;
+		}
+
+		void UnmapRangeKernel(addr_t where, size_t bytes)
+		{
+			for ( addr_t page = where; page < where + bytes; page += 4096UL )
+			{
+				addr_t physicalpage = UnmapKernel(page);
+				Page::Put(physicalpage);
+			}
+		}
+
+		bool MapRangeUser(addr_t where, size_t bytes)
+		{
+			for ( addr_t page = where; page < where + bytes; page += 4096UL )
+			{
+				addr_t physicalpage = Page::Get();
+				if ( physicalpage == 0 || !MapUser(where, physicalpage) )
+				{
+					while ( where < page )
+					{
+						page -= 4096UL;
+						physicalpage = UnmapUser(page);
+						Page::Put(physicalpage);
+					}
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		void UnmapRangeUser(addr_t where, size_t bytes)
+		{
+			for ( addr_t page = where; page < where + bytes; page += 4096UL )
+			{
+				addr_t physicalpage = UnmapUser(page);
+				Page::Put(physicalpage);
+			}
+		}
+
 	#else
 
 		#warning "Virtual Memory is not available on this arch"
