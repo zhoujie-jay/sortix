@@ -666,7 +666,7 @@ namespace Sortix
 
 			uint32_t CodePoint = Layouts::GetCodePoint(Scancode);
 
-			bool KeyUp = (Scancode & 0x80) > 0;
+			bool KeyUp = (Scancode & 0x80);
 
 			if ( KeyUp ) { CodePoint |= DEPRESSED; }
 
