@@ -26,8 +26,9 @@
 #include <libmaxsi/memory.h>
 #include "elf.h"
 #include "memorymanagement.h"
+#include "panic.h"
 
-#include "log.h" // DEBUG
+using namespace Maxsi;
 
 namespace Sortix
 {
@@ -44,69 +45,41 @@ namespace Sortix
 
 			addr_t entry = header->entry;
 
-			// Find the location of the first section header.
-			addr_t shtbloffset = header->sectionheaderoffset;
-			addr_t shtblpos = ((addr_t) file) + shtbloffset;
-			size_t shsize = header->sectionheaderentrysize;
+			// Find the location of the program headers.
+			addr_t phtbloffset = header->programheaderoffset;
+			if ( filelen < phtbloffset ) { return 0; }
+			addr_t phtblpos = ((addr_t) file) + phtbloffset;
+			size_t phsize = header->programheaderentrysize;
+			const ProgramHeader32* phtbl = (const ProgramHeader32*) phtblpos;
 
-			// Validate that all sections are present.
-			uint16_t numsections = header->numsectionheaderentries;
-			size_t neededfilelen = shtbloffset + numsections * shsize;
+			// Validate that all program headers are present.
+			uint16_t numprogheaders = header->numprogramheaderentries;
+			size_t neededfilelen = phtbloffset + numprogheaders * phsize;
 			if ( filelen < neededfilelen ) { return 0; } 
 
-			addr_t memlower = SIZE_MAX;
-			addr_t memupper = 0;
-
-			// Valid all the data we need is in the file.
-			for ( uint16_t i = 0; i < numsections; i++ )
+			// Create all the segments in the final process.
+			// TODO: Handle errors on bad/malicious input or out-of-mem!
+			for ( uint16_t i = 0; i < numprogheaders; i++ )
 			{
-				addr_t shoffset = i * shsize;
-				addr_t shpos = shtblpos + shoffset;
-				const SectionHeader32* sh = (const SectionHeader32*) shpos;
-				if ( sh->addr == 0 ) { continue; }
-				if ( sh->type == SHT_PROGBITS )
-				{
-					size_t sectionendsat = sh->offset + sh->size;
-					if ( filelen < sectionendsat ) { return 0; }
-				}
-				if ( sh->type == SHT_PROGBITS || sh->type == SHT_NOBITS )
-				{
-					if ( sh->addr < memlower ) { memlower = sh->addr; }
-					if ( memupper < sh->addr + sh->size ) { memupper = sh->addr + sh->size; }
-				}
-			}
+				const ProgramHeader32* pht = &(phtbl[i]);
+				if ( pht->type != PT_LOAD ) { continue; }
+				addr_t virtualaddr = pht->virtualaddr;
+				addr_t mapto = Page::AlignDown(virtualaddr);
+				addr_t mapbytes = virtualaddr - mapto + pht->memorysize;
+				ASSERT(pht->offset % pht->align == virtualaddr % pht->align);
+				ASSERT(pht->offset + pht->filesize < filelen);
+				ASSERT(pht->filesize <= pht->memorysize);
 
-			if ( memupper < memlower ) { return entry; }
-
-			// HACK: For now just put it in the same continious block. This is
-			// very wasteful and not very intelligent.
-			addr_t mapto = Page::AlignDown(memlower);
-			addr_t mapbytes = memupper - mapto;
-			// TODO: Validate that we actually may map here!
-			if ( !VirtualMemory::MapRangeUser(mapto, mapbytes) )
-			{
-				return 0;
-			}
-
-			// Create all the sections in the final process.
-			for ( uint16_t i = 0; i < numsections; i++ )
-			{
-				addr_t shoffset = i * shsize;
-				addr_t shpos = shtblpos + shoffset;
-				const SectionHeader32* sh = (const SectionHeader32*) shpos;
-				if ( sh->type != SHT_PROGBITS && sh->type != SHT_NOBITS )
+				if ( !VirtualMemory::MapRangeUser(mapto, mapbytes) )
 				{
-					continue;
+					PanicF("Could not user-map at %p and %zu bytes onwards", mapto, mapbytes);
 				}
 
-				if ( sh->addr == 0 ) { continue; }
-
-				if ( sh->type == SHT_PROGBITS )
-				{
-					void* memdest = (void*) sh->addr;
-					void* memsource = (void*) ( ((addr_t) file) + sh->offset );
-					Maxsi::Memory::Copy(memdest, memsource, sh->size);
-				}
+				// Copy as much data as possible and memset the rest to 0.
+				byte* memdest = (byte*) virtualaddr;
+				byte* memsource = (byte*) ( (addr_t)file + pht->offset);
+				Memory::Copy(memdest, memsource, pht->filesize);
+				Memory::Set(memdest + pht->filesize, 0, pht->memorysize - pht->filesize);
 			}
 
 			// MEMORY LEAK: There is no system in place to delete the sections

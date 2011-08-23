@@ -93,6 +93,28 @@ namespace Sortix
 		const uint32_t SHT_LOUSER = 0x80000000;
 		const uint32_t SHT_HIUSER = 0xffffffff;
 
+		struct ProgramHeader32
+		{
+			uint32_t type;
+			uint32_t offset;
+			uint32_t virtualaddr;
+			uint32_t physicaladdr;
+			uint32_t filesize;
+			uint32_t memorysize;
+			uint32_t flags;
+			uint32_t align;
+		};
+
+		const uint32_t PT_NULL = 0;
+		const uint32_t PT_LOAD = 1;
+		const uint32_t PT_DYNAMIC = 2;
+		const uint32_t PT_INTERP = 3;
+		const uint32_t PT_NOTE = 4;
+		const uint32_t PT_SHLIB = 5;
+		const uint32_t PT_PHDR = 6;
+		const uint32_t PT_LOPROC = 0x70000000;
+		const uint32_t PT_HIPROC = 0x7FFFFFFF;
+
 		// Reads the elf file into the current address space and returns the
 		// entry address of the program, or 0 upon failure.
 		addr_t Construct(const void* file, size_t filelen);
