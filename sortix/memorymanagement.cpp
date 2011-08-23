@@ -579,7 +579,7 @@ namespace Sortix
 					return false;
 				}
 
-				MapKernel(where, physicalpage);
+				MapKernel(page, physicalpage);
 			}
 
 			return true;
@@ -599,7 +599,7 @@ namespace Sortix
 			for ( addr_t page = where; page < where + bytes; page += 4096UL )
 			{
 				addr_t physicalpage = Page::Get();
-				if ( physicalpage == 0 || !MapUser(where, physicalpage) )
+				if ( physicalpage == 0 || !MapUser(page, physicalpage) )
 				{
 					while ( where < page )
 					{
