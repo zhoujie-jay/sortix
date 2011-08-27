@@ -252,7 +252,7 @@ namespace Sortix
 
 		if ( initrd != NULL )
 		{
-			initstart = (Thread::Entry) ELF::Construct(initrd, initrdsize);
+			initstart = (Thread::Entry) ELF::Construct(process, initrd, initrdsize);
 			if ( initstart == NULL )
 			{
 				Panic("kernel.cpp: Could not construct ELF program");

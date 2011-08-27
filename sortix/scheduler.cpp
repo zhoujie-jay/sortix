@@ -38,17 +38,6 @@ namespace Sortix
 {
 	const bool LOG_SWITCHING = false;
 
-	Process::Process(addr_t addrspace)
-	{
-		_addrspace = addrspace;
-		_endcodesection = 0x400000UL;
-	}
-
-	Process::~Process()
-	{
-		// TODO: Delete address space!
-	}
-
 	namespace Scheduler
 	{
 		// This is a very small thread that does absoluting nothing!

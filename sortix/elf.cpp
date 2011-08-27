@@ -27,6 +27,7 @@
 #include "elf.h"
 #include "memorymanagement.h"
 #include "panic.h"
+#include "process.h"
 
 using namespace Maxsi;
 
@@ -34,7 +35,7 @@ namespace Sortix
 {
 	namespace ELF
 	{
-		addr_t Construct32(const void* file, size_t filelen)
+		addr_t Construct32(Process* process, const void* file, size_t filelen)
 		{
 			if ( filelen < sizeof(Header32) ) { return 0; }
 			const Header32* header = (const Header32*) file;
@@ -55,7 +56,10 @@ namespace Sortix
 			// Validate that all program headers are present.
 			uint16_t numprogheaders = header->numprogramheaderentries;
 			size_t neededfilelen = phtbloffset + numprogheaders * phsize;
-			if ( filelen < neededfilelen ) { return 0; } 
+			if ( filelen < neededfilelen ) { return 0; }
+
+			// Reset the current address space.
+			process->ResetAddressSpace();
 
 			// Create all the segments in the final process.
 			// TODO: Handle errors on bad/malicious input or out-of-mem!
@@ -70,10 +74,27 @@ namespace Sortix
 				ASSERT(pht->offset + pht->filesize < filelen);
 				ASSERT(pht->filesize <= pht->memorysize);
 
+				ProcessSegment* segment = new ProcessSegment;
+				if ( segment == NULL ) { return 0; }
+				segment->position = mapto;
+				segment->size = Page::AlignUp(mapbytes);
+
+				if ( segment->Intersects(process->segments) )
+				{
+					delete segment;
+					return 0;
+				}
+
 				if ( !VirtualMemory::MapRangeUser(mapto, mapbytes) )
 				{
-					PanicF("Could not user-map at %p and %zu bytes onwards", mapto, mapbytes);
+					return 0;
 				}
+
+				// Insert our newly allocated memory into the processes segment
+				// list such that it can be reclaimed later.
+				if ( process->segments ) { process->segments->prev = segment;}
+				segment->next = process->segments;
+				process->segments = segment;
 
 				// Copy as much data as possible and memset the rest to 0.
 				byte* memdest = (byte*) virtualaddr;
@@ -82,18 +103,15 @@ namespace Sortix
 				Memory::Set(memdest + pht->filesize, 0, pht->memorysize - pht->filesize);
 			}
 
-			// MEMORY LEAK: There is no system in place to delete the sections
-			// once the process has terminated.
-
 			return entry;
 		}
 
-		addr_t Construct64(const void* /*file*/, size_t /*filelen*/)
+		addr_t Construct64(Process* /*process*/, const void* /*file*/, size_t /*filelen*/)
 		{
 			return 0;
 		}
 
-		addr_t Construct(const void* file, size_t filelen)
+		addr_t Construct(Process* process, const void* file, size_t filelen)
 		{
 			if ( filelen < sizeof(Header) ) { return 0; }
 			const Header* header = (const Header*) file;
@@ -107,9 +125,9 @@ namespace Sortix
 			switch ( header->fileclass )
 			{
 				case CLASS32:
-					return Construct32(file, filelen);
+					return Construct32(process, file, filelen);
 				case CLASS64:
-					return Construct64(file, filelen);
+					return Construct64(process, file, filelen);
 				default:
 					return 0;
 			}		

@@ -31,40 +31,50 @@ namespace Sortix
 {
 	class Thread;
 	class Process;
-	class MountPoint;
-	class User;
-	class System;
-	class DevBuffer;
+	struct ProcessSegment;
+
+	struct ProcessSegment
+	{
+	public:
+		ProcessSegment() : prev(NULL), next(NULL) { }
+
+	public:
+		ProcessSegment* prev;
+		ProcessSegment* next;
+		addr_t position;
+		size_t size;
+
+	public:
+		 bool Intersects(ProcessSegment* segments);
+
+	};
 
 	class Process
 	{
 	public:
-		// TODO: Make this possible from an async syscall!
-		//bool CreateProcess(System* system, DevBuffer* image);
+		Process(addr_t addrspace);
+		~Process();
+
+	private:
+		addr_t _addrspace;
 
 	public:
-		DescriptorTable _descs;
-
-	private:
-		MountPoint* _rootFS;
-		User* _user;
-		System* _system;
+		DescriptorTable descriptors;
+		ProcessSegment* segments;
 
 	public:
-		MountPoint* GetRootFS() { _rootFS; }
-		User* GetUser() { _user; }
-		System* GetSystem() { _system; }
+		addr_t _endcodesection; // HACK
 
-	private:
-		Process* _parent;
-		Process* _child;
-		Process* _prevSibling;
-		Process* _nextSibling;
+	public:
+		addr_t GetAddressSpace() { return _addrspace; }
+		void ResetAddressSpace();
 
-	private:
-		Thread* _firstThread;
+	public:
+		bool IsSane() { return _addrspace != 0; }
 
 	};
+
+	Process* CurrentProcess();
 }
 
 #endif

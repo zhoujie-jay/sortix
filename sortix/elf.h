@@ -27,6 +27,8 @@
 
 namespace Sortix
 {
+	class Process;
+
 	namespace ELF
 	{
 		struct Header
@@ -117,7 +119,7 @@ namespace Sortix
 
 		// Reads the elf file into the current address space and returns the
 		// entry address of the program, or 0 upon failure.
-		addr_t Construct(const void* file, size_t filelen);
+		addr_t Construct(Process* process, const void* file, size_t filelen);
 	}
 }
 

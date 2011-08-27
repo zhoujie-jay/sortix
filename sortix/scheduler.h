@@ -25,35 +25,12 @@
 #ifndef SORTIX_SCHEDULER_H
 #define SORTIX_SCHEDULER_H
 
+#include "process.h"
 #include "descriptors.h"
 
 namespace Sortix
 {
 	class Thread;
-	class Process;
-
-	class Process
-	{
-	public:
-		Process(addr_t addrspace);
-		~Process();
-
-	private:
-		addr_t _addrspace;
-
-	public:
-		DescriptorTable descriptors;
-
-	public:
-		addr_t _endcodesection; // HACK
-
-	public:
-		addr_t GetAddressSpace() { return _addrspace; }
-
-	public:
-		bool IsSane() { return _addrspace != 0; }
-
-	};
 
 	class Thread
 	{
@@ -138,7 +115,6 @@ namespace Sortix
 
 	// Scheduling
 	Thread* CurrentThread();
-	Process* CurrentProcess();
 }
 
 #endif
