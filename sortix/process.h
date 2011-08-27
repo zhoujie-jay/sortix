@@ -63,6 +63,9 @@ namespace Sortix
 		ProcessSegment* segments;
 
 	public:
+		bool sigint;
+
+	public:
 		addr_t _endcodesection; // HACK
 
 	public:

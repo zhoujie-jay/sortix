@@ -30,6 +30,8 @@
 #include "panic.h"
 #include "keyboard.h"
 #include "isr.h"
+#include "process.h"
+#include "scheduler.h"
 
 #include "pong.h"
 
@@ -578,6 +580,7 @@ namespace Sortix
 
 			nat Mask = 0;
 			nat LockMask = 0;
+			bool control;
 
 			const nat Shift = (1<<0);
 			const nat AltGr = (1<<1);
@@ -600,6 +603,7 @@ namespace Sortix
 					if ( CodePoint == LSHFT ) { Mask &= ~Shift; }
 					if ( CodePoint == ALTGR ) { Mask &= ~AltGr; }
 					if ( CodePoint == SCRLCK ) { Mask &= ~ScrLck; }
+					if ( CodePoint == CTRL ) { control = false; }
 				}
 				else
 				{
@@ -607,6 +611,12 @@ namespace Sortix
 					if ( CodePoint == ALTGR ) { Mask |= AltGr; }
 					if ( CodePoint == SCRLCK ) { Mask |= ScrLck; }
 					if ( CodePoint == CAPS ) { LockMask ^= Shift; SetLEDs(LEDCapsLck); }
+					if ( CodePoint == CTRL ) { control = true; }
+				}
+
+				if ( control && ( CodePoint == 'c' || CodePoint == 'C' ) )
+				{
+					CodePoint = SIGINT;
 				}
 
 				return CodePoint;
@@ -665,6 +675,12 @@ namespace Sortix
 			//Log::PrintF("[%u]", Scancode);
 
 			uint32_t CodePoint = Layouts::GetCodePoint(Scancode);
+
+			if ( CodePoint == SIGINT )
+			{
+				SigInt();
+				return;
+			}
 
 			bool KeyUp = (Scancode & 0x80);
 

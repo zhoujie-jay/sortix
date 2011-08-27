@@ -52,6 +52,7 @@ namespace Sortix
 		_addrspace = addrspace;
 		_endcodesection = 0x400000UL;
 		segments = NULL;
+		sigint = false;
 	}
 
 	Process::~Process()
@@ -81,6 +82,7 @@ namespace Sortix
 	void SysExecute(CPU::InterruptRegisters* R)
 	{
 		const char* programname = (const char*) R->ebx;
+
 		size_t programsize = 0;
 		byte* program = InitRD::Open(programname, &programsize);
 		if ( program == NULL ) { R->eax = -1; return; }
@@ -93,5 +95,6 @@ namespace Sortix
 		// This is a hacky way to set up the thread!
 		R->eip = entry;
 		R->useresp = 0x80000000UL;
+		R->ebp = 0x80000000UL;
 	}
 }

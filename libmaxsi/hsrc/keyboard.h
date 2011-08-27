@@ -62,6 +62,7 @@ namespace Maxsi
 		const uint32_t NONE = 0x40000000 + 30;
 		const uint32_t ALTGR = 0x40000000 + 31;
 		const uint32_t NUMLCK = 0x40000000 + 32;
+		const uint32_t SIGINT = 0x40000000 + 33;
 		const uint32_t DEPRESSED = (1<<31);
 	}
 }

@@ -183,11 +183,16 @@ namespace Sortix
 		SetState(UNRUNNABLE);	
 	}
 
+	bool sigintpending = false;
+	void SigInt() { sigintpending = true; }
+
 	namespace Scheduler
 	{
 		// Initializes the scheduling subsystem.
 		void Init()
 		{
+			sigintpending = false;
+
 			currentThread = NULL;
 			firstRunnableThread = NULL;
 			firstUnrunnableThread = NULL;
@@ -331,6 +336,15 @@ namespace Sortix
 		void Switch(CPU::InterruptRegisters* R, uintmax_t TimePassed)
 		{
 			//Log::PrintF("Scheduling while at eip=0x%p...", R->eip);
+
+			if ( currentThread != NoopThread && currentThread->GetProcess() && sigintpending )
+			{
+				const char* programname = "sh";
+				R->ebx = (uint32_t) programname;
+				SysExecute(R);
+				sigintpending = false;
+				Log::Print("^C\n");
+			}
 
 			WakeSleeping(TimePassed);
 

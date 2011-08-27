@@ -115,6 +115,9 @@ namespace Sortix
 
 	// Scheduling
 	Thread* CurrentThread();
+
+	// HACK
+	void SigInt();
 }
 
 #endif
