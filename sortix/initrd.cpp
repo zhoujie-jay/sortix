@@ -65,5 +65,16 @@ namespace Sortix
 
 			return NULL;
 		}
+
+		void SysPrintPathFiles(CPU::InterruptRegisters* /*R*/)
+		{
+			Header* header = (Header*) initrd;
+			FileHeader* fhtbl = (FileHeader*) (initrd + sizeof(Header));
+			for ( uint32_t i = 0; i < header->numfiles; i++ )
+			{
+				FileHeader* fileheader = &(fhtbl[i]);
+				Log::PrintF("%s\n", fileheader->name);
+			}
+		}
 	}
 }

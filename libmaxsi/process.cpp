@@ -31,10 +31,16 @@ namespace Maxsi
 	namespace Process
 	{
 		DEFN_SYSCALL3(int, SysExecute, 10, const char*, int, const char**);
+		DEFN_SYSCALL0_VOID(SysPrintPathFiles, 11);
 
 		int Execute(const char* filepath, int argc, const char** argv)
 		{
 			return SysExecute(filepath, argc, argv);
+		}
+
+		void PrintPathFiles()
+		{
+			SysPrintPathFiles();
 		}
 	}
 }

@@ -30,6 +30,7 @@ namespace Maxsi
 	namespace Process
 	{
 		int Execute(const char* filepath, int argc, const char** argv);
+		void PrintPathFiles();
 	}
 }
 

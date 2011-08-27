@@ -8,6 +8,9 @@ cat \
 sh \
 mxsh \
 clear \
+ls \
+help \
+uname \
 
 all: $(BINARIES)
 

@@ -35,6 +35,7 @@
 #include "keyboard.h"
 #include "sound.h"
 #include "process.h"
+#include "initrd.h"
 
 namespace Sortix
 {
@@ -51,7 +52,7 @@ namespace Sortix
 #endif
 		}
 
-		const size_t NumSyscalls = 11;
+		const size_t NumSyscalls = 12;
 		const Syscall Syscalls[NumSyscalls] =
 		{
 			&Scheduler::SysCreateThread,
@@ -65,6 +66,7 @@ namespace Sortix
 			&Keyboard::SysReceieveKeystroke,
 			&Sound::SysSetFrequency,
 			&SysExecute,
+			&InitRD::SysPrintPathFiles,
 		};
 
 		void Init()
