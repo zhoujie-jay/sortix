@@ -45,6 +45,7 @@
 #include "serialterminal.h"
 #include "vgaterminal.h"
 #include "elf.h"
+#include "initrd.h"
 
 using namespace Maxsi;
 
@@ -209,6 +210,8 @@ namespace Sortix
 			initrd = modules[2*I+0];
 			break;
 		}
+
+		if ( initrd == NULL ) { PanicF("No initrd provided"); }
 #endif
 
 		// Initialize the GDT and TSS structures.
@@ -250,17 +253,21 @@ namespace Sortix
 		Process* process = new Process(addrspace);
 		if ( process == 0 ) { Panic("kernel.cpp: Could not allocate the first process!"); }
 
-		if ( initrd != NULL )
-		{
-			initstart = (Thread::Entry) ELF::Construct(process, initrd, initrdsize);
-			if ( initstart == NULL )
-			{
-				Panic("kernel.cpp: Could not construct ELF program");
-			}
+		InitRD::Init(initrd, initrdsize);
 
-			// HACK: This should be determined from other information!
-			process->_endcodesection = 0x400000UL;
+		const char* initname = "init";
+		size_t programsize = 0;
+		byte* program = InitRD::Open(initname, &programsize);
+		if ( program == NULL ) { PanicF("initrd did not contain '%s'", initname); }
+
+		initstart = (Thread::Entry) ELF::Construct(process, program, programsize);
+		if ( initstart == NULL )
+		{
+			Panic("kernel.cpp: Could not construct ELF program");
 		}
+
+		// HACK: This should be determined from other information!
+		process->_endcodesection = 0x400000UL;
 
 		if ( Scheduler::CreateThread(process, initstart) == NULL )
 		{

@@ -5,7 +5,7 @@ endif
 REMOTE=192.168.2.6
 REMOTEUSER=sortie
 REMOTECOPYDIR:=/home/$(REMOTEUSER)/Desktop/MaxsiOS
-MODULES=libmaxsi hello pong sortix
+MODULES=libmaxsi hello pong mkinitrd sortix
 
 VERSION=0.4
 DEBNAME:=sortix_$(VERSION)_$(CPU)
@@ -17,6 +17,7 @@ PACKAGENAME:=sortix
 ISODIR:=builds/$(DEBNAME)-iso
 ISOFILE:=builds/$(DEBNAME).iso
 JSNAME:=jssortix_$(VERSION)_$(CPU).bin
+INITRDDIR:=initrd
 
 all:
 	(for D in $(MODULES); do $(MAKE) all $(MFLAGS) --directory $$D; done)
@@ -99,7 +100,12 @@ iso: all debsource
 	mkdir -p $(ISODIR)
 	cp -r isosrc/. $(ISODIR)
 	cp sortix/sortix.bin $(ISODIR)/boot
-	cp hello/hello $(ISODIR)/boot/sortix.initrd
+	mkdir -p $(INITRDDIR)
+	cp hello/hello $(INITRDDIR)
+	cp pong/pong $(INITRDDIR)
+	cp $(INITRDDIR)/hello $(INITRDDIR)/init
+	(cd $(INITRDDIR) && ../mkinitrd/mkinitrd * -o ../$(ISODIR)/boot/sortix.initrd)
+	rm -rf $(INITRDDIR)
 	cp builds/$(DEBSRCNAME)-src.tar.gz $(ISODIR) 
 	grub-mkrescue -o $(ISOFILE) $(ISODIR)
 	rm -rf $(ISODIR)
