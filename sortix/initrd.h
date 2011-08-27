@@ -48,6 +48,11 @@ namespace Sortix
 			uint32_t offset; // where the physical data is located.
 			char name[128];
 		};
+
+#ifdef SORTIX_KERNEL
+		void Init(byte* initrd, size_t size);
+		byte* Open(const char* filepath, size_t* size);
+#endif
 	}
 }
 
