@@ -44,7 +44,7 @@ c/h/stdio.h
 
 COMMONOBJS=c++.o thread.o io.o memory.o string.o error.o format.o
 SORTIXOBJS:=$(addprefix sortix/,$(COMMONOBJS))
-LIBMAXSIOBJS:=$(COMMONOBJS) sortix-vga.o sortix-keyboard.o sortix-sound.o
+LIBMAXSIOBJS:=$(COMMONOBJS) sortix-vga.o sortix-keyboard.o sortix-sound.o process.o
 HEADERS=\
 error.h \
 io.h \
@@ -53,6 +53,7 @@ platform.h \
 string.h \
 syscall.h \
 thread.h \
+process.h \
 types.h \
 format.h \
 keyboard.h \

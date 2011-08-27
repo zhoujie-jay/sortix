@@ -26,6 +26,8 @@
 #include <libmaxsi/memory.h>
 #include "process.h"
 #include "memorymanagement.h"
+#include "initrd.h"
+#include "elf.h"
 
 namespace Sortix
 {
@@ -74,5 +76,22 @@ namespace Sortix
 		}
 
 		segments = NULL;
+	}
+
+	void SysExecute(CPU::InterruptRegisters* R)
+	{
+		const char* programname = (const char*) R->ebx;
+		size_t programsize = 0;
+		byte* program = InitRD::Open(programname, &programsize);
+		if ( program == NULL ) { R->eax = -1; return; }
+		addr_t entry = ELF::Construct(CurrentProcess(), program, programsize);
+		if ( entry == 0 )
+		{
+			PanicF("Could not create process '%s'", programname);
+		}
+		
+		// This is a hacky way to set up the thread!
+		R->eip = entry;
+		R->useresp = 0x80000000UL;
 	}
 }

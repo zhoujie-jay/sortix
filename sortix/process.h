@@ -75,6 +75,8 @@ namespace Sortix
 	};
 
 	Process* CurrentProcess();
+
+	void SysExecute(CPU::InterruptRegisters* R);
 }
 
 #endif
