@@ -50,7 +50,7 @@ int Init()
 	frame = System::VGA::CreateFrame();
 	if ( frame == NULL )
 	{
-		StdOut::Print("Could not create VGA frame\n");
+		Print("Could not create VGA frame\n");
 		return -1;
 	}
 
