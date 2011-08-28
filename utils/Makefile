@@ -2,7 +2,8 @@
 OSROOT=..
 include ../crosscompilemakefile.mak
 
-BINARIES:=\
+INITRDDIR:=../initrd
+LOCALBINARIES:=\
 init \
 cat \
 sh \
@@ -12,15 +13,21 @@ ls \
 help \
 uname \
 
-all: $(BINARIES)
+BINARIES:=$(addprefix $(INITRDDIR)/,$(BINARIES))
+
+all: install
+
+install: $(LOCALBINARIES)
+	cp $(LOCALBINARIES) $(INITRDDIR)
+	rm -f $(LOCALBINARIES)
 
 %: %.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -O2 -c $< -o $@.o
 	$(LD) $(LDFLAGS) $@.o -o $@ $(LIBS)
 
 sh: mxsh
-	cp mxsh sh
+	cp $< $@
 
 clean:
-	rm -f $(BINARIES) *.o
+	rm -f $(BINARIES) $(LOCALBINARIES) *.o
 

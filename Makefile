@@ -100,12 +100,7 @@ iso: all debsource
 	mkdir -p $(ISODIR)
 	cp -r isosrc/. $(ISODIR)
 	cp sortix/sortix.bin $(ISODIR)/boot
-	mkdir -p $(INITRDDIR)
-	cp hello/hello $(INITRDDIR)
-	cp pong/pong $(INITRDDIR)
-	for F in init cat sh mxsh clear ls help uname; do cp utils/$$F $(INITRDDIR); done
 	(cd $(INITRDDIR) && ../mkinitrd/mkinitrd * -o ../$(ISODIR)/boot/sortix.initrd)
-	rm -rf $(INITRDDIR)
 	cp builds/$(DEBSRCNAME)-src.tar.gz $(ISODIR) 
 	grub-mkrescue -o $(ISOFILE) $(ISODIR)
 	rm -rf $(ISODIR)

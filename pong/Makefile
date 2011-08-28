@@ -2,14 +2,25 @@
 OSROOT=..
 include ../crosscompilemakefile.mak
 
-all: pong
+INITRDDIR:=../initrd
+LOCALBINARIES:=\
+pong \
 
-pong: pong.o
-	$(LD) $(LDFLAGS) pong.o -o pong $(LIBS)
+BINARIES:=$(addprefix $(INITRDDIR)/,$(BINARIES))
 
-pong.o: pong.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -O2 -c pong.cpp -o pong.o
+all: install
+
+install: $(LOCALBINARIES)
+	cp $(LOCALBINARIES) $(INITRDDIR)
+	rm -f $(LOCALBINARIES)
+
+%: %.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -O2 -c $< -o $@.o
+	$(LD) $(LDFLAGS) $@.o -o $@ $(LIBS)
+
+sh: mxsh
+	cp $< $@
 
 clean:
-	rm -f pong.o pong
+	rm -f $(BINARIES) $(LOCALBINARIES) *.o
 

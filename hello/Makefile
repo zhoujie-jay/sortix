@@ -2,14 +2,25 @@
 OSROOT=..
 include ../crosscompilemakefile.mak
 
-all: hello
+INITRDDIR:=../initrd
+LOCALBINARIES:=\
+hello \
 
-hello: hello.o
-	$(LD) $(LDFLAGS) hello.o -o hello $(LIBS)
+BINARIES:=$(addprefix $(INITRDDIR)/,$(BINARIES))
 
-hello.o: hello.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -O2 -c hello.cpp -o hello.o
+all: install
+
+install: $(LOCALBINARIES)
+	cp $(LOCALBINARIES) $(INITRDDIR)
+	rm -f $(LOCALBINARIES)
+
+%: %.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -O2 -c $< -o $@.o
+	$(LD) $(LDFLAGS) $@.o -o $@ $(LIBS)
+
+sh: mxsh
+	cp $< $@
 
 clean:
-	rm -f hello.o hello
+	rm -f $(BINARIES) $(LOCALBINARIES) *.o
 
