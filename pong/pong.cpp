@@ -198,7 +198,17 @@ int main(int argc, char* argv[])
 		ReadInput();
 		Update();
 		UpdateUI();
-		Thread::USleep(50 * 1000);
+		const unsigned sleepms = 50;
+		Thread::USleep(sleepms * 1000);
+		if ( soundleft < 0 ) { continue; }
+		if ( soundleft <= 50 )
+		{
+			System::Sound::SetFrequency(0);
+		}
+		else
+		{
+			soundleft -= sleepms;
+		}
 	}
 
 	return 0;

@@ -58,10 +58,12 @@ const char* exceptions[] = { "Divide by zero", "Debug", "Non maskable interrupt"
 			//Sortix::Log::PrintF("IRQ eax=%u, int_no=%u, err_code=%u, eip=0x%x!\n", Regs->eax, Regs->int_no, Regs->err_code, Regs->eip);
 		}
 
-		if ( Regs->int_no < 32 || 48 < Regs->int_no ) { Sortix::PanicF("IRQ eax=%u, int_no=%u, err_code=%u, eip=%u!", Regs->eax, Regs->int_no, Regs->err_code, Regs->eip); }
-
 		// TODO! IRQ 7 and 15 might be spurious and might need to be ignored.
 		// See http://wiki.osdev.org/PIC for details (section Spurious IRQs).
+		if ( Regs->int_no == 32 + 7 || Regs->int_no == 32 + 15 ) { return; }
+
+		if ( Regs->int_no < 32 || 48 < Regs->int_no ) { Sortix::PanicF("IRQ eax=%u, int_no=%u, err_code=%u, eip=%u!", Regs->eax, Regs->int_no, Regs->err_code, Regs->eip); }
+
 
 		// Send an EOI (end of interrupt) signal to the PICs.		
 		if (Regs->int_no >= 40) { Sortix::X86::OutPortB(0xA0, 0x20); } // Send reset signal to slave if this interrupt involved the slave.		

@@ -34,6 +34,8 @@
 #include "iprintable.h"
 #include "log.h"
 
+#include "sound.h" // HACK
+
 namespace Sortix
 {
 	const bool LOG_SWITCHING = false;
@@ -68,6 +70,7 @@ namespace Sortix
 		_prevThread = this;
 		_nextThread = this;
 		_inThisList = NULL;
+		_nextSleepingThread = NULL;
 	}
 
 	Thread::~Thread()
@@ -145,6 +148,7 @@ namespace Sortix
 	{
 		if ( miliseconds == 0 ) { return; }
 
+		_nextSleepingThread = NULL;
 		Thread* Thread = Scheduler::firstSleeping;
 
 		if ( Thread == NULL )
@@ -336,9 +340,11 @@ namespace Sortix
 		void Switch(CPU::InterruptRegisters* R, uintmax_t TimePassed)
 		{
 			//Log::PrintF("Scheduling while at eip=0x%p...", R->eip);
+			//Log::Print("\n");
 
 			if ( currentThread != NoopThread && currentThread->GetProcess() && sigintpending )
 			{
+				Sound::Mute();
 				const char* programname = "sh";
 				R->ebx = (uint32_t) programname;
 				SysExecute(R);
@@ -438,7 +444,7 @@ namespace Sortix
 		void WakeSleeping(uintmax_t TimePassed)
 		{
 			while ( firstSleeping != NULL )
-			{		
+			{
 				if ( TimePassed < firstSleeping->_sleepMilisecondsLeft ) { firstSleeping->_sleepMilisecondsLeft -= TimePassed; break; }
 
 				TimePassed -= firstSleeping->_sleepMilisecondsLeft;
@@ -446,7 +452,7 @@ namespace Sortix
 				firstSleeping->SetState(Thread::State::RUNNABLE);
 				Thread* Next = firstSleeping->_nextSleepingThread;
 				firstSleeping->_nextSleepingThread = NULL;
-				firstSleeping = Next;					
+				firstSleeping = Next;		
 			}
 		}
 

@@ -33,9 +33,6 @@
 #include "iprintable.h"
 #include "log.h"
 
-#include "pong.h"
-#include "conway.h"
-
 #if !defined(PLATFORM_X86_FAMILY)
 #error No time subsystem is available for this CPU
 #endif
@@ -59,16 +56,8 @@ namespace Sortix
 #endif
 		}
 
-		void Init()
+		void RequestIQR0()
 		{
-			// Initialize our variables.
-			Ticks = 0;
-			Miliseconds = 0;
-
-			// First, register our timer callback.
-			register_interrupt_handler(IRQ0, &OnIRQ0);
-			register_interrupt_handler(177, &OnInt177);
-
 			// The value we send to the PIT is the value to divide it's input clock
 			// (1193180 Hz) by, to get our required frequency. Important to note is
 			// that the divisor must be small enough to fit into 16-bits.
@@ -86,19 +75,35 @@ namespace Sortix
 			CPU::OutPortB(0x40, H);
 		}
 
+		bool didUglyIRQ0Hack;
+
+		void Init()
+		{
+			// Initialize our variables.
+			Ticks = 0;
+			Miliseconds = 0;
+
+			// First, register our timer callback.
+			register_interrupt_handler(IRQ0, &OnIRQ0);
+			register_interrupt_handler(177, &OnInt177);
+
+			didUglyIRQ0Hack = false;
+
+			RequestIQR0();
+		}
+
 		void OnIRQ0(CPU::InterruptRegisters* Regs)
 		{
 			Ticks++;
 
-#ifdef PONG
-			Pong::OnFuture(); return;
-#elif defined(CONWAY)
-			Conway::OnFuture(); return;
-#endif
-
 			// Let the scheduler switch to the next task.
 			// TODO: Let the scheduler know how long has passed.
 			Scheduler::Switch(Regs, 1000/Frequency);
+
+			// TODO: There is a horrible bug that causes Sortix to only receive
+			// one IRQ0 on my laptop, but it works in virtual machines. But 
+			// re-requesting an addtional time seems to work. Hacky and ugly.
+			if ( !didUglyIRQ0Hack ) { RequestIQR0(); didUglyIRQ0Hack = true; } 
 		}
 
 		// TODO: Implement all the other useful functions regarding tiem.
