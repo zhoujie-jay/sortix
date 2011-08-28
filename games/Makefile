@@ -5,6 +5,7 @@ include ../crosscompilemakefile.mak
 INITRDDIR:=../initrd
 LOCALBINARIES:=\
 pong \
+conway \
 
 BINARIES:=$(addprefix $(INITRDDIR)/,$(BINARIES))
 
