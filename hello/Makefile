@@ -6,7 +6,7 @@ INITRDDIR:=../initrd
 LOCALBINARIES:=\
 hello \
 
-BINARIES:=$(addprefix $(INITRDDIR)/,$(BINARIES))
+BINARIES:=$(addprefix $(INITRDDIR)/,$(LOCALBINARIES))
 
 all: install
 

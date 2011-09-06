@@ -13,7 +13,7 @@ ls \
 help \
 uname \
 
-BINARIES:=$(addprefix $(INITRDDIR)/,$(BINARIES))
+BINARIES:=$(addprefix $(INITRDDIR)/,$(LOCALBINARIES))
 
 all: install
 

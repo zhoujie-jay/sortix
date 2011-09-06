@@ -7,7 +7,7 @@ LOCALBINARIES:=\
 pong \
 conway \
 
-BINARIES:=$(addprefix $(INITRDDIR)/,$(BINARIES))
+BINARIES:=$(addprefix $(INITRDDIR)/,$(LOCALBINARIES))
 
 all: install
 
