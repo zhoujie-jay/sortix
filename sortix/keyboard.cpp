@@ -33,8 +33,6 @@
 #include "process.h"
 #include "scheduler.h"
 
-#include "pong.h"
-
 using namespace Maxsi::Keyboard;
 
 namespace Sortix
@@ -689,13 +687,6 @@ namespace Sortix
 			QueueKeystroke(CodePoint);
 			return;
 
-#if PONG
-			Pong::OnKeystroke(CodePoint, KeyUp); return;
-#endif
-
-#if 1
-			return;
-#endif
 			//if ( Reader != NULL ) { Reader->OnKeystroke(CodePoint, KeyUp); return; }
 
 			// Use this to debug the exact scancodes you receive!

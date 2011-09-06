@@ -30,8 +30,6 @@
 
 #ifdef SORTIX_KERNEL
 #include <sortix/platform.h>
-#include <sortix/globals.h> // DEBUG
-#include <sortix/iprintable.h> // DEBUG
 #include <sortix/log.h> // DEBUG
 
 #include <sortix/memorymanagement.h>

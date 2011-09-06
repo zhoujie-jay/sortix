@@ -28,9 +28,6 @@
 #include "iirqhandler.h"
 #include "isr.h"
 #include "scheduler.h"
-
-#include "globals.h"
-#include "iprintable.h"
 #include "log.h"
 
 #if !defined(PLATFORM_X86_FAMILY)

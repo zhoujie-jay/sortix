@@ -24,16 +24,12 @@
 
 #include "platform.h"
 #include "pci.h"
-
-#include "globals.h"
-#include "iprintable.h"
 #include "log.h"
 
 namespace Sortix
 {
 	namespace PCI
 	{
-
 		const uint16_t Config_Address = 0xCF8;
 		const uint16_t Config_Data = 0xCFC;
 	

@@ -44,12 +44,6 @@ namespace Maxsi
 		size_t WriteAt(int FileDesc, const void* Buffer, size_t BufferSize, intmax_t Position);
 	}
 
-	// TODO: This namespace is hereby deprecated as it was stupid. Delete it soon.
-	namespace StdOut
-	{
-		size_t Print(const char* Message);
-	}
-
 	size_t Print(const char* msg);
 	size_t PrintF(const char* format, ...);
 }

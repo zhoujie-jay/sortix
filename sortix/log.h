@@ -30,35 +30,6 @@
 
 namespace Sortix
 {
-#ifdef OLD_LOG
-	class Log : public IPrintable
-	{
-	protected:
-		const static nat Width = 80;
-		const static nat Height = 25;
-		char Messages[Width * Height];
-		nat Column;
-		nat Line;
-		uint8_t Colors[Height];
-
-	public:
-		virtual void Init();
-
-	public:
-		void UpdateScreen();
-
-	public:
-		virtual size_t Print(const char* Message);
-
-	private:
-		void NewLine();
-
-	public:
-		void SetCursor(nat X, nat Y);
-	};
-
-	DECLARE_GLOBAL_OBJECT(Log, Log);
-#else
 	namespace Log
 	{
 		extern Maxsi::Format::Callback deviceCallback;
@@ -91,7 +62,6 @@ namespace Sortix
 			return Maxsi::Format::Virtual(deviceCallback, devicePointer, format, list);
 		}
 	}
-#endif
 }
 
 #endif

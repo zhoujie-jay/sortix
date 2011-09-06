@@ -27,8 +27,6 @@
 #include "scheduler.h"
 #include "iirqhandler.h"
 #include "isr.h"
-#include "globals.h"
-#include "iprintable.h"
 #include "log.h"
 #include "panic.h"
 #include "vga.h"

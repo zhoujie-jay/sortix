@@ -26,8 +26,6 @@
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/format.h>
-#include "globals.h"
-#include "iprintable.h"
 #include "log.h"
 #include "panic.h"
 #include "descriptor_tables.h"
@@ -38,8 +36,6 @@
 #include "memorymanagement.h"
 #include "scheduler.h"
 #include "syscall.h"
-#include "pong.h"
-#include "conway.h"
 #include "pci.h"
 #include "uart.h"
 #include "serialterminal.h"

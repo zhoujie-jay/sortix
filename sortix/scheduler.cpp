@@ -26,12 +26,10 @@
 #include <libmaxsi/memory.h>
 #include "panic.h"
 #include "scheduler.h"
-#include "globals.h"
 #include "multiboot.h"
 #include "memorymanagement.h"
 #include "descriptor_tables.h"
 
-#include "iprintable.h"
 #include "log.h"
 
 #include "sound.h" // HACK

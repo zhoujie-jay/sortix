@@ -5,8 +5,6 @@
 //
 
 #include "platform.h"
-#include "globals.h"
-#include "iprintable.h"
 #include "iirqhandler.h"
 #include "log.h"
 #include "isr.h"
