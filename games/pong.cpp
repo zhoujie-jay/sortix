@@ -2,6 +2,7 @@
 #include <libmaxsi/io.h>
 #include <libmaxsi/thread.h>
 #include <libmaxsi/keyboard.h>
+#include <libmaxsi/string.h>
 #include <libmaxsi/sortix-vga.h>
 #include <libmaxsi/sortix-keyboard.h>
 #include <libmaxsi/sortix-sound.h>
@@ -131,6 +132,15 @@ void Goal(nat player)
 void UpdateUI()
 {
 	for ( int x = 0; x < width; x++ ) { frame->text[x] = ' ' | (COLOR8_LIGHT_GREY << 12) | (COLOR8_RED << 8); }
+
+	char num[12];
+	int len;
+
+	len = String::ConvertUInt32(p1score, num);
+	for ( int i = 0; i < len; i++ ) { frame->text[i] = ( frame->text[i] & 0xFF00 ) | num[i]; }
+
+	len = String::ConvertUInt32(p2score, num);
+	for ( int i = 0; i < len; i++ ) { frame->text[width - len + i] = ( frame->text[width - len + i] & 0xFF00 ) | num[i]; }
 }
 
 void Update()
