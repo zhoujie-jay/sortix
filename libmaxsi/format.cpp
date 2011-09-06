@@ -28,9 +28,9 @@
 
 namespace Maxsi
 {
-	namespace Format
+	namespace String
 	{
-		int UInt8ToString(uint8_t Num, char* Dest)
+		int ConvertUInt8(uint8_t Num, char* Dest)
 		{
 			uint8_t Copy = Num;
 			int Result = 0;
@@ -46,7 +46,7 @@ namespace Maxsi
 			return Result + 1;
 		}
 
-		int UInt16ToString(uint16_t Num, char* Dest)
+		int ConvertUInt16(uint16_t Num, char* Dest)
 		{
 			uint16_t Copy = Num;
 			int Result = 0;
@@ -62,7 +62,7 @@ namespace Maxsi
 			return Result + 1;
 		}
 
-		int UInt32ToString(uint32_t Num, char* Dest)
+		int ConvertUInt32(uint32_t Num, char* Dest)
 		{
 			uint32_t Copy = Num;
 			int Result = 0;
@@ -78,7 +78,7 @@ namespace Maxsi
 			return Result + 1;
 		}
 
-		int UInt64ToString(uint64_t Num, char* Dest)
+		int ConvertUInt64(uint64_t Num, char* Dest)
 		{
 			uint64_t Copy = Num;
 			int Result = 0;
@@ -96,7 +96,7 @@ namespace Maxsi
 
 		// Missing functions here.
 
-		int UInt32ToString16(uint32_t Num, char* Dest)
+		int ConvertUInt3216(uint32_t Num, char* Dest)
 		{
 			uint32_t Copy = Num;
 			int Result = 0;
@@ -120,7 +120,7 @@ namespace Maxsi
 			return Result + 1;
 		}
 
-		int UInt64ToString16(uint64_t Num, char* Dest)
+		int ConvertUInt6416(uint64_t Num, char* Dest)
 		{
 			uint64_t Copy = Num;
 			int Result = 0;
@@ -143,7 +143,10 @@ namespace Maxsi
 
 			return Result + 1;
 		}
+	}
 
+	namespace Format
+	{
 		#define READY_SIZE 128
 
 		#define READY_FLUSH() \
@@ -229,28 +232,28 @@ namespace Maxsi
 					{
 						if ( READY_SIZE - readylen < 10 ) { READY_FLUSH(); }
 						uint32_t num = va_arg(parameters, uint32_t);
-						readylen += UInt32ToString(num, ready + readylen);
+						readylen += String::ConvertUInt32(num, ready + readylen);
 						break;
 					}
 					case UNSIGNED | BIT64:
 					{
 						if ( READY_SIZE - readylen < 20 ) { READY_FLUSH(); }
 						uint64_t num = va_arg(parameters, uint64_t);
-						readylen += UInt64ToString(num, ready + readylen);
+						readylen += String::ConvertUInt64(num, ready + readylen);
 						break;
 					}
 					case UNSIGNED | HEX:
 					{
 						if ( READY_SIZE - readylen < 8 ) { READY_FLUSH(); }
 						uint32_t num = va_arg(parameters, uint32_t);
-						readylen += UInt32ToString16(num, ready + readylen);
+						readylen += String::ConvertUInt3216(num, ready + readylen);
 						break;
 					}
 					case UNSIGNED | BIT64 | HEX:
 					{
 						if ( READY_SIZE - readylen < 16 ) { READY_FLUSH(); }
 						uint64_t num = va_arg(parameters, uint64_t);
-						readylen += UInt64ToString16(num, ready + readylen);
+						readylen += String::ConvertUInt6416(num, ready + readylen);
 						break;
 					}
 					case STRING:
