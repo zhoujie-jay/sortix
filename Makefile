@@ -16,13 +16,17 @@ DEBFILE:=builds/$(DEBNAME).deb
 PACKAGENAME:=sortix
 ISODIR:=builds/$(DEBNAME)-iso
 ISOFILE:=builds/$(DEBNAME).iso
-JSNAME:=jssortix_$(VERSION)_$(CPU).bin
 INITRDDIR:=initrd
+INITRD=sortix/sortix.initrd
 
-all:
-	(for D in $(MODULES); do $(MAKE) all $(MFLAGS) --directory $$D; done)
-clean: 
-	(for D in $(MODULES); do $(MAKE) clean $(MFLAGS) --directory $$D; done)
+suball:
+	(for D in $(MODULES); do $(MAKE) all $(MFLAGS) --directory $$D || exit 1; done)
+
+all: $(INITRD)
+
+clean:
+	rm -f $(INITRD)
+	(for D in $(MODULES); do $(MAKE) clean $(MFLAGS) --directory $$D || exit 1; done)
 
 distclean: clean cleanbuilds
 
@@ -30,7 +34,11 @@ cleanbuilds:
 	rm -rf builds/
 	rm -f sortix.iso
 
-everything: all deb iso jssortix
+everything: all deb iso
+
+# Initializing RamDisk
+$(INITRD): suball
+	(cd $(INITRDDIR) && ../mkinitrd/mkinitrd * -o ../$(INITRD))
 
 # Statistics
 linecount:
@@ -40,6 +48,7 @@ linecount:
 
 install: all
 	cp sortix/sortix.bin /boot
+	cp $(INITRD) /boot
 	cp debsrc/etc/grub.d/42_sortix /etc/grub.d/42_sortix
 	chmod +x /etc/grub.d/42_sortix
 	update-grub
@@ -54,6 +63,7 @@ uninstall:
 install-remote: all
 	scp -r ./ $(REMOTE):$(REMOTECOPYDIR)
 	scp sortix/sortix.bin root@$(REMOTE):/boot
+	scp $(INITRD) root@$(REMOTE):/boot
 	ssh root@$(REMOTE) "init 6"
 
 uninstall-remote:
@@ -69,6 +79,7 @@ debfile: all
 	cp -r debsrc/. $(DEBDIR)
 	mkdir -p  $(DEBDIR)/boot
 	cp sortix/sortix.bin $(DEBDIR)/boot
+	cp sortix/sortix.initrd $(DEBDIR)/boot
 	cat debsrc/DEBIAN/control | \
 	sed "s/SORTIX_PACKAGE_NAME/$(PACKAGENAME)/g" | \
 	sed "s/SORTIX_VERSION/$(VERSION)/g" | \
@@ -87,11 +98,6 @@ debsource: all
 	(cd builds && tar cfzv $(DEBSRCNAME)-src.tar.gz $(DEBSRCNAME)-src)
 	rm -rf $(DEBSRCDIR)
 
-jssortix: all
-	mkdir -p builds
-	$(MAKE) jssortix $(MFLAGS) --directory sortix
-	cp sortix/jssortix.bin builds/$(JSNAME)
-
 # Bootable images
 
 iso: all debsource
@@ -100,7 +106,7 @@ iso: all debsource
 	mkdir -p $(ISODIR)
 	cp -r isosrc/. $(ISODIR)
 	cp sortix/sortix.bin $(ISODIR)/boot
-	(cd $(INITRDDIR) && ../mkinitrd/mkinitrd * -o ../$(ISODIR)/boot/sortix.initrd)
+	cp $(INITRD) $(ISODIR)/boot/sortix.initrd
 	cp builds/$(DEBSRCNAME)-src.tar.gz $(ISODIR) 
 	grub-mkrescue -o $(ISOFILE) $(ISODIR)
 	rm -rf $(ISODIR)

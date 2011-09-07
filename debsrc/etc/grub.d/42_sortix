@@ -1,11 +1,10 @@
 #!/bin/sh
-if [ -f /boot/sortix.bin ]; then
-	echo "Found Sortix kernel: /boot/sortix" >&2
-
-cat << EOF
-menuentry "Sortix" {
-	multiboot /boot/sortix.bin
-}
-EOF
-fi
+for KERNEL in `ls /boot | grep sortix | grep bin`; do
+  echo "Found Sortix kernel: $KERNEL" >&2
+  INITRD=`echo "$KERNEL" | sed 's/bin/initrd/g'`
+  echo "menuentry \"Sortix\" {"
+  echo "\tmultiboot /boot/$KERNEL"
+  echo "\tmodule /boot/$INITRD"
+  echo "}"
+done
 
