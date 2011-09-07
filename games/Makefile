@@ -6,6 +6,7 @@ INITRDDIR:=../initrd
 LOCALBINARIES:=\
 pong \
 conway \
+snake \
 
 BINARIES:=$(addprefix $(INITRDDIR)/,$(LOCALBINARIES))
 
