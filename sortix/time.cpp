@@ -25,8 +25,7 @@
 
 #include "platform.h"
 #include "time.h"
-#include "iirqhandler.h"
-#include "isr.h"
+#include "interrupt.h"
 #include "scheduler.h"
 #include "log.h"
 
@@ -81,8 +80,8 @@ namespace Sortix
 			Miliseconds = 0;
 
 			// First, register our timer callback.
-			register_interrupt_handler(IRQ0, &OnIRQ0);
-			register_interrupt_handler(177, &OnInt177);
+			Interrupt::RegisterHandler(Interrupt::IRQ0, &OnIRQ0);
+			Interrupt::RegisterHandler(177, &OnInt177);
 
 			didUglyIRQ0Hack = false;
 

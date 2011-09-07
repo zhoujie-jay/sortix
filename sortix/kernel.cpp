@@ -29,7 +29,6 @@
 #include "log.h"
 #include "panic.h"
 #include "descriptor_tables.h"
-#include "iirqhandler.h"
 #include "time.h"
 #include "keyboard.h"
 #include "multiboot.h"

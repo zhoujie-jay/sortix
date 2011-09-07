@@ -25,8 +25,7 @@
 #include "platform.h"
 #include "syscall.h"
 #include "scheduler.h"
-#include "iirqhandler.h"
-#include "isr.h"
+#include "interrupt.h"
 #include "log.h"
 #include "panic.h"
 #include "vga.h"
@@ -69,7 +68,7 @@ namespace Sortix
 
 		void Init()
 		{
-			register_interrupt_handler(0x80, &OnCall);
+			Interrupt::RegisterHandler(0x80, &OnCall);
 		}
 
 		void OnCall(CPU::InterruptRegisters* registers)

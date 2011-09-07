@@ -47,7 +47,7 @@ CPPFLAGS=-I.. -I. $(CPUDEFINES) $(CPUFLAGS) -std=gnu++0x -Wall -Wextra -nostdlib
 OBJS=$(CPUOBJS) \
 kernel.o \
 descriptor_tables.o \
-isr.o \
+interrupt.o \
 time.o \
 log.o \
 panic.o \

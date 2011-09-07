@@ -25,11 +25,10 @@
 #include "platform.h"
 #include <libmaxsi/memory.h>
 #include <libmaxsi/keyboard.h>
-#include "iirqhandler.h"
 #include "log.h"
 #include "panic.h"
 #include "keyboard.h"
-#include "isr.h"
+#include "interrupt.h"
 #include "process.h"
 #include "scheduler.h"
 
@@ -634,7 +633,7 @@ namespace Sortix
 			LEDs = 0;
 
 			// Register our keystroke callback.
-			register_interrupt_handler(IRQ1, OnIRQ1);
+			Interrupt::RegisterHandler(Interrupt::IRQ1, OnIRQ1);
 
 			// If any scancodes were already pending, our interrupt handler
 			// will never be called. Let's just discard anything pending.

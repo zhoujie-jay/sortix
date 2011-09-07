@@ -87,7 +87,7 @@ IRQ  14,    46
 IRQ  15,    47
 
 ; In isr.c
-extern isr_handler
+extern ISRHandler
 
 ; This is our common ISR stub. It saves the processor state, sets
 ; up for kernel mode segments, calls the C-level fault handler,
@@ -108,7 +108,7 @@ isr_common_stub:
 
 	push esp
 
-    call isr_handler
+    call ISRHandler
 
 	add esp, 8
     pop ebx        ; reload the original data segment descriptor
@@ -123,7 +123,7 @@ isr_common_stub:
     iret           ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
 
 ; In isr.c
-extern irq_handler
+extern IRQHandler
 
 ; This is our common IRQ stub. It saves the processor state, sets
 ; up for kernel mode segments, calls the C-level fault handler,
@@ -144,7 +144,7 @@ irq_common_stub:
 
 	push esp
 
-    call irq_handler
+    call IRQHandler
 
 	add esp, 8
     pop ebx        ; reload the original data segment descriptor

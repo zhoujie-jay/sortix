@@ -23,10 +23,8 @@
 ******************************************************************************/
 
 #include "platform.h"
-#include "iirqhandler.h"
 #include <libmaxsi/memory.h>
 #include "descriptor_tables.h"
-#include "isr.h"
 #include "panic.h"
 
 using namespace Maxsi;
