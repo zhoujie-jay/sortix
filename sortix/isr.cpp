@@ -10,6 +10,11 @@
 #include "isr.h"
 #include "panic.h"
 
+#include "process.h" // Hack for SIGSEGV
+#include "sound.h" // Hack for SIGSEGV
+
+using namespace Sortix;
+
 size_t numknownexceptions = 19;
 const char* exceptions[] = { "Divide by zero", "Debug", "Non maskable interrupt", "Breakpoint", 
                              "Into detected overflow", "Out of bounds", "Invalid opcode",
@@ -31,10 +36,26 @@ const char* exceptions[] = { "Divide by zero", "Debug", "Non maskable interrupt"
 #ifdef PLATFORM_X86
 		if ( Regs->int_no < 32 )
 		{
-			const char* message = ( Regs->int_no < numknownexceptions ) ? exceptions[Regs->int_no] : "Unknown";
-			//Sortix::Log::PrintF("eax=0x%x\tebx=0x%x\tecx=0x%x\tedx=0x%x\tesi=0x%x\tedi=0x%x\tesp=0x%x\tuseresp=0x%x\tebp=0x%x\teip=0x%x\n", Regs->eax, Regs->ebx, Regs->ecx, Regs->edx, Regs->esi, Regs->edi, Regs->esp, Regs->useresp, Regs->ebp, Regs->eip);
+			const char* message = ( Regs->int_no < numknownexceptions )
+			                      ? exceptions[Regs->int_no] : "Unknown";
 
-			Sortix::PanicF("Unhandled CPU Exception id %zu '%s' at eip=0x%zx (cr2=0x%p, err_code=0x%p)", Regs->int_no, message, Regs->eip, Regs->cr2, Regs->err_code);
+			// Halt and catch fire if we are the kernel.
+			if ( (Regs->cs & (0x4-1)) == 0 )
+			{
+				PanicF("Unhandled CPU Exception id %zu '%s' at eip=0x%zx "
+				       "(cr2=0x%p, err_code=0x%p)", Regs->int_no, message,
+				       Regs->eip, Regs->cr2, Regs->err_code);
+			}
+
+			Log::Print("The current program has crashed and was terminated:\n");
+			Log::PrintF("%s exception at eip=0x%zx (cr2=0x%p, err_code=0x%p)\n",
+                        message,  Regs->eip, Regs->cr2, Regs->err_code);
+
+			Sound::Mute();
+			const char* programname = "sh";
+			Regs->ebx = (uint32_t) programname;
+			SysExecute(Regs);
+			return;
 		}
 
 		if ( interrupt_handlers[Regs->int_no] != NULL )

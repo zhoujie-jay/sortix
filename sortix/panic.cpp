@@ -32,7 +32,11 @@ using namespace Maxsi;
 
 namespace Sortix
 {
+#if defined(DEBUG) || defined(PANIC_LONG)
 	bool longpanic = false;
+#else
+	bool longpanic = true;
+#endif
 
 	void PanicInit()
 	{
@@ -57,6 +61,10 @@ namespace Sortix
 			Log::Print("                                                                                \n");
 			Log::Print("                              RED MAXSI OF DEATH                                \n");
 			Log::Print("                                                                                \n");
+			Log::Print("A critical error occured within the kernel of the operating system and it has\n");
+			Log::Print("forcefully shut down as a last resort.\n");
+			Log::Print("\n");
+			Log::Print("Technical information:\n");
 		}
 		else
 		{
