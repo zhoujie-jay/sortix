@@ -344,6 +344,12 @@ namespace Sortix
 		// good dozen of pages onwards. Beware that this is only meant to be
 		// a temporary place to put memory.
 		const addr_t tempaddr = 0xFF800000UL;
+
+#elif defined(PLATFORM_X64)
+		// 	This isn't supported yet, so just use random values.
+		const addr_t heapLower = 0x80000000UL;
+		const addr_t heapUpper = 0xFF800000UL;
+		const addr_t tempaddr = 0xFF800000UL;
 #endif
 
 	}

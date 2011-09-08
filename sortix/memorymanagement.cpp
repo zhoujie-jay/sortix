@@ -131,6 +131,8 @@ namespace Sortix
 
 					#ifdef PLATFORM_X64
 					Log::Print("Halt: CPU X64 cannot continue as the virtual memory isn't disabled (kernel bug) and the code is about to access non-mapped memory.\n");
+					Log::Print("Sorry, it simply isn't possible to fully boot Sortix in x64 mode yet.\n");
+					Log::Print("X64 may be working when Sortix 0.5 comes out, or try the git master.\n");
 					while(true);
 					#endif
 
@@ -627,11 +629,21 @@ namespace Sortix
 
 		#warning "Virtual Memory is not available on this arch"
 
+		addr_t Lookup(addr_t where) { while(true); return 0; }
 		void Flush() { while(true); }
-		void SwitchDirectory(addr_t dir) { while(true); }
+		addr_t CreateAddressSpace() { while(true); return 0; }
+		addr_t SwitchAddressSpace(addr_t addrspace) { while(true); return 0; }
+		addr_t SwitchDirectory(addr_t dir) { while(true); return 0; }
 		addr_t CreateDirectory() { while(true); return 0; }
+		void MapKernel(addr_t where, addr_t physical) { while(true); }
 		addr_t UnmapKernel(addr_t where) { while(true); return 0; }
+		Table* CreateUserTable(addr_t where, bool maycreate) { while(true); return NULL; }
+		bool MapUser(addr_t where, addr_t physical) { while(true); return false; }
 		addr_t UnmapUser(addr_t where) { while(true); return 0; }
+		bool MapRangeKernel(addr_t where, size_t bytes) { while(true); return false; }
+		void UnmapRangeKernel(addr_t where, size_t bytes) { while(true); }
+		bool MapRangeUser(addr_t where, size_t bytes) { while(true); return false; }
+		void UnmapRangeUser(addr_t where, size_t bytes) { while(true); }
 
 	#endif
 	}

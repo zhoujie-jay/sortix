@@ -261,6 +261,11 @@ namespace Sortix
 			// Create a new thread data structure.
 			Thread* thread = new Thread(Process, AllocatedThreadId++, PhysStack, StackLength);
 
+#ifndef PLATFORM_X86
+			#warning "No threads are available on this arch"
+			while(true);
+#endif
+
 #ifdef PLATFORM_X86
 
 			uintptr_t StackPos = 0x80000000UL;
@@ -271,7 +276,6 @@ namespace Sortix
 			VirtualMemory::MapUser(MapTo, PhysStack);
 			size_t* Stack = (size_t*) StackPos;
 
-#ifdef PLATFORM_X86
 			// Prepare the parameters for the entry function (C calling convention).
 			//Stack[StackLength - 1] = (size_t) 0xFACE; // Parameter2
 			Stack[-1] = (size_t) Parameter2; // Parameter2
@@ -280,18 +284,15 @@ namespace Sortix
 			Stack[-4] = (size_t) 0x0; // Eip
 			thread->_registers.ebp = thread->_registers.useresp = (uint32_t) (StackPos - 4*sizeof(size_t)); // Point to the last word used on the stack.
 			thread->_registers.eip = (uint32_t) Start; // Point to our entry function.
-#endif
 
-#else
-			#warning "No threads are available on this arch"
-			while(true);
-#endif
 
 			// Mark the thread as running, which adds it to the scheduler's linked list.
 			thread->SetState(Thread::State::RUNNABLE);
 
 			// Avoid side effects by restoring the old address space.
 			VirtualMemory::SwitchAddressSpace(OldAddrSpace);
+
+#endif
 
 			return thread;
 		}
@@ -319,12 +320,16 @@ namespace Sortix
 
 			if ( currentThread != NoopThread && currentThread->GetProcess() && sigintpending )
 			{
+#ifdef PLATFORM_X86
 				Sound::Mute();
 				const char* programname = "sh";
 				R->ebx = (uint32_t) programname;
 				SysExecute(R);
 				sigintpending = false;
 				Log::Print("^C\n");
+#else
+#warning "Sigint is not available on this arch"
+#endif
 			}
 
 			WakeSleeping(TimePassed);

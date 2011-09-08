@@ -55,8 +55,10 @@ namespace Sortix
 
 		void SysSetFrequency(CPU::InterruptRegisters* R)
 		{
+#ifdef PLATFORM_X86
 			unsigned frequency = R->ebx;
 			if ( frequency == 0 ) { Mute(); } else { Play(frequency); }
+#endif
 		}
 	}
 }

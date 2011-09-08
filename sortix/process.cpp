@@ -81,6 +81,7 @@ namespace Sortix
 
 	void SysExecute(CPU::InterruptRegisters* R)
 	{
+#ifdef PLATFORM_X86
 		const char* programname = (const char*) R->ebx;
 
 		size_t programsize = 0;
@@ -96,5 +97,6 @@ namespace Sortix
 		R->eip = entry;
 		R->useresp = 0x80000000UL;
 		R->ebp = 0x80000000UL;
+#endif
 	}
 }

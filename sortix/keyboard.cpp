@@ -715,6 +715,7 @@ namespace Sortix
 
 		void SysReceieveKeystroke(CPU::InterruptRegisters* R)
 		{
+#ifdef PLATFORM_X86
 			uint32_t codepoint;
 			if ( keystrokeQueueUsed == 0 )
 			{
@@ -728,6 +729,7 @@ namespace Sortix
 				keystrokeQueueUsed--;
 			}
 			R->eax = codepoint;
+#endif
 		}
 	}
 }

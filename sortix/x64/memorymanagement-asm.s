@@ -18,7 +18,7 @@
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	memorymanagement-asm.s
-	Handles memory for the x86 architecture.
+	Handles memory for the x64 architecture.
 
 ******************************************************************************/
 
@@ -80,9 +80,9 @@ FragNext:
 FragDone:
 	ret	
 
-.globl _ZN6Sortix4Page3GetEv
-.type _ZN6Sortix4Page3GetEv, @function # namespace Sortix { void Paging::Allocate(); }
-_ZN6Sortix4Page3GetEv:
+.globl _ZN6Sortix4Page10GetPrivateEv
+.type _ZN6Sortix4Page10GetPrivateEv, @function # namespace Sortix { void Paging::Allocate(); }
+_ZN6Sortix4Page10GetPrivateEv:
 	# Load the front of our linked list.
 	movq _ZN6Sortix4Page15UnallocatedPageE, %rax # Load UnallocPage* Sortix::Page::UnallocatedPage
 
@@ -135,9 +135,9 @@ OutOfMem:
 	movq $0, %rax
 	ret
 
-.globl _ZN6Sortix4Page3PutEPv
-.type _ZN6Sortix4Page3PutEPv, @function # namespace Sortix { void Paging::Free(void* Page); }
-_ZN6Sortix4Page3PutEPv:
+.globl _ZN6Sortix4Page10PutPrivateEm
+.type _ZN6Sortix4Page10PutPrivateEm, @function # namespace Sortix { void Paging::Free(void* Page); }
+_ZN6Sortix4Page10PutPrivateEm:
 	movq _ZN6Sortix4Page15UnallocatedPageE, %rax # Load UnallocPage* Sortix::Page::UnallocatedPage
 
 	# Disable virtual memory

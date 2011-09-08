@@ -62,6 +62,7 @@ namespace Sortix
 
 		void SysCreateFrame(CPU::InterruptRegisters* R)
 		{
+#ifdef PLATFORM_X86
 			addr_t page = Page::Get();
 			if ( page == NULL ) { R->eax = 0; return; }
 
@@ -102,10 +103,12 @@ namespace Sortix
 			process->_endcodesection = mapto + 0x1000UL;
 
 			R->eax = mapto;
+#endif
 		}
 
 		void SysChangeFrame(CPU::InterruptRegisters* R)
 		{
+#ifdef PLATFORM_X86
 			int fd = (int) R->ebx;
 
 			Process* process = CurrentProcess();
@@ -167,11 +170,13 @@ namespace Sortix
 
 			frame->onscreen = true;
 			currentframe = frame;
-			SetCursor(width, height-1);	
+			SetCursor(width, height-1);
+#endif
 		}
 
 		void SysDeleteFrame(CPU::InterruptRegisters* R)
 		{
+#ifdef PLATFORM_X86
 			int fd = (int) R->ebx;
 
 			Process* process = CurrentProcess();
@@ -181,6 +186,7 @@ namespace Sortix
 			if ( device == NULL ) { R->eax = -1; return; }
 			if ( !device->Close() )  { R->eax = -1; return; }
 			R->eax = 0;
+#endif
 		}
 	}
 
