@@ -22,11 +22,11 @@ INITRD=sortix/sortix.initrd
 all: $(INITRD)
 
 suball:
-	(for D in $(MODULES); do $(MAKE) all $(MFLAGS) --directory $$D || exit 1; done)
+	(for D in $(MODULES); do $(MAKE) all $(MFLAGS) --directory $$D || exit $?; done)
 
 clean:
 	rm -f $(INITRD)
-	(for D in $(MODULES); do $(MAKE) clean $(MFLAGS) --directory $$D || exit 1; done)
+	(for D in $(MODULES); do $(MAKE) clean $(MFLAGS) --directory $$D || exit $?; done)
 
 distclean: clean cleanbuilds
 
