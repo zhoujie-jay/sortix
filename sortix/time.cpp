@@ -29,6 +29,13 @@
 #include "scheduler.h"
 #include "log.h"
 
+#ifdef PLATFORM_SERIAL
+#include <libmaxsi/keyboard.h>
+#include "keyboard.h"
+#include "vga.h"
+#include "uart.h"
+#endif
+
 #if !defined(PLATFORM_X86_FAMILY)
 #error No time subsystem is available for this CPU
 #endif
@@ -72,6 +79,8 @@ namespace Sortix
 		}
 
 		bool didUglyIRQ0Hack;
+		bool isEsc;
+		bool isEscDepress;
 
 		void Init()
 		{
@@ -86,10 +95,47 @@ namespace Sortix
 			didUglyIRQ0Hack = false;
 
 			RequestIQR0();
+
+			isEsc = isEscDepress = false;
 		}
 
 		void OnIRQ0(CPU::InterruptRegisters* Regs)
 		{
+#ifdef PLATFORM_SERIAL
+			// TODO: Yeah, this is a bad hack.
+			int c;
+			while ( (c=UART::TryPopChar()) != -1 )
+			{
+				using namespace Maxsi::Keyboard;
+
+				if ( !isEsc && c == '\e' ) { isEsc = true; continue; }
+				if ( isEsc && c == '\e' ) { isEsc = false; }
+				if ( isEsc && c == '[' ) { continue; }
+				if ( isEsc && c == ']' ) { isEscDepress = true; continue; }
+				if ( isEsc && !isEscDepress && c == 'A' ) { Keyboard::QueueKeystroke(UP); }
+				if ( isEsc && !isEscDepress && c == 'B' ) { Keyboard::QueueKeystroke(DOWN); }
+				if ( isEsc && !isEscDepress && c == 'C' ) { Keyboard::QueueKeystroke(RIGHT); }
+				if ( isEsc && !isEscDepress && c == 'D' ) { Keyboard::QueueKeystroke(LEFT); }
+				if ( isEsc && isEscDepress && c == 'A' ) { Keyboard::QueueKeystroke(UP | DEPRESSED); }
+				if ( isEsc && isEscDepress && c == 'B' ) { Keyboard::QueueKeystroke(DOWN | DEPRESSED); }
+				if ( isEsc && isEscDepress && c == 'C' ) { Keyboard::QueueKeystroke(RIGHT | DEPRESSED); }
+				if ( isEsc && isEscDepress && c == 'D' ) { Keyboard::QueueKeystroke(LEFT | DEPRESSED); }
+				if ( isEsc ) { isEsc = false; isEscDepress = false; continue; }
+				if ( c == '\e' ) { c = ESC; }
+				if ( c == ('\e' | (1<<7)) ) { c = ESC | DEPRESSED; }
+				if ( c == 3 ) { SigInt(); continue; }
+				if ( c == 127 ) { c = '\b'; }
+				if ( c & (1<<7) )
+				{
+					c &= ~(1<<7); c |= DEPRESSED;
+				}
+				Keyboard::QueueKeystroke(c);
+			}
+
+			// TODO: But this hack may be worse.
+			UART::RenderVGA((VGA::Frame*) 0xB8000);
+#endif
+
 			Ticks++;
 
 			// Let the scheduler switch to the next task.

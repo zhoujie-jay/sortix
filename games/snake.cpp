@@ -31,6 +31,11 @@ char direction[buffersize];
 uint16_t animal = '%' | (COLOR8_RED<<8);
 uint16_t snake = ' ' | (COLOR8_GREEN<<12);
 
+const int defaultspeed = 75;
+const int speedincrease = -5;
+const int maxspeed = 40;
+volatile int speed;
+
 // HACK: Sortix has no random number generator yet!
 int random_seed=1337;
 int rand(int max) 
@@ -43,7 +48,7 @@ int rand(int max)
 void Clear()
 {
 	// Reset the game data.
-	for ( int i = 0; i < buffersize; i++ ) { frame->text[i] = 0; direction[i] = -1; }
+	for ( int i = 0; i < buffersize; i++ ) { frame->text[i] = ' '; direction[i] = -1; }
 }
 
 void Reset()
@@ -66,6 +71,8 @@ void Reset()
 	tailmax = 3;
 
 	frame->text[animaly * width + animalx] = animal;
+
+	speed = defaultspeed;
 }
 
 int Init()
@@ -125,7 +132,7 @@ void Update()
 	// Move the tail, if needed.
 	if ( taillen == tailmax )
 	{
-		frame->text[taily * width + tailx] = 0; taillen--;
+		frame->text[taily * width + tailx] = ' '; taillen--;
 		switch ( direction[taily * width + tailx] )
 		{
 			case 0: tailx--; break;
@@ -144,6 +151,7 @@ void Update()
 		tailmax++;
 		animalx = 2 + rand(width-4);
 		animaly = 2 + rand(height-4);
+		if ( maxspeed < speed ) { speed += speedincrease; }
 	}
 
 	frame->text[animaly * width + animalx] = animal;
@@ -167,11 +175,10 @@ int main(int argc, char* argv[])
 	int result = Init();
 	if ( result != 0 ) { return result; }
 
-	// Update the game every 300th milisecond.
+	// Update the game every once in a while.
 	while ( true )
 	{
-		const int sleepms = 75;
-		Thread::USleep(sleepms * 1000);
+		Thread::USleep(speed * 1000);
 		Update();
 	}
 

@@ -60,7 +60,7 @@ namespace Sortix
 				                      ? exceptions[regs->int_no] : "Unknown";
 
 				// Halt and catch fire if we are the kernel.
-				if ( (regs->cs & (0x4-1)) == 0 )
+				if ( (regs->cs & (0x4-1)) == 0 || regs->int_no == 13 )
 				{
 					PanicF("Unhandled CPU Exception id %zu '%s' at eip=0x%zx "
 					       "(cr2=0x%p, err_code=0x%p)", regs->int_no, message,

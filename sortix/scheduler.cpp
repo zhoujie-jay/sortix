@@ -223,11 +223,9 @@ namespace Sortix
 			addr_t KernelStackPage = Page::Get();
 			if ( KernelStackPage == 0 ) { Panic("scheduler.cpp: could not allocate kernel interrupt stack for tss!"); }
 
-#ifdef PLATFORM_VIRTUAL_MEMORY
 			uintptr_t MapTo = 0x80000000;
 
 			VirtualMemory::MapKernel(MapTo, (uintptr_t) KernelStackPage);
-#endif
 
 			GDT::SetKernelStack((size_t*) (MapTo+4096));
 		}
@@ -236,7 +234,6 @@ namespace Sortix
 		// simply awaits an IRQ0 and then we shall be scheduling.
 		void MainLoop()
 		{
-			Log::PrintF("Waiting for IRQ0\n");
 			// Simply wait for the next IRQ0 and then the OS will run.
 			while ( true ) { }
 		}
@@ -253,43 +250,25 @@ namespace Sortix
 			// TODO: We only support stacks of up to one page!
 			if ( 4096 < StackSize ) { StackSize = 4096; }
 
-#ifndef PLATFORM_KERNEL_HEAP
-			// TODO: Use the proper memory management systems using new and delete instead of these hacks!
-			// TODO: These allocations might NOT be thread safe!
-			void* ThreadPage = Page::Get();
-			if ( ThreadPage == NULL ) { return NULL; }
-#endif
-
 			// Allocate a stack for this thread.
 			size_t StackLength = StackSize / sizeof(size_t);
 			addr_t PhysStack = Page::Get();
 			if ( PhysStack == 0 )
 			{
-#ifndef PLATFORM_KERNEL_HEAP
-				Page::Put(ThreadPage);
-#endif
 				return NULL;
 			}
 
 			// Create a new thread data structure.
-			Thread* thread = new
-#ifndef PLATFORM_KERNEL_HEAP
-			                     (ThreadPage)
-#endif
-                                              Thread(Process, AllocatedThreadId++, PhysStack, StackLength);
+			Thread* thread = new Thread(Process, AllocatedThreadId++, PhysStack, StackLength);
 
 #ifdef PLATFORM_X86
 
-#ifdef PLATFORM_VIRTUAL_MEMORY
 			uintptr_t StackPos = 0x80000000UL;
 			uintptr_t MapTo = StackPos - 4096UL;
 
 			addr_t OldAddrSpace = VirtualMemory::SwitchAddressSpace(Process->GetAddressSpace());
 
 			VirtualMemory::MapUser(MapTo, PhysStack);
-#else
-			uintptr_t StackPos = (uintptr_t) PhysStack + 4096;
-#endif
 			size_t* Stack = (size_t*) StackPos;
 
 #ifdef PLATFORM_X86
@@ -311,10 +290,8 @@ namespace Sortix
 			// Mark the thread as running, which adds it to the scheduler's linked list.
 			thread->SetState(Thread::State::RUNNABLE);
 
-#ifdef PLATFORM_VIRTUAL_MEMORY
 			// Avoid side effects by restoring the old address space.
 			VirtualMemory::SwitchAddressSpace(OldAddrSpace);
-#endif
 
 			return thread;
 		}
@@ -390,7 +367,8 @@ namespace Sortix
 
 #ifdef PLATFORM_X86
 
-			if ( currentThread != NoopThread )
+			// TODO: HACK: Find a more accurate way to test for kernel code.
+			if ( R->eip >= 0x400000UL )
 			{
 				uint32_t RPL = 0x3;
 
@@ -460,11 +438,7 @@ namespace Sortix
 			// TODO: What do we do with the result parameter?
 			Thread->~Thread();
 			//Log::PrintF("<ExitedThread debug=\"2\" thread=\"%p\"/>\n", Thread);
-#ifndef PLATFORM_KERNEL_HEAP
-			Page::Put((addr_t) Thread);
-#else
 			delete Thread;
-#endif
 			//Log::PrintF("<ExitedThread debug=\"3\" thread=\"%p\"/>\n", Thread);
 
 			if ( Thread == currentThread ) { currentThread = NULL; }

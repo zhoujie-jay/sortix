@@ -24,6 +24,7 @@
 
 #include "platform.h"
 #include <libmaxsi/string.h>
+#include <libmaxsi/memory.h>
 #ifdef PLATFORM_SERIAL
 #include "vga.h"
 #endif
@@ -216,15 +217,11 @@ namespace Sortix
 
 		void RenderVGA(const VGA::Frame* Frame)
 		{
-#if 0
-			// Set the cursor to (0,0)
-			const char InitMessage[] = { String::ASCII_ESCAPE, '[', 'H' };
-			UART::Write(InitMessage, sizeof(InitMessage));
-
 			const uint16_t* Source = Frame->Data;
 
 			nat LastColor = 1337;
 			nat SkippedSince = 0;
+			bool posundefined = true;
 
 			for ( nat Y = 0; Y < Frame->Height; Y++)
 			{
@@ -237,33 +234,42 @@ namespace Sortix
 
 					if ( Element == OldElement ) { continue; }
 
-					VGALastFrame.Data[Index] = Element;
-
 					// Update the position if we skipped some characters.
-					if ( Index - SkippedSince > 8 )
+					if ( Index - SkippedSince > 8 || posundefined )
 					{
 						const nat LineId = Y + 1;
 						const nat ColumnId = X + 1;
 
 						if ( ColumnId > 1 )
 						{
-							const char Message[] = { String::ASCII_ESCAPE, '[', '0' + LineId / 10, '0' + LineId % 10, ';', '0' + ColumnId / 10, '0' + ColumnId % 10, 'H' };
-							UART::Write(Message, sizeof(Message));
+							UART::WriteChar('\e');
+							UART::WriteChar('[');
+							UART::WriteChar('0' + LineId / 10);
+							UART::WriteChar('0' + LineId % 10);
+							UART::WriteChar(';');
+							UART::WriteChar('0' + ColumnId / 10);
+							UART::WriteChar('0' + ColumnId % 10);
+							UART::WriteChar('H');
 						}
 						else
 						{
-							const char Message[] = { String::ASCII_ESCAPE, '[', '0' + LineId / 10, '0' + LineId % 10, 'H' };
-							UART::Write(Message, sizeof(Message));
+							UART::WriteChar('\e');
+							UART::WriteChar('[');
+							UART::WriteChar('0' + LineId / 10);
+							UART::WriteChar('0' + LineId % 10);
+							UART::WriteChar('H');
 						}
 
 						SkippedSince = Index;
+						posundefined = false;
 					}
 
 					for ( nat Pos = SkippedSince; Pos <= Index; Pos++ )
 					{
 						Element = Source[Pos];
+						OldElement = VGALastFrame.Data[Pos];
 
-						nat NewColor = ConversionTable[ (Element >> 12) & 0xF ] << 3 | ConversionTable[ (Element >> 8) & 0xF ];
+						nat NewColor = (ConversionTable[ (Element >> 12) & 0xF ] << 3) | (ConversionTable[ (Element >> 8) & 0xF ]);
 		
 						// Change the color if we need to.
 						if ( LastColor != NewColor )
@@ -272,25 +278,40 @@ namespace Sortix
 							nat OldBGColor = LastColor / 8;
 							nat FGColor = NewColor % 8;
 							nat BGColor = NewColor / 8;
+							if ( LastColor == 1337 ) { OldFGColor = 9; OldBGColor = 9; }
 
 							if ( (OldFGColor != FGColor) && (OldBGColor != BGColor) )
 							{
-								const char Message[] = { String::ASCII_ESCAPE, '[', '3', '0' + FGColor, ';', '4', '0' + BGColor, 'm' };
-								UART::Write(Message, sizeof(Message));
+								UART::WriteChar('\e');
+								UART::WriteChar('[');
+								UART::WriteChar('3');
+								UART::WriteChar('0' + FGColor);
+								UART::WriteChar(';');
+								UART::WriteChar('4');
+								UART::WriteChar('0' + BGColor);
+								UART::WriteChar('m');
 							}
 							else if ( OldFGColor != FGColor )
 							{
-								const char Message[] = { String::ASCII_ESCAPE, '[', '3', '0' + FGColor, 'm' };
-								UART::Write(Message, sizeof(Message));
+								UART::WriteChar('\e');
+								UART::WriteChar('[');
+								UART::WriteChar('3');
+								UART::WriteChar('0' + FGColor);
+								UART::WriteChar('m');
 							}
 							else if ( OldBGColor != BGColor )
 							{
-								const char Message[] = { String::ASCII_ESCAPE, '[', '4', '0' + BGColor, 'm' };
-								UART::Write(Message, sizeof(Message));
+								UART::WriteChar('\e');
+								UART::WriteChar('[');
+								UART::WriteChar('4');
+								UART::WriteChar('0' + BGColor);
+								UART::WriteChar('m');
 							}
 
 							LastColor = NewColor;
 						}
+
+						VGALastFrame.Data[Pos] = Element;
 
 						Element &= 0x7F;
 
@@ -303,7 +324,6 @@ namespace Sortix
 					SkippedSince = Index + 1;
 				}
 			}
-#endif
 		}
 #endif
 	}

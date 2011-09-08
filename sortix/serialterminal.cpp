@@ -25,8 +25,10 @@
 #include "platform.h"
 #include <libmaxsi/string.h>
 #include "log.h"
+#include "vga.h"
 #include "uart.h"
 #include "serialterminal.h"
+#include "vgaterminal.h"
 
 namespace Sortix
 {
@@ -46,7 +48,12 @@ namespace Sortix
 
 		size_t Print(void* /*user*/, const char* string, size_t stringlen)
 		{
+#ifdef JSSORTIX
+			VGATerminal::Print(NULL, string, stringlen);
+			UART::RenderVGA((VGA::Frame*) 0xB8000);
+#else
 			UART::Write(string, stringlen);
+#endif
 			return stringlen;
 		}
 	}

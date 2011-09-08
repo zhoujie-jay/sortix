@@ -3,7 +3,8 @@ ifndef CPU
 endif
 
 ifeq ($(CPU),x86)
-	X86FAMILY=1
+    BUILDID=x86
+    X86FAMILY=1
     CPUDEFINES=-DPLATFORM_X86
     CPUFLAGS=-m32
     CPULDFLAGS=-melf_i386
@@ -13,7 +14,8 @@ ifeq ($(CPU),x86)
 endif
 
 ifeq ($(CPU),x64)
-	X86FAMILY=1
+    BUILDID=x64
+    X86FAMILY=1
     CPUDEFINES=-DPLATFORM_X64
     CPUFLAGS=-m64 -ffreestanding -mcmodel=large -mno-red-zone
     CPULDFLAGS=-melf64-little -z max-page-size=0x1000
@@ -34,13 +36,10 @@ endif
 DIRS=. x64 x86 x86-family
 
 DEFINES:=-DSORTIX_KERNEL $(CPUDEFINES)
-DEFINES:=$(DEFINES) -DPLATFORM_VIRTUAL_MEMORY
-DEFINES:=$(DEFINES) -DPLATFORM_KERNEL_HEAP
-#DEFINES:=$(DEFINES) -DPLATFORM_SERIAL
-#DEFINES:=$(DEFINES) -DPLATFORM_HTP
-#DEFINES:=$(DEFINES) -DCONWAY
-#DEFINES:=$(DEFINES) -DPONG
-DEFINES:=$(DEFINES) -DINITRD
+ifeq ($(JSSORTIX),1)
+    DEFINES:=$(DEFINES) -DPLATFORM_SERIAL -DJSSORTIX
+    BUILDID:=$(BUILDID)-js
+endif
 CPPFLAGSRELEASE=-s -O3
 CPPFLAGSDEBUG=
 CPPFLAGS=-I.. -I. $(CPUDEFINES) $(CPUFLAGS) -std=gnu++0x -Wall -Wextra -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -fno-exceptions -fno-rtti -fno-stack-protector $(DEFINES) $(CPPFLAGSRELEASE)
@@ -76,9 +75,9 @@ all: sortix.bin
 
 jssortix: jssortix.bin
 
-jssortix.bin: $(JSOBJS)
-	ld -melf_i386 -Ttext 100000 -o jssortix.out $(JSOBJS)
-	objcopy -O binary jssortix.out jssortix.bin
+sortix-x86-js.tmp: $(OBJS)
+	ld -melf_i386 -Ttext 100000 -o sortix-x86-js-internal.out $(OBJS)
+	objcopy -O binary sortix-x86-js-internal.out $@
 
 # x64 compilation
 x64/boot.o: x64/boot.s
@@ -101,7 +100,7 @@ sortix-x86.tmp: $(OBJS)
 
 # general rules
 
-sortix.bin: sortix-$(CPU).tmp
+sortix.bin: sortix-$(BUILDID).tmp
 	cp -vu $< $@
 
 %.o: %.cpp
@@ -111,15 +110,6 @@ sortix.bin: sortix-$(CPU).tmp
 	as $(CPUASFLAGS) $< -o $@
 
 %.o: %.asm
-	nasm $(CPUNASMFLAGS) $< -o $@
-
-%-js.o: %.cpp
-	g++ -c $< -o $@ $(CPPFLAGS) -DJSSORTIX
-
-%-js.o: %.s
-	as $(CPUASFLAGS) $< -o $@
-
-%-js.o: %.asm
 	nasm $(CPUNASMFLAGS) $< -o $@
 
 clean:

@@ -115,6 +115,7 @@ namespace Sortix
 		Log::Print("                     /           \\         /          \\                         \n");
 		Log::Print("                    /_____________\\       /____________\\                        \n");
 		Log::Print("                                                                                \n");
+		Log::Print("                           BOOTING OPERATING SYSTEM...                          ");
 	}
 
 	void DoWelcome()
@@ -124,22 +125,6 @@ namespace Sortix
 #endif
 
 		DoMaxsiLogo();
-
-#ifdef PLATFORM_SERIAL
-#ifdef PONG
-		Log::Print("                     = THE SORTIX KERNEL - PONG EDITION =                       ");
-#elif defined(CONWAY)
-		Log::Print("              = THE SORTIX KERNEL - CONWAY'S GAME OF LIFE EDITION =             ");
-#else
-		Log::Print("                                                                                ");
-#endif
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-#endif
 	}
 
 	extern "C" void KernelInit(unsigned long Magic, multiboot_info_t* BootInfo)
@@ -197,7 +182,7 @@ namespace Sortix
 		uint8_t* initrd = NULL;
 		size_t initrdsize = 0;
 
-#ifdef INITRD
+#ifndef JSSORTIX
 		uint8_t** modules = (uint8_t**) BootInfo->mods_addr;
 		for ( uint32_t I = 0; I < BootInfo->mods_count; I++ )
 		{
@@ -205,9 +190,13 @@ namespace Sortix
 			initrd = modules[2*I+0];
 			break;
 		}
+#else
+		// TODO: UGLY HACK because JSVM doesn't support multiboot yet!
+		initrd = (uint8_t*) 0x180000UL;
+		initrdsize = 0x80000; // 512 KiB
+#endif
 
 		if ( initrd == NULL ) { PanicF("No initrd provided"); }
-#endif
 
 		// Initialize the GDT and TSS structures.
 		GDT::Init();
@@ -217,16 +206,12 @@ namespace Sortix
 
 		if ( BootInfo == NULL ) { Panic("kernel.cpp: The bootinfo structure was NULL. Are your bootloader multiboot compliant?"); }
 
-#ifdef PLATFORM_VIRTUAL_MEMORY
 		// Initialize virtual memory. TODO: This is not fully working yet.
 		VirtualMemory::Init();
 
-#ifdef PLATFORM_KERNEL_HEAP
 		// Initialize the kernel heap.
 		Maxsi::Memory::Init();
-#endif
 
-#endif
 		// Initialize the keyboard.
 		Keyboard::Init();
 

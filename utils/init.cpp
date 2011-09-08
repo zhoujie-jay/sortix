@@ -4,7 +4,7 @@
 int main(int argc, char* argv[])
 {
 	// Reset the terminal's color and the rest of it.
-	printf("\e[m\e[J");
+	printf("\r\e[m\e[J");
 
 	const char* programname = "sh";
 	const char* newargv[] = { programname };

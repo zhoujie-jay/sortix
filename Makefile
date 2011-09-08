@@ -19,10 +19,10 @@ ISOFILE:=builds/$(DEBNAME).iso
 INITRDDIR:=initrd
 INITRD=sortix/sortix.initrd
 
+all: $(INITRD)
+
 suball:
 	(for D in $(MODULES); do $(MAKE) all $(MFLAGS) --directory $$D || exit 1; done)
-
-all: $(INITRD)
 
 clean:
 	rm -f $(INITRD)
