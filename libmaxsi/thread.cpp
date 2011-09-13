@@ -48,13 +48,6 @@ namespace Maxsi
 			SysExit(Result);
 		}
 
-#ifdef LIBMAXSI_LIBC
-		extern "C" void exit(int result)
-		{
-			SysExit(NULL);
-		}
-#endif
-
 		void ThreadStartup(size_t Id, Entry Start, void* Parameter)
 		{
 			Exit(Start(Parameter));

@@ -42,6 +42,24 @@ namespace Maxsi
 		{
 			SysPrintPathFiles();
 		}
+
+		void Abort()
+		{
+			// TODO: Send SIGABRT instead!
+			Exit(128 + 6);
+		}
+
+		extern "C" void abort() { return Abort(); }
+
+		void Exit(int code)
+		{
+			const char* sh = "sh";
+			const char* argv[] = { sh };
+			Execute("sh", 1, argv);
+			while(true);
+		}
+
+		extern "C" void exit(int code) { return Exit(code); }
 	}
 }
 

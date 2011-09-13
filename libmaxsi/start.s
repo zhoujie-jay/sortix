@@ -36,18 +36,7 @@ _start:
 	push $0 # argc
 	call main
 
-	# HACK: Just restart the shell!
-	mov $10, %eax
-	mov $SH, %ebx
-	int $0x80
-
-	# Now return mains result when exiting the process
-	mov %eax, %ebx
-	mov $1, %eax
-	mov $0x0, %ebx # TODO: This syscall exits a thread, not a process!
-	int $0x80
-
-.section .data
-SH:
-	.asciz "sh"
+	# Terminate the process with main's exit code.
+	push %eax
+	call exit
 

@@ -31,6 +31,8 @@ namespace Maxsi
 	{
 		int Execute(const char* filepath, int argc, const char** argv);
 		void PrintPathFiles();
+		void Abort();
+		void Exit(int code);
 	}
 }
 
