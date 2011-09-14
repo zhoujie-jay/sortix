@@ -40,11 +40,19 @@ c/h/features.h \
 c/h/string.h \
 c/h/sys/stat.h \
 c/h/sys/types.h \
-c/h/stdio.h
+c/h/stdio.h \
 
-COMMONOBJS=c++.o thread.o io.o memory.o string.o error.o format.o
+COMMONOBJS=c++.o memory.o string.o error.o format.o
 SORTIXOBJS:=$(addprefix sortix/,$(COMMONOBJS))
-LIBMAXSIOBJS:=$(COMMONOBJS) sortix-vga.o sortix-keyboard.o sortix-sound.o process.o
+LIBMAXSIOBJS:=$(COMMONOBJS) \
+sortix-vga.o \
+sortix-keyboard.o \
+sortix-sound.o \
+process.o \
+thread.o \
+io.o \
+init.o \
+
 HEADERS=\
 error.h \
 io.h \

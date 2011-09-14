@@ -17,28 +17,18 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	start.s
-	A stub for linking to the C runtime on Sortix. 
+	init.cpp
+	Initializes the process by setting up the heap, signal handling,
+	static memory and other useful things.
 
 ******************************************************************************/
 
-.globl _start
+#include "platform.h"
 
-.section .text
-
-.text  0x100000
-.type _start, @function
-_start:
-
-	call initialize_standard_library
-
-	# Run main
-	# TODO: Sortix should push these values to the stack itself!
-	push $0x0 # argv
-	push $0 # argc
-	call main
-
-	# Terminate the process with main's exit code.
-	push %eax
-	call exit
-
+namespace Maxsi
+{
+	extern "C" void initialize_standard_library()
+	{
+	
+	}
+}
