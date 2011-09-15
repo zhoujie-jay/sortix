@@ -45,6 +45,7 @@ c/h/sys/stat.h \
 c/h/sys/types.h \
 c/h/sys/wait.h \
 c/h/stdio.h \
+c/h/signal.h \
 
 COMMONOBJS=c++.o memory.o string.o error.o format.o
 SORTIXOBJS:=$(addprefix sortix/,$(COMMONOBJS))
@@ -56,10 +57,12 @@ process.o \
 thread.o \
 io.o \
 init.o \
+signal.o \
+$(CPU)/signal.o \
 start.o \
 random.o \
 
-HEADERS=\
+MAXSIHEADERS=\
 error.h \
 io.h \
 memory.h \
@@ -72,6 +75,8 @@ types.h \
 format.h \
 keyboard.h \
 sortedlist.h \
+signal.h \
+signalnum.h \
 sortix-vga.h \
 sortix-keyboard.h \
 sortix-sound.h \
@@ -100,7 +105,7 @@ ifndef LIBMAXSI_NO_LIBC
          BINS:=$(BINS) libc.a
     endif
 
-    HEADERS:=$(HEADERS) $(CHEADERS)
+    HEADERS:=$(MAXSIHEADERS) $(CHEADERS)
 
 else
     DEFINES:=$(DEFINES) -DLIBMAXSI_NO_LIBC
@@ -172,4 +177,19 @@ sortix/%.o: sortix/%.cpp
 
 clean:
 	rm -f *.o sortix/*.o c/*.o x86/*.o x64/*.o *.a *.so $(CHEADERS) $(HEADERS)
+
+# Installation into sysroot
+install:
+	mkdir -p $(SYSROOT)/usr/lib
+	for F in $(BINS); do cp --preserve=links $$F $(SYSROOT)/usr/lib || exit $?; done
+	mkdir -p $(SYSROOT)/usr/include
+	for F in $(CHEADERS); do F=`echo $$F | sed 's/c\/h\///g'`; mkdir -p $(SYSROOT)/usr/include/`dirname $$F`; cp c/h/$$F $(SYSROOT)/usr/include/$$F || exit $?; done
+	mkdir -p $(SYSROOT)/usr/include/libmaxsi
+	for F in $(MAXSIHEADERS); do cp $$F $(SYSROOT)/usr/include/libmaxsi || exit $?; done
+	cp start.o $(SYSROOT)/usr/lib/crt1.o
+	touch deleteme.cpp
+	g++ $(CPUFLAGS) -c deleteme.cpp -o deleteme.o
+	for F in crt0.o crtn.o crtbegin.o crtend.o crtbeginT.o crti.o; do cp deleteme.o $(SYSROOT)/usr/lib/$$F; done
+	for F in libgcc.so libm.so libstdc++.so; do ld $(CPULDFLAGS) -shared deleteme.o -o $(SYSROOT)/usr/lib/$$F; done
+	rm -f deleteme.o deleteme.cpp
 

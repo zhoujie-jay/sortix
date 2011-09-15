@@ -11,3 +11,5 @@ all: $(BINARIES)
 clean:
 	rm -f $(BINARIES)
 
+install:
+	

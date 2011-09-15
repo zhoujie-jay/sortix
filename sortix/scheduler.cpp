@@ -132,6 +132,8 @@ namespace Sortix
 			Memory::SwitchAddressSpace(newaddrspace);
 			currentthread = nextthread;
 
+			nextthread->HandleSignal(regs);
+
 			LogEndContextSwitch(currentthread, regs);
 
 			if ( currentthread->scfunc ) { Syscall::Resume(regs); }

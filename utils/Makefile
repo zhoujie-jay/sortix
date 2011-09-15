@@ -16,6 +16,7 @@ help \
 uname \
 idle \
 editor \
+kill \
 
 BINARIES:=$(addprefix $(INITRDDIR)/,$(LOCALBINARIES))
 

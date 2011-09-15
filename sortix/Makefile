@@ -74,10 +74,11 @@ pipe.o \
 filesystem.o \
 directory.o \
 mount.o \
+signal.o \
 fs/devfs.o \
 fs/initfs.o \
 fs/ramfs.o \
-../libmaxsi/libmaxsi-sortix.a
+../libmaxsi/libmaxsi-sortix.a \
 
 JSOBJS:=$(subst .o,-js.o,$(OBJS))
 
@@ -127,20 +128,8 @@ sortix.bin: sortix-$(BUILDID).tmp
 clean:
 	for D in $(DIRS); do rm -fv $$D/*.o $$D/*.bin $$D/*.out $$D/*.tmp; done
 
-# Local machine
+# Installation into sysroot
+install:
+	mkdir -p $(SYSROOT)/usr/include/sortix
+	cp $(CPU)/bits.h $(SYSROOT)/usr/include/sortix/bits.h
 
-install: sortix.bin
-	cp sortix.bin /boot
-
-uninstall:
-	rm -f /boot/sortix.bin
-
-# Remote machine
-
-install-remote: sortix.bin
-	scp -r ./ 192.168.2.6:/home/sortie/Desktop/sortix	
-	scp sortix.bin root@192.168.2.6:/boot
-	ssh root@192.168.2.6 "init 6"
-
-uninstall-remote:
-	ssh root@192.168.2.6 "rm /boot/sortix.bin"

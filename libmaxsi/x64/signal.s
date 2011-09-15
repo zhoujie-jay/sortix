@@ -17,25 +17,22 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	init.cpp
-	Initializes the process by setting up the heap, signal handling,
-	static memory and other useful things.
+	signal.s
+	An assembly stub that for handling unix signals.
 
 ******************************************************************************/
 
-#include "platform.h"
-#include "signal.h"
+.globl SignalHandlerAssembly
 
-namespace Maxsi
-{
-	extern "C" void init_error_functions();
+.section .text
 
-	extern "C" void initialize_standard_library()
-	{
-		// Initialize stuff such as errno.
-		init_error_functions();
+.type SignalHandlerAssembly, @function
+SignalHandlerAssembly:
 
-		// It's probably best to initialize the Unix signals early on.
-		Signal::Init();
-	}
-}
+	# The kernel put the signal id in edi.
+	call SignalHandler
+
+	# Return control to the kernel, so normal computation can resume normally.
+	movl $3, %eax
+	int $0x80
+

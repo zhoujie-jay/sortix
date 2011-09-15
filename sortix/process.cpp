@@ -153,7 +153,7 @@ namespace Sortix
 			if ( clonesegments == NULL ) { delete clone; return NULL; }
 		}
 
-		// Fork address-space here and copy memory somehow.
+		// Fork address-space here and copy memory.
 		clone->addrspace = Memory::Fork();
 		if ( !clone->addrspace )
 		{

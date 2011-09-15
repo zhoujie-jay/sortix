@@ -241,6 +241,9 @@ namespace Sortix
 		// Initialize the process system.
 		Process::Init();
 
+		// Initialize the thread system.
+		Thread::Init();
+
 		// Initialize the IO system.
 		IO::Init();
 

@@ -25,6 +25,8 @@
 #ifndef SORTIX_THREAD_H
 #define SORTIX_THREAD_H
 
+#include "signal.h"
+
 namespace Sortix
 {
 	class Process;
@@ -34,12 +36,17 @@ namespace Sortix
 	Thread* CreateThread(addr_t entry, size_t stacksize = 0);
 	Thread* CurrentThread();
 
+	typedef void (*sighandler_t)(int);
+
 	class Thread
 	{
 	friend Thread* CreateThread(addr_t entry, size_t stacksize);
 
 	public:
 		enum State { NONE, RUNNABLE, BLOCKING };
+
+	public:
+		static void Init();
 
 	private:
 		Thread();
@@ -67,6 +74,9 @@ namespace Sortix
 	public:
 		addr_t stackpos;
 		size_t stacksize;
+		Signal* currentsignal;
+		SignalQueue signalqueue;
+		sighandler_t sighandler;
 
 	// After being created/forked, a thread is not inserted into the scheduler.
 	// Whenever the thread has been safely established within a process, then
@@ -84,6 +94,10 @@ namespace Sortix
 		Thread* Fork();
 		void SaveRegisters(const CPU::InterruptRegisters* src);
 		void LoadRegisters(CPU::InterruptRegisters* dest);
+		void HandleSignal(CPU::InterruptRegisters* regs);
+
+	private:
+		void HandleSignalCPU(CPU::InterruptRegisters* regs);
 
 	public:
 		void* scfunc;

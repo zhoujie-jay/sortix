@@ -62,6 +62,7 @@ namespace Maxsi
 				case EIO: return (char*) "Input/output error";
 				case ENOEXEC: return (char*) "Not executable";
 				case EACCESS: return (char*) "Permission denied";
+				case ESRCH: return (char*) "No such process";
 				default: return (char*) "Unknown error condition";
 			}
 		}

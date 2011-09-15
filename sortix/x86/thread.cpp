@@ -106,4 +106,10 @@ namespace Sortix
 
 		thread->SaveRegisters(&regs);
 	}
+
+	void Thread::HandleSignalCPU(CPU::InterruptRegisters* regs)
+	{
+		regs->edi = currentsignal->signum;
+		regs->eip = (size_t) sighandler;
+	}
 }

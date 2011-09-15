@@ -17,25 +17,26 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	init.cpp
-	Initializes the process by setting up the heap, signal handling,
-	static memory and other useful things.
+	signal.h
+	Handles the good old unix signals.
 
 ******************************************************************************/
 
-#include "platform.h"
-#include "signal.h"
+#ifndef LIBMAXSI_SIGNAL_H
+#define LIBMAXSI_SIGNAL_H
+
+#include "signalnum.h"
 
 namespace Maxsi
 {
-	extern "C" void init_error_functions();
-
-	extern "C" void initialize_standard_library()
+	namespace Signal
 	{
-		// Initialize stuff such as errno.
-		init_error_functions();
+		typedef void (*Handler)(int);
 
-		// It's probably best to initialize the Unix signals early on.
-		Signal::Init();
+		void Init();
+		Handler RegisterHandler(int signum, Handler handler);
 	}
 }
+
+#endif
+

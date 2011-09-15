@@ -1,5 +1,11 @@
 ifndef CPU
     CPU=x86
+    MFLAGS:=CPU=$(CPU)
+endif
+
+ifndef SYSROOT
+    SYSROOT:=$(shell pwd)/sysroot
+    MFLAGS:=SYSROOT=$(SYSROOT)
 endif
 
 REMOTE=192.168.2.6
@@ -22,9 +28,10 @@ INITRD=sortix/sortix.initrd
 all: $(INITRD)
 
 suball:
-	(for D in $(MODULES); do $(MAKE) all $(MFLAGS) --directory $$D || exit $?; done)
+	(for D in $(MODULES); do ($(MAKE) all $(MFLAGS) --directory $$D && $(MAKE) install $(MFLAGS) --directory $$D) || exit $?; done)
 
 clean:
+	rm -rf $(SYSROOT)
 	rm -f $(INITRD)
 	rm -f initrd/*
 	(for D in $(MODULES); do $(MAKE) clean $(MFLAGS) --directory $$D || exit $?; done)

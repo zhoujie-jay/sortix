@@ -19,5 +19,6 @@
 #define EIO 27
 #define ENOEXEC 28
 #define EACCESS 29
+#define ESRCH 30
 
 #endif

@@ -23,12 +23,16 @@
 ******************************************************************************/
 
 #include "platform.h"
+#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "process.h"
 #include "thread.h"
 #include "scheduler.h"
 #include "memorymanagement.h"
 #include "time.h"
+#include "syscall.h"
+
+using namespace Maxsi;
 
 namespace Sortix
 {
@@ -46,6 +50,8 @@ namespace Sortix
 		Maxsi::Memory::Set(&registers, 0, sizeof(registers));
 		ready = false;
 		scfunc = NULL;
+		currentsignal = NULL;
+		sighandler = NULL;
 		ResetCallbacks();
 	}
 
@@ -65,6 +71,7 @@ namespace Sortix
 		schedulerlistprev = NULL;
 		schedulerlistnext = NULL;
 		scfunc = NULL;
+		sighandler = forkfrom->sighandler;
 		ResetCallbacks();
 	}
 
@@ -78,6 +85,14 @@ namespace Sortix
 		ASSERT(CurrentProcess() == process);
 		ASSERT(nextsleepingthread == NULL);
 
+		// Delete information about signals being processed.
+		while ( currentsignal )
+		{
+			Signal* todelete = currentsignal;
+			currentsignal = currentsignal->nextsignal;
+			delete todelete;
+		}
+
 		Memory::UnmapRangeUser(stackpos, stacksize);
 	}
 
@@ -85,8 +100,26 @@ namespace Sortix
 	{
 		ASSERT(ready);
 
+		Signal* clonesignal = NULL;
+		if ( currentsignal )
+		{
+			clonesignal = currentsignal->Fork();
+			if ( !clonesignal ) { return NULL; }
+		} 
+
 		Thread* clone = new Thread(this);
-		if ( !clone ) { return NULL; }
+		if ( !clone )
+		{
+			while ( clonesignal )
+			{
+				Signal* todelete = clonesignal;
+				clonesignal = clonesignal->nextsignal;
+				delete todelete;
+			}
+			return NULL;
+		}
+
+		clone->currentsignal = clonesignal;
 
 		return clone;
 	}
@@ -153,5 +186,84 @@ namespace Sortix
 			state = State::NONE; // Since we are in no linked list.
 			Scheduler::SetThreadState(this, State::RUNNABLE);
 		}
+	}
+
+	void Thread::HandleSignal(CPU::InterruptRegisters* regs)
+	{
+		Signal* override = signalqueue.Pop(currentsignal);
+		if ( !override ) { return; }
+		if ( !sighandler ) { delete override; return; }
+
+		if ( override->signum == SIGKILL )
+		{
+			
+		}
+		
+
+		override->nextsignal = currentsignal;
+		Maxsi::Memory::Copy(&override->regs, regs, sizeof(override->regs));
+		currentsignal = override;
+
+		HandleSignalCPU(regs);
+	}
+
+	void SysSigReturn()
+	{
+		Thread* thread = CurrentThread();
+		if ( !thread->currentsignal ) { return; }
+
+		CPU::InterruptRegisters* dest = Syscall::InterruptRegs();
+		CPU::InterruptRegisters* src = &thread->currentsignal->regs;
+		
+		Maxsi::Memory::Copy(dest, src, sizeof(CPU::InterruptRegisters));
+		thread->currentsignal = thread->currentsignal->nextsignal;
+		Syscall::AsIs();
+	}
+
+	void SysRegisterSignalHandler(sighandler_t sighandler)
+	{
+		CurrentThread()->sighandler = sighandler;
+	}
+
+	int SysKill(pid_t pid, int signum)
+	{
+		if ( signum < 0 || 128 <= signum ) { Error::Set(EINVAL); return -1; }
+
+		// Protect the system idle process.
+		if ( pid == 0 ) { Error::Set(EPERM); return -1; }
+
+		Process* process = Process::Get(pid);
+		if ( !process ) { Error::Set(ESRCH); return -1; }
+
+		// TODO: Protect init?
+		// TODO: Check for permission.
+		// TODO: Check for zombies.
+
+		Thread* currentthread = CurrentThread();
+		Thread* thread = NULL;
+		if ( currentthread->process->pid == pid ) { thread = currentthread; }
+		if ( !thread ) { thread = process->firstthread; }
+		if ( !thread ) { Error::Set(ESRCH); return -1; /* TODO: Zombie? */ }
+
+		// TODO: If thread is not runnable, wake it and runs its handler?
+		if ( !thread->signalqueue.Push(signum) )
+		{
+			// TODO: Possibly kill the process?
+		}
+
+		if ( thread == currentthread )
+		{
+			Syscall::SyscallRegs()->result = 0;
+			thread->HandleSignal(Syscall::InterruptRegs());
+		}
+
+		return 0;
+	}
+
+	void Thread::Init()
+	{
+		Syscall::Register(SYSCALL_KILL, (void*) SysKill);
+		Syscall::Register(SYSCALL_REGISTER_SIGNAL_HANDLER, (void*) SysRegisterSignalHandler);
+		Syscall::Register(SYSCALL_SIGRETURN, (void*) SysSigReturn);
 	}
 }
