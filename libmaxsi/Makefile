@@ -17,6 +17,7 @@ ifeq ($(CPU),x64)
     CPULDFLAGS=-melf_x86_64
     CPUASFLAGS=-64
     CPUNASMFLAGS=-felf64
+    LIBMAXSI_NO_SHARED=1 # This doesn't work yet
 endif
 
 DEFINES=-DLIBMAXSI_LIBRARY -DSORTIX $(CPUDEFINES)
@@ -52,6 +53,7 @@ process.o \
 thread.o \
 io.o \
 init.o \
+start.o \
 
 HEADERS=\
 error.h \
@@ -70,19 +72,25 @@ sortix-keyboard.h \
 sortix-sound.h \
 
 OBJS:=$(LIBMAXSIOBJS)
-BINS:=libmaxsi.so
+BINS:=
+
+ifndef LIBMAXSI_NO_SHARED
+    BINS:=$(BINS) libmaxsi.so
+endif
 
 ifndef LIBMAXSI_NO_STATIC
     BINS:=$(BINS) libmaxsi.a
 endif
 
 ifndef LIBMAXSI_NO_SORTIX
-    BINS:=$(BINS) libmaxsi-sortix.a start.o
+    BINS:=$(BINS) libmaxsi-sortix.a
 endif
 
 ifndef LIBMAXSI_NO_LIBC
     OBJS:=$(OBJS) $(COBJS)
-    BINS:=$(BINS) libc.so
+    ifndef LIBMAXSI_NO_SHARED
+         BINS:=$(BINS) libc.so
+    endif
     ifndef LIBMAXSI_NO_STATIC
          BINS:=$(BINS) libc.a
     endif
@@ -112,6 +120,9 @@ libc.a: libmaxsi.a
 	ln -sf $< $@ 
 
 libc.so: libmaxsi.so
+	ln -sf $< $@ 
+
+start.o: $(CPU)/start.o
 	ln -sf $< $@ 
 
 # libmaxsi
@@ -155,5 +166,5 @@ sortix/%.o: sortix/%.cpp
 	g++ -c $< -o $@ $(SORTIXFLAGS)
 
 clean:
-	rm -f *.o sortix/*.o c/*.o *.a *.so $(CHEADERS) $(HEADERS)
+	rm -f *.o sortix/*.o c/*.o x86/*.o x64/*.o *.a *.so $(CHEADERS) $(HEADERS)
 
