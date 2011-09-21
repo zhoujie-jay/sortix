@@ -33,7 +33,7 @@ namespace Sortix
 		void Init();
 		void OnIRQ0(CPU::InterruptRegisters* Registers);	
 		float GetTimeSinceBoot();
-		intmax_t GetMilisecondsSinceBoot();	
+		uintmax_t MicrosecondsSinceBoot();
 	}
 }
 

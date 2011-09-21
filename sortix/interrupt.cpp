@@ -34,7 +34,8 @@ namespace Sortix
 {
 	namespace Interrupt
 	{
-		const bool debugexception = true;
+		const bool DEBUG_EXCEPTION = false;
+		const bool DEBUG_IRQ = false;
 
 		size_t numknownexceptions = 20;
 		const char* exceptions[] =
@@ -62,15 +63,7 @@ namespace Sortix
 				const char* message = ( regs->int_no < numknownexceptions )
 				                      ? exceptions[regs->int_no] : "Unknown";
 
-				if ( debugexception )
-				{
-					Log::PrintF("cs=0x%x, eax=0x%zx, ebx=0x%zx, ecx=0x%zx, "
-					            "edx=0x%zx, esi=0x%zx, edi=0x%zx, esp=0x%zx, "
-					            "useresp=0x%zx, test=0x%zx\n",
-					            regs->cs, regs->eax, regs->ebx, regs->ecx,
-					            regs->edx, regs->esi, regs->edi, regs->esp,
-					            regs->useresp, regs->useresp);
-				}
+				if ( DEBUG_EXCEPTION ) { regs->LogRegisters(); Log::Print("\n"); }
 
 				// Halt and catch fire if we are the kernel.
 				if ( (regs->cs & (0x4-1)) == 0 )
@@ -86,8 +79,7 @@ namespace Sortix
 
 				Sound::Mute();
 				const char* programname = "sh";
-				regs->ebx = (uint32_t) programname;
-				SysExecuteOld(regs);
+				Process::Execute(programname, regs);
 				return;
 			}
 
@@ -108,6 +100,13 @@ namespace Sortix
 			// TODO! IRQ 7 and 15 might be spurious and might need to be ignored.
 			// See http://wiki.osdev.org/PIC for details (section Spurious IRQs).
 			if ( regs->int_no == 32 + 7 || regs->int_no == 32 + 15 ) { return; }
+
+			if ( DEBUG_IRQ )
+			{
+				Log::PrintF("IRQ%u ", regs->int_no-32);
+				regs->LogRegisters();
+				Log::Print("\n");
+			}
 
 			if ( regs->int_no < 32 || 48 < regs->int_no )
 			{

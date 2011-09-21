@@ -29,7 +29,6 @@
 #include "panic.h"
 #include "keyboard.h"
 #include "interrupt.h"
-#include "process.h"
 #include "scheduler.h"
 #include "syscall.h"
 
@@ -688,7 +687,7 @@ namespace Sortix
 
 			if ( CodePoint == SIGINT )
 			{
-				SigInt();
+				Scheduler::SigIntHack();
 				return;
 			}
 

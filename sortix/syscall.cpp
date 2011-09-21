@@ -75,7 +75,7 @@ namespace Sortix
 			CPU::InterruptRegisters* regs = InterruptRegs();
 			CurrentThread()->SaveRegisters(regs);
 			// TODO: Make the thread blocking if not already.
-			Scheduler::Switch(regs, 0);
+			Scheduler::Switch(regs);
 		}
 
 		CPU::InterruptRegisters* InterruptRegs()

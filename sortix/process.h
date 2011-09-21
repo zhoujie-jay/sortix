@@ -33,6 +33,8 @@ namespace Sortix
 	class Process;
 	struct ProcessSegment;
 
+	const size_t DEFAULT_STACK_SIZE = 64*1024;
+
 	struct ProcessSegment
 	{
 	public:
@@ -45,21 +47,38 @@ namespace Sortix
 		size_t size;
 
 	public:
-		 bool Intersects(ProcessSegment* segments);
+		bool Intersects(ProcessSegment* segments);
+		ProcessSegment* Fork();
 
 	};
 
 	class Process
 	{
 	public:
-		Process(addr_t addrspace);
+		Process();
 		~Process();
 
 	public:
 		static void Init();
+		static int Execute(const char* programname, CPU::InterruptRegisters* regs);
 
 	private:
-		addr_t _addrspace;
+		static pid_t AllocatePID();
+
+	public:
+		addr_t addrspace;
+
+	public:
+		pid_t pid;
+
+	public:
+		Process* parent;
+		Process* prevsibling;
+		Process* nextsibling;
+		Process* firstchild;
+
+	public:
+		Thread* firstthread;
 
 	public:
 		DescriptorTable descriptors;
@@ -69,20 +88,32 @@ namespace Sortix
 		bool sigint;
 
 	public:
-		addr_t _endcodesection; // HACK
-
-	public:
-		addr_t GetAddressSpace() { return _addrspace; }
 		void ResetAddressSpace();
 
 	public:
-		bool IsSane() { return _addrspace != 0; }
+		bool IsSane() { return addrspace != 0; }
+
+	public:
+		Process* Fork();
+
+	private:
+		Thread* ForkThreads(Process* processclone);
+
+	public:
+		void ResetForExecute();
+
+	public:
+		inline size_t DefaultStackSize() { return DEFAULT_STACK_SIZE; }
+
+	private:
+		addr_t mmapfrom;
+
+	public:
+		addr_t AllocVirtualAddr(size_t size);
 
 	};
 
 	Process* CurrentProcess();
-
-	void SysExecuteOld(CPU::InterruptRegisters* R);
 }
 
 #endif

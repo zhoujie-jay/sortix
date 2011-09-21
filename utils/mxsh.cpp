@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
 #include <libmaxsi/sortix-keyboard.h>
+#include <libmaxsi/string.h>
 
 using namespace Maxsi;
 
@@ -38,6 +40,9 @@ void command()
 	}
 
 	if ( command[0] == '\0' ) { return; }
+
+	if ( String::Compare(command, "$$") == 0 ) { printf("%u\n", Process::GetPID()); return; }
+	if ( String::Compare(command, "$PPID") == 0 ) { printf("%u\n", Process::GetParentPID()); return; }
 
 	// Replace the current process with another process image.
 	Process::Execute(command, 0, NULL);

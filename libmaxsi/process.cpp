@@ -32,6 +32,9 @@ namespace Maxsi
 	{
 		DEFN_SYSCALL3(int, SysExecute, 10, const char*, int, const char**);
 		DEFN_SYSCALL0_VOID(SysPrintPathFiles, 11);
+		DEFN_SYSCALL0(pid_t, SysFork, 12);
+		DEFN_SYSCALL0(pid_t, SysGetPID, 13);
+		DEFN_SYSCALL0(pid_t, SysGetParentPID, 14);
 
 		int Execute(const char* filepath, int argc, const char** argv)
 		{
@@ -60,6 +63,21 @@ namespace Maxsi
 		}
 
 		extern "C" void exit(int code) { return Exit(code); }
+
+		DUAL_FUNCTION(pid_t, fork, Fork, ())
+		{
+			return SysFork();
+		}
+
+		DUAL_FUNCTION(pid_t, getpid, GetPID, ())
+		{
+			return SysGetPID();
+		}
+
+		DUAL_FUNCTION(pid_t, getppid, GetParentPID, ())
+		{
+			return SysGetParentPID();
+		}
 	}
 }
 

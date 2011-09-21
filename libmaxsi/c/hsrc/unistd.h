@@ -100,7 +100,6 @@ int fchown(int, uid_t, gid_t);
 int fchownat(int, const char*, uid_t, gid_t, int);
 int fdatasync(int);
 int fexecve(int, char* const [], char* const []);
-pid_t fork(void);
 long fpathconf(int, int);
 int fsync(int);
 int ftruncate(int, off_t);
@@ -116,8 +115,6 @@ int getlogin_r(char*, size_t);
 int getopt(int, char* const [], const char*);
 pid_t getpgid(pid_t);
 pid_t getpgrp(void);
-pid_t getpid(void);
-pid_t getppid(void);
 pid_t getsid(pid_t);
 uid_t getuid(void);
 int isatty(int);
@@ -144,7 +141,6 @@ int setregid(gid_t, gid_t);
 int setreuid(uid_t, uid_t);
 pid_t setsid(void);
 int setuid(uid_t);
-unsigned sleep(unsigned);
 void swab(const void* restrict, void* restrict, ssize_t);
 int symlink(const char*, const char*);
 int symlinkat(const char*, int, const char*);
@@ -165,6 +161,14 @@ pid_t setpgrp(void);
 
 extern char* optarg;
 extern int opterr, optind, optopt;
+#endif
+
+pid_t fork(void);
+pid_t getpid(void);
+pid_t getppid(void);
+unsigned sleep(unsigned);
+#if __POSIX_OBSOLETE <= 200112
+int usleep(useconds_t useconds);
 #endif
 
 __END_DECLS

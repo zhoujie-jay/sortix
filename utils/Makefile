@@ -12,6 +12,7 @@ clear \
 ls \
 help \
 uname \
+idle \
 
 BINARIES:=$(addprefix $(INITRDDIR)/,$(LOCALBINARIES))
 

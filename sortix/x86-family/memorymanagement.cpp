@@ -476,8 +476,10 @@ namespace Sortix
 
 					if ( level == 1 )
 					{
+						size_t offset = pmloffset * ENTRIES + pos;
+
 						// Determine the source page's address.
-						const void* src = (const void*) (pmloffset * 4096UL);
+						const void* src = (const void*) (offset * 4096UL);
 
 						// Determine the destination page's address.
 						void* dest = (void*) (FORKPML + level - 1);

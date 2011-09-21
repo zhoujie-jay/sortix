@@ -17,43 +17,36 @@
 	You should have received a copy of the GNU General Public License along
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	x86.h
-	CPU stuff for the x86 platform.
+	x86/scheduler.cpp
+	CPU specific things related to the scheduler.
 
 ******************************************************************************/
 
-#ifndef SORTIX_X86_H
-#define SORTIX_X86_H
-
-#include "../x86-family/x86-family.h"
+#include "platform.h"
+#include "scheduler.h"
+#include "../memorymanagement.h"
+#include "descriptor_tables.h"
 
 namespace Sortix
 {
-	namespace X86
+	namespace Scheduler
 	{
-		struct InterruptRegisters
-		{
-			uint32_t cr2;
-			uint32_t ds; // Data segment selector
-			uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax; // Pushed by pusha.
-			uint32_t int_no, err_code; // Interrupt number and error code (if applicable)
-			uint32_t eip, cs, eflags, useresp, ss; // Pushed by the processor automatically.
-		
-		public:
-			void LogRegisters() const;
+		const size_t KERNEL_STACK_SIZE = 256UL * 1024UL;
+		const addr_t KERNEL_STACK_END = 0x80001000UL;
+		const addr_t KERNEL_STACK_START = KERNEL_STACK_END + KERNEL_STACK_SIZE;
 
-		};
-
-		struct SyscallRegisters
+		void InitCPU()
 		{
-			uint32_t cr2; // For compabillity with above, may be removed soon.
-			uint32_t ds;
-			uint32_t di, si, bp, trash, b, d, c; union { uint32_t a; uint32_t result; };
-			uint32_t int_no, err_code; // Also compabillity.
-			uint32_t ip, cs, flags, sp, ss;
-		};
+			// TODO: Prevent the kernel heap and other stuff from accidentally
+			// also allocating this virtual memory region!
+
+			if ( !Memory::MapRangeKernel(KERNEL_STACK_END, KERNEL_STACK_SIZE) )
+			{
+				PanicF("could not create kernel stack (%zx to %zx)",
+				       KERNEL_STACK_END, KERNEL_STACK_START);
+			}
+
+			GDT::SetKernelStack((size_t*) KERNEL_STACK_START);
+		}
 	}
 }
-
-#endif
-

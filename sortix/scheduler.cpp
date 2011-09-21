@@ -17,510 +17,275 @@
 	You should have received a copy of the GNU General Public License along
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	scheduler.h
-	Handles the creation and management of threads.
+	scheduler.cpp
+	Handles context switching between tasks and deciding when to execute what.
 
 ******************************************************************************/
 
 #include "platform.h"
-#include <libmaxsi/memory.h>
 #include "panic.h"
+#include "thread.h"
+#include "process.h"
+#include "time.h"
 #include "scheduler.h"
-#include "multiboot.h"
 #include "memorymanagement.h"
-#include "descriptor_tables.h"
 #include "syscall.h"
-
-#include "log.h"
-
-#include "sound.h" // HACK
 
 namespace Sortix
 {
-	const bool LOG_SWITCHING = false;
-
+	// Internal forward-declarations.
 	namespace Scheduler
 	{
-		// This is a very small thread that does absoluting nothing!
-		char NoopThreadData[sizeof(Thread)];
-		Thread* NoopThread;
-		const size_t NoopThreadStackLength = 8;
-		size_t NoopThreadStack[NoopThreadStackLength];
-		void NoopFunction() { while ( true ) { } }
-
-		// Linked lists that implements a very simple scheduler.
-		Thread* currentThread;
-		Thread* firstRunnableThread;
-		Thread* firstUnrunnableThread;
-		Thread* firstSleeping;
-		size_t AllocatedThreadId;
-
+		void InitCPU();
+		Thread* PopNextThread();
+		void WakeSleeping();
+		void LogBeginContextSwitch(Thread* current, const CPU::InterruptRegisters* state);
+		void LogContextSwitch(Thread* current, Thread* next);
+		void LogEndContextSwitch(Thread* current, const CPU::InterruptRegisters* state);
 		void SysSleep(size_t secs);
 		void SysUSleep(size_t usecs);
+		void HandleSigIntHack(CPU::InterruptRegisters* regs);
 	}
-
-	Thread::Thread(Process* process, size_t id, addr_t stack, size_t stackLength)
-	{
-		ASSERT(process != NULL);
-		ASSERT(process->IsSane());
-
-		_process = process;
-		_id = id;
-		_stack = stack;
-		_stackLength = stackLength;
-		_state = INFANT;
-		_prevThread = this;
-		_nextThread = this;
-		_inThisList = NULL;
-		_nextSleepingThread = NULL;
-	}
-
-	Thread::~Thread()
-	{
-		Unlink();
-
-		Page::Put(_stack);
-	}
-
-	void Thread::Unlink()
-	{
-		if ( _inThisList != NULL && *_inThisList == this )
-		{
-			*_inThisList = ( _nextThread != this ) ? _nextThread : NULL;
-			_inThisList = NULL;
-		}
-		if ( _nextThread != this ) { _prevThread->_nextThread = _nextThread; _nextThread->_prevThread = _prevThread; _prevThread = this; _nextThread = this; }
-	}
-	
-	void Thread::Relink(Thread** list)
-	{
-		Unlink();
-
-		_inThisList = list;	
-		if ( *list != NULL )
-		{
-			(*list)->_prevThread->_nextThread = this;
-			_prevThread = (*list)->_prevThread;
-			(*list)->_prevThread = this;
-			_nextThread = *list;
-		}
-		else
-		{
-			*list = this;
-		}
-	}
-
-	void Thread::SetState(State newState)
-	{
-		if ( newState == _state ) { return; }
-
-		if ( newState == RUNNABLE )
-		{
-			Relink(&Scheduler::firstRunnableThread);
-		}
-		else if ( ( newState == UNRUNNABLE ) /*&& ( State != UNRUNNABLE || State != WAITING )*/ )
-		{
-			Relink(&Scheduler::firstUnrunnableThread);
-		}
-
-		_state = newState;
-	}
-
-	void Thread::SaveRegisters(CPU::InterruptRegisters* Src)
-	{
-#ifdef PLATFORM_X86
-		_registers.eip = Src->eip; _registers.useresp = Src->useresp; _registers.eax = Src->eax; _registers.ebx = Src->ebx; _registers.ecx = Src->ecx; _registers.edx = Src->edx; _registers.edi = Src->edi; _registers.esi = Src->esi; _registers.ebp = Src->ebp;
-#else
-		#warning "No threads are available on this arch"
-		while(true);
-#endif
-	}
-
-	void Thread::LoadRegisters(CPU::InterruptRegisters* Dest)
-	{
-#ifdef PLATFORM_X86
-		Dest->eip = _registers.eip; Dest->useresp = _registers.useresp; Dest->eax = _registers.eax; Dest->ebx = _registers.ebx; Dest->ecx = _registers.ecx; Dest->edx = _registers.edx; Dest->edi = _registers.edi; Dest->esi = _registers.esi; Dest->ebp = _registers.ebp;
-#else
-		#warning "No threads are available on this arch"
-		while(true);
-#endif
-	}
-
-	void Thread::Sleep(uintmax_t miliseconds)
-	{
-		if ( miliseconds == 0 ) { return; }
-
-		_nextSleepingThread = NULL;
-		Thread* Thread = Scheduler::firstSleeping;
-
-		if ( Thread == NULL )
-		{
-			Scheduler::firstSleeping = this;
-		}
-		else if ( miliseconds < Thread->_sleepMilisecondsLeft )
-		{
-			Scheduler::firstSleeping = this;
-			_nextSleepingThread = Thread;
-			Thread->_sleepMilisecondsLeft -= miliseconds;
-		}
-		else
-		{
-			while ( true )
-			{
-				if ( Thread->_nextSleepingThread == NULL )
-				{
-					Thread->_nextSleepingThread = this; break;
-				}
-				else if ( miliseconds < Thread->_nextSleepingThread->_sleepMilisecondsLeft )
-				{
-					Thread->_nextSleepingThread->_sleepMilisecondsLeft -= miliseconds;
-					_nextSleepingThread = Thread->_nextSleepingThread;
-					Thread->_nextSleepingThread = this; break;
-				}
-				else
-				{
-					miliseconds -= Thread->_sleepMilisecondsLeft;
-					Thread = Thread->_nextSleepingThread;
-				}
-			}
-		}
-
-		_sleepMilisecondsLeft = miliseconds;
-		SetState(UNRUNNABLE);	
-	}
-
-	bool sigintpending = false;
-	void SigInt() { sigintpending = true; }
 
 	namespace Scheduler
 	{
-		// Initializes the scheduling subsystem.
+		byte dummythreaddata[sizeof(Thread)];
+		Thread* dummythread = (Thread*) &dummythreaddata;
+		Thread* currentthread;
+		Thread* idlethread;
+		Thread* firstrunnablethread;
+		Thread* firstsleepingthread;
+		bool hacksigintpending = false;
+
 		void Init()
 		{
-			sigintpending = false;
-
-			currentThread = NULL;
-			firstRunnableThread = NULL;
-			firstUnrunnableThread = NULL;
-			firstSleeping = NULL;
-			AllocatedThreadId = 1;
-
-			// Create an address space for the idle process.
-			addr_t noopaddrspace = Memory::Fork();
-
-			// Create the noop process.
-			Process* noopprocess = new Process(noopaddrspace);
-
-			// Initialize the thread that does nothing.
-			NoopThread = new ((void*) NoopThreadData) Thread(noopprocess, 0, NULL, 0);
-			NoopThread->SetState(Thread::State::NOOP);
-#ifdef PLATFORM_X86
-			NoopThread->_registers.useresp = (uint32_t) NoopThreadStack + NoopThreadStackLength;
-			NoopThread->_registers.ebp = (uint32_t) NoopThreadStack + NoopThreadStackLength;
-			NoopThread->_registers.eip = (uint32_t) &NoopFunction; // NoopFunction;
-#else
-			#warning "No scheduler are available on this arch"
-			while(true);
-#endif
-
-			// Allocate and set up a stack for the kernel to use during interrupts.
-			addr_t KernelStackPage = Page::Get();
-			if ( KernelStackPage == 0 ) { Panic("scheduler.cpp: could not allocate kernel interrupt stack for tss!"); }
-
-			uintptr_t MapTo = 0x80000000;
-
-			Memory::MapKernel((addr_t) KernelStackPage, MapTo);
-			Memory::InvalidatePage(KernelStackPage);
-
-			GDT::SetKernelStack((size_t*) (MapTo+4096));
+			// We use a dummy so that the first context switch won't crash when
+			// currentthread is accessed. This lets us avoid checking whether
+			// currentthread is NULL (which it only will be once) which gives
+			// simpler code.
+			currentthread = dummythread;
+			firstrunnablethread = NULL;
+			idlethread = NULL;
+			hacksigintpending = false;
 
 			Syscall::Register(SYSCALL_SLEEP, (void*) SysSleep);
 			Syscall::Register(SYSCALL_USLEEP, (void*) SysUSleep);
+
+			InitCPU();
 		}
 
-		// Once the init process is spawned and IRQ0 is enabled, this process
-		// simply awaits an IRQ0 and then we shall be scheduling.
+		// The no operating thread is a thread stuck in an infinite loop that
+		// executes absolutely nothing, which is only run when the system has
+		// nothing to do.
+		void SetIdleThread(Thread* thread)
+		{
+			ASSERT(idlethread == NULL);
+			idlethread = thread;
+			SetThreadState(thread, Thread::State::NONE);
+		}
+
+		void SetDummyThreadOwner(Process* process)
+		{
+			dummythread->process = process;
+		}
+
+		void SetInitialProcess(Process* init)
+		{
+			dummythread->process = init;
+		}
+
 		void MainLoop()
 		{
-			// Simply wait for the next IRQ0 and then the OS will run.
-			while ( true ) { }
+			// Wait for the first hardware interrupt to trigger a context switch
+			// into the first task! Then the init process should gracefully
+			// start executing.
+			while(true);
 		}
 
-		Thread* CreateThread(Process* Process, Thread::Entry Start, void* Parameter1, void* Parameter2, size_t StackSize)
+		void Switch(CPU::InterruptRegisters* regs)
 		{
-			ASSERT(Process != NULL);
-			ASSERT(Process->IsSane());
-			ASSERT(Start != NULL);
+			LogBeginContextSwitch(currentthread, regs);
 
-			// The current default stack size is 4096 bytes.
-			if ( StackSize == SIZE_MAX ) { StackSize = 4096; }
+			if ( hacksigintpending ) { HandleSigIntHack(regs); }
 
-			// TODO: We only support stacks of up to one page!
-			if ( 4096 < StackSize ) { StackSize = 4096; }
+			WakeSleeping();
 
-			// Allocate a stack for this thread.
-			size_t StackLength = StackSize / sizeof(size_t);
-			addr_t PhysStack = Page::Get();
-			if ( PhysStack == 0 )
+			Thread* nextthread = PopNextThread();
+			if ( !nextthread ) { Panic("had no thread to switch to"); }
+
+			LogContextSwitch(currentthread, nextthread);
+			if ( nextthread == currentthread ) { return; }
+
+			currentthread->SaveRegisters(regs);
+			nextthread->LoadRegisters(regs);
+
+			addr_t newaddrspace = nextthread->process->addrspace;
+			Memory::SwitchAddressSpace(newaddrspace);
+			currentthread = nextthread;
+
+			LogEndContextSwitch(currentthread, regs);
+		}
+
+		const bool DEBUG_BEGINCTXSWITCH = false;
+		const bool DEBUG_CTXSWITCH = false;
+		const bool DEBUG_ENDCTXSWITCH = false;
+
+		void LogBeginContextSwitch(Thread* current, const CPU::InterruptRegisters* state)
+		{
+			if ( DEBUG_BEGINCTXSWITCH && current->process->pid != 0 )
 			{
-				return NULL;
+				Log::PrintF("Switching from 0x%p", current);
+				state->LogRegisters();
+				Log::Print("\n");
 			}
+		}
 
-			// Create a new thread data structure.
-			Thread* thread = new Thread(Process, AllocatedThreadId++, PhysStack, StackLength);
+		void LogContextSwitch(Thread* current, Thread* next)
+		{
+			if ( DEBUG_CTXSWITCH && current != next )
+			{
+				Log::PrintF("switching from %u:%u (0x%p) to %u:%u (0x%p) \n",
+				            current->process->pid, 0, current,
+				            next->process->pid, 0, next);
+			}
+		}
 
-#ifndef PLATFORM_X86
-			#warning "No threads are available on this arch"
-			while(true);
-#endif
-
-#ifdef PLATFORM_X86
-
-			uintptr_t StackPos = 0x80000000UL;
-			uintptr_t MapTo = StackPos - 4096UL;
-
-			addr_t OldAddrSpace = Memory::SwitchAddressSpace(Process->GetAddressSpace());
-
-			Memory::MapUser(PhysStack, MapTo);
-			size_t* Stack = (size_t*) StackPos;
-
-			// Prepare the parameters for the entry function (C calling convention).
-			//Stack[StackLength - 1] = (size_t) 0xFACE; // Parameter2
-			Stack[-1] = (size_t) Parameter2; // Parameter2
-			Stack[-2] = (size_t) Parameter1; // Parameter1
-			Stack[-3] = (size_t) thread->GetId(); // This thread's id.
-			Stack[-4] = (size_t) 0x0; // Eip
-			thread->_registers.ebp = thread->_registers.useresp = (uint32_t) (StackPos - 4*sizeof(size_t)); // Point to the last word used on the stack.
-			thread->_registers.eip = (uint32_t) Start; // Point to our entry function.
-
-
-			// Mark the thread as running, which adds it to the scheduler's linked list.
-			thread->SetState(Thread::State::RUNNABLE);
-
-			// Avoid side effects by restoring the old address space.
-			Memory::SwitchAddressSpace(OldAddrSpace);
-
-#endif
-
-			return thread;
+		void LogEndContextSwitch(Thread* current, const CPU::InterruptRegisters* state)
+		{
+			if ( DEBUG_ENDCTXSWITCH && current->process->pid != 0 )
+			{
+				Log::PrintF("Switched to 0x%p", current);
+				state->LogRegisters();
+				Log::Print("\n");
+			}
 		}
 
 		Thread* PopNextThread()
 		{
-			//Log::PrintF("PopNextThread(): currentThread = 0x%p, firstRunnableThread = 0x%p, firstRunnableThread->PrevThread = 0x%p, firstRunnableThread->NextThread = 0x%p\n", currentThread, firstRunnableThread, firstRunnableThread->PrevThread, firstRunnableThread->NextThread);
-
-			if ( firstRunnableThread == NULL )
-			{
-				return NoopThread;
-			}
-			else if ( currentThread == firstRunnableThread )
-			{
-				firstRunnableThread = firstRunnableThread->_nextThread;
-			}
-
-			return firstRunnableThread;
+			if ( !firstrunnablethread ) { return idlethread; }
+			Thread* result = firstrunnablethread;
+			firstrunnablethread = firstrunnablethread->schedulerlistnext;
+			return result;
 		}
 
-		void Switch(CPU::InterruptRegisters* R, uintmax_t TimePassed)
+		void SetThreadState(Thread* thread, Thread::State state)
 		{
-			//Log::PrintF("Scheduling while at eip=0x%p...", R->eip);
-			//Log::Print("\n");
+			if ( thread->state == state ) { return; }
 
-			if ( currentThread != NoopThread && currentThread->GetProcess() && sigintpending )
+			if ( thread->state == Thread::State::RUNNABLE )
 			{
-#ifdef PLATFORM_X86
-				Sound::Mute();
-				const char* programname = "sh";
-				R->ebx = (uint32_t) programname;
-				SysExecuteOld(R);
-				sigintpending = false;
-				Log::Print("^C\n");
-#else
-#warning "Sigint is not available on this arch"
-#endif
+				if ( thread == firstrunnablethread ) { firstrunnablethread = thread->schedulerlistnext; }
+				if ( thread == firstrunnablethread ) { firstrunnablethread = NULL; }
+				thread->schedulerlistprev->schedulerlistnext = thread->schedulerlistnext;
+				thread->schedulerlistnext->schedulerlistprev = thread->schedulerlistprev;
+				thread->schedulerlistprev = NULL;
+				thread->schedulerlistnext = NULL;
 			}
 
-			WakeSleeping(TimePassed);
-
-			// Find the next thread to be run.
-			Thread* NextThread = PopNextThread();
-
-			//if ( NextThread == NoopThread ) { PanicF("Going to NoopThread! Noop=0x%p, First=0x%p -> 0x%p, Unrun=0x%p", NoopThread, firstRunnableThread, firstRunnableThread->NextThread, firstUnrunnableThread); }
-
-			// If the next thread happens to be the current one, simply do nothing.
-			if ( currentThread != NextThread )
+			// Insert the thread into the scheduler's carousel linked list.
+			if ( state == Thread::State::RUNNABLE )
 			{
-				// Save the hardware registers of the current thread.
-				if ( currentThread != NULL )
+				if ( firstrunnablethread == NULL ) { firstrunnablethread = thread; }
+				thread->schedulerlistprev = firstrunnablethread->schedulerlistprev;
+				thread->schedulerlistnext = firstrunnablethread;
+				firstrunnablethread->schedulerlistprev = thread;
+				thread->schedulerlistprev->schedulerlistnext = thread;
+			}
+
+			thread->state = state;
+		}
+
+		Thread::State GetThreadState(Thread* thread)
+		{
+			return thread->state;
+		}
+
+		void PutThreadToSleep(Thread* thread, uintmax_t usecs)
+		{
+			SetThreadState(thread, Thread::State::BLOCKING);
+			thread->sleepuntil = Time::MicrosecondsSinceBoot() + usecs;
+
+			// We use a simple linked linked list sorted after wake-up time to
+			// keep track of the threads that are sleeping.
+
+			if ( firstsleepingthread == NULL )
+			{
+				thread->nextsleepingthread = NULL;
+				firstsleepingthread = thread;
+				return;
+			}
+
+			if ( thread->sleepuntil < firstsleepingthread->sleepuntil )
+			{
+				thread->nextsleepingthread = firstsleepingthread;
+				firstsleepingthread = thread;
+				return;
+			}
+
+			for ( Thread* tmp = firstsleepingthread; tmp != NULL; tmp = tmp->nextsleepingthread )
+			{
+				if ( tmp->nextsleepingthread == NULL ||
+					 thread->sleepuntil < tmp->nextsleepingthread->sleepuntil )
 				{
-					currentThread->SaveRegisters(R);
-				}
-
-				if ( LOG_SWITCHING && NextThread != NoopThread )
-				{
-					Log::PrintF("Switching from thread at 0x%p to thread at 0x%p\n", currentThread);
-				}
-
-				// If applicable, switch the virtual address space.
-				Memory::SwitchAddressSpace(NextThread->GetProcess()->GetAddressSpace());
-
-				currentThread = NextThread;
-
-				// Load the hardware registers of the next thread.
-				//Log::PrintF("Switching to thread at 0x%p\n", NextThread);
-				NextThread->LoadRegisters(R);
-			}
-			else
-			{
-				if ( LOG_SWITCHING )
-				{
-					//Log::PrintF("Staying in thread 0x%p\n", currentThread);
+					thread->nextsleepingthread = tmp->nextsleepingthread;
+					tmp->nextsleepingthread = thread;
+					return;
 				}
 			}
+		}
 
-#ifdef PLATFORM_X86
+		void WakeSleeping()
+		{
+			uintmax_t now = Time::MicrosecondsSinceBoot();
 
-			// TODO: HACK: Find a more accurate way to test for kernel code.
-			if ( R->eip >= 0x400000UL )
+			while ( firstsleepingthread && firstsleepingthread->sleepuntil < now )
 			{
-				uint32_t RPL = 0x3;
-
-				// Jump into user-space!
-				R->ds = 0x20 | RPL; // Set the data segment and Requested Privilege Level.
-				R->cs = 0x18 | RPL; // Set the code segment and Requested Privilege Level.
-				R->ss = 0x20 | RPL; // Set the stack segment and Requested Privilege Level.
-			}
-			else
-			{
-				uint32_t RPL = 0x0;
-
-				// Jump into kernel-space!
-				R->ds = 0x10 | RPL; // Set the data segment and Requested Privilege Level.
-				R->cs = 0x08 | RPL; // Set the code segment and Requested Privilege Level.
-				R->ss = 0x10 | RPL; // Set the stack segment and Requested Privilege Level.
-			}
-
-			R->eflags |= 0x200; // Enable the enable interrupts flag in EFLAGS!
-#else
-			#warning "No threads are available on this arch"
-			while(true);
-#endif
-
-			//Log::PrintF("ds=0x%x, edi=0x%x, esi=0x%x, ebp=0x%x, esp=0x%x, ebx=0x%x, edx=0x%x, ecx=0x%x, eax=0x%x, int_no=0x%x, err_code=0x%x, eip=0x%x, cs=0x%x, eflags=0x%x, useresp=0x%x, ss=0x%x\n", R->ds, R->edi, R->esi, R->ebp, R->esp, R->ebx, R->edx, R->ecx, R->eax, R->int_no, R->err_code, R->eip, R->cs, R->eflags, R->useresp, R->ss);
-
-#if 0
-			size_t* Stack = (size_t*) R->useresp;
-
-
-			// TODO: HACK: Currently ESP is not properly set after we return
-			// from the interrupt. So we call a helper function that restores
-			// it by storing it in EAX, then restoring EAX, and restoring EIP,
-			// then we should have returned successfully.
-			
-			Stack[-1] = (size_t) &PrintRegistersAndDie; // R->eip;
-			Stack[-2] = (size_t) R->eax;
-			R->eax = (uint32_t) (Stack - 2);
-			R->eip = (uint32_t) &RestoreStack;
-
-			Log::PrintF("ds=0x%x, edi=0x%x, esi=0x%x, ebp=0x%x, esp=0x%x, ebx=0x%x, edx=0x%x, ecx=0x%x, eax=0x%x, int_no=0x%x, err_code=0x%x, eip=0x%x, cs=0x%x, eflags=0x%x, useresp=0x%x, ss=0x%x\n", R->ds, R->edi, R->esi, R->ebp, R->esp, R->ebx, R->edx, R->ecx, R->eax, R->int_no, R->err_code, R->eip, R->cs, R->eflags, R->useresp, R->ss);
-#endif
-
-			//Log::PrintF("Stack = {0x%p, 0x%p, 0x%p, 0x%p, 0x%p, 0x%p, 0x%p, 0x%p, 0x%p, 0x%p, 0x%p, 0x%p, 0x%p, 0x%p, 0x%p, 0x%p}\n", Stack[0], Stack[1], Stack[2], Stack[3], Stack[4], Stack[5], Stack[6], Stack[7], Stack[8], Stack[9], Stack[10], Stack[11], Stack[12], Stack[13], Stack[14], Stack[15]);
-
-			//Log::PrintF(" resuming at eip=0x%p\n", R->eip);
-		}
-
-		void WakeSleeping(uintmax_t TimePassed)
-		{
-			while ( firstSleeping != NULL )
-			{
-				if ( TimePassed < firstSleeping->_sleepMilisecondsLeft ) { firstSleeping->_sleepMilisecondsLeft -= TimePassed; break; }
-
-				TimePassed -= firstSleeping->_sleepMilisecondsLeft;
-				firstSleeping->_sleepMilisecondsLeft = 0;
-				firstSleeping->SetState(Thread::State::RUNNABLE);
-				Thread* Next = firstSleeping->_nextSleepingThread;
-				firstSleeping->_nextSleepingThread = NULL;
-				firstSleeping = Next;		
+				SetThreadState(firstsleepingthread, Thread::State::RUNNABLE);
+				firstsleepingthread = firstsleepingthread->nextsleepingthread;
 			}
 		}
 
-		void ExitThread(Thread* Thread, void* Result)
+		void HandleSigIntHack(CPU::InterruptRegisters* regs)
 		{
-			//Log::PrintF("<ExitedThread debug=\"1\" thread=\"%p\"/>\n", Thread);
-			// TODO: What do we do with the result parameter?
-			Thread->~Thread();
-			//Log::PrintF("<ExitedThread debug=\"2\" thread=\"%p\"/>\n", Thread);
-			delete Thread;
-			//Log::PrintF("<ExitedThread debug=\"3\" thread=\"%p\"/>\n", Thread);
+			if ( currentthread == idlethread ) { return; }
 
-			if ( Thread == currentThread ) { currentThread = NULL; }
+			hacksigintpending = false;
+			Log::PrintF("^C\n");
+
+			Process::Execute("sh", regs);
 		}
 
-
-		#define ASSERDDD(invariant) \
-			if ( unlikely(!(invariant)) ) \
-			{ \
-				Sortix::Log::PrintF("Assertion failure: %s:%u : %s %s\n", __FILE__, __LINE__, __PRETTY_FUNCTION__, #invariant); \
-				while ( true ) { } \
-			}
-
-		#define LOL(what) #what
-
-		void SysCreateThread(CPU::InterruptRegisters* R)
+		void SigIntHack()
 		{
-#ifdef PLATFORM_X86
-			Thread* Thread = CreateThread(CurrentProcess(), (Thread::Entry) R->ebx, (void*) R->ecx, (void*) R->edx, (size_t) R->edi);
-			R->eax = (Thread != NULL) ? Thread->GetId() : 0;
-			//Log::PrintF("<CreatedThread id=\"%p\"/>\n", Thread);
-#else
-			#warning "This syscall is not supported on this arch"
-			while(true);
-#endif
-		}
-
-		void SysExitThread(CPU::InterruptRegisters* R)
-		{
-			//Log::PrintF("<ExitedThread id=\"%p\"/>\n", CurrentThread());
-#ifdef PLATFORM_X86
-			ExitThread(CurrentThread(), (void*) R->ebx);
-			Switch(R, 0);
-#else
-			#warning "This syscall is not supported on this arch"
-			while(true);
-#endif
-			//Log::PrintF("<ExitedThread nextthread=\"%p\"/>\n", CurrentThread());
+			hacksigintpending = true;
 		}
 
 		void SysSleep(size_t secs)
 		{
-			//Log::PrintF("<SysSleep>\n");
-			intmax_t TimeToSleep = ((uintmax_t) secs) * 1000ULL;
-			if ( TimeToSleep == 0 ) { return; }
+			Thread* thread = currentthread;
+			uintmax_t timetosleep = ((uintmax_t) secs) * 1000ULL * 1000ULL;
+			if ( timetosleep == 0 ) { return; }
+			PutThreadToSleep(thread, timetosleep);
 			Syscall::Incomplete();
-			CurrentThread()->Sleep(TimeToSleep);
-			Switch(Syscall::InterruptRegs(), 0);
-			//Log::PrintF("</SysSleep>\n");
 		}
 
 		void SysUSleep(size_t usecs)
 		{
-			intmax_t TimeToSleep = ((uintmax_t) usecs) / 1000ULL;
-			if ( TimeToSleep == 0 ) { return; }
+			Thread* thread = currentthread;
+			uintmax_t timetosleep = usecs;
+			if ( timetosleep == 0 ) { return; }
+			PutThreadToSleep(thread, timetosleep);
 			Syscall::Incomplete();
-			CurrentThread()->Sleep(TimeToSleep);
-			Switch(Syscall::InterruptRegs(), 0);
 		}
 	}
 
 	Thread* CurrentThread()
 	{
-		return Scheduler::currentThread;
+		return Scheduler::currentthread;
 	}
 
 	Process* CurrentProcess()
 	{
-		if ( Scheduler::currentThread != NULL ) { return Scheduler::currentThread->GetProcess(); } else { return NULL; }
+		return Scheduler::currentthread->process;
 	}
 }
-

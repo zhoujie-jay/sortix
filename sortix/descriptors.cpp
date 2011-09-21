@@ -67,11 +67,7 @@ namespace Sortix
 		if ( newlistlength == 0 ) { newlistlength = 8; }
 
 		Device** newlist = new Device*[newlistlength];
-		if ( newlist == NULL )
-		{
-			// TODO: Set errno!
-			return -1;
-		}
+		if ( newlist == NULL ) { return -1; }
 
 		if ( devices != NULL )
 		{
@@ -110,8 +106,25 @@ namespace Sortix
 	{
 		ASSERT(index < index);
 		ASSERT(devices[index] != NULL);
-		ASSERT(devices[index] != reserveddevideptr);
+		ASSERT(devices[index] == reserveddevideptr);
 
 		devices[index] = object;
+	}
+
+	bool DescriptorTable::Fork(DescriptorTable* forkinto)
+	{
+		Device** newlist = new Device*[numdevices];
+		if ( newlist == NULL ) { return false; }
+
+		Memory::Copy(newlist, devices, sizeof(Device*) * numdevices);
+
+		// TODO: Possibly deal with a potential O_CLOFORK!
+
+		ASSERT(forkinto->devices == NULL);
+
+		forkinto->devices = newlist;
+		forkinto->numdevices = numdevices;
+
+		return true;
 	}
 }

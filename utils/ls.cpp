@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
 
 int main(int argc, char* argv[])

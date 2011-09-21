@@ -38,13 +38,13 @@
 
 #define IsGoodChunkPosition(Chunk) ((uintptr_t) Wilderness + WildernessSize <= (uintptr_t) (Chunk) && (uintptr_t) (Chunk) <= (uintptr_t) HeapStart)
 #define IsGoodChunkInfo(Chunk) ( ( (UnusedChunkFooter*) (((byte*) (Chunk)) + (Chunk)->Size - sizeof(UnusedChunkFooter)) )->Size == (Chunk)->Size )
-#define IsGoodChunk(Chunk) (IsGoodChunkPosition(Chunk) && (Chunk)->Size >= 32 && IsGoodChunkPosition((uintptr_t) (Chunk) + (Chunk)->Size) && IsGoodChunkInfo(Chunk) )
+#define IsGoodChunk(Chunk) (IsGoodChunkPosition(Chunk) && (Chunk)->Size >= 16 && IsGoodChunkPosition((uintptr_t) (Chunk) + (Chunk)->Size) && IsGoodChunkInfo(Chunk) )
 #define IsGoodUnusedChunk(Chunk) (  IsGoodChunk(Chunk)  &&  ( Chunk->NextUnused == NULL || IsGoodChunkPosition(Chunk->NextUnused) )  )
 #define IsGoodUsedChunk(Chunk) ( IsGoodChunk(Chunk) && Chunk->Magic == Magic )
 #ifdef PLATFORM_X64
-#define IsGoodBinIndex(Index) ( 4 <= Index && Index < 32 )
+#define IsGoodBinIndex(Index) ( 3 <= Index && Index < 32 )
 #else
-#define IsGoodBinIndex(Index) ( 5 <= Index && Index < 64 )
+#define IsGoodBinIndex(Index) ( 4 <= Index && Index < 64 )
 #endif
 #define IsAligned(Value, Alignment) ( (Value & (Alignment-1)) == 0 )
 

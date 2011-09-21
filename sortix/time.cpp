@@ -26,8 +26,10 @@
 #include "platform.h"
 #include "time.h"
 #include "interrupt.h"
+#include "process.h"
 #include "scheduler.h"
 #include "log.h"
+#include "sound.h"
 
 #ifdef PLATFORM_SERIAL
 #include <libmaxsi/keyboard.h>
@@ -44,10 +46,15 @@ namespace Sortix
 {
 	namespace Time
 	{
-		uintmax_t Ticks;
-		uintmax_t Miliseconds;
+		uintmax_t ticks;
+		uintmax_t microsecondssinceboot;
 
 		const uint32_t Frequency = 100; // 100 Hz
+
+		uintmax_t MicrosecondsSinceBoot()
+		{
+			return microsecondssinceboot;
+		}
 
 		void OnInt177(CPU::InterruptRegisters* Regs)
 		{
@@ -85,8 +92,8 @@ namespace Sortix
 		void Init()
 		{
 			// Initialize our variables.
-			Ticks = 0;
-			Miliseconds = 0;
+			ticks = 0;
+			microsecondssinceboot = 0;
 
 			// First, register our timer callback.
 			Interrupt::RegisterHandler(Interrupt::IRQ0, &OnIRQ0);
@@ -123,7 +130,7 @@ namespace Sortix
 				if ( isEsc ) { isEsc = false; isEscDepress = false; continue; }
 				if ( c == '\e' ) { c = ESC; }
 				if ( c == ('\e' | (1<<7)) ) { c = ESC | DEPRESSED; }
-				if ( c == 3 ) { SigInt(); continue; }
+				if ( c == 3 ) { Scheduler::SigIntHack(); continue; }
 				if ( c == 127 ) { c = '\b'; }
 				if ( c & (1<<7) )
 				{
@@ -136,11 +143,12 @@ namespace Sortix
 			UART::RenderVGA((VGA::Frame*) 0xB8000);
 #endif
 
-			Ticks++;
+			ticks++;
+			microsecondssinceboot += (1000*1000)/Frequency;
 
 			// Let the scheduler switch to the next task.
 			// TODO: Let the scheduler know how long has passed.
-			Scheduler::Switch(Regs, 1000/Frequency);
+			Scheduler::Switch(Regs);
 
 			// TODO: There is a horrible bug that causes Sortix to only receive
 			// one IRQ0 on my laptop, but it works in virtual machines. But 

@@ -33,6 +33,9 @@ namespace Maxsi
 		void PrintPathFiles();
 		void Abort();
 		void Exit(int code);
+		pid_t Fork();
+		pid_t GetPID();
+		pid_t GetParentPID();
 	}
 }
 

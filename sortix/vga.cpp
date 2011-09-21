@@ -28,6 +28,7 @@
 #include "memorymanagement.h"
 #include "scheduler.h"
 #include "syscall.h"
+#include "process.h"
 
 using namespace Maxsi;
 
@@ -75,7 +76,7 @@ namespace Sortix
 			if ( !page ) { return 0; }
 
 			Process* process = CurrentProcess();
-			addr_t mapto = Page::AlignUp(process->_endcodesection);
+			addr_t mapto = process->AllocVirtualAddr(0x1000UL);
 			UserFrame* userframe = (UserFrame*) mapto;
 
 			// TODO: Check if mapto collides with any other memory section!
@@ -107,8 +108,6 @@ namespace Sortix
 			frame->process = process;
 			frame->physical = page;
 			frame->userframe = userframe;
-
-			process->_endcodesection = mapto + 0x1000UL;
 
 			return mapto;
 		}
@@ -144,7 +143,7 @@ namespace Sortix
 
 				if ( currentframe->process != process )
 				{
-					Memory::SwitchAddressSpace(currentframe->process->GetAddressSpace());
+					Memory::SwitchAddressSpace(currentframe->process->addrspace);
 				}
 
 				// Remap the pages in the owning process.
@@ -158,7 +157,7 @@ namespace Sortix
 
 				if ( currentframe->process != process )
 				{
-					Memory::SwitchAddressSpace(process->GetAddressSpace());
+					Memory::SwitchAddressSpace(process->addrspace);
 				}
 
 				currentframe->onscreen = false;

@@ -44,6 +44,7 @@ namespace Sortix
 		int Reserve();
 		void Free(int index);
 		void UseReservation(int index, Device* object);
+		bool Fork(DescriptorTable* forkinto);
 
 	public:
 		inline Device* Get(int index)

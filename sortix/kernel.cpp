@@ -33,6 +33,8 @@
 #include "keyboard.h"
 #include "multiboot.h"
 #include "memorymanagement.h"
+#include "thread.cpp"
+#include "process.h"
 #include "scheduler.h"
 #include "syscall.h"
 #include "pci.h"
@@ -237,38 +239,50 @@ namespace Sortix
 		// Initialize the scheduler.
 		Scheduler::Init();
 
-		Thread::Entry initstart = NULL;
-
-		// Create an address space for the first process.
-		addr_t addrspace = Memory::Fork();
-
-		// Use the new address space!
-		Memory::SwitchAddressSpace(addrspace);
-
-		// Create the first process!
-		Process* process = new Process(addrspace);
-		if ( process == 0 ) { Panic("kernel.cpp: Could not allocate the first process!"); }
-
+		// Set up the initial ram disk.
 		InitRD::Init(initrd, initrdsize);
 
-		const char* initname = "init";
-		size_t programsize = 0;
-		byte* program = InitRD::Open(initname, &programsize);
-		if ( program == NULL ) { PanicF("initrd did not contain '%s'", initname); }
+		// Alright, now the system's drivers are loaded and initialized. It is
+		// time to load the initial user-space programs and start execution of
+		// the actual operating system.
 
-		initstart = (Thread::Entry) ELF::Construct(process, program, programsize);
-		if ( initstart == NULL )
-		{
-			Panic("kernel.cpp: Could not construct ELF program");
-		}
+		byte* program;
+		size_t programsize;
 
-		// HACK: This should be determined from other information!
-		process->_endcodesection = 0x400000UL;
+		// Create an address space for the idle process.
+		addr_t idleaddrspace = Memory::Fork();
+		if ( !idleaddrspace ) { Panic("could not fork an idle process"); }
 
-		if ( Scheduler::CreateThread(process, initstart) == NULL )
-		{
-			Panic("Could not create a sample thread!");
-		}
+		// Create an address space for the initial process.
+		addr_t initaddrspace = Memory::Fork();
+		if ( !initaddrspace ) { Panic("could not fork an initial process"); }
+
+		// Create the system idle process.
+		Process* idle = new Process;
+		if ( !idle ) { Panic("could not allocate idle process"); }
+		idle->addrspace = idleaddrspace;
+		Memory::SwitchAddressSpace(idleaddrspace);
+		Scheduler::SetDummyThreadOwner(idle);
+		program = InitRD::Open("idle", &programsize);
+		if ( program == NULL ) { PanicF("initrd did not contain 'idle'"); }
+		addr_t idlestart = ELF::Construct(idle, program, programsize);
+		if ( !idlestart ) { Panic("could not construct ELF image for idle process"); }
+		Thread* idlethread = CreateThread(idlestart);
+		if ( !idlethread ) { Panic("could not create thread for the idle process"); }
+		Scheduler::SetIdleThread(idlethread);
+
+		// Create the initial process.
+		Process* init = new Process;
+		if ( !init ) { Panic("could not allocate init process"); }
+		init->addrspace = initaddrspace;
+		Memory::SwitchAddressSpace(initaddrspace);
+		Scheduler::SetDummyThreadOwner(init);
+		program = InitRD::Open("init", &programsize);
+		if ( program == NULL ) { PanicF("initrd did not contain 'init'"); }
+		addr_t initstart = ELF::Construct(init, program, programsize);
+		if ( !initstart ) { Panic("could not construct ELF image for init process"); }
+		Thread* initthread = CreateThread(initstart);
+		if ( !initthread ) { Panic("could not create thread for the init process"); }
 
 		// Lastly set up the timer driver and we are ready to run the OS.
 		Time::Init();
