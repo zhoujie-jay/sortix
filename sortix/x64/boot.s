@@ -23,7 +23,6 @@
 
 ******************************************************************************/
 
-
 .globl start, _start
 
 .section .text
@@ -36,16 +35,16 @@ _start:
 	jmp multiboot_entry
 
 	# Align 32 bits boundary.
-	.align	4
+	.align 4
 
 	# Multiboot header.
 multiboot_header:
 	# Magic.
-	.long	0x1BADB002
+	.long 0x1BADB002
 	# Flags.
-	.long	0x00000003
+	.long 0x00000003
 	# Checksum.
-	.long	-(0x1BADB002 + 0x00000003)
+	.long -(0x1BADB002 + 0x00000003)
 
 multiboot_entry:
 	
@@ -59,6 +58,7 @@ multiboot_entry:
 	# Store the magic value.
 	mov %eax, 0x100004
 
+	# Clear the first 4096*4 bytes following 0x1000.
 	movl $0x1000, %edi
 	mov %edi, %cr3
 	xorl %eax, %eax
@@ -66,6 +66,7 @@ multiboot_entry:
 	rep stosl
 	movl %cr3, %edi
 
+	# Set the initial page tables.
 	movl $0x2003, (%edi)
 	addl $0x1000, %edi
 
@@ -75,6 +76,7 @@ multiboot_entry:
 	movl $0x4003, (%edi)
 	addl $0x1000, %edi
 
+	# Memory map the first 2 MiB.
 	movl $0x3, %ebx
 	movl $512, %ecx
 
@@ -84,27 +86,33 @@ SetEntry:
 	add $8, %edi
 	loop SetEntry
 
+	# Enable PAE.
 	mov %cr4, %eax
 	orl $0x20, %eax
 	mov %eax, %cr4
 
+	# Enable long mode.
 	mov $0xC0000080, %ecx
 	rdmsr
 	orl $0x100, %eax
 	wrmsr
 
+	# Enable paging and enter long mode (still 32-bit)
 	mov %cr0, %eax
 	orl $0x80000000, %eax
 	mov %eax, %cr0
 
+	# Load the long mode GDT.
 	mov GDTPointer, %eax
 	lgdtl GDTPointer
 
+	# Now use the 64-bit code segment, and we are in full 64-bit mode.
 	ljmp $0x10, $Realm64
 
 .code64
 Realm64:
 
+	# Now, set up the other segment registers.
 	cli
 	mov $0x18, %ax
 	mov %ax, %ds
@@ -112,14 +120,8 @@ Realm64:
 	mov %ax, %fs
 	mov %ax, %gs
 
-
-
-	# Disable virtual memory
-	#movq %cr0, %rdi
-	#movabs $0xffffffff7fffffff, %rbx
-	#andq %rbx, %rdi
-	#movq %rdi, %cr0
-
+	# Alright, that was the bootstrap code. Now begin preparing to run the
+	# actual 64-bit kernel.
 	jmp Main
 
 .section .data
@@ -162,7 +164,6 @@ Main:
 	movq $0x242, %r15
 	movq %r15, %rax
 	movw %ax, 0xB8000
-
 
 	# Load the pointer to the Multiboot information structure.
 	mov 0x100000, %ebx
