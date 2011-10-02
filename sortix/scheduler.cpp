@@ -202,7 +202,7 @@ namespace Sortix
 			AllocatedThreadId = 1;
 
 			// Create an address space for the idle process.
-			addr_t noopaddrspace = VirtualMemory::CreateAddressSpace();
+			addr_t noopaddrspace = Memory::Fork();
 
 			// Create the noop process.
 			Process* noopprocess = new Process(noopaddrspace);
@@ -225,7 +225,8 @@ namespace Sortix
 
 			uintptr_t MapTo = 0x80000000;
 
-			VirtualMemory::MapKernel(MapTo, (uintptr_t) KernelStackPage);
+			Memory::MapKernel((addr_t) KernelStackPage, MapTo);
+			Memory::InvalidatePage(KernelStackPage);
 
 			GDT::SetKernelStack((size_t*) (MapTo+4096));
 		}
@@ -271,9 +272,9 @@ namespace Sortix
 			uintptr_t StackPos = 0x80000000UL;
 			uintptr_t MapTo = StackPos - 4096UL;
 
-			addr_t OldAddrSpace = VirtualMemory::SwitchAddressSpace(Process->GetAddressSpace());
+			addr_t OldAddrSpace = Memory::SwitchAddressSpace(Process->GetAddressSpace());
 
-			VirtualMemory::MapUser(MapTo, PhysStack);
+			Memory::MapUser(PhysStack, MapTo);
 			size_t* Stack = (size_t*) StackPos;
 
 			// Prepare the parameters for the entry function (C calling convention).
@@ -290,7 +291,7 @@ namespace Sortix
 			thread->SetState(Thread::State::RUNNABLE);
 
 			// Avoid side effects by restoring the old address space.
-			VirtualMemory::SwitchAddressSpace(OldAddrSpace);
+			Memory::SwitchAddressSpace(OldAddrSpace);
 
 #endif
 
@@ -354,7 +355,7 @@ namespace Sortix
 				}
 
 				// If applicable, switch the virtual address space.
-				VirtualMemory::SwitchAddressSpace(NextThread->GetProcess()->GetAddressSpace());
+				Memory::SwitchAddressSpace(NextThread->GetProcess()->GetAddressSpace());
 
 				currentThread = NextThread;
 

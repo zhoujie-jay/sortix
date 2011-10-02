@@ -72,17 +72,17 @@ namespace Sortix
 
 			// TODO: Check if mapto collides with any other memory section!
 
-			if ( !VirtualMemory::MapUser(mapto, page) )
+			if ( !Memory::MapUser(page, mapto) )
 			{
 				Page::Put(page); R->eax = 0; return;
 			}
 
-			Memory::Set(userframe, 0, sizeof(UserFrame));
+			Maxsi::Memory::Set(userframe, 0, sizeof(UserFrame));
 
 			DevVGAFrame* frame = new DevVGAFrame();
 			if ( frame == NULL )
 			{
-				VirtualMemory::UnmapUser(mapto);
+				Memory::UnmapUser(mapto);
 				Page::Put(page); R->eax = 0; return;
 			}
 
@@ -90,7 +90,7 @@ namespace Sortix
 			if ( fd < 0 )
 			{
 				delete frame;
-				VirtualMemory::UnmapUser(mapto);
+				Memory::UnmapUser(mapto);
 				Page::Put(page); R->eax = 0; return;
 			}
 
@@ -142,31 +142,33 @@ namespace Sortix
 
 				if ( currentframe->process != process )
 				{
-					VirtualMemory::SwitchAddressSpace(currentframe->process->GetAddressSpace());
+					Memory::SwitchAddressSpace(currentframe->process->GetAddressSpace());
 				}
 
 				// Remap the pages in the owning process.
 				// TODO: Check if userframe is actually user-space writable!
-				VirtualMemory::UnmapUser((addr_t) currentframe->userframe);
-				VirtualMemory::MapUser((addr_t) currentframe->userframe, currentframe->physical);
+				Memory::UnmapUser((addr_t) currentframe->userframe);
+				Memory::MapUser(currentframe->physical, (addr_t) currentframe->userframe);
+				Memory::InvalidatePage((addr_t) frame->userframe);
 
 				// Restore the contents of this frame to the VGA framebuffer.
-				Memory::Copy(currentframe->userframe, vga, sizeof(UserFrame));
+				Maxsi::Memory::Copy(currentframe->userframe, vga, sizeof(UserFrame));
 
 				if ( currentframe->process != process )
 				{
-					VirtualMemory::SwitchAddressSpace(process->GetAddressSpace());
+					Memory::SwitchAddressSpace(process->GetAddressSpace());
 				}
 
 				currentframe->onscreen = false;
 			}
 
 			// Now move the contents of this frame to the VGA framebuffer.
-			Memory::Copy(vga, frame->userframe, sizeof(UserFrame));
+			Maxsi::Memory::Copy(vga, frame->userframe, sizeof(UserFrame));
 
 			// Remap the pages such that the current process now uses the vga.
-			VirtualMemory::UnmapUser((addr_t) frame->userframe);
-			VirtualMemory::MapUser((addr_t) frame->userframe, (addr_t) vga);
+			Memory::UnmapUser((addr_t) frame->userframe);
+			Memory::MapUser((addr_t) vga, (addr_t) frame->userframe);
+			Memory::InvalidatePage((addr_t) frame->userframe);
 
 			frame->onscreen = true;
 			currentframe = frame;
@@ -201,7 +203,7 @@ namespace Sortix
 	DevVGAFrame::~DevVGAFrame()
 	{
 		if ( process != NULL ) { ASSERT(CurrentProcess() == process); }
-		if ( userframe != NULL ) { VirtualMemory::UnmapUser((addr_t) userframe); }
+		if ( userframe != NULL ) { Memory::UnmapUser((addr_t) userframe); Memory::InvalidatePage((addr_t) userframe); }
 		if ( physical != 0 ) { Page::Put(physical); }
 	}
 

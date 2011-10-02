@@ -177,10 +177,10 @@ namespace Maxsi
 		{
 			Memory::Set(Bins, 0, sizeof(Bins));
 #ifdef SORTIX_KERNEL			 
-			Wilderness = (byte*) Sortix::VirtualMemory::heapUpper;
+			Wilderness = (byte*) Sortix::Memory::HEAPUPPER;
 #else
 			// TODO: This is very 32-bit specific!
-			Wilderness = (byte*) 0x80000000;
+			Wilderness = (byte*) 0x80000000UL;
 #endif
 			HeapStart = Wilderness;
 			WildernessSize = 0;
@@ -199,7 +199,7 @@ namespace Maxsi
 
 #ifdef SORTIX_KERNEL
 			// Check if the wilderness would grow larger than the kernel memory area.
-			if ( ( ((uintptr_t) Wilderness) - Sortix::VirtualMemory::heapLower ) < NeededSize ) { return false; }
+			if ( ( ((uintptr_t) Wilderness) - Sortix::Memory::HEAPLOWER ) < NeededSize ) { return false; }
 #endif
 
 			// Figure out how where the new wilderness will be.
@@ -235,8 +235,13 @@ namespace Maxsi
 				// Get a raw unused physical page.
 				addr_t Page = Sortix::Page::Get();
 
-				if ( Page == 0 )
+				// Map the physical page to a virtual one.
+				addr_t VirtualAddr = NewWilderness + 4096 * PagesLeft;
+
+				if ( Page == 0 || !Sortix::Memory::MapKernel(Page, VirtualAddr) )
 				{
+					if ( Page != 0 ) { Sortix::Page::Put(Page); }
+
 					// If none is available, simply let the allocation fail
 					// and unallocate everything we did allocate so far.
 					while ( PagesLeft < NumPages )
@@ -244,16 +249,11 @@ namespace Maxsi
 						PagesLeft++;
 
 						addr_t OldVirtual = NewWilderness + 4096 * PagesLeft;
-						addr_t OldPage = Sortix::VirtualMemory::UnmapKernel(OldVirtual);
+						addr_t OldPage = Sortix::Memory::UnmapKernel(OldVirtual);
 						Sortix::Page::Put(OldPage);
 					}
 					return false;
-				}
-
-				// Map the physical page to a virtual one.
-				addr_t VirtualAddr = NewWilderness + 4096 * PagesLeft;
-
-				Sortix::VirtualMemory::MapKernel(VirtualAddr, Page);
+				}				
 			}
 #endif
 

@@ -58,24 +58,29 @@ multiboot_entry:
 	# Store the magic value.
 	mov %eax, 0x100004
 
-	# Clear the first 4096*4 bytes following 0x1000.
+	# Clear the first $0xE000 bytes following 0x1000.
 	movl $0x1000, %edi
 	mov %edi, %cr3
 	xorl %eax, %eax
-	movl $4096, %ecx
+	movl $0xE000, %ecx
 	rep stosl
 	movl %cr3, %edi
 
 	# Set the initial page tables.
+
+	# Page-Map Level 4
 	movl $0x2003, (%edi)
 	addl $0x1000, %edi
 
+	# Page-Directory Pointer Table
 	movl $0x3003, (%edi)
 	addl $0x1000, %edi
 
+	# Page-Directory
 	movl $0x4003, (%edi)
 	addl $0x1000, %edi
 
+	# Page-Table
 	# Memory map the first 2 MiB.
 	movl $0x3, %ebx
 	movl $512, %ecx

@@ -35,6 +35,15 @@ namespace Sortix
 {
 	namespace ELF
 	{
+		// This works around an optimizer bug I ran into, where the memcpy below
+		// somehow gets executed prior to the memory was mapped. Somehow, when I
+		// tried to debug it, it suddenly worked. So here's some deep magic that
+		// somehow fixes my code.
+		void PreventHazardousCodeReordering()
+		{
+			Log::Print("");
+		}
+
 		addr_t Construct32(Process* process, const void* file, size_t filelen)
 		{
 			if ( filelen < sizeof(Header32) ) { return 0; }
@@ -85,22 +94,24 @@ namespace Sortix
 					return 0;
 				}
 
-				if ( !VirtualMemory::MapRangeUser(mapto, mapbytes) )
+				if ( !Memory::MapRangeUser(mapto, mapbytes) )
 				{
 					return 0;
 				}
 
 				// Insert our newly allocated memory into the processes segment
 				// list such that it can be reclaimed later.
-				if ( process->segments ) { process->segments->prev = segment;}
+				if ( process->segments ) { process->segments->prev = segment; }
 				segment->next = process->segments;
 				process->segments = segment;
 
+				PreventHazardousCodeReordering();
+
 				// Copy as much data as possible and memset the rest to 0.
 				byte* memdest = (byte*) virtualaddr;
-				byte* memsource = (byte*) ( (addr_t)file + pht->offset);
-				Memory::Copy(memdest, memsource, pht->filesize);
-				Memory::Set(memdest + pht->filesize, 0, pht->memorysize - pht->filesize);
+				byte* memsource = (byte*) ( ((addr_t)file) + pht->offset);
+				Maxsi::Memory::Copy(memdest, memsource, pht->filesize);
+				Maxsi::Memory::Set(memdest + pht->filesize, 0, pht->memorysize - pht->filesize);
 			}
 
 			return entry;

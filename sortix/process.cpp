@@ -70,7 +70,7 @@ namespace Sortix
 		ProcessSegment* tmp = segments;
 		while ( tmp != NULL )
 		{
-			VirtualMemory::UnmapRangeUser(tmp->position, tmp->size);
+			Memory::UnmapRangeUser(tmp->position, tmp->size);
 			ProcessSegment* todelete = tmp;
 			tmp = tmp->next;
 			delete todelete;

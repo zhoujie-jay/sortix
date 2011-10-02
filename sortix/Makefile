@@ -26,7 +26,8 @@ endif
 
 ifdef X86FAMILY
     CPUOBJS:=$(CPUOBJS) \
-             $(CPU)/memorymanagement-asm.o \
+             $(CPU)/memorymanagement.o \
+             x86-family/memorymanagement.o \
              $(CPU)/interrupt.o \
              $(CPU)/gdt.o \
              x86-family/x86-family.o
@@ -51,7 +52,6 @@ time.o \
 log.o \
 panic.o \
 keyboard.o \
-memorymanagement.o \
 scheduler.o \
 syscall.o \
 sound.o \

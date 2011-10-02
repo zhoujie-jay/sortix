@@ -176,8 +176,8 @@ namespace Sortix
 		PCI::Init();
 #endif
 
-		// Initialize the paging.
-		Page::Init(BootInfo);
+		// Initialize the paging and virtual memory.
+		Memory::Init(BootInfo);
 
 		uint8_t* initrd = NULL;
 		size_t initrdsize = 0;
@@ -206,9 +206,6 @@ namespace Sortix
 
 		if ( BootInfo == NULL ) { Panic("kernel.cpp: The bootinfo structure was NULL. Are your bootloader multiboot compliant?"); }
 
-		// Initialize virtual memory. TODO: This is not fully working yet.
-		VirtualMemory::Init();
-
 		// Initialize the kernel heap.
 		Maxsi::Memory::Init();
 
@@ -224,11 +221,11 @@ namespace Sortix
 		Thread::Entry initstart = RunApplication;
 
 		// Create an address space for the first process.
-		addr_t addrspace = VirtualMemory::CreateAddressSpace();
+		addr_t addrspace = Memory::Fork();
 
 		// Use the new address space!
-		VirtualMemory::SwitchAddressSpace(addrspace);
-		
+		Memory::SwitchAddressSpace(addrspace);
+
 		// Create the first process!
 		Process* process = new Process(addrspace);
 		if ( process == 0 ) { Panic("kernel.cpp: Could not allocate the first process!"); }

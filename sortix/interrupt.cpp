@@ -34,6 +34,8 @@ namespace Sortix
 {
 	namespace Interrupt
 	{
+		const bool debugexception = true;
+
 		size_t numknownexceptions = 19;
 		const char* exceptions[] =
 		{ "Divide by zero", "Debug", "Non maskable interrupt", "Breakpoint", 
@@ -59,8 +61,18 @@ namespace Sortix
 				const char* message = ( regs->int_no < numknownexceptions )
 				                      ? exceptions[regs->int_no] : "Unknown";
 
+				if ( debugexception )
+				{
+					Log::PrintF("cs=0x%x, eax=0x%zx, ebx=0x%zx, ecx=0x%zx, "
+					            "edx=0x%zx, esi=0x%zx, edi=0x%zx, esp=0x%zx, "
+					            "useresp=0x%zx, test=0x%zx\n",
+					            regs->cs, regs->eax, regs->ebx, regs->ecx,
+					            regs->edx, regs->esi, regs->edi, regs->esp,
+					            regs->useresp, regs->useresp);
+				}
+
 				// Halt and catch fire if we are the kernel.
-				if ( (regs->cs & (0x4-1)) == 0 || regs->int_no == 13 )
+				if ( (regs->cs & (0x4-1)) == 0 )
 				{
 					PanicF("Unhandled CPU Exception id %zu '%s' at eip=0x%zx "
 					       "(cr2=0x%p, err_code=0x%p)", regs->int_no, message,
