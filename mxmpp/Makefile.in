@@ -38,6 +38,7 @@ distclean: clean
 	$(RM) -r $(BUILDDIR) $(DISTDIR)
 
 install: all
+	mkdir -p $(bindir)
 	$(INSTALL) $(BINARY) $(bindir)
 
 dist: dist-gzip
