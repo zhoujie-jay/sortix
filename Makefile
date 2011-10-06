@@ -42,7 +42,7 @@ $(INITRD): suball
 
 # Statistics
 linecount:
-	wc -l `find | grep -E '\.h$$|\.c$$|\.cpp$$|\.s$$|\.asm$$|Makefile$$'` | sort -n
+	wc -l `find | grep -E '\.h$$|\.c$$|\.cpp$$|\.s$$|\.asm$$|Makefile$$' | grep -v sysroot` | sort -n
 
 # Local machine
 
