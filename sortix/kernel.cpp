@@ -201,6 +201,14 @@ namespace Sortix
 		// Initialize the GDT and TSS structures.
 		GDT::Init();
 
+#ifdef PLATFORM_X64
+		Log::Print("Halt: CPU X64 cannot boot because interrupts are not yet "
+		           "supported under 64-bit Sortix.\n");
+		Log::Print("Sorry, it simply isn't possible to fully boot Sortix in x64 mode yet.\n");
+		Log::Print("X64 may be working when Sortix 0.5 comes out, or try the git master.\n");
+		while(true);
+#endif
+
 		// Initialize the interrupt descriptor tables.
 		IDT::Init();
 
