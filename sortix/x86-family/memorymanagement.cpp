@@ -43,7 +43,7 @@ namespace Sortix
 
 	namespace Memory
 	{
-		addr_t currentdir;		
+		addr_t currentdir;
 
 		void InitCPU();
 		void AllocateKernelPMLs();
@@ -65,11 +65,11 @@ namespace Sortix
 			typedef const multiboot_memory_map_t* mmap_t;
 
 			// Loop over every detected memory region.
-			for	(
-				 mmap_t mmap = (mmap_t) bootinfo->mmap_addr;
-				 (addr_t) mmap < bootinfo->mmap_addr + bootinfo->mmap_length;
-				 mmap = (mmap_t) ((addr_t) mmap + mmap->size + sizeof(mmap->size))
-				)
+			for (
+			     mmap_t mmap = (mmap_t) bootinfo->mmap_addr;
+			     (addr_t) mmap < bootinfo->mmap_addr + bootinfo->mmap_length;
+			     mmap = (mmap_t) ((addr_t) mmap + mmap->size + sizeof(mmap->size))
+			    )
 			{
 				// Check that we can use this kind of RAM.
 				if ( mmap->type != 1 ) { continue; }
