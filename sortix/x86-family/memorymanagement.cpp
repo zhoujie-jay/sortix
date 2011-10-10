@@ -66,7 +66,7 @@ namespace Sortix
 
 			// Loop over every detected memory region.
 			for	(
-                 mmap_t mmap = (mmap_t) bootinfo->mmap_addr;
+				 mmap_t mmap = (mmap_t) bootinfo->mmap_addr;
 				 (addr_t) mmap < bootinfo->mmap_addr + bootinfo->mmap_length;
 				 mmap = (mmap_t) ((addr_t) mmap + mmap->size + sizeof(mmap->size))
 				)
@@ -425,20 +425,10 @@ namespace Sortix
 
 			while ( positionstack[TOPPMLLEVEL] < ENTRIES )
 			{
-				if ( level == 1 )
-				{
-					//Log::PrintF("[%zu > %zu]", positionstack[2], positionstack[1]);
-				}
-				else
-				{
-					//Log::PrintF("[%zu]", positionstack[2]);
-				}
-
 				const size_t pos = positionstack[level];
 
 				if ( pos == ENTRIES )
 				{
-					//Log::PrintF(" done with level\n");
 					(positionstack[++level])++;
 					pmloffset /= ENTRIES;
 					continue;
@@ -454,7 +444,6 @@ namespace Sortix
 
 					if ( unlikely(phys == 0) )
 					{
-						//Log::PrintF(" out of memory!\n");
 						// Oh no. Out of memory! We'll have to undo everything
 						// we just did. Argh!
 						failure = true;
@@ -472,8 +461,6 @@ namespace Sortix
 
 					if ( level == 1 )
 					{
-						//Log::PrintF(" copy\n");
-
 						// Determine the source page's address.
 						const void* src = (const void*) (pmloffset * 4096UL);
 
@@ -484,8 +471,6 @@ namespace Sortix
 					}
 					else
 					{
-						//Log::PrintF(" recurse\n");
-
 						// Fork the PML recursively!
 						pmloffset = pmloffset * ENTRIES + pos;
 						positionstack[--level] = 0;
@@ -496,14 +481,11 @@ namespace Sortix
 				// If this entry should be linked, link it.
 				else
 				{
-					//Log::PrintF(" link\n");
 					FORKPML[level].entry[pos] = entry;
-				}		
+				}
 
 				positionstack[level]++;
 			}
-
-			//Log::PrintF("Fork: Loop Terminated\n");
 
 			if ( !failure )
 			{
@@ -523,8 +505,6 @@ namespace Sortix
 					(FORKPML + i)->entry[ENTRIES-1] = newtoppmladdr | flags;
 					childaddr = (FORKPML + i)->entry[ENTRIES-2] & PML_ADDRESS;
 				}
-
-				//Log::PrintF("Fork: Done\n");
 
 				return newtoppmladdr;
 			}

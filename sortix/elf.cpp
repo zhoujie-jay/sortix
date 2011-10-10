@@ -35,15 +35,6 @@ namespace Sortix
 {
 	namespace ELF
 	{
-		// This works around an optimizer bug I ran into, where the memcpy below
-		// somehow gets executed prior to the memory was mapped. Somehow, when I
-		// tried to debug it, it suddenly worked. So here's some deep magic that
-		// somehow fixes my code.
-		void PreventHazardousCodeReordering()
-		{
-			Log::Print("");
-		}
-
 		addr_t Construct32(Process* process, const void* file, size_t filelen)
 		{
 			if ( filelen < sizeof(Header32) ) { return 0; }
@@ -70,6 +61,10 @@ namespace Sortix
 			// Reset the current address space.
 			process->ResetAddressSpace();
 
+			// Flush the TLB such that no stale information from the last
+			// address space is used when creating the new one.
+			Memory::Flush();
+
 			// Create all the segments in the final process.
 			// TODO: Handle errors on bad/malicious input or out-of-mem!
 			for ( uint16_t i = 0; i < numprogheaders; i++ )
@@ -94,7 +89,7 @@ namespace Sortix
 					return 0;
 				}
 
-				if ( !Memory::MapRangeUser(mapto, mapbytes) )
+				if ( !Memory::MapRangeUser(mapto, mapbytes))
 				{
 					return 0;
 				}
@@ -104,8 +99,6 @@ namespace Sortix
 				if ( process->segments ) { process->segments->prev = segment; }
 				segment->next = process->segments;
 				process->segments = segment;
-
-				PreventHazardousCodeReordering();
 
 				// Copy as much data as possible and memset the rest to 0.
 				byte* memdest = (byte*) virtualaddr;
