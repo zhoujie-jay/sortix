@@ -93,7 +93,7 @@ debfile: all
 debsource: all
 	rm -rf $(DEBSRCDIR)
 	mkdir -p $(DEBSRCDIR)
-	for D in `ls | grep -v builds`; do cp -r $$D $(DEBSRCDIR); done
+	for D in `ls | grep -v builds | grep -v sysroot`; do cp -r $$D $(DEBSRCDIR); done
 	(cd $(DEBSRCDIR) && make distclean)
 	(cd builds && tar cfzv $(DEBSRCNAME)-src.tar.gz $(DEBSRCNAME)-src)
 	rm -rf $(DEBSRCDIR)
