@@ -76,15 +76,22 @@ deb: debfile debsource
 debfile: all
 	rm -rf $(DEBDIR)
 	mkdir -p $(DEBDIR)
-	cp -r debsrc/. $(DEBDIR)
-	mkdir -p  $(DEBDIR)/boot
+	mkdir -p $(DEBDIR)/boot
 	cp sortix/sortix.bin $(DEBDIR)/boot
 	cp sortix/sortix.initrd $(DEBDIR)/boot
+	expr \( `stat --printf="%s" $(DEBDIR)/boot/sortix.bin` \
+	      + `stat --printf="%s" $(DEBDIR)/boot/sortix.initrd` \
+	      + 1023 \) / 1024 > $(DEBDIR)/boot/deb.size
+	cp -r debsrc/. $(DEBDIR)
+	mkdir -p  $(DEBDIR)/boot
+	SIZE=`cat $(DEBDIR)/boot/deb.size`; \
 	cat debsrc/DEBIAN/control | \
 	sed "s/SORTIX_PACKAGE_NAME/$(PACKAGENAME)/g" | \
 	sed "s/SORTIX_VERSION/$(VERSION)/g" | \
 	sed "s/SORTIX_ARCH/all/g" | \
+	sed "s/SORTIX_SIZE/$$SIZE/g" | \
 	cat > $(DEBDIR)/DEBIAN/control
+	rm $(DEBDIR)/boot/deb.size
 	dpkg --build $(DEBDIR) $(DEBFILE)
 	rm -rf $(DEBDIR)/DEBIAN
 	(cd builds/$(DEBNAME) && tar cfzv ../$(DEBNAME).tar.gz `ls`)

@@ -3,6 +3,7 @@ Version: SORTIX_VERSION
 Section: kernel 
 Priority: optional
 Architecture: SORTIX_ARCH
+Installed-Size: SORTIX_SIZE
 Essential: no
 Recommends: grub2, xorriso
 Provides: sortix
