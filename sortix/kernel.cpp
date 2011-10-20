@@ -226,7 +226,7 @@ namespace Sortix
 		// Initialize the scheduler.
 		Scheduler::Init();
 
-		Thread::Entry initstart = RunApplication;
+		Thread::Entry initstart = NULL;
 
 		// Create an address space for the first process.
 		addr_t addrspace = Memory::Fork();

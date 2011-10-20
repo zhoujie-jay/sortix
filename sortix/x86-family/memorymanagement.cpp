@@ -129,6 +129,11 @@ namespace Sortix
 				if ( !page ) { Panic("out of memory allocating boot PMLs"); }
 
 				pml->entry[i] = page | flags;
+
+				// Invalidate the new PML and reset it to zeroes.
+				addr_t pmladdr = (addr_t) (PMLS[TOPPMLLEVEL-1] + i);
+				InvalidatePage(pmladdr);
+				Maxsi::Memory::Set((void*) pmladdr, 0, sizeof(PML));
 			}
 		}
 	}
@@ -318,8 +323,8 @@ namespace Sortix
 				else if ( userspace && !(entry & PML_USERSPACE) )
 				{
 					PanicF("attempted to map physical page %p to virtual page "
-					       "%p with userspace permissions, but the virtual page"
-					       "wasn't in an userspace PML[%zu]. This is a bug in the"
+					       "%p with userspace permissions, but the virtual page "
+					       "wasn't in an userspace PML[%zu]. This is a bug in the "
 					       "code calling this function", physical, mapto, i-1);
 				}
 
@@ -362,8 +367,8 @@ namespace Sortix
 				}
 				else if ( userspace && !(entry & PML_USERSPACE) )
 				{
-					PanicF("attempted to unmap virtual page %p it wasn't in an"
-					       "userspace PML[%zu]. This is a bug in the code"
+					PanicF("attempted to unmap virtual page %p it wasn't in an "
+					       "userspace PML[%zu]. This is a bug in the code "
 					       "calling this function", mapto, i-1);
 				}
 
@@ -437,7 +442,7 @@ namespace Sortix
 				addr_t entry = (PMLS[level] + pmloffset)->entry[pos];
 
 				// If the entry should be forked, fork it!
-				if ( likely(entry & PML_FORK) )
+				if ( (entry & PML_FORK) && (entry & PML_PRESENT) )
 				{
 					// Pop the physical address of somewhere unused.
 					addr_t phys = Page::Get();

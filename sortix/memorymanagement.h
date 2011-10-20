@@ -60,7 +60,7 @@ namespace Sortix
 
 #if defined(PLATFORM_X86)
 		const addr_t HEAPLOWER = 0x80000000UL;
-		const addr_t HEAPUPPER = 0xFF800000UL;
+		const addr_t HEAPUPPER = 0xFF400000UL;
 #elif defined(PLATFORM_X64)
 		const addr_t HEAPLOWER = 0xFFFF800000000000UL;
 		const addr_t HEAPUPPER = 0xFFFFFE8000000000UL;

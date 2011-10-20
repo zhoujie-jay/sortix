@@ -49,7 +49,7 @@ namespace Sortix
 			PML* const IDENPML1 = (PML* const) 0x04000UL;
 
 			// Initialize the memory structures with zeroes.
-			Maxsi::Memory::Set(BOOTPML1, 0, 0x6000UL);
+			Maxsi::Memory::Set((PML* const) 0x01000UL, 0, 0x6000UL);
 
 			// Identity map the first 4 MiB.
 			addr_t flags = PML_PRESENT | PML_WRITABLE;
