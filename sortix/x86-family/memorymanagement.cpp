@@ -74,7 +74,7 @@ namespace Sortix
 				// Check that we can use this kind of RAM.
 				if ( mmap->type != 1 ) { continue; }
 
-				// The kernels code may split this memory area into multiple pieces.
+				// The kernel's code may split this memory area into multiple pieces.
 				addr_t base = (addr_t) mmap->addr;
 				size_t length = mmap->len;
 
@@ -219,7 +219,7 @@ namespace Sortix
 
 			addr_t previous = currentdir;
 
-			// Swtich and flush the TLB.
+			// Switch and flush the TLB.
 			asm volatile("mov %0, %%cr3":: "r"(addrspace));
 
 			currentdir = addrspace;
@@ -293,6 +293,7 @@ namespace Sortix
 			const addr_t userflags = userspace ? (PML_USERSPACE | PML_FORK) : 0;
 			const addr_t flags = userflags | PML_PRESENT | PML_WRITABLE;
 
+			// Translate the virtual address into PML indexes.
 			const size_t MASK = (1<<TRANSBITS)-1;
 			size_t pmlchildid[TOPPMLLEVEL + 1];
 			for ( size_t i = 1; i <= TOPPMLLEVEL; i++ )
@@ -300,6 +301,7 @@ namespace Sortix
 				pmlchildid[i] = (mapto >> (12+(i-1)*TRANSBITS)) & MASK;
 			}
 
+			// For each PML level, make sure it exists, and that we may use it.
 			size_t offset = 0;
 			for ( size_t i = TOPPMLLEVEL; i > 1; i-- )
 			{
@@ -328,9 +330,11 @@ namespace Sortix
 					       "code calling this function", physical, mapto, i-1);
 				}
 
+				// Find the index of the next PML in the fractal mapped memory.
 				offset = offset * ENTRIES + childid;
 			}
 
+			// Actually map the physical page to the virtual page.
 			(PMLS[1] + offset)->entry[pmlchildid[1]] = physical | flags;
 
 			if ( invalidate )
@@ -344,6 +348,7 @@ namespace Sortix
 		template <bool userspace, bool invalidate>
 		addr_t Unmap(addr_t mapto)
 		{
+			// Translate the virtual address into PML indexes.
 			const size_t MASK = (1<<TRANSBITS)-1;
 			size_t pmlchildid[TOPPMLLEVEL + 1];
 			for ( size_t i = 1; i <= TOPPMLLEVEL; i++ )
@@ -351,6 +356,8 @@ namespace Sortix
 				pmlchildid[i] = (mapto >> (12+(i-1)*TRANSBITS)) & MASK;
 			}
 
+			// For each PML level, make sure it exists, and that it belongs to
+			// user-space.
 			size_t offset = 0;
 			for ( size_t i = TOPPMLLEVEL; i > 1; i-- )
 			{
@@ -372,6 +379,7 @@ namespace Sortix
 					       "calling this function", mapto, i-1);
 				}
 
+				// Find the index of the next PML in the fractal mapped memory.
 				offset = offset * ENTRIES + childid;
 			}
 
@@ -410,8 +418,9 @@ namespace Sortix
 			return Unmap<true, false>(mapto);
 		}
 
+		// Create an exact copy of the current address space.
 		// TODO: Copying every frame is endlessly useless in many uses. It'd be
-		// nice to upgrade this to a copy-on-demand algorithm.
+		// nice to upgrade this to a copy-on-write algorithm.
 		addr_t Fork()
 		{
 			addr_t newtoppmladdr = Page::Get();
@@ -428,6 +437,7 @@ namespace Sortix
 			MapKernel(newtoppmladdr, (addr_t) (FORKPML + level));
 			InvalidatePage((addr_t) (FORKPML + level));
 
+			// Recurse over the PMLs and fork what should be forked.
 			while ( positionstack[TOPPMLLEVEL] < ENTRIES )
 			{
 				const size_t pos = positionstack[level];
