@@ -67,6 +67,7 @@ process.h \
 types.h \
 format.h \
 keyboard.h \
+sortedlist.h \
 sortix-vga.h \
 sortix-keyboard.h \
 sortix-sound.h \
