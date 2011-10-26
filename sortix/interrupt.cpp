@@ -36,14 +36,15 @@ namespace Sortix
 	{
 		const bool debugexception = true;
 
-		size_t numknownexceptions = 19;
+		size_t numknownexceptions = 20;
 		const char* exceptions[] =
 		{ "Divide by zero", "Debug", "Non maskable interrupt", "Breakpoint", 
 		  "Into detected overflow", "Out of bounds", "Invalid opcode",
 		  "No coprocessor", "Double fault", "Coprocessor segment overrun",
 		  "Bad TSS", "Segment not present", "Stack fault",
 		  "General protection fault", "Page fault", "Unknown interrupt",
-		  "Coprocessor fault", "Alignment check", "Machine check"             };
+		  "Coprocessor fault", "Alignment check", "Machine check",
+		  "SIMD Floating-Point"                                               };
 
 		Handler interrupthandlers[256];
 
