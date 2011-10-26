@@ -67,11 +67,6 @@ namespace Sortix
 
 		void Init();
 		void SetCursor(nat x, nat y);
-
-		// System Calls.
-		void SysCreateFrame(CPU::InterruptRegisters* R);
-		void SysChangeFrame(CPU::InterruptRegisters* R);
-		void SysDeleteFrame(CPU::InterruptRegisters* R);
 	}
 
 	class DevVGAFrame : public Device

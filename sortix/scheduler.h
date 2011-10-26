@@ -109,8 +109,6 @@ namespace Sortix
 		// System Calls.
 		void SysCreateThread(CPU::InterruptRegisters* R);
 		void SysExitThread(CPU::InterruptRegisters* R);
-		void SysSleep(CPU::InterruptRegisters* R);
-		void SysUSleep(CPU::InterruptRegisters* R);
 	}
 
 	// Scheduling

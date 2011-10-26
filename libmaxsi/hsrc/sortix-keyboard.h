@@ -40,7 +40,7 @@ namespace System
 		// no character point was available at this time.
 		const unsigned WAIT = 0;
 		const unsigned POLL = 1;
-		uint32_t ReceieveKeystroke(unsigned method);
+		uint32_t ReceiveKeystroke(unsigned method);
 	}
 }
 

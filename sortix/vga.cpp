@@ -27,6 +27,7 @@
 #include "vga.h"
 #include "memorymanagement.h"
 #include "scheduler.h"
+#include "syscall.h"
 
 using namespace Maxsi;
 
@@ -34,6 +35,10 @@ namespace Sortix
 {
 	namespace VGA
 	{
+		addr_t SysCreateFrame();
+		int SysChangeFrame(int fd);
+		int SysDeleteFrame(int fd);
+
 		uint16_t* const vga = (uint16_t* const) 0xB8000;
 		const int width = 80;
 		const int height = 80;
@@ -43,6 +48,10 @@ namespace Sortix
 		void Init()
 		{
 			currentframe = NULL;
+
+			Syscall::Register(SYSCALL_CREATE_FRAME, (void*) SysCreateFrame);
+			Syscall::Register(SYSCALL_CHANGE_FRAME, (void*) SysChangeFrame);
+			Syscall::Register(SYSCALL_DELETE_FRAME, (void*) SysDeleteFrame);
 		}
 
 		// Changes the position of the hardware cursor.
@@ -60,11 +69,10 @@ namespace Sortix
 			CPU::OutPortB(0x3D5, (value >> 0) & 0xFF);
 		}
 
-		void SysCreateFrame(CPU::InterruptRegisters* R)
+		addr_t SysCreateFrame()
 		{
-#ifdef PLATFORM_X86
 			addr_t page = Page::Get();
-			if ( page == NULL ) { R->eax = 0; return; }
+			if ( !page ) { return 0; }
 
 			Process* process = CurrentProcess();
 			addr_t mapto = Page::AlignUp(process->_endcodesection);
@@ -74,7 +82,7 @@ namespace Sortix
 
 			if ( !Memory::MapUser(page, mapto) )
 			{
-				Page::Put(page); R->eax = 0; return;
+				Page::Put(page); return 0;
 			}
 
 			Maxsi::Memory::Set(userframe, 0, sizeof(UserFrame));
@@ -83,7 +91,7 @@ namespace Sortix
 			if ( frame == NULL )
 			{
 				Memory::UnmapUser(mapto);
-				Page::Put(page); R->eax = 0; return;
+				Page::Put(page); return 0;
 			}
 
 			int fd = process->descriptors.Allocate(frame);
@@ -91,7 +99,7 @@ namespace Sortix
 			{
 				delete frame;
 				Memory::UnmapUser(mapto);
-				Page::Put(page); R->eax = 0; return;
+				Page::Put(page); return 0;
 			}
 
 			userframe->fd = fd;
@@ -102,20 +110,16 @@ namespace Sortix
 
 			process->_endcodesection = mapto + 0x1000UL;
 
-			R->eax = mapto;
-#endif
+			return mapto;
 		}
 
-		void SysChangeFrame(CPU::InterruptRegisters* R)
+		int SysChangeFrame(int fd)
 		{
-#ifdef PLATFORM_X86
-			int fd = (int) R->ebx;
-
 			Process* process = CurrentProcess();
 			Device* device = process->descriptors.Get(fd);
-			if ( device == NULL ) { R->eax = -1; return; }
+			if ( !device ) { return -1; }
 
-			if ( !device->IsType(Device::VGABUFFER) ) { R->eax = -2; return; }
+			if ( !device->IsType(Device::VGABUFFER) ) { return -2; }
 
 			DevVGAFrame* frame = (DevVGAFrame*) device;
 
@@ -126,10 +130,8 @@ namespace Sortix
 
 			// TODO: Check if userframe is actually user-space writable!
 
-			//Log::PrintF("changeframe: fd = %u, frame = 0x%p, currentframe = 0x%p, userframe = 0x%p\n", fd, frame, currentframe, frame->userframe); while(true);
-
 			// Check if we need to do anything.
-			if ( frame == currentframe ) { R->eax = 0; return; }
+			if ( frame == currentframe ) { return 0; }
 
 			// If there is already a currently used frame? If so, swap it from
 			// the VGA memory and back to the RAM. This should be done
@@ -173,22 +175,20 @@ namespace Sortix
 			frame->onscreen = true;
 			currentframe = frame;
 			SetCursor(width, height-1);
-#endif
+
+			return 0;
 		}
 
-		void SysDeleteFrame(CPU::InterruptRegisters* R)
+		int SysDeleteFrame(int fd)
 		{
-#ifdef PLATFORM_X86
-			int fd = (int) R->ebx;
-
 			Process* process = CurrentProcess();
 			Device* device = process->descriptors.Get(fd);
 			process->descriptors.Free(fd);
 			
-			if ( device == NULL ) { R->eax = -1; return; }
-			if ( !device->Close() )  { R->eax = -1; return; }
-			R->eax = 0;
-#endif
+			if ( device == NULL ) { return -1; }
+			if ( !device->Close() )  { return -1; }
+			
+			return 0;
 		}
 	}
 

@@ -41,7 +41,6 @@ namespace Sortix
 		void Init();
 		void SetLEDs(uint8_t Toggle);
 		void OnIRQ1(CPU::InterruptRegisters* Regs);
-		void SysReceieveKeystroke(CPU::InterruptRegisters* R);
 		bool QueueKeystroke(uint32_t keystroke);
 	}
 }

@@ -30,11 +30,11 @@ namespace System
 {
 	namespace Keyboard
 	{
-		DEFN_SYSCALL1(uint32_t, SysReceieveKeystroke, 8, unsigned);
+		DEFN_SYSCALL1(uint32_t, SysReceiveKeystroke, 8, unsigned);
 
-		uint32_t ReceieveKeystroke(unsigned method)
+		uint32_t ReceiveKeystroke(unsigned method)
 		{
-			return SysReceieveKeystroke(method);
+			return SysReceiveKeystroke(method);
 		}
 	}
 }

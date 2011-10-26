@@ -29,6 +29,7 @@
 #include "multiboot.h"
 #include "memorymanagement.h"
 #include "descriptor_tables.h"
+#include "syscall.h"
 
 #include "log.h"
 
@@ -53,6 +54,9 @@ namespace Sortix
 		Thread* firstUnrunnableThread;
 		Thread* firstSleeping;
 		size_t AllocatedThreadId;
+
+		void SysSleep(size_t secs);
+		void SysUSleep(size_t usecs);
 	}
 
 	Thread::Thread(Process* process, size_t id, addr_t stack, size_t stackLength)
@@ -229,6 +233,9 @@ namespace Sortix
 			Memory::InvalidatePage(KernelStackPage);
 
 			GDT::SetKernelStack((size_t*) (MapTo+4096));
+
+			Syscall::Register(SYSCALL_SLEEP, (void*) SysSleep);
+			Syscall::Register(SYSCALL_USLEEP, (void*) SysUSleep);
 		}
 
 		// Once the init process is spawned and IRQ0 is enabled, this process
@@ -325,7 +332,7 @@ namespace Sortix
 				Sound::Mute();
 				const char* programname = "sh";
 				R->ebx = (uint32_t) programname;
-				SysExecute(R);
+				SysExecuteOld(R);
 				sigintpending = false;
 				Log::Print("^C\n");
 #else
@@ -485,32 +492,24 @@ namespace Sortix
 			//Log::PrintF("<ExitedThread nextthread=\"%p\"/>\n", CurrentThread());
 		}
 
-		void SysSleep(CPU::InterruptRegisters* R)
+		void SysSleep(size_t secs)
 		{
 			//Log::PrintF("<SysSleep>\n");
-#ifdef PLATFORM_X86
-			intmax_t TimeToSleep = ((uintmax_t) R->ebx) * 1000ULL;
+			intmax_t TimeToSleep = ((uintmax_t) secs) * 1000ULL;
 			if ( TimeToSleep == 0 ) { return; }
+			Syscall::Incomplete();
 			CurrentThread()->Sleep(TimeToSleep);
-			Switch(R, 0);
+			Switch(Syscall::InterruptRegs(), 0);
 			//Log::PrintF("</SysSleep>\n");
-#else
-			#warning "This syscall is not supported on this arch"
-			while(true);
-#endif
 		}
 
-		void SysUSleep(CPU::InterruptRegisters* R)
+		void SysUSleep(size_t usecs)
 		{
-#ifdef PLATFORM_X86
-			intmax_t TimeToSleep = ((uintmax_t) R->ebx) / 1000ULL;
+			intmax_t TimeToSleep = ((uintmax_t) usecs) / 1000ULL;
 			if ( TimeToSleep == 0 ) { return; }
+			Syscall::Incomplete();
 			CurrentThread()->Sleep(TimeToSleep);
-			Switch(R, 0);
-#else
-			#warning "This syscall is not supported on this arch"
-			while(true);
-#endif
+			Switch(Syscall::InterruptRegs(), 0);
 		}
 	}
 

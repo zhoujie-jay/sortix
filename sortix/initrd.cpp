@@ -25,6 +25,7 @@
 #include "platform.h"
 #include "initrd.h"
 #include <libmaxsi/string.h>
+#include "syscall.h"
 
 #include "log.h" // DEBUG
 
@@ -37,6 +38,17 @@ namespace Sortix
 		byte* initrd;
 		size_t initrdsize;
 
+		void SysPrintPathFiles()
+		{
+			Header* header = (Header*) initrd;
+			FileHeader* fhtbl = (FileHeader*) (initrd + sizeof(Header));
+			for ( uint32_t i = 0; i < header->numfiles; i++ )
+			{
+				FileHeader* fileheader = &(fhtbl[i]);
+				Log::PrintF("%s\n", fileheader->name);
+			}
+		}
+
 		void Init(byte* theinitrd, size_t size)
 		{
 			initrd = theinitrd;
@@ -47,6 +59,8 @@ namespace Sortix
 			size_t sizeneeded = sizeof(Header) + header->numfiles * sizeof(FileHeader);
 			if ( size < sizeneeded ) { PanicF("initrd.cpp: initrd is too small"); }
 			// TODO: We need to do more validation here!
+
+			Syscall::Register(SYSCALL_PRINT_PATH_FILES, (void*) SysPrintPathFiles);
 		}
 
 		byte* Open(const char* filepath, size_t* size)
@@ -64,17 +78,6 @@ namespace Sortix
 			}
 
 			return NULL;
-		}
-
-		void SysPrintPathFiles(CPU::InterruptRegisters* /*R*/)
-		{
-			Header* header = (Header*) initrd;
-			FileHeader* fhtbl = (FileHeader*) (initrd + sizeof(Header));
-			for ( uint32_t i = 0; i < header->numfiles; i++ )
-			{
-				FileHeader* fileheader = &(fhtbl[i]);
-				Log::PrintF("%s\n", fileheader->name);
-			}
 		}
 	}
 }

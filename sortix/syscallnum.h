@@ -17,37 +17,27 @@
 	You should have received a copy of the GNU General Public License along
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	syscall.h
-	Handles system calls from userspace safely.
+	syscallnum.h
+	Stores numerical constants for each available system call on this kernel.
 
 ******************************************************************************/
 
-#ifndef SORTIX_SYSCALL_H
-#define SORTIX_SYSCALL_H
+#ifndef SORTIX_SYSCALLNUM_H
+#define SORTIX_SYSCALLNUM_H
 
-#include "syscallnum.h"
-
-namespace Sortix
-{
-	namespace Syscall
-	{
-		void Init();
-		void Register(size_t index, void* funcptr);
-
-		// Aborts the current system call such that the current thread is marked
-		// as blocking, and control is transferred to the next runnable thread.
-		// This allows the thread to wait for an condition that makes the thread
-		// runnable again and stores the return value in the proper register.
-		// Once called, you may safely return from the system call in good faith
-		// that its return value shall be discarded.
-		void Incomplete();
-
-		CPU::InterruptRegisters* InterruptRegs();
-		CPU::SyscallRegisters* SyscallRegs();
-	}
-}
-
-extern "C" void syscall_handler();
+#define SYSCALL_BAD_SYSCALL 0
+#define SYSCALL_EXIT 1
+#define SYSCALL_SLEEP 2
+#define SYSCALL_USLEEP 3
+#define SYSCALL_PRINT_STRING 4
+#define SYSCALL_CREATE_FRAME 5
+#define SYSCALL_CHANGE_FRAME 6
+#define SYSCALL_DELETE_FRAME 7
+#define SYSCALL_RECEIVE_KEYSTROKE 8
+#define SYSCALL_SET_FREQUENCY 9
+#define SYSCALL_EXEC 10
+#define SYSCALL_PRINT_PATH_FILES 11
+#define SYSCALL_MAX_NUM 12 /* index of highest constant + 1 */
 
 #endif
 

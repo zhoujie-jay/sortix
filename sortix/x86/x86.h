@@ -39,6 +39,15 @@ namespace Sortix
 			uint32_t int_no, err_code; // Interrupt number and error code (if applicable)
 			uint32_t eip, cs, eflags, useresp, ss; // Pushed by the processor automatically.
 		};
+
+		struct SyscallRegisters
+		{
+			uint32_t cr2; // For compabillity with below, may be removed soon.
+			uint32_t ds;
+			uint32_t di, si, bp, trash, b, d, c, a;
+			uint32_t int_no, err_code; // Also compabillity.
+			uint32_t ip, cs, flags, sp, ss;
+		};
 	}
 }
 

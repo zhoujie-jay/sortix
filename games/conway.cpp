@@ -111,7 +111,7 @@ void Update()
 	// Read the keyboard input from the user.
 	unsigned method = System::Keyboard::POLL;
 	uint32_t codepoint;
-	while ( (codepoint = System::Keyboard::ReceieveKeystroke(method) ) != 0 )
+	while ( (codepoint = System::Keyboard::ReceiveKeystroke(method) ) != 0 )
 	{
 		bool keyup = codepoint & DEPRESSED;
 		if ( keyup ) { continue; }

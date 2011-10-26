@@ -55,6 +55,9 @@ namespace Sortix
 		Process(addr_t addrspace);
 		~Process();
 
+	public:
+		static void Init();
+
 	private:
 		addr_t _addrspace;
 
@@ -79,7 +82,7 @@ namespace Sortix
 
 	Process* CurrentProcess();
 
-	void SysExecute(CPU::InterruptRegisters* R);
+	void SysExecuteOld(CPU::InterruptRegisters* R);
 }
 
 #endif

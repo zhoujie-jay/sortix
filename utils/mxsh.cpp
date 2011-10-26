@@ -15,7 +15,7 @@ void command()
 	while (true)
 	{
 		unsigned method = System::Keyboard::POLL;
-		uint32_t codepoint = System::Keyboard::ReceieveKeystroke(method);
+		uint32_t codepoint = System::Keyboard::ReceiveKeystroke(method);
 
 		if ( codepoint == 0 ) { continue; }
 		if ( codepoint & Maxsi::Keyboard::DEPRESSED ) { continue; }

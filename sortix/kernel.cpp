@@ -41,6 +41,8 @@
 #include "vgaterminal.h"
 #include "elf.h"
 #include "initrd.h"
+#include "vga.h"
+#include "sound.h"
 
 using namespace Maxsi;
 
@@ -143,6 +145,9 @@ namespace Sortix
 		BootInfo->mmap_length = sizeof(MBMMap);
 #endif
 
+		// Initialize system calls.
+		Syscall::Init();
+
 		// Initialize the default terminal.
 		Maxsi::Format::Callback logcallback;
 		void* logpointer;
@@ -220,8 +225,14 @@ namespace Sortix
 		// Initialize the keyboard.
 		Keyboard::Init();
 
-		// Initialize system calls.
-		Syscall::Init();
+		// Initialize the VGA driver.
+		VGA::Init();
+
+		// Initialize the sound driver.
+		Sound::Init();
+
+		// Initialize the process system.
+		Process::Init();
 
 		// Initialize the scheduler.
 		Scheduler::Init();

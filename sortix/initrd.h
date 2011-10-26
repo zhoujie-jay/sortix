@@ -50,7 +50,6 @@ namespace Sortix
 		};
 
 #ifdef SORTIX_KERNEL
-		void SysPrintPathFiles(CPU::InterruptRegisters* R);
 		void Init(byte* initrd, size_t size);
 		byte* Open(const char* filepath, size_t* size);
 #endif

@@ -24,10 +24,14 @@
 
 #include "platform.h"
 #include <libmaxsi/memory.h>
+#include <libmaxsi/string.h>
 #include "process.h"
 #include "memorymanagement.h"
 #include "initrd.h"
 #include "elf.h"
+#include "syscall.h"
+
+using namespace Maxsi;
 
 namespace Sortix
 {
@@ -79,7 +83,36 @@ namespace Sortix
 		segments = NULL;
 	}
 
-	void SysExecute(CPU::InterruptRegisters* R)
+	int SysExecute(const char* programname)
+	{
+		// TODO: Validate that filepath is a user-space readable string!
+
+		size_t programsize = 0;
+		byte* program = InitRD::Open(programname, &programsize);
+		if ( !program ) { return -1; }
+
+		addr_t entry = ELF::Construct(CurrentProcess(), program, programsize);
+		if ( !entry )
+		{
+			Log::PrintF("Could not create process '%s'", programname);
+			if ( String::Compare(programname, "sh") == 0 )
+			{
+				Panic("Couldn't create the shell process");
+			}
+
+			return SysExecute("sh");
+		}
+
+		// This is a hacky way to set up the thread!
+		CPU::InterruptRegisters* regs = Syscall::InterruptRegs();
+		regs->eip = entry;
+		regs->useresp = 0x80000000UL;
+		regs->ebp = 0x80000000UL;
+
+		return 0;
+	}
+
+	void SysExecuteOld(CPU::InterruptRegisters* R)
 	{
 #ifdef PLATFORM_X86
 		const char* programname = (const char*) R->ebx;
@@ -98,5 +131,10 @@ namespace Sortix
 		R->useresp = 0x80000000UL;
 		R->ebp = 0x80000000UL;
 #endif
+	}
+
+	void Process::Init()
+	{
+		Syscall::Register(SYSCALL_EXEC, (void*) SysExecute);
 	}
 }

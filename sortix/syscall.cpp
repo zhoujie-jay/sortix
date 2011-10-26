@@ -24,77 +24,68 @@
 
 #include "platform.h"
 #include "syscall.h"
-#include "scheduler.h"
-#include "interrupt.h"
-#include "log.h"
+#include "syscallnum.h"
 #include "panic.h"
-#include "vga.h"
-#include "keyboard.h"
-#include "sound.h"
-#include "process.h"
-#include "initrd.h"
+#include "thread.h"
+#include "scheduler.h"
+
+#include "log.h" // DEBUG
 
 namespace Sortix
 {
 	namespace Syscall
 	{
-		void SysStdOutPrint(CPU::InterruptRegisters* R)
+		extern "C"
 		{
-#ifdef PLATFORM_X86
-			// TODO: Validate our input pointer is legal for the current thread/process!
-			R->eax = (uint32_t) Log::Print((const char*) R->ebx);
-#else
-			#warning "This syscall is not supported on this arch"
-			while(true);
-#endif
+			CPU::SyscallRegisters* syscall_state_ptr;
+			int system_was_incomplete;
+			size_t SYSCALL_MAX = SYSCALL_MAX_NUM;
+			void* syscall_list[SYSCALL_MAX_NUM];
 		}
 
-		const size_t NumSyscalls = 12;
-		const Syscall Syscalls[NumSyscalls] =
+		int BadSyscall()
 		{
-			&Scheduler::SysCreateThread,
-			&Scheduler::SysExitThread,
-			&Scheduler::SysSleep,
-			&Scheduler::SysUSleep,
-			&SysStdOutPrint,
-			&VGA::SysCreateFrame,
-			&VGA::SysChangeFrame,
-			&VGA::SysDeleteFrame,
-			&Keyboard::SysReceieveKeystroke,
-			&Sound::SysSetFrequency,
-			&SysExecute,
-			&InitRD::SysPrintPathFiles,
-		};
+			// TODO: Send signal, set errno, or crash/abort process?
+			return -1;
+		}
 
 		void Init()
 		{
-			Interrupt::RegisterHandler(0x80, &OnCall);
+			for ( size_t i = 0; i < SYSCALL_MAX; i++ )
+			{
+				syscall_list[i] = (void*) BadSyscall;
+			}
 		}
 
-		void OnCall(CPU::InterruptRegisters* registers)
+		void Register(size_t index, void* funcptr)
 		{
-#ifdef PLATFORM_X86
-			size_t callId = registers->eax;
+			if ( SYSCALL_MAX <= index )
+			{
+				PanicF("attempted to register syscall 0x%p to index %zu, but "
+				       "SYSCALL_MAX = %zu", funcptr, index, SYSCALL_MAX);
+			}
 
-			// Make sure the requested syscall exists.
-			if ( callId >= NumSyscalls ) { return; }
+			syscall_list[index] = funcptr; 
+		}
 
-#ifdef USING_OLD_SYSCALL
-			Syscalls[registers->eax](registers);
-#else
-			Thread* thread = CurrentThread();
+		void Incomplete()
+		{
+			system_was_incomplete = 1;
 
-			thread->BeginSyscall(registers);
+			CPU::InterruptRegisters* regs = InterruptRegs();
+			CurrentThread()->SaveRegisters(regs);
+			// TODO: Make the thread blocking if not already.
+			Scheduler::Switch(regs, 0);
+		}
 
-			Syscalls[registers->eax](thread);
+		CPU::InterruptRegisters* InterruptRegs()
+		{
+			return (CPU::InterruptRegisters*) syscall_state_ptr;
+		}
 
-			thread->OnSysReturn();
-#endif
-
-#else
-			#warning "System calls are not available on this platform"
-			while(true);
-#endif
+		CPU::SyscallRegisters* SyscallRegs()
+		{
+			return syscall_state_ptr;
 		}
 	}
 }

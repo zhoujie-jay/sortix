@@ -26,6 +26,7 @@
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
 #include "log.h"
+#include "syscall.h"
 
 using namespace Maxsi;
 
@@ -36,10 +37,19 @@ namespace Sortix
 		Maxsi::Format::Callback deviceCallback = NULL;
 		void* devicePointer = NULL;
 
+		size_t SysPrintString(const char* str)
+		{
+			// TODO: Check that str is a user-readable string!
+
+			return Print(str);
+		}
+
 		void Init(Maxsi::Format::Callback callback, void* user)
 		{
 			deviceCallback = callback;
 			devicePointer = user;
+
+			Syscall::Register(SYSCALL_PRINT_STRING, (void*) SysPrintString);
 		}
 	}
 }

@@ -29,9 +29,9 @@ namespace Sortix
 {
 	namespace Sound
 	{
+		void Init();
 		void Mute();
 		void Play(nat Frequency);
-		void SysSetFrequency(CPU::InterruptRegisters* R);
 	}
 }
 

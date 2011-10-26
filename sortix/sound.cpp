@@ -24,6 +24,7 @@
 
 #include "platform.h"
 #include "sound.h"
+#include "syscall.h"
 
 namespace Sortix
 {
@@ -53,12 +54,14 @@ namespace Sortix
 			}
 		}
 
-		void SysSetFrequency(CPU::InterruptRegisters* R)
+		void SysSetFrequency(unsigned frequency)
 		{
-#ifdef PLATFORM_X86
-			unsigned frequency = R->ebx;
 			if ( frequency == 0 ) { Mute(); } else { Play(frequency); }
-#endif
+		}
+
+		void Init()
+		{
+			Syscall::Register(SYSCALL_SET_FREQUENCY, (void*) SysSetFrequency);
 		}
 	}
 }

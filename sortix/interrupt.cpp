@@ -87,7 +87,7 @@ namespace Sortix
 				Sound::Mute();
 				const char* programname = "sh";
 				regs->ebx = (uint32_t) programname;
-				SysExecute(regs);
+				SysExecuteOld(regs);
 				return;
 			}
 

@@ -31,6 +31,7 @@
 #include "interrupt.h"
 #include "process.h"
 #include "scheduler.h"
+#include "syscall.h"
 
 using namespace Maxsi::Keyboard;
 
@@ -627,6 +628,16 @@ namespace Sortix
 		size_t keystrokeQueueLength;
 		uint32_t* keystrokeQueue;
 
+		uint32_t SysReceiveKeystroke()
+		{
+			if ( keystrokeQueueUsed == 0 ) { return 0; }
+
+			uint32_t codepoint = keystrokeQueue[keystrokeQueueOffset++];
+			keystrokeQueueOffset %= keystrokeQueueLength;
+			keystrokeQueueUsed--;
+			return codepoint;
+		}
+
 		void Init()
 		{
 			// Initialize variables.
@@ -649,6 +660,8 @@ namespace Sortix
 			{
 				Panic("Could not allocate keystroke buffer");
 			}
+
+			Syscall::Register(SYSCALL_RECEIVE_KEYSTROKE, (void*) SysReceiveKeystroke);
 		}
 
 		bool QueueKeystroke(uint32_t keystroke)
@@ -711,25 +724,6 @@ namespace Sortix
 			CPU::OutPortB(0x60, 0xED);
 			while ( (CPU::InPortB(0x64) & (1<<1)) != 0 ) { } //loop Until zero
 			CPU::OutPortB(0x60, LEDs);
-		}
-
-		void SysReceieveKeystroke(CPU::InterruptRegisters* R)
-		{
-#ifdef PLATFORM_X86
-			uint32_t codepoint;
-			if ( keystrokeQueueUsed == 0 )
-			{
-				codepoint = 0;
-			}
-			else
-			{
-				codepoint = keystrokeQueue[keystrokeQueueOffset];
-				keystrokeQueueOffset++;
-				keystrokeQueueOffset %= keystrokeQueueLength;
-				keystrokeQueueUsed--;
-			}
-			R->eax = codepoint;
-#endif
 		}
 	}
 }

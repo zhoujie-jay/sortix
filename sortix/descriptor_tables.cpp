@@ -26,6 +26,7 @@
 #include <libmaxsi/memory.h>
 #include "descriptor_tables.h"
 #include "panic.h"
+#include "syscall.h"
 
 using namespace Maxsi;
 
@@ -232,8 +233,7 @@ namespace Sortix
 			SetGate(45, (uint32_t) irq13, 0x08, 0x8E);
 			SetGate(46, (uint32_t) irq14, 0x08, 0x8E);
 			SetGate(47, (uint32_t) irq15, 0x08, 0x8E);
-			SetGate(128, (uint32_t) isr128, 0x08, 0x8E | 0x60); // System Calls
-			SetGate(177, (uint32_t) isr177, 0x08, 0x8E | 0x60); // System Calls
+			SetGate(128, (uint32_t) syscall_handler, 0x08, 0x8E | 0x60); // System Calls
 
 			idt_flush((uint32_t)&idt_ptr);
 #else
