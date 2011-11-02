@@ -25,6 +25,7 @@
 #include "platform.h"
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
+#include <libmaxsi/sortedlist.h>
 #include "thread.h"
 #include "process.h"
 #include "memorymanagement.h"
@@ -94,10 +95,13 @@ namespace Sortix
 		firstthread = NULL;
 		mmapfrom = 0x80000000UL;
 		pid = AllocatePID();
+		Put(this);
 	}
 
 	Process::~Process()
 	{
+		Remove(this);
+
 		ResetAddressSpace();
 
 		// Avoid memory leaks.
@@ -304,6 +308,43 @@ namespace Sortix
 		return nextpidtoallocate++;
 	}
 
+	int ProcessCompare(Process* a, Process* b)
+	{
+		if ( a->pid < b->pid ) { return -1; }
+		if ( a->pid > b->pid ) { return 1; }
+		return 0;
+	}
+
+	int ProcessPIDCompare(Process* a, pid_t pid)
+	{
+		if ( a->pid < pid ) { return -1; }
+		if ( a->pid > pid ) { return 1; }
+		return 0;
+	}
+
+	SortedList<Process*>* pidlist;
+
+	Process* Process::Get(pid_t pid)
+	{
+		size_t index = pidlist->Search(ProcessPIDCompare, pid);
+		if ( index == SIZE_MAX ) { return NULL; }
+
+		return pidlist->Get(index);
+	}
+
+	bool Process::Put(Process* process)
+	{
+		return pidlist->Add(process);
+	}
+
+	void Process::Remove(Process* process)
+	{
+		size_t index = pidlist->Search(process);
+		ASSERT(index != SIZE_MAX);
+
+		pidlist->Remove(index);
+	}
+
 	void Process::Init()
 	{
 		Syscall::Register(SYSCALL_EXEC, (void*) SysExecute);
@@ -312,6 +353,9 @@ namespace Sortix
 		Syscall::Register(SYSCALL_GETPPID, (void*) SysGetParentPID);
 
 		nextpidtoallocate = 0;
+
+		pidlist = new SortedList<Process*>(ProcessCompare);
+		if ( !pidlist ) { Panic("could not allocate pidlist\n"); }
 	}
 
 	addr_t Process::AllocVirtualAddr(size_t size)
