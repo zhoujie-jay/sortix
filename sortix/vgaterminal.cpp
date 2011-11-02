@@ -442,6 +442,7 @@ namespace Sortix
 						showcursor = false;
 						UpdateCursor();
 					}
+					break;
 				}
 				// Show cursor.
 				case 'h':
@@ -452,6 +453,7 @@ namespace Sortix
 						showcursor = true;
 						UpdateCursor();
 					}
+					break;
 				}
 				// TODO: Handle other cases.
 			}
