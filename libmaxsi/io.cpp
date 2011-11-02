@@ -17,7 +17,7 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	io.h
+	io.cpp
 	Functions for management of input and output.
 
 ******************************************************************************/
@@ -34,15 +34,6 @@ namespace Maxsi
 	size_t Print(const char* Message)
 	{
 		return SysPrint(Message);
-	}
-
-	// TODO: This namespace is hereby deprecated as it was stupid. Delete it soon.
-	namespace StdOut
-	{
-		size_t Print(const char* Message)
-		{
-			return SysPrint(Message);
-		}
 	}
 
 	size_t PrintCallback(void* user, const char* string, size_t stringlen)
