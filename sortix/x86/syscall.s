@@ -33,7 +33,7 @@ syscall_handler:
 	pushl $0x0
 	pushl $0x80
 
-	# Push eax, ecx, edx, ebx, esp, ebp, esi, edi, cr2
+	# Push eax, ecx, edx, ebx, esp, ebp, esi, edi
 	pushal
 
 	# Push the user-space data segment.
