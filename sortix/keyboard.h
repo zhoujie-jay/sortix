@@ -27,15 +27,6 @@
 
 namespace Sortix
 {
-	/*
-	class IKeystrokable
-	{
-	public:
-		virtual void OnKeystroke(uint32_t CodePoint, bool KeyUp) = 0;
-
-	};
-	*/
-
 	namespace Keyboard
 	{
 		void Init();
