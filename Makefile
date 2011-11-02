@@ -102,6 +102,8 @@ debsource: all
 	mkdir -p $(DEBSRCDIR)
 	for D in `ls | grep -v builds | grep -v sysroot`; do cp -r $$D $(DEBSRCDIR); done
 	(cd $(DEBSRCDIR) && make distclean)
+	rm $(DEBSRCDIR)/git-daemon-export-ok
+	rm -rf $(DEBSRCDIR)/sysroot
 	(cd builds && tar cfzv $(DEBSRCNAME)-src.tar.gz $(DEBSRCNAME)-src)
 	rm -rf $(DEBSRCDIR)
 
