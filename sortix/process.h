@@ -111,6 +111,13 @@ namespace Sortix
 	public:
 		addr_t AllocVirtualAddr(size_t size);
 
+	public:
+		static Process* Get(pid_t pid);
+
+	private:
+		static bool Put(Process* process);
+		static void Remove(Process* process);
+
 	};
 
 	Process* CurrentProcess();
