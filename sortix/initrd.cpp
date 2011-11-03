@@ -24,6 +24,7 @@
 
 #include "platform.h"
 #include "initrd.h"
+#include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include "syscall.h"
 
@@ -49,6 +50,35 @@ namespace Sortix
 			}
 		}
 
+		size_t SysGetNumFiles()
+		{
+			Header* header = (Header*) initrd;
+			return header->numfiles;
+		}
+
+		struct FileInfo
+		{
+			mode_t permissions;
+			char name[128];
+		};
+
+		int SysGetFileInfo(size_t index, FileInfo* fileinfo)
+		{
+			Header* header = (Header*) initrd;
+			if ( index >= header->numfiles ) { return -1; }
+			FileHeader* fhtbl = (FileHeader*) (initrd + sizeof(Header));
+			FileHeader* fileheader = &(fhtbl[index]);
+
+			// TODO: Check that fileinfo is a userspace writable buffer.
+
+			STATIC_ASSERT(sizeof(fileheader->name) == sizeof(fileinfo->name));
+
+			fileinfo->permissions = fileheader->permissions;
+			Maxsi::Memory::Copy(fileinfo->name, fileheader->name, sizeof(fileheader->name));
+
+			return 0;
+		}
+
 		void Init(byte* theinitrd, size_t size)
 		{
 			initrd = theinitrd;
@@ -61,6 +91,8 @@ namespace Sortix
 			// TODO: We need to do more validation here!
 
 			Syscall::Register(SYSCALL_PRINT_PATH_FILES, (void*) SysPrintPathFiles);
+			Syscall::Register(SYSCALL_GET_FILEINFO, (void*) SysGetFileInfo);
+			Syscall::Register(SYSCALL_GET_NUM_FILES, (void*) SysGetNumFiles);
 		}
 
 		byte* Open(const char* filepath, size_t* size)

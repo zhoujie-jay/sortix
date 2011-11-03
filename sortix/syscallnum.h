@@ -40,7 +40,9 @@
 #define SYSCALL_FORK 12
 #define SYSCALL_GETPID 13
 #define SYSCALL_GETPPID 14
-#define SYSCALL_MAX_NUM 15 /* index of highest constant + 1 */
+#define SYSCALL_GET_FILEINFO 15
+#define SYSCALL_GET_NUM_FILES 16
+#define SYSCALL_MAX_NUM 17 /* index of highest constant + 1 */
 
 #endif
 

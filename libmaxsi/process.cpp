@@ -35,6 +35,8 @@ namespace Maxsi
 		DEFN_SYSCALL0(pid_t, SysFork, 12);
 		DEFN_SYSCALL0(pid_t, SysGetPID, 13);
 		DEFN_SYSCALL0(pid_t, SysGetParentPID, 14);
+		DEFN_SYSCALL2(int, SysGetFileInfo, 15, size_t, FileInfo*);
+		DEFN_SYSCALL0(size_t, SysGetNumFiles, 16);
 
 		int Execute(const char* filepath, int argc, const char** argv)
 		{
@@ -44,6 +46,16 @@ namespace Maxsi
 		void PrintPathFiles()
 		{
 			SysPrintPathFiles();
+		}
+
+		size_t GetNumFiles()
+		{
+			return SysGetNumFiles();
+		}
+
+		int GetFileInfo(size_t index, FileInfo* fileinfo)
+		{
+			return SysGetFileInfo(index, fileinfo);
 		}
 
 		void Abort()
