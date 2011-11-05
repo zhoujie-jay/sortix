@@ -98,5 +98,11 @@ namespace Sortix
 			// If that didn't work, just halt.
 			asm volatile("hlt");
 		}
+
+		void ShutDown()
+		{
+			// TODO: Unimplemented, just reboot.
+			Reboot();
+		}
 	}
 }

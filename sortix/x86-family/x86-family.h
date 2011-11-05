@@ -36,6 +36,7 @@ namespace Sortix
 		uint16_t InPortW(uint16_t Port);
 		uint32_t InPortL(uint16_t Port);
 		void Reboot();
+		void ShutDown();
 	}
 }
 
