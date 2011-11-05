@@ -35,7 +35,9 @@ namespace Sortix
 		void MainLoop() SORTIX_NORETURN;
 		void Switch(CPU::InterruptRegisters* regs);
 		void SetIdleThread(Thread* thread);
-		void SetDummyThreadOwner(Process* init);
+		void SetDummyThreadOwner(Process* process);
+		void SetInitProcess(Process* init);
+		Process* GetInitProcess();
 
 		void SetThreadState(Thread* thread, Thread::State state);
 		Thread::State GetThreadState(Thread* thread);

@@ -55,6 +55,7 @@ namespace Sortix
 		Thread* idlethread;
 		Thread* firstrunnablethread;
 		Thread* firstsleepingthread;
+		Process* initprocess;
 		bool hacksigintpending = false;
 
 		void Init()
@@ -89,9 +90,14 @@ namespace Sortix
 			dummythread->process = process;
 		}
 
-		void SetInitialProcess(Process* init)
+		void SetInitProcess(Process* init)
 		{
-			dummythread->process = init;
+			initprocess = init;
+		}
+
+		Process* GetInitProcess()
+		{
+			return initprocess;
 		}
 
 		void MainLoop()

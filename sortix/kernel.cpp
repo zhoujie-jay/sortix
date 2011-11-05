@@ -283,6 +283,7 @@ namespace Sortix
 		if ( !initstart ) { Panic("could not construct ELF image for init process"); }
 		Thread* initthread = CreateThread(initstart);
 		if ( !initthread ) { Panic("could not create thread for the init process"); }
+		Scheduler::SetInitProcess(init);
 
 		// Lastly set up the timer driver and we are ready to run the OS.
 		Time::Init();
