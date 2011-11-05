@@ -42,6 +42,9 @@ namespace Sortix
 		// that its return value shall be discarded.
 		void Incomplete();
 
+		// For when you want the syscall exit code not to modify registers.
+		void AsIs();
+
 		CPU::InterruptRegisters* InterruptRegs();
 		CPU::SyscallRegisters* SyscallRegs();
 	}

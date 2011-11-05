@@ -78,6 +78,11 @@ namespace Sortix
 			Scheduler::Switch(regs);
 		}
 
+		void AsIs()
+		{
+			system_was_incomplete = 1;
+		}
+
 		CPU::InterruptRegisters* InterruptRegs()
 		{
 			return (CPU::InterruptRegisters*) syscall_state_ptr;
