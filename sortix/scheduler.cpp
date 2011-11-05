@@ -132,6 +132,12 @@ namespace Sortix
 			LogEndContextSwitch(currentthread, regs);
 		}
 
+		void ProcessTerminated(CPU::InterruptRegisters* regs)
+		{
+			currentthread = dummythread;
+			Switch(regs);
+		}
+
 		const bool DEBUG_BEGINCTXSWITCH = false;
 		const bool DEBUG_CTXSWITCH = false;
 		const bool DEBUG_ENDCTXSWITCH = false;
@@ -240,6 +246,32 @@ namespace Sortix
 			}
 		}
 
+		void EarlyWakeUp(Thread* thread)
+		{
+			uintmax_t now = Time::MicrosecondsSinceBoot();
+			if ( thread->sleepuntil < now ) { return; }
+			thread->sleepuntil = now;
+
+			SetThreadState(thread, Thread::State::RUNNABLE);
+
+			if ( firstsleepingthread == thread )
+			{
+				firstsleepingthread = thread->nextsleepingthread;
+				thread->nextsleepingthread = NULL;
+				return;
+			}
+
+			for ( Thread* tmp = firstsleepingthread; tmp->nextsleepingthread != NULL; tmp = tmp->nextsleepingthread )
+			{
+				if ( tmp->nextsleepingthread == thread )
+				{
+					tmp->nextsleepingthread = thread->nextsleepingthread;
+					thread->nextsleepingthread = NULL;
+					return;
+				}
+			}
+		}
+
 		void WakeSleeping()
 		{
 			uintmax_t now = Time::MicrosecondsSinceBoot();
@@ -247,7 +279,9 @@ namespace Sortix
 			while ( firstsleepingthread && firstsleepingthread->sleepuntil < now )
 			{
 				SetThreadState(firstsleepingthread, Thread::State::RUNNABLE);
-				firstsleepingthread = firstsleepingthread->nextsleepingthread;
+				Thread* next = firstsleepingthread->nextsleepingthread;
+				firstsleepingthread->nextsleepingthread = NULL;
+				firstsleepingthread = next;
 			}
 		}
 

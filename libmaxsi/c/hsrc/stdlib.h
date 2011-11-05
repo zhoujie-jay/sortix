@@ -45,9 +45,8 @@ typedef int div_t, ldiv_t, lldiv_t;
 
 /* TODO: WEXITSTATUS, WIFEXITED, WIFSIGNALED, WIFSTOPPED, WNOHANG, WSTOPSIG, WTERMSIG, WUNTRACED is missing here */
 
-/* TODO: _Exit(int) is missing here */
-
 void exit(int);
+void _Exit(int status);
 void free(void*);
 void* malloc(size_t);
 

@@ -34,6 +34,7 @@ namespace Sortix
 		void Init();
 		void MainLoop() SORTIX_NORETURN;
 		void Switch(CPU::InterruptRegisters* regs);
+		void ProcessTerminated(CPU::InterruptRegisters* regs);
 		void SetIdleThread(Thread* thread);
 		void SetDummyThreadOwner(Process* process);
 		void SetInitProcess(Process* init);
@@ -42,6 +43,7 @@ namespace Sortix
 		void SetThreadState(Thread* thread, Thread::State state);
 		Thread::State GetThreadState(Thread* thread);
 		void PutThreadToSleep(Thread* thread, uintmax_t usecs);
+		void EarlyWakeUp(Thread* thread);
 
 		void SigIntHack();
 	}

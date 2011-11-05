@@ -30,6 +30,7 @@ namespace Maxsi
 {
 	namespace Process
 	{
+		DEFN_SYSCALL1_VOID(SysExit, 1, int);
 		DEFN_SYSCALL3(int, SysExecute, 10, const char*, int, const char**);
 		DEFN_SYSCALL0_VOID(SysPrintPathFiles, 11);
 		DEFN_SYSCALL0(pid_t, SysFork, 12);
@@ -66,15 +67,20 @@ namespace Maxsi
 
 		extern "C" void abort() { return Abort(); }
 
-		void Exit(int code)
+		extern "C" void _exit(int status)
 		{
+			SysExit(status);
+		}
+
+		DUAL_FUNCTION(void, exit, Exit, (int status))
+		{
+			// TODO: Once wait() works and is used in the shell, call _exit!
+			//_exit(status);
 			const char* sh = "sh";
 			const char* argv[] = { sh };
 			Execute("sh", 1, argv);
 			while(true);
 		}
-
-		extern "C" void exit(int code) { return Exit(code); }
 
 		DUAL_FUNCTION(pid_t, fork, Fork, ())
 		{

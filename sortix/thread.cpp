@@ -39,8 +39,7 @@ namespace Sortix
 		prevsibling = NULL;
 		nextsibling = NULL;
 		sleepuntil = 0;
-		nextsleepingthread = 0;
-		schedulerlist = NULL;
+		nextsleepingthread = NULL;
 		schedulerlistprev = NULL;
 		schedulerlistnext = NULL;
 		state = NONE;
@@ -60,11 +59,15 @@ namespace Sortix
 		ready = false;
 		stackpos = forkfrom->stackpos;
 		stacksize = forkfrom->stacksize;
+		nextsleepingthread = NULL;
+		schedulerlistprev = NULL;
+		schedulerlistnext = NULL;
 	}
 
 	Thread::~Thread()
 	{
 		ASSERT(CurrentProcess() == process);
+		ASSERT(nextsleepingthread == NULL);
 
 		Memory::UnmapRangeUser(stackpos, stacksize);
 	}

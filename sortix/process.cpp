@@ -28,6 +28,7 @@
 #include <libmaxsi/sortedlist.h>
 #include "thread.h"
 #include "process.h"
+#include "scheduler.h"
 #include "memorymanagement.h"
 #include "initrd.h"
 #include "elf.h"
@@ -345,12 +346,94 @@ namespace Sortix
 		pidlist->Remove(index);
 	}
 
+	void SysExit(int status)
+	{
+		// Status codes can only contain 8 bits according to ISO C and POSIX.
+		status %= 256;
+
+		Process* process = CurrentProcess();
+		Process* init = Scheduler::GetInitProcess();
+
+		if ( process->pid == 0 ) { Panic("System idle process exited"); }
+
+		// If the init process terminated successfully, time to halt.
+		if ( process == init )
+		{
+			switch ( status )
+			{
+				case 0: CPU::ShutDown();
+				case 1: CPU::Reboot();
+				default: PanicF("The init process exited abnormally with status code %u\n", status);
+			}
+		}
+
+		// Take care of the orphans, so give them to init.
+		while ( process->firstchild )
+		{
+			Process* orphan = process->firstchild;
+			process->firstchild = orphan->nextsibling;
+			if ( process->firstchild ) { process->firstchild->prevsibling = NULL; }
+			orphan->parent = init;
+			orphan->prevsibling = NULL;
+			orphan->nextsibling = init->firstchild;
+			if ( orphan->nextsibling ) { orphan->nextsibling->prevsibling = orphan; }
+			init->firstchild = orphan;
+		}
+
+		// Remove the current process from the family tree.
+		if ( !process->prevsibling )
+		{
+			process->parent->firstchild = process->nextsibling;
+		}
+		else
+		{
+			process->prevsibling->nextsibling = process->nextsibling;
+		}
+
+		if ( process->nextsibling )
+		{
+			process->nextsibling->prevsibling = process->prevsibling;
+		}
+
+		// TODO: Close all the file descriptors!
+
+		// Make all threads belonging to process unrunnable.
+		for ( Thread* t = process->firstthread; t; t = t->nextsibling )
+		{
+			Scheduler::EarlyWakeUp(t);
+			Scheduler::SetThreadState(t, Thread::State::NONE);
+		}
+
+		// Delete the threads.
+		while ( process->firstthread )
+		{
+			Thread* todelete = process->firstthread;
+			process->firstthread = process->firstthread->nextsibling;
+			delete todelete;
+		}
+
+		// Now clean up the address space.
+		process->ResetAddressSpace();
+
+		// TODO: Actually delete the address space. This is a small memory leak
+		// of a couple pages.
+
+		// TODO: Zombification!
+		delete process;
+
+		// And so, the process had vanished from existence. But as fate would
+		// have it, soon a replacement took its place.
+		Scheduler::ProcessTerminated(Syscall::InterruptRegs());
+		Syscall::AsIs();
+	}
+
 	void Process::Init()
 	{
 		Syscall::Register(SYSCALL_EXEC, (void*) SysExecute);
 		Syscall::Register(SYSCALL_FORK, (void*) SysFork);
 		Syscall::Register(SYSCALL_GETPID, (void*) SysGetPID);
 		Syscall::Register(SYSCALL_GETPPID, (void*) SysGetParentPID);
+		Syscall::Register(SYSCALL_EXIT, (void*) SysExit);
 
 		nextpidtoallocate = 0;
 

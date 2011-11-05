@@ -57,7 +57,6 @@ namespace Sortix
 	// These are some things used internally by the scheduler and should not be
 	// touched by anything but it. Consider it private.
 	public:
-		Thread** schedulerlist;
 		Thread* schedulerlistprev;
 		Thread* schedulerlistnext;
 		State state;
