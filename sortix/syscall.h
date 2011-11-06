@@ -29,6 +29,8 @@
 
 namespace Sortix
 {
+	class Thread;
+
 	namespace Syscall
 	{
 		void Init();
@@ -44,6 +46,14 @@ namespace Sortix
 
 		// For when you want the syscall exit code not to modify registers.
 		void AsIs();
+
+		// Retries a system call by making the thread runnable and then calling
+		// the system call code whenever the thread is scheduled to run.
+		void ScheduleResumption(Thread* thread);
+
+		// Retries a system call based on the Thread::sc* values of the current
+		// thread and if it succeeds, sets the proper registers.
+		void Resume(CPU::InterruptRegisters* regs);
 
 		CPU::InterruptRegisters* InterruptRegs();
 		CPU::SyscallRegisters* SyscallRegs();

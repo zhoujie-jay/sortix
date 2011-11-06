@@ -38,7 +38,7 @@ namespace Sortix
 		extern "C"
 		{
 			CPU::SyscallRegisters* syscall_state_ptr;
-			int system_was_incomplete;
+			unsigned system_was_incomplete;
 			size_t SYSCALL_MAX = SYSCALL_MAX_NUM;
 			void* syscall_list[SYSCALL_MAX_NUM];
 		}
@@ -70,17 +70,55 @@ namespace Sortix
 
 		void Incomplete()
 		{
+			Thread* thread = CurrentThread();
+
 			system_was_incomplete = 1;
 
 			CPU::InterruptRegisters* regs = InterruptRegs();
-			CurrentThread()->SaveRegisters(regs);
-			// TODO: Make the thread blocking if not already.
+			thread->SaveRegisters(regs);
+			Scheduler::SetThreadState(thread, Thread::State::BLOCKING);
 			Scheduler::Switch(regs);
 		}
 
 		void AsIs()
 		{
 			system_was_incomplete = 1;
+		}
+
+		void ScheduleResumption(Thread* thread)
+		{
+			Scheduler::SetThreadState(thread, Thread::State::RUNNABLE);
+		}
+
+		extern "C" size_t resume_syscall(void* scfunc, size_t scsize, size_t* scstate);
+
+		void Resume(CPU::InterruptRegisters* regs)
+		{
+			Thread* thread = CurrentThread();
+
+			syscall_state_ptr = (CPU::SyscallRegisters*) regs;
+
+			ASSERT(thread->scfunc);
+
+			size_t* scstate = thread->scstate;
+			size_t scsize = thread->scsize;
+			void* scfunc = thread->scfunc;
+
+			system_was_incomplete = 0;
+
+			size_t result = resume_syscall(scfunc, scsize, scstate);
+
+			bool incomplete = (system_was_incomplete);
+
+			system_was_incomplete = 1;
+
+			if ( !incomplete )
+			{
+				syscall_state_ptr->result = result;
+				return;
+			}
+
+			Incomplete();
 		}
 
 		CPU::InterruptRegisters* InterruptRegs()

@@ -130,6 +130,8 @@ namespace Sortix
 			currentthread = nextthread;
 
 			LogEndContextSwitch(currentthread, regs);
+
+			if ( currentthread->scfunc ) { Syscall::Resume(regs); }
 		}
 
 		void ProcessTerminated(CPU::InterruptRegisters* regs)

@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 .global syscall_handler
+.global resume_syscall
 
 .section .text
 .type syscall_handler, @function
@@ -108,4 +109,28 @@ return_to_userspace:
 
 	# Return to user-space.
 	iretl
+
+.type resume_syscall, @function
+resume_syscall:
+	pushl %ebp
+	movl %esp, %ebp
+
+	movl 8(%esp), %eax
+	movl 16(%esp), %ecx
+
+	pushl 28(%ecx)
+	pushl 24(%ecx)
+	pushl 20(%ecx)
+	pushl 16(%ecx)
+	pushl 12(%ecx)
+	pushl 8(%ecx)
+	pushl 4(%ecx)
+	pushl 0(%ecx)
+
+	call *%eax
+
+	addl $32, %esp
+	
+	leavel
+	retl
 

@@ -44,7 +44,8 @@ namespace Sortix
 		schedulerlistnext = NULL;
 		state = NONE;
 		Maxsi::Memory::Set(&registers, 0, sizeof(registers));
-		ready = false;		
+		ready = false;
+		scfunc = NULL;
 	}
 
 	Thread::Thread(const Thread* forkfrom)
@@ -62,6 +63,7 @@ namespace Sortix
 		nextsleepingthread = NULL;
 		schedulerlistprev = NULL;
 		schedulerlistnext = NULL;
+		scfunc = NULL;
 	}
 
 	Thread::~Thread()

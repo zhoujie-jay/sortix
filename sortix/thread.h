@@ -83,6 +83,11 @@ namespace Sortix
 		Thread* Fork();
 		void SaveRegisters(const CPU::InterruptRegisters* src);
 		void LoadRegisters(CPU::InterruptRegisters* dest);
+
+	public:
+		void* scfunc;
+		size_t scsize;
+		size_t scstate[8];
 		
 	};
 }
