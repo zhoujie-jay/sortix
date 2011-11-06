@@ -67,6 +67,7 @@ namespace Sortix
 
 	public:
 		addr_t addrspace;
+		int exitstatus;
 
 	public:
 		pid_t pid;
@@ -76,6 +77,7 @@ namespace Sortix
 		Process* prevsibling;
 		Process* nextsibling;
 		Process* firstchild;
+		Process* zombiechild;
 
 	public:
 		Thread* firstthread;
@@ -110,6 +112,9 @@ namespace Sortix
 
 	public:
 		addr_t AllocVirtualAddr(size_t size);
+
+	public:
+		void OnChildProcessExit(Process* process);
 
 	public:
 		static Process* Get(pid_t pid);

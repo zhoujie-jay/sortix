@@ -93,8 +93,10 @@ namespace Sortix
 		prevsibling = NULL;
 		nextsibling = NULL;
 		firstchild = NULL;
+		zombiechild = NULL;
 		firstthread = NULL;
 		mmapfrom = 0x80000000UL;
+		exitstatus = -1;
 		pid = AllocatePID();
 		Put(this);
 	}
@@ -346,12 +348,26 @@ namespace Sortix
 		pidlist->Remove(index);
 	}
 
+	void Process::OnChildProcessExit(Process* process)
+	{
+		ASSERT(process->parent == this);
+
+		for ( Thread* thread = firstthread; thread; thread = thread->nextsibling )
+		{
+			if ( thread->onchildprocessexit )
+			{
+				thread->onchildprocessexit(thread, process);
+			}
+		}
+	}
+
 	void SysExit(int status)
 	{
 		// Status codes can only contain 8 bits according to ISO C and POSIX.
 		status %= 256;
 
 		Process* process = CurrentProcess();
+		Process* parent = process->parent;
 		Process* init = Scheduler::GetInitProcess();
 
 		if ( process->pid == 0 ) { Panic("System idle process exited"); }
@@ -383,7 +399,7 @@ namespace Sortix
 		// Remove the current process from the family tree.
 		if ( !process->prevsibling )
 		{
-			process->parent->firstchild = process->nextsibling;
+			parent->firstchild = process->nextsibling;
 		}
 		else
 		{
@@ -418,13 +434,96 @@ namespace Sortix
 		// TODO: Actually delete the address space. This is a small memory leak
 		// of a couple pages.
 
-		// TODO: Zombification!
-		delete process;
+		process->exitstatus = status;
+		process->nextsibling = parent->zombiechild;
+		if ( parent->zombiechild ) { parent->zombiechild->prevsibling = process; }
+		parent->zombiechild = process;
+
+		// Notify the parent process that the child has become a zombie.
+		parent->OnChildProcessExit(process);
 
 		// And so, the process had vanished from existence. But as fate would
 		// have it, soon a replacement took its place.
 		Scheduler::ProcessTerminated(Syscall::InterruptRegs());
 		Syscall::AsIs();
+	}
+
+	struct SysWait_t
+	{
+		union { size_t align1; pid_t pid; };
+		union { size_t align2; int* status; };
+		union { size_t align3; int options; };
+	};
+
+	STATIC_ASSERT(sizeof(SysWait_t) <= sizeof(Thread::scstate));
+
+	void SysWaitCallback(Thread* thread, Process* exitee)
+	{
+		// See if this process matches what we are looking for.
+		SysWait_t* state = (SysWait_t*) thread->scstate;
+		if ( state->pid != -1 && state->pid != exitee->pid ) { return; }
+
+		thread->onchildprocessexit = NULL;
+
+		Syscall::ScheduleResumption(thread);
+	}
+
+	pid_t SysWait(pid_t pid, int* status, int options)
+	{
+		Thread* thread = CurrentThread();
+		Process* process = thread->process;
+
+		if ( pid != -1 )
+		{
+			Process* waitingfor = Process::Get(pid);
+			if ( !waitingfor ) { return -1; /* TODO: ECHILD*/ }
+			if ( waitingfor->parent != process ) { return -1; /* TODO: ECHILD*/ }
+		}
+
+		// Find any zombie children matching the search description.
+		for ( Process* zombie = process->zombiechild; zombie; zombie = zombie->nextsibling )
+		{
+			if ( pid != -1 && pid != zombie->pid ) { continue; }
+
+			pid = zombie->pid;
+			// TODO: Validate that status is a valid user-space int!
+			if ( status ) { *status = zombie->exitstatus; }
+
+			if ( zombie == process->zombiechild )
+			{
+				process->zombiechild = zombie->nextsibling;
+				if ( zombie->nextsibling ) { zombie->nextsibling->prevsibling = NULL; }
+			}
+			else
+			{
+				zombie->prevsibling->nextsibling = zombie->nextsibling;
+				if ( zombie->nextsibling ) { zombie->nextsibling->prevsibling = zombie->prevsibling; }
+			}
+
+			// And so, the process was fully deleted.
+			delete zombie;
+
+			return pid;
+		}
+
+		// The process needs to have children, otherwise we are waiting for
+		// nothing to happen.
+		if ( !process->firstchild ) { return -1; /* TODO: ECHILD*/ }
+		
+		// Resumes this system call when the wait condition has been met.
+		thread->onchildprocessexit = SysWaitCallback;
+
+		// Resume the system call with these parameters.
+		thread->scfunc = (void*) SysWait;
+		SysWait_t* state = (SysWait_t*) thread->scstate;
+		state->pid = pid;
+		state->status = status;
+		state->options = options;
+		thread->scsize = sizeof(SysWait_t);
+
+		// Now go do something else.
+		Syscall::Incomplete();
+		return 0;
 	}
 
 	void Process::Init()
@@ -434,6 +533,7 @@ namespace Sortix
 		Syscall::Register(SYSCALL_GETPID, (void*) SysGetPID);
 		Syscall::Register(SYSCALL_GETPPID, (void*) SysGetParentPID);
 		Syscall::Register(SYSCALL_EXIT, (void*) SysExit);
+		Syscall::Register(SYSCALL_WAIT, (void*) SysWait);
 
 		nextpidtoallocate = 0;
 

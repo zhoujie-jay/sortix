@@ -42,7 +42,8 @@
 #define SYSCALL_GETPPID 14
 #define SYSCALL_GET_FILEINFO 15
 #define SYSCALL_GET_NUM_FILES 16
-#define SYSCALL_MAX_NUM 17 /* index of highest constant + 1 */
+#define SYSCALL_WAIT 17
+#define SYSCALL_MAX_NUM 18 /* index of highest constant + 1 */
 
 #endif
 

@@ -46,6 +46,7 @@ namespace Sortix
 		Maxsi::Memory::Set(&registers, 0, sizeof(registers));
 		ready = false;
 		scfunc = NULL;
+		ResetCallbacks();
 	}
 
 	Thread::Thread(const Thread* forkfrom)
@@ -64,6 +65,12 @@ namespace Sortix
 		schedulerlistprev = NULL;
 		schedulerlistnext = NULL;
 		scfunc = NULL;
+		ResetCallbacks();
+	}
+
+	void Thread::ResetCallbacks()
+	{
+		onchildprocessexit = NULL;
 	}
 
 	Thread::~Thread()

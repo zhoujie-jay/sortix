@@ -44,6 +44,7 @@ namespace Sortix
 	private:
 		Thread();
 		Thread(const Thread* forkfrom);
+		void ResetCallbacks();
 
 	public:
 		~Thread();
@@ -88,6 +89,9 @@ namespace Sortix
 		void* scfunc;
 		size_t scsize;
 		size_t scstate[8];
+
+	public:
+		void (*onchildprocessexit)(Thread*, Process*);
 		
 	};
 }

@@ -41,6 +41,7 @@ c/h/features.h \
 c/h/string.h \
 c/h/sys/stat.h \
 c/h/sys/types.h \
+c/h/sys/wait.h \
 c/h/stdio.h \
 
 COMMONOBJS=c++.o memory.o string.o error.o format.o

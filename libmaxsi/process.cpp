@@ -38,6 +38,7 @@ namespace Maxsi
 		DEFN_SYSCALL0(pid_t, SysGetParentPID, 14);
 		DEFN_SYSCALL2(int, SysGetFileInfo, 15, size_t, FileInfo*);
 		DEFN_SYSCALL0(size_t, SysGetNumFiles, 16);
+		DEFN_SYSCALL3(pid_t, SysWait, 17, pid_t, int*, int);
 
 		int Execute(const char* filepath, int argc, const char** argv)
 		{
@@ -95,6 +96,16 @@ namespace Maxsi
 		DUAL_FUNCTION(pid_t, getppid, GetParentPID, ())
 		{
 			return SysGetParentPID();
+		}
+
+		extern "C" pid_t waitpid(pid_t pid, int* status, int options)
+		{
+			return SysWait(pid, status, options);
+		}
+
+		extern "C" pid_t wait(int* status)
+		{
+			return waitpid(-1, status, 0);
 		}
 	}
 }
