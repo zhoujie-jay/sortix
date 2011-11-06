@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
 #include <libmaxsi/sortix-keyboard.h>
@@ -43,12 +46,24 @@ void command()
 
 	if ( String::Compare(command, "$$") == 0 ) { printf("%u\n", Process::GetPID()); return; }
 	if ( String::Compare(command, "$PPID") == 0 ) { printf("%u\n", Process::GetParentPID()); return; }
+	if ( String::Compare(command, "exit") == 0 ) { exit(0); return; }
+
+	pid_t child = fork();
+	if ( child < 0 ) { printf("fork failed\n"); return; }
+	if ( child != 0 )
+	{
+		int status;
+		pid_t childpid = wait(&status);
+		return;
+	}
 
 	// Replace the current process with another process image.
 	Process::Execute(command, 0, NULL);
 
 	// This is clever. This only happens if the program didn't change.
 	printf("%s: command not found\n", command);
+
+	exit(127);
 }
 
 int main(int argc, char* argv[])

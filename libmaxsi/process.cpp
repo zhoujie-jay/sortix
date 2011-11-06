@@ -75,12 +75,7 @@ namespace Maxsi
 
 		DUAL_FUNCTION(void, exit, Exit, (int status))
 		{
-			// TODO: Once wait() works and is used in the shell, call _exit!
-			//_exit(status);
-			const char* sh = "sh";
-			const char* argv[] = { sh };
-			Execute("sh", 1, argv);
-			while(true);
+			_exit(status);
 		}
 
 		DUAL_FUNCTION(pid_t, fork, Fork, ())

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <sys/wait.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
 #include <libmaxsi/thread.cpp>
@@ -7,8 +8,9 @@ using namespace Maxsi;
 
 int parent(pid_t childid)
 {
-	// TODO: wait for child to finish.
-	while ( true ) { Thread::Sleep(100000);	}
+	int status;
+	waitpid(childid, &status, 0);
+	return status;
 }
 
 int child()
@@ -18,7 +20,7 @@ int child()
 
 	Process::Execute(programname, 1, newargv);
 
-	return 1;
+	return 2;
 }
 
 int main(int argc, char* argv[])
@@ -31,7 +33,7 @@ int main(int argc, char* argv[])
 	if ( childpid < 0 )
 	{
 		printf("init: unable to fork a child\n");
-		return 1;
+		return 2;
 	}
 
 	return ( childpid == 0 ) ? child() : parent(childpid);
