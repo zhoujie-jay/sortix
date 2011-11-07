@@ -68,6 +68,7 @@ vga.o \
 elf.o \
 process.o \
 initrd.o \
+thread.o \
 ../libmaxsi/libmaxsi-sortix.a
 
 JSOBJS:=$(subst .o,-js.o,$(OBJS))

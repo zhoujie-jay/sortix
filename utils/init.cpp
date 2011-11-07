@@ -2,7 +2,7 @@
 #include <sys/wait.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
-#include <libmaxsi/thread.cpp>
+#include <libmaxsi/thread.h>
 
 using namespace Maxsi;
 

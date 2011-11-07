@@ -33,7 +33,7 @@
 #include "keyboard.h"
 #include "multiboot.h"
 #include "memorymanagement.h"
-#include "thread.cpp"
+#include "thread.h"
 #include "process.h"
 #include "scheduler.h"
 #include "syscall.h"
