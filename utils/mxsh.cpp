@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <sys/wait.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
@@ -8,6 +9,8 @@
 #include <libmaxsi/string.h>
 
 using namespace Maxsi;
+
+int status = 0;
 
 void command()
 {
@@ -44,24 +47,15 @@ void command()
 
 	if ( command[0] == '\0' ) { return; }
 
-	if ( String::Compare(command, "$$") == 0 ) { printf("%u\n", Process::GetPID()); return; }
-	if ( String::Compare(command, "$PPID") == 0 ) { printf("%u\n", Process::GetParentPID()); return; }
-	if ( String::Compare(command, "exit") == 0 ) { exit(0); return; }
-
-	pid_t child = fork();
-	if ( child < 0 ) { printf("fork failed\n"); return; }
-	if ( child != 0 )
-	{
-		int status;
-		pid_t childpid = wait(&status);
-		return;
-	}
+	if ( String::Compare(command, "$?") == 0 ) { printf("%u\n", status); status = 0; return; }
+	if ( String::Compare(command, "$$") == 0 ) { printf("%u\n", Process::GetPID()); status = 0; return; }
+	if ( String::Compare(command, "$PPID") == 0 ) { printf("%u\n", Process::GetParentPID()); status = 0; return; }
 
 	int argc = 0;
 	const char* argv[256];
-	argv[argc++] = command;
+	argv[0] = NULL;
 
-	bool lastwasspace = false;
+	bool lastwasspace = true;
 	for ( size_t i = 0; i <= commandused; i++ )
 	{
 		switch ( command[i] )
@@ -76,6 +70,23 @@ void command()
 				if ( lastwasspace ) { argv[argc++] = command + i; }
 				lastwasspace = false;
 		}
+	}
+
+	if ( !argv[0] ) { return; }
+
+	if ( strcmp(argv[0], "exit") == 0 )
+	{
+		const char* status = "1";
+		if ( 1 < argc ) { status = argv[1]; }
+		exit(atoi(status));
+	}
+
+	pid_t child = fork();
+	if ( child < 0 ) { printf("fork failed\n"); return; }
+	if ( child != 0 )
+	{
+		pid_t childpid = wait(&status);
+		return;
 	}
 
 	// Replace the current process with another process image.
