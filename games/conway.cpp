@@ -2,9 +2,11 @@
 #include <libmaxsi/io.h>
 #include <libmaxsi/thread.h>
 #include <libmaxsi/keyboard.h>
+#include <libmaxsi/string.h>
 #include <libmaxsi/sortix-vga.h>
 #include <libmaxsi/sortix-keyboard.h>
-
+#include <stdio.h>
+	
 using namespace Maxsi;
 using namespace Maxsi::Keyboard;
 
@@ -136,15 +138,36 @@ void Update()
 	Render();
 }
 
+int usage(int argc, char* argv[])
+{
+	printf("usage: %s [OPTIONS]\n", argv[0]);
+	printf("Options:\n");
+	printf("  --speed <miliseconds>    How many miliseconds between updates\n");
+	printf("  --usage                  Display this screen\n");
+	printf("  --help                   Display this screen\n");
+
+	return 0;
+}
+
 int main(int argc, char* argv[])
 {
+	int sleepms = 50;
+	for ( int i = 1; i < argc; i++ )
+	{
+		if ( String::Compare(argv[i], "--help") == 0 ) { return usage(argc, argv); }
+		if ( String::Compare(argv[i], "--usage") == 0 ) { return usage(argc, argv); }
+		if ( String::Compare(argv[i], "--speed") == 0 && 1 < argc-i )
+		{
+			sleepms = String::ToInt(argv[++i]);
+		}
+	}
+
 	int result = Init();
 	if ( result != 0 ) { return result; }
 
 	// Update the game every 50th milisecond.
 	while ( true )
 	{
-		const int sleepms = 50;
 		Thread::USleep(sleepms * 1000);
 		Update();
 	}
