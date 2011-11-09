@@ -31,7 +31,7 @@ namespace Maxsi
 	namespace Process
 	{
 		DEFN_SYSCALL1_VOID(SysExit, 1, int);
-		DEFN_SYSCALL3(int, SysExecute, 10, const char*, int, const char**);
+		DEFN_SYSCALL4(int, SysExecVE, 10, const char*, int, char* const*, char* const*);
 		DEFN_SYSCALL0_VOID(SysPrintPathFiles, 11);
 		DEFN_SYSCALL0(pid_t, SysFork, 12);
 		DEFN_SYSCALL0(pid_t, SysGetPID, 13);
@@ -42,7 +42,7 @@ namespace Maxsi
 
 		int Execute(const char* filepath, int argc, const char** argv)
 		{
-			return SysExecute(filepath, argc, argv);
+			return SysExecVE(filepath, argc, (char* const*) argv, NULL);
 		}
 
 		void PrintPathFiles()

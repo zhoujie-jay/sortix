@@ -294,7 +294,10 @@ namespace Sortix
 			hacksigintpending = false;
 			Log::PrintF("^C\n");
 
-			Process::Execute("sh", regs);
+			const char* programname = "sh";
+			const char* const argv[] = { "sh" };
+			CurrentProcess()->Execute(programname, 1, argv, regs);
+			return;
 		}
 
 		void SigIntHack()

@@ -79,7 +79,8 @@ namespace Sortix
 
 				Sound::Mute();
 				const char* programname = "sh";
-				Process::Execute(programname, regs);
+				const char* const argv[] = { "sh" };
+				CurrentProcess()->Execute(programname, 1, argv, regs);
 				return;
 			}
 

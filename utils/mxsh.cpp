@@ -57,11 +57,32 @@ void command()
 		return;
 	}
 
+	int argc = 0;
+	const char* argv[256];
+	argv[argc++] = command;
+
+	bool lastwasspace = false;
+	for ( size_t i = 0; i <= commandused; i++ )
+	{
+		switch ( command[i] )
+		{
+			case ' ':
+			case '\t':
+			case '\n':
+				command[i] = 0;
+				lastwasspace = true;
+				break;
+			default:
+				if ( lastwasspace ) { argv[argc++] = command + i; }
+				lastwasspace = false;
+		}
+	}
+
 	// Replace the current process with another process image.
-	Process::Execute(command, 0, NULL);
+	Process::Execute(argv[0], argc, argv);
 
 	// This is clever. This only happens if the program didn't change.
-	printf("%s: command not found\n", command);
+	printf("%s: command not found\n", argv[0]);
 
 	exit(127);
 }

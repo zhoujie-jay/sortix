@@ -33,9 +33,8 @@ _start:
 	call initialize_standard_library
 
 	# Run main
-	# TODO: Sortix should push these values to the stack itself!
-	push $0x0 # argv
-	push $0 # argc
+	push %ebx # argv
+	push %eax # argc
 	call main
 
 	# Terminate the process with main's exit code.

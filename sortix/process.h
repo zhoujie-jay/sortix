@@ -60,7 +60,6 @@ namespace Sortix
 
 	public:
 		static void Init();
-		static int Execute(const char* programname, CPU::InterruptRegisters* regs);
 
 	private:
 		static pid_t AllocatePID();
@@ -90,6 +89,7 @@ namespace Sortix
 		bool sigint;
 
 	public:
+		int Execute(const char* programname, int argc, const char* const* argv, CPU::InterruptRegisters* regs);
 		void ResetAddressSpace();
 
 	public:

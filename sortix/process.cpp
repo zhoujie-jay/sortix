@@ -244,8 +244,10 @@ namespace Sortix
 		// TODO: Unmap any process memory segments.
 	}
 
-	int Process::Execute(const char* programname, CPU::InterruptRegisters* regs)
+	int Process::Execute(const char* programname, int argc, const char* const* argv, CPU::InterruptRegisters* regs)
 	{
+		ASSERT(CurrentProcess() == this);
+
 		size_t programsize = 0;
 		byte* program = InitRD::Open(programname, &programsize);
 		if ( !program ) { return -1; }
@@ -259,24 +261,75 @@ namespace Sortix
 				Panic("Couldn't create the shell process");
 			}
 
-			return Execute("sh", regs);
+			const char* const SHARGV[]= { "sh" };
+			return Execute("sh", 1, SHARGV, regs);
 		}
 
 		// TODO: This may be an ugly hack!
 		// TODO: Move this to x86/process.cpp.
+
+		// Alright, move argv onto the new stack! First figure out exactly how
+		// big argv actually is.
+		addr_t stackpos = CurrentThread()->stackpos + CurrentThread()->stacksize;
+		addr_t argvpos = stackpos - sizeof(char*) * argc;
+		char** stackargv = (char**) argvpos;
+		regs->eax = argc;
+		regs->ebx = argvpos;
+
+		size_t argvsize = 0;
+		for ( int i = 0; i < argc; i++ )
+		{
+			size_t len = String::Length(argv[i]) + 1;
+			argvsize += len;
+			char* dest = ((char*) argvpos) - argvsize;
+			stackargv[i] = dest;
+			Maxsi::Memory::Copy(dest, argv[i], len);
+		}
+
+		stackpos = argvpos - argvsize;
+
 		regs->eip = entry;
-		regs->useresp = CurrentThread()->stackpos + CurrentThread()->stacksize;
-		regs->ebp = CurrentThread()->stackpos + CurrentThread()->stacksize;
+		regs->useresp = stackpos;
+		regs->ebp = stackpos;
 
 		return 0;
 	}
 
-	int SysExecute(const char* programname)
+	int SysExecVE(const char* filename, int argc, char* const argv[], char* const /*envp*/[])
 	{
-		// TODO: Validate that filepath is a user-space readable string! 
+		// TODO: Validate that all the pointer-y parameters are SAFE!
 
-		// This is a hacky way to set up the thread!
-		return Process::Execute(programname, Syscall::InterruptRegs());
+		// Make a copy of argv and filename as they are going to be destroyed
+		// when the address space is reset.
+		filename = String::Clone(filename);
+		if ( !filename ) { return -1; /* TODO: errno */ }
+
+		char** newargv = new char*[argc];
+		if ( !newargv ) { delete[] filename; return -1; /* TODO: errno */ }
+
+		for ( int i = 0; i < argc; i++ )
+		{
+			newargv[i] = String::Clone(argv[i]);
+			if ( !newargv[i] )
+			{
+				while ( i ) { delete[] newargv[--i]; }
+
+				return -1; /* TODO: errno */
+			}
+		}
+
+		argv = newargv;
+
+		CPU::InterruptRegisters* regs = Syscall::InterruptRegs();
+		Process* process = CurrentProcess();
+		int result = process->Execute(filename, argc, argv, regs);
+		Syscall::AsIs();
+
+		for ( int i = 0; i < argc; i++ ) { delete[] argv[i]; }
+		delete[] argv;
+		delete[] filename;
+
+		return result;
 	}
 
 	pid_t SysFork()
@@ -528,7 +581,7 @@ namespace Sortix
 
 	void Process::Init()
 	{
-		Syscall::Register(SYSCALL_EXEC, (void*) SysExecute);
+		Syscall::Register(SYSCALL_EXEC, (void*) SysExecVE);
 		Syscall::Register(SYSCALL_FORK, (void*) SysFork);
 		Syscall::Register(SYSCALL_GETPID, (void*) SysGetPID);
 		Syscall::Register(SYSCALL_GETPPID, (void*) SysGetParentPID);
