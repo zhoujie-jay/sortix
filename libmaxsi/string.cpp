@@ -90,6 +90,20 @@ namespace Maxsi
 			return Result;
 		}
 
+		DUAL_FUNCTION(int, atoi, ToInt, (const char* str))
+		{
+			bool negative = ( *str == '-' );
+			if ( negative ) { str++; }
+			int result = 0;
+			int c;
+			while ( (c = *str++) != 0 )
+			{
+				if ( c < '0' || '9' < c ) { return result; }
+				result = result * 10 + c - '0';
+			}
+			return (negative) ? -result : result;
+		}
+
 #if 0
 		char* Combine(size_t NumParameters, ...)
 		{

@@ -45,6 +45,7 @@ typedef int div_t, ldiv_t, lldiv_t;
 
 /* TODO: WEXITSTATUS, WIFEXITED, WIFSIGNALED, WIFSTOPPED, WNOHANG, WSTOPSIG, WTERMSIG, WUNTRACED is missing here */
 
+int atoi(const char*);
 void exit(int);
 void _Exit(int status);
 void free(void*);
