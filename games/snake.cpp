@@ -4,6 +4,7 @@
 #include <libmaxsi/keyboard.h>
 #include <libmaxsi/sortix-vga.h>
 #include <libmaxsi/sortix-keyboard.h>
+#include <stdlib.h>
 
 using namespace Maxsi;
 using namespace Maxsi::Keyboard;
@@ -36,15 +37,6 @@ const int speedincrease = -5;
 const int maxspeed = 40;
 volatile int speed;
 
-// HACK: Sortix has no random number generator yet!
-int random_seed=1337;
-int rand(int max) 
-{
-	int tmpmax=max;
-	random_seed = random_seed + 37 * 1103515245 + 12345;
-	return (unsigned int) (random_seed / 65536) % tmpmax; 
-}
-
 void Clear()
 {
 	// Reset the game data.
@@ -56,7 +48,7 @@ void Reset()
 	Clear();
 	tailx = posx = width/2;
 	taily = posy = height/2;
-	switch ( rand(4) )
+	switch ( rand() % 4 )
 	{
 		case 0: velx = -1; vely = 0; break;
 		case 1: velx = 1; vely = 0; break; 
@@ -64,8 +56,8 @@ void Reset()
 		case 3: velx = 0; vely = -1; break;
 	}
 
-	animalx = 2 + rand(width-4);
-	animaly = 2 + rand(height-4);
+	animalx = 2 + (rand() % width-4);
+	animaly = 2 + (rand() % height-4);
 
 	taillen = 0;
 	tailmax = 3;
@@ -149,8 +141,8 @@ void Update()
 	if ( newx == animalx && newy == animaly )
 	{
 		tailmax++;
-		animalx = 2 + rand(width-4);
-		animaly = 2 + rand(height-4);
+		animalx = 2 + (rand() % width-4);
+		animaly = 2 + (rand() % height-4);
 		if ( maxspeed < speed ) { speed += speedincrease; }
 	}
 

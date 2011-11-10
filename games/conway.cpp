@@ -6,7 +6,7 @@
 #include <libmaxsi/sortix-vga.h>
 #include <libmaxsi/sortix-keyboard.h>
 #include <stdio.h>
-	
+
 using namespace Maxsi;
 using namespace Maxsi::Keyboard;
 

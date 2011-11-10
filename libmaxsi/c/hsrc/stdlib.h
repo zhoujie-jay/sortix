@@ -50,6 +50,7 @@ void exit(int);
 void _Exit(int status);
 void free(void*);
 void* malloc(size_t);
+int rand(void);
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #ifndef SORTIX_UNIMPLEMENTED
@@ -90,7 +91,6 @@ int posix_openpt(int);
 char* ptsname(int);
 int putenv(char*);
 void qsort(void*, size_t, size_t, int (*)(const void*, const void*));
-int rand(void);
 long random(void);
 void* realloc(void*, size_t);
 char* realpath(const char* restrict, char* restrict);

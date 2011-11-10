@@ -6,6 +6,8 @@
 #include <libmaxsi/sortix-vga.h>
 #include <libmaxsi/sortix-keyboard.h>
 #include <libmaxsi/sortix-sound.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 using namespace Maxsi;
 using namespace Maxsi::Keyboard;
@@ -107,21 +109,25 @@ void Goal(nat player)
 {
 	frame->text[ballx + bally*width] = ' ' | (COLOR8_WHITE << 8);
 
+	int offset = (rand() % 4) - 2;
 	ballx = width/2;
-	bally = height/2;
+	bally = height/2 + offset;
 
 	if ( player == 1 )
 	{
 		ballvelx = 1;
-		ballvely = 1;
+		ballvely = (rand() % 2) * 2 - 1;
 		p1score++;
 	}
 	else if ( player == 2 )
 	{
 		ballvelx = -1;
-		ballvely = -1;
+		ballvely = (rand() % 2) * 2 - 1;
 		p2score++;
 	}
+
+	if ( ballvely > 0 ) { ballvely /= ballvely; }
+	if ( ballvely < 0 ) { ballvely /= -ballvely; }
 
 	System::Sound::SetFrequency(goalfreq);
 	soundleft = 50;
@@ -198,8 +204,30 @@ void ReadInput()
 	}
 }
 
+int usage(int argc, char* argv[])
+{
+	printf("usage: %s [OPTIONS]\n", argv[0]);
+	printf("Options:\n");
+	printf("  --speed <miliseconds>    How many miliseconds between updates\n");
+	printf("  --usage                  Display this screen\n");
+	printf("  --help                   Display this screen\n");
+
+	return 0;
+}
+
 int main(int argc, char* argv[])
 {
+	int sleepms = 50;
+	for ( int i = 1; i < argc; i++ )
+	{
+		if ( String::Compare(argv[i], "--help") == 0 ) { return usage(argc, argv); }
+		if ( String::Compare(argv[i], "--usage") == 0 ) { return usage(argc, argv); }
+		if ( String::Compare(argv[i], "--speed") == 0 && 1 < argc-i )
+		{
+			sleepms = String::ToInt(argv[++i]);
+		}
+	}
+
 	int result = Init();
 	if ( result != 0 ) { return result; }
 
@@ -208,7 +236,6 @@ int main(int argc, char* argv[])
 		ReadInput();
 		Update();
 		UpdateUI();
-		const unsigned sleepms = 50;
 		Thread::USleep(sleepms * 1000);
 		if ( soundleft < 0 ) { continue; }
 		if ( soundleft <= 50 )

@@ -55,6 +55,7 @@ thread.o \
 io.o \
 init.o \
 start.o \
+random.o \
 
 HEADERS=\
 error.h \
