@@ -25,6 +25,7 @@
 #include "platform.h"
 #include <libmaxsi/memory.h>
 #include "descriptors.h"
+#include "device.h"
 
 using namespace Maxsi;
 
@@ -91,7 +92,7 @@ namespace Sortix
 
 		if ( devices[index] != reserveddevideptr )
 		{
-			// TODO: Unref device here?
+			devices[index]->Unref();
 		}
 
 		devices[index] = NULL;

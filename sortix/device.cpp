@@ -28,29 +28,24 @@
 
 namespace Sortix
 {
-	bool Device::Close()
+	Device::Device()
 	{
-		_refCount--;
-		if ( _refCount == 0 )
-		{
-			delete this;
-		}
-		return true;
+		refcount = 0;
 	}
 
-	void Device::Think()
+	Device::~Device()
 	{
 		
 	}
 
-	void Device::RequestThink()
+	void Device::Unref()
 	{
-		Think();
+		if ( --refcount == 0 ) { delete this; }
 	}
 
-	bool Device::Sync()
+	void Device::Refer()
 	{
-		return true;
+		refcount++;
 	}
 }
 

@@ -125,10 +125,8 @@ off_t lseek(int, off_t, int);
 int nice(int);
 long pathconf(const char*, int);
 int pause(void);
-int pipe(int [2]);
 ssize_t pread(int, void*, size_t, off_t);
 ssize_t pwrite(int, const void*, size_t, off_t);
-ssize_t read(int, void*, size_t);
 ssize_t readlink(const char* restrict, char* restrict, size_t);
 ssize_t readlinkat(int, const char* restrict, char* restrict, size_t);
 int rmdir(const char*);
@@ -152,7 +150,6 @@ char* ttyname(int);
 int ttyname_r(int, char*, size_t);
 int unlink(const char*);
 int unlinkat(int, const char*, int);
-ssize_t write(int, const void*, size_t);
 
 #if __POSIX_OBSOLETE <= 200801
 pid_t setpgrp(void);
@@ -166,10 +163,13 @@ void _exit(int);
 pid_t fork(void);
 pid_t getpid(void);
 pid_t getppid(void);
+int pipe(int [2]);
+ssize_t read(int, void*, size_t);
 unsigned sleep(unsigned);
 #if __POSIX_OBSOLETE <= 200112
 int usleep(useconds_t useconds);
 #endif
+ssize_t write(int, const void*, size_t);
 
 __END_DECLS
 

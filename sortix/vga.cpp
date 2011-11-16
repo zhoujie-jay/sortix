@@ -109,6 +109,8 @@ namespace Sortix
 			frame->physical = page;
 			frame->userframe = userframe;
 
+			frame->Refer();
+
 			return mapto;
 		}
 
@@ -185,7 +187,7 @@ namespace Sortix
 			process->descriptors.Free(fd);
 			
 			if ( device == NULL ) { return -1; }
-			if ( !device->Close() )  { return -1; }
+			device->Unref();
 			
 			return 0;
 		}
@@ -206,5 +208,8 @@ namespace Sortix
 		if ( physical != 0 ) { Page::Put(physical); }
 	}
 
-	nat DevVGAFrame::Flags() { return Device::VGABUFFER; }
+	bool DevVGAFrame::IsType(unsigned type)
+	{
+		return type == Device::VGABUFFER;
+	}
 }

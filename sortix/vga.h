@@ -72,11 +72,11 @@ namespace Sortix
 	class DevVGAFrame : public Device
 	{
 	public:
-		virtual nat Flags();
-
-	public:
 		DevVGAFrame();
 		~DevVGAFrame();
+
+	public:
+		virtual bool IsType(unsigned type);
 
 	public:
 		Process* process;

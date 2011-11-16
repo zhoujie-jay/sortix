@@ -25,61 +25,43 @@
 #ifndef SORTIX_STREAM_H
 #define SORTIX_STREAM_H
 
+#include "device.h"
+
 namespace Sortix
 {
-	class Device
-	{
-	public:
-		Device() { };
-		virtual ~Device() { }
-
-	public:
-		virtual void close() = 0;
-
-	};
-
 	class DevStream : public Device
 	{
 	public:
-		DevStream() { };
-		virtual ~DevStream() { }
+		typedef Device BaseClass;
 
 	public:
-		virtual size_t write(const void* buffer, size_t bufferSize) = 0;
-		virtual size_t readSome(const void* buffer, size_t bufferSize) = 0;
+		virtual bool IsType(unsigned type) { return type == Device::STREAM; }
 
 	public:
-		inline size_t read(const void* buffer, size_t bufferSize)
-		{
-			const uint8_t* bytes = (uint8_t*) buffer;
-			size_t total = bufferSize;
-			while ( BufferSize > 0 )
-			{
-				size_t got = readSome(bytes, bufferSize);
-				if ( got == SIZE_MAX ) { return SIZE_MAX; }
-				bytes += got;
-				bufferSize -= got;				
-			}
-			return total;
-		}
+		virtual ssize_t Read(byte* dest, size_t count) = 0;
+		virtual ssize_t Write(const byte* src, size_t count) = 0;
+		virtual bool IsReadable() = 0;
+		virtual bool IsWritable() = 0;
+
 	};
 
 	class DevBuffer : public DevStream
 	{
 	public:
-		DevBuffer() { };
-		virtual ~DevBuffer() { }
+		typedef Device BaseClass;
 
 	public:
-		virtual size_t write(const void* buffer, size_t bufferSize) = 0;
-		virtual size_t readSome(const void* buffer, size_t bufferSize) = 0;
+		virtual bool IsType(unsigned type)
+		{
+			return type == Device::BUFFER || BaseClass::IsType(type);
+		}
 
 	public:
-		virtual size_t blockSize() = 0;
-		virtual intmax_t size() = 0;
-		virtual intmax_t position() = 0;
-		virtual bool seek(intmax_t position) = 0;
-		virtual bool resize(intmax_t size) = 0;
+		virtual size_t BlockSize() = 0;
+		virtual uintmax_t Size() = 0;
+		virtual uintmax_t Position() = 0;
+		virtual bool Seek(uintmax_t position) = 0;
+		virtual bool Resize(uintmax_t size) = 0;
 
 	};
 }

@@ -43,7 +43,10 @@
 #define SYSCALL_GET_FILEINFO 15
 #define SYSCALL_GET_NUM_FILES 16
 #define SYSCALL_WAIT 17
-#define SYSCALL_MAX_NUM 18 /* index of highest constant + 1 */
+#define SYSCALL_READ 18
+#define SYSCALL_WRITE 19
+#define SYSCALL_PIPE 20
+#define SYSCALL_MAX_NUM 21 /* index of highest constant + 1 */
 
 #endif
 

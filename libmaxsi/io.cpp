@@ -30,6 +30,9 @@
 namespace Maxsi
 {
 	DEFN_SYSCALL1(size_t, SysPrint, 4, const char*);
+	DEFN_SYSCALL3(ssize_t, SysRead, 18, int, void*, size_t);
+	DEFN_SYSCALL3(ssize_t, SysWrite, 19, int, const void*, size_t);
+	DEFN_SYSCALL1(int, SysPipe, 20, int*);
 
 	size_t Print(const char* Message)
 	{
@@ -59,6 +62,22 @@ namespace Maxsi
 		va_end(list);
 		return (int) result;
 	}
+
+	extern "C" ssize_t read(int fd, void* buf, size_t count)
+	{
+		return SysRead(fd, buf, count);
+	}
+
+	extern "C" ssize_t write(int fd, const void* buf, size_t count)
+	{
+		return SysWrite(fd, buf, count);
+	}
+
+	extern "C" int pipe(int pipefd[2])
+	{
+		return SysPipe(pipefd);
+	}
+
 #endif
 
 }

@@ -17,38 +17,20 @@
 	You should have received a copy of the GNU General Public License along
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	device.h
-	A base class for all devices.
+	io.h
+	Provides system calls for input and output.
 
 ******************************************************************************/
 
-#ifndef SORTIX_DEVICE_H
-#define SORTIX_DEVICE_H
+#ifndef SORTIX_IO_H
+#define SORTIX_IO_H
 
 namespace Sortix
 {
-	class Device
+	namespace IO
 	{
-	public:
-		static const unsigned STREAM = 0;
-		static const unsigned BUFFER = 1;
-		static const unsigned VGABUFFER = 2;
-
-	public:
-		Device();
-		virtual ~Device();
-
-	private:
-		size_t refcount;
-
-	public:
-		void Refer();
-		void Unref();
-
-	public:
-		virtual bool IsType(unsigned type) = 0;
-
-	};
+		void Init();
+	}
 }
 
 #endif

@@ -45,6 +45,8 @@
 #include "initrd.h"
 #include "vga.h"
 #include "sound.h"
+#include "io.h"
+#include "pipe.h"
 
 using namespace Maxsi;
 
@@ -235,6 +237,12 @@ namespace Sortix
 
 		// Initialize the process system.
 		Process::Init();
+
+		// Initialize the IO system.
+		IO::Init();
+
+		// Initialize the pipe system.
+		Pipe::Init();
 
 		// Initialize the scheduler.
 		Scheduler::Init();

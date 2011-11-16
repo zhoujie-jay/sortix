@@ -17,38 +17,23 @@
 	You should have received a copy of the GNU General Public License along
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	device.h
-	A base class for all devices.
+	pipe.h
+	A device with a writing end and a reading end.
 
 ******************************************************************************/
 
-#ifndef SORTIX_DEVICE_H
-#define SORTIX_DEVICE_H
+
+#ifndef SORTIX_PIPE_H
+#define SORTIX_PIPE_H
+
+#include "stream.h"
 
 namespace Sortix
 {
-	class Device
+	namespace Pipe
 	{
-	public:
-		static const unsigned STREAM = 0;
-		static const unsigned BUFFER = 1;
-		static const unsigned VGABUFFER = 2;
-
-	public:
-		Device();
-		virtual ~Device();
-
-	private:
-		size_t refcount;
-
-	public:
-		void Refer();
-		void Unref();
-
-	public:
-		virtual bool IsType(unsigned type) = 0;
-
-	};
+		void Init();
+	}	
 }
 
 #endif

@@ -49,7 +49,7 @@ namespace Sortix
 	public:
 		inline Device* Get(int index)
 		{
-			if ( numdevices <= index ) { return NULL; }
+			if ( index < 0 || numdevices <= index ) { return NULL; }
 			return devices[index];
 		}
 

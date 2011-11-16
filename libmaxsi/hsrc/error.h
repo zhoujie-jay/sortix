@@ -46,6 +46,8 @@ namespace Maxsi
 
 		const int ENOTBLK = 12;
 		const int ENODEV = 13;
+		const int EWOULDBLOCK = 14;
+		const int EBADF = 15;
 
 		extern int _errornumber;
 
