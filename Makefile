@@ -26,6 +26,7 @@ suball:
 
 clean:
 	rm -f $(INITRD)
+	rm -f initrd/*
 	(for D in $(MODULES); do $(MAKE) clean $(MFLAGS) --directory $$D || exit $?; done)
 
 distclean: clean cleanbuilds
