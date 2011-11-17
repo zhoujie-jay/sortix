@@ -131,7 +131,6 @@ namespace Sortix
 			Process* process = CurrentProcess();
 			Device* dev = process->descriptors.Get(fd);
 			if ( !dev ) { return -1; /* TODO: EBADF */ }
-			process->descriptors.Free(fd);
 			return process->descriptors.Allocate(dev);
 		}
 
