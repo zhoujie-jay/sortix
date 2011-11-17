@@ -59,6 +59,7 @@ namespace Sortix
 		{
 			if ( devices[i] == NULL )
 			{
+				object->Refer();
 				devices[i] = object;
 				return i;
 			}
@@ -87,7 +88,7 @@ namespace Sortix
 
 	void DescriptorTable::Free(int index)
 	{
-		ASSERT(index < index);
+		ASSERT(index < numdevices);
 		ASSERT(devices[index] != NULL);
 
 		if ( devices[index] != reserveddevideptr )
@@ -109,6 +110,7 @@ namespace Sortix
 		ASSERT(devices[index] != NULL);
 		ASSERT(devices[index] == reserveddevideptr);
 
+		object->Refer();
 		devices[index] = object;
 	}
 
@@ -117,9 +119,14 @@ namespace Sortix
 		Device** newlist = new Device*[numdevices];
 		if ( newlist == NULL ) { return false; }
 
-		Memory::Copy(newlist, devices, sizeof(Device*) * numdevices);
-
-		// TODO: Possibly deal with a potential O_CLOFORK!
+		for ( int i = 0; i < numdevices; i++ )
+		{
+			// TODO: Possibly deal with a potential O_CLOFORK!
+			newlist[i] = devices[i];
+			if ( !devices[i] ) { continue; }
+			if ( devices[i] == reserveddevideptr ) { continue; }
+			newlist[i]->Refer();
+		}
 
 		ASSERT(forkinto->devices == NULL);
 

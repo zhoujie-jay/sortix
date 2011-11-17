@@ -80,7 +80,6 @@ int access(const char*, int);
 unsigned alarm(unsigned);
 int chdir(const char*);
 int chown(const char*, uid_t, gid_t);
-int close(int);
 size_t confstr(int, char*, size_t);
 char* crypt(const char*, const char*);
 char* ctermid(char*);
@@ -159,6 +158,7 @@ extern char* optarg;
 extern int opterr, optind, optopt;
 #endif
 
+int close(int);
 void _exit(int);
 pid_t fork(void);
 pid_t getpid(void);

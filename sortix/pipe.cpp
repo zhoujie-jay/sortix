@@ -71,8 +71,8 @@ namespace Sortix
 
 	DevPipeStorage::~DevPipeStorage()
 	{
-		ASSERT(!readwaiting);
-		ASSERT(!writewaiting);
+		if ( readwaiting ) { Syscall::ScheduleResumption(readwaiting); }
+		if ( writewaiting ) { Syscall::ScheduleResumption(writewaiting); }
 		delete[] buffer;
 	}
 
