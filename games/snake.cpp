@@ -56,8 +56,8 @@ void Reset()
 		case 3: velx = 0; vely = -1; break;
 	}
 
-	animalx = 2 + (rand() % width-4);
-	animaly = 2 + (rand() % height-4);
+	animalx = 2 + (rand() % (width-4));
+	animaly = 2 + (rand() % (height-4));
 
 	taillen = 0;
 	tailmax = 3;
@@ -141,8 +141,10 @@ void Update()
 	if ( newx == animalx && newy == animaly )
 	{
 		tailmax++;
-		animalx = 2 + (rand() % width-4);
-		animaly = 2 + (rand() % height-4);
+		animalx = 2 + (rand() % (width-4));
+		animaly = 2 + (rand() % (height-4));
+		ASSERT(0 <= animalx && animalx < width);
+		ASSERT(0 <= animaly && animaly < height);
 		if ( maxspeed < speed ) { speed += speedincrease; }
 	}
 

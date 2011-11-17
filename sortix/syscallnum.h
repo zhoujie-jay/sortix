@@ -47,7 +47,8 @@
 #define SYSCALL_WRITE 19
 #define SYSCALL_PIPE 20
 #define SYSCALL_CLOSE 21
-#define SYSCALL_MAX_NUM 22 /* index of highest constant + 1 */
+#define SYSCALL_DUP 22
+#define SYSCALL_MAX_NUM 23 /* index of highest constant + 1 */
 
 #endif
 

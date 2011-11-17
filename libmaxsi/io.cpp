@@ -34,6 +34,7 @@ namespace Maxsi
 	DEFN_SYSCALL3(ssize_t, SysWrite, 19, int, const void*, size_t);
 	DEFN_SYSCALL1(int, SysPipe, 20, int*);
 	DEFN_SYSCALL1(int, SysClose, 21, int);
+	DEFN_SYSCALL1(int, SysDup, 22, int);
 
 	size_t Print(const char* Message)
 	{
@@ -82,6 +83,11 @@ namespace Maxsi
 	extern "C" int close(int fd)
 	{
 		return SysClose(fd);
+	}
+
+	extern "C" int dup(int fd)
+	{
+		return SysDup(fd);
 	}
 #endif
 

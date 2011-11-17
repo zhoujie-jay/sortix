@@ -126,11 +126,21 @@ namespace Sortix
 			return 0;
 		}
 
+		int SysDup(int fd)
+		{
+			Process* process = CurrentProcess();
+			Device* dev = process->descriptors.Get(fd);
+			if ( !dev ) { return -1; /* TODO: EBADF */ }
+			process->descriptors.Free(fd);
+			return process->descriptors.Allocate(dev);
+		}
+
 		void Init()
 		{
 			Syscall::Register(SYSCALL_WRITE, (void*) SysWrite);
 			Syscall::Register(SYSCALL_READ, (void*) SysRead);
 			Syscall::Register(SYSCALL_CLOSE, (void*) SysClose);
+			Syscall::Register(SYSCALL_DUP, (void*) SysDup);
 		}
 	}
 }
