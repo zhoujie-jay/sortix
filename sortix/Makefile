@@ -71,6 +71,8 @@ initrd.o \
 thread.o \
 io.o \
 pipe.o \
+filesystem.o \
+mount.o \
 ../libmaxsi/libmaxsi-sortix.a
 
 JSOBJS:=$(subst .o,-js.o,$(OBJS))

@@ -47,6 +47,8 @@
 #include "sound.h"
 #include "io.h"
 #include "pipe.h"
+#include "filesystem.h"
+#include "mount.h"
 
 using namespace Maxsi;
 
@@ -243,6 +245,12 @@ namespace Sortix
 
 		// Initialize the pipe system.
 		Pipe::Init();
+
+		// Initialize the filesystem system.
+		FileSystem::Init();
+
+		// Initialize the mount system.
+		Mount::Init();
 
 		// Initialize the scheduler.
 		Scheduler::Init();

@@ -17,28 +17,44 @@
 	You should have received a copy of the GNU General Public License along
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	mount.cpp
-	Handles system wide mount points and initialization of new file systems.
+	filesystem.cpp
+	Allows access to stored sequences of bytes in an orderly fashion.
 
 ******************************************************************************/
 
 #include "platform.h"
+#include "syscall.h"
+#include "process.h"
+#include "filesystem.h"
 #include "mount.h"
 
 namespace Sortix
 {
-	namespace Mount
+	namespace FileSystem
 	{
-		DevFileSystem* WhichFileSystem(const char* path, size_t* pathoffset)
+		Device* Open(const char* path, int flags, mode_t mode)
 		{
-			// TODO: Support some file systems!
-			*pathoffset = 0;
-			return NULL;
+			size_t pathoffset = 0;
+			DevFileSystem* fs = Mount::WhichFileSystem(path, &pathoffset);
+			if ( !fs ) { return NULL; }
+			return fs->Open(path + pathoffset, flags, mode); 
+		}
+
+		int SysOpen(const char* path, int flags, mode_t mode)
+		{
+			Process* process = CurrentProcess();
+			Device* dev = Open(path, flags, mode);
+			if ( !dev ) { return -1; /* TODO: errno */ }
+			int fd = process->descriptors.Allocate(dev);
+			if ( fd < 0 ) { dev->Unref(); }
+			return fd;			
 		}
 
 		void Init()
 		{
-			
+			Syscall::Register(SYSCALL_OPEN, (void*) SysOpen);
 		}
 	}
 }
+
+

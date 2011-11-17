@@ -27,47 +27,12 @@
 
 namespace Sortix
 {
-	class Device;
 	class DevFileSystem;
-	class DevBuffer;
-	class Process;
-
-	class MountPoint
-	{
-	public:
-		MountPoint();
-		~MountPoint();
-
-	public:
-		const char* path;
-		DevFileSystem* fs;
-		DevBuffer* device;
-		nat flags;
-
-	public:
-		Thread* waiting;
-		int* waitingResult;
-
-	public:
-		bool Mount();
-
-	public:
-		bool IsSane() { return path != NULL && fs != NULL && device != NULL; }
-		
-	};
 
 	namespace Mount
 	{
 		void Init();
-		MountPoint* GetMountPoint(const char*& path, Thread* thread);
-		void OnMountFailure(MountPoint* mountPoint, int cause);
-		void OnMountSuccess(MountPoint* mountPoint);
-	}
-
-	namespace Syscall
-	{
-		void SysOpen(Thread* thread);
-		void SysMount(Thread* thread);
+		DevFileSystem* WhichFileSystem(const char* path, size_t* pathoffset);
 	}
 }
 

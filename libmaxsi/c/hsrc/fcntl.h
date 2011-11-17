@@ -46,7 +46,7 @@ __BEGIN_DECLS
 #define O_RDONLY	     00
 #define O_WRONLY	     01
 #define O_RDWR		     02
-#define O_CREAT		   0100
+#define O_CREAT		   (1<<5)
 #define O_EXCL		   0200
 #define O_NOCTTY	   0400
 #define O_TRUNC		  01000
@@ -82,10 +82,10 @@ struct _flock
 typedef struct _flock flock;
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
+int open(const char* path, int oflag, ...);
 #ifndef SORTIX_UNIMPLEMENTED
 int creat(const char* path, mode_t mode);
 int fcntl(int fd, int cmd, ...);
-int open(const char* path, int oflag, ...);
 int openat(int fd, const char* path, int oflag, ...);
 #endif
 

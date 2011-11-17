@@ -18,7 +18,7 @@
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	filesystem.h
-	Abstracts away a file system device.
+	Allows access to stored sequences of bytes in an orderly fashion.
 
 ******************************************************************************/
 
@@ -26,71 +26,41 @@
 #define SORTIX_FILESYSTEM_H
 
 #include "device.h"
-#include "mount.h"
 
 namespace Sortix
 {
-	class Thread;
-
-	namespace FileSystem
-	{
-		struct SysCallback
-		{
-			Device* device;
-			union { int deviceError; nat deviceType; }
-		}
-	}
-
 	// TODO: These belong in libmaxsi!
-
-	const nat O_RDONLY = 1;
-	const nat O_WRONLY = 2;
-	const nat O_RDWR = 3;
-	const nat O_EXEC = 4;
-	const nat O_SEARCH = 5;
-	const nat O_LOWERFLAGS = 0x7;
-
 	// TODO: Sortix might never support all of these flags if they are stupid.
-	const nat O_APPEND = (1<<3);
-	const nat O_CLOEXEC = (1<<4);
-	const nat O_CREAT = (1<<5);
-	const nat O_DIRECTORY = (1<<6);
-	const nat O_DSYNC = (1<<6);
-	const nat O_EXCL = (1<<7);
-	const nat O_NOCTTY = (1<<8);
-	const nat O_NOFOLLOW = (1<<9);
-	const nat O_RSYNC = (1<<11);
-	const nat O_SYNC = (1<<12);
-	const nat O_TRUNC = (1<<13);
-	const nat O_TTY_INIT = (1<<13);
-
-	// If O_RDONLY, then no one is allowed to write to this, or if O_RDWD then
-	// no one else is allowed to use this besides me.
-	const nat O_EXCLUSIVELY = (1<<14);
-	const nat O_USERSPACEABLE = ((1<<15)-1);
-
-	const nat O_MOUNT = (1<<31);
+	const int O_RDONLY = 1;
+	const int O_WRONLY = 2;
+	const int O_RDWR = 3;
+	const int O_EXEC = 4;
+	const int O_SEARCH = 5;
+	const int O_LOWERFLAGS = 0x7;
+	const int O_APPEND = (1<<3);
+	const int O_CLOEXEC = (1<<4);
+	const int O_CREAT = (1<<5);
+	const int O_DIRECTORY = (1<<6);
+	const int O_DSYNC = (1<<6);
+	const int O_EXCL = (1<<7);
+	const int O_NOCTTY = (1<<8);
+	const int O_NOFOLLOW = (1<<9);
+	const int O_RSYNC = (1<<11);
+	const int O_SYNC = (1<<12);
+	const int O_TRUNC = (1<<13);
+	const int O_TTY_INIT = (1<<13);
 
 	class DevFileSystem : public Device
 	{
 	public:
-		DevFileSystem() { };
-		virtual ~DevFileSystem() { }
-
-	public:
-		bool LegalNodeName(const char* name);
-
-	public:
-		virtual int Initialize(MountPoint* mountPoint, const char* commandLine) = 0;
-
-	public:
-		virtual bool Open(const char* path, nat openFlags, nat mode, FileSystem::SysCallback* callbackInfo, Thread* thread);
+		virtual Device* Open(const char* path, int flags, mode_t mode) = 0;
 
 	};
 
 	namespace FileSystem
 	{
-		DevFileSystem* CreateDriver(const char* fsType);
+		void Init();
+		Device* Open(const char* path, int flags, mode_t mode);
 	}
 }
 

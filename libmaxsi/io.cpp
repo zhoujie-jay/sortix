@@ -35,6 +35,7 @@ namespace Maxsi
 	DEFN_SYSCALL1(int, SysPipe, 20, int*);
 	DEFN_SYSCALL1(int, SysClose, 21, int);
 	DEFN_SYSCALL1(int, SysDup, 22, int);
+	DEFN_SYSCALL3(int, SysOpen, 23, const char*, int, mode_t);
 
 	size_t Print(const char* Message)
 	{
@@ -88,6 +89,11 @@ namespace Maxsi
 	extern "C" int dup(int fd)
 	{
 		return SysDup(fd);
+	}
+
+	extern "C" int open(const char* path, int flags, mode_t mode)
+	{
+		return SysOpen(path, flags, mode);
 	}
 #endif
 
