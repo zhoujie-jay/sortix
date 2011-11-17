@@ -40,7 +40,7 @@ namespace Sortix
 
 	void Device::Unref()
 	{
-		if ( --refcount == 0 ) { delete this; }
+		if ( --refcount == 0 || refcount == SIZE_MAX ) { delete this; }
 	}
 
 	void Device::Refer()
