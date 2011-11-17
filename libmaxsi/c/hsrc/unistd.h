@@ -84,7 +84,6 @@ int close(int);
 size_t confstr(int, char*, size_t);
 char* crypt(const char*, const char*);
 char* ctermid(char*);
-int dup(int);
 int dup2(int, int);
 void encrypt(char [64], int);
 int execl(const char*, const char*, ...);
@@ -159,6 +158,7 @@ extern char* optarg;
 extern int opterr, optind, optopt;
 #endif
 
+int dup(int);
 void _exit(int);
 pid_t fork(void);
 pid_t getpid(void);
