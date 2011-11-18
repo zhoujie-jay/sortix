@@ -13,6 +13,7 @@ ls \
 help \
 uname \
 idle \
+editor \
 
 BINARIES:=$(addprefix $(INITRDDIR)/,$(LOCALBINARIES))
 
