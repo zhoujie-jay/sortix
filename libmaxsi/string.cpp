@@ -52,6 +52,8 @@ namespace Maxsi
 				Dest++; Src++;
 			}
 
+			*Dest = '\0';
+
 			return OriginalDest;
 		}
 
