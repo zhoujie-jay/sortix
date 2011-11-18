@@ -33,6 +33,7 @@ namespace Sortix
 		static const unsigned STREAM = 0;
 		static const unsigned BUFFER = 1;
 		static const unsigned VGABUFFER = 2;
+		static const unsigned FILESYSTEM = 3;
 
 	public:
 		Device();

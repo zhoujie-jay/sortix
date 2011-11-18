@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 #include "platform.h"
+#include <libmaxsi/memory.h>
 #include "syscall.h"
 #include "process.h"
 #include "filesystem.h"
@@ -47,13 +48,85 @@ namespace Sortix
 			if ( !dev ) { return -1; /* TODO: errno */ }
 			int fd = process->descriptors.Allocate(dev);
 			if ( fd < 0 ) { dev->Unref(); }
-			return fd;			
+			return fd;
 		}
 
 		void Init()
 		{
 			Syscall::Register(SYSCALL_OPEN, (void*) SysOpen);
 		}
+	}
+
+	DevFileWrapper::DevFileWrapper(DevBuffer* buffer, int flags)
+	{
+		this->buffer = buffer;
+		this->flags = flags;
+		this->offset = 0;
+		this->buffer->Refer();
+	}
+
+	DevFileWrapper::~DevFileWrapper()
+	{
+		buffer->Unref();
+	}
+
+	size_t DevFileWrapper::BlockSize()
+	{
+		return buffer->BlockSize();
+	}
+
+	uintmax_t DevFileWrapper::Size()
+	{
+		return buffer->Size();
+	}
+
+	uintmax_t DevFileWrapper::Position()
+	{
+		return offset;
+	}
+
+	bool DevFileWrapper::Seek(uintmax_t position)
+	{
+		if ( !buffer->Seek(position) ) { return false; }
+		offset = position;
+		return true;
+	}
+
+	bool DevFileWrapper::Resize(uintmax_t size)
+	{
+		return buffer->Resize(size);
+	}
+
+	ssize_t DevFileWrapper::Read(byte* dest, size_t count)
+	{
+		// TODO: Enforce read permission!
+		if ( !buffer->Seek(offset) ) { return -1; }
+		ssize_t result = buffer->Read(dest, count);
+		if ( result < 0 ) { return result; }
+		offset += result;
+		return result;
+	}
+
+	ssize_t DevFileWrapper::Write(const byte* src, size_t count)
+	{
+		// TODO: Enforce write permission!
+		if ( !buffer->Seek(offset) ) { return -1; }
+		ssize_t result = buffer->Write(src, count);
+		if ( result < 0 ) { return result; }
+		offset += result;
+		return result;
+	}
+
+	bool DevFileWrapper::IsReadable()
+	{
+		// TODO: Enforce read permission!
+		return true;
+	}
+
+	bool DevFileWrapper::IsWritable()
+	{
+		// TODO: Enforce write permission!
+		return true;
 	}
 }
 

@@ -26,6 +26,7 @@
 #define SORTIX_FILESYSTEM_H
 
 #include "device.h"
+#include "stream.h"
 
 namespace Sortix
 {
@@ -55,6 +56,32 @@ namespace Sortix
 	public:
 		virtual Device* Open(const char* path, int flags, mode_t mode) = 0;
 
+	public:
+		virtual bool IsType(unsigned type) { return type == Device::FILESYSTEM; }
+
+	};
+
+	class DevFileWrapper : public DevBuffer
+	{
+	public:
+		DevFileWrapper(DevBuffer* buffer, int flags);
+		virtual ~DevFileWrapper();
+
+	private:
+		DevBuffer* buffer;
+		int flags;
+		uintmax_t offset;
+
+	public:
+		virtual ssize_t Read(byte* dest, size_t count);
+		virtual ssize_t Write(const byte* src, size_t count);
+		virtual bool IsReadable();
+		virtual bool IsWritable();
+		virtual size_t BlockSize();
+		virtual uintmax_t Size();
+		virtual uintmax_t Position();
+		virtual bool Seek(uintmax_t position);
+		virtual bool Resize(uintmax_t size);
 	};
 
 	namespace FileSystem

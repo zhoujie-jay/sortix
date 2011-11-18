@@ -48,7 +48,7 @@ namespace Sortix
 	class DevBuffer : public DevStream
 	{
 	public:
-		typedef Device BaseClass;
+		typedef DevStream BaseClass;
 
 	public:
 		virtual bool IsType(unsigned type)

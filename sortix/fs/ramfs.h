@@ -17,31 +17,39 @@
 	You should have received a copy of the GNU General Public License along
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	mount.cpp
-	Handles system wide mount points and initialization of new file systems.
+	fs/ramfs.h
+	A filesystem stored entirely in RAM.
 
 ******************************************************************************/
 
-#include "platform.h"
-#include <libmaxsi/memory.h>
-#include "mount.h"
-#include "fs/ramfs.h"
+#ifndef SORTIX_FS_RAMFS_H
+#define SORTIX_FS_RAMFS_H
+
+#include <libmaxsi/sortedlist.h>
+#include "../filesystem.h"
 
 namespace Sortix
 {
-	namespace Mount
+	class DevRAMFSFile;
+
+	class DevRAMFS : public DevFileSystem
 	{
-		DevRAMFS* fs;
+	public:
+		DevRAMFS();
+		virtual ~DevRAMFS();
 
-		DevFileSystem* WhichFileSystem(const char* path, size_t* pathoffset)
-		{
-			*pathoffset = 0;
-			return fs;
-		}
+	public:
+		virtual Device* Open(const char* path, int flags, mode_t mode);
 
-		void Init()
-		{
-			fs = new DevRAMFS();
-		}
-	}
+	private:
+		Maxsi::SortedList<DevRAMFSFile*>* files;
+
+	private:
+		virtual DevBuffer* OpenFile(const char* path, int flags, mode_t mode);
+		virtual DevBuffer* CreateFile(const char* path, int flags, mode_t mode);
+
+	};
 }
+
+#endif
+
