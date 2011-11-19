@@ -24,10 +24,13 @@
 
 #include "platform.h"
 #include <libmaxsi/memory.h>
+#include <libmaxsi/string.h>
 #include "syscall.h"
 #include "process.h"
 #include "filesystem.h"
 #include "mount.h"
+
+using namespace Maxsi;
 
 namespace Sortix
 {
@@ -35,10 +38,23 @@ namespace Sortix
 	{
 		Device* Open(const char* path, int flags, mode_t mode)
 		{
+			const char* workingdir = "/";
+			char* fullpath = NULL;
+			if ( *path != '/' )
+			{
+				size_t len = String::Length(workingdir) + String::Length(path);
+				fullpath = new char[len+1];
+				if ( !fullpath ) { return NULL; }
+				String::Copy(fullpath, workingdir);
+				String::Cat(fullpath, path);
+				path = fullpath;
+			}
 			size_t pathoffset = 0;
 			DevFileSystem* fs = Mount::WhichFileSystem(path, &pathoffset);
-			if ( !fs ) { return NULL; }
-			return fs->Open(path + pathoffset, flags, mode); 
+			if ( !fs ) { delete[] fullpath; return NULL; }
+			Device* result = fs->Open(path + pathoffset, flags, mode);
+			delete[] fullpath;
+			return result;
 		}
 
 		int SysOpen(const char* path, int flags, mode_t mode)
