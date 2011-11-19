@@ -37,7 +37,7 @@ ifdef X86FAMILY
     CPUFLAGS:=$(CPUFLAGS) -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow
 endif
 
-DIRS=. x64 x86 x86-family
+DIRS=. x64 x86 x86-family fs
 
 DEFINES:=-DSORTIX_KERNEL $(CPUDEFINES)
 ifeq ($(JSSORTIX),1)
