@@ -263,7 +263,12 @@ namespace Sortix
 		if ( files )
 		{
 			size_t fileindex = files->Search(LookupFile, path);
-			if ( fileindex != SIZE_MAX ) { return files->Get(fileindex); }
+			if ( fileindex != SIZE_MAX )
+			{
+				DevRAMFSFile* file = files->Get(fileindex);
+				if ( flags & O_TRUNC ) { file->Resize(0); }
+				return file;
+			}
 		}
 
 		return CreateFile(path, flags, mode);
