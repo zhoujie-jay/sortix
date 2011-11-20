@@ -8,9 +8,9 @@ int main(int argc, char* argv[])
 	printf("Please enter the name of one of the following programs:\n");
 
 	const char* programname = "ls";
-	const char* newargv[] = { programname };
+	const char* newargv[] = { programname, "/bin" };
 
-	Maxsi::Process::Execute(programname, 1, newargv);
+	Maxsi::Process::Execute(programname, 2, newargv);
 
 	return 1;
 }
