@@ -72,6 +72,7 @@ thread.o \
 io.o \
 pipe.o \
 filesystem.o \
+directory.o \
 mount.o \
 fs/initfs.o \
 fs/ramfs.o \

@@ -52,6 +52,8 @@ namespace Sortix
 #ifdef SORTIX_KERNEL
 		void Init(byte* initrd, size_t size);
 		byte* Open(const char* filepath, size_t* size);
+		const char* GetFilename(size_t index);
+		size_t GetNumFiles();
 #endif
 	}
 }

@@ -50,10 +50,24 @@ namespace Sortix
 			}
 		}
 
-		size_t SysGetNumFiles()
+		size_t GetNumFiles()
 		{
 			Header* header = (Header*) initrd;
 			return header->numfiles;
+		}
+
+		size_t SysGetNumFiles()
+		{
+			return GetNumFiles();
+		}
+
+		const char* GetFilename(size_t index)
+		{
+			Header* header = (Header*) initrd;
+			if ( index >= header->numfiles ) { return NULL; }
+			FileHeader* fhtbl = (FileHeader*) (initrd + sizeof(Header));
+			FileHeader* fileheader = &(fhtbl[index]);
+			return fileheader->name;
 		}
 
 		struct FileInfo

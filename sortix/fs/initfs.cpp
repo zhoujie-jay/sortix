@@ -27,6 +27,7 @@
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
 #include "../filesystem.h"
+#include "../directory.h"
 #include "../stream.h"
 #include "initfs.h"
 #include "../initrd.h"
@@ -133,6 +134,65 @@ namespace Sortix
 		return false;
 	}
 
+	class DevInitFSDir : public DevDirectory
+	{
+	public:
+		typedef Device DevDirectory;
+
+	public:
+		DevInitFSDir();
+		virtual ~DevInitFSDir();
+
+	private:
+		size_t position;
+
+	public:
+		virtual void Rewind();
+		virtual int Read(sortix_dirent* dirent, size_t available);
+
+	};
+
+	DevInitFSDir::DevInitFSDir()
+	{
+		position = 0;
+	}
+
+	DevInitFSDir::~DevInitFSDir()
+	{
+	}
+
+	void DevInitFSDir::Rewind()
+	{
+		position = 0;
+	}
+
+	int DevInitFSDir::Read(sortix_dirent* dirent, size_t available)
+	{
+		if ( available <= sizeof(sortix_dirent) ) { return -1; }
+		if ( InitRD::GetNumFiles() <= position )
+		{
+			dirent->d_namelen = 0;
+			dirent->d_name[0] = 0;
+			return 0;
+		}
+
+		const char* name = InitRD::GetFilename(position);
+		size_t namelen = String::Length(name);
+		size_t needed = sizeof(sortix_dirent) + namelen + 1;
+
+		if ( available < needed )
+		{
+			dirent->d_namelen = needed;
+			Error::Set(Error::EINVAL);
+			return 0;
+		}
+
+		Memory::Copy(dirent->d_name, name, namelen + 1);
+		dirent->d_namelen = namelen;
+		position++;
+		return 0;
+	}
+
 	DevInitFS::DevInitFS()
 	{
 	}
@@ -143,11 +203,20 @@ namespace Sortix
 
 	Device* DevInitFS::Open(const char* path, int flags, mode_t mode)
 	{
+		size_t buffersize;
+
+		if ( (flags & O_LOWERFLAGS) == O_SEARCH )
+		{
+			if ( path[0] == 0 || (path[0] == '/' && path[1] == 0) ) { return new DevInitFSDir; }
+			const byte* buffer = InitRD::Open(path, &buffersize);
+			Error::Set(buffer ? Error::ENOTDIR : Error::ENOENT);
+			return NULL;
+		}
+
 		if ( *path++ != '/' ) { return NULL; }
 
 		if ( (flags & O_LOWERFLAGS) != O_RDONLY ) { Error::Set(Error::EROFS); return NULL; }
 
-		size_t buffersize;
 		const byte* buffer = InitRD::Open(path, &buffersize);
 		if ( !buffer ) { Error::Set(Error::ENOENT); return NULL; }
 

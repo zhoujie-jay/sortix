@@ -34,7 +34,7 @@ namespace Sortix
 
 	class DevRAMFS : public DevFileSystem
 	{
-	public:
+	public: 
 		DevRAMFS();
 		virtual ~DevRAMFS();
 
@@ -43,6 +43,10 @@ namespace Sortix
 
 	private:
 		Maxsi::SortedList<DevRAMFSFile*>* files;
+
+	public:
+		size_t GetNumFiles();
+		const char* GetFilename(size_t index);
 
 	private:
 		virtual DevBuffer* OpenFile(const char* path, int flags, mode_t mode);

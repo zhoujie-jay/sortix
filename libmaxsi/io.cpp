@@ -26,6 +26,7 @@
 #include "syscall.h"
 #include "io.h"
 #include "format.h"
+#include <sys/readdirents.h>
 
 namespace Maxsi
 {
@@ -36,6 +37,7 @@ namespace Maxsi
 	DEFN_SYSCALL1(int, SysClose, 21, int);
 	DEFN_SYSCALL1(int, SysDup, 22, int);
 	DEFN_SYSCALL3(int, SysOpen, 23, const char*, int, mode_t);
+	DEFN_SYSCALL3(int, SysReadDirEnts, 24, int, struct sortix_dirent*, size_t);
 
 	size_t Print(const char* Message)
 	{
@@ -94,6 +96,11 @@ namespace Maxsi
 	extern "C" int open(const char* path, int flags, mode_t mode)
 	{
 		return SysOpen(path, flags, mode);
+	}
+
+	extern "C" int readdirents(int fd, struct sortix_dirent* dirent, size_t size)
+	{
+		return SysReadDirEnts(fd, dirent, size);
 	}
 #endif
 

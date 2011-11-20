@@ -49,6 +49,7 @@
 #include "pipe.h"
 #include "filesystem.h"
 #include "mount.h"
+#include "directory.h"
 
 using namespace Maxsi;
 
@@ -248,6 +249,9 @@ namespace Sortix
 
 		// Initialize the filesystem system.
 		FileSystem::Init();
+
+		// Initialize the directory system.
+		Directory::Init();
 
 		// Initialize the mount system.
 		Mount::Init();

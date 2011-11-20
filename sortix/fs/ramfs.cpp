@@ -27,6 +27,7 @@
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
 #include "../filesystem.h"
+#include "../directory.h"
 #include "../stream.h"
 #include "ramfs.h"
 
@@ -162,6 +163,70 @@ namespace Sortix
 		}
 	}
 
+	class DevRAMFSDir : public DevDirectory
+	{
+	public:
+		typedef Device DevDirectory;
+
+	public:
+		DevRAMFSDir(DevRAMFS* fs);
+		virtual ~DevRAMFSDir();
+
+	private:
+		DevRAMFS* fs;
+		size_t position;
+
+	public:
+		virtual void Rewind();
+		virtual int Read(sortix_dirent* dirent, size_t available);
+
+	};
+
+	DevRAMFSDir::DevRAMFSDir(DevRAMFS* fs)
+	{
+		position = 0;
+		this->fs = fs;
+		fs->Refer();
+	}
+
+	DevRAMFSDir::~DevRAMFSDir()
+	{
+		fs->Unref();
+	}
+
+	void DevRAMFSDir::Rewind()
+	{
+		position = 0;
+	}
+
+	int DevRAMFSDir::Read(sortix_dirent* dirent, size_t available)
+	{
+		if ( available <= sizeof(sortix_dirent) ) { return -1; }
+		if ( fs->GetNumFiles() <= position )
+		{
+				dirent->d_namelen = 0;
+			dirent->d_name[0] = 0;
+			return 0;
+		}
+
+		const char* name = fs->GetFilename(position);
+		if ( !name ) { return -1; }
+		size_t namelen = String::Length(name);
+		size_t needed = sizeof(sortix_dirent) + namelen + 1;
+
+		if ( available < needed )
+		{
+			dirent->d_namelen = needed;
+			Error::Set(Error::EINVAL);
+			return 0;
+		}
+
+		Memory::Copy(dirent->d_name, name, namelen + 1);
+		dirent->d_namelen = namelen;
+		position++;
+		return 0;
+	}
+
 	int CompareFiles(DevRAMFSFile* file1, DevRAMFSFile* file2)
 	{
 		return String::Compare(file1->name, file2->name);
@@ -174,6 +239,13 @@ namespace Sortix
 
 	Device* DevRAMFS::Open(const char* path, int flags, mode_t mode)
 	{
+		if ( (flags & O_LOWERFLAGS) == O_SEARCH )
+		{
+			if ( path[0] == 0 || (path[0] == '/' && path[1] == 0) ) { return new DevRAMFSDir(this); }
+			Error::Set(Error::ENOTDIR);
+			return NULL;
+		}
+
 		DevBuffer* file = OpenFile(path, flags, mode);
 		if ( !file ) { return NULL; }
 		Device* wrapper = new DevFileWrapper(file, flags);
@@ -223,6 +295,20 @@ namespace Sortix
 		file->Refer();
 
 		return file;
+	}
+
+	size_t DevRAMFS::GetNumFiles()
+	{
+		if ( !files ) { return 0; }
+		return files->Length();
+	}
+
+	const char* DevRAMFS::GetFilename(size_t index)
+	{
+		if ( !files ) { return NULL; }
+		if ( files->Length() <= index ) { return NULL; }
+		DevRAMFSFile* file = files->Get(index);
+		return file->name;
 	}
 }
 

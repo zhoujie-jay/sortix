@@ -53,6 +53,8 @@ namespace Maxsi
 		const int ENOSPC = 18;
 		const int EEXIST = 19;
 		const int EROFS = 20;
+		const int EINVAL = 21;
+		const int ENOTDIR = 22;
 
 		extern int _errornumber;
 
