@@ -183,7 +183,10 @@ namespace Sortix
 
 	DevBuffer* DevRAMFS::OpenFile(const char* path, int flags, mode_t mode)
 	{
-		if ( *path++ != '/' ) { return NULL; }
+		if ( *path++ != '/' ) { Error::Set(Error::ENOENT); return NULL; }
+
+		// Hack to prevent / from being a filename.
+		if ( path++ == 0 ) { Error::Set(Error::ENOENT); return NULL; }
 
 		if ( files )
 		{
