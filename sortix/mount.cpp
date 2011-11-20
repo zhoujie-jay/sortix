@@ -24,24 +24,35 @@
 
 #include "platform.h"
 #include <libmaxsi/memory.h>
+#include "panic.h"
 #include "mount.h"
 #include "fs/ramfs.h"
+#include "fs/initfs.h"
 
 namespace Sortix
 {
 	namespace Mount
 	{
-		DevRAMFS* fs;
+		DevFileSystem* initfs;
+		DevFileSystem* rootfs;
 
 		DevFileSystem* WhichFileSystem(const char* path, size_t* pathoffset)
 		{
+			if ( path[0] == '/' && path[1] == 'b' && path[2] == 'i' && path[3] == 'n' && (path[4] == '/' || path[4] == 0) )
+			{
+				*pathoffset = 4;
+				return initfs;
+			}
 			*pathoffset = 0;
-			return fs;
+			return rootfs;
 		}
 
 		void Init()
 		{
-			fs = new DevRAMFS();
+			initfs = new DevInitFS();
+			if ( !initfs ) { Panic("Unable to allocate initfs"); }
+			rootfs = new DevRAMFS();
+			if ( !rootfs ) { Panic("Unable to allocate rootfs"); }
 		}
 	}
 }
