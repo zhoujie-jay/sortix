@@ -73,6 +73,7 @@ io.o \
 pipe.o \
 filesystem.o \
 mount.o \
+fs/initfs.o \
 fs/ramfs.o \
 ../libmaxsi/libmaxsi-sortix.a
 

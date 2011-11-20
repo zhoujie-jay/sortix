@@ -42,20 +42,23 @@ __BEGIN_DECLS
 @include(SEEK_END.h)
 
 /* TODO: Keep these aligned with those in the Sortix kernel */
-#define O_ACCMODE	   0003
-#define O_RDONLY	     00
-#define O_WRONLY	     01
-#define O_RDWR		     02
-#define O_CREAT		   (1<<5)
-#define O_EXCL		   0200
-#define O_NOCTTY	   0400
-#define O_TRUNC		  01000
-#define O_APPEND	  02000
-#define O_NONBLOCK	  04000
-#define O_NDELAY	O_NONBLOCK
-#define O_SYNC	       04010000
-#define O_FSYNC		 O_SYNC
-#define O_ASYNC		 020000
+#define O_RDONLY 1
+#define O_WRONLY 2
+#define O_RDWR 3
+#define O_EXEC 4
+#define O_SEARCH 5
+#define O_APPEND (1<<3)
+#define O_CLOEXEC (1<<4)
+#define O_CREAT (1<<5)
+#define O_DIRECTORY (1<<6)
+#define O_DSYNC (1<<6)
+#define O_EXCL (1<<7)
+#define O_NOCTTY (1<<8)
+#define O_NOFOLLOW (1<<9)
+#define O_RSYNC (1<<11)
+#define O_SYNC (1<<12)
+#define O_TRUNC (1<<13)
+#define O_TTY_INIT (1<<13)
 
 @include(mode_t.h)
 @include(mode_t_values.h)
