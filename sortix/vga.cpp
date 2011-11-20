@@ -29,6 +29,7 @@
 #include "scheduler.h"
 #include "syscall.h"
 #include "process.h"
+#include "serialterminal.h"
 
 using namespace Maxsi;
 
@@ -108,8 +109,6 @@ namespace Sortix
 			frame->process = process;
 			frame->physical = page;
 			frame->userframe = userframe;
-
-			frame->Refer();
 
 			return mapto;
 		}
@@ -199,10 +198,12 @@ namespace Sortix
 		userframe = NULL;
 		physical = 0;
 		onscreen = false;
+		SerialTerminal::OnVGAFrameCreated();
 	}
 
 	DevVGAFrame::~DevVGAFrame()
 	{
+		SerialTerminal::OnVGAFrameDeleted();
 		if ( process != NULL ) { ASSERT(CurrentProcess() == process); }
 		if ( userframe != NULL ) { Memory::UnmapUser((addr_t) userframe); Memory::InvalidatePage((addr_t) userframe); }
 		if ( physical != 0 ) { Page::Put(physical); }

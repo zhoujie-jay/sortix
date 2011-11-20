@@ -28,6 +28,7 @@
 #include <libmaxsi/sortedlist.h>
 #include "thread.h"
 #include "process.h"
+#include "device.h"
 #include "scheduler.h"
 #include "memorymanagement.h"
 #include "initrd.h"
@@ -241,7 +242,17 @@ namespace Sortix
 	void Process::ResetForExecute()
 	{
 		// TODO: Delete all threads and their stacks.
-		// TODO: Unmap any process memory segments.
+
+		ResetAddressSpace();
+
+		// HACK: Don't let VGA buffers survive executes.
+		// Real Solution: Don't use VGA buffers in this manner.
+		for ( int i = 0; i < 32; i++ )
+		{
+			Device* dev = descriptors.Get(i);
+			if ( !dev ) { continue; }
+			if ( dev->IsType(Device::VGABUFFER) ) { descriptors.Free(i); }
+		}
 	}
 
 	int Process::Execute(const char* programname, int argc, const char* const* argv, CPU::InterruptRegisters* regs)

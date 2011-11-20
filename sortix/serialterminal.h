@@ -31,6 +31,9 @@ namespace Sortix
 	{
 		void Init();
 		void Reset();
+		void OnTick();
+		void OnVGAFrameCreated();
+		void OnVGAFrameDeleted();
 		size_t Print(void* user, const char* string, size_t stringlen);
 	}
 }

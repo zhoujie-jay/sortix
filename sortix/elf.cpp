@@ -58,8 +58,8 @@ namespace Sortix
 			size_t neededfilelen = phtbloffset + numprogheaders * phsize;
 			if ( filelen < neededfilelen ) { return 0; }
 
-			// Reset the current address space.
-			process->ResetAddressSpace();
+			// Prepare the process for execution (clean up address space, etc.)
+			process->ResetForExecute();
 
 			// Flush the TLB such that no stale information from the last
 			// address space is used when creating the new one.
