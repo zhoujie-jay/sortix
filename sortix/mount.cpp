@@ -24,10 +24,13 @@
 
 #include "platform.h"
 #include <libmaxsi/memory.h>
+#include <libmaxsi/string.h>
 #include "panic.h"
 #include "mount.h"
 #include "fs/ramfs.h"
 #include "fs/initfs.h"
+
+using namespace Maxsi;
 
 namespace Sortix
 {
@@ -36,9 +39,23 @@ namespace Sortix
 		DevFileSystem* initfs;
 		DevFileSystem* rootfs;
 
+		bool MatchesMountPath(const char* path, const char* mount)
+		{
+			size_t mountlen = String::Length(mount);
+			if ( !String::StartsWith(path, mount) ) { return false; }
+			switch ( path[mountlen] )
+			{
+				case '\0':
+				case '/':
+					return true;
+				default:
+					return false;
+			}
+		}
+
 		DevFileSystem* WhichFileSystem(const char* path, size_t* pathoffset)
 		{
-			if ( path[0] == '/' && path[1] == 'b' && path[2] == 'i' && path[3] == 'n' && (path[4] == '/' || path[4] == 0) )
+			if ( MatchesMountPath(path, "/bin") )
 			{
 				*pathoffset = 4;
 				return initfs;
