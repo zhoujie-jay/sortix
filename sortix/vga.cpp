@@ -207,6 +207,7 @@ namespace Sortix
 		if ( process != NULL ) { ASSERT(CurrentProcess() == process); }
 		if ( userframe != NULL ) { Memory::UnmapUser((addr_t) userframe); Memory::InvalidatePage((addr_t) userframe); }
 		if ( physical != 0 ) { Page::Put(physical); }
+		if ( VGA::currentframe == this ) { VGA::currentframe = NULL; }
 	}
 
 	bool DevVGAFrame::IsType(unsigned type)

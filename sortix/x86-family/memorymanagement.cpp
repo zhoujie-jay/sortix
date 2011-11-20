@@ -217,6 +217,8 @@ namespace Sortix
 			// Don't switch if we are already there.
 			if ( addrspace == currentdir ) { return currentdir; }
 
+			if ( addrspace & 0xFFFUL ) { PanicF("addrspace 0x%zx was not page-aligned!", addrspace); }
+
 			addr_t previous = currentdir;
 
 			// Switch and flush the TLB.
