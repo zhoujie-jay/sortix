@@ -186,7 +186,7 @@ namespace Sortix
 		if ( *path++ != '/' ) { Error::Set(Error::ENOENT); return NULL; }
 
 		// Hack to prevent / from being a filename.
-		if ( path++ == 0 ) { Error::Set(Error::ENOENT); return NULL; }
+		if ( path == 0 ) { Error::Set(Error::ENOENT); return NULL; }
 
 		if ( files )
 		{
