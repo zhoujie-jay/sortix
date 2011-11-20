@@ -85,6 +85,24 @@ namespace Maxsi
 			}
 		}
 
+		DUAL_FUNCTION(int, strncmp, CompareN, (const char* A, const char* B, size_t MaxLength))
+		{
+			while ( MaxLength-- )
+			{
+				if ( *A == '\0' && *B == '\0' ) { return 0; }
+				if ( *A < *B ) { return -1; }
+				if ( *A > *B ) { return 1; }
+				A++; B++;
+			}
+
+			return 0;
+		}
+
+		bool StartsWith(const char* haystack, const char* needle)
+		{
+			return CompareN(haystack, needle, Length(needle)) == 0;
+		}
+
 		char* Clone(const char* Input)
 		{
 			size_t InputSize = Length(Input);

@@ -38,7 +38,7 @@ namespace Maxsi
 		char* Cat(char* Dest, const char* Src);
 		int Compare(const char* A, const char* B);
 		int CompareN(const char* A, const char* B, size_t MaxLength);
-		int StartsWith(const char* Haystack, const char* Needle);
+		bool StartsWith(const char* Haystack, const char* Needle);
 		int ToInt(const char* str);
 
 		int ConvertUInt8T(uint8_t num, char* dest);
