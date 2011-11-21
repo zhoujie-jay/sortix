@@ -58,6 +58,7 @@ namespace Maxsi
 		const int ENOMEM = 23;
 		const int ERANGE = 24;
 		const int EISDIR = 25;
+		const int EPERM = 26;
 
 		extern int _errornumber;
 

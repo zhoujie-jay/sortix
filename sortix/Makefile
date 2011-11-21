@@ -74,6 +74,7 @@ pipe.o \
 filesystem.o \
 directory.o \
 mount.o \
+fs/devfs.o \
 fs/initfs.o \
 fs/ramfs.o \
 ../libmaxsi/libmaxsi-sortix.a

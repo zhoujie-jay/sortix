@@ -18,7 +18,7 @@ int ls(const char* path)
 	sortix_dirent* dirent = (sortix_dirent*) buffer;
 
 	// TODO: Hack until mountpoints work correctly.
-	if ( strcmp(path, "/") == 0 ) { printf("bin\n"); }
+	if ( strcmp(path, "/") == 0 ) { printf("bin\ndev\n"); }
 
 	while ( true )
 	{

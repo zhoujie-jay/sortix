@@ -29,6 +29,7 @@
 #include "mount.h"
 #include "fs/ramfs.h"
 #include "fs/initfs.h"
+#include "fs/devfs.h"
 
 using namespace Maxsi;
 
@@ -133,6 +134,8 @@ namespace Sortix
 			if ( !rootfs || !Register(rootfs, "") ) { Panic("Unable to allocate rootfs"); }
 			DevFileSystem* initfs = new DevInitFS();
 			if ( !initfs || !Register(initfs, "/bin") ) { Panic("Unable to allocate initfs"); }
+			DevFileSystem* devfs = new DevDevFS();
+			if ( !devfs || !Register(devfs, "/dev") ) { Panic("Unable to allocate devfs"); }
 		}
 	}
 }
