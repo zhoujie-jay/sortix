@@ -6,6 +6,7 @@ INITRDDIR:=../initrd
 LOCALBINARIES:=\
 init \
 cat \
+cp \
 sh \
 mxsh \
 clear \
