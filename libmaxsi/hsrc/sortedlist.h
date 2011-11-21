@@ -175,7 +175,7 @@ namespace Maxsi
 		template <class Searchee> size_t Search(int (*searcher)(const T t, const Searchee searchee), const Searchee searchee)
 		{
 			if ( !listused ) { return SIZE_MAX; }
-			if ( flags & FLAG_SORTED ) { Sort(); }
+			if ( !(flags & FLAG_SORTED) ) { Sort(); }
 
 			size_t minindex = 0;
 			size_t maxindex = listused-1;
