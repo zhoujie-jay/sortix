@@ -57,6 +57,7 @@ namespace Sortix
 	namespace Directory
 	{
 		void Init();
+		char* MakeAbsolute(const char* wd, const char* rel);
 	}
 }
 

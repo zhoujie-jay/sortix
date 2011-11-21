@@ -96,6 +96,7 @@ namespace Sortix
 		firstchild = NULL;
 		zombiechild = NULL;
 		firstthread = NULL;
+		workingdir = NULL;
 		mmapfrom = 0x80000000UL;
 		exitstatus = -1;
 		pid = AllocatePID();
@@ -110,6 +111,8 @@ namespace Sortix
 
 		// Avoid memory leaks.
 		ASSERT(segments == NULL);
+	
+		delete[] workingdir;
 
 		// TODO: Delete address space!
 	}
@@ -193,6 +196,8 @@ namespace Sortix
 
 		// Copy variables.
 		clone->mmapfrom = mmapfrom;
+		if ( workingdir ) { clone->workingdir = String::Clone(workingdir); }
+		else { clone->workingdir = NULL; }
 
 		// Now that the cloned process is fully created, we need to signal to
 		// its threads that they should insert themselves into the scheduler.

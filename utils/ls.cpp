@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/readdirents.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
@@ -37,7 +38,11 @@ int ls(const char* path)
 
 int main(int argc, char* argv[])
 {
-	const char* path = "/";
+	const size_t CWD_SIZE = 512;
+	char cwd[CWD_SIZE];
+	const char* path = getcwd(cwd, CWD_SIZE);
+	if ( !path ) { path = "."; }
+
 	if ( 1 < argc ) { path = argv[1]; }
 
 	return ls(path);

@@ -30,6 +30,8 @@
 #include "process.h"
 #include "device.h"
 #include "directory.h"
+#include "filesystem.h"
+#include "mount.h"
 
 using namespace Maxsi;
 
@@ -84,9 +86,127 @@ namespace Sortix
 			}
 		}
 
+		int SysChDir(const char* path)
+		{
+			// Calculate the absolute new path.
+			Process* process = CurrentProcess();
+			const char* wd = process->workingdir;
+			char* abs = MakeAbsolute(wd, path);
+			if ( !abs ) { Error::Set(Error::ENOMEM); return -1; }
+			size_t abslen = String::Length(abs);
+			if ( 1 < abslen && abs[abslen-1] == '/' )
+			{
+				abs[abslen-1] = '\0';
+			}
+
+			// Lookup the path and see if it is a directory.
+			size_t pathoffset = 0;
+			DevFileSystem* fs = Mount::WhichFileSystem(abs, &pathoffset);
+			if ( !fs ) { delete[] abs; Error::Set(Error::EINVAL); return -1; }
+			Device* dev = fs->Open(abs + pathoffset, O_SEARCH | O_DIRECTORY, 0);
+			if ( !dev ) { Error::Set(Error::ENOTDIR); return -1; }
+			dev->Unref();
+
+			// Alright, the path passed.
+			delete[] process->workingdir; // Works if it was NULL.
+			process->workingdir = abs;
+
+			return 0;
+		}
+
+		char* SysGetCWD(char* buf, size_t size)
+		{
+			// Calculate the absolute new path.
+			Process* process = CurrentProcess();
+			const char* wd = process->workingdir;
+			if ( !wd ) { wd = "/"; }
+			size_t wdsize = String::Length(wd) + 1;
+			if ( size < wdsize ) { Error::Set(Error::ERANGE); return NULL; }
+			String::Copy(buf, wd);
+			return buf;
+		}
+
 		void Init()
 		{
 			Syscall::Register(SYSCALL_READDIRENTS, (void*) SysReadDirEnts);
+			Syscall::Register(SYSCALL_CHDIR, (void*) SysChDir);
+			Syscall::Register(SYSCALL_GETCWD, (void*) SysGetCWD);
+		}
+
+		// Allocate a byte too much, in case you want to add a trailing slash.
+		char* MakeAbsolute(const char* wd, const char* rel)
+		{
+			// If given no wd, then interpret from the root.
+			if ( !wd ) { wd = "/"; }
+
+			// The resulting size won't ever be larger than this.
+			size_t wdlen = String::Length(wd);
+			size_t resultsize = wdlen + String::Length(rel) + 2;
+			char* result = new char[resultsize + 1];
+			if ( !result ) { return NULL; }
+
+			// Detect if rel is relative to / or to wd, and then continue the
+			// interpretation from that point.
+			size_t offset;
+			if ( *rel == '/' ) { result[0] = '/'; offset = 1; rel++; }
+			else { String::Copy(result, wd); offset = wdlen; }
+
+			// Make sure the working directory ends with a slash.
+			if ( result[offset-1] != '/' ) { result[offset++] = '/'; }
+
+			bool leadingdots = true;
+			size_t dots = 0;
+			int c = 1;
+			while ( c ) // Exit after handling \0
+			{
+				c = *rel++;
+
+				// Don't insert double //'s into the final path.
+				if ( c == '/' && result[offset-1] == '/' ) { continue; }
+
+				// / or \0 means that we should interpret . and ..
+				if ( c == '/' || c == '\0' )
+				{
+					// If ., just remove the dot and ignore the slash.
+					if ( leadingdots && dots == 1 )
+					{
+						result[--offset] = '\0';
+						dots = 0;
+						continue;
+					}
+
+					// If .., remove .. and one element of the path.
+					if ( leadingdots && dots == 2 )
+					{
+						offset -= 2; // Remove ..
+						offset -= 1; // Remove the trailing slash
+						while ( offset )
+						{
+							if ( result[--offset] == '/' ) { break; }
+						}
+						result[offset++] = '/'; // Need to re-insert a slash.
+						result[offset] = '\0';
+						dots = 0;
+						continue;
+					}
+
+					// Reset the dot count after a slash.
+					dots = 0;
+				}
+
+				// The newest path element consisted solely of dots.
+				leadingdots = ( c == '/' || c == '.' );
+
+				// Count the number of leading dots in the path element.
+				if ( c == '.' && leadingdots ) { dots++; }
+
+				// Insert the character into the result.
+				result[offset++] = c;
+			}
+
+			// TODO: To avoid wasting space, should we String::Clone(result)?
+
+			return result;
 		}
 	}
 }

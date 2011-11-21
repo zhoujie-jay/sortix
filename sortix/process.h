@@ -67,8 +67,7 @@ namespace Sortix
 	public:
 		addr_t addrspace;
 		int exitstatus;
-
-	public:
+		char* workingdir;
 		pid_t pid;
 
 	public:

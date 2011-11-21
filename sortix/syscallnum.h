@@ -50,7 +50,9 @@
 #define SYSCALL_DUP 22
 #define SYSCALL_OPEN 23
 #define SYSCALL_READDIRENTS 24
-#define SYSCALL_MAX_NUM 25 /* index of highest constant + 1 */
+#define SYSCALL_CHDIR 25
+#define SYSCALL_GETCWD 26
+#define SYSCALL_MAX_NUM 27 /* index of highest constant + 1 */
 
 #endif
 

@@ -14,7 +14,12 @@ int status = 0;
 
 void command()
 {
-	printf("root@sortix / # ");	
+	const size_t CWD_SIZE = 512;
+	char cwd[CWD_SIZE];
+	const char* wd = getcwd(cwd, CWD_SIZE);
+	if ( !wd ) { wd = "?"; }
+
+	printf("root@sortix %s # ", wd);	
 
 	const size_t commandsize = 128;
 	char command[commandsize + 1];
@@ -79,6 +84,19 @@ void command()
 		const char* status = "1";
 		if ( 1 < argc ) { status = argv[1]; }
 		exit(atoi(status));
+	}
+
+	if ( strcmp(argv[0], "cd") == 0 )
+	{
+		status = 0;
+		const char* newdir = "/";
+		if ( 1 < argc ) { newdir = argv[1]; }
+		if ( chdir(newdir) )
+		{
+			printf("cd: %s: cannot change directory\n", newdir);
+			status = 1;
+		}
+		return;
 	}
 
 	pid_t child = fork();

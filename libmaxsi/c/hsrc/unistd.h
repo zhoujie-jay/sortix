@@ -78,7 +78,6 @@ __BEGIN_DECLS
 #ifndef SORTIX_UNIMPLEMENTED
 int access(const char*, int);
 unsigned alarm(unsigned);
-int chdir(const char*);
 int chown(const char*, uid_t, gid_t);
 size_t confstr(int, char*, size_t);
 char* crypt(const char*, const char*);
@@ -100,7 +99,6 @@ int fexecve(int, char* const [], char* const []);
 long fpathconf(int, int);
 int fsync(int);
 int ftruncate(int, off_t);
-char* getcwd(char*, size_t);
 gid_t getegid(void);
 uid_t geteuid(void);
 gid_t getgid(void);
@@ -157,10 +155,12 @@ extern char* optarg;
 extern int opterr, optind, optopt;
 #endif
 
+int chdir(const char*);
 int close(int);
 int dup(int);
 void _exit(int);
 pid_t fork(void);
+char* getcwd(char*, size_t);
 pid_t getpid(void);
 pid_t getppid(void);
 int pipe(int [2]);

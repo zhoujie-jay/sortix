@@ -38,6 +38,8 @@ namespace Maxsi
 	DEFN_SYSCALL1(int, SysDup, 22, int);
 	DEFN_SYSCALL3(int, SysOpen, 23, const char*, int, mode_t);
 	DEFN_SYSCALL3(int, SysReadDirEnts, 24, int, struct sortix_dirent*, size_t);
+	DEFN_SYSCALL1(int, SysChDir, 25, const char*);
+	DEFN_SYSCALL2(char*, SysGetCWD, 26, char*, size_t);
 
 	size_t Print(const char* Message)
 	{
@@ -101,6 +103,16 @@ namespace Maxsi
 	extern "C" int readdirents(int fd, struct sortix_dirent* dirent, size_t size)
 	{
 		return SysReadDirEnts(fd, dirent, size);
+	}
+
+	extern "C" int chdir(const char* path)
+	{
+		return SysChDir(path);
+	}
+
+	extern "C" char* getcwd(char* buf, size_t size)
+	{
+		return SysGetCWD(buf, size);
 	}
 #endif
 
