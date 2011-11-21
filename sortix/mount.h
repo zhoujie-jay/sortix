@@ -33,6 +33,7 @@ namespace Sortix
 	{
 		void Init();
 		DevFileSystem* WhichFileSystem(const char* path, size_t* pathoffset);
+		bool Register(DevFileSystem* fs, const char* path);
 	}
 }
 

@@ -34,42 +34,105 @@ using namespace Maxsi;
 
 namespace Sortix
 {
+	class MountPoint
+	{
+	public:
+		MountPoint(DevFileSystem* fs, char* path);
+		~MountPoint();
+
+	public:
+		MountPoint* prev;
+		MountPoint* next;
+
+	public:
+		DevFileSystem* fs;
+		char* path;
+
+	};
+
+	MountPoint::MountPoint(DevFileSystem* fs, char* path)
+	{
+		this->path = path;
+		this->fs = fs;
+		this->fs->Refer();
+		prev = NULL;
+		next = NULL;
+	}
+
+	MountPoint::~MountPoint()
+	{
+		fs->Unref();
+		delete[] path;
+	}
+
 	namespace Mount
 	{
-		DevFileSystem* initfs;
-		DevFileSystem* rootfs;
+		MountPoint* root;
 
 		bool MatchesMountPath(const char* path, const char* mount)
 		{
 			size_t mountlen = String::Length(mount);
 			if ( !String::StartsWith(path, mount) ) { return false; }
-			switch ( path[mountlen] )
-			{
-				case '\0':
-				case '/':
-					return true;
-				default:
-					return false;
-			}
+			int c = path[mountlen];
+			return c == '/' || c == '\0';
 		}
 
 		DevFileSystem* WhichFileSystem(const char* path, size_t* pathoffset)
 		{
-			if ( MatchesMountPath(path, "/bin") )
-			{
-				*pathoffset = 4;
-				return initfs;
-			}
+			DevFileSystem* result = NULL;
 			*pathoffset = 0;
-			return rootfs;
+
+			for ( MountPoint* tmp = root; tmp; tmp = tmp->next )
+			{
+				if ( MatchesMountPath(path, tmp->path) )
+				{
+					result = tmp->fs;
+					*pathoffset = String::Length(tmp->path);
+				}
+			}
+
+			return result;
+		}
+
+		bool Register(DevFileSystem* fs, const char* path)
+		{
+			char* newpath = String::Clone(path);
+			if ( !newpath ) { return false; }
+
+			MountPoint* mp = new MountPoint(fs, newpath);
+			if ( !mp ) { delete[] newpath; return false; }
+
+			if ( !root ) { root = mp; return true; }
+
+			if ( String::Compare(path, root->path) < 0 )
+			{
+				mp->next = root;
+				root->prev = mp;
+				root = mp;
+				return false;
+			}
+
+			for ( MountPoint* tmp = root; tmp; tmp = tmp->next )
+			{
+				if ( tmp->next == NULL || String::Compare(path, tmp->next->path) < 0 )
+				{
+					mp->next = tmp->next;
+					tmp->next = mp;
+					return true;
+				}
+			}
+
+			return false; // Shouldn't happen.
 		}
 
 		void Init()
 		{
-			initfs = new DevInitFS();
-			if ( !initfs ) { Panic("Unable to allocate initfs"); }
-			rootfs = new DevRAMFS();
-			if ( !rootfs ) { Panic("Unable to allocate rootfs"); }
+			root = NULL;
+
+			DevFileSystem* rootfs = new DevRAMFS();
+			if ( !rootfs || !Register(rootfs, "") ) { Panic("Unable to allocate rootfs"); }
+			DevFileSystem* initfs = new DevInitFS();
+			if ( !initfs || !Register(initfs, "/bin") ) { Panic("Unable to allocate initfs"); }
 		}
 	}
 }
