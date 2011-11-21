@@ -228,5 +228,11 @@ namespace Sortix
 
 		return result;
 	}
+
+	bool DevInitFS::Unlink(const char* path)
+	{
+		Error::Set(Error::EROFS);
+		return false;
+	}
 }
 

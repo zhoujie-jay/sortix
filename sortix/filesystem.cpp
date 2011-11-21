@@ -53,6 +53,21 @@ namespace Sortix
 			return result;
 		}
 
+		bool Unlink(const char* path)
+		{
+			Process* process = CurrentProcess();
+			const char* wd = process->workingdir;
+			char* abs = Directory::MakeAbsolute(wd, path);
+			if ( !abs ) { Error::Set(Error::ENOMEM); return false; }
+
+			size_t pathoffset = 0;
+			DevFileSystem* fs = Mount::WhichFileSystem(abs, &pathoffset);
+			if ( !fs ) { delete[] abs; return false; }
+			bool result = fs->Unlink(abs + pathoffset);
+			delete[] abs;
+			return result;
+		}
+
 		int SysOpen(const char* path, int flags, mode_t mode)
 		{
 			Process* process = CurrentProcess();
@@ -63,9 +78,15 @@ namespace Sortix
 			return fd;
 		}
 
+		int SysUnlink(const char* path)
+		{
+			return Unlink(path) ? 0 : -1;
+		}
+
 		void Init()
 		{
 			Syscall::Register(SYSCALL_OPEN, (void*) SysOpen);
+			Syscall::Register(SYSCALL_UNLINK, (void*) SysUnlink);
 		}
 	}
 

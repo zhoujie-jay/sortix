@@ -55,6 +55,7 @@ namespace Sortix
 	{
 	public:
 		virtual Device* Open(const char* path, int flags, mode_t mode) = 0;
+		virtual bool Unlink(const char* path) = 0;
 
 	public:
 		virtual bool IsType(unsigned type) { return type == Device::FILESYSTEM; }
@@ -88,6 +89,7 @@ namespace Sortix
 	{
 		void Init();
 		Device* Open(const char* path, int flags, mode_t mode);
+		bool Unlink(const char* path);
 	}
 }
 

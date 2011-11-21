@@ -302,6 +302,23 @@ namespace Sortix
 		return file;
 	}
 
+	bool DevRAMFS::Unlink(const char* path)
+	{
+		if ( *path == '\0' || ( *path++ == '/' && *path == '\0' ) )
+		{
+			Error::Set(Error::EISDIR);
+			return false;
+		}
+
+		size_t index = files->Search(LookupFile, path);
+		if ( index == SIZE_MAX ) { Error::Set(Error::ENOENT); return false; }
+
+		Device* dev = files->Remove(index);
+		ASSERT(dev);
+		dev->Unref();
+		return true;
+	}
+
 	size_t DevRAMFS::GetNumFiles()
 	{
 		if ( !files ) { return 0; }

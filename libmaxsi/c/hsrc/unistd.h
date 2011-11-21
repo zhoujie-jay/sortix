@@ -144,7 +144,6 @@ int tcsetpgrp(int, pid_t);
 int truncate(const char*, off_t);
 char* ttyname(int);
 int ttyname_r(int, char*, size_t);
-int unlink(const char*);
 int unlinkat(int, const char*, int);
 
 #if __POSIX_OBSOLETE <= 200801
@@ -169,6 +168,7 @@ unsigned sleep(unsigned);
 #if __POSIX_OBSOLETE <= 200112
 int usleep(useconds_t useconds);
 #endif
+int unlink(const char*);
 ssize_t write(int, const void*, size_t);
 
 __END_DECLS

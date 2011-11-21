@@ -40,6 +40,7 @@ namespace Maxsi
 	DEFN_SYSCALL3(int, SysReadDirEnts, 24, int, struct sortix_dirent*, size_t);
 	DEFN_SYSCALL1(int, SysChDir, 25, const char*);
 	DEFN_SYSCALL2(char*, SysGetCWD, 26, char*, size_t);
+	DEFN_SYSCALL1(int, SysUnlink, 27, const char*);
 
 	size_t Print(const char* Message)
 	{
@@ -113,6 +114,11 @@ namespace Maxsi
 	extern "C" char* getcwd(char* buf, size_t size)
 	{
 		return SysGetCWD(buf, size);
+	}
+
+	extern "C" int unlink(const char* pathname)
+	{
+		return SysUnlink(pathname);
 	}
 #endif
 

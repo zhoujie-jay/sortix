@@ -52,7 +52,8 @@
 #define SYSCALL_READDIRENTS 24
 #define SYSCALL_CHDIR 25
 #define SYSCALL_GETCWD 26
-#define SYSCALL_MAX_NUM 27 /* index of highest constant + 1 */
+#define SYSCALL_UNLINK 27
+#define SYSCALL_MAX_NUM 28 /* index of highest constant + 1 */
 
 #endif
 

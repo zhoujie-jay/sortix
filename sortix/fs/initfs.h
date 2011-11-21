@@ -40,6 +40,7 @@ namespace Sortix
 
 	public:
 		virtual Device* Open(const char* path, int flags, mode_t mode);
+		virtual bool Unlink(const char* path);
 
 	};
 }
