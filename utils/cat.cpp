@@ -5,9 +5,26 @@
 #include <errno.h>
 #include <libmaxsi/sortix-keyboard.h>
 
+bool writeall(int fd, const void* buffer, size_t len)
+{
+	const char* buf = (const char*) buffer;
+	while ( len )
+	{
+		ssize_t byteswritten = write(fd, buf, len);
+		if ( byteswritten < 0 ) { return false; }
+		buf += byteswritten;
+		len -= byteswritten;
+	}
+
+	return true;
+}
+
 int cat(int argc, char* argv[])
 {
 	int result = 0;
+
+	int outfd = open("/dev/tty", O_WRONLY | O_APPEND);
+	if ( outfd < 0 ) { printf("%s: %s: %s\n", argv[0], "/dev/tty", strerror(errno)); return 1; }
 
 	for ( int i = 1; i < argc; i++ )
 	{
@@ -31,8 +48,12 @@ int cat(int argc, char* argv[])
 				result = 1;
 				break;
 			}
-			buffer[bytesread] = 0;
-			printf("%s", buffer);
+			if ( !writeall(outfd, buffer, bytesread) )
+			{
+				printf("%s: /dev/tty: %s\n", argv[0], strerror(errno));
+				result = 1;
+				break;
+			}
 		} while ( true );
 
 		close(fd);
