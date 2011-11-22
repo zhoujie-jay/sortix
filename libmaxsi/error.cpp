@@ -60,6 +60,7 @@ namespace Maxsi
 				case EISDIR: return (char*) "Is a directory";
 				case EPERM: return (char*) "Permission denied";
 				case EIO: return (char*) "Input/output error";
+				case ENOEXEC: return (char*) "Not executable";
 				default: return (char*) "Unknown error condition";
 			}
 		}

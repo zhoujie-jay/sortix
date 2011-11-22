@@ -17,5 +17,6 @@
 #define EISDIR 25
 #define EPERM 26
 #define EIO 27
+#define ENOEXEC 28
 
 #endif

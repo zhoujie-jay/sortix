@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 #include "platform.h"
+#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "elf.h"
 #include "memorymanagement.h"
@@ -117,14 +118,13 @@ namespace Sortix
 
 		addr_t Construct(Process* process, const void* file, size_t filelen)
 		{
-			// TODO: These messages should be returned by errno instead!
-			if ( filelen < sizeof(Header) ) { Log::PrintF("File is not executable\n"); return 0; }
+			if ( filelen < sizeof(Header) ) { Error::Set(ENOEXEC); return 0; }
 			const Header* header = (const Header*) file;
 
 			if ( !(header->magic[0] == 0x7F && header->magic[1] == 'E' &&
                    header->magic[2] == 'L'  && header->magic[3] == 'F'  ) )
 			{
-				Log::PrintF("File is not executable\n");
+				Error::Set(ENOEXEC);
 				return 0;
 			}
 
