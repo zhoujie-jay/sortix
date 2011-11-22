@@ -63,7 +63,7 @@ syscall_handler:
 
 	# Make sure the requested system call is valid.
 	cmp SYSCALL_MAX, %eax
-	jl valid_eax
+	jb valid_eax
 	xorl %eax, %eax
 
 valid_eax:
