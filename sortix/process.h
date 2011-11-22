@@ -88,8 +88,9 @@ namespace Sortix
 		bool sigint;
 
 	public:
-		int Execute(const char* programname, int argc, const char* const* argv, CPU::InterruptRegisters* regs);
+		int Execute(const char* programname, const byte* program, size_t programsize, int argc, const char* const* argv, CPU::InterruptRegisters* regs);
 		void ResetAddressSpace();
+		void Exit(int status);
 
 	public:
 		bool IsSane() { return addrspace != 0; }

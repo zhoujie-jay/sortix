@@ -23,12 +23,16 @@
 ******************************************************************************/
 
 #include "platform.h"
+#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/sortedlist.h>
 #include "thread.h"
 #include "process.h"
 #include "device.h"
+#include "stream.h"
+#include "filesystem.h"
+#include "directory.h"
 #include "scheduler.h"
 #include "memorymanagement.h"
 #include "initrd.h"
@@ -260,26 +264,12 @@ namespace Sortix
 		}
 	}
 
-	int Process::Execute(const char* programname, int argc, const char* const* argv, CPU::InterruptRegisters* regs)
+	int Process::Execute(const char* programname, const byte* program, size_t programsize, int argc, const char* const* argv, CPU::InterruptRegisters* regs)
 	{
 		ASSERT(CurrentProcess() == this);
 
-		size_t programsize = 0;
-		byte* program = InitRD::Open(programname, &programsize);
-		if ( !program ) { return -1; }
-
 		addr_t entry = ELF::Construct(CurrentProcess(), program, programsize);
-		if ( !entry )
-		{
-			Log::PrintF("Could not create process '%s'", programname);
-			if ( String::Compare(programname, "sh") == 0 )
-			{
-				Panic("Couldn't create the shell process");
-			}
-
-			const char* const SHARGV[]= { "sh" };
-			return Execute("sh", 1, SHARGV, regs);
-		}
+		if ( !entry ) { return -1; }
 
 		// TODO: This may be an ugly hack!
 		// TODO: Move this to x86/process.cpp.
@@ -311,41 +301,138 @@ namespace Sortix
 		return 0;
 	}
 
+	class SysExecVEState
+	{
+	public:
+		char* filename;
+		DevBuffer* dev;
+		byte* buffer;
+		size_t count;
+		size_t sofar;
+		int argc;
+		char** argv;
+
+	public:
+		SysExecVEState()
+		{
+			filename = NULL;
+			dev = NULL;
+			buffer = NULL;
+			count = 0;
+			sofar = 0;
+			argc = 0;
+			argv = NULL;
+		}
+
+		~SysExecVEState()
+		{
+			delete[] filename;
+			dev->Unref();
+			delete[] buffer;
+			for ( int i = 0; i < argc; i++ ) { delete[] argv[i]; }
+			delete[] argv;
+		}
+	
+	};
+
+	int SysExevVEStage2(SysExecVEState* state)
+	{
+		if ( !state->dev->IsReadable() ) { Error::Set(Error::EBADF); delete state; return -1; }
+
+		byte* dest = state->buffer + state->sofar;
+		size_t amount = state->count - state->sofar;
+		ssize_t bytesread = state->dev->Read(dest, amount);
+
+		// Check for premature end-of-file.
+		if ( bytesread == 0 && amount != 0 )
+		{
+			Error::Set(Error::EIO); delete state; return -1;
+		}
+
+		// We actually managed to read some data.
+		if ( 0 <= bytesread )
+		{
+			state->sofar += bytesread;
+			if ( state->sofar <= state->count )
+			{
+				CPU::InterruptRegisters* regs = Syscall::InterruptRegs();
+				Process* process = CurrentProcess();
+				int result = process->Execute(state->filename, state->buffer, state->count, state->argc, state->argv, regs);
+				if ( result == 0 ) { Syscall::AsIs(); }
+				delete state;
+				return result;
+			}
+
+			return SysExevVEStage2(state);
+		}
+
+		if ( Error::Last() != Error::EWOULDBLOCK ) { delete state; return -1; }
+
+		// The stream will resume our system call once progress has been
+		// made. Our request is certainly not forgotten.
+
+		// Resume the system call with these parameters.
+		Thread* thread = CurrentThread();
+		thread->scfunc = (void*) SysExevVEStage2;
+		thread->scstate[0] = (size_t) state;
+		thread->scsize = sizeof(state);
+
+		// Now go do something else.
+		Syscall::Incomplete();
+		return 0;
+	}
+
+	DevBuffer* OpenProgramImage(const char* progname)
+	{
+		// TODO: Use the PATH enviromental variable.
+		char* abs = Directory::MakeAbsolute("/bin", progname);
+		if ( !abs ) { Error::Set(Error::ENOMEM); return NULL; }
+
+		// TODO: Use O_EXEC here!
+		Device* dev =  FileSystem::Open(abs, O_RDONLY, 0);
+		delete[] abs;
+
+		if ( !dev ) { return NULL; }
+		if ( !dev->IsType(Device::BUFFER) ) { dev->Unref(); return NULL; }
+		return (DevBuffer*) dev;
+	}
+
 	int SysExecVE(const char* filename, int argc, char* const argv[], char* const /*envp*/[])
 	{
 		// TODO: Validate that all the pointer-y parameters are SAFE!
 
+		// Use a container class to store everything and handle cleaning up.
+		SysExecVEState* state = new SysExecVEState;
+		if ( !state ) { return -1; }
+
 		// Make a copy of argv and filename as they are going to be destroyed
 		// when the address space is reset.
-		filename = String::Clone(filename);
-		if ( !filename ) { return -1; /* TODO: errno */ }
+		state->filename = String::Clone(filename);
+		if ( !state->filename ) { delete state; return -1; }
 
-		char** newargv = new char*[argc];
-		if ( !newargv ) { delete[] filename; return -1; /* TODO: errno */ }
+		state->argc = argc;
+		state->argv = new char*[state->argc];
+		Maxsi::Memory::Set(state->argv, 0, sizeof(char*) * state->argc);
+		if ( !state->argv ) { delete state; return -1; }
 
-		for ( int i = 0; i < argc; i++ )
+		for ( int i = 0; i < state->argc; i++ )
 		{
-			newargv[i] = String::Clone(argv[i]);
-			if ( !newargv[i] )
-			{
-				while ( i ) { delete[] newargv[--i]; }
-
-				return -1; /* TODO: errno */
-			}
+			state->argv[i] = String::Clone(argv[i]);
+			if ( !state->argv[i] ) { delete state; return -1; }
 		}
 
-		argv = newargv;
+		state->dev = OpenProgramImage(state->filename);
+		if ( !state->dev ) { delete state; return -1; }
 
-		CPU::InterruptRegisters* regs = Syscall::InterruptRegs();
-		Process* process = CurrentProcess();
-		int result = process->Execute(filename, argc, argv, regs);
-		Syscall::AsIs();
+		state->dev->Refer(); // TODO: Rules of GC may change soon.
+		uintmax_t needed = state->dev->Size();
+		if ( SIZE_MAX < needed ) { Error::Set(Error::ENOMEM); delete state; return -1; }
 
-		for ( int i = 0; i < argc; i++ ) { delete[] argv[i]; }
-		delete[] argv;
-		delete[] filename;
+		state->count = needed;
+		state->buffer = new byte[state->count];
+		if ( !state->buffer ) { delete state; return -1; }
 
-		return result;
+		return SysExevVEStage2(state);
 	}
 
 	pid_t SysFork()
@@ -430,19 +517,19 @@ namespace Sortix
 		}
 	}
 
-	void SysExit(int status)
+	void Process::Exit(int status)
 	{
-		// Status codes can only contain 8 bits according to ISO C and POSIX.
+	// Status codes can only contain 8 bits according to ISO C and POSIX.
 		status %= 256;
 
-		Process* process = CurrentProcess();
-		Process* parent = process->parent;
+		ASSERT(this == CurrentProcess());
+
 		Process* init = Scheduler::GetInitProcess();
 
-		if ( process->pid == 0 ) { Panic("System idle process exited"); }
+		if ( pid == 0 ) { Panic("System idle process exited"); }
 
 		// If the init process terminated successfully, time to halt.
-		if ( process == init )
+		if ( this == init )
 		{
 			switch ( status )
 			{
@@ -453,11 +540,11 @@ namespace Sortix
 		}
 
 		// Take care of the orphans, so give them to init.
-		while ( process->firstchild )
+		while ( firstchild )
 		{
-			Process* orphan = process->firstchild;
-			process->firstchild = orphan->nextsibling;
-			if ( process->firstchild ) { process->firstchild->prevsibling = NULL; }
+			Process* orphan = firstchild;
+			firstchild = orphan->nextsibling;
+			if ( firstchild ) { firstchild->prevsibling = NULL; }
 			orphan->parent = init;
 			orphan->prevsibling = NULL;
 			orphan->nextsibling = init->firstchild;
@@ -466,50 +553,55 @@ namespace Sortix
 		}
 
 		// Remove the current process from the family tree.
-		if ( !process->prevsibling )
+		if ( !prevsibling )
 		{
-			parent->firstchild = process->nextsibling;
+			parent->firstchild = nextsibling;
 		}
 		else
 		{
-			process->prevsibling->nextsibling = process->nextsibling;
+			prevsibling->nextsibling = nextsibling;
 		}
 
-		if ( process->nextsibling )
+		if ( nextsibling )
 		{
-			process->nextsibling->prevsibling = process->prevsibling;
+			nextsibling->prevsibling = prevsibling;
 		}
 
 		// TODO: Close all the file descriptors!
 
 		// Make all threads belonging to process unrunnable.
-		for ( Thread* t = process->firstthread; t; t = t->nextsibling )
+		for ( Thread* t = firstthread; t; t = t->nextsibling )
 		{
 			Scheduler::EarlyWakeUp(t);
 			Scheduler::SetThreadState(t, Thread::State::NONE);
 		}
 
 		// Delete the threads.
-		while ( process->firstthread )
+		while ( firstthread )
 		{
-			Thread* todelete = process->firstthread;
-			process->firstthread = process->firstthread->nextsibling;
+			Thread* todelete = firstthread;
+			firstthread = firstthread->nextsibling;
 			delete todelete;
 		}
 
 		// Now clean up the address space.
-		process->ResetAddressSpace();
+		ResetAddressSpace();
 
 		// TODO: Actually delete the address space. This is a small memory leak
 		// of a couple pages.
 
-		process->exitstatus = status;
-		process->nextsibling = parent->zombiechild;
-		if ( parent->zombiechild ) { parent->zombiechild->prevsibling = process; }
-		parent->zombiechild = process;
+		exitstatus = status;
+		nextsibling = parent->zombiechild;
+		if ( parent->zombiechild ) { parent->zombiechild->prevsibling = this; }
+		parent->zombiechild = this;
 
 		// Notify the parent process that the child has become a zombie.
-		parent->OnChildProcessExit(process);
+		parent->OnChildProcessExit(this);
+	}
+
+	void SysExit(int status)
+	{
+		CurrentProcess()->Exit(status);
 
 		// And so, the process had vanished from existence. But as fate would
 		// have it, soon a replacement took its place.

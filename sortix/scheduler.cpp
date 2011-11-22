@@ -30,9 +30,12 @@
 #include "scheduler.h"
 #include "memorymanagement.h"
 #include "syscall.h"
+#include "sound.h" // HACK FOR SIGINT
 
 namespace Sortix
 {
+	void SysExit(int status); // HACK FOR SIGINT
+
 	// Internal forward-declarations.
 	namespace Scheduler
 	{
@@ -292,12 +295,16 @@ namespace Sortix
 			if ( currentthread == idlethread ) { return; }
 
 			hacksigintpending = false;
+
+			// HACK: Don't crash init or sh.
+			Process* process = CurrentProcess();
+			if ( process->pid < 3 ) { return; }
+
+			Sound::Mute();
 			Log::PrintF("^C\n");
 
-			const char* programname = "sh";
-			const char* const argv[] = { "sh" };
-			CurrentProcess()->Execute(programname, 1, argv, regs);
-			return;
+			process->Exit(130);
+			currentthread = dummythread;
 		}
 
 		void SigIntHack()

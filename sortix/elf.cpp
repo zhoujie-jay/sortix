@@ -117,12 +117,14 @@ namespace Sortix
 
 		addr_t Construct(Process* process, const void* file, size_t filelen)
 		{
-			if ( filelen < sizeof(Header) ) { return 0; }
+			// TODO: These messages should be returned by errno instead!
+			if ( filelen < sizeof(Header) ) { Log::PrintF("File is not executable\n"); return 0; }
 			const Header* header = (const Header*) file;
 
 			if ( !(header->magic[0] == 0x7F && header->magic[1] == 'E' &&
                    header->magic[2] == 'L'  && header->magic[3] == 'F'  ) )
 			{
+				Log::PrintF("File is not executable\n");
 				return 0;
 			}
 

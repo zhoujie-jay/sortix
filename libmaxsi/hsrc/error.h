@@ -59,6 +59,7 @@ namespace Maxsi
 		const int ERANGE = 24;
 		const int EISDIR = 25;
 		const int EPERM = 26;
+		const int EIO = 27;
 
 		extern int _errornumber;
 

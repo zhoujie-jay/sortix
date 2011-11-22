@@ -29,9 +29,14 @@
 
 #include "process.h" // Hack for SIGSEGV
 #include "sound.h" // Hack for SIGSEGV
+#include "thread.h" // HACK FOR SIGSEGV
+#include "syscall.h" // HACK FOR SIGSEGV
+#include "scheduler.h" // HACK FOR SIGSEGV
 
 namespace Sortix
 {
+	void SysExit(int status); // HACK
+
 	namespace Interrupt
 	{
 		const bool DEBUG_EXCEPTION = false;
@@ -78,9 +83,10 @@ namespace Sortix
 				            message, regs->eip, regs->cr2, regs->err_code);
 
 				Sound::Mute();
-				const char* programname = "sh";
-				const char* const argv[] = { "sh" };
-				CurrentProcess()->Execute(programname, 1, argv, regs);
+
+				CurrentProcess()->Exit(139);
+				Scheduler::ProcessTerminated(regs);		
+
 				return;
 			}
 
