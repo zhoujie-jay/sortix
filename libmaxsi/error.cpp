@@ -32,7 +32,7 @@ namespace Maxsi
 	{
 		DEFN_SYSCALL1(int, SysRegisterErrno, 28, int*);
 
-		extern "C" int errno = 0;
+		extern "C" { int errno = 0; }
 
 		extern "C" void init_error_functions()
 		{
@@ -58,9 +58,10 @@ namespace Maxsi
 				case ENOMEM: return (char*) "Not enough space";
 				case ERANGE: return (char*) "Result too large";
 				case EISDIR: return (char*) "Is a directory";
-				case EPERM: return (char*) "Permission denied";
+				case EPERM: return (char*) "Operation not permitted";
 				case EIO: return (char*) "Input/output error";
 				case ENOEXEC: return (char*) "Not executable";
+				case EACCESS: return (char*) "Permission denied";
 				default: return (char*) "Unknown error condition";
 			}
 		}
