@@ -218,7 +218,7 @@ namespace Sortix
 		if ( String::Compare(path, "/null") == 0 ) { return new DevNull; }
 		if ( String::Compare(path, "/tty") == 0 ) { return new DevLogTTY; }
 
-		Error::Set(ENOENT);
+		Error::Set(flags & O_CREAT ? EPERM : ENOENT);
 		return NULL;
 	}
 
@@ -231,7 +231,7 @@ namespace Sortix
 		}
 
 		Error::Set(EPERM);
-		return true;
+		return false;
 	}
 }
 
