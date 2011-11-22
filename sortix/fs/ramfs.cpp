@@ -239,10 +239,14 @@ namespace Sortix
 
 	Device* DevRAMFS::Open(const char* path, int flags, mode_t mode)
 	{
-		if ( (flags & O_LOWERFLAGS) == O_SEARCH )
+		if ( path[0] == 0 || (path[0] == '/' && path[1] == 0) )
 		{
-			if ( path[0] == 0 || (path[0] == '/' && path[1] == 0) ) { return new DevRAMFSDir(this); }
-			Error::Set(Error::ENOTDIR);
+			if ( (flags & O_LOWERFLAGS) == O_SEARCH )
+			{
+				return new DevRAMFSDir(this);
+			}
+
+			Error::Set(Error::EISDIR);
 			return NULL;
 		}
 
