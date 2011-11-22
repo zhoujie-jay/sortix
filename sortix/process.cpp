@@ -382,10 +382,11 @@ namespace Sortix
 		return 0;
 	}
 
-	DevBuffer* OpenProgramImage(const char* progname)
+	DevBuffer* OpenProgramImage(const char* progname, const char* wd, const char* path)
 	{
 		// TODO: Use the PATH enviromental variable.
-		char* abs = Directory::MakeAbsolute("/bin", progname);
+		const char* base = ( *progname == '.' ) ? wd : path;
+		char* abs = Directory::MakeAbsolute(base, progname);
 		if ( !abs ) { Error::Set(Error::ENOMEM); return NULL; }
 
 		// TODO: Use O_EXEC here!
@@ -421,7 +422,8 @@ namespace Sortix
 			if ( !state->argv[i] ) { delete state; return -1; }
 		}
 
-		state->dev = OpenProgramImage(state->filename);
+		Process* process = CurrentProcess();
+		state->dev = OpenProgramImage(state->filename, process->workingdir, "/bin");
 		if ( !state->dev ) { delete state; return -1; }
 
 		state->dev->Refer(); // TODO: Rules of GC may change soon.
