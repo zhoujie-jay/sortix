@@ -23,13 +23,15 @@
 ******************************************************************************/
 
 #include "platform.h"
+#include <libmaxsi/error.h>
 #include "syscall.h"
 #include "syscallnum.h"
 #include "panic.h"
+#include "process.h"
 #include "thread.h"
 #include "scheduler.h"
 
-#include "log.h" // DEBUG
+using namespace Maxsi;
 
 namespace Sortix
 {
@@ -90,6 +92,16 @@ namespace Sortix
 			Scheduler::SetThreadState(thread, Thread::State::RUNNABLE);
 		}
 
+		extern "C" void update_userspace_errno()
+		{
+			int error = Error::Last();
+			if ( !error ) { return; }
+			Process* process = CurrentProcess();
+			if ( !process->errno ) { return; }
+			// TODO: Validate that process->errno is in userspace memory!
+			*process->errno = error;
+		}
+
 		extern "C" size_t resume_syscall(void* scfunc, size_t scsize, size_t* scstate);
 
 		void Resume(CPU::InterruptRegisters* regs)
@@ -105,6 +117,7 @@ namespace Sortix
 			void* scfunc = thread->scfunc;
 
 			system_was_incomplete = 0;
+			Error::Set(0);
 
 			size_t result = resume_syscall(scfunc, scsize, scstate);
 
@@ -115,6 +128,7 @@ namespace Sortix
 			if ( !incomplete )
 			{
 				syscall_state_ptr->result = result;
+				update_userspace_errno();
 				return;
 			}
 

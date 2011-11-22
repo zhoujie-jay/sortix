@@ -188,7 +188,7 @@ namespace Sortix
 		if ( available < needed )
 		{
 			dirent->d_namelen = needed;
-			Error::Set(Error::EINVAL);
+			Error::Set(EINVAL);
 			return 0;
 		}
 
@@ -211,14 +211,14 @@ namespace Sortix
 		if ( (flags & O_LOWERFLAGS) == O_SEARCH )
 		{
 			if ( path[0] == 0 || (path[0] == '/' && path[1] == 0) ) { return new DevDevFSDir(); }
-			Error::Set(Error::ENOTDIR);
+			Error::Set(ENOTDIR);
 			return NULL;
 		}
 
 		if ( String::Compare(path, "/null") == 0 ) { return new DevNull; }
 		if ( String::Compare(path, "/tty") == 0 ) { return new DevLogTTY; }
 
-		Error::Set(Error::ENOENT);
+		Error::Set(ENOENT);
 		return NULL;
 	}
 
@@ -226,11 +226,11 @@ namespace Sortix
 	{
 		if ( *path == '\0' || ( *path++ == '/' && *path == '\0' ) )
 		{
-			Error::Set(Error::EISDIR);
+			Error::Set(EISDIR);
 			return false;
 		}
 
-		Error::Set(Error::EPERM);
+		Error::Set(EPERM);
 		return true;
 	}
 }

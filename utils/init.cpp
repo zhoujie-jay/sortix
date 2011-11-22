@@ -1,5 +1,7 @@
-#include <stdio.h>
 #include <sys/wait.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
 #include <libmaxsi/thread.h>
@@ -32,7 +34,7 @@ int main(int argc, char* argv[])
 	
 	if ( childpid < 0 )
 	{
-		printf("init: unable to fork a child\n");
+		printf("init: fork: %s\n", strerror(errno));
 		return 2;
 	}
 

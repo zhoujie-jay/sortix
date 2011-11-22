@@ -22,14 +22,47 @@
 
 ******************************************************************************/
 
+#include "platform.h"
 #include "error.h"
+#include "syscall.h"
 
 namespace Maxsi
 {
 	namespace Error
 	{
-		// TODO: merge with errno interface.
-		int _errornumber;
+		DEFN_SYSCALL1(int, SysRegisterErrno, 28, int*);
+
+		extern "C" int errno = 0;
+
+		extern "C" void init_error_functions()
+		{
+			errno = 0;
+			SysRegisterErrno(&errno);			
+		}
+
+		extern "C" char* strerror(int code)
+		{
+			switch ( code )
+			{
+				case ENOTBLK: return (char*) "Block device required";
+				case ENODEV: return (char*) "No such device";
+				case EWOULDBLOCK: return (char*) "Operation would block";
+				case EBADF: return (char*) "Bad file descriptor";
+				case EOVERFLOW: return (char*) "Value too large to be stored in data type";
+				case ENOENT: return (char*) "No such file or directory";
+				case ENOSPC: return (char*) "No space left on device";
+				case EEXIST: return (char*) "File exists";
+				case EROFS: return (char*) "Read-only file system";
+				case EINVAL: return (char*) "Invalid argument";
+				case ENOTDIR: return (char*) "Not a directory";
+				case ENOMEM: return (char*) "Not enough space";
+				case ERANGE: return (char*) "Result too large";
+				case EISDIR: return (char*) "Is a directory";
+				case EPERM: return (char*) "Permission denied";
+				case EIO: return (char*) "Input/output error";
+				default: return (char*) "Unknown error condition";
+			}
+		}
 	}
 }
 

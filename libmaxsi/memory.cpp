@@ -379,7 +379,7 @@ namespace Maxsi
 			else
 			{
 				// We have no free chunks that are big enough, let's expand our heap into the unknown, if possible.
-				if ( WildernessSize < Size && !ExpandWilderness(Size) ) { Error::Set(Error::NOMEM); return NULL; }
+				if ( WildernessSize < Size && !ExpandWilderness(Size) ) { Error::Set(ENOMEM); return NULL; }
 
 				// Write some headers and footers around our newly allocated data.
 				UsedChunkHeader* ResultHeader = (UsedChunkHeader*) (Wilderness + WildernessSize - Size);

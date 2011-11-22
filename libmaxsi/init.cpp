@@ -27,8 +27,10 @@
 
 namespace Maxsi
 {
+	extern "C" void init_error_functions();
+
 	extern "C" void initialize_standard_library()
 	{
-	
+		init_error_functions();
 	}
 }

@@ -58,7 +58,7 @@ namespace Sortix
 			if ( !stream->IsWritable() ) { return -1; /* TODO: EBADF */ }
 			ssize_t written = stream->Write(buffer, count);
 			if ( 0 <= written ) { return written; }
-			if ( Error::Last() != Error::EWOULDBLOCK ) { return -1; /* TODO: errno */ }
+			if ( Error::Last() != EWOULDBLOCK ) { return -1; /* TODO: errno */ }
 
 			// The stream will resume our system call once progress has been
 			// made. Our request is certainly not forgotten.
@@ -98,7 +98,7 @@ namespace Sortix
 			if ( !stream->IsReadable() ) { return -1; /* TODO: EBADF */ }
 			ssize_t bytesread = stream->Read(buffer, count);
 			if ( 0 <= bytesread ) { return bytesread; }
-			if ( Error::Last() != Error::EWOULDBLOCK ) { return -1; /* TODO: errno */ }
+			if ( Error::Last() != EWOULDBLOCK ) { return -1; /* TODO: errno */ }
 
 			// The stream will resume our system call once progress has been
 			// made. Our request is certainly not forgotten.

@@ -25,46 +25,18 @@
 #ifndef LIBMAXSI_ERROR_H
 #define LIBMAXSI_ERROR_H
 
+extern "C"
+{
+@include(errno_decl.h);
+@include(errno_values.h)
+}
+
 namespace Maxsi
 {
 	namespace Error
 	{
-		// TODO: merge with errno interface.
-
-		const int SUCCESS = 0;
-		const int NONE = 1;
-		const int DENIED = 2;
-		const int NOTFOUND = 3;
-		const int NOSUPPORT = 4;
-		const int NOTIMPLEMENTED = 5;
-		const int PENDING = 6;
-		const int BADINPUT = 7;
-		const int CORRUPT = 8;
-		const int NOMEM = 9;
-		const int NOTDIR = 10;
-		const int ISDIR = 11;
-
-		const int ENOTBLK = 12;
-		const int ENODEV = 13;
-		const int EWOULDBLOCK = 14;
-		const int EBADF = 15;
-		const int EOVERFLOW = 16;
-		const int ENOENT = 17;
-		const int ENOSPC = 18;
-		const int EEXIST = 19;
-		const int EROFS = 20;
-		const int EINVAL = 21;
-		const int ENOTDIR = 22;
-		const int ENOMEM = 23;
-		const int ERANGE = 24;
-		const int EISDIR = 25;
-		const int EPERM = 26;
-		const int EIO = 27;
-
-		extern int _errornumber;
-
-		inline int Last() { return _errornumber; }
-		inline void Set(int error) { _errornumber = error; }
+		inline int Last() { return errno; }
+		inline void Set(int error) { errno = error; }
 	}
 }
 

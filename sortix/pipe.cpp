@@ -100,7 +100,7 @@ namespace Sortix
 			return amount + Read(dest + amount, count - amount);
 		}
 
-		Error::Set(Error::EWOULDBLOCK);
+		Error::Set(EWOULDBLOCK);
 
 		// TODO: Only one thread can wait on a pipe at the same time.
 		ASSERT(readwaiting == NULL);
@@ -129,7 +129,7 @@ namespace Sortix
 			return amount + Write(src + amount, count - amount);
 		}
 
-		Error::Set(Error::EWOULDBLOCK);
+		Error::Set(EWOULDBLOCK);
 
 		// TODO: Only one thread can wait on a pipe at the same time.
 		ASSERT(writewaiting == NULL);
@@ -175,7 +175,7 @@ namespace Sortix
 
 	ssize_t DevPipeReading::Write(const byte* /*src*/, size_t /*count*/)
 	{
-		Error::Set(Error::EBADF);
+		Error::Set(EBADF);
 		return -1;
 	}
 
@@ -222,7 +222,7 @@ namespace Sortix
 
 	ssize_t DevPipeWriting::Read(byte* /*dest*/, size_t /*count*/)
 	{
-		Error::Set(Error::EBADF);
+		Error::Set(EBADF);
 		return -1;
 	}
 

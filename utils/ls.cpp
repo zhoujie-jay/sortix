@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include <sys/readdirents.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
@@ -11,7 +12,7 @@ using namespace Maxsi;
 int ls(const char* path)
 {
 	int fd = open(path, O_SEARCH | O_DIRECTORY);
-	if ( fd < 0 ) { printf("ls: %s: open() failed\n", path); return 2; }
+	if ( fd < 0 ) { printf("ls: %s: %s\n", path, strerror(errno)); return 2; }
 
 	const size_t BUFFER_SIZE = 512;
 	char buffer[BUFFER_SIZE];
@@ -24,7 +25,7 @@ int ls(const char* path)
 	{
 		if ( readdirents(fd, dirent, BUFFER_SIZE) )
 		{
-			printf("readdirents() failed\n");
+			printf("ls: %s: %s\n", path, strerror(errno));
 			return 1;
 		}
 

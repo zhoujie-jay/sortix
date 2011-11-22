@@ -43,7 +43,7 @@ namespace Sortix
 			Process* process = CurrentProcess();
 			const char* wd = process->workingdir;
 			char* abs = Directory::MakeAbsolute(wd, path);
-			if ( !abs ) { Error::Set(Error::ENOMEM); return NULL; }
+			if ( !abs ) { Error::Set(ENOMEM); return NULL; }
 
 			size_t pathoffset = 0;
 			DevFileSystem* fs = Mount::WhichFileSystem(abs, &pathoffset);
@@ -58,7 +58,7 @@ namespace Sortix
 			Process* process = CurrentProcess();
 			const char* wd = process->workingdir;
 			char* abs = Directory::MakeAbsolute(wd, path);
-			if ( !abs ) { Error::Set(Error::ENOMEM); return false; }
+			if ( !abs ) { Error::Set(ENOMEM); return false; }
 
 			size_t pathoffset = 0;
 			DevFileSystem* fs = Mount::WhichFileSystem(abs, &pathoffset);

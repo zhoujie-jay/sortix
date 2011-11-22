@@ -58,6 +58,9 @@ syscall_handler:
 	# By default, assume the system call was complete.
 	movl $0, system_was_incomplete
 
+	# Reset the kernel errno.
+	movl $0, errno
+
 	# Make sure the requested system call is valid.
 	cmp SYSCALL_MAX, %eax
 	jl valid_eax
@@ -90,6 +93,9 @@ valid_eax:
 
 	# The system call was completed, so store the return value.
 	movl %eax, 36(%esp)
+
+	# Don't forget to update userspace's errno value.
+	call update_userspace_errno
 
 return_to_userspace:
 	# Compabillity with InterruptRegisters.

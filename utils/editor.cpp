@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <errno.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/sortix-keyboard.h>
 
@@ -208,7 +209,7 @@ bool writeall(int fd, const void* buffer, size_t len)
 bool savetofile(const char* path)
 {
 	int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0777);
-	if ( fd < 0 ) { printf("unable to open for writing: %s\n", path); return false; }
+	if ( fd < 0 ) { printf("%s: %s\n", path, strerror(errno)); return false; }
 
 	for ( unsigned y = 0; y < numlines; y++ )
 	{
@@ -216,10 +217,10 @@ bool savetofile(const char* path)
 		buffers[y][len] = '\n';
 		bool result = writeall(fd, buffers[y], len+1);
 		buffers[y][len] = 0;
-		if ( !result ) { printf("unable to write: %s\n", path); close(fd); return false; }
+		if ( !result ) { printf("%s: %s\n", path, strerror(errno)); close(fd); return false; }
 	}
 
-	if ( close(fd) ) { printf("unable to write: %s\n", path); return false; }
+	if ( close(fd) ) { printf("%s: %s\n", path, strerror(errno)); return false; }
 	return true;
 }
 
@@ -283,7 +284,7 @@ retry:
 bool loadfromfile(const char* path)
 {
 	int fd = open(path, O_RDONLY, 0777);
-	if ( fd < 0 ) { printf("unable to open for reading: %s\n", path); return false; }
+	if ( fd < 0 ) { printf("%s: %s\n", path, strerror(errno)); return false; }
 
 	clearbuffers();
 
@@ -294,7 +295,7 @@ bool loadfromfile(const char* path)
 	while ( !done )
 	{
 		ssize_t bytesread = read(fd, buffer, BUFFER_SIZE);
-		if ( bytesread < 0 ) { close(fd); return false; }
+		if ( bytesread < 0 ) { printf("%s: %s\n", path, strerror(errno)); close(fd); return false; }
 		if ( bytesread == 0 ) { break; }
 		for ( ssize_t i = 0; i < bytesread; i++ )
 		{

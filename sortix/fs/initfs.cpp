@@ -97,14 +97,14 @@ namespace Sortix
 
 	bool DevInitFSFile::Seek(uintmax_t position)
 	{
-		if ( SIZE_MAX < position ) { Error::Set(Error::EOVERFLOW); return false; }
+		if ( SIZE_MAX < position ) { Error::Set(EOVERFLOW); return false; }
 		offset = position;
 		return true;
 	}
 
 	bool DevInitFSFile::Resize(uintmax_t /*size*/)
 	{
-		Error::Set(Error::EBADF);
+		Error::Set(EBADF);
 		return false;
 	}
 
@@ -121,7 +121,7 @@ namespace Sortix
 
 	ssize_t DevInitFSFile::Write(const byte* /*src*/, size_t /*count*/)
 	{
-		Error::Set(Error::EBADF);
+		Error::Set(EBADF);
 		return false;
 	}
 
@@ -184,7 +184,7 @@ namespace Sortix
 		if ( available < needed )
 		{
 			dirent->d_namelen = needed;
-			Error::Set(Error::EINVAL);
+			Error::Set(EINVAL);
 			return 0;
 		}
 
@@ -210,29 +210,29 @@ namespace Sortix
 		{
 			if ( path[0] == 0 || (path[0] == '/' && path[1] == 0) ) { return new DevInitFSDir; }
 			const byte* buffer = InitRD::Open(path, &buffersize);
-			Error::Set(buffer ? Error::ENOTDIR : Error::ENOENT);
+			Error::Set(buffer ? ENOTDIR : ENOENT);
 			return NULL;
 		}
 
 		if ( *path++ != '/' ) { return NULL; }
 
-		if ( (flags & O_LOWERFLAGS) != O_RDONLY ) { Error::Set(Error::EROFS); return NULL; }
+		if ( (flags & O_LOWERFLAGS) != O_RDONLY ) { Error::Set(EROFS); return NULL; }
 
 		const byte* buffer = InitRD::Open(path, &buffersize);
-		if ( !buffer ) { Error::Set(Error::ENOENT); return NULL; }
+		if ( !buffer ) { Error::Set(ENOENT); return NULL; }
 
 		char* newpath = String::Clone(path);
-		if ( !newpath ) { Error::Set(Error::ENOSPC); return NULL; }
+		if ( !newpath ) { Error::Set(ENOSPC); return NULL; }
 
 		Device* result = new DevInitFSFile(newpath, buffer, buffersize);
-		if ( !result ) { delete[] newpath; Error::Set(Error::ENOSPC); return NULL; }
+		if ( !result ) { delete[] newpath; Error::Set(ENOSPC); return NULL; }
 
 		return result;
 	}
 
 	bool DevInitFS::Unlink(const char* path)
 	{
-		Error::Set(Error::EROFS);
+		Error::Set(EROFS);
 		return false;
 	}
 }

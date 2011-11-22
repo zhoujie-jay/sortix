@@ -69,6 +69,7 @@ namespace Sortix
 		int exitstatus;
 		char* workingdir;
 		pid_t pid;
+		int* errno;
 
 	public:
 		Process* parent;

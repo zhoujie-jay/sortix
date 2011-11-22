@@ -101,6 +101,7 @@ namespace Sortix
 		zombiechild = NULL;
 		firstthread = NULL;
 		workingdir = NULL;
+		errno = NULL;
 		mmapfrom = 0x80000000UL;
 		exitstatus = -1;
 		pid = AllocatePID();
@@ -133,6 +134,7 @@ namespace Sortix
 		}
 
 		segments = NULL;
+		errno = NULL;
 	}
 
 	Process* Process::Fork()
@@ -200,6 +202,7 @@ namespace Sortix
 
 		// Copy variables.
 		clone->mmapfrom = mmapfrom;
+		clone->errno = errno;
 		if ( workingdir ) { clone->workingdir = String::Clone(workingdir); }
 		else { clone->workingdir = NULL; }
 
@@ -337,7 +340,7 @@ namespace Sortix
 
 	int SysExevVEStage2(SysExecVEState* state)
 	{
-		if ( !state->dev->IsReadable() ) { Error::Set(Error::EBADF); delete state; return -1; }
+		if ( !state->dev->IsReadable() ) { Error::Set(EBADF); delete state; return -1; }
 
 		byte* dest = state->buffer + state->sofar;
 		size_t amount = state->count - state->sofar;
@@ -346,7 +349,7 @@ namespace Sortix
 		// Check for premature end-of-file.
 		if ( bytesread == 0 && amount != 0 )
 		{
-			Error::Set(Error::EIO); delete state; return -1;
+			Error::Set(EIO); delete state; return -1;
 		}
 
 		// We actually managed to read some data.
@@ -366,7 +369,7 @@ namespace Sortix
 			return SysExevVEStage2(state);
 		}
 
-		if ( Error::Last() != Error::EWOULDBLOCK ) { delete state; return -1; }
+		if ( Error::Last() != EWOULDBLOCK ) { delete state; return -1; }
 
 		// The stream will resume our system call once progress has been
 		// made. Our request is certainly not forgotten.
@@ -387,7 +390,7 @@ namespace Sortix
 		// TODO: Use the PATH enviromental variable.
 		const char* base = ( *progname == '.' ) ? wd : path;
 		char* abs = Directory::MakeAbsolute(base, progname);
-		if ( !abs ) { Error::Set(Error::ENOMEM); return NULL; }
+		if ( !abs ) { Error::Set(ENOMEM); return NULL; }
 
 		// TODO: Use O_EXEC here!
 		Device* dev =  FileSystem::Open(abs, O_RDONLY, 0);
@@ -428,7 +431,7 @@ namespace Sortix
 
 		state->dev->Refer(); // TODO: Rules of GC may change soon.
 		uintmax_t needed = state->dev->Size();
-		if ( SIZE_MAX < needed ) { Error::Set(Error::ENOMEM); delete state; return -1; }
+		if ( SIZE_MAX < needed ) { Error::Set(ENOMEM); delete state; return -1; }
 
 		state->count = needed;
 		state->buffer = new byte[state->count];
@@ -689,6 +692,12 @@ namespace Sortix
 		return 0;
 	}
 
+	int SysRegisterErrno(int* errnop)
+	{
+		CurrentProcess()->errno = errnop;
+		return 0;
+	}
+
 	void Process::Init()
 	{
 		Syscall::Register(SYSCALL_EXEC, (void*) SysExecVE);
@@ -697,6 +706,7 @@ namespace Sortix
 		Syscall::Register(SYSCALL_GETPPID, (void*) SysGetParentPID);
 		Syscall::Register(SYSCALL_EXIT, (void*) SysExit);
 		Syscall::Register(SYSCALL_WAIT, (void*) SysWait);
+		Syscall::Register(SYSCALL_REGISTER_ERRNO, (void*) SysRegisterErrno);
 
 		nextpidtoallocate = 0;
 

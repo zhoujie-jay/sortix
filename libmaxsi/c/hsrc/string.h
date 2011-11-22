@@ -37,6 +37,7 @@ void* memcpy(void* restrict, const void* restrict, size_t);
 char* strcat(char* restrict, const char* restrict);
 int strcmp(const char*, const char*);
 char* strcpy(char* restrict, const char* restrict);
+char* strerror(int);
 size_t strlen(const char*);
 int strncmp(const char*, const char*, size_t);
 
@@ -54,7 +55,6 @@ int strcoll(const char*, const char*);
 int strcoll_l(const char*, const char*, locale_t);
 size_t strcspn(const char*, const char*);
 char* strdup(const char*);
-char* strerror(int);
 char* strerror_l(int, locale_t);
 int strerror_r(int, char*, size_t);
 char* strncat(char* restrict, const char* restrict, size_t);

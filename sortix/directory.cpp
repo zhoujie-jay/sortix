@@ -43,8 +43,8 @@ namespace Sortix
 		{
 			Process* process = CurrentProcess();
 			Device* dev =  process->descriptors.Get(fd);
-			if ( !dev ) { Error::Set(Error::EBADF); return -1; }
-			if ( !dev->IsType(Device::DIRECTORY) ) { Error::Set(Error::EBADF); return -1; }
+			if ( !dev ) { Error::Set(EBADF); return -1; }
+			if ( !dev->IsType(Device::DIRECTORY) ) { Error::Set(EBADF); return -1; }
 			DevDirectory* dir = (DevDirectory*) dev;
 
 			sortix_dirent* prev = NULL;
@@ -56,7 +56,7 @@ namespace Sortix
 				if ( size < sizeof(sortix_dirent) )
 				{
 					if ( prev ) { return 0; } // We did some work.
-					Error::Set(Error::EINVAL); // Nope, userspace was cheap.
+					Error::Set(EINVAL); // Nope, userspace was cheap.
 					return -1;
 				}
 
@@ -92,7 +92,7 @@ namespace Sortix
 			Process* process = CurrentProcess();
 			const char* wd = process->workingdir;
 			char* abs = MakeAbsolute(wd, path);
-			if ( !abs ) { Error::Set(Error::ENOMEM); return -1; }
+			if ( !abs ) { Error::Set(ENOMEM); return -1; }
 			size_t abslen = String::Length(abs);
 			if ( 1 < abslen && abs[abslen-1] == '/' )
 			{
@@ -102,9 +102,9 @@ namespace Sortix
 			// Lookup the path and see if it is a directory.
 			size_t pathoffset = 0;
 			DevFileSystem* fs = Mount::WhichFileSystem(abs, &pathoffset);
-			if ( !fs ) { delete[] abs; Error::Set(Error::EINVAL); return -1; }
+			if ( !fs ) { delete[] abs; Error::Set(EINVAL); return -1; }
 			Device* dev = fs->Open(abs + pathoffset, O_SEARCH | O_DIRECTORY, 0);
-			if ( !dev ) { Error::Set(Error::ENOTDIR); return -1; }
+			if ( !dev ) { Error::Set(ENOTDIR); return -1; }
 			dev->Unref();
 
 			// Alright, the path passed.
@@ -121,7 +121,7 @@ namespace Sortix
 			const char* wd = process->workingdir;
 			if ( !wd ) { wd = "/"; }
 			size_t wdsize = String::Length(wd) + 1;
-			if ( size < wdsize ) { Error::Set(Error::ERANGE); return NULL; }
+			if ( size < wdsize ) { Error::Set(ERANGE); return NULL; }
 			String::Copy(buf, wd);
 			return buf;
 		}

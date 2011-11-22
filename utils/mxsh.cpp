@@ -1,8 +1,9 @@
+#include <sys/wait.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <sys/wait.h>
+#include <errno.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
 #include <libmaxsi/sortix-keyboard.h>
@@ -93,14 +94,14 @@ void command()
 		if ( 1 < argc ) { newdir = argv[1]; }
 		if ( chdir(newdir) )
 		{
-			printf("cd: %s: cannot change directory\n", newdir);
+			printf("sh: cd: %s: %s\n", newdir, strerror(errno));
 			status = 1;
 		}
 		return;
 	}
 
 	pid_t child = fork();
-	if ( child < 0 ) { printf("fork failed\n"); return; }
+	if ( child < 0 ) { printf("sh: fork failed: %s\n", strerror(errno)); return; }
 	if ( child != 0 )
 	{
 		pid_t childpid = wait(&status);
@@ -111,7 +112,7 @@ void command()
 	Process::Execute(argv[0], argc, argv);
 
 	// This is clever. This only happens if the program didn't change.
-	printf("%s: command not found\n", argv[0]);
+	printf("%s: %s\n", argv[0], strerror(errno));
 
 	exit(127);
 }

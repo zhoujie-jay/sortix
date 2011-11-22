@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
+#include <errno.h>
 #include <libmaxsi/sortix-keyboard.h>
 
 int cat(int argc, char* argv[])
@@ -10,7 +12,12 @@ int cat(int argc, char* argv[])
 	for ( int i = 1; i < argc; i++ )
 	{
 		int fd = open(argv[i], O_RDONLY);
-		if ( fd < 0 ) { printf("%s: unable to open: %s\n", argv[0], argv[i]); result = 1; continue; }
+		if ( fd < 0 )
+		{
+			printf("%s: %s: %s\n", argv[0], argv[i], strerror(errno));
+			result = 1;
+			continue;
+		}
 
 		do
 		{
@@ -18,7 +25,12 @@ int cat(int argc, char* argv[])
 			char buffer[BUFFER_SIZE+1];
 			ssize_t bytesread = read(fd, buffer, BUFFER_SIZE);
 			if ( bytesread == 0 ) { break; }
-			if ( bytesread < 0 ) { printf("%s: read failed: %s\n", argv[0], argv[i]); result = 1; break; }
+			if ( bytesread < 0 )
+			{
+				printf("%s: %s: %s\n", argv[0], argv[i], strerror(errno));
+				result = 1;
+				break;
+			}
 			buffer[bytesread] = 0;
 			printf("%s", buffer);
 		} while ( true );

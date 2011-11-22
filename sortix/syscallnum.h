@@ -53,7 +53,8 @@
 #define SYSCALL_CHDIR 25
 #define SYSCALL_GETCWD 26
 #define SYSCALL_UNLINK 27
-#define SYSCALL_MAX_NUM 28 /* index of highest constant + 1 */
+#define SYSCALL_REGISTER_ERRNO 28
+#define SYSCALL_MAX_NUM 29 /* index of highest constant + 1 */
 
 #endif
 

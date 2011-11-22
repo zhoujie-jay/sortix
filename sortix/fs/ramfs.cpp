@@ -96,16 +96,16 @@ namespace Sortix
 
 	bool DevRAMFSFile::Seek(uintmax_t position)
 	{
-		if ( SIZE_MAX < position ) { Error::Set(Error::EOVERFLOW); return false; }
+		if ( SIZE_MAX < position ) { Error::Set(EOVERFLOW); return false; }
 		offset = position;
 		return true;
 	}
 
 	bool DevRAMFSFile::Resize(uintmax_t size)
 	{
-		if ( SIZE_MAX < size ) { Error::Set(Error::EOVERFLOW); return false; }
+		if ( SIZE_MAX < size ) { Error::Set(EOVERFLOW); return false; }
 		byte* newbuffer = new byte[size];
-		if ( !newbuffer ) { Error::Set(Error::ENOSPC); return false; }
+		if ( !newbuffer ) { Error::Set(ENOSPC); return false; }
 		size_t sharedmemsize = ( size < buffersize ) ? size : buffersize;
 		Memory::Copy(newbuffer, buffer, sharedmemsize);
 		delete[] buffer;
@@ -217,7 +217,7 @@ namespace Sortix
 		if ( available < needed )
 		{
 			dirent->d_namelen = needed;
-			Error::Set(Error::EINVAL);
+			Error::Set(EINVAL);
 			return 0;
 		}
 
@@ -246,23 +246,23 @@ namespace Sortix
 				return new DevRAMFSDir(this);
 			}
 
-			Error::Set(Error::EISDIR);
+			Error::Set(EISDIR);
 			return NULL;
 		}
 
 		DevBuffer* file = OpenFile(path, flags, mode);
 		if ( !file ) { return NULL; }
 		Device* wrapper = new DevFileWrapper(file, flags);
-		if ( !wrapper ) { Error::Set(Error::ENOSPC); return NULL; }
+		if ( !wrapper ) { Error::Set(ENOSPC); return NULL; }
 		return wrapper;
 	}
 
 	DevBuffer* DevRAMFS::OpenFile(const char* path, int flags, mode_t mode)
 	{
-		if ( *path++ != '/' ) { Error::Set(Error::ENOENT); return NULL; }
+		if ( *path++ != '/' ) { Error::Set(ENOENT); return NULL; }
 
 		// Hack to prevent / from being a filename.
-		if ( path == 0 ) { Error::Set(Error::ENOENT); return NULL; }
+		if ( path == 0 ) { Error::Set(ENOENT); return NULL; }
 
 		if ( files )
 		{
@@ -280,26 +280,26 @@ namespace Sortix
 
 	DevBuffer* DevRAMFS::CreateFile(const char* path, int flags, mode_t mode)
 	{
-		if ( !(flags & O_CREAT) ) { Error::Set(Error::ENOENT); return NULL; }
+		if ( !(flags & O_CREAT) ) { Error::Set(ENOENT); return NULL; }
 
 		if ( !files )
 		{
 			files = new SortedList<DevRAMFSFile*>(CompareFiles);
-			if ( !files) { Error::Set(Error::ENOSPC); return NULL; }
+			if ( !files) { Error::Set(ENOSPC); return NULL; }
 		}
 
 		if ( files->Search(LookupFile, path) != SIZE_MAX )
 		{
-			Error::Set(Error::EEXIST);
+			Error::Set(EEXIST);
 			return NULL;
 		}
 
 		char* newpath = String::Clone(path);
-		if ( !newpath ) { Error::Set(Error::ENOSPC); return NULL; }
+		if ( !newpath ) { Error::Set(ENOSPC); return NULL; }
 
 		DevRAMFSFile* file = new DevRAMFSFile(newpath);
-		if ( !file ) { delete[] newpath; Error::Set(Error::ENOSPC); return NULL; }
-		if ( !files->Add(file) ) { delete file; Error::Set(Error::ENOSPC); return NULL; }
+		if ( !file ) { delete[] newpath; Error::Set(ENOSPC); return NULL; }
+		if ( !files->Add(file) ) { delete file; Error::Set(ENOSPC); return NULL; }
 
 		file->Refer();
 
@@ -310,12 +310,12 @@ namespace Sortix
 	{
 		if ( *path == '\0' || ( *path++ == '/' && *path == '\0' ) )
 		{
-			Error::Set(Error::EISDIR);
+			Error::Set(EISDIR);
 			return false;
 		}
 
 		size_t index = files->Search(LookupFile, path);
-		if ( index == SIZE_MAX ) { Error::Set(Error::ENOENT); return false; }
+		if ( index == SIZE_MAX ) { Error::Set(ENOENT); return false; }
 
 		Device* dev = files->Remove(index);
 		ASSERT(dev);

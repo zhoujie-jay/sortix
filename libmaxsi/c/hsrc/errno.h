@@ -17,29 +17,21 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	start.s
-	A stub for linking to the C runtime on Sortix. 
+	errno.h
+	System error numbers.
 
 ******************************************************************************/
 
-.globl _start
+#ifndef	_ERRNO_H
+#define	_ERRNO_H 1
 
-.section .text
+#include <features.h>
 
-.text  0x100000
-.type _start, @function
-_start:
+__BEGIN_DECLS
 
-	# Arguments for main
-	push %ebx # argv
-	push %eax # argc
+@include(errno_decl.h)
+@include(errno_values.h)
 
-	call initialize_standard_library
+__END_DECLS
 
-	# Run main
-	call main
-
-	# Terminate the process with main's exit code.
-	push %eax
-	call exit
-
+#endif
