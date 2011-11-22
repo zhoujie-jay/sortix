@@ -43,14 +43,21 @@ namespace Sortix
 
 	DescriptorTable::~DescriptorTable()
 	{
+		Reset();
+	}
+
+	void DescriptorTable::Reset()
+	{
 		for ( int i = 0; i < numdevices; i++ )
 		{
 			if ( devices[i] == NULL || devices[i] == reserveddevideptr ) { continue; }
 
-			// TODO: unref any device here!
+			devices[i]->Unref();
 		}
 
 		delete[] devices;
+		devices = NULL;
+		numdevices = 0;
 	}
 
 	int DescriptorTable::Allocate(Device* object)

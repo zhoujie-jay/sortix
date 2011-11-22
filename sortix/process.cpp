@@ -256,15 +256,6 @@ namespace Sortix
 		// TODO: Delete all threads and their stacks.
 
 		ResetAddressSpace();
-
-		// HACK: Don't let VGA buffers survive executes.
-		// Real Solution: Don't use VGA buffers in this manner.
-		for ( int i = 0; i < 32; i++ )
-		{
-			Device* dev = descriptors.Get(i);
-			if ( !dev ) { continue; }
-			if ( dev->IsType(Device::VGABUFFER) ) { descriptors.Free(i); }
-		}
 	}
 
 	int Process::Execute(const char* programname, const byte* program, size_t programsize, int argc, const char* const* argv, CPU::InterruptRegisters* regs)
@@ -572,7 +563,8 @@ namespace Sortix
 			nextsibling->prevsibling = prevsibling;
 		}
 
-		// TODO: Close all the file descriptors!
+		// Close all the file descriptors.
+		descriptors.Reset();
 
 		// Make all threads belonging to process unrunnable.
 		for ( Thread* t = firstthread; t; t = t->nextsibling )
