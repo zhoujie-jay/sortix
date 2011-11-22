@@ -72,6 +72,7 @@ namespace Sortix
 		this->name = name;
 		this->buffer = buffer;
 		this->buffersize = buffersize;
+		this->offset = 0;
 	}
 
 	DevInitFSFile::~DevInitFSFile()
