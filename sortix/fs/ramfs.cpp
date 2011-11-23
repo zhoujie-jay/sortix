@@ -250,6 +250,8 @@ namespace Sortix
 			return NULL;
 		}
 
+		if ( (flags & O_LOWERFLAGS) == O_SEARCH ) { Error::Set(ENOTDIR); return NULL; }
+
 		DevBuffer* file = OpenFile(path, flags, mode);
 		if ( !file ) { return NULL; }
 		Device* wrapper = new DevFileWrapper(file, flags);
