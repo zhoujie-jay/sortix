@@ -44,7 +44,7 @@ void command()
 		if ( commandsize <= commandused && codepoint != '\n' ) { continue; }
 
 		char msg[2]; msg[0] = codepoint; msg[1] = '\0';
-		printf(msg);
+		printf("%s", msg);
 
 		if ( codepoint == '\n' ) { command[commandused] = '\0'; break; }
 
