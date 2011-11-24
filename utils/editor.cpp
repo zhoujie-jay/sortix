@@ -62,9 +62,16 @@ unsigned textmode()
 
 	bool ctrl = false;
 
+	int oldcursorx = -1;
+	int oldcursory = -1;
 	while ( true )
 	{
-		cursorto(cursorx, cursory);
+		if ( oldcursorx != cursorx || oldcursory != cursory )
+		{
+			cursorto(cursorx, cursory);
+			oldcursorx = cursorx;
+			oldcursory = cursory;
+		}
 
 		unsigned method = System::Keyboard::POLL;
 		uint32_t codepoint = System::Keyboard::ReceiveKeystroke(method);
