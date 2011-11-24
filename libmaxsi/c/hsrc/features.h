@@ -43,9 +43,15 @@
 	#define __POSIX_OBSOLETE 200112L
 #endif
 
+/* Whether sortix-specific extensions to the C library are available. */
+#ifndef SORTIX_NO_EXTENSIONS
+#define SORTIX_EXTENSIONS
+#endif
+
+/* Don't provide things from standard headers that is not implemented. */
+#define SORTIX_UNIMPLEMENTED
+
 #include <sortix/bits.h>
 
-// Don't provide things from standard headers that is not implemented in libmaxsi/sortix.
-#define SORTIX_UNIMPLEMENTED
 
 #endif

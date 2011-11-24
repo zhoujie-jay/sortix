@@ -26,7 +26,9 @@
 #include "syscall.h"
 #include "io.h"
 #include "format.h"
+#include "string.h"
 #include <sys/readdirents.h>
+#include <unistd.h>
 
 namespace Maxsi
 {
@@ -42,14 +44,17 @@ namespace Maxsi
 	DEFN_SYSCALL2(char*, SysGetCWD, 26, char*, size_t);
 	DEFN_SYSCALL1(int, SysUnlink, 27, const char*);
 
-	size_t Print(const char* Message)
+	size_t Print(const char* string)
 	{
-		return SysPrint(Message);
+		size_t stringlen = String::Length(string);
+		if ( writeall(1, string, stringlen) ) { return 0; }
+		return stringlen;
 	}
 
 	size_t PrintCallback(void* user, const char* string, size_t stringlen)
 	{
-		return SysPrint(string);
+		if ( writeall(1, string, stringlen) ) { return 0; }
+		return stringlen;
 	}
 
 	size_t PrintF(const char* format, ...)
@@ -79,6 +84,20 @@ namespace Maxsi
 	extern "C" ssize_t write(int fd, const void* buf, size_t count)
 	{
 		return SysWrite(fd, buf, count);
+	}
+
+	extern "C" int writeall(int fd, const void* buffer, size_t len)
+	{
+		const char* buf = (const char*) buffer;
+		while ( len )
+		{
+			ssize_t byteswritten = write(fd, buf, len);
+			if ( byteswritten < 0 ) { return (int) byteswritten; }
+			buf += byteswritten;
+			len -= byteswritten;
+		}
+
+		return 0;
 	}
 
 	extern "C" int pipe(int pipefd[2])
