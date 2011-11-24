@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
 #include <libmaxsi/sortix-keyboard.h>
@@ -106,6 +107,20 @@ void command()
 	{
 		pid_t childpid = wait(&status);
 		return;
+	}
+
+	if ( 3 <= argc )
+	{
+		if ( strcmp(argv[argc-2], ">") == 0 )
+		{
+			const char* file = argv[argc-1];
+			int outfd = open(file, O_CREAT | O_WRONLY | O_TRUNC | O_APPEND);
+			if ( outfd < 0 ) { printf("%s: %s\n", file, strerror(errno)); exit(127); }
+			close(1);
+			dup(outfd);
+			close(outfd);
+			argc -= 2;
+		}
 	}
 
 	// Replace the current process with another process image.
