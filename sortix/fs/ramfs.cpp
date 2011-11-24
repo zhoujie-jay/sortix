@@ -252,6 +252,14 @@ namespace Sortix
 
 		if ( (flags & O_LOWERFLAGS) == O_SEARCH ) { Error::Set(ENOTDIR); return NULL; }
 
+		if ( *path++ != '/' ) { Error::Set(ENOENT); return NULL; }
+
+		size_t pathlen = String::Length(path);
+		for ( size_t i = 0; i < pathlen; i++ )
+		{
+			if ( path[i] == '/' ) { Error::Set(ENOENT); return NULL; }
+		}
+
 		DevBuffer* file = OpenFile(path, flags, mode);
 		if ( !file ) { return NULL; }
 		Device* wrapper = new DevFileWrapper(file, flags);
@@ -261,8 +269,6 @@ namespace Sortix
 
 	DevBuffer* DevRAMFS::OpenFile(const char* path, int flags, mode_t mode)
 	{
-		if ( *path++ != '/' ) { Error::Set(ENOENT); return NULL; }
-
 		// Hack to prevent / from being a filename.
 		if ( path == 0 ) { Error::Set(ENOENT); return NULL; }
 
@@ -316,6 +322,7 @@ namespace Sortix
 			return false;
 		}
 
+		if ( !files ) { Error::Set(ENOENT); return false; }
 		size_t index = files->Search(LookupFile, path);
 		if ( index == SIZE_MAX ) { Error::Set(ENOENT); return false; }
 

@@ -192,20 +192,6 @@ unsigned confirmquit()
 	}
 }
 
-bool writeall(int fd, const void* buffer, size_t len)
-{
-	const char* buf = (const char*) buffer;
-	while ( len )
-	{
-		ssize_t byteswritten = write(fd, buf, len);
-		if ( byteswritten < 0 ) { return false; }
-		buf += byteswritten;
-		len -= byteswritten;
-	}
-
-	return true;
-}
-
 bool savetofile(const char* path)
 {
 	int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0777);
@@ -215,7 +201,7 @@ bool savetofile(const char* path)
 	{
 		size_t len = strlen(buffers[y]);
 		buffers[y][len] = '\n';
-		bool result = writeall(fd, buffers[y], len+1);
+		bool result = !writeall(fd, buffers[y], len+1);
 		buffers[y][len] = 0;
 		if ( !result ) { printf("%s: %s\n", path, strerror(errno)); close(fd); return false; }
 	}

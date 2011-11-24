@@ -15,7 +15,7 @@
 	more details.
 
 	You should have received a copy of the GNU Lesser General Public License
-	along with LibMaxsi. If not, see <http:/*www.gnu.org/licenses/>.
+	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
 	unistd.h
 	The <unistd.h> header defines miscellaneous symbolic constants and types,
@@ -170,6 +170,9 @@ int usleep(useconds_t useconds);
 #endif
 int unlink(const char*);
 ssize_t write(int, const void*, size_t);
+#ifdef SORTIX_EXTENSIONS
+int writeall(int fd, const void* buffer, size_t len);
+#endif
 
 __END_DECLS
 

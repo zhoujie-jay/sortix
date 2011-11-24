@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
 #include <libmaxsi/thread.h>
@@ -27,6 +28,10 @@ int child()
 
 int main(int argc, char* argv[])
 {
+	if ( open("/dev/tty", O_RDONLY) != 0 ) { return 2; }
+	if ( open("/dev/tty", O_WRONLY | O_APPEND) != 1 ) { return 2; }
+	if ( open("/dev/tty", O_WRONLY | O_APPEND) != 2 ) { return 2; }
+
 	// Reset the terminal's color and the rest of it.
 	printf("\r\e[m\e[J");
 

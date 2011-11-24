@@ -147,8 +147,9 @@ namespace Maxsi
 		T Remove(size_t index)
 		{
 			if ( !(flags & FLAG_SORTED) ) { Sort(); }
+			ASSERT(index < listused);
 
-			T result = list[listused-1];
+			T result = list[index];
 
 			if ( index == listused-1 )
 			{
