@@ -26,11 +26,10 @@
 #define SORTIX_VGA_H
 
 #include "device.h"
+#include "stream.h"
 
 namespace Sortix
 {
-	class Process;
-
 	namespace VGA
 	{
 		// TODO: Move these to a better place
@@ -51,38 +50,32 @@ namespace Sortix
 		#define COLOR8_LIGHT_BROWN 14
 		#define COLOR8_WHITE 15
 
-		struct Frame
-		{
-			static const nat Mode = 0x3;
-			static const size_t Width = 80;
-			static const size_t Height = 25;
-
-			uint16_t Data[80*25];
-		};
-
-		struct UserFrame : public Frame
-		{
-			int fd;
-		};
-
 		void Init();
 		void SetCursor(nat x, nat y);
 	}
 
-	class DevVGAFrame : public Device
+	class DevVGA : public DevBuffer
 	{
 	public:
-		DevVGAFrame();
-		~DevVGAFrame();
+		typedef DevBuffer BaseClass;
 
 	public:
-		virtual bool IsType(unsigned type);
+		DevVGA();
+		virtual ~DevVGA();
+
+	private:
+		size_t offset;
 
 	public:
-		Process* process;
-		addr_t physical;
-		VGA::UserFrame* userframe;
-		bool onscreen;
+		virtual ssize_t Read(byte* dest, size_t count);
+		virtual ssize_t Write(const byte* src, size_t count);
+		virtual bool IsReadable();
+		virtual bool IsWritable();
+		virtual size_t BlockSize();
+		virtual uintmax_t Size();
+		virtual uintmax_t Position();
+		virtual bool Seek(uintmax_t position);
+		virtual bool Resize(uintmax_t size);
 
 	};
 }

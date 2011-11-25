@@ -50,7 +50,6 @@ c/h/signal.h \
 COMMONOBJS=c++.o memory.o string.o error.o format.o
 SORTIXOBJS:=$(addprefix sortix/,$(COMMONOBJS))
 LIBMAXSIOBJS:=$(COMMONOBJS) \
-sortix-vga.o \
 sortix-keyboard.o \
 sortix-sound.o \
 process.o \

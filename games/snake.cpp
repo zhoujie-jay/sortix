@@ -4,7 +4,12 @@
 #include <libmaxsi/keyboard.h>
 #include <libmaxsi/sortix-vga.h>
 #include <libmaxsi/sortix-keyboard.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
 
 using namespace Maxsi;
 using namespace Maxsi::Keyboard;
@@ -14,7 +19,8 @@ const int height = 25;
 
 const int buffersize = height * width;
 
-System::VGA::Frame* frame;
+int vgafd;
+uint16_t frame[width*height];
 
 int posx;
 int posy;
@@ -40,7 +46,7 @@ volatile int speed;
 void Clear()
 {
 	// Reset the game data.
-	for ( int i = 0; i < buffersize; i++ ) { frame->text[i] = ' '; direction[i] = -1; }
+	for ( int i = 0; i < buffersize; i++ ) { frame[i] = ' '; direction[i] = -1; }
 }
 
 void Reset()
@@ -62,22 +68,20 @@ void Reset()
 	taillen = 0;
 	tailmax = 3;
 
-	frame->text[animaly * width + animalx] = animal;
+	frame[animaly * width + animalx] = animal;
 
 	speed = defaultspeed;
 }
 
+bool FlushVGA()
+{
+	return writeall(vgafd, frame, sizeof(frame)) == 0;
+}
+
 int Init()
 {
-	// Create a VGA frame we can render onto.
-	frame = System::VGA::CreateFrame();
-	if ( frame == NULL )
-	{
-		Print("Could not create VGA frame\n");
-		return -1;
-	}
-
-	System::VGA::ChangeFrame(frame->fd);
+	vgafd = open("/dev/vga", O_RDWR);
+	if ( vgafd < 0 ) { printf("Unable to open vga device: %s", strerror(errno)); return 1; }
 
 	Reset();
 
@@ -124,7 +128,7 @@ void Update()
 	// Move the tail, if needed.
 	if ( taillen == tailmax )
 	{
-		frame->text[taily * width + tailx] = ' '; taillen--;
+		frame[taily * width + tailx] = ' '; taillen--;
 		switch ( direction[taily * width + tailx] )
 		{
 			case 0: tailx--; break;
@@ -135,7 +139,7 @@ void Update()
 	}
 
 	// Check for collision.
-	if ( frame->text[newy * width + newx] == snake ) { Reset(); return; }
+	if ( frame[newy * width + newx] == snake ) { Reset(); return; }
 
 	// Check for food.
 	if ( newx == animalx && newy == animaly )
@@ -148,7 +152,7 @@ void Update()
 		if ( maxspeed < speed ) { speed += speedincrease; }
 	}
 
-	frame->text[animaly * width + animalx] = animal;
+	frame[animaly * width + animalx] = animal;
 
 	// Remember where we are going.
 	int dir = 0;
@@ -161,7 +165,7 @@ void Update()
 	// Move the head.
 	posx = newx;
 	posy = newy;
-	frame->text[posy * width + posx] = snake; taillen++;
+	frame[posy * width + posx] = snake; taillen++;
 }
 
 int main(int argc, char* argv[])
@@ -174,6 +178,7 @@ int main(int argc, char* argv[])
 	{
 		Thread::USleep(speed * 1000);
 		Update();
+		FlushVGA();
 	}
 
 	return 0;

@@ -96,7 +96,7 @@ namespace Sortix
 			// TODO: But this hack may be worse.
 			if ( numvgaframes )
 			{
-				UART::RenderVGA((VGA::Frame*) 0xB8000);
+				UART::RenderVGA((const uint16_t*) 0xB8000);
 			}
 #endif
 		}
@@ -128,7 +128,7 @@ namespace Sortix
 			{
 				VGATerminal::Print(NULL, string, stringlen);
 #ifdef PLATFORM_SERIAL
-				UART::RenderVGA((VGA::Frame*) 0xB8000);
+				UART::RenderVGA((const uint16_t*) 0xB8000);
 #endif
 			}
 			else

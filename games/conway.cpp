@@ -6,6 +6,11 @@
 #include <libmaxsi/sortix-vga.h>
 #include <libmaxsi/sortix-keyboard.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
 
 using namespace Maxsi;
 using namespace Maxsi::Keyboard;
@@ -16,7 +21,8 @@ const int height = 25;
 const int rowstride = width + 2;
 const int buffersize = (height+2) * (width+2);
 
-System::VGA::Frame* frame;
+int vgafd;
+uint16_t frame[width*height];
 
 bool running;
 int posx;
@@ -33,17 +39,15 @@ void Clear()
 	for ( int i = 0; i < buffersize; i++ ) { framea[i] = 0; frameb[i] = 0; }
 }
 
+bool FlushVGA()
+{
+	return writeall(vgafd, frame, sizeof(frame)) == 0;
+}
+
 int Init()
 {
-	// Create a VGA frame we can render onto.
-	frame = System::VGA::CreateFrame();
-	if ( frame == NULL )
-	{
-		Print("Could not create VGA frame\n");
-		return -1;
-	}
-
-	System::VGA::ChangeFrame(frame->fd);
+	vgafd = open("/dev/vga", O_RDWR);
+	if ( vgafd < 0 ) { printf("Unable to open vga device: %s", strerror(errno)); return 1; }
 
 	Clear();
 
@@ -87,7 +91,7 @@ void Cycle()
 
 void Render()
 {
-	uint16_t* dest = frame->text;
+	uint16_t* dest = frame;
 
 	uint16_t set = 'O' | (COLOR8_LIGHT_GREY << 8);
 	uint16_t unset = ' ' | (COLOR8_LIGHT_GREY << 8);
@@ -106,6 +110,8 @@ void Render()
 			}
 		}
 	}
+
+	FlushVGA();
 }
 
 void Update()

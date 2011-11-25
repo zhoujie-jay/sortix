@@ -29,6 +29,7 @@
 #include "../filesystem.h"
 #include "../directory.h"
 #include "../stream.h"
+#include "../vga.h"
 #include "devfs.h"
 
 using namespace Maxsi;
@@ -170,8 +171,8 @@ namespace Sortix
 
 	int DevDevFSDir::Read(sortix_dirent* dirent, size_t available)
 	{
-		const char* names[] = { "null", "tty" };
-		const size_t nameslength = 2;
+		const char* names[] = { "null", "tty", "vga" };
+		const size_t nameslength = 3;
 
 		if ( available <= sizeof(sortix_dirent) ) { return -1; }
 		if ( nameslength <= position )
@@ -217,6 +218,7 @@ namespace Sortix
 
 		if ( String::Compare(path, "/null") == 0 ) { return new DevNull; }
 		if ( String::Compare(path, "/tty") == 0 ) { return new DevLogTTY; }
+		if ( String::Compare(path, "/vga") == 0 ) { return new DevVGA; }
 
 		Error::Set(flags & O_CREAT ? EPERM : ENOENT);
 		return NULL;

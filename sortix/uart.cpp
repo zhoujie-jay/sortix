@@ -69,7 +69,9 @@ namespace Sortix
 		const nat BOTH_EMPTY = LSR_TEMT | LSR_THRE;
 
 #ifdef SORTIX_VGA_H
-		VGA::Frame VGALastFrame;
+		const unsigned FrameWidth = 80;
+		const unsigned FrameHeight = 25;
+		uint16_t VGALastFrame[FrameWidth * FrameHeight];
 #endif
 
 		nat ProbeBaud(nat Port)
@@ -212,25 +214,25 @@ namespace Sortix
 
 		void InvalidateVGA()
 		{
-			for ( nat I = 0; I < VGALastFrame.Width * VGALastFrame.Height; I++ ) { VGALastFrame.Data[I] = 0; }	
+			for ( nat I = 0; I < FrameWidth * FrameHeight; I++ ) { VGALastFrame[I] = 0; }	
 		}
 
-		void RenderVGA(const VGA::Frame* Frame)
+		void RenderVGA(const uint16_t* Frame)
 		{
-			const uint16_t* Source = Frame->Data;
+			const uint16_t* Source = Frame;
 
 			nat LastColor = 1337;
 			nat SkippedSince = 0;
 			bool posundefined = true;
 
-			for ( nat Y = 0; Y < Frame->Height; Y++)
+			for ( nat Y = 0; Y < FrameHeight; Y++)
 			{
-				for ( nat X = 0; X < Frame->Width; X++ )
+				for ( nat X = 0; X < FrameWidth; X++ )
 				{
-					nat Index = Y * Frame->Width + X;
+					nat Index = Y * FrameWidth + X;
 
 					nat Element = Source[Index];
-					nat OldElement = VGALastFrame.Data[Index];
+					nat OldElement = VGALastFrame[Index];
 
 					if ( Element == OldElement ) { continue; }
 
@@ -267,7 +269,7 @@ namespace Sortix
 					for ( nat Pos = SkippedSince; Pos <= Index; Pos++ )
 					{
 						Element = Source[Pos];
-						OldElement = VGALastFrame.Data[Pos];
+						OldElement = VGALastFrame[Pos];
 
 						nat NewColor = (ConversionTable[ (Element >> 12) & 0xF ] << 3) | (ConversionTable[ (Element >> 8) & 0xF ]);
 		
@@ -311,7 +313,7 @@ namespace Sortix
 							LastColor = NewColor;
 						}
 
-						VGALastFrame.Data[Pos] = Element;
+						VGALastFrame[Pos] = Element;
 
 						Element &= 0x7F;
 

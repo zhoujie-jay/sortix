@@ -8,6 +8,10 @@
 #include <libmaxsi/sortix-sound.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
 
 using namespace Maxsi;
 using namespace Maxsi::Keyboard;
@@ -29,7 +33,8 @@ const int padsize = 5;
 const unsigned goalfreq = 800;
 const unsigned collisionfreq = 1200;
 
-System::VGA::Frame* frame;
+int vgafd;
+uint16_t frame[width*height];
 
 int ballx;
 int bally;
@@ -48,16 +53,15 @@ unsigned p2score;
 unsigned time;
 unsigned soundleft;
 
+bool FlushVGA()
+{
+	return writeall(vgafd, frame, sizeof(frame)) == 0;
+}
+
 int Init()
 {
-	frame = System::VGA::CreateFrame();
-	if ( frame == NULL )
-	{
-		Print("Could not create VGA frame\n");
-		return -1;
-	}
-
-	System::VGA::ChangeFrame(frame->fd);
+	vgafd = open("/dev/vga", O_RDWR);
+	if ( vgafd < 0 ) { printf("Unable to open vga device: %s", strerror(errno)); return 1; }
 
 	Reset();
 
@@ -94,9 +98,11 @@ void ClearScreen()
 
 		for ( int x = 0; x < width; x++ )
 		{
-			frame->text[x + y*width] = ' ' | color;
+			frame[x + y*width] = ' ' | color;
 		}
 	}
+
+	FlushVGA();
 }
 
 void Collision()
@@ -107,7 +113,7 @@ void Collision()
 
 void Goal(nat player)
 {
-	frame->text[ballx + bally*width] = ' ' | (COLOR8_WHITE << 8);
+	frame[ballx + bally*width] = ' ' | (COLOR8_WHITE << 8);
 
 	int offset = (rand() % 4) - 2;
 	ballx = width/2;
@@ -137,16 +143,16 @@ void Goal(nat player)
 
 void UpdateUI()
 {
-	for ( int x = 0; x < width; x++ ) { frame->text[x] = ' ' | (COLOR8_LIGHT_GREY << 12) | (COLOR8_RED << 8); }
+	for ( int x = 0; x < width; x++ ) { frame[x] = ' ' | (COLOR8_LIGHT_GREY << 12) | (COLOR8_RED << 8); }
 
 	char num[12];
 	int len;
 
 	len = String::ConvertUInt32(p1score, num);
-	for ( int i = 0; i < len; i++ ) { frame->text[i] = ( frame->text[i] & 0xFF00 ) | num[i]; }
+	for ( int i = 0; i < len; i++ ) { frame[i] = ( frame[i] & 0xFF00 ) | num[i]; }
 
 	len = String::ConvertUInt32(p2score, num);
-	for ( int i = 0; i < len; i++ ) { frame->text[width - len + i] = ( frame->text[width - len + i] & 0xFF00 ) | num[i]; }
+	for ( int i = 0; i < len; i++ ) { frame[width - len + i] = ( frame[width - len + i] & 0xFF00 ) | num[i]; }
 }
 
 void Update()
@@ -163,12 +169,12 @@ void Update()
 
 	for ( int y = 1; y < height; y++ )
 	{
-		uint16_t color = ( y < p1y || y >= p1y + padsize ) ? COLOR8_BLACK << 12 : COLOR8_RED << 12; frame->text[y*width] = ' ' | color;
+		uint16_t color = ( y < p1y || y >= p1y + padsize ) ? COLOR8_BLACK << 12 : COLOR8_RED << 12; frame[y*width] = ' ' | color;
 	}
 
 	for ( int y = 1; y < height; y++ )
 	{
-		uint16_t color = ( y < p2y || y >= p2y + padsize ) ? COLOR8_BLACK << 12 : COLOR8_BLUE << 12; frame->text[width-1 + y*width] = ' ' | color;
+		uint16_t color = ( y < p2y || y >= p2y + padsize ) ? COLOR8_BLACK << 12 : COLOR8_BLUE << 12; frame[width-1 + y*width] = ' ' | color;
 	}
 
 	if ( bally + ballvely <= 1 ) { ballvely = 0 - ballvely; Collision(); }
@@ -177,14 +183,14 @@ void Update()
 	if ( ballx + ballvelx < 1 ) { if ( bally + ballvely < p1y - 1 || bally + ballvely > p1y + padsize + 1 ) { Goal(2); } else { ballvelx = 0 - ballvelx; Collision(); } }
 	if ( ballx + ballvelx >= width-1 ) { if ( bally + ballvely < p2y - 1 || bally + ballvely > p2y + padsize + 1 ) { Goal(1); } else { ballvelx = 0 - ballvelx; Collision(); } }
 
-	frame->text[oldballx + oldbally*width] = ' ' | (COLOR8_WHITE << 8);
-	frame->text[ballx + bally*width] = '.' | (COLOR8_WHITE << 8);
+	frame[oldballx + oldbally*width] = ' ' | (COLOR8_WHITE << 8);
+	frame[ballx + bally*width] = '.' | (COLOR8_WHITE << 8);
 	oldballx = ballx; oldbally = bally;
 
 	ballx += ballvelx;
 	bally += ballvely;
 
-	frame->text[ballx + bally*width] = 'o' | (COLOR8_WHITE << 8);
+	frame[ballx + bally*width] = 'o' | (COLOR8_WHITE << 8);
 }
 
 void ReadInput()
@@ -236,6 +242,7 @@ int main(int argc, char* argv[])
 		ReadInput();
 		Update();
 		UpdateUI();
+		FlushVGA();
 		Thread::USleep(sleepms * 1000);
 		if ( soundleft < 0 ) { continue; }
 		if ( soundleft <= 50 )

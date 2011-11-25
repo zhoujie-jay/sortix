@@ -36,7 +36,7 @@ namespace Sortix
 		int TryPopChar();
 #ifdef SORTIX_VGA_H
 		void InvalidateVGA();
-		void RenderVGA(const VGA::Frame* Frame = (const VGA::Frame*) 0xB8000);
+		void RenderVGA(const uint16_t* frame = (const uint16_t*) 0xB8000UL);
 #endif
 	}
 }
