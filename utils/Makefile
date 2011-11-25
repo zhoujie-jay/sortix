@@ -7,6 +7,7 @@ LOCALBINARIES:=\
 init \
 cat \
 cp \
+echo \
 rm \
 sh \
 mxsh \
