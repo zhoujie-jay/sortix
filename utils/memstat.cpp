@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 
 	printf("memory usage: ");
 	printbytes(memused);
-	printf(" free / ");
+	printf(" used / ");
 	printbytes(memtotal);
 	unsigned percent = ((unsigned long long) memused * 100ULL ) / memtotal;
 	printf(" total (%u%s)\n", percent, "%");
