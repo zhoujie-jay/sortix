@@ -63,6 +63,7 @@ namespace Maxsi
 				case ENOEXEC: return (char*) "Not executable";
 				case EACCESS: return (char*) "Permission denied";
 				case ESRCH: return (char*) "No such process";
+				case ENOTTY: return (char*) "Not a tty";
 				default: return (char*) "Unknown error condition";
 			}
 		}

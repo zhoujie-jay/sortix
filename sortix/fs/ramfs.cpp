@@ -51,6 +51,7 @@ namespace Sortix
 	private:
 		size_t offset;
 		byte* buffer;
+		size_t bufferused;
 		size_t buffersize;
 
 	public:
@@ -70,6 +71,7 @@ namespace Sortix
 	{
 		this->name = name;
 		buffer = NULL;
+		bufferused = 0;
 		buffersize = 0;
 	}
 
@@ -86,7 +88,7 @@ namespace Sortix
 
 	uintmax_t DevRAMFSFile::Size()
 	{
-		return buffersize;
+		return bufferused;
 	}
 
 	uintmax_t DevRAMFSFile::Position()
@@ -106,10 +108,11 @@ namespace Sortix
 		if ( SIZE_MAX < size ) { Error::Set(EOVERFLOW); return false; }
 		byte* newbuffer = new byte[size];
 		if ( !newbuffer ) { Error::Set(ENOSPC); return false; }
-		size_t sharedmemsize = ( size < buffersize ) ? size : buffersize;
+		size_t sharedmemsize = ( size < bufferused ) ? size : bufferused;
 		Memory::Copy(newbuffer, buffer, sharedmemsize);
 		delete[] buffer;
 		buffer = newbuffer;
+		bufferused = sharedmemsize;
 		buffersize = size;
 		return true;
 	}
@@ -118,7 +121,7 @@ namespace Sortix
 	{
 		if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
 		size_t available = count;
-		if ( buffersize < offset + count ) { available = buffersize - offset; }
+		if ( bufferused < offset + count ) { available = bufferused - offset; }
 		if ( available == 0 ) { return 0; }
 		Memory::Copy(dest, buffer + offset, available);
 		offset += available;
@@ -137,6 +140,7 @@ namespace Sortix
 
 		Memory::Copy(buffer + offset, src, count);
 		offset += count;
+		if ( bufferused < offset ) { bufferused = offset; }
 		return count;
 	}
 

@@ -58,7 +58,8 @@
 #define SYSCALL_SIGRETURN 30
 #define SYSCALL_KILL 31
 #define SYSCALL_MEMSTAT 32
-#define SYSCALL_MAX_NUM 33 /* index of highest constant + 1 */
+#define SYSCALL_ISATTY 33
+#define SYSCALL_MAX_NUM 34 /* index of highest constant + 1 */
 
 #endif
 

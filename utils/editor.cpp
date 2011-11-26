@@ -410,6 +410,8 @@ void run()
 
 int main(int argc, char* argv[])
 {
+	if ( !isatty(1) ) { error(1, errno, "stdout must be a tty"); return 1; }
+
 	if ( argc < 2 )
 	{
 		clearbuffers();

@@ -47,6 +47,7 @@ namespace Maxsi
 	DEFN_SYSCALL1(int, SysChDir, 25, const char*);
 	DEFN_SYSCALL2(char*, SysGetCWD, 26, char*, size_t);
 	DEFN_SYSCALL1(int, SysUnlink, 27, const char*);
+	DEFN_SYSCALL1(int, SysIsATTY, 33, int);
 
 	size_t Print(const char* string)
 	{
@@ -160,6 +161,11 @@ namespace Maxsi
 	extern "C" int unlink(const char* pathname)
 	{
 		return SysUnlink(pathname);
+	}
+
+	extern "C" int isatty(int fd)
+	{
+		return SysIsATTY(fd);
 	}
 #endif
 

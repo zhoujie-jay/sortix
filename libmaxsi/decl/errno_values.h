@@ -20,5 +20,6 @@
 #define ENOEXEC 28
 #define EACCESS 29
 #define ESRCH 30
+#define ENOTTY 31
 
 #endif

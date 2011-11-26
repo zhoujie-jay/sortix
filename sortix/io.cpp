@@ -52,13 +52,13 @@ namespace Sortix
 			if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
 			Process* process = CurrentProcess();
 			Device* dev = process->descriptors.Get(fd);
-			if ( !dev ) { return -1; /* TODO: EBADF */ }
-			if ( !dev->IsType(Device::STREAM) ) { return -1; /* TODO: EBADF */ }
+			if ( !dev ) { Error::Set(EBADF); return -1; }
+			if ( !dev->IsType(Device::STREAM) ) { Error::Set(EBADF); return -1; }
 			DevStream* stream = (DevStream*) dev;
-			if ( !stream->IsWritable() ) { return -1; /* TODO: EBADF */ }
+			if ( !stream->IsWritable() ) { Error::Set(EBADF); return -1; }
 			ssize_t written = stream->Write(buffer, count);
 			if ( 0 <= written ) { return written; }
-			if ( Error::Last() != EWOULDBLOCK ) { return -1; /* TODO: errno */ }
+			if ( Error::Last() != EWOULDBLOCK ) { return -1; }
 
 			// The stream will resume our system call once progress has been
 			// made. Our request is certainly not forgotten.
@@ -92,13 +92,13 @@ namespace Sortix
 			if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
 			Process* process = CurrentProcess();
 			Device* dev = process->descriptors.Get(fd);
-			if ( !dev ) { return -1; /* TODO: EBADF */ }
-			if ( !dev->IsType(Device::STREAM) ) { return -1; /* TODO: EBADF */ }
+			if ( !dev ) { Error::Set(EBADF); return -1; }
+			if ( !dev->IsType(Device::STREAM) ) { Error::Set(EBADF); return -1; }
 			DevStream* stream = (DevStream*) dev;
-			if ( !stream->IsReadable() ) { return -1; /* TODO: EBADF */ }
+			if ( !stream->IsReadable() ) { Error::Set(EBADF); return -1;}
 			ssize_t bytesread = stream->Read(buffer, count);
 			if ( 0 <= bytesread ) { return bytesread; }
-			if ( Error::Last() != EWOULDBLOCK ) { return -1; /* TODO: errno */ }
+			if ( Error::Last() != EWOULDBLOCK ) { return -1; }
 
 			// The stream will resume our system call once progress has been
 			// made. Our request is certainly not forgotten.
@@ -121,7 +121,7 @@ namespace Sortix
 		{
 			Process* process = CurrentProcess();
 			Device* dev = process->descriptors.Get(fd);
-			if ( !dev ) { return -1; /* TODO: EBADF */ }
+			if ( !dev ) { Error::Set(EBADF); return -1; }
 			process->descriptors.Free(fd);
 			return 0;
 		}
@@ -130,8 +130,17 @@ namespace Sortix
 		{
 			Process* process = CurrentProcess();
 			Device* dev = process->descriptors.Get(fd);
-			if ( !dev ) { return -1; /* TODO: EBADF */ }
+			if ( !dev ) { Error::Set(EBADF); return -1; }
 			return process->descriptors.Allocate(dev);
+		}
+
+		int SysIsATTY(int fd)
+		{
+			Process* process = CurrentProcess();
+			Device* dev = process->descriptors.Get(fd);
+			if ( !dev ) { Error::Set(EBADF); return 0; }
+			if ( !dev->IsType(Device::TTY) ) {  Error::Set(ENOTTY); return 0; }
+			return 1;
 		}
 
 		void Init()
@@ -140,6 +149,7 @@ namespace Sortix
 			Syscall::Register(SYSCALL_READ, (void*) SysRead);
 			Syscall::Register(SYSCALL_CLOSE, (void*) SysClose);
 			Syscall::Register(SYSCALL_DUP, (void*) SysDup);
+			Syscall::Register(SYSCALL_ISATTY, (void*) SysIsATTY);
 		}
 	}
 }

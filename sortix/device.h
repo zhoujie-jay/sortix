@@ -35,6 +35,7 @@ namespace Sortix
 		static const unsigned VGABUFFER = 2;
 		static const unsigned FILESYSTEM = 3;
 		static const unsigned DIRECTORY = 4;
+		static const unsigned TTY = 5;
 
 	public:
 		Device();
