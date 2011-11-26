@@ -321,7 +321,7 @@ namespace Sortix
 		~SysExecVEState()
 		{
 			delete[] filename;
-			dev->Unref();
+			if ( dev ) { dev->Unref(); }
 			delete[] buffer;
 			for ( int i = 0; i < argc; i++ ) { delete[] argv[i]; }
 			delete[] argv;
