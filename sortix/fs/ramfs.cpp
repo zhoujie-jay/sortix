@@ -131,6 +131,7 @@ namespace Sortix
 		if ( buffersize < offset + count )
 		{
 			uintmax_t newsize = (uintmax_t) offset + (uintmax_t) count;
+			if ( newsize < buffersize * 2 ) { newsize = buffersize * 2; }
 			if ( !Resize(newsize) ) { return -1; }
 		}
 
