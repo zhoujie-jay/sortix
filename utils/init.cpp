@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <error.h>
 #include <fcntl.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
@@ -23,6 +24,8 @@ int child()
 
 	Process::Execute(programname, 1, newargv);
 
+	error(0, errno, "%s", programname);
+
 	return 2;
 }
 
@@ -35,13 +38,8 @@ int main(int argc, char* argv[])
 	// Reset the terminal's color and the rest of it.
 	printf("\r\e[m\e[J");
 
-	pid_t childpid = Process::Fork();
-	
-	if ( childpid < 0 )
-	{
-		printf("init: fork: %s\n", strerror(errno));
-		return 2;
-	}
+	pid_t childpid = Process::Fork();	
+	if ( childpid < 0 ) { perror("fork"); return 2; }
 
 	return ( childpid == 0 ) ? child() : parent(childpid);
 }

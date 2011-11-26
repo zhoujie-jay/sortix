@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <errno.h>
+#include <error.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
 
@@ -11,6 +13,8 @@ int main(int argc, char* argv[])
 	const char* newargv[] = { programname, "/bin" };
 
 	Maxsi::Process::Execute(programname, 2, newargv);
+
+	error(1, errno, "%s", programname);
 
 	return 1;
 }

@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <error.h>
 #include <fcntl.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
@@ -95,14 +96,14 @@ void command()
 		if ( 1 < argc ) { newdir = argv[1]; }
 		if ( chdir(newdir) )
 		{
-			printf("sh: cd: %s: %s\n", newdir, strerror(errno));
+			error(0, errno, "cd: %s", newdir);
 			status = 1;
 		}
 		return;
 	}
 
 	pid_t child = fork();
-	if ( child < 0 ) { printf("sh: fork failed: %s\n", strerror(errno)); return; }
+	if ( child < 0 ) { perror("fork"); status = 1; return; }
 	if ( child != 0 )
 	{
 		pid_t childpid = wait(&status);
@@ -115,7 +116,7 @@ void command()
 		{
 			const char* file = argv[argc-1];
 			int outfd = open(file, O_CREAT | O_WRONLY | O_TRUNC | O_APPEND);
-			if ( outfd < 0 ) { printf("%s: %s\n", file, strerror(errno)); exit(127); }
+			if ( outfd < 0 ) { error(127, errno, "%s", file); exit(127); }
 			close(1);
 			dup(outfd);
 			close(outfd);
@@ -127,9 +128,7 @@ void command()
 	Process::Execute(argv[0], argc, argv);
 
 	// This is clever. This only happens if the program didn't change.
-	printf("%s: %s\n", argv[0], strerror(errno));
-
-	exit(127);
+	error(127, errno, "%s", argv[0]);
 }
 
 int main(int argc, char* argv[])

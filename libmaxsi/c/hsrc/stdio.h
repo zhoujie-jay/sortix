@@ -76,6 +76,7 @@ extern FILE* stderr;
 #define stdout stdout
 #define stderr stderr
 
+extern void perror(const char* s);
 extern int printf(const char* restrict format, ...);
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
@@ -141,7 +142,6 @@ extern ssize_t getline(char** restrict lineptr, size_t* restrict n, FILE* restri
 extern void clearerr(FILE* stream);
 extern void flockfile(FILE* file);
 extern void funlockfile(FILE* file);
-extern void perror(const char* s);
 extern void rewind(FILE* stream);
 extern void setbuf(FILE* restrict stream, char* restrict buf);
 

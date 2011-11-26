@@ -29,6 +29,10 @@
 #include "string.h"
 #include <sys/readdirents.h>
 #include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <error.h>
+#include <stdlib.h>
 
 namespace Maxsi
 {
@@ -74,6 +78,24 @@ namespace Maxsi
 		size_t result = Maxsi::Format::Virtual(PrintCallback, NULL, format, list);
 		va_end(list);
 		return (int) result;
+	}
+
+	extern "C" void error(int status, int errnum, const char *format, ...)
+	{
+		printf("%s: ", program_invocation_name);
+
+		va_list list;
+		va_start(list, format);
+		size_t result = Maxsi::Format::Virtual(PrintCallback, NULL, format, list);
+		va_end(list);
+
+		printf(": %s\n", strerror(errnum));
+		if ( status ) { exit(status); }
+	}
+
+	extern "C" void perror(const char* s)
+	{
+		error(0, errno, "%s", s);
 	}
 
 	extern "C" ssize_t read(int fd, void* buf, size_t count)

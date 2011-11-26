@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <error.h>
 
 int main(int argc, char* argv[])
 {
@@ -13,7 +14,7 @@ int main(int argc, char* argv[])
 	{
 		if ( unlink(argv[i]) )
 		{
-			printf("%s: cannot remove %s: %s\n", argv[0], argv[i], strerror(errno));
+			error(0, errno, "cannot remove %s", argv[i]);
 			result = 1;
 		}
 	}

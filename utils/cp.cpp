@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <error.h>
 #include <string.h>
 
 const char* basename(const char* path)
@@ -20,7 +21,7 @@ int main(int argc, char* argv[])
 	char tobuffer[256];
 
 	int fromfd = open(frompath, O_RDONLY);
-	if ( fromfd < 0 ) { printf("%s: %s: %s\n", argv[0], frompath, strerror(errno)); return 1; }
+	if ( fromfd < 0 ) { error(1, errno, "%s", frompath); return 1; }
 
 	int tofd = open(topath, O_WRONLY | O_TRUNC | O_CREAT, 0777);
 	if ( tofd < 0 )
@@ -34,11 +35,7 @@ int main(int argc, char* argv[])
 			tofd = open(topath, O_WRONLY | O_TRUNC | O_CREAT, 0777);
 		}
 
-		if ( tofd < 0 )
-		{
-			printf("%s: %s: %s\n", argv[0], topath, strerror(errno));
-			return 1;
-		}
+		if ( tofd < 0 ) { error(1, errno, "%s", topath); return 1; }
 	}
 
 	while ( true )
@@ -46,8 +43,8 @@ int main(int argc, char* argv[])
 		const size_t BUFFER_SIZE = 4096;
 		char buffer[BUFFER_SIZE];
 		ssize_t bytesread = read(fromfd, buffer, BUFFER_SIZE);
-		if ( bytesread < 0 ) { printf("%s: %s: %s\n", argv[0], frompath, strerror(errno)); return 1; }
+		if ( bytesread < 0 ) { error(1, errno, "read: %s", frompath); return 1; }
 		if ( bytesread == 0 ) { return 0; }
-		if ( writeall(tofd, buffer, bytesread) ) { printf("%s: %s: %s\n", argv[0], topath, strerror(errno)); return 1; }
+		if ( writeall(tofd, buffer, bytesread) ) { error(1, errno, "write: %s", topath); return 1; }
 	}
 }

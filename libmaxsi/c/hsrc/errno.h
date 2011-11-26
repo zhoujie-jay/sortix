@@ -32,6 +32,8 @@ __BEGIN_DECLS
 @include(errno_decl.h)
 @include(errno_values.h)
 
+extern char* program_invocation_name;
+
 __END_DECLS
 
 #endif

@@ -40,6 +40,7 @@ c/h/wctype.h \
 c/h/features.h \
 c/h/string.h \
 c/h/errno.h \
+c/h/error.h \
 c/h/sys/readdirents.h \
 c/h/sys/stat.h \
 c/h/sys/types.h \

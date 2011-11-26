@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+#include <error.h>
 #include <libmaxsi/sortix-keyboard.h>
 
 int cat(int argc, char* argv[])
@@ -10,14 +11,14 @@ int cat(int argc, char* argv[])
 	int result = 0;
 
 	int outfd = open("/dev/tty", O_WRONLY | O_APPEND);
-	if ( outfd < 0 ) { printf("%s: %s: %s\n", argv[0], "/dev/tty", strerror(errno)); return 1; }
+	if ( outfd < 0 ) { error(0, errno, "%s", "/dev/tty"); return 1; }
 
 	for ( int i = 1; i < argc; i++ )
 	{
 		int fd = open(argv[i], O_RDONLY);
 		if ( fd < 0 )
 		{
-			printf("%s: %s: %s\n", argv[0], argv[i], strerror(errno));
+			error(0, errno, "%s", argv[i]);
 			result = 1;
 			continue;
 		}
@@ -30,13 +31,13 @@ int cat(int argc, char* argv[])
 			if ( bytesread == 0 ) { break; }
 			if ( bytesread < 0 )
 			{
-				printf("%s: %s: %s\n", argv[0], argv[i], strerror(errno));
+				error(0, errno, "read: %s", argv[i]);
 				result = 1;
 				break;
 			}
 			if ( writeall(outfd, buffer, bytesread) )
 			{
-				printf("%s: /dev/tty: %s\n", argv[0], strerror(errno));
+				error(0, errno, "write: %s", argv[i]);
 				result = 1;
 				break;
 			}

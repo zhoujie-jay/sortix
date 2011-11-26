@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
+#include <error.h>
 
 int usage()
 {
@@ -29,7 +30,7 @@ int main(int argc, char* argv[])
 		pid_t pid = atoi(argv[i]);
 		if ( kill(pid, signum) )
 		{
-			printf("kill: (%u): %s\n", pid, strerror(errno));
+			error(0, errno, "(%u)", pid);
 			result |= 1;
 		}
 	}
