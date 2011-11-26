@@ -57,6 +57,7 @@ namespace Sortix
 		bool MapUser(addr_t physical, addr_t mapto);
 		addr_t UnmapKernel(addr_t mapto);
 		addr_t UnmapUser(addr_t mapto);
+		void Statistics(size_t* amountused, size_t* totalmem);
 
 #if defined(PLATFORM_X86)
 		const addr_t HEAPLOWER = 0x80000000UL;

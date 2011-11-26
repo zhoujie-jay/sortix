@@ -170,7 +170,9 @@ int usleep(useconds_t useconds);
 #endif
 int unlink(const char*);
 ssize_t write(int, const void*, size_t);
+
 #ifdef SORTIX_EXTENSIONS
+int memstat(size_t* memused, size_t* memtotal);
 int writeall(int fd, const void* buffer, size_t len);
 #endif
 

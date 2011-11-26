@@ -28,10 +28,11 @@
 #include "panic.h"
 #include "../memorymanagement.h"
 #include "memorymanagement.h"
+#include "syscall.h"
 
 namespace Sortix
 {
-	const addr_t KERNELEND = 0x200000UL;
+	const addr_t KERNELEND = 0x400000UL;
 
 	namespace Page
 	{
@@ -39,6 +40,8 @@ namespace Sortix
 		size_t pagesnotonstack;
 		size_t stackused;
 		size_t stacklength;
+		size_t totalmem;
+		size_t pagesallocated;
 	}
 
 	namespace Memory
@@ -47,10 +50,15 @@ namespace Sortix
 
 		void InitCPU();
 		void AllocateKernelPMLs();
+		int SysMemStat(size_t* memused, size_t* memtotal);
 
 		void Init(multiboot_info_t* bootinfo)
 		{
 			Page::pagesnotonstack = 0;
+			Page::totalmem = 0;
+
+			// The first mebibytes are reserved for use by the kernel.
+			Page::pagesallocated = KERNELEND >> 12UL;
 
 			if ( !( bootinfo->flags & MULTIBOOT_INFO_MEM_MAP ) )
 			{
@@ -84,6 +92,9 @@ namespace Sortix
 				if ( 0xFFFFFFFFULL < mmap->addr + mmap->len ) { length = 0x100000000ULL - mmap->addr;  }
 	#endif
 
+				// Count the amount of usable RAM (even if reserved for kernel).
+				Page::totalmem += length;
+
 				// Detect if this memory is completely covered by the kernel.
 				if ( base + length <= KERNELEND ) { continue; }
 
@@ -95,6 +106,8 @@ namespace Sortix
 				}
 
 				Page::InitPushRegion(base, length);
+
+				Syscall::Register(SYSCALL_MEMSTAT, (void*) SysMemStat);
 			}
 
 			// If the physical allocator couldn't handle the vast amount of
@@ -108,6 +121,23 @@ namespace Sortix
 
 			// Finish allocating the top level PMLs for the kernels use.
 			AllocateKernelPMLs();
+		}
+
+		void Statistics(size_t* amountused, size_t* totalmem)
+		{
+			if ( amountused ) { *amountused = Page::pagesallocated << 12Ul; }
+			if ( totalmem ) { *totalmem = Page::totalmem; }
+		}
+
+		int SysMemStat(size_t* memused, size_t* memtotal)
+		{
+			size_t used;
+			size_t total;
+			Statistics(&used, &total);
+			// TODO: Check if legal user-space buffers!
+			*memused = used;
+			*memtotal = total;
+			return 0;
 		}
 
 		// Prepare the non-forkable kernel PMLs such that forking the kernel
@@ -188,12 +218,15 @@ namespace Sortix
 			// TODO: Set out of memory errno here!
 			if ( unlikely(stackused == 0) ) { return 0; }
 
+			pagesallocated++;
+
 			return STACK[--stackused];
 		}
 
 		void Put(addr_t page)
 		{
 			ASSERT(stackused < MAXSTACKLENGTH);
+			pagesallocated--;
 			STACK[stackused++] = page;
 		}
 	}

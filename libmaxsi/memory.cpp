@@ -34,6 +34,11 @@
 
 #include <sortix/memorymanagement.h>
 #include <sortix/panic.h>
+
+#else // !SORTIX_KERNEL
+
+#include "syscall.h"
+
 #endif
 
 #define IsGoodChunkPosition(Chunk) ((uintptr_t) Wilderness + WildernessSize <= (uintptr_t) (Chunk) && (uintptr_t) (Chunk) <= (uintptr_t) HeapStart)
@@ -72,6 +77,15 @@ namespace Maxsi
 
 	namespace Memory
 	{
+#ifndef SORTIX_KERNEL
+		DEFN_SYSCALL2(int, SysMemStat, 32, size_t*, size_t*);
+
+		extern "C" int memstat(size_t* memused, size_t* memtotal)
+		{
+			return SysMemStat(memused, memtotal);
+		}
+#endif
+
 		// This magic word is useful to see if the program has written into the
 		// chunk's header or footer, which means the program has malfunctioned
 		// and ought to be terminated.

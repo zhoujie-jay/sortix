@@ -14,6 +14,7 @@ mxsh \
 clear \
 ls \
 help \
+memstat \
 uname \
 idle \
 editor \
