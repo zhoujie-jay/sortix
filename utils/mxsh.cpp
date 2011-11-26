@@ -68,6 +68,7 @@ void command()
 	{
 		switch ( command[i] )
 		{
+			case '\0':
 			case ' ':
 			case '\t':
 			case '\n':
