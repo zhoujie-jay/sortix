@@ -50,6 +50,7 @@ namespace Sortix
 		virtual ssize_t Write(const byte* src, size_t count);
 		virtual bool IsReadable();
 		virtual bool IsWritable();
+		virtual bool IsType(unsigned type);
 
 	};
 	
@@ -83,6 +84,11 @@ namespace Sortix
 	bool DevLogTTY::IsWritable()
 	{
 		return true;
+	}
+
+	bool DevLogTTY::IsType(unsigned type)
+	{
+		return type == Device::TTY || BaseClass::IsType(type);
 	}
 
 	class DevNull : public DevStream
