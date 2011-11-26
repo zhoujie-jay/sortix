@@ -10,9 +10,6 @@ int cat(int argc, char* argv[])
 {
 	int result = 0;
 
-	int outfd = open("/dev/tty", O_WRONLY | O_APPEND);
-	if ( outfd < 0 ) { error(0, errno, "%s", "/dev/tty"); return 1; }
-
 	for ( int i = 1; i < argc; i++ )
 	{
 		int fd = open(argv[i], O_RDONLY);
@@ -35,7 +32,7 @@ int cat(int argc, char* argv[])
 				result = 1;
 				break;
 			}
-			if ( writeall(outfd, buffer, bytesread) )
+			if ( writeall(1, buffer, bytesread) )
 			{
 				error(0, errno, "write: %s", argv[i]);
 				result = 1;
