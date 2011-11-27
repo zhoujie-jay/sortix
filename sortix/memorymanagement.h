@@ -49,6 +49,7 @@ namespace Sortix
 		void Flush();
 		addr_t Fork();
 		addr_t SwitchAddressSpace(addr_t addrspace);
+		void DestroyAddressSpace();
 		bool MapRangeKernel(addr_t where, size_t bytes);
 		void UnmapRangeKernel(addr_t where, size_t bytes);
 		bool MapRangeUser(addr_t where, size_t bytes);

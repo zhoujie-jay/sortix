@@ -35,6 +35,7 @@ namespace Sortix
 	{
 		extern size_t stackused;
 		extern size_t stacklength;
+		void ExtendStack();
 	}
 
 	namespace Memory
@@ -72,7 +73,7 @@ namespace Sortix
 			BOOTPML1->entry[1023] = (addr_t) BOOTPML2 | flags;
 
 			// Add some predefined room for forking address spaces.
-			BOOTPML1->entry[0] = (addr_t) FORKPML1 | flags | PML_FORK;
+			BOOTPML1->entry[0] = 0; // (addr_t) FORKPML1 | flags | PML_FORK;
 
 			// The virtual memory structures are now available on the predefined
 			// locations. This means the virtual memory code is bootstrapped. Of
@@ -99,6 +100,55 @@ namespace Sortix
 			// The physical memory allocator should now be ready for use. Next
 			// up, the calling function will fill up the physical allocator with
 			// plenty of nice physical pages. (see Page::InitPushRegion)
+		}
+
+		// Please note that even if this function exists, you should still clean
+		// up the address space of a process _before_ calling
+		// DestroyAddressSpace. This is just a hack because it currently is
+		// impossible to clean up PLM1's using the MM api!
+		void RecursiveFreeUserspacePages(size_t level, size_t offset)
+		{
+			PML* pml = PMLS[level] + offset;
+			for ( size_t i = 0; i < ENTRIES; i++ )
+			{
+				if ( !(pml->entry[i] & PML_PRESENT) ) { continue; }
+				if ( !(pml->entry[i] & PML_USERSPACE) ) { continue; }
+				if ( !(pml->entry[i] & PML_FORK) ) { continue; }
+				if ( level > 1 ) { RecursiveFreeUserspacePages(level-1, offset * ENTRIES + i); }
+				addr_t addr = pml->entry[i] & PML_ADDRESS;
+				pml->entry[i] = 0;
+				Page::Put(addr);
+			}
+		}
+
+		void DestroyAddressSpace()
+		{
+			// First let's do the safe part. Garbage collect any PML1/0's left
+			// behind by user-space. These are completely safe to delete.
+			RecursiveFreeUserspacePages(TOPPMLLEVEL, 0);
+
+			// Let's destroy the current address space! Oh wait. If we do that,
+			// hell will break loose half-way when we start unmapping this piece
+			// of code.
+			// Instead, let's just mark the relevant pages as unused and switch
+			// to another address space as fast as humanely possible. Any memory
+			// allocation could potentially modify the current paging structures
+			// and overwrite their contents causing a tripple-fault!
+
+			// Make sure Page::Put does NOT cause any Page::Get's internally!
+			const size_t NUM_PAGES = 2;
+			if ( Page::stacklength - Page::stackused < NUM_PAGES ) { Page::ExtendStack(); }
+
+			addr_t fractal1 = PMLS[2]->entry[1022];
+
+			Page::Put(fractal1);
+			Page::Put(currentdir);
+
+			// Switch to the address space from when the world was originally
+			// created. It should contain the kernel, the whole kernel, and
+			// nothing but the kernel.
+			PML* const BOOTPML2 = (PML* const) 0x01000UL;
+			SwitchAddressSpace((addr_t) BOOTPML2);
 		}
 	}
 }

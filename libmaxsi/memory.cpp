@@ -267,7 +267,7 @@ namespace Maxsi
 						Sortix::Page::Put(OldPage);
 					}
 					return false;
-				}				
+				}
 			}
 #endif
 

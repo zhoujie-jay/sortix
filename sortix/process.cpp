@@ -515,7 +515,7 @@ namespace Sortix
 
 	void Process::Exit(int status)
 	{
-	// Status codes can only contain 8 bits according to ISO C and POSIX.
+		// Status codes can only contain 8 bits according to ISO C and POSIX.
 		status %= 256;
 
 		ASSERT(this == CurrentProcess());
@@ -594,6 +594,11 @@ namespace Sortix
 
 		// Notify the parent process that the child has become a zombie.
 		parent->OnChildProcessExit(this);
+
+		// Now, as a final operation, get rid of the address space. This should
+		// return us to the original kernel address space containing nothing
+		// but the kernel.
+		Memory::DestroyAddressSpace();
 	}
 
 	void SysExit(int status)
