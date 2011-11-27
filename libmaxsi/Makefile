@@ -48,7 +48,7 @@ c/h/sys/wait.h \
 c/h/stdio.h \
 c/h/signal.h \
 
-COMMONOBJS=c++.o memory.o string.o error.o format.o
+COMMONOBJS=c++.o memory.o heap.o string.o error.o format.o
 SORTIXOBJS:=$(addprefix sortix/,$(COMMONOBJS))
 LIBMAXSIOBJS:=$(COMMONOBJS) \
 sortix-keyboard.o \
