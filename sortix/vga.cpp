@@ -86,6 +86,7 @@ namespace Sortix
 		if ( VGA::VGA_SIZE - offset < count ) { count = VGA::VGA_SIZE - offset; }
 		Maxsi::Memory::Copy(VGA::VGA + offset, src, count);
 		offset = (offset + count) % VGA::VGA_SIZE;
+		VGA::SetCursor(VGA::WIDTH, VGA::HEIGHT-1);
 		return count;
 	}
 
