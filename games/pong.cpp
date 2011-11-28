@@ -74,10 +74,10 @@ void Reset()
 
 	ballx = width/2;
 	bally = height/2;
-	oldballx = ballx;
-	oldbally = bally;
 	ballvelx = -1;
 	ballvely = -1;
+	oldballx = ballx - ballvelx;
+	oldbally = bally - ballvely;
 	p1y = (height-padsize) / 5;
 	p2y = (height-padsize) / 5;
 	p1vup = false;
@@ -239,11 +239,11 @@ int main(int argc, char* argv[])
 
 	while (true)
 	{
+		Thread::USleep(sleepms * 1000);
 		ReadInput();
 		Update();
 		UpdateUI();
 		FlushVGA();
-		Thread::USleep(sleepms * 1000);
 		if ( soundleft < 0 ) { continue; }
 		if ( soundleft <= 50 )
 		{
