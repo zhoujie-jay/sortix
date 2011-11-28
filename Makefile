@@ -11,7 +11,7 @@ endif
 REMOTE=192.168.2.6
 REMOTEUSER=sortie
 REMOTECOPYDIR:=/home/$(REMOTEUSER)/Desktop/MaxsiOS
-MODULES=libmaxsi hello games mkinitrd utils sortix
+MODULES=libmaxsi games mkinitrd utils sortix
 
 VERSION=0.5dev
 DEBNAME:=sortix_$(VERSION)_$(CPU)
