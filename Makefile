@@ -3,6 +3,11 @@ ifndef CPU
     MFLAGS:=CPU=$(CPU)
 endif
 
+ifndef O
+    O=-O2
+    MFLAGS:=0=$(O)
+endif
+
 ifndef SYSROOT
     SYSROOT:=$(shell pwd)/sysroot
     MFLAGS:=SYSROOT=$(SYSROOT)

@@ -32,7 +32,7 @@ using namespace Maxsi;
 
 namespace Sortix
 {
-#if defined(DEBUG) || defined(PANIC_LONG)
+#if defined(DEBUG) || defined(PANIC_SHORT)
 	bool longpanic = false;
 #else
 	bool longpanic = true;

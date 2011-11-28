@@ -1,3 +1,7 @@
+ifndef O
+    O:=-O3
+endif
+
 ifndef CPU
     CPU=x86
 endif
@@ -44,7 +48,10 @@ ifeq ($(JSSORTIX),1)
     DEFINES:=$(DEFINES) -DPLATFORM_SERIAL -DJSSORTIX
     BUILDID:=$(BUILDID)-js
 endif
-CPPFLAGSRELEASE=-s -O3
+ifeq ($(PANIC_SHORT),1)
+    DEFINES:=$(DEFINES) -DPANIC_SHORT
+endif 
+CPPFLAGSRELEASE=-s $(O)
 CPPFLAGSDEBUG=
 CPPFLAGS=-I.. -I. $(CPUDEFINES) $(CPUFLAGS) -std=gnu++0x -Wall -Wextra -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -fno-exceptions -fno-rtti -fno-stack-protector $(DEFINES) $(CPPFLAGSRELEASE)
 OBJS=$(CPUOBJS) \
