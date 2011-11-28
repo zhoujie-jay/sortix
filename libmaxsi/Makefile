@@ -60,6 +60,7 @@ init.o \
 signal.o \
 $(CPU)/signal.o \
 start.o \
+time.o \
 random.o \
 
 MAXSIHEADERS=\

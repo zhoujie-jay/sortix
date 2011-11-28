@@ -172,7 +172,9 @@ int unlink(const char*);
 ssize_t write(int, const void*, size_t);
 
 #ifdef SORTIX_EXTENSIONS
+@include(intn_t.h)
 int memstat(size_t* memused, size_t* memtotal);
+int uptime(uintmax_t* mssinceboot);
 int writeall(int fd, const void* buffer, size_t len);
 #endif
 

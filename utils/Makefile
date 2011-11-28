@@ -14,6 +14,7 @@ mxsh \
 clear \
 ls \
 help \
+uptime \
 memstat \
 uname \
 idle \

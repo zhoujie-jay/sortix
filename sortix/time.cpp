@@ -30,6 +30,7 @@
 #include "scheduler.h"
 #include "log.h"
 #include "sound.h"
+#include "syscall.h"
 
 #ifdef PLATFORM_SERIAL
 #include "serialterminal.h"
@@ -84,6 +85,13 @@ namespace Sortix
 
 		bool didUglyIRQ0Hack;
 
+		int SysUptime(uintmax_t* mssinceboot)
+		{
+			// TODO: HACK!
+			*mssinceboot = ((size_t)microsecondssinceboot) / 1000;
+			return 0;
+		}
+
 		void Init()
 		{
 			// Initialize our variables.
@@ -93,6 +101,8 @@ namespace Sortix
 			// First, register our timer callback.
 			Interrupt::RegisterHandler(Interrupt::IRQ0, &OnIRQ0);
 			Interrupt::RegisterHandler(177, &OnInt177);
+
+			Syscall::Register(SYSCALL_UPTIME, (void*) SysUptime);
 
 			didUglyIRQ0Hack = false;
 
@@ -118,6 +128,6 @@ namespace Sortix
 			if ( !didUglyIRQ0Hack ) { RequestIQR0(); didUglyIRQ0Hack = true; } 
 		}
 
-		// TODO: Implement all the other useful functions regarding tiem.
+		// TODO: Implement all the other useful functions regarding time.
 	}
 }
