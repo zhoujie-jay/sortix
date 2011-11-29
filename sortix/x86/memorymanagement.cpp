@@ -106,6 +106,9 @@ namespace Sortix
 		// up the address space of a process _before_ calling
 		// DestroyAddressSpace. This is just a hack because it currently is
 		// impossible to clean up PLM1's using the MM api!
+		// ---
+		// TODO: This function is duplicated in {x86,x64}/memorymanagement.cpp!
+		// ---
 		void RecursiveFreeUserspacePages(size_t level, size_t offset)
 		{
 			PML* pml = PMLS[level] + offset;

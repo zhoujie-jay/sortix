@@ -101,6 +101,7 @@ namespace Sortix
 
 	private:
 		Thread* ForkThreads(Process* processclone);
+		void ExecuteCPU(int argc, char** argv, addr_t stackpos, addr_t entry, CPU::InterruptRegisters* regs);
 
 	public:
 		void ResetForExecute();

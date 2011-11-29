@@ -17,33 +17,22 @@
 	You should have received a copy of the GNU General Public License along
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	x64.cpp
-	CPU stuff for the x64 platform.
+	x64/process.cpp
+	CPU-specific process code.
 
 ******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include "x64.h"
-#include "log.h"
+#include "platform.h"
+#include "process.h"
 
 namespace Sortix
 {
-	namespace X64
+	void Process::ExecuteCPU(int argc, char** argv, addr_t stackpos, addr_t entry, CPU::InterruptRegisters* regs)
 	{
-		void InterruptRegisters::LogRegisters() const
-		{
-			Log::PrintF("[cr2=0x%zx,ds=0x%zx,rdi=0x%zx,rsi=0x%zx,rbp=0x%zx,"
-			            "rsp=0x%zx,rbx=0x%zx,rcx=0x%zx,rax=0x%zx,r8=0x%zx,"
-			            "r9=0x%zx,r10=0x%zx,r11=0x%zx,r12=0x%zx,r13=0x%zx,"
-			            "r14=0x%zx,r15=0x%zx,int_no=0x%zx,err_code=0x%zx,"
-			            "rip=0x%zx,cs=0x%zx,rflags=0x%zx,userrsp=0x%zx,"
-			            "ss=0x%zx]",
-			            cr2, ds, rdi, rsi, rbp,
-			            rsp, rbx, rcx, rax, r8,
-			            r9, r10, r11, r12, r13,
-			            r14, r15, int_no, err_code,
-			            rip, cs, rflags, userrsp,
-			            ss);
-		}
+		regs->rdi = argc;
+		regs->rsi = (size_t) argv;
+		regs->rip = entry;
+		regs->userrsp = stackpos;
+		regs->rbp = stackpos;
 	}
 }

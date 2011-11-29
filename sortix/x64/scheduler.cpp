@@ -17,33 +17,36 @@
 	You should have received a copy of the GNU General Public License along
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	x64.cpp
-	CPU stuff for the x64 platform.
+	x64/scheduler.cpp
+	CPU specific things related to the scheduler.
 
 ******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include "x64.h"
-#include "log.h"
+#include "platform.h"
+#include "scheduler.h"
+#include "../memorymanagement.h"
+#include "descriptor_tables.h"
 
 namespace Sortix
 {
-	namespace X64
+	namespace Scheduler
 	{
-		void InterruptRegisters::LogRegisters() const
+		const size_t KERNEL_STACK_SIZE = 256UL * 1024UL;
+		const addr_t KERNEL_STACK_END = 0xFFFF800000001000UL;
+		const addr_t KERNEL_STACK_START = KERNEL_STACK_END + KERNEL_STACK_SIZE;
+
+		void InitCPU()
 		{
-			Log::PrintF("[cr2=0x%zx,ds=0x%zx,rdi=0x%zx,rsi=0x%zx,rbp=0x%zx,"
-			            "rsp=0x%zx,rbx=0x%zx,rcx=0x%zx,rax=0x%zx,r8=0x%zx,"
-			            "r9=0x%zx,r10=0x%zx,r11=0x%zx,r12=0x%zx,r13=0x%zx,"
-			            "r14=0x%zx,r15=0x%zx,int_no=0x%zx,err_code=0x%zx,"
-			            "rip=0x%zx,cs=0x%zx,rflags=0x%zx,userrsp=0x%zx,"
-			            "ss=0x%zx]",
-			            cr2, ds, rdi, rsi, rbp,
-			            rsp, rbx, rcx, rax, r8,
-			            r9, r10, r11, r12, r13,
-			            r14, r15, int_no, err_code,
-			            rip, cs, rflags, userrsp,
-			            ss);
+			// TODO: Prevent the kernel heap and other stuff from accidentally
+			// also allocating this virtual memory region!
+
+			if ( !Memory::MapRangeKernel(KERNEL_STACK_END, KERNEL_STACK_SIZE) )
+			{
+				PanicF("could not create kernel stack (%zx to %zx)",
+				       KERNEL_STACK_END, KERNEL_STACK_START);
+			}
+
+			GDT::SetKernelStack((size_t*) KERNEL_STACK_START);
 		}
 	}
 }

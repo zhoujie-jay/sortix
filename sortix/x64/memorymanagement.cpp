@@ -106,5 +106,42 @@ namespace Sortix
 			// up, the calling function will fill up the physical allocator with
 			// plenty of nice physical pages. (see Page::InitPushRegion)
 		}
+
+		// Please note that even if this function exists, you should still clean
+		// up the address space of a process _before_ calling
+		// DestroyAddressSpace. This is just a hack because it currently is
+		// impossible to clean up PLM1's using the MM api!
+		// ---
+		// TODO: This function is duplicated in {x86,x64}/memorymanagement.cpp!
+		// ---
+		void RecursiveFreeUserspacePages(size_t level, size_t offset)
+		{
+			PML* pml = PMLS[level] + offset;
+			for ( size_t i = 0; i < ENTRIES; i++ )
+			{
+				if ( !(pml->entry[i] & PML_PRESENT) ) { continue; }
+				if ( !(pml->entry[i] & PML_USERSPACE) ) { continue; }
+				if ( !(pml->entry[i] & PML_FORK) ) { continue; }
+				if ( level > 1 ) { RecursiveFreeUserspacePages(level-1, offset * ENTRIES + i); }
+				addr_t addr = pml->entry[i] & PML_ADDRESS;
+				pml->entry[i] = 0;
+				Page::Put(addr);
+			}
+		}
+
+		void DestroyAddressSpace()
+		{
+			// First let's do the safe part. Garbage collect any PML1/0's left
+			// behind by user-space. These are completely safe to delete.
+			RecursiveFreeUserspacePages(TOPPMLLEVEL, 0);
+
+			// TODO: Right now this just leaks memory.
+
+			// Switch to the address space from when the world was originally
+			// created. It should contain the kernel, the whole kernel, and
+			// nothing but the kernel.
+			PML* const BOOTPML4 = (PML* const) 0x01000UL;
+			SwitchAddressSpace((addr_t) BOOTPML4);
+		}
 	}
 }

@@ -29,10 +29,15 @@
 .type _start, @function
 _start:
 
+	pushq %rsi
+	pushq %rdi
+
 	call initialize_standard_library
 
+	popq %rdi
+	popq %rsi
+
 	# Run main
-	# TODO: Sortix should set the initial values before this point!
 	call main
 
 	# Terminate the process with main's exit code.

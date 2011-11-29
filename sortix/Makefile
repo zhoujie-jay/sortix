@@ -37,6 +37,7 @@ ifdef X86FAMILY
              $(CPU)/syscall.o \
              $(CPU)/thread.o \
              $(CPU)/scheduler.o \
+             $(CPU)/process.o \
              x86-family/x86-family.o
     CPUFLAGS:=$(CPUFLAGS) -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow
 endif

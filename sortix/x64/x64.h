@@ -35,10 +35,23 @@ namespace Sortix
 		{
 			uint64_t cr2;
 			uint64_t ds; // Data segment selector
-			uint64_t rdi, rsi, rbp, rsp, rbx, rdx, rcx, rax; // Pushed by pusha.
-			uint64_t r8, r9, r10, r11, r12, r13, r14, r15; // Pushed by pusha.
+			uint64_t rdi, rsi, rbp, rsp, rbx, rdx, rcx, rax;
+			uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
 			uint64_t int_no, err_code; // Interrupt number and error code (if applicable)
-			uint64_t eip, cs, eflags, useresp, ss; // Pushed by the processor automatically.
+			uint64_t rip, cs, rflags, userrsp, ss; // Pushed by the processor automatically.
+		
+		public:
+			void LogRegisters() const;
+		};
+
+		struct SyscallRegisters
+		{
+			uint64_t cr2; // For compabillity with above, may be removed soon.
+			uint64_t ds;
+			uint64_t di, si, bp, trash, b, d, c; union { uint64_t a; uint64_t result; };
+			uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
+			uint64_t int_no, err_code; // Also compabillity.
+			uint64_t ip, cs, flags, sp, ss;
 		};
 	}
 }

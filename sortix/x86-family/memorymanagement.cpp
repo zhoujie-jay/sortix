@@ -115,7 +115,7 @@ namespace Sortix
 			// until the pebibyte era of RAM.
 			if ( 0 < Page::pagesnotonstack )
 			{
-				Log::PrintF("%zu bytes of RAM aren't used due to technical"
+				Log::PrintF("%zu bytes of RAM aren't used due to technical "
 				            "restrictions.\n", Page::pagesnotonstack * 0x1000UL);
 			}
 
@@ -178,7 +178,10 @@ namespace Sortix
 
 			// This call will also succeed, since there are plenty of physical
 			// pages available and it might need some.
-			Memory::MapKernel(page, (addr_t) (STACK + stacklength));
+			if ( !Memory::MapKernel(page, (addr_t) (STACK + stacklength)) )
+			{
+				Panic("Unable to extend page stack, which should have worked");
+			}
 
 			// TODO: This may not be needed during the boot process!
 			//Memory::InvalidatePage((addr_t) (STACK + stacklength));
@@ -345,6 +348,9 @@ namespace Sortix
 
 				addr_t& entry = pml->entry[childid];
 
+				// Find the index of the next PML in the fractal mapped memory.
+				size_t childoffset = offset * ENTRIES + childid;
+
 				if ( !(entry & PML_PRESENT) )
 				{
 					// TODO: Possible memory leak when page allocation fails.
@@ -353,7 +359,7 @@ namespace Sortix
 					entry = page | flags;
 
 					// Invalidate the new PML and reset it to zeroes.
-					addr_t pmladdr = (addr_t) (PMLS[i-1] + childid);
+					addr_t pmladdr = (addr_t) (PMLS[i-1] + childoffset);
 					InvalidatePage(pmladdr);
 					Maxsi::Memory::Set((void*) pmladdr, 0, sizeof(PML));
 				}
@@ -365,8 +371,7 @@ namespace Sortix
 					       "code calling this function", physical, mapto, i-1);
 				}
 
-				// Find the index of the next PML in the fractal mapped memory.
-				offset = offset * ENTRIES + childid;
+				offset = childoffset;
 			}
 
 			// Actually map the physical page to the virtual page.

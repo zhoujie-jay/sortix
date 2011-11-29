@@ -273,8 +273,6 @@ namespace Sortix
 		addr_t stackpos = CurrentThread()->stackpos + CurrentThread()->stacksize;
 		addr_t argvpos = stackpos - sizeof(char*) * argc;
 		char** stackargv = (char**) argvpos;
-		regs->eax = argc;
-		regs->ebx = argvpos;
 
 		size_t argvsize = 0;
 		for ( int i = 0; i < argc; i++ )
@@ -288,9 +286,7 @@ namespace Sortix
 
 		stackpos = argvpos - argvsize;
 
-		regs->eip = entry;
-		regs->useresp = stackpos;
-		regs->ebp = stackpos;
+		ExecuteCPU(argc, stackargv, stackpos, entry, regs);
 
 		return 0;
 	}
