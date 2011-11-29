@@ -47,6 +47,7 @@ syscall_handler:
 	pushq %rdx
 	pushq %rbx
 	pushq %rsp
+	pushq %rbp
 	pushq %rsi
 	pushq %rdi
 
@@ -115,6 +116,7 @@ return_to_userspace:
 
 	popq %rdi
 	popq %rsi
+	popq %rbp
 	popq %rsp
 	popq %rbx
 	popq %rdx
