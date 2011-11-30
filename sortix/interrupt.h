@@ -49,6 +49,8 @@ namespace Sortix
 		typedef void (*Handler)(CPU::InterruptRegisters* Registers);
 
 		void RegisterHandler(uint8_t n, Handler handler);
+
+		void Init();
 	}
 }
 

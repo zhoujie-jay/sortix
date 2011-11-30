@@ -26,7 +26,6 @@
 .globl start, _start
 
 .section .text
-
 .text  0x100000
 .type _start, @function
 .code32

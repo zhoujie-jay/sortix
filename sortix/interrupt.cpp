@@ -54,6 +54,14 @@ namespace Sortix
 
 		Handler interrupthandlers[256];
 
+		void Init()
+		{
+			for ( size_t i = 0; i < 256; i++ )
+			{
+				interrupthandlers[i] = NULL;
+			}
+		}
+
 		void RegisterHandler(uint8_t n, Interrupt::Handler handler)
 		{
 			interrupthandlers[n] = handler;
@@ -62,7 +70,6 @@ namespace Sortix
 		// This gets called from our ASM interrupt handler stub.
 		extern "C" void ISRHandler(Sortix::CPU::InterruptRegisters* regs)
 		{
-#ifdef PLATFORM_X86
 			if ( regs->int_no < 32 )
 			{
 				const char* message = ( regs->int_no < numknownexceptions )
@@ -70,17 +77,23 @@ namespace Sortix
 
 				if ( DEBUG_EXCEPTION ) { regs->LogRegisters(); Log::Print("\n"); }
 
+#ifdef PLATFORM_X64
+				addr_t ip = regs->rip;
+#else
+				addr_t ip = regs->eip;
+#endif
+
 				// Halt and catch fire if we are the kernel.
 				if ( (regs->cs & (0x4-1)) == 0 )
 				{
-					PanicF("Unhandled CPU Exception id %zu '%s' at eip=0x%zx "
+					PanicF("Unhandled CPU Exception id %zu '%s' at ip=0x%zx "
 					       "(cr2=0x%p, err_code=0x%p)", regs->int_no, message,
-					       regs->eip, regs->cr2, regs->err_code);
+					       ip, regs->cr2, regs->err_code);
 				}
 
 				Log::Print("The current program has crashed and was terminated:\n");
-				Log::PrintF("%s exception at eip=0x%zx (cr2=0x%p, err_code=0x%p)\n",
-				            message, regs->eip, regs->cr2, regs->err_code);
+				Log::PrintF("%s exception at ip=0x%zx (cr2=0x%p, err_code=0x%p)\n",
+				            message, ip, regs->cr2, regs->err_code);
 
 				Sound::Mute();
 
@@ -94,16 +107,11 @@ namespace Sortix
 			{
 				interrupthandlers[regs->int_no](regs);
 			}
-#else
-			#warning "ISR handlers are not supported on this arch"
-			while(true);
-#endif
 		}
 
 		// This gets called from our ASM interrupt handler stub.
 		extern "C" void IRQHandler(Sortix::CPU::InterruptRegisters* regs)
 		{
-#ifdef PLATFORM_X86
 			// TODO! IRQ 7 and 15 might be spurious and might need to be ignored.
 			// See http://wiki.osdev.org/PIC for details (section Spurious IRQs).
 			if ( regs->int_no == 32 + 7 || regs->int_no == 32 + 15 ) { return; }
@@ -115,28 +123,25 @@ namespace Sortix
 				Log::Print("\n");
 			}
 
-			if ( regs->int_no < 32 || 48 < regs->int_no )
-			{
-				PanicF("IRQ eax=%u, int_no=%u, err_code=%u, eip=%u!",
-				       regs->eax, regs->int_no, regs->err_code, regs->eip);
-			}
-
 			// Send an EOI (end of interrupt) signal to the PICs.
 
 			// Send reset signal to slave if this interrupt involved the slave.
-			if (regs->int_no >= 40) { X86::OutPortB(0xA0, 0x20); } 
+			if (regs->int_no >= 40) { CPU::OutPortB(0xA0, 0x20); } 
 
 			// Send reset signal to master.
-			X86::OutPortB(0x20, 0x20); 
+			CPU::OutPortB(0x20, 0x20); 
 
-			if ( interrupthandlers[regs->int_no] != NULL )
+			if ( interrupthandlers[regs->int_no] )
 			{
 				interrupthandlers[regs->int_no](regs);
 			}
-#else
-			#warning "IRQ handlers are not supported on this arch"
-			while(true);
-#endif
+		}
+
+		extern "C" void interrupt_handler(Sortix::CPU::InterruptRegisters* regs)
+		{
+			size_t int_no = regs->int_no;
+			if ( 32 <= int_no && int_no < 48 ) { IRQHandler(regs); }
+			else { ISRHandler(regs); }
 		}
 	}
 }

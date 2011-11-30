@@ -167,85 +167,84 @@ namespace Sortix
 
 		void Init()
 		{
-#ifdef PLATFORM_X86
 			idt_ptr.limit = sizeof(idt_entry_t) * 256 - 1;
-			idt_ptr.base  = (uint32_t)&idt_entries;
+			idt_ptr.base  = (addr_t) &idt_entries;
 
 			Memory::Set(&idt_entries, 0, sizeof(idt_entry_t)*256);
 
 			// Remap the irq table.
-			X86::OutPortB(0x20, 0x11);
-			X86::OutPortB(0xA0, 0x11);
-			X86::OutPortB(0x21, 0x20);
-			X86::OutPortB(0xA1, 0x28);
-			X86::OutPortB(0x21, 0x04);
-			X86::OutPortB(0xA1, 0x02);
-			X86::OutPortB(0x21, 0x01);
-			X86::OutPortB(0xA1, 0x01);
-			X86::OutPortB(0x21, 0x0);
-			X86::OutPortB(0xA1, 0x0);
+			CPU::OutPortB(0x20, 0x11);
+			CPU::OutPortB(0xA0, 0x11);
+			CPU::OutPortB(0x21, 0x20);
+			CPU::OutPortB(0xA1, 0x28);
+			CPU::OutPortB(0x21, 0x04);
+			CPU::OutPortB(0xA1, 0x02);
+			CPU::OutPortB(0x21, 0x01);
+			CPU::OutPortB(0xA1, 0x01);
+			CPU::OutPortB(0x21, 0x0);
+			CPU::OutPortB(0xA1, 0x0);
 
-			SetGate( 0, (uint32_t) isr0 , 0x08, 0x8E);
-			SetGate( 1, (uint32_t) isr1 , 0x08, 0x8E);
-			SetGate( 2, (uint32_t) isr2 , 0x08, 0x8E);
-			SetGate( 3, (uint32_t) isr3 , 0x08, 0x8E);
-			SetGate( 4, (uint32_t) isr4 , 0x08, 0x8E);
-			SetGate( 5, (uint32_t) isr5 , 0x08, 0x8E);
-			SetGate( 6, (uint32_t) isr6 , 0x08, 0x8E);
-			SetGate( 7, (uint32_t) isr7 , 0x08, 0x8E);
-			SetGate( 8, (uint32_t) isr8 , 0x08, 0x8E);
-			SetGate( 9, (uint32_t) isr9 , 0x08, 0x8E);
-			SetGate(10, (uint32_t) isr10, 0x08, 0x8E);
-			SetGate(11, (uint32_t) isr11, 0x08, 0x8E);
-			SetGate(12, (uint32_t) isr12, 0x08, 0x8E);
-			SetGate(13, (uint32_t) isr13, 0x08, 0x8E);
-			SetGate(14, (uint32_t) isr14, 0x08, 0x8E);
-			SetGate(15, (uint32_t) isr15, 0x08, 0x8E);
-			SetGate(16, (uint32_t) isr16, 0x08, 0x8E);
-			SetGate(17, (uint32_t) isr17, 0x08, 0x8E);
-			SetGate(18, (uint32_t) isr18, 0x08, 0x8E);
-			SetGate(19, (uint32_t) isr19, 0x08, 0x8E);
-			SetGate(20, (uint32_t) isr20, 0x08, 0x8E);
-			SetGate(21, (uint32_t) isr21, 0x08, 0x8E);
-			SetGate(22, (uint32_t) isr22, 0x08, 0x8E);
-			SetGate(23, (uint32_t) isr23, 0x08, 0x8E);
-			SetGate(24, (uint32_t) isr24, 0x08, 0x8E);
-			SetGate(25, (uint32_t) isr25, 0x08, 0x8E);
-			SetGate(26, (uint32_t) isr26, 0x08, 0x8E);
-			SetGate(27, (uint32_t) isr27, 0x08, 0x8E);
-			SetGate(28, (uint32_t) isr28, 0x08, 0x8E);
-			SetGate(29, (uint32_t) isr29, 0x08, 0x8E);
-			SetGate(30, (uint32_t) isr30, 0x08, 0x8E);
-			SetGate(31, (uint32_t) isr31, 0x08, 0x8E);
-			SetGate(32, (uint32_t) irq0, 0x08, 0x8E);
-			SetGate(33, (uint32_t) irq1, 0x08, 0x8E);
-			SetGate(34, (uint32_t) irq2, 0x08, 0x8E);
-			SetGate(35, (uint32_t) irq3, 0x08, 0x8E);
-			SetGate(36, (uint32_t) irq4, 0x08, 0x8E);
-			SetGate(37, (uint32_t) irq5, 0x08, 0x8E);
-			SetGate(38, (uint32_t) irq6, 0x08, 0x8E);
-			SetGate(39, (uint32_t) irq7, 0x08, 0x8E);
-			SetGate(40, (uint32_t) irq8, 0x08, 0x8E);
-			SetGate(41, (uint32_t) irq9, 0x08, 0x8E);
-			SetGate(42, (uint32_t) irq10, 0x08, 0x8E);
-			SetGate(43, (uint32_t) irq11, 0x08, 0x8E);
-			SetGate(44, (uint32_t) irq12, 0x08, 0x8E);
-			SetGate(45, (uint32_t) irq13, 0x08, 0x8E);
-			SetGate(46, (uint32_t) irq14, 0x08, 0x8E);
-			SetGate(47, (uint32_t) irq15, 0x08, 0x8E);
-			SetGate(128, (uint32_t) syscall_handler, 0x08, 0x8E | 0x60); // System Calls
+			SetGate( 0, (addr_t) isr0 , 0x08, 0x8E);
+			SetGate( 1, (addr_t) isr1 , 0x08, 0x8E);
+			SetGate( 2, (addr_t) isr2 , 0x08, 0x8E);
+			SetGate( 3, (addr_t) isr3 , 0x08, 0x8E);
+			SetGate( 4, (addr_t) isr4 , 0x08, 0x8E);
+			SetGate( 5, (addr_t) isr5 , 0x08, 0x8E);
+			SetGate( 6, (addr_t) isr6 , 0x08, 0x8E);
+			SetGate( 7, (addr_t) isr7 , 0x08, 0x8E);
+			SetGate( 8, (addr_t) isr8 , 0x08, 0x8E);
+			SetGate( 9, (addr_t) isr9 , 0x08, 0x8E);
+			SetGate(10, (addr_t) isr10, 0x08, 0x8E);
+			SetGate(11, (addr_t) isr11, 0x08, 0x8E);
+			SetGate(12, (addr_t) isr12, 0x08, 0x8E);
+			SetGate(13, (addr_t) isr13, 0x08, 0x8E);
+			SetGate(14, (addr_t) isr14, 0x08, 0x8E);
+			SetGate(15, (addr_t) isr15, 0x08, 0x8E);
+			SetGate(16, (addr_t) isr16, 0x08, 0x8E);
+			SetGate(17, (addr_t) isr17, 0x08, 0x8E);
+			SetGate(18, (addr_t) isr18, 0x08, 0x8E);
+			SetGate(19, (addr_t) isr19, 0x08, 0x8E);
+			SetGate(20, (addr_t) isr20, 0x08, 0x8E);
+			SetGate(21, (addr_t) isr21, 0x08, 0x8E);
+			SetGate(22, (addr_t) isr22, 0x08, 0x8E);
+			SetGate(23, (addr_t) isr23, 0x08, 0x8E);
+			SetGate(24, (addr_t) isr24, 0x08, 0x8E);
+			SetGate(25, (addr_t) isr25, 0x08, 0x8E);
+			SetGate(26, (addr_t) isr26, 0x08, 0x8E);
+			SetGate(27, (addr_t) isr27, 0x08, 0x8E);
+			SetGate(28, (addr_t) isr28, 0x08, 0x8E);
+			SetGate(29, (addr_t) isr29, 0x08, 0x8E);
+			SetGate(30, (addr_t) isr30, 0x08, 0x8E);
+			SetGate(31, (addr_t) isr31, 0x08, 0x8E);
+			SetGate(32, (addr_t) irq0, 0x08, 0x8E);
+			SetGate(33, (addr_t) irq1, 0x08, 0x8E);
+			SetGate(34, (addr_t) irq2, 0x08, 0x8E);
+			SetGate(35, (addr_t) irq3, 0x08, 0x8E);
+			SetGate(36, (addr_t) irq4, 0x08, 0x8E);
+			SetGate(37, (addr_t) irq5, 0x08, 0x8E);
+			SetGate(38, (addr_t) irq6, 0x08, 0x8E);
+			SetGate(39, (addr_t) irq7, 0x08, 0x8E);
+			SetGate(40, (addr_t) irq8, 0x08, 0x8E);
+			SetGate(41, (addr_t) irq9, 0x08, 0x8E);
+			SetGate(42, (addr_t) irq10, 0x08, 0x8E);
+			SetGate(43, (addr_t) irq11, 0x08, 0x8E);
+			SetGate(44, (addr_t) irq12, 0x08, 0x8E);
+			SetGate(45, (addr_t) irq13, 0x08, 0x8E);
+			SetGate(46, (addr_t) irq14, 0x08, 0x8E);
+			SetGate(47, (addr_t) irq15, 0x08, 0x8E);
+			SetGate(128, (addr_t) syscall_handler, 0x08, 0x8E | 0x60); // System Calls
 
-			idt_flush((uint32_t)&idt_ptr);
-#else
-			#warning "IDT is not yet supported on this arch!"
-			while(true);
-#endif
+			idt_flush((addr_t) &idt_ptr);
 		}
 
-		void SetGate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags)
+		void SetGate(uint8_t num, addr_t base, uint16_t sel, uint8_t flags)
 		{
-			idt_entries[num].base_lo = base & 0xFFFF;
-			idt_entries[num].base_hi = (base >> 16) & 0xFFFF;
+			idt_entries[num].base_low = base & 0xFFFF;
+			idt_entries[num].base_high = (base >> 16) & 0xFFFF;
+#ifdef PLATFORM_X64
+			idt_entries[num].base_highest = (base >> 32 ) & 0xFFFFFFFFU;
+			idt_entries[num].zero1 = 0;
+#endif
 
 			idt_entries[num].sel     = sel;
 			idt_entries[num].always0 = 0;

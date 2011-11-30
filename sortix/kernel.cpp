@@ -50,6 +50,7 @@
 #include "filesystem.h"
 #include "mount.h"
 #include "directory.h"
+#include "interrupt.h"
 
 using namespace Maxsi;
 
@@ -183,6 +184,28 @@ namespace Sortix
 		// Display the boot welcome screen.
 		DoWelcome();
 
+		if ( BootInfo == NULL ) { Panic("kernel.cpp: The bootinfo structure was NULL. Are your bootloader multiboot compliant?"); }
+
+		uint8_t* initrd = NULL;
+		size_t initrdsize = 0;
+
+#ifndef JSSORTIX
+		uint32_t* modules = (uint32_t*) BootInfo->mods_addr;
+		for ( uint32_t I = 0; I < BootInfo->mods_count; I++ )
+		{
+			initrdsize = modules[2*I+1] - modules[2*I+0];
+			initrd = (uint8_t*) modules[2*I+0];
+			break;
+		}
+
+		if ( initrd == NULL ) { PanicF("No init ramdisk provided"); }
+
+#else
+		// TODO: UGLY HACK because JSVM doesn't support multiboot yet!
+		initrd = (uint8_t*) 0x180000UL;
+		initrdsize = 0x80000; // 512 KiB
+#endif
+
 #ifndef JSSORTIX
 		// Search for PCI devices and load their drivers.
 		PCI::Init();
@@ -191,40 +214,14 @@ namespace Sortix
 		// Initialize the paging and virtual memory.
 		Memory::Init(BootInfo);
 
-		uint8_t* initrd = NULL;
-		size_t initrdsize = 0;
-
-#ifndef JSSORTIX
-		uint8_t** modules = (uint8_t**) BootInfo->mods_addr;
-		for ( uint32_t I = 0; I < BootInfo->mods_count; I++ )
-		{
-			initrdsize = modules[2*I+1] - modules[2*I+0];
-			initrd = modules[2*I+0];
-			break;
-		}
-#else
-		// TODO: UGLY HACK because JSVM doesn't support multiboot yet!
-		initrd = (uint8_t*) 0x180000UL;
-		initrdsize = 0x80000; // 512 KiB
-#endif
-
-		if ( initrd == NULL ) { PanicF("No initrd provided"); }
-
 		// Initialize the GDT and TSS structures.
 		GDT::Init();
 
-#ifdef PLATFORM_X64
-		Log::Print("Halt: CPU x64 cannot boot because interrupts are not yet "
-		           "supported under 64-bit Sortix.\n");
-		Log::Print("Sorry, it simply isn't possible to fully boot Sortix in x64 mode yet.\n");
-		Log::Print("x64 may be working when Sortix 0.6 comes out, or try the git master.\n");
-		while(true);
-#endif
+		// Initialize the interrupt handler table to zeroes.
+		Interrupt::Init();
 
-		// Initialize the interrupt descriptor tables.
+		// Initialize the interrupt descriptor tables (enabling interrupts).
 		IDT::Init();
-
-		if ( BootInfo == NULL ) { Panic("kernel.cpp: The bootinfo structure was NULL. Are your bootloader multiboot compliant?"); }
 
 		// Initialize the kernel heap.
 		Maxsi::Memory::Init();
@@ -264,6 +261,13 @@ namespace Sortix
 
 		// Set up the initial ram disk.
 		InitRD::Init(initrd, initrdsize);
+
+#ifdef PLATFORM_X64
+		Log::Print("Halt: There is no program loader for 64-bit Sortix\n");
+		Log::Print("Sorry, it simply isn't possible to fully boot Sortix in x64 mode yet.\n");
+		Log::Print("x64 may be working when Sortix 0.5 comes out, or try the git master.\n");
+		while(true);
+#endif
 
 		// Alright, now the system's drivers are loaded and initialized. It is
 		// time to load the initial user-space programs and start execution of

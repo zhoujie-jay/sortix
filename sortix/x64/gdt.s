@@ -36,9 +36,11 @@ gdt_flush:
 	mov %ax, %es
 	mov %ax, %fs
 	mov %ax, %gs
+	mov %ax, %ss
 
-	# 0x08 is the offset to our code segment: Far jump!
-	ljmp *GDT_FLUSH_POSTJMP
+	# Far jump to our new code segment!
+	movq $GDT_FLUSH_POSTJMP, %rax
+	ljmp *(%rax)
 gdt_flush_postjmp:
 	ret
 
@@ -67,5 +69,5 @@ tss_flush:
 .section .data
 GDT_FLUSH_POSTJMP:
 	.long gdt_flush_postjmp
-	.word 0x08
+	.word 0x08 # 0x08 is the offset to our code segment
 
