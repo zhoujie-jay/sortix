@@ -29,7 +29,15 @@ namespace Maxsi
 {
 #ifdef SORTIX_KERNEL
 #warning ===
+#warning ===
+#warning ===
+#warning ===
+#warning ===
 #warning Sortix does not support syscalls from within the kernel, building this part of LibMaxsi should not be needed, and should not be used in kernel mode
+#warning ===
+#warning ===
+#warning ===
+#warning ===
 #warning ===
 #endif
 
@@ -134,8 +142,11 @@ namespace Maxsi
 
 #else
 
+	// TODO: Make these inline - though that requires a move advanced inline
+	// assembly stub to force parameters into the right registers.
+
 	#define DEFN_SYSCALL0(type, fn, num) \
-	inline type fn() \
+	type fn() \
 	{ \
 		type a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
@@ -143,7 +154,7 @@ namespace Maxsi
 	}
 
 	#define DEFN_SYSCALL1(type, fn, num, P1) \
-	inline type fn(P1 p1) \
+	type fn(P1 p1) \
 	{ \
 		type a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
@@ -151,7 +162,7 @@ namespace Maxsi
 	}
 
 	#define DEFN_SYSCALL2(type, fn, num, P1, P2) \
-	inline type fn(P1 p1, P2 p2) \
+	type fn(P1 p1, P2 p2) \
 	{ \
 		type a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
@@ -159,7 +170,7 @@ namespace Maxsi
 	}
 
 	#define DEFN_SYSCALL3(type, fn, num, P1, P2, P3) \
-	inline type fn(P1 p1, P2 p2, P3 p3) \
+	type fn(P1 p1, P2 p2, P3 p3) \
 	{ \
 		type a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
@@ -167,7 +178,7 @@ namespace Maxsi
 	}
 
 	#define DEFN_SYSCALL4(type, fn, num, P1, P2, P3, P4) \
-	inline type fn(P1 p1, P2 p2, P3 p3, P4 p4) \
+	type fn(P1 p1, P2 p2, P3 p3, P4 p4) \
 	{ \
 		type a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
@@ -175,7 +186,7 @@ namespace Maxsi
 	}
 
 	#define DEFN_SYSCALL5(type, fn, num, P1, P2, P3, P4, P5) \
-	inline type fn(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) \
+	type fn(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) \
 	{ \
 		type a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
@@ -183,42 +194,42 @@ namespace Maxsi
 	}
 
 	#define DEFN_SYSCALL0_VOID(fn, num) \
-	inline void fn() \
+	void fn() \
 	{ \
 		size_t a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 	#define DEFN_SYSCALL1_VOID(fn, num, P1) \
-	inline void fn(P1 p1) \
+	void fn(P1 p1) \
 	{ \
 		size_t a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 	#define DEFN_SYSCALL2_VOID(fn, num, P1, P2) \
-	inline void fn(P1 p1, P2 p2) \
+	void fn(P1 p1, P2 p2) \
 	{ \
 		size_t a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 	#define DEFN_SYSCALL3_VOID(fn, num, P1, P2, P3) \
-	inline void fn(P1 p1, P2 p2, P3 p3) \
+	void fn(P1 p1, P2 p2, P3 p3) \
 	{ \
 		size_t a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 	#define DEFN_SYSCALL4_VOID(fn, num, P1, P2, P3, P4) \
-	inline void fn(P1 p1, P2 p2, P3 p3, P4 p4) \
+	void fn(P1 p1, P2 p2, P3 p3, P4 p4) \
 	{ \
 		size_t a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 	#define DEFN_SYSCALL5_VOID(fn, num, P1, P2, P3, P4, P5) \
-	inline void fn(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) \
+	void fn(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) \
 	{ \
 		size_t a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
