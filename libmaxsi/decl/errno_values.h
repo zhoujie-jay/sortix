@@ -21,5 +21,6 @@
 #define EACCESS 29
 #define ESRCH 30
 #define ENOTTY 31
+#define ECHILD 32
 
 #endif

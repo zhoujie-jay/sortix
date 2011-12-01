@@ -24,21 +24,26 @@
 
 #include "platform.h"
 #include "error.h"
+#ifndef SORTIX_KERNEL
 #include "syscall.h"
+#include <stdio.h>
+#endif
 
 namespace Maxsi
 {
 	namespace Error
 	{
-		DEFN_SYSCALL1(int, SysRegisterErrno, 28, int*);
-
 		extern "C" { int errno = 0; }
+
+#ifndef SORTIX_KERNEL
+		DEFN_SYSCALL1(int, SysRegisterErrno, 28, int*);
 
 		extern "C" void init_error_functions()
 		{
 			errno = 0;
 			SysRegisterErrno(&errno);			
 		}
+#endif
 
 		extern "C" char* strerror(int code)
 		{
@@ -64,6 +69,7 @@ namespace Maxsi
 				case EACCESS: return (char*) "Permission denied";
 				case ESRCH: return (char*) "No such process";
 				case ENOTTY: return (char*) "Not a tty";
+				case ECHILD: return (char*) "No child processes";
 				default: return (char*) "Unknown error condition";
 			}
 		}

@@ -635,8 +635,8 @@ namespace Sortix
 		if ( pid != -1 )
 		{
 			Process* waitingfor = Process::Get(pid);
-			if ( !waitingfor ) { return -1; /* TODO: ECHILD*/ }
-			if ( waitingfor->parent != process ) { return -1; /* TODO: ECHILD*/ }
+			if ( !waitingfor ) { Error::Set(ECHILD); return -1; }
+			if ( waitingfor->parent != process ) { Error::Set(ECHILD); return -1; }
 		}
 
 		// Find any zombie children matching the search description.
@@ -667,7 +667,7 @@ namespace Sortix
 
 		// The process needs to have children, otherwise we are waiting for
 		// nothing to happen.
-		if ( !process->firstchild ) { return -1; /* TODO: ECHILD*/ }
+		if ( !process->firstchild ) { Error::Set(ECHILD); return -1; }
 		
 		// Resumes this system call when the wait condition has been met.
 		thread->onchildprocessexit = SysWaitCallback;
