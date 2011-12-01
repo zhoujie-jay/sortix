@@ -143,7 +143,7 @@ resume_syscall:
 	movq %rsp, %rbp
 
 	movq %rdi, %rax
-	movq %rsi, %r11
+	movq %rdx, %r11
 
 	movq 0(%r11), %rdi
 	movq 8(%r11), %rsi
