@@ -32,7 +32,7 @@ namespace Sortix
 		regs->rdi = argc;
 		regs->rsi = (size_t) argv;
 		regs->rip = entry;
-		regs->userrsp = stackpos;
+		regs->userrsp = stackpos & ~(15UL);
 		regs->rbp = stackpos;
 	}
 }
