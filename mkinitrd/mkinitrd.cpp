@@ -49,6 +49,16 @@ bool writeall(int fd, const void* p, size_t size)
 	return true;
 }
 
+uint8_t ContinueChecksum(uint8_t checksum,  const void* p, size_t size)
+{
+	const uint8_t* buffer = (const uint8_t*) p;
+	while ( size-- )
+	{
+		checksum += *buffer++;
+	}
+	return checksum;
+}
+
 void usage(int argc, char* argv[])
 {
 	printf("usage: %s [OPTIONS] <files>\n", argv[0]);
@@ -136,11 +146,16 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	// Keep track of the file checksum.
+	Sortix::InitRD::Trailer trailer;
+	trailer.sum = 0;
+
 	// Write the initrd headers.
 	Sortix::InitRD::Header header;
 	memset(&header, 0, sizeof(header));
 	strcpy(header.magic, "sortix-initrd-1");
 	header.numfiles = numfiles;
+	trailer.sum = ContinueChecksum(trailer.sum, &header, sizeof(header));
 	if ( !writeall(fd, &header, sizeof(header)) )
 	{
 		error(0, errno, "write: %s", dest);
@@ -209,6 +224,7 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 
+		trailer.sum = ContinueChecksum(trailer.sum, &fileheader, sizeof(fileheader));
 		if ( !writeall(fd, &fileheader, sizeof(fileheader)) )
 		{
 			error(0, errno, "write: %s", dest);
@@ -242,6 +258,7 @@ int main(int argc, char* argv[])
 				return 1;
 			}
 
+			trailer.sum = ContinueChecksum(trailer.sum, &buffer, bytesread);
 			if ( !writeall(fd, buffer, bytesread) )
 			{
 				error(0, errno, "write: %s", dest);
@@ -257,6 +274,14 @@ int main(int argc, char* argv[])
 		filenum++;
 
 		close(filefd);
+	}
+
+	if ( !writeall(fd, &trailer, sizeof(trailer)) )
+	{
+		error(0, errno, "write: %s", dest);
+		close(fd);
+		unlink(dest);
+		return 1;
 	}
 
 	return 0;

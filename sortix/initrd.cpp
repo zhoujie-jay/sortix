@@ -93,6 +93,16 @@ namespace Sortix
 			return 0;
 		}
 
+		uint8_t ContinueChecksum(uint8_t checksum,  const void* p, size_t size)
+		{
+			const uint8_t* buffer = (const uint8_t*) p;
+			while ( size-- )
+			{
+				checksum += *buffer++;
+			}
+			return checksum;
+		}
+
 		void Init(byte* theinitrd, size_t size)
 		{
 			initrd = theinitrd;
@@ -103,6 +113,15 @@ namespace Sortix
 			size_t sizeneeded = sizeof(Header) + header->numfiles * sizeof(FileHeader);
 			if ( size < sizeneeded ) { PanicF("initrd.cpp: initrd is too small"); }
 			// TODO: We need to do more validation here!
+
+			Trailer* trailer = (Trailer*) (initrd + initrdsize - sizeof(Trailer));
+			uint8_t checksum = ContinueChecksum(0, initrd, initrdsize - sizeof(Trailer));
+			if ( trailer->sum != checksum )
+			{
+				PanicF("InitRD Checksum failed: the ramdisk may have been "
+				       "corrupted by the bootloader: Got %u instead of %u\n",
+				       checksum, trailer->sum);
+			}
 
 			Syscall::Register(SYSCALL_PRINT_PATH_FILES, (void*) SysPrintPathFiles);
 			Syscall::Register(SYSCALL_GET_FILEINFO, (void*) SysGetFileInfo);

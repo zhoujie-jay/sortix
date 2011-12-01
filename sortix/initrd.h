@@ -49,6 +49,11 @@ namespace Sortix
 			char name[128];
 		};
 
+		struct Trailer
+		{
+			uint8_t sum; // sum of all bytes but the trailer.
+		};
+
 #ifdef SORTIX_KERNEL
 		void Init(byte* initrd, size_t size);
 		byte* Open(const char* filepath, size_t* size);
