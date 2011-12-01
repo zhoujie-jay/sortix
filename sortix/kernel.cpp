@@ -56,8 +56,8 @@ using namespace Maxsi;
 
 void* RunApplication(void* Parameter);
 
-extern "C" size_t stack[4096] = {0};
-extern "C" size_t stackend = 0;
+extern "C" { size_t stack[64*1024] = {0}; }
+extern "C" { size_t stackend = 0; }
 
 namespace Sortix
 {

@@ -28,12 +28,9 @@
 
 .section .text
 
-.text  0x110000
 .type _beginkernel, @function
 beginkernel:
 _beginkernel:
-start:
-_start:
 	movw $0x736, 0xB83E8
 	movw $0x734, 0xB83EA
 	movw $0x753, 0xB83EE
@@ -44,8 +41,7 @@ _start:
 	movw $0x758, 0xB83F8
 
 	# Initialize the stack pointer.
-	# TODO: This is very hacky!
-	movq $0x110000, %rsp
+	movq $stackend, %rsp
 
 	# Reset EFLAGS.
 	# pushl	$0

@@ -77,14 +77,15 @@ multiboot_entry:
 	movl $0x3207, (%edi)
 	addl $0x1000, %edi
 
-	# Page-Directory
-	movl $0x4207, (%edi)
+	# Page-Directory (no user-space access here)
+	movl $0x4203, (%edi) # (First 2 MiB)
+	movl $0x5203, 8(%edi) # (Second 2 MiB)
 	addl $0x1000, %edi
 
 	# Page-Table
-	# Memory map the first 2 MiB.
+	# Memory map the first 4 MiB.
 	movl $0x3, %ebx
-	movl $512, %ecx
+	movl $1024, %ecx
 
 SetEntry:
 	mov %ebx, (%edi)
@@ -177,6 +178,5 @@ Main:
 	# Load the magic value.
 	mov 0x100004, %eax
 
-	# The linker is kindly asked to put the real 64-bit kernel at 0x110000.
-	jmp 0x110000
+	jmp beginkernel
 

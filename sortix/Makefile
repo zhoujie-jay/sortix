@@ -102,17 +102,11 @@ sortix-x86-js.tmp: $(OBJS)
 
 # x64 compilation
 x64/boot.o: x64/boot.s
-	as -32 $< -o $@
+	as -64 $< -o $@
 
 sortix-x64.tmp: $(OBJS) x64/boot.o
-	ld -N -melf_x86_64 -Ttext 110000 -o sortix-x64-internal.out $(OBJS)
-	objcopy -O binary sortix-x64-internal.out sortix-x64-internal.tmp
-	objcopy --add-section      kernel64=sortix-x64-internal.tmp \
-	        --set-section-flag kernel64=alloc,data,load,contents \
-	        $(CPU)/boot.o
-	ld -melf_i386 -Ttext 100000 $(CPU)/boot.o -o $@
-	# move section to 0x11000
-	objcopy --change-section-address kernel64=1114112 $@
+	ld -N -melf_x86_64 -Ttext 100000 -o sortix-x64-internal.out x64/boot.o $(OBJS)
+	objcopy sortix-x64-internal.out -O elf32-i386 sortix-x64.tmp
 
 # x86 compilation
 
