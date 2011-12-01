@@ -119,8 +119,9 @@ namespace Sortix
 			if ( trailer->sum != checksum )
 			{
 				PanicF("InitRD Checksum failed: the ramdisk may have been "
-				       "corrupted by the bootloader: Got %u instead of %u\n",
-				       checksum, trailer->sum);
+				       "corrupted by the bootloader: Got %u instead of %u "
+				       "when checking the ramdisk at 0x%p + 0x%zx bytes\n",
+				       checksum, trailer->sum, initrd, initrdsize);
 			}
 
 			Syscall::Register(SYSCALL_PRINT_PATH_FILES, (void*) SysPrintPathFiles);
