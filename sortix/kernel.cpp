@@ -262,13 +262,6 @@ namespace Sortix
 		// Set up the initial ram disk.
 		InitRD::Init(initrd, initrdsize);
 
-#ifdef PLATFORM_X64
-		Log::Print("Halt: There is no program loader for 64-bit Sortix\n");
-		Log::Print("Sorry, it simply isn't possible to fully boot Sortix in x64 mode yet.\n");
-		Log::Print("x64 may be working when Sortix 0.5 comes out, or try the git master.\n");
-		while(true);
-#endif
-
 		// Alright, now the system's drivers are loaded and initialized. It is
 		// time to load the initial user-space programs and start execution of
 		// the actual operating system.
@@ -278,11 +271,11 @@ namespace Sortix
 
 		// Create an address space for the idle process.
 		addr_t idleaddrspace = Memory::Fork();
-		if ( !idleaddrspace ) { Panic("could not fork an idle process"); }
+		if ( !idleaddrspace ) { Panic("could not fork an idle process address space"); }
 
 		// Create an address space for the initial process.
 		addr_t initaddrspace = Memory::Fork();
-		if ( !initaddrspace ) { Panic("could not fork an initial process"); }
+		if ( !initaddrspace ) { Panic("could not fork an initial process address space"); }
 
 		// Create the system idle process.
 		Process* idle = new Process;

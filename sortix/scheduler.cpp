@@ -69,6 +69,7 @@ namespace Sortix
 			// simpler code.
 			currentthread = dummythread;
 			firstrunnablethread = NULL;
+			firstsleepingthread = NULL;
 			idlethread = NULL;
 			hacksigintpending = false;
 

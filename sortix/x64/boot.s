@@ -66,17 +66,19 @@ multiboot_entry:
 	movl %cr3, %edi
 
 	# Set the initial page tables.
+	# Note that we OR with 0x7 here to allow user-space access, except in the
+	# first 2 MiB. We also do this with 0x200 to allow forking the page.
 
 	# Page-Map Level 4
-	movl $0x2003, (%edi)
+	movl $0x2207, (%edi)
 	addl $0x1000, %edi
 
 	# Page-Directory Pointer Table
-	movl $0x3003, (%edi)
+	movl $0x3207, (%edi)
 	addl $0x1000, %edi
 
 	# Page-Directory
-	movl $0x4003, (%edi)
+	movl $0x4207, (%edi)
 	addl $0x1000, %edi
 
 	# Page-Table

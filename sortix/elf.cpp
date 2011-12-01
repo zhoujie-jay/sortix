@@ -111,9 +111,84 @@ namespace Sortix
 			return entry;
 		}
 
-		addr_t Construct64(Process* /*process*/, const void* /*file*/, size_t /*filelen*/)
+		addr_t Construct64(Process* process, const void* file, size_t filelen)
 		{
+			#ifndef PLATFORM_X64
+			Error::Set(ENOEXEC);
 			return 0;
+			#else
+			if ( filelen < sizeof(Header64) ) { return 0; }
+			const Header64* header = (const Header64*) file;
+
+			// Check for little endian.
+			if ( header->dataencoding != DATA2LSB ) { return 0; }
+			if ( header->version != CURRENTVERSION ) { return 0; }
+
+			addr_t entry = header->entry;
+
+			// Find the location of the program headers.
+			addr_t phtbloffset = header->programheaderoffset;
+			if ( filelen < phtbloffset ) { return 0; }
+			addr_t phtblpos = ((addr_t) file) + phtbloffset;
+			size_t phsize = header->programheaderentrysize;
+			const ProgramHeader64* phtbl = (const ProgramHeader64*) phtblpos;
+
+			// Validate that all program headers are present.
+			uint16_t numprogheaders = header->numprogramheaderentries;
+			size_t neededfilelen = phtbloffset + numprogheaders * phsize;
+			if ( filelen < neededfilelen ) { return 0; }
+
+			// Prepare the process for execution (clean up address space, etc.)
+			process->ResetForExecute();
+
+			// Flush the TLB such that no stale information from the last
+			// address space is used when creating the new one.
+			Memory::Flush();
+
+			// Create all the segments in the final process.
+			// TODO: Handle errors on bad/malicious input or out-of-mem!
+			for ( uint16_t i = 0; i < numprogheaders; i++ )
+			{
+				const ProgramHeader64* pht = &(phtbl[i]);
+				if ( pht->type != PT_LOAD ) { continue; }
+				addr_t virtualaddr = pht->virtualaddr;
+				addr_t mapto = Page::AlignDown(virtualaddr);
+				addr_t mapbytes = virtualaddr - mapto + pht->memorysize;
+				ASSERT(pht->offset % pht->align == virtualaddr % pht->align);
+				ASSERT(pht->offset + pht->filesize < filelen);
+				ASSERT(pht->filesize <= pht->memorysize);
+
+				ProcessSegment* segment = new ProcessSegment;
+				if ( segment == NULL ) { return 0; }
+				segment->position = mapto;
+				segment->size = Page::AlignUp(mapbytes);
+
+				if ( segment->Intersects(process->segments) )
+				{
+					delete segment;
+					return 0;
+				}
+
+				if ( !Memory::MapRangeUser(mapto, mapbytes))
+				{
+					return 0;
+				}
+
+				// Insert our newly allocated memory into the processes segment
+				// list such that it can be reclaimed later.
+				if ( process->segments ) { process->segments->prev = segment; }
+				segment->next = process->segments;
+				process->segments = segment;
+
+				// Copy as much data as possible and memset the rest to 0.
+				byte* memdest = (byte*) virtualaddr;
+				byte* memsource = (byte*) ( ((addr_t)file) + pht->offset);
+				Maxsi::Memory::Copy(memdest, memsource, pht->filesize);
+				Maxsi::Memory::Set(memdest + pht->filesize, 0, pht->memorysize - pht->filesize);
+			}
+
+			return entry;
+			#endif
 		}
 
 		addr_t Construct(Process* process, const void* file, size_t filelen)

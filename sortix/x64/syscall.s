@@ -83,7 +83,7 @@ syscall_handler:
 valid_rax:
 	# Read a system call function pointer.
 	xorq %rbp, %rbp
-	movq syscall_list(%rbp,%rax,4), %rax
+	movq syscall_list(%rbp,%rax,8), %rax
 
 	# Oh how nice, user-space put the parameters in: rdi, rsi, rdx, rcx, r8, r9
 

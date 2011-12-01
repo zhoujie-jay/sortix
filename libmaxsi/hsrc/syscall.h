@@ -137,67 +137,91 @@ namespace Maxsi
 	#define DEFN_SYSCALL0(type, fn, num) \
 	inline type fn() \
 	{ \
-		return 0; \
+		type a; \
+		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		return a; \
 	}
 
 	#define DEFN_SYSCALL1(type, fn, num, P1) \
 	inline type fn(P1 p1) \
 	{ \
-		return 0; \
+		type a; \
+		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		return a; \
 	}
 
 	#define DEFN_SYSCALL2(type, fn, num, P1, P2) \
 	inline type fn(P1 p1, P2 p2) \
 	{ \
-		return 0; \
+		type a; \
+		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		return a; \
 	}
 
 	#define DEFN_SYSCALL3(type, fn, num, P1, P2, P3) \
 	inline type fn(P1 p1, P2 p2, P3 p3) \
 	{ \
-		return 0; \
+		type a; \
+		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		return a; \
 	}
 
 	#define DEFN_SYSCALL4(type, fn, num, P1, P2, P3, P4) \
 	inline type fn(P1 p1, P2 p2, P3 p3, P4 p4) \
 	{ \
-		return 0; \
+		type a; \
+		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		return a; \
 	}
 
 	#define DEFN_SYSCALL5(type, fn, num, P1, P2, P3, P4, P5) \
 	inline type fn(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) \
 	{ \
-		return 0; \
+		type a; \
+		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		return a; \
 	}
 
 	#define DEFN_SYSCALL0_VOID(fn, num) \
 	inline void fn() \
 	{ \
+		size_t a; \
+		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 	#define DEFN_SYSCALL1_VOID(fn, num, P1) \
 	inline void fn(P1 p1) \
 	{ \
+		size_t a; \
+		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 	#define DEFN_SYSCALL2_VOID(fn, num, P1, P2) \
 	inline void fn(P1 p1, P2 p2) \
 	{ \
+		size_t a; \
+		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 	#define DEFN_SYSCALL3_VOID(fn, num, P1, P2, P3) \
 	inline void fn(P1 p1, P2 p2, P3 p3) \
 	{ \
+		size_t a; \
+		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 	#define DEFN_SYSCALL4_VOID(fn, num, P1, P2, P3, P4) \
 	inline void fn(P1 p1, P2 p2, P3 p3, P4 p4) \
 	{ \
+		size_t a; \
+		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 	#define DEFN_SYSCALL5_VOID(fn, num, P1, P2, P3, P4, P5) \
 	inline void fn(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) \
 	{ \
+		size_t a; \
+		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 #endif

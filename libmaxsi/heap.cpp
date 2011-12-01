@@ -30,7 +30,7 @@
 #define HEAP_GROWS_DOWNWARDS
 #endif
 
-#define PARANOIA 0
+#define PARANOIA 1
 
 #ifdef SORTIX_KERNEL
 #include <sortix/platform.h>
@@ -141,7 +141,7 @@ namespace Maxsi
 			ASSERT(Value > 0);
 			for ( size_t I = 8*sizeof(size_t); I > 0; I-- )
 			{
-				if ( Value & ( 1 << (I-1) ) ) { return I-1; }
+				if ( Value & ( 1UL << (I-1) ) ) { return I-1; }
 			}
 			return 0;
 #else
@@ -158,7 +158,7 @@ namespace Maxsi
 			ASSERT(Value > 0);
 			for ( size_t I = 0; I < 8*sizeof(size_t); I++ )
 			{
-				if ( Value & ( 1 << I ) ) { return I; }
+				if ( Value & ( 1UL << I ) ) { return I; }
 			}
 			return 0;
 #else
@@ -268,6 +268,7 @@ namespace Maxsi
 
 		bool Chunk::IsSane()
 		{
+			if ( !size ) { return false; }
 			size_t binindex = BSR(size);
 			Trailer* trailer = GetTrailer();
 			if ( trailer->size != size ) { return false; }
@@ -314,6 +315,9 @@ namespace Maxsi
 
 		bool ValidateHeap()
 		{
+			bool foundbin[NUMBINS];
+			for ( size_t i = 0; i < NUMBINS; i++ ) { foundbin[i] = false; }
+
 			#ifdef HEAP_GROWS_DOWNWARDS
 			Chunk* chunk = (Chunk*) (wilderness + wildernesssize);
 			while ( (addr_t) chunk < heapstart )
@@ -322,8 +326,26 @@ namespace Maxsi
 			while ( (addr_t) chunk < wilderness - wildernesssize )
 			#endif
 			{
+				size_t timesfound = 0;
+				for ( size_t i = 0; i < NUMBINS; i++ )
+				{
+					if ( chunk == bins[i] ) { foundbin[i] = true; timesfound++; }
+				}
+				if ( 1 < timesfound ) { return false; }
+
 				if ( !chunk->IsSane() ) { return false; }
 				chunk = chunk->RightNeighbor();
+			}
+
+			for ( size_t i = 0; i < NUMBINS; i++ )
+			{
+				if ( !bins[i] )
+				{
+					if ( foundbin[i] ) { return false; }
+					continue;
+				}
+				if ( !foundbin[i] ) { return false; }
+				if ( !bins[i]->IsSane() ) { return false; }
 			}
 
 			return true;

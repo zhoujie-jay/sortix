@@ -37,7 +37,9 @@ namespace Sortix
 			unsigned char fileclass;
 			unsigned char dataencoding;
 			unsigned char version;
-			unsigned char padding[9];
+			unsigned char osabi;
+			unsigned char abiversion;
+			unsigned char padding[7];
 		};
 
 		const unsigned char CLASSNONE = 0;
@@ -64,6 +66,23 @@ namespace Sortix
 			uint16_t sectionheaderstringindex;
 		};
 
+		struct Header64 : public Header
+		{
+			uint16_t type;
+			uint16_t machine;
+			uint32_t version;
+			uint64_t entry;
+			uint64_t programheaderoffset;
+			uint64_t sectionheaderoffset;
+			uint32_t flags;
+			uint16_t elfheadersize;
+			uint16_t programheaderentrysize;
+			uint16_t numprogramheaderentries;
+			uint16_t sectionheaderentrysize;
+			uint16_t numsectionheaderentries;
+			uint16_t sectionheaderstringindex;
+		};
+
 		struct SectionHeader32
 		{
 			uint32_t name;
@@ -76,6 +95,20 @@ namespace Sortix
 			uint32_t info;
 			uint32_t addralign;
 			uint32_t entsize;
+		};
+
+		struct SectionHeader64
+		{
+			uint32_t name;
+			uint32_t type;
+			uint64_t flags;
+			uint64_t addr;
+			uint64_t offset;
+			uint64_t size;
+			uint32_t link;
+			uint32_t info;
+			uint64_t addralign;
+			uint64_t entsize;
 		};
 
 		const uint32_t SHT_NULL = 0;
@@ -105,6 +138,18 @@ namespace Sortix
 			uint32_t memorysize;
 			uint32_t flags;
 			uint32_t align;
+		};
+
+		struct ProgramHeader64
+		{
+			uint32_t type;
+			uint32_t flags;
+			uint64_t offset;
+			uint64_t virtualaddr;
+			uint64_t physicaladdr;
+			uint64_t filesize;
+			uint64_t memorysize;
+			uint64_t align;
 		};
 
 		const uint32_t PT_NULL = 0;
