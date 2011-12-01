@@ -575,9 +575,16 @@ namespace Sortix
 
 			uint32_t** Layout = US::Layout;
 
-			nat Mask = 0;
-			nat LockMask = 0;
+			nat Mask;
+			nat LockMask;
 			bool control;
+
+			void Init()
+			{
+				Mask = 0;
+				LockMask = 0;
+				control = false;
+			}
 
 			const nat Shift = (1<<0);
 			const nat AltGr = (1<<1);
@@ -641,6 +648,8 @@ namespace Sortix
 		{
 			// Initialize variables.
 			LEDs = 0;
+
+			Layouts::Init();
 
 			// Register our keystroke callback.
 			Interrupt::RegisterHandler(Interrupt::IRQ1, OnIRQ1);
