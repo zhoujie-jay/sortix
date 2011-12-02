@@ -165,9 +165,10 @@ int isatty(int);
 int pipe(int [2]);
 ssize_t read(int, void*, size_t);
 unsigned sleep(unsigned);
-#if __POSIX_OBSOLETE <= 200112
+/*#if __POSIX_OBSOLETE <= 200112*/
+typedef unsigned int useconds_t;
 int usleep(useconds_t useconds);
-#endif
+/*#endif*/
 int unlink(const char*);
 ssize_t write(int, const void*, size_t);
 

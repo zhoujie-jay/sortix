@@ -319,7 +319,12 @@ namespace Sortix
 		{
 			Thread* thread = currentthread;
 			uintmax_t timetosleep = ((uintmax_t) secs) * 1000ULL * 1000ULL;
-			if ( timetosleep == 0 ) { return; }
+			if ( timetosleep == 0 )
+			{
+				Switch(Syscall::InterruptRegs());
+				Syscall::AsIs();
+				return;
+			}
 			PutThreadToSleep(thread, timetosleep);
 			Syscall::Incomplete();
 		}
@@ -328,7 +333,12 @@ namespace Sortix
 		{
 			Thread* thread = currentthread;
 			uintmax_t timetosleep = usecs;
-			if ( timetosleep == 0 ) { return; }
+			if ( timetosleep == 0 )
+			{
+				Switch(Syscall::InterruptRegs());
+				Syscall::AsIs();
+				return;
+			}
 			PutThreadToSleep(thread, timetosleep);
 			Syscall::Incomplete();
 		}
