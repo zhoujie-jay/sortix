@@ -5,6 +5,7 @@ include ../crosscompilemakefile.mak
 INITRDDIR:=../initrd
 LOCALBINARIES:=\
 benchsyscall \
+benchctxswitch \
 
 BINARIES:=$(addprefix $(INITRDDIR)/,$(LOCALBINARIES))
 
