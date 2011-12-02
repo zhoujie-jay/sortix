@@ -53,6 +53,12 @@ cleanbuilds:
 
 everything: all deb iso
 
+everything-all-archs:
+	$(MAKE) clean $(MFLAGS)
+	$(MAKE) everything CPU=x86 $(MFLAGS)
+	$(MAKE) clean $(MFLAGS)
+	$(MAKE) everything CPU=x64 $(MFLAGS)
+
 # Initializing RamDisk
 $(INITRD): suball
 	(cd $(INITRDDIR) && ../mkinitrd/mkinitrd * -o ../$(INITRD))
