@@ -41,8 +41,6 @@ namespace Maxsi
 		bool StartsWith(const char* Haystack, const char* Needle);
 		int ToInt(const char* str);
 
-		int ConvertUInt8T(uint8_t num, char* dest);
-		int ConvertUInt16(uint16_t num, char* dest);
 		int ConvertUInt32(uint32_t num, char* dest);
 		int ConvertUInt64(uint64_t num, char* dest);
 	}

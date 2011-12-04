@@ -30,38 +30,6 @@ namespace Maxsi
 {
 	namespace String
 	{
-		int ConvertUInt8(uint8_t Num, char* Dest)
-		{
-			uint8_t Copy = Num;
-			int Result = 0;
-
-			while ( Copy > 9 ) { Copy /= 10; Result++; }
-
-			int Offset = Result;
-			while ( Offset >= 0 )
-			{
-				Dest[Offset] = '0' + Num % 10; Num /= 10; Offset--;
-			}
-
-			return Result + 1;
-		}
-
-		int ConvertUInt16(uint16_t Num, char* Dest)
-		{
-			uint16_t Copy = Num;
-			int Result = 0;
-
-			while ( Copy > 9 ) { Copy /= 10; Result++; }
-
-			int Offset = Result;
-			while ( Offset >= 0 )
-			{
-				Dest[Offset] = '0' + Num % 10; Num /= 10; Offset--;
-			}
-
-			return Result + 1;
-		}
-
 		int ConvertUInt32(uint32_t Num, char* Dest)
 		{
 			uint32_t Copy = Num;
@@ -93,8 +61,6 @@ namespace Maxsi
 
 			return Result + 1;
 		}
-
-		// Missing functions here.
 
 		int ConvertUInt3216(uint32_t Num, char* Dest)
 		{
