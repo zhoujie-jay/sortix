@@ -33,6 +33,6 @@ SignalHandlerAssembly:
 	call SignalHandler
 
 	# Return control to the kernel, so normal computation can resume normally.
-	movl $3, %eax
+	movl $30, %eax # SysSigReturn
 	int $0x80
 
