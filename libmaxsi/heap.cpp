@@ -169,7 +169,7 @@ namespace Maxsi
 		}
 
 		//
-		// This is where the actual memory allocation algorithm starts.
+		// Now for some helper functions and structures.
 		//
 
 		struct Chunk;
@@ -350,6 +350,10 @@ namespace Maxsi
 
 			return true;
 		}
+
+		//
+		// This is where the actual memory allocation algorithm starts.
+		//
 
 		void Init()
 		{
