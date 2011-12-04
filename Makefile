@@ -1,20 +1,25 @@
+BITS:=$(shell getconf LONG_BIT)
 ifndef CPU
-    CPU=x86
-    MFLAGS:=CPU=$(CPU)
+    ifeq ($(BITS),64)
+        CPU:=x64
+    else
+        CPU:=x86
+    endif
+    MFLAGS:=$(MFLAGS) CPU=$(CPU)
 endif
 
 ifndef O
     O=-O2
-    MFLAGS:=0=$(O)
+    MFLAGS:=$(MFLAGS) 0=$(O)
 endif
 
 ifeq ($(BENCH),1)
-EXTRAMODULES:=$(EXTRAMODULES) bench
+    EXTRAMODULES:=$(EXTRAMODULES) bench
 endif
 
 ifndef SYSROOT
     SYSROOT:=$(shell pwd)/sysroot
-    MFLAGS:=SYSROOT=$(SYSROOT)
+    MFLAGS:=$(MFLAGS) SYSROOT=$(SYSROOT)
 endif
 
 REMOTE=192.168.2.6
@@ -56,9 +61,9 @@ everything: all deb iso
 
 everything-all-archs:
 	$(MAKE) clean $(MFLAGS)
-	$(MAKE) everything CPU=x86 $(MFLAGS)
+	$(MAKE) everything $(MFLAGS) CPU=x86
 	$(MAKE) clean $(MFLAGS)
-	$(MAKE) everything CPU=x64 $(MFLAGS)
+	$(MAKE) everything $(MFLAGS) CPU=x64
 
 # Initializing RamDisk
 $(INITRD): suball
