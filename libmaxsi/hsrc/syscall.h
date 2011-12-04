@@ -22,25 +22,17 @@
 
 ******************************************************************************/
 
+#ifdef SORTIX_KERNEL
+#warning ===
+#warning Sortix does not support syscalls from within the kernel, building this part of LibMaxsi should not be needed, and should not be used in kernel mode
+#warning ===
+#else
+
 #ifndef LIBMAXSI_SYSCALL_H
 #define LIBMAXSI_SYSCALL_H
 
 namespace Maxsi
 {
-#ifdef SORTIX_KERNEL
-#warning ===
-#warning ===
-#warning ===
-#warning ===
-#warning ===
-#warning Sortix does not support syscalls from within the kernel, building this part of LibMaxsi should not be needed, and should not be used in kernel mode
-#warning ===
-#warning ===
-#warning ===
-#warning ===
-#warning ===
-#endif
-
 	#define DECL_SYSCALL0(type,fn) type fn();
 	#define DECL_SYSCALL1(type,fn,p1) type fn(p1);
 	#define DECL_SYSCALL2(type,fn,p1,p2) type fn(p1,p2);
@@ -238,6 +230,8 @@ namespace Maxsi
 #endif
 
 }
+
+#endif
 
 #endif
 
