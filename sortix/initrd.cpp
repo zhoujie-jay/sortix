@@ -39,28 +39,11 @@ namespace Sortix
 		byte* initrd;
 		size_t initrdsize;
 
-		void SysPrintPathFiles()
-		{
-			Header* header = (Header*) initrd;
-			FileHeader* fhtbl = (FileHeader*) (initrd + sizeof(Header));
-			for ( uint32_t i = 0; i < header->numfiles; i++ )
-			{
-				FileHeader* fileheader = &(fhtbl[i]);
-				Log::PrintF("%s\n", fileheader->name);
-			}
-		}
-
 		size_t GetNumFiles()
 		{
 			Header* header = (Header*) initrd;
 			return header->numfiles;
 		}
-
-		size_t SysGetNumFiles()
-		{
-			return GetNumFiles();
-		}
-
 		const char* GetFilename(size_t index)
 		{
 			Header* header = (Header*) initrd;
@@ -68,29 +51,6 @@ namespace Sortix
 			FileHeader* fhtbl = (FileHeader*) (initrd + sizeof(Header));
 			FileHeader* fileheader = &(fhtbl[index]);
 			return fileheader->name;
-		}
-
-		struct FileInfo
-		{
-			mode_t permissions;
-			char name[128];
-		};
-
-		int SysGetFileInfo(size_t index, FileInfo* fileinfo)
-		{
-			Header* header = (Header*) initrd;
-			if ( index >= header->numfiles ) { return -1; }
-			FileHeader* fhtbl = (FileHeader*) (initrd + sizeof(Header));
-			FileHeader* fileheader = &(fhtbl[index]);
-
-			// TODO: Check that fileinfo is a userspace writable buffer.
-
-			STATIC_ASSERT(sizeof(fileheader->name) == sizeof(fileinfo->name));
-
-			fileinfo->permissions = fileheader->permissions;
-			Maxsi::Memory::Copy(fileinfo->name, fileheader->name, sizeof(fileheader->name));
-
-			return 0;
 		}
 
 		uint8_t ContinueChecksum(uint8_t checksum,  const void* p, size_t size)
@@ -123,10 +83,6 @@ namespace Sortix
 				       "when checking the ramdisk at 0x%p + 0x%zx bytes\n",
 				       checksum, trailer->sum, initrd, initrdsize);
 			}
-
-			Syscall::Register(SYSCALL_PRINT_PATH_FILES, (void*) SysPrintPathFiles);
-			Syscall::Register(SYSCALL_GET_FILEINFO, (void*) SysGetFileInfo);
-			Syscall::Register(SYSCALL_GET_NUM_FILES, (void*) SysGetNumFiles);
 		}
 
 		byte* Open(const char* filepath, size_t* size)

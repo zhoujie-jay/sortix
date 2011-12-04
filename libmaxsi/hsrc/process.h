@@ -27,18 +27,9 @@
 
 namespace Maxsi
 {
-	struct FileInfo
-	{
-		mode_t permissions;
-		char name[128];
-	};
-
 	namespace Process
 	{
 		int Execute(const char* filepath, int argc, const char** argv);
-		void PrintPathFiles();
-		size_t GetNumFiles();
-		int GetFileInfo(size_t index, FileInfo* fileinfo);
 		void Abort();
 		void Exit(int code);
 		pid_t Fork();
