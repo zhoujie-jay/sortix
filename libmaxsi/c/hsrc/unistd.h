@@ -74,6 +74,9 @@ __BEGIN_DECLS
 @include(off_t.h)
 @include(pid_t.h)
 @include(useconds_t.h)
+#ifdef SORTIX_EXTENSIONS
+@include(intn_t.h)
+#endif
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #ifndef SORTIX_UNIMPLEMENTED
@@ -166,14 +169,13 @@ int isatty(int);
 int pipe(int [2]);
 ssize_t read(int, void*, size_t);
 unsigned sleep(unsigned);
-/*#if __POSIX_OBSOLETE <= 200112*/
+#if __POSIX_OBSOLETE <= 200112 || defined(SORTIX_EXTENSIONS)
 int usleep(useconds_t useconds);
-/*#endif*/
+#endif
 int unlink(const char*);
 ssize_t write(int, const void*, size_t);
 
 #ifdef SORTIX_EXTENSIONS
-@include(intn_t.h)
 int memstat(size_t* memused, size_t* memtotal);
 int uptime(uintmax_t* mssinceboot);
 int writeall(int fd, const void* buffer, size_t len);
