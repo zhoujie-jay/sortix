@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <error.h>
 #include <string.h>
 
 using namespace Maxsi;
@@ -47,7 +48,7 @@ bool FlushVGA()
 int Init()
 {
 	vgafd = open("/dev/vga", O_RDWR);
-	if ( vgafd < 0 ) { printf("Unable to open vga device: %s", strerror(errno)); return 1; }
+	if ( vgafd < 0 ) { error(0, errno, "unable to open vga device /dev/vga"); return 1; }
 
 	Clear();
 
