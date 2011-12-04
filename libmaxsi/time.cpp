@@ -33,9 +33,9 @@ namespace Maxsi
 	{
 		DEFN_SYSCALL1(int, SysUptime, 34, uintmax_t*);
 
-		extern "C" int uptime(uintmax_t* mssinceboot)
+		extern "C" int uptime(uintmax_t* usecssinceboot)
 		{
-			return SysUptime(mssinceboot);
+			return SysUptime(usecssinceboot);
 		}
 	}
 }

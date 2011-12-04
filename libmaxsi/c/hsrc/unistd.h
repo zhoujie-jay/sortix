@@ -177,7 +177,7 @@ ssize_t write(int, const void*, size_t);
 
 #ifdef SORTIX_EXTENSIONS
 int memstat(size_t* memused, size_t* memtotal);
-int uptime(uintmax_t* mssinceboot);
+int uptime(uintmax_t* usecssinceboot);
 int writeall(int fd, const void* buffer, size_t len);
 #endif
 

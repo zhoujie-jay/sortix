@@ -1,24 +1,24 @@
 #include <stdio.h>
 #include <unistd.h>
 
-size_t Seconds(size_t ms)
+size_t Seconds(uintmax_t usecs)
 {
-	return (ms / 1000UL) % (60UL);
+	return (usecs / (1000ULL * 1000ULL)) % (60ULL);
 }
 
-size_t Minutes(size_t ms)
+size_t Minutes(uintmax_t usecs)
 {
-	return (ms / (1000UL * 60UL)) % (60UL);
+	return (usecs / (1000ULL * 1000ULL * 60ULL)) % (60ULL);
 }
 
-size_t Hours(size_t ms)
+size_t Hours(uintmax_t usecs)
 {
-	return (ms / (1000UL * 60UL * 60UL)) % (24UL);
+	return (usecs / (1000ULL * 1000ULL * 60ULL * 60ULL)) % (24ULL);
 }
 
-size_t Days(size_t ms)
+size_t Days(uintmax_t usecs)
 {
-	return (ms / (1000UL * 60UL * 60UL * 24UL)) % (24UL);
+	return usecs / (1000ULL * 1000ULL * 60ULL * 60ULL * 24ULL);
 }
 
 void PrintElement(size_t num, const char* single, const char* multiple)

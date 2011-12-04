@@ -85,10 +85,10 @@ namespace Sortix
 
 		bool didUglyIRQ0Hack;
 
-		int SysUptime(uintmax_t* mssinceboot)
+		int SysUptime(uintmax_t* usecssinceboot)
 		{
-			// TODO: HACK!
-			*mssinceboot = ((size_t)microsecondssinceboot) / 1000;
+			// TODO: Validate that usecssinceboot is a valid user-space pointer.
+			*usecssinceboot = microsecondssinceboot;
 			return 0;
 		}
 
