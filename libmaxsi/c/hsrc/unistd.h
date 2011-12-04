@@ -73,6 +73,7 @@ __BEGIN_DECLS
 @include(gid_t.h)
 @include(off_t.h)
 @include(pid_t.h)
+@include(useconds_t.h)
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #ifndef SORTIX_UNIMPLEMENTED
@@ -166,7 +167,6 @@ int pipe(int [2]);
 ssize_t read(int, void*, size_t);
 unsigned sleep(unsigned);
 /*#if __POSIX_OBSOLETE <= 200112*/
-typedef unsigned int useconds_t;
 int usleep(useconds_t useconds);
 /*#endif*/
 int unlink(const char*);
