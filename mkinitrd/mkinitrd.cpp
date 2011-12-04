@@ -49,7 +49,7 @@ bool writeall(int fd, const void* p, size_t size)
 	return true;
 }
 
-uint8_t ContinueChecksum(uint8_t checksum,  const void* p, size_t size)
+uint8_t ContinueChecksum(uint8_t checksum, const void* p, size_t size)
 {
 	const uint8_t* buffer = (const uint8_t*) p;
 	while ( size-- )
