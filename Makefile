@@ -21,6 +21,7 @@ REMOTE=192.168.2.6
 REMOTEUSER=sortie
 REMOTECOPYDIR:=/home/$(REMOTEUSER)/Desktop/MaxsiOS
 MODULES=libmaxsi games mkinitrd utils $(EXTRAMODULES) sortix
+ALLMODULES=libmaxsi games mkinitrd utils bench sortix
 
 VERSION=0.5dev
 DEBNAME:=sortix_$(VERSION)_$(CPU)
@@ -43,7 +44,7 @@ clean:
 	rm -rf $(SYSROOT)
 	rm -f $(INITRD)
 	rm -f initrd/*
-	(for D in $(MODULES); do $(MAKE) clean $(MFLAGS) --directory $$D || exit $?; done)
+	(for D in $(ALLMODULES); do $(MAKE) clean $(MFLAGS) --directory $$D || exit $?; done)
 
 distclean: clean cleanbuilds
 
