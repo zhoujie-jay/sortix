@@ -59,7 +59,7 @@ namespace Maxsi
 		}
 
 #ifdef LIBMAXSI_LIBC
-		extern "C" unsigned sleep(unsigned Seconds) { SysSleep(Seconds); return 0; /* TODO: Posix mentions something about signals and whatnot. */}
+		extern "C" unsigned sleep(unsigned Seconds) { SysSleep(Seconds); return 0; }
 #endif
 
 		// TODO: Thinking about it, there is no need for this to be a long.
