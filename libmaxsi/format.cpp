@@ -169,7 +169,11 @@ namespace Maxsi
 							scanning = false;
 							break;
 						case 'z':
+						case 'l':
 							type |= WORDWIDTH;
+							break;
+						case 'j':
+							type |= BIT64;
 							break;
 						case 'u':
 							type |= UNSIGNED;
