@@ -31,76 +31,57 @@ extern "C" void __cxa_pure_virtual()
 
 #ifdef PLATFORM_X86
 
-// TODO: These two stubs are buggy!
-
-// Divides two 64-bit integers in O(logN). I think.
-extern "C" uint64_t __udivdi3(uint64_t A, uint64_t B)
+extern "C" uint64_t __udivdi3(uint64_t a, uint64_t b)
 {
-	uint64_t ACC = 0;
-	uint64_t R = 0;
-	uint64_t PWR = 1;
-	uint64_t EXP = B;
-
-	while ( EXP <= A - ACC )
+	uint64_t result = 0;
+	uint64_t power = 1;
+	uint64_t remainder = a;
+	uint64_t divisor = b;
+	while ( divisor * 2 <= remainder )
 	{
-		R += PWR;
-		ACC += EXP;
-		
-		if ( 2 * EXP <= A - ACC )
+		power *= 2;
+		divisor *= 2;
+	}
+	
+	while ( divisor <= remainder )
+	{
+		remainder -= divisor;
+		result += power;
+		while ( power > 1 && remainder < divisor )
 		{
-			PWR++;
-			EXP *= 2;
-		}
-		else if ( A - ACC < B )
-		{
-			break;
-		}
-		else
-		{
-			while ( A - ACC < EXP )
-			{
-				PWR--;
-				EXP /= 2;
-			}
+			divisor /= 2;
+			power /= 2;
 		}
 	}
 
-	return R;
+	return result;
 }
 
-// Mods two 64-bit integers in O(logN). I think.
-extern "C" uint64_t __umoddi3(uint64_t A, uint64_t B)
+extern "C" uint64_t __umoddi3(uint64_t a, uint64_t b)
 {
-	uint64_t ACC = 0;
-	uint64_t R = 0;
-	uint64_t PWR = 1;
-	uint64_t EXP = B;
-
-	while ( EXP <= A - ACC )
+	uint64_t result = 0;
+	uint64_t power = 1;
+	uint64_t remainder = a;
+	uint64_t divisor = b;
+	while ( divisor * 2 <= remainder )
 	{
-		R += PWR;
-		ACC += EXP;
-		
-		if ( 2 * EXP <= A - ACC )
+		power *= 2;
+		divisor *= 2;
+	}
+	
+	while ( divisor <= remainder )
+	{
+		remainder -= divisor;
+		result += power;
+		while ( power > 1 && remainder < divisor )
 		{
-			PWR++;
-			EXP *= 2;
-		}
-		else if ( A - ACC < B )
-		{
-			break;
-		}
-		else
-		{
-			while ( A - ACC < EXP )
-			{
-				PWR--;
-				EXP /= 2;
-			}
+			divisor /= 2;
+			power /= 2;
 		}
 	}
 
-	return A - ACC;
+	return remainder;
 }
+
 #endif
 
