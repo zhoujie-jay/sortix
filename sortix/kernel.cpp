@@ -203,7 +203,7 @@ namespace Sortix
 #else
 		// TODO: UGLY HACK because JSVM doesn't support multiboot yet!
 		initrd = (uint8_t*) 0x180000UL;
-		initrdsize = 0x80000; // 512 KiB
+		initrdsize = 0x280000; // 2 MiB 512 KiB
 #endif
 
 #ifndef JSSORTIX
