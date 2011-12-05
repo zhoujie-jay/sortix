@@ -33,6 +33,8 @@
 #include "vgaterminal.h"
 #include "scheduler.h"
 
+using namespace Maxsi;
+
 namespace Sortix
 {
 	namespace SerialTerminal
@@ -41,7 +43,7 @@ namespace Sortix
 		{
 			// Set the cursor to (0,0) and clear the screen.
 			const char InitMessage[] = "\e[37m\e[40m\e[2J\e[H";
-			UART::Write(InitMessage, Maxsi::String::Length(InitMessage));
+			UART::Write(InitMessage, String::Length(InitMessage));
 		}
 
 		bool isEsc;
@@ -50,12 +52,15 @@ namespace Sortix
 
 		const bool ECHO_TO_VGA = true;
 
+		bool cursordisabled;
+
 		void Init()
 		{
 			Reset();
 
 			isEsc = isEscDepress = false;
 			sigpending = -1;
+			cursordisabled = false;
 		}
 
 		void OnTick()
@@ -121,12 +126,24 @@ namespace Sortix
 
 		void OnVGAModified()
 		{
+			if ( !cursordisabled )
+			{
+				const char* msg = "\e[l";
+				UART::Write(msg, String::Length(msg));
+				cursordisabled = true;
+			}
 			UART::RenderVGA((const uint16_t*) 0xB8000);
 		}
 
 		size_t Print(void* /*user*/, const char* string, size_t stringlen)
 		{
 			if ( ECHO_TO_VGA ) { VGATerminal::Print(NULL, string, stringlen); }
+			if ( cursordisabled )
+			{
+				const char* msg = "\e[h";
+				UART::Write(msg, String::Length(msg));
+				cursordisabled = false;
+			}
 			UART::Write(string, stringlen);
 			return stringlen;
 		}
