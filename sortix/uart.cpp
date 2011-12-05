@@ -25,9 +25,7 @@
 #include "platform.h"
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
-#ifdef PLATFORM_SERIAL
 #include "vga.h"
-#endif
 #include "uart.h"
 
 using namespace Maxsi;
@@ -68,11 +66,9 @@ namespace Sortix
 		const nat BASE_BAUD = 1843200/16;
 		const nat BOTH_EMPTY = LSR_TEMT | LSR_THRE;
 
-#ifdef SORTIX_VGA_H
 		const unsigned FrameWidth = 80;
 		const unsigned FrameHeight = 25;
 		uint16_t VGALastFrame[FrameWidth * FrameHeight];
-#endif
 
 		nat ProbeBaud(nat Port)
 		{
@@ -103,9 +99,7 @@ namespace Sortix
 
 		void Init()
 		{
-#ifdef SORTIX_VGA_H
 			InvalidateVGA();
-#endif
 
 #ifdef JSSORTIX
 			// This crashes the JS VM, so don't do it.
@@ -208,7 +202,6 @@ namespace Sortix
 			WriteChar(Num % 10);
 		}
 
-#ifdef SORTIX_VGA_H
 		// Change from VGA color to another color system.
 		nat ConversionTable[16] = { 0, 4, 2, 6, 1, 5, 3, 7, 0, 4, 2, 6, 1, 5, 3, 7 };
 
@@ -327,6 +320,5 @@ namespace Sortix
 				}
 			}
 		}
-#endif
 	}
 }

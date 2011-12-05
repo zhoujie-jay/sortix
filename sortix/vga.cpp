@@ -70,6 +70,14 @@ namespace Sortix
 
 	DevVGA::~DevVGA()
 	{
+#ifdef PLATFORM_SERIAL
+		// TODO: HACK: This is a hack that is unrelated to this file.
+		// This is a hack to make the cursor a proper color after the vga buffer
+		// has been radically modified. The best solution would be for the VGA
+		// to ANSI Escape Codes converter to keep track of colors and restoring
+		// them, but this will do for now.
+		Log::PrintF("\e[m");
+#endif
 	}
 
 	ssize_t DevVGA::Read(byte* dest, size_t count)
@@ -87,6 +95,9 @@ namespace Sortix
 		Maxsi::Memory::Copy(VGA::VGA + offset, src, count);
 		offset = (offset + count) % VGA::VGA_SIZE;
 		VGA::SetCursor(VGA::WIDTH, VGA::HEIGHT-1);
+#ifdef PLATFORM_SERIAL
+		SerialTerminal::OnVGAModified();
+#endif
 		return count;
 	}
 

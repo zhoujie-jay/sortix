@@ -44,15 +44,14 @@ namespace Sortix
 			UART::Write(InitMessage, Maxsi::String::Length(InitMessage));
 		}
 
-		size_t numvgaframes = 0;
-
 		bool isEsc;
 		bool isEscDepress;
 		int sigpending;
 
+		const bool ECHO_TO_VGA = true;
+
 		void Init()
 		{
-			numvgaframes = 0;
 			Reset();
 
 			isEsc = isEscDepress = false;
@@ -118,51 +117,17 @@ namespace Sortix
 				}
 				Keyboard::QueueKeystroke(c);
 			}
-
-#ifdef PLATFORM_SERIAL
-			// TODO: But this hack may be worse.
-			if ( numvgaframes )
-			{
-				UART::RenderVGA((const uint16_t*) 0xB8000);
-			}
-#endif
 		}
 
-		void OnVGAFrameCreated()
+		void OnVGAModified()
 		{
-			if ( numvgaframes++ == 0 )
-			{
-				UART::WriteChar('\e');
-				UART::WriteChar('[');
-				UART::WriteChar('l');
-			}
-		}
-
-		void OnVGAFrameDeleted()
-		{
-			if ( --numvgaframes == 0 )
-			{
-				Reset();
-				UART::WriteChar('\e');
-				UART::WriteChar('[');
-				UART::WriteChar('h');
-			}
+			UART::RenderVGA((const uint16_t*) 0xB8000);
 		}
 
 		size_t Print(void* /*user*/, const char* string, size_t stringlen)
 		{
-			if ( numvgaframes )
-			{
-				VGATerminal::Print(NULL, string, stringlen);
-#ifdef PLATFORM_SERIAL
-				UART::RenderVGA((const uint16_t*) 0xB8000);
-#endif
-			}
-			else
-			{
-				UART::Write(string, stringlen);
-			}
-
+			if ( ECHO_TO_VGA ) { VGATerminal::Print(NULL, string, stringlen); }
+			UART::Write(string, stringlen);
 			return stringlen;
 		}
 	}
