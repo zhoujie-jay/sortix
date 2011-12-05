@@ -30,84 +30,132 @@ namespace Maxsi
 {
 	namespace String
 	{
-		int ConvertUInt32(uint32_t Num, char* Dest)
+		int ConvertInt32(int32_t num, char* dest)
 		{
-			uint32_t Copy = Num;
-			int Result = 0;
+			int result = 0;
+			int32_t copy = num;
 
-			while ( Copy > 9 ) { Copy /= 10; Result++; }
-
-			int Offset = Result;
-			while ( Offset >= 0 )
+			if ( num < 0 )
 			{
-				Dest[Offset] = '0' + Num % 10; Num /= 10; Offset--;
+				*dest++ = '-';
+				result++;
+
+				int offset = 0;
+				while ( copy < -9 ) { copy /= 10; offset++; }
+				result += offset;
+				while ( offset >= 0 )
+				{
+					dest[offset] = '0' - num % 10; num /= 10; offset--;
+				}
+			}
+			else
+			{
+				int offset = 0;
+				while ( copy > 9 ) { copy /= 10; offset++; }
+				result += offset;
+				while ( offset >= 0 )
+				{
+					dest[offset] = '0' + num % 10; num /= 10; offset--;
+				}
 			}
 
-			return Result + 1;
+			return result + 1;
 		}
 
-		int ConvertUInt64(uint64_t Num, char* Dest)
+		int ConvertInt64(int64_t num, char* dest)
 		{
-			uint64_t Copy = Num;
-			int Result = 0;
+			int result = 0;
+			int64_t copy = num;
 
-			while ( Copy > 9 ) { Copy /= 10; Result++; }
-
-			int Offset = Result;
-			while ( Offset >= 0 )
+			if ( num < 0 )
 			{
-				Dest[Offset] = '0' + Num % 10; Num /= 10; Offset--;
+				*dest++ = '-';
+				result++;
+
+				int offset = 0;
+				while ( copy < -9 ) { copy /= 10; offset++; }
+				result += offset;
+				while ( offset >= 0 )
+				{
+					dest[offset] = '0' - num % 10; num /= 10; offset--;
+				}
+			}
+			else
+			{
+				int offset = 0;
+				while ( copy > 9 ) { copy /= 10; offset++; }
+				result += offset;
+				while ( offset >= 0 )
+				{
+					dest[offset] = '0' + num % 10; num /= 10; offset--;
+				}
 			}
 
-			return Result + 1;
+			return result + 1;
 		}
 
-		int ConvertUInt3216(uint32_t Num, char* Dest)
+		int ConvertUInt32(uint32_t num, char* dest)
 		{
-			uint32_t Copy = Num;
-			int Result = 0;
-
-			while ( Copy > 15 ) { Copy /= 16; Result++; }
-
-			int Offset = Result;
-			while ( Offset >= 0 )
+			int result = 0;
+			uint32_t copy = num;
+			int offset = 0;
+			while ( copy > 9 ) { copy /= 10; offset++; }
+			result += offset;
+			while ( offset >= 0 )
 			{
-				if ( Num % 16 < 10 )
-				{
-					Dest[Offset] = '0' + Num % 16;
-				}
-				else
-				{
-					Dest[Offset] = 'A' + (Num % 16) - 10;
-				}
-				Num /= 16; Offset--;
+				dest[offset] = '0' + num % 10; num /= 10; offset--;
 			}
 
-			return Result + 1;
+			return result + 1;
 		}
 
-		int ConvertUInt6416(uint64_t Num, char* Dest)
+		int ConvertUInt64(uint64_t num, char* dest)
 		{
-			uint64_t Copy = Num;
-			int Result = 0;
-
-			while ( Copy > 15 ) { Copy /= 16; Result++; }
-
-			int Offset = Result;
-			while ( Offset >= 0 )
+			int result = 0;
+			uint64_t copy = num;
+			int offset = 0;
+			while ( copy > 9 ) { copy /= 10; offset++; }
+			result += offset;
+			while ( offset >= 0 )
 			{
-				if ( Num % 16 < 10 )
-				{
-					Dest[Offset] = '0' + Num % 16;
-				}
-				else
-				{
-					Dest[Offset] = 'A' + (Num % 16) - 10;
-				}
-				Num /= 16; Offset--;
+				dest[offset] = '0' + num % 10; num /= 10; offset--;
 			}
 
-			return Result + 1;
+			return result + 1;
+		}
+
+		int ConvertUInt32Hex(uint32_t num, char* dest)
+		{
+			char chars[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+			                   'A', 'B', 'C', 'D', 'E', 'F' };
+			int result = 0;
+			uint32_t copy = num;
+			int offset = 0;
+			while ( copy > 15 ) { copy /= 16; offset++; }
+			result += offset;
+			while ( offset >= 0 )
+			{
+				dest[offset] = chars[num % 16]; num /= 16; offset--;
+			}
+
+			return result + 1;
+		}
+
+		int ConvertUInt64Hex(uint64_t num, char* dest)
+		{
+			char chars[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+			                   'A', 'B', 'C', 'D', 'E', 'F' };
+			int result = 0;
+			uint64_t copy = num;
+			int offset = 0;
+			while ( copy > 15 ) { copy /= 16; offset++; }
+			result += offset;
+			while ( offset >= 0 )
+			{
+				dest[offset] = chars[num % 16]; num /= 16; offset--;
+			}
+
+			return result + 1;
 		}
 	}
 
@@ -137,11 +185,14 @@ namespace Maxsi
 					continue;
 				}
 
+				if ( *format == '%' ) { continue; }
+
 				const nat UNSIGNED = 0;
-				const nat BIT64 = (1<<0);
-				const nat HEX = (1<<1);
-				const nat STRING = 4;
-				const nat CHARACTER = 5;
+				const nat INTEGER = (1<<0);
+				const nat BIT64 = (1<<1);
+				const nat HEX = (1<<2);
+				const nat STRING = 8;
+				const nat CHARACTER = 9;
 			#ifdef PLATFORM_X64
 				const nat WORDWIDTH = BIT64;
 			#else
@@ -168,8 +219,11 @@ namespace Maxsi
 							type = WORDWIDTH | HEX;
 							scanning = false;
 							break;
+						case 't':
+							type |= INTEGER;
 						case 'z':
 						case 'l':
+							if ( type & WORDWIDTH ) { type |= BIT64; }
 							type |= WORDWIDTH;
 							break;
 						case 'j':
@@ -177,6 +231,11 @@ namespace Maxsi
 							break;
 						case 'u':
 							type |= UNSIGNED;
+							scanning = false;
+							break;
+						case 'd':
+						case 'i':
+							type |= INTEGER;
 							scanning = false;
 							break;
 						case 'x':
@@ -198,11 +257,25 @@ namespace Maxsi
 
 				switch ( type )
 				{
+					case INTEGER:
+					{
+						if ( READY_SIZE - readylen < 10 ) { READY_FLUSH(); }
+						int32_t num = va_arg(parameters, int32_t);
+						readylen += String::ConvertInt32(num, ready + readylen);
+						break;
+					}
 					case UNSIGNED:
 					{
 						if ( READY_SIZE - readylen < 10 ) { READY_FLUSH(); }
 						uint32_t num = va_arg(parameters, uint32_t);
 						readylen += String::ConvertUInt32(num, ready + readylen);
+						break;
+					}
+					case INTEGER | BIT64:
+					{
+						if ( READY_SIZE - readylen < 10 ) { READY_FLUSH(); }
+						int64_t num = va_arg(parameters, int64_t);
+						readylen += String::ConvertInt64(num, ready + readylen);
 						break;
 					}
 					case UNSIGNED | BIT64:
@@ -212,18 +285,20 @@ namespace Maxsi
 						readylen += String::ConvertUInt64(num, ready + readylen);
 						break;
 					}
+					case INTEGER | HEX:
 					case UNSIGNED | HEX:
 					{
 						if ( READY_SIZE - readylen < 8 ) { READY_FLUSH(); }
 						uint32_t num = va_arg(parameters, uint32_t);
-						readylen += String::ConvertUInt3216(num, ready + readylen);
+						readylen += String::ConvertUInt32Hex(num, ready + readylen);
 						break;
 					}
+					case INTEGER | BIT64 | HEX:
 					case UNSIGNED | BIT64 | HEX:
 					{
 						if ( READY_SIZE - readylen < 16 ) { READY_FLUSH(); }
 						uint64_t num = va_arg(parameters, uint64_t);
-						readylen += String::ConvertUInt6416(num, ready + readylen);
+						readylen += String::ConvertUInt64Hex(num, ready + readylen);
 						break;
 					}
 					case STRING:

@@ -83,5 +83,69 @@ extern "C" uint64_t __umoddi3(uint64_t a, uint64_t b)
 	return remainder;
 }
 
+extern "C" int64_t __divdi3(int64_t a, int64_t b)
+{
+	if ( a >= 0 && b >= 0 )
+	{
+		uint64_t numer = a;
+		uint64_t denom = b;
+		uint64_t result = __udivdi3(numer, denom);
+		return +((int64_t) result);
+	}
+	else if ( a < 0 && b >= 0 )
+	{
+		uint64_t numer = -a;
+		uint64_t denom = b;
+		uint64_t result = __udivdi3(numer, denom);
+		return -((int64_t) result);
+	}
+	else if ( a >= 0 && b < 0 )
+	{
+		uint64_t numer = a;
+		uint64_t denom = -b;
+		uint64_t result = __udivdi3(numer, denom);
+		return -((int64_t) result);
+	}
+	else // if ( a < 0 && b < 0 )
+	{
+		uint64_t numer = -a;
+		uint64_t denom = -b;
+		uint64_t result = __udivdi3(numer, denom);
+		return +((int64_t) result);
+	}
+}
+
+extern "C" int64_t __moddi3(int64_t a, int64_t b)
+{
+	if ( a >= 0 && b >= 0 )
+	{
+		uint64_t numer = a;
+		uint64_t denom = b;
+		uint64_t result = __umoddi3(numer, denom);
+		return +((int64_t) result);
+	}
+	else if ( a < 0 && b >= 0 )
+	{
+		uint64_t numer = -a;
+		uint64_t denom = b;
+		uint64_t result = __umoddi3(numer, denom);
+		return -((int64_t) result);
+	}
+	else if ( a >= 0 && b < 0 )
+	{
+		uint64_t numer = a;
+		uint64_t denom = -b;
+		uint64_t result = __umoddi3(numer, denom);
+		return +((int64_t) result);
+	}
+	else // if ( a < 0 && b < 0 )
+	{
+		uint64_t numer = -a;
+		uint64_t denom = -b;
+		uint64_t result = __umoddi3(numer, denom);
+		return -((int64_t) result);
+	}
+}
+
 #endif
 
