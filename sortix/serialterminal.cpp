@@ -48,6 +48,7 @@ namespace Sortix
 
 		bool isEsc;
 		bool isEscDepress;
+		int sigpending;
 
 		void Init()
 		{
@@ -55,6 +56,7 @@ namespace Sortix
 			Reset();
 
 			isEsc = isEscDepress = false;
+			sigpending = -1;
 		}
 
 		void OnTick()
@@ -80,10 +82,35 @@ namespace Sortix
 				if ( isEsc ) { isEsc = false; isEscDepress = false; continue; }
 				if ( c == '\e' ) { c = ESC; }
 				if ( c == ('\e' | (1<<7)) ) { c = ESC | DEPRESSED; }
-				if ( c == 'c' - 'a'+1 ) { Scheduler::SigIntHack(); continue; }
-				if ( c == 'o' - 'a'+1 ) { Keyboard::QueueKeystroke(CTRL); Keyboard::QueueKeystroke('O');  Keyboard::QueueKeystroke(CTRL | DEPRESSED); continue; }
-				if ( c == 'r' - 'a'+1 ) { Keyboard::QueueKeystroke(CTRL); Keyboard::QueueKeystroke('R');  Keyboard::QueueKeystroke(CTRL | DEPRESSED); continue; }
-				if ( c == 'x' - 'a'+1 ) { Keyboard::QueueKeystroke(CTRL); Keyboard::QueueKeystroke('X');  Keyboard::QueueKeystroke(CTRL | DEPRESSED); continue; }
+				if ( c == 145 ) // Control Depressed
+				{
+					if ( sigpending < 0 ) { continue; }
+					if ( sigpending == 'C' - 'A' + 1 )
+					{
+						Scheduler::SigIntHack();
+						continue;
+					}
+
+					Keyboard::QueueKeystroke(CTRL);
+					Keyboard::QueueKeystroke('A' + sigpending - 1); 
+					Keyboard::QueueKeystroke(CTRL | DEPRESSED);
+					sigpending = -1;
+					continue;					
+				}
+				if ( c < 32 ) { sigpending = c; } else { sigpending = -1; }
+				switch ( c )
+				{
+					default:
+						// Ignore most unprintable characters.
+						if ( c < 32 ) { continue; }
+					case '\b':
+					case '\t':
+					case '\r':
+					case '\n':
+					case '\e':
+					case '\f':
+						break;
+				}
 				if ( c == 127 ) { c = '\b'; }
 				if ( c & (1<<7) )
 				{
