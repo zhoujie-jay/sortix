@@ -38,6 +38,12 @@ namespace Sortix
 	{
 		byte* initrd;
 		size_t initrdsize;
+#ifdef JSSORTIX
+		// JSVM never tells JSSortix how big the initrd is!
+		const bool CHECK_CHECKSUM = false;
+#else
+		const bool CHECK_CHECKSUM = true;
+#endif
 
 		size_t GetNumFiles()
 		{
@@ -63,6 +69,19 @@ namespace Sortix
 			return checksum;
 		}
 
+		void CheckSum()
+		{
+			Trailer* trailer = (Trailer*) (initrd + initrdsize - sizeof(Trailer));
+			uint8_t checksum = ContinueChecksum(0, initrd, initrdsize - sizeof(Trailer));
+			if ( trailer->sum != checksum )
+			{
+				PanicF("InitRD Checksum failed: the ramdisk may have been "
+				       "corrupted by the bootloader: Got %u instead of %u "
+				       "when checking the ramdisk at 0x%p + 0x%zx bytes\n",
+				       checksum, trailer->sum, initrd, initrdsize);
+			}
+		}
+
 		void Init(byte* theinitrd, size_t size)
 		{
 			initrd = theinitrd;
@@ -74,15 +93,7 @@ namespace Sortix
 			if ( size < sizeneeded ) { PanicF("initrd.cpp: initrd is too small"); }
 			// TODO: We need to do more validation here!
 
-			Trailer* trailer = (Trailer*) (initrd + initrdsize - sizeof(Trailer));
-			uint8_t checksum = ContinueChecksum(0, initrd, initrdsize - sizeof(Trailer));
-			if ( trailer->sum != checksum )
-			{
-				PanicF("InitRD Checksum failed: the ramdisk may have been "
-				       "corrupted by the bootloader: Got %u instead of %u "
-				       "when checking the ramdisk at 0x%p + 0x%zx bytes\n",
-				       checksum, trailer->sum, initrd, initrdsize);
-			}
+			if ( CHECK_CHECKSUM ) { CheckSum(); }
 		}
 
 		byte* Open(const char* filepath, size_t* size)
