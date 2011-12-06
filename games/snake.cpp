@@ -44,6 +44,8 @@ const int speedincrease = -5;
 const int maxspeed = 40;
 volatile int speed;
 
+bool tabhack = false;
+
 void Clear()
 {
 	// Reset the game data.
@@ -89,6 +91,8 @@ int Init()
 	return 0;
 }
 
+bool tabhacking = false;
+
 void Update()
 {
 	int newvelx = velx;
@@ -99,6 +103,8 @@ void Update()
 	uint32_t codepoint;
 	while ( (codepoint = System::Keyboard::ReceiveKeystroke(method) ) != 0 )
 	{
+		if ( tabhack && codepoint == '\t' ) { tabhacking = true; }
+		if ( tabhack && codepoint == ('\t' | DEPRESSED ) ) { tabhacking = false; }
 		bool keyup = codepoint & DEPRESSED;
 		if ( keyup ) { continue; }
 		codepoint &= ~DEPRESSED;
@@ -108,6 +114,14 @@ void Update()
 		if ( codepoint == 'a' || codepoint == 'A' ) { newvelx = -1; newvely = 0; }
 		if ( codepoint == 's' || codepoint == 'S' ) { newvelx = 0; newvely = 1; }
 		if ( codepoint == 'd' || codepoint == 'D' ) { newvelx = 1; newvely = 0; }
+	}
+
+	if ( tabhack && tabhacking )
+	{
+		if ( animalx == posx && posy < animaly ) { newvelx = 0; newvely = 1; }
+		if ( animalx == posx && posy > animaly ) { newvelx = 0; newvely = -1; }
+		if ( animaly == posy && posx < animalx ) { newvelx = 1; newvely = 0; }
+		if ( animaly == posy && posx > animalx ) { newvelx = -1; newvely = 0; }
 	}
 
 	// Make sure we don't do a 180.
@@ -171,6 +185,11 @@ void Update()
 
 int main(int argc, char* argv[])
 {
+	for ( int i = 1; i < argc; i++ )
+	{
+		if ( strcmp("--tabhack", argv[i]) == 0 ) { tabhack = true; }
+	}
+
 	int result = Init();
 	if ( result != 0 ) { return result; }
 
