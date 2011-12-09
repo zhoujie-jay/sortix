@@ -31,6 +31,8 @@
 #ifndef LIBMAXSI_SYSCALL_H
 #define LIBMAXSI_SYSCALL_H
 
+#include <sortix/syscallnum.h>
+
 namespace Maxsi
 {
 	#define DECL_SYSCALL0(type,fn) type fn();

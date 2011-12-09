@@ -31,7 +31,7 @@ namespace System
 {
 	namespace Sound
 	{
-		DEFN_SYSCALL1_VOID(SysSetFrequency, 9, unsigned);
+		DEFN_SYSCALL1_VOID(SysSetFrequency, SYSCALL_SET_FREQUENCY, unsigned);
 
 		void SetFrequency(unsigned frequency)
 		{

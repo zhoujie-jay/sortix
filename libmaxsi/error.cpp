@@ -36,7 +36,7 @@ namespace Maxsi
 		extern "C" { int errno = 0; }
 
 #ifndef SORTIX_KERNEL
-		DEFN_SYSCALL1(int, SysRegisterErrno, 28, int*);
+		DEFN_SYSCALL1(int, SysRegisterErrno, SYSCALL_REGISTER_ERRNO, int*);
 
 		extern "C" void init_error_functions()
 		{

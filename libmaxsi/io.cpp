@@ -36,18 +36,18 @@
 
 namespace Maxsi
 {
-	DEFN_SYSCALL1(size_t, SysPrint, 4, const char*);
-	DEFN_SYSCALL3(ssize_t, SysRead, 18, int, void*, size_t);
-	DEFN_SYSCALL3(ssize_t, SysWrite, 19, int, const void*, size_t);
-	DEFN_SYSCALL1(int, SysPipe, 20, int*);
-	DEFN_SYSCALL1(int, SysClose, 21, int);
-	DEFN_SYSCALL1(int, SysDup, 22, int);
-	DEFN_SYSCALL3(int, SysOpen, 23, const char*, int, mode_t);
-	DEFN_SYSCALL3(int, SysReadDirEnts, 24, int, struct sortix_dirent*, size_t);
-	DEFN_SYSCALL1(int, SysChDir, 25, const char*);
-	DEFN_SYSCALL2(char*, SysGetCWD, 26, char*, size_t);
-	DEFN_SYSCALL1(int, SysUnlink, 27, const char*);
-	DEFN_SYSCALL1(int, SysIsATTY, 33, int);
+	DEFN_SYSCALL1(size_t, SysPrint, SYSCALL_PRINT_STRING, const char*);
+	DEFN_SYSCALL3(ssize_t, SysRead, SYSCALL_READ, int, void*, size_t);
+	DEFN_SYSCALL3(ssize_t, SysWrite, SYSCALL_WRITE, int, const void*, size_t);
+	DEFN_SYSCALL1(int, SysPipe, SYSCALL_PIPE, int*);
+	DEFN_SYSCALL1(int, SysClose, SYSCALL_CLOSE, int);
+	DEFN_SYSCALL1(int, SysDup, SYSCALL_DUP, int);
+	DEFN_SYSCALL3(int, SysOpen, SYSCALL_OPEN, const char*, int, mode_t);
+	DEFN_SYSCALL3(int, SysReadDirEnts, SYSCALL_READDIRENTS, int, struct sortix_dirent*, size_t);
+	DEFN_SYSCALL1(int, SysChDir, SYSCALL_CHDIR, const char*);
+	DEFN_SYSCALL2(char*, SysGetCWD, SYSCALL_GETCWD, char*, size_t);
+	DEFN_SYSCALL1(int, SysUnlink, SYSCALL_UNLINK, const char*);
+	DEFN_SYSCALL1(int, SysIsATTY, SYSCALL_ISATTY, int);
 
 	size_t Print(const char* string)
 	{

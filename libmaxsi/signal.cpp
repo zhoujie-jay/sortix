@@ -93,9 +93,9 @@ namespace Maxsi
 			}
 		}
 
-		DEFN_SYSCALL1_VOID(SysRegisterSignalHandler, 29, sighandler_t);
-		DEFN_SYSCALL0_VOID(SysSigReturn, 30);
-		DEFN_SYSCALL2(int, SysKill, 31, pid_t, int);
+		DEFN_SYSCALL1_VOID(SysRegisterSignalHandler, SYSCALL_REGISTER_SIGNAL_HANDLER, sighandler_t);
+		DEFN_SYSCALL0_VOID(SysSigReturn, SYSCALL_SIGRETURN);
+		DEFN_SYSCALL2(int, SysKill, SYSCALL_KILL, pid_t, int);
 
 		void Init()
 		{

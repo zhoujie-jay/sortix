@@ -39,9 +39,9 @@ namespace Maxsi
 	{
 		typedef void (*SysEntry)(size_t, Entry, void*);
 		DEFN_SYSCALL4(size_t, SysCreate, 0, SysEntry, Entry, const void*, size_t);
-		DEFN_SYSCALL1_VOID(SysExit, 1, const void*);
-		DEFN_SYSCALL1_VOID(SysSleep, 2, long);
-		DEFN_SYSCALL1_VOID(SysUSleep, 3, long);
+		DEFN_SYSCALL1_VOID(SysExit, SYSCALL_EXIT, const void*);
+		DEFN_SYSCALL1_VOID(SysSleep, SYSCALL_SLEEP, long);
+		DEFN_SYSCALL1_VOID(SysUSleep, SYSCALL_USLEEP, long);
 
 		void Exit(const void* Result)
 		{

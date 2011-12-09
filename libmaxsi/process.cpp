@@ -30,12 +30,12 @@ namespace Maxsi
 {
 	namespace Process
 	{
-		DEFN_SYSCALL1_VOID(SysExit, 1, int);
-		DEFN_SYSCALL4(int, SysExecVE, 10, const char*, int, char* const*, char* const*);
-		DEFN_SYSCALL0(pid_t, SysFork, 12);
-		DEFN_SYSCALL0(pid_t, SysGetPID, 13);
-		DEFN_SYSCALL0(pid_t, SysGetParentPID, 14);
-		DEFN_SYSCALL3(pid_t, SysWait, 17, pid_t, int*, int);
+		DEFN_SYSCALL1_VOID(SysExit, SYSCALL_EXIT, int);
+		DEFN_SYSCALL4(int, SysExecVE, SYSCALL_EXEC, const char*, int, char* const*, char* const*);
+		DEFN_SYSCALL0(pid_t, SysFork, SYSCALL_FORK);
+		DEFN_SYSCALL0(pid_t, SysGetPID, SYSCALL_GETPID);
+		DEFN_SYSCALL0(pid_t, SysGetParentPID, SYSCALL_GETPPID);
+		DEFN_SYSCALL3(pid_t, SysWait, SYSCALL_WAIT, pid_t, int*, int);
 
 		int Execute(const char* filepath, int argc, const char** argv)
 		{

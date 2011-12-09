@@ -31,7 +31,7 @@ namespace Maxsi
 {
 	namespace Time
 	{
-		DEFN_SYSCALL1(int, SysUptime, 34, uintmax_t*);
+		DEFN_SYSCALL1(int, SysUptime, SYSCALL_UPTIME, uintmax_t*);
 
 		extern "C" int uptime(uintmax_t* usecssinceboot)
 		{
