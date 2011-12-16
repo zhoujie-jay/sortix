@@ -23,12 +23,15 @@
 ******************************************************************************/
 
 #include "platform.h"
+#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "multiboot.h"
 #include "panic.h"
 #include "../memorymanagement.h"
 #include "memorymanagement.h"
 #include "syscall.h"
+
+using namespace Maxsi;
 
 namespace Sortix
 {
@@ -218,8 +221,7 @@ namespace Sortix
 
 		addr_t Get()
 		{
-			// TODO: Set out of memory errno here!
-			if ( unlikely(stackused == 0) ) { return 0; }
+			if ( unlikely(stackused == 0) ) { Error::Set(ENOMEM); return 0; }
 
 			pagesallocated++;
 

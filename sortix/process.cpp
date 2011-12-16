@@ -691,6 +691,47 @@ namespace Sortix
 		return 0;
 	}
 
+	void* SysSbrk(intptr_t increment)
+	{
+		Process* process = CurrentProcess();
+		ProcessSegment* dataseg = NULL;
+		for ( ProcessSegment* iter = process->segments; iter; iter = iter->next )
+		{
+			if ( !iter->type == SEG_DATA ) { continue; }
+			if ( dataseg && iter->position < dataseg->position ) { continue; }
+			dataseg = iter;
+		}
+		if ( !dataseg ) { Error::Set(ENOMEM); return (void*) -1UL; }
+		addr_t currentend = dataseg->position + dataseg->size;
+		addr_t newend = currentend + increment;
+		if ( newend < dataseg->position ) { Error::Set(EINVAL); return (void*) -1UL; }
+		if ( newend < currentend )
+		{
+			addr_t unmapfrom = Page::AlignUp(newend);
+			if ( unmapfrom < currentend )
+			{
+				size_t unmapbytes = Page::AlignUp(currentend - unmapfrom);
+				Memory::UnmapRangeUser(unmapfrom, unmapbytes);
+			}
+		}
+		else if ( currentend < newend )
+		{
+			// TODO: HACK: Make a safer way of expanding the data segment
+			// without segments possibly colliding!
+			addr_t mapfrom = Page::AlignUp(currentend);
+			if ( mapfrom < newend )
+			{
+				size_t mapbytes = Page::AlignUp(newend - mapfrom);
+				if ( !Memory::MapRangeUser(mapfrom, mapbytes) )
+				{
+					return (void*) -1UL;
+				}
+			}
+		}
+		dataseg->size += increment;
+		return (void*) newend;
+	}
+
 	void Process::Init()
 	{
 		Syscall::Register(SYSCALL_EXEC, (void*) SysExecVE);
@@ -700,6 +741,7 @@ namespace Sortix
 		Syscall::Register(SYSCALL_EXIT, (void*) SysExit);
 		Syscall::Register(SYSCALL_WAIT, (void*) SysWait);
 		Syscall::Register(SYSCALL_REGISTER_ERRNO, (void*) SysRegisterErrno);
+		Syscall::Register(SYSCALL_SBRK, (void*) SysSbrk);
 
 		nextpidtoallocate = 0;
 

@@ -27,6 +27,7 @@
 #include "signal.h"
 #include "string.h"
 #include "io.h"
+#include "memory.h"
 
 namespace Maxsi
 {
@@ -47,5 +48,8 @@ namespace Maxsi
 
 		// It's probably best to initialize the Unix signals early on.
 		Signal::Init();
+
+		// Initialize the dynamic heap.
+		Memory::Init();
 	}
 }

@@ -83,6 +83,7 @@ namespace Sortix
 				if ( segment == NULL ) { return 0; }
 				segment->position = mapto;
 				segment->size = Page::AlignUp(mapbytes);
+				segment->type = SEG_DATA; // TODO: BUG
 
 				if ( segment->Intersects(process->segments) )
 				{
@@ -162,6 +163,7 @@ namespace Sortix
 				if ( segment == NULL ) { return 0; }
 				segment->position = mapto;
 				segment->size = Page::AlignUp(mapbytes);
+				segment->type = SEG_DATA; // TODO: BUG
 
 				if ( segment->Intersects(process->segments) )
 				{

@@ -34,6 +34,10 @@ namespace Sortix
 	struct ProcessSegment;
 
 	const size_t DEFAULT_STACK_SIZE = 64*1024;
+	const int SEG_TEXT = 0;
+	const int SEG_DATA = 1;
+	const int SEG_STACK = 2;
+	const int SEG_OTHER = 3;
 
 	struct ProcessSegment
 	{
@@ -45,6 +49,7 @@ namespace Sortix
 		ProcessSegment* next;
 		addr_t position;
 		size_t size;
+		int type;
 
 	public:
 		bool Intersects(ProcessSegment* segments);

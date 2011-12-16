@@ -30,6 +30,10 @@
 #define HEAP_GROWS_DOWNWARDS
 #endif
 
+#ifndef SORTIX_KERNEL
+#include <unistd.h>
+#endif
+
 #define PARANOIA 1
 
 #ifdef SORTIX_KERNEL
@@ -59,23 +63,19 @@ namespace Maxsi
 		const size_t PAGESIZE = 4UL * 1024UL; // 4 KiB
 		const size_t NUMBINS = 8UL * sizeof(size_t);
 
+		extern addr_t wilderness;
+
+#ifdef SORTIX_KERNEL
 		addr_t GetHeapStart()
 		{
-			#ifdef SORTIX_KERNEL
-				return Sortix::Memory::HEAPUPPER;
-			#endif
-			return 0; // TODO: Not implemented in User-Space yet!
+			return Sortix::Memory::HEAPUPPER;
 		}
 
 		size_t GetHeapMaxSize()
 		{
-			#ifdef SORTIX_KERNEL
-				return Sortix::Memory::HEAPUPPER - Sortix::Memory::HEAPLOWER;
-			#endif
-			return 0; // TODO: Not implemented in User-Space yet!
+			return Sortix::Memory::HEAPUPPER - Sortix::Memory::HEAPLOWER;
 		}
 
-#ifdef SORTIX_KERNEL
 		void FreeMemory(addr_t where, size_t bytes)
 		{
 			ASSERT( (bytes & (PAGESIZE-1UL)) == 0 );
@@ -118,15 +118,40 @@ namespace Maxsi
 
 			return true;
 		}
-#else
-		void FreeMemory(addr_t where, size_t bytes)
+
+		bool ExtendHeap(size_t bytesneeded)
 		{
+			#ifdef HEAP_GROWS_DOWNWARDS
+			addr_t newwilderness = wilderness - bytesneeded;
+			#else
+			addr_t newwilderness = wilderness + bytesneeded;
+			#endif
+
+			return AllocateMemory(newwilderness, bytesneeded);
+		}
+#else
+		addr_t GetHeapStart()
+		{
+			addr_t base = (addr_t) sbrk(0);
+			addr_t unaligned = base % ALIGNMENT;
+			if ( unaligned )
+			{
+				sbrk(ALIGNMENT-unaligned);
+			}
+			addr_t result = (addr_t) sbrk(0);
+			return result;
 		}
 
-		bool AllocateMemory(addr_t where, size_t bytes)
+		size_t GetHeapMaxSize()
 		{
-			Error::Set(ENOMEM);
-			return false;
+			// TODO: A bit of a hack!
+			return SIZE_MAX;
+		}
+
+		bool ExtendHeap(size_t bytesneeded)
+		{
+			void* newheapend = sbrk(bytesneeded);
+			return newheapend != (void*) -1UL;
 		}
 #endif
 
@@ -395,7 +420,7 @@ namespace Maxsi
 			#endif
 
 			// Attempt to map pages so our wilderness grows.
-			if ( !AllocateMemory(newwilderness, bytesneeded) ) { return false; }
+			if ( !ExtendHeap(bytesneeded) ) { return false; }
 
 			wildernesssize += bytesneeded;
 			wilderness = newwilderness;
@@ -520,7 +545,7 @@ namespace Maxsi
 			#ifdef HEAP_GROWS_DOWNWARDS
 			return heapstart <= (addr_t) chunk + chunk->size;
 			#else
-			return (addr_t) chunk + chunk->size <= heapstart + heapsize;
+			return heapstart + heapsize <= (addr_t) chunk + chunk->size;
 			#endif
 		}
 
@@ -619,3 +644,9 @@ namespace Maxsi
 		}
 	}
 }
+
+void* operator new(size_t Size)     { return Maxsi::Memory::Allocate(Size); }
+void* operator new[](size_t Size)   { return Maxsi::Memory::Allocate(Size); }
+void  operator delete  (void* Addr) { return Maxsi::Memory::Free(Addr); };
+void  operator delete[](void* Addr) { return Maxsi::Memory::Free(Addr); };
+

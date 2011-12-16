@@ -35,10 +35,16 @@ namespace Maxsi
 	{
 #ifndef SORTIX_KERNEL
 		DEFN_SYSCALL2(int, SysMemStat, SYSCALL_MEMSTAT, size_t*, size_t*);
+		DEFN_SYSCALL1(void*, SysSbrk, SYSCALL_SBRK, intptr_t);
 
 		extern "C" int memstat(size_t* memused, size_t* memtotal)
 		{
 			return SysMemStat(memused, memtotal);
+		}
+
+		extern "C" void* sbrk(intptr_t increment)
+		{
+			return SysSbrk(increment);
 		}
 #endif
 

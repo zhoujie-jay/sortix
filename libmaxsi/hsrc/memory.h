@@ -39,15 +39,11 @@ namespace Maxsi
 	}
 }
 
+// Placement new.
 inline void* operator new(size_t, void* p)     { return p; }
 inline void* operator new[](size_t, void* p)   { return p; }
 inline void  operator delete  (void*, void*) { };
 inline void  operator delete[](void*, void*) { };
-
-inline void* operator new(size_t Size)     { return Maxsi::Memory::Allocate(Size); }
-inline void* operator new[](size_t Size)   { return Maxsi::Memory::Allocate(Size); }
-inline void  operator delete  (void* Addr) { return Maxsi::Memory::Free(Addr); };
-inline void  operator delete[](void* Addr) { return Maxsi::Memory::Free(Addr); };
 
 #endif
 

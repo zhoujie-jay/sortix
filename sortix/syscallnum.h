@@ -60,7 +60,8 @@
 #define SYSCALL_MEMSTAT 32
 #define SYSCALL_ISATTY 33
 #define SYSCALL_UPTIME 34
-#define SYSCALL_MAX_NUM 35 /* index of highest constant + 1 */
+#define SYSCALL_SBRK 35
+#define SYSCALL_MAX_NUM 36 /* index of highest constant + 1 */
 
 #endif
 
