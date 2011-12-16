@@ -66,7 +66,7 @@ namespace Maxsi
 			if ( !base && str[0] == '0' )
 			{
 				if ( str[1] == 'x' || str[1] == 'X' ) { str += 2; base = 16; }
-				else { str++; base = 8; }
+				else if ( 0 <= Debase(str[1]) && Debase(str[1]) < 8 ) { str++; base = 8; }
 			}
 			if ( !base ) { base = 10; }
 			if ( origbase == 16 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X') ) { str += 2; }
