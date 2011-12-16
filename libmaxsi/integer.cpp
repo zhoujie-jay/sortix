@@ -47,8 +47,8 @@ namespace Maxsi
 		static int Debase(char c)
 		{
 			if ( '0' <= c && c <= '9' ) { return c - '0'; }
-			if ( 'a' <= c && c <= 'z' ) { return c - 'a'; }
-			if ( 'A' <= c && c <= 'Z' ) { return c - 'A'; }
+			if ( 'a' <= c && c <= 'z' ) { return 10 + c - 'a'; }
+			if ( 'A' <= c && c <= 'Z' ) { return 10 + c - 'A'; }
 			return -1;
 		}
 
@@ -71,13 +71,13 @@ namespace Maxsi
 			if ( origbase == 16 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X') ) { str += 2; }
 			while ( (c = *str ) )
 			{
-				str++;
 				int val = Debase(c);
 				if ( val < 0 ) { break; }
 				if ( base <= val ) { break; }
 				if ( !UNSIGNED && negative ) { val = -val; }
 				// TODO: Detect overflow!
 				result = result * (INT) base + (INT) val;
+				str++;
 			}
 			if ( endptr ) { *endptr = (char*) str; }
 			return result;
