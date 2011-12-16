@@ -54,6 +54,7 @@ namespace Maxsi
 
 		template <class INT, bool UNSIGNED> INT ParseInteger(const char* str, char** endptr, int base)
 		{
+			const char* origstr = str;
 			int origbase = base;
 			while ( IsSpace(*str) ) { str++; }
 			if ( base < 0 || 36 < base ) { if ( endptr ) { *endptr = (char*) str; } return 0; }
@@ -69,6 +70,7 @@ namespace Maxsi
 			}
 			if ( !base ) { base = 10; }
 			if ( origbase == 16 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X') ) { str += 2; }
+			size_t numconvertedchars = 0;
 			while ( (c = *str ) )
 			{
 				int val = Debase(c);
@@ -78,7 +80,9 @@ namespace Maxsi
 				// TODO: Detect overflow!
 				result = result * (INT) base + (INT) val;
 				str++;
+				numconvertedchars++;
 			}
+			if ( !numconvertedchars ) { str = origstr; result = 0; }
 			if ( endptr ) { *endptr = (char*) str; }
 			return result;
 		}
