@@ -36,6 +36,25 @@ namespace Sortix
 {
 	namespace ELF
 	{
+		int ToProgramSectionType(int flags)
+		{
+			switch ( flags & (PF_X | PF_R | PF_W) )
+			{
+				case 0:
+					return SEG_NONE;
+				case PF_X:
+				case PF_X | PF_R:
+				case PF_X | PF_W:
+				case PF_X | PF_R | PF_W:
+					return SEG_TEXT;
+				case PF_R:
+				case PF_W:
+				case PF_R | PF_W:
+				default:
+					return SEG_DATA;
+			}
+		}
+
 		addr_t Construct32(Process* process, const void* file, size_t filelen)
 		{
 			if ( filelen < sizeof(Header32) ) { return 0; }
@@ -83,7 +102,7 @@ namespace Sortix
 				if ( segment == NULL ) { return 0; }
 				segment->position = mapto;
 				segment->size = Page::AlignUp(mapbytes);
-				segment->type = SEG_DATA; // TODO: BUG
+				segment->type = ToProgramSectionType(pht->flags);
 
 				if ( segment->Intersects(process->segments) )
 				{
@@ -163,7 +182,7 @@ namespace Sortix
 				if ( segment == NULL ) { return 0; }
 				segment->position = mapto;
 				segment->size = Page::AlignUp(mapbytes);
-				segment->type = SEG_DATA; // TODO: BUG
+				segment->type = ToProgramSectionType(pht->flags);
 
 				if ( segment->Intersects(process->segments) )
 				{

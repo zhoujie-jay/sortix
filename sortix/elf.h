@@ -162,6 +162,10 @@ namespace Sortix
 		const uint32_t PT_LOPROC = 0x70000000;
 		const uint32_t PT_HIPROC = 0x7FFFFFFF;
 
+		const uint32_t PF_X = (1<<0);
+		const uint32_t PF_W = (1<<1);
+		const uint32_t PF_R = (1<<2);
+
 		// Reads the elf file into the current address space and returns the
 		// entry address of the program, or 0 upon failure.
 		addr_t Construct(Process* process, const void* file, size_t filelen);

@@ -34,10 +34,11 @@ namespace Sortix
 	struct ProcessSegment;
 
 	const size_t DEFAULT_STACK_SIZE = 64*1024;
-	const int SEG_TEXT = 0;
-	const int SEG_DATA = 1;
-	const int SEG_STACK = 2;
-	const int SEG_OTHER = 3;
+	const int SEG_NONE = 0;
+	const int SEG_TEXT = 1;
+	const int SEG_DATA = 2;
+	const int SEG_STACK = 3;
+	const int SEG_OTHER = 4;
 
 	struct ProcessSegment
 	{
