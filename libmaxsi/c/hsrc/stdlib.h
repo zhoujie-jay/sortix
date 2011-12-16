@@ -51,6 +51,10 @@ void _Exit(int status);
 void free(void*);
 void* malloc(size_t);
 int rand(void);
+long strtol(const char* restrict, char** restrict, int);
+unsigned long strtoul(const char* restrict, char** restrict, int);
+unsigned long long strtoull(const char* restrict, char** restrict, int);
+long long strtoll(const char* restrict, char** restrict, int);
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #ifndef SORTIX_UNIMPLEMENTED
@@ -103,11 +107,7 @@ void srand48(long);
 void srandom(unsigned);
 double strtod(const char* restrict, char** restrict);
 float strtof(const char* restrict, char** restrict);
-long strtol(const char* restrict, char** restrict, int);
 long double strtold(const char* restrict, char** restrict);
-long long strtoll(const char* restrict, char** restrict, int);
-unsigned long strtoul(const char* restrict, char** restrict, int);
-unsigned long long strtoull(const char* restrict, char** restrict, int);
 int system(const char*);
 int unlockpt(int);
 int unsetenv(const char*);

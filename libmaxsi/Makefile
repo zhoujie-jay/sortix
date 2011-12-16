@@ -62,6 +62,7 @@ $(CPU)/signal.o \
 start.o \
 time.o \
 random.o \
+integer.o
 
 MAXSIHEADERS=\
 error.h \
