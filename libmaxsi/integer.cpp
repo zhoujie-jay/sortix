@@ -69,8 +69,9 @@ namespace Maxsi
 			}
 			if ( !base ) { base = 10; }
 			if ( origbase == 16 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X') ) { str += 2; }
-			while ( (c = *str++ ) )
+			while ( (c = *str ) )
 			{
+				str++;
 				int val = Debase(c);
 				if ( val < 0 ) { break; }
 				if ( base <= val ) { break; }
