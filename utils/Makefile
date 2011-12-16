@@ -5,6 +5,7 @@ include ../crosscompilemakefile.mak
 INITRDDIR:=../initrd
 LOCALBINARIES:=\
 init \
+calc \
 cat \
 cp \
 echo \
