@@ -143,5 +143,47 @@ namespace Sortix
 			PML* const BOOTPML4 = (PML* const) 0x01000UL;
 			SwitchAddressSpace((addr_t) BOOTPML4);
 		}
+
+		const size_t KERNEL_STACK_SIZE = 256UL * 1024UL;
+		const addr_t KERNEL_STACK_END = 0xFFFF800000001000UL;
+		const addr_t KERNEL_STACK_START = KERNEL_STACK_END + KERNEL_STACK_SIZE;
+		addr_t INITRD = KERNEL_STACK_START;
+		size_t initrdsize = 0;
+		const addr_t HEAPUPPER = 0xFFFFFE8000000000UL;
+
+		addr_t GetInitRD()
+		{
+			return INITRD;
+		}
+
+		size_t GetInitRDSize()
+		{
+			return initrdsize;
+		}
+
+		void RegisterInitRDSize(size_t size)
+		{
+			initrdsize = size;
+		}
+
+		addr_t GetHeapLower()
+		{
+			return Page::AlignUp(INITRD + initrdsize);
+		}
+
+		addr_t GetHeapUpper()
+		{
+			return HEAPUPPER;
+		}
+
+		addr_t GetKernelStack()
+		{
+			return KERNEL_STACK_START;
+		}
+
+		size_t GetKernelStackSize()
+		{
+			return KERNEL_STACK_SIZE;
+		}
 	}
 }

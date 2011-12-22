@@ -27,6 +27,7 @@
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include "syscall.h"
+#include "memorymanagement.h"
 
 #include "log.h" // DEBUG
 
@@ -82,9 +83,23 @@ namespace Sortix
 			}
 		}
 
-		void Init(byte* theinitrd, size_t size)
+		void Init(addr_t phys, size_t size)
 		{
-			initrd = theinitrd;
+			// First up, map the initrd onto the kernel's address space.
+			addr_t virt = Memory::GetInitRD();
+			size_t amount = 0;
+			while ( amount < size )
+			{
+				if ( !Memory::MapKernel(phys + amount, virt + amount) )
+				{
+					Panic("Unable to map the init ramdisk into virtual memory");
+				}
+				amount += 0x1000UL;
+			}
+
+			Memory::Flush();
+
+			initrd = (byte*) virt;
 			initrdsize = size;
 			if ( size < sizeof(Header) ) { PanicF("initrd.cpp: initrd is too small"); }
 			Header* header = (Header*) initrd;

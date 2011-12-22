@@ -59,14 +59,13 @@ namespace Sortix
 		addr_t UnmapKernel(addr_t mapto);
 		addr_t UnmapUser(addr_t mapto);
 		void Statistics(size_t* amountused, size_t* totalmem);
-
-#if defined(PLATFORM_X86)
-		const addr_t HEAPLOWER = 0x80000000UL;
-		const addr_t HEAPUPPER = 0xFF400000UL;
-#elif defined(PLATFORM_X64)
-		const addr_t HEAPLOWER = 0xFFFF800000000000UL;
-		const addr_t HEAPUPPER = 0xFFFFFE8000000000UL;
-#endif
+		addr_t GetKernelStack();
+		size_t GetKernelStackSize();
+		addr_t GetInitRD();
+		size_t GetInitRDSize();
+		void RegisterInitRDSize(size_t size);
+		addr_t GetHeapLower();
+		addr_t GetHeapUpper();
 	}
 }
 

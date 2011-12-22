@@ -31,6 +31,7 @@
 #include "memorymanagement.h"
 #include "syscall.h"
 #include "sound.h" // HACK FOR SIGINT
+#include "descriptor_tables.h"
 
 namespace Sortix
 {
@@ -39,7 +40,6 @@ namespace Sortix
 	// Internal forward-declarations.
 	namespace Scheduler
 	{
-		void InitCPU();
 		Thread* PopNextThread();
 		void WakeSleeping();
 		void LogBeginContextSwitch(Thread* current, const CPU::InterruptRegisters* state);
@@ -76,7 +76,16 @@ namespace Sortix
 			Syscall::Register(SYSCALL_SLEEP, (void*) SysSleep);
 			Syscall::Register(SYSCALL_USLEEP, (void*) SysUSleep);
 
-			InitCPU();
+			addr_t stackstart = Memory::GetKernelStack();
+			size_t stacksize = Memory::GetKernelStackSize();
+			addr_t stackend = stackstart - stacksize;
+			if ( !Memory::MapRangeKernel(stackend, stacksize) )
+			{
+				PanicF("could not create kernel stack (%zx to %zx)",
+				       stackend, stackstart);
+			}
+
+			GDT::SetKernelStack((size_t*) stackstart);
 		}
 
 		// The no operating thread is a thread stuck in an infinite loop that

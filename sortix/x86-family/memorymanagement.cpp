@@ -35,7 +35,7 @@ using namespace Maxsi;
 
 namespace Sortix
 {
-	const addr_t KERNELEND = 0x400000UL;
+	const addr_t KERNELEND = 0x200000UL;
 
 	namespace Page
 	{
@@ -98,17 +98,52 @@ namespace Sortix
 				// Count the amount of usable RAM (even if reserved for kernel).
 				Page::totalmem += length;
 
-				// Detect if this memory is completely covered by the kernel.
-				if ( base + length <= KERNELEND ) { continue; }
-
-				// Detect if this memory is partially covered by the kernel.
-				if ( base <= KERNELEND && KERNELEND <= base + length )
+				// Give all the physical memory to the physical memory allocator
+				// but make sure not to give it things we already use.
+				addr_t regionstart = mmap->addr;
+				addr_t regionend = mmap->addr + mmap->len;
+				addr_t processed = regionstart;
+				while ( processed < regionend )
 				{
-					length = (base + length) - KERNELEND;
-					base = KERNELEND;
-				}
+					addr_t lowest = processed;
+					addr_t highest = regionend;
 
-				Page::InitPushRegion(base, length);
+					// Don't allocate the kernel.
+					if ( lowest < KERNELEND ) { processed = KERNELEND; continue; }
+
+					// Don't give any of our modules to the physical page
+					// allocator, we'll need them.
+					bool continuing = false;
+					uint32_t* modules = (uint32_t*) bootinfo->mods_addr;
+					for ( uint32_t i = 0; i < bootinfo->mods_count; i++ )
+					{
+						size_t modsize = (size_t) (modules[2*i+1] - modules[2*i+0]);
+						addr_t modstart = (addr_t) modules[2*i+0];
+						addr_t modend = modstart + modsize;
+						if ( modstart <= processed && processed < modend )
+						{
+							processed = modend;
+							continuing = true;
+							break;
+						}
+						if ( lowest <= modstart && modstart < highest )
+						{
+							highest = modstart;
+						}
+					}
+
+					if ( continuing ) { continue; }
+
+					if ( highest <= lowest ) { break; }
+
+					// Now that we have a continious area not used by anything,
+					// let's forward it to the physical page allocator.
+					lowest = Page::AlignUp(lowest);
+					highest = Page::AlignUp(highest);
+					size_t size = highest - lowest;
+					Page::InitPushRegion(lowest, size);
+					processed = highest;
+				}
 			}
 
 			// If the physical allocator couldn't handle the vast amount of

@@ -68,12 +68,12 @@ namespace Maxsi
 #ifdef SORTIX_KERNEL
 		addr_t GetHeapStart()
 		{
-			return Sortix::Memory::HEAPUPPER;
+			return Sortix::Memory::GetHeapUpper();
 		}
 
 		size_t GetHeapMaxSize()
 		{
-			return Sortix::Memory::HEAPUPPER - Sortix::Memory::HEAPLOWER;
+			return Sortix::Memory::GetHeapUpper() - Sortix::Memory::GetHeapLower();
 		}
 
 		void FreeMemory(addr_t where, size_t bytes)

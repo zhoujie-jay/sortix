@@ -184,7 +184,7 @@ namespace Sortix
 
 		if ( BootInfo == NULL ) { Panic("kernel.cpp: The bootinfo structure was NULL. Are your bootloader multiboot compliant?"); }
 
-		uint8_t* initrd = NULL;
+		addr_t initrd = NULL;
 		size_t initrdsize = 0;
 
 #ifndef JSSORTIX
@@ -192,17 +192,19 @@ namespace Sortix
 		for ( uint32_t I = 0; I < BootInfo->mods_count; I++ )
 		{
 			initrdsize = modules[2*I+1] - modules[2*I+0];
-			initrd = (uint8_t*) modules[2*I+0];
+			initrd = (addr_t) modules[2*I+0];
 			break;
 		}
 
-		if ( initrd == NULL ) { PanicF("No init ramdisk provided"); }
+		if ( !initrd ) { PanicF("No init ramdisk provided"); }
 
 #else
 		// TODO: UGLY HACK because JSVM doesn't support multiboot yet!
-		initrd = (uint8_t*) 0x180000UL;
+		initrd = (addr_t) 0x180000UL;
 		initrdsize = 0x280000; // 2 MiB 512 KiB
 #endif
+
+		Memory::RegisterInitRDSize(initrdsize);
 
 #ifndef JSSORTIX
 		// Search for PCI devices and load their drivers.
