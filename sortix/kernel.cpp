@@ -110,6 +110,7 @@ namespace Sortix
 
 	void DoMaxsiLogo()
 	{
+		Log::Print("\e[37;41m\e[2J"); // Make the background color red.
 		Log::Print("                                                       _                        \n");
 		Log::Print("                                                      / \\                       \n");
 		Log::Print("                  /\\    /\\                           /   \\                      \n");
@@ -177,9 +178,6 @@ namespace Sortix
 
 		// Initialize the kernel log.
 		Log::Init(logcallback, logpointer);
-
-		// Just a test to see if the color system works! Make the BG red!
-		Log::Print("\e[37;41m\e[2J");
 
 		// Display the boot welcome screen.
 		DoWelcome();
