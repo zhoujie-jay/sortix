@@ -109,8 +109,6 @@ namespace Sortix
 				}
 
 				Page::InitPushRegion(base, length);
-
-				Syscall::Register(SYSCALL_MEMSTAT, (void*) SysMemStat);
 			}
 
 			// If the physical allocator couldn't handle the vast amount of
@@ -124,6 +122,8 @@ namespace Sortix
 
 			// Finish allocating the top level PMLs for the kernels use.
 			AllocateKernelPMLs();
+
+			Syscall::Register(SYSCALL_MEMSTAT, (void*) SysMemStat);
 		}
 
 		void Statistics(size_t* amountused, size_t* totalmem)
