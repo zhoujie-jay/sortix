@@ -32,13 +32,13 @@ void PrintElement(size_t num, const char* single, const char* multiple)
 
 int main(int argc, char* argv[])
 {
-	uintmax_t mssinceboot;
-	if ( uptime(&mssinceboot) ) { perror("uptime"); return 1; }
+	uintmax_t usecssinceboot;
+	if ( uptime(&usecssinceboot) ) { perror("uptime"); return 1; }
 
-	PrintElement(Days(mssinceboot), "day", "days");
-	PrintElement(Hours(mssinceboot), "hour", "hours");
-	PrintElement(Minutes(mssinceboot), "min", "mins");
-	PrintElement(Seconds(mssinceboot), "sec", "secs");
+	PrintElement(Days(usecssinceboot), "day", "days");
+	PrintElement(Hours(usecssinceboot), "hour", "hours");
+	PrintElement(Minutes(usecssinceboot), "min", "mins");
+	PrintElement(Seconds(usecssinceboot), "sec", "secs");
 	printf("\n");
 
 	return 0;
