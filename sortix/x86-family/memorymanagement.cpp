@@ -44,7 +44,6 @@ namespace Sortix
 		size_t stackused;
 		size_t stacklength;
 		size_t totalmem;
-		size_t pagesallocated;
 	}
 
 	namespace Memory
@@ -70,9 +69,6 @@ namespace Sortix
 			Page::pagesnotonstack = 0;
 			Page::totalmem = 0;
 
-			// The first mebibytes are reserved for use by the kernel.
-			Page::pagesallocated = kernelend >> 12UL;
-
 			if ( !( bootinfo->flags & MULTIBOOT_INFO_MEM_MAP ) )
 			{
 				Panic("memorymanagement.cpp: The memory map flag was't set in "
@@ -97,7 +93,7 @@ namespace Sortix
 
 				// The kernel's code may split this memory area into multiple pieces.
 				addr_t base = (addr_t) mmap->addr;
-				size_t length = mmap->len;
+				size_t length = Page::AlignDown(mmap->len);
 
 	#ifdef PLATFORM_X86
 				// Figure out if the memory area is addressable (are our pointers big enough?)
@@ -173,7 +169,9 @@ namespace Sortix
 
 		void Statistics(size_t* amountused, size_t* totalmem)
 		{
-			if ( amountused ) { *amountused = Page::pagesallocated << 12Ul; }
+			size_t memfree = Page::stackused << 12UL;
+			size_t memused = Page::totalmem - memfree;
+			if ( amountused ) { *amountused = memused; }
 			if ( totalmem ) { *totalmem = Page::totalmem; }
 		}
 
@@ -267,16 +265,12 @@ namespace Sortix
 		addr_t Get()
 		{
 			if ( unlikely(stackused == 0) ) { Error::Set(ENOMEM); return 0; }
-
-			pagesallocated++;
-
 			return STACK[--stackused];
 		}
 
 		void Put(addr_t page)
 		{
 			ASSERT(stackused < MAXSTACKLENGTH);
-			pagesallocated--;
 			STACK[stackused++] = page;
 		}
 	}
