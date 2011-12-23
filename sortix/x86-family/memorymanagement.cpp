@@ -35,7 +35,7 @@ using namespace Maxsi;
 
 namespace Sortix
 {
-	const addr_t KERNELEND = 0x200000UL;
+	extern size_t end;
 
 	namespace Page
 	{
@@ -57,11 +57,21 @@ namespace Sortix
 
 		void Init(multiboot_info_t* bootinfo)
 		{
+			const size_t MAXKERNELEND = 0x400000UL; /* 4 MiB */
+			addr_t kernelend = Page::AlignUp((addr_t) &end);
+			if ( MAXKERNELEND < kernelend )
+			{
+				Log::PrintF("Warning: The kernel is too big! It ends at 0x%zx, "
+				            "but the highest ending address supported is 0x%zx. "
+				            "The system may not boot correctly.\n", kernelend,
+				            MAXKERNELEND);
+			}
+
 			Page::pagesnotonstack = 0;
 			Page::totalmem = 0;
 
 			// The first mebibytes are reserved for use by the kernel.
-			Page::pagesallocated = KERNELEND >> 12UL;
+			Page::pagesallocated = kernelend >> 12UL;
 
 			if ( !( bootinfo->flags & MULTIBOOT_INFO_MEM_MAP ) )
 			{
@@ -109,7 +119,7 @@ namespace Sortix
 					addr_t highest = regionend;
 
 					// Don't allocate the kernel.
-					if ( lowest < KERNELEND ) { processed = KERNELEND; continue; }
+					if ( lowest < kernelend ) { processed = kernelend; continue; }
 
 					// Don't give any of our modules to the physical page
 					// allocator, we'll need them.

@@ -87,6 +87,7 @@ fs/devfs.o \
 fs/initfs.o \
 fs/ramfs.o \
 ../libmaxsi/libmaxsi-sortix.a \
+end.o # Must be last
 
 JSOBJS:=$(subst .o,-js.o,$(OBJS))
 
