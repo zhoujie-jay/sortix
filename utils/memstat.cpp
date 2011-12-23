@@ -13,30 +13,30 @@ void printbytes(unsigned long long bytes)
 	const unsigned EXBI = 6;
 
 	unsigned unit = BYTES;
-	if ( (bytes >> 10) & 1023 ) { unit = KIBI; }
-	if ( (bytes >> 20) & 1023 ) { unit = MEBI; }
-	if ( (bytes >> 30) & 1023 ) { unit = GIBI; }
-	if ( (bytes >> 40) & 1023 ) { unit = TEBI; }
-	if ( (bytes >> 50) & 1023 ) { unit = PEBI; }
-	if ( (bytes >> 60) & 1023 ) { unit = EXBI; }
+	if ( (bytes >> 10ULL) & 1023 ) { unit = KIBI; }
+	if ( (bytes >> 20ULL) & 1023 ) { unit = MEBI; }
+	if ( (bytes >> 30ULL) & 1023 ) { unit = GIBI; }
+	if ( (bytes >> 40ULL) & 1023 ) { unit = TEBI; }
+	if ( (bytes >> 50ULL) & 1023 ) { unit = PEBI; }
+	if ( (bytes >> 60ULL) & 1023 ) { unit = EXBI; }
 
 	switch ( unit )
 	{
 		case EXBI:
-			printf("%u ZiB ", (bytes >> 60) & 1023);
+			printf("%u ZiB ", (bytes >> 60ULL) & 1023);
 		case PEBI:
-			printf("%u PiB ", (bytes >> 50) & 1023);
+			printf("%u PiB ", (bytes >> 50ULL) & 1023);
 		case TEBI:
-			printf("%u TiB ", (bytes >> 40) & 1023);
+			printf("%u TiB ", (bytes >> 40ULL) & 1023);
 		case GIBI:
-			printf("%u GiB ", (bytes >> 30) & 1023);
+			printf("%u GiB ", (bytes >> 30ULL) & 1023);
 		case MEBI:
-			printf("%u MiB ", (bytes >> 20) & 1023);
+			printf("%u MiB ", (bytes >> 20ULL) & 1023);
 		case KIBI:
-			printf("%u KiB", (bytes >> 10) & 1023);
+			printf("%u KiB", (bytes >> 10ULL) & 1023);
 			break;
 		case BYTES:
-			printf("%u B", (bytes >> 0) & 1023);
+			printf("%u B", (bytes >> 0ULL) & 1023);
 	}
 }
 
