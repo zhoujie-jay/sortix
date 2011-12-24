@@ -19,8 +19,8 @@ typedef __uintmax_t uintmax_t;
 
 /* Define an integer able to hold the size of the largest continious memory */
 /* region and define pointer safe integer types. */
-typedef __size_t size_t;
-typedef __ssize_t ssize_t;
+@include(size_t.h)
+@include(ssize_t.h)
 typedef __intptr_t intptr_t;
 typedef __uintptr_t uintptr_t;
 typedef __ptrdiff_t ptrdiff_t;

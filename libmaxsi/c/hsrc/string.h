@@ -34,6 +34,7 @@ __BEGIN_DECLS
 @include(locale_t.h)
 
 void* memcpy(void* restrict, const void* restrict, size_t);
+void* memset(void*, int, size_t);
 char* strcat(char* restrict, const char* restrict);
 int strcmp(const char*, const char*);
 char* strcpy(char* restrict, const char* restrict);
@@ -47,7 +48,6 @@ void* memccpy(void* restrict, const void* restrict, int, size_t);
 void* memchr(const void*, int, size_t);
 int memcmp(const void*, const void*, size_t);
 void* memmove(void*, const void*, size_t);
-void* memset(void*, int, size_t);
 char* stpcpy(char* restrict, const char* restrict);
 char* stpncpy(char* restrict, const char* restrict, size_t);
 char* strchr(const char*, int);

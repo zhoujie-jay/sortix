@@ -40,6 +40,7 @@ using namespace Maxsi;
 void cursorto(unsigned x, unsigned y)
 {
 	printf("\e[%u;%uH", y+1+1, x+1);
+	fflush(stdout);
 }
 
 void drawtextmode()
@@ -54,6 +55,7 @@ void drawtextmode()
 		if ( y < HEIGHT-1 ) { printf("\n"); }
 	}
 
+	fflush(stdout);
 	cursorto(cursorx, cursory);
 }
 
@@ -125,7 +127,8 @@ unsigned textmode()
 						buffers[cursory][x] = buffers[cursory][x+1];
 						bufferchanged = true;
 					}
-					printf("\e[2K\r%s", buffers[cursory]);					
+					printf("\e[2K\r%s", buffers[cursory]);
+					fflush(stdout);
 				}
 				else if ( 0 < cursory && strlen(buffers[cursory]) == 0 )
 				{
@@ -161,6 +164,7 @@ unsigned textmode()
 		msg[1] = 0;
 		printf("%s", msg);
 		buffers[cursory][cursorx++] = codepoint;
+		fflush(stdout);
 		bufferchanged = true;
 		if ( WIDTH <= cursorx ) { cursorx = WIDTH-1; }
 	}
@@ -230,6 +234,7 @@ int savemode()
 retry:
 	size_t len = strlen(writefilename);
 	printf("File Name to Write: %s", writefilename);
+	fflush(stdout);
 
 	bool readytosave = false;
 
@@ -247,7 +252,7 @@ retry:
 				return MODE_TEXT;
 				break;
 			case '\b':
-				if ( 0 < len ) { printf("\b"); writefilename[--len] = 0; }
+				if ( 0 < len ) { printf("\b"); fflush(stdout); writefilename[--len] = 0; }
 				break;
 			case '\n':
 				if ( len == 0 ) { return MODE_TEXT; }
@@ -262,6 +267,7 @@ retry:
 				msg[0] = codepoint;
 				msg[1] = 0;
 				printf("%s", msg);
+				fflush(stdout);
 		}
 	}
 
@@ -327,6 +333,7 @@ int loadmode()
 retry:
 	size_t len = strlen(loadfilename);
 	printf("File Name to Load: %s", loadfilename);
+	fflush(stdout);
 
 	bool readytoload = false;
 
@@ -344,7 +351,7 @@ retry:
 				return MODE_TEXT;
 				break;
 			case '\b':
-				if ( 0 < len ) { printf("\b"); loadfilename[--len] = 0; }
+				if ( 0 < len ) { printf("\b"); fflush(stdout); loadfilename[--len] = 0; }
 				break;
 			case '\n':
 				if ( len == 0 ) { return MODE_TEXT; }
@@ -359,6 +366,7 @@ retry:
 				msg[0] = codepoint;
 				msg[1] = 0;
 				printf("%s", msg);
+				fflush(stdout);
 		}
 	}
 
@@ -406,6 +414,7 @@ void run()
 	}
 
 	printf("\e[37m\e[40m\e[2J\e[H");
+	fflush(stdout);
 }
 
 int main(int argc, char* argv[])

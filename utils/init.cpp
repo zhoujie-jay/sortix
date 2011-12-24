@@ -37,6 +37,7 @@ int main(int argc, char* argv[])
 
 	// Reset the terminal's color and the rest of it.
 	printf("\r\e[m\e[J");
+	fflush(stdout);
 
 	pid_t childpid = Process::Fork();	
 	if ( childpid < 0 ) { perror("fork"); return 2; }

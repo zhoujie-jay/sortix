@@ -18,288 +18,168 @@
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
 	file.c
-	Implements every related to the FILE structure. This API is not compatible
-	enough with LibMaxsi's design goals, so it is implemented as a layer upon
-	the C functions in LibMaxsi.
+	FILE* in libmaxsi is an interface to various implementations of the FILE*
+	API. This allows stuff like fmemopen, but also allows the application
+	programmers to provide their own backends.
 
 ******************************************************************************/
 
 #include <sys/types.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <wchar.h>
-#include <fcntl.h>
 
-#if 0
+FILE* firstfile = NULL;
 
-// TODO: Make a real errno system!
-volatile int errno;
-#define EINVAL 1
-
-typedef struct
+void fregister(FILE* fp)
 {
-  off_t pos;
-  mbstate_t state;
-} _fpos_t;
-
-struct _IO_FILE
-{
-	int fd;
-	_fpos_t pos;
-};
-
-// TODO: Actually implement these stubs.
-
-char* fgets(char* restrict s, int n, FILE* restrict stream)
-{
-	return NULL;
+	fp->flags |= _FILE_REGISTERED;
+	if ( !firstfile ) { firstfile = fp; return; }
+	fp->next = firstfile;
+	firstfile->prev = fp;
+	firstfile = fp;
 }
 
-FILE* fdopen(int fildes, const char* mode)
+void funregister(FILE* fp)
 {
-	return NULL;
+	if ( !(fp->flags & _FILE_REGISTERED) ) { return; }
+	if ( !fp->prev ) { firstfile = fp->next; }
+	if ( fp->prev ) { fp->prev->next = fp->next; }
+	if ( fp->next ) { fp->next->prev = fp->prev; }
+	fp->flags &= ~_FILE_REGISTERED;
 }
 
-FILE *fmemopen(void* restrict buf, size_t size, const char* restrict mode)
+size_t fread(void* ptr, size_t size, size_t nmemb, FILE* fp)
 {
-	return NULL;
+	if ( !fp->read_func ) { errno = EBADF; return 0; }
+	return fp->read_func(ptr, size, nmemb, fp->user);	
 }
 
-FILE* fopen(const char* restrict filename, const char* restrict mode)
+size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* fp)
 {
-	int len;
-	if ( mode[0] == '\0' ) { errno = EINVAL; return NULL; } else
-	if ( mode[1] == '\1' ) { len = 1; } else
-	if ( mode[2] == '\0' ) { len = 2; }
-	if ( mode[3] == '\0' ) { len = 3; } else { errno = EINVAL; return NULL; }
-
-	int oflags;
-
-	if ( len == 1 || (len == 2 && mode[1] == 'b') )
+	if ( !fp->write_func ) { errno = EBADF; return 0; }
+	char* str = (char*) ptr;
+	size_t total = size * nmemb;
+	size_t sofar = 0;
+	while ( sofar < total )
 	{
-		switch ( mode[0] )
+		size_t left = total - sofar;
+		if ( (!fp->bufferused && fp->buffersize <= left) || (fp->flags & _FILE_NO_BUFFER) )
 		{
-			case 'r': oflags = O_RDONLY; break;
-			case 'w': oflags = O_WRONLY | O_TRUNC | O_CREAT; break;
-			case 'a': oflags = O_WRONLY | O_APPEND | O_CREAT; break;
-			default: errno = EINVAL; return NULL;
+			return sofar + fp->write_func(str + sofar, 1, left, fp->user);
+		}
+
+		size_t available = fp->buffersize - fp->bufferused;
+		size_t count = ( left < available ) ? left : available;
+		count = left;
+		for ( size_t i = 0; i < count; i++ )
+		{
+			char c = str[sofar++];
+			fp->buffer[fp->bufferused++] = c;
+			if ( c == '\n' )
+			{
+				if ( fflush(fp) ) { return sofar; }
+				break;
+			}
+		}
+
+		if ( fp->buffersize <= fp->bufferused )
+		{
+			if ( fflush(fp) ) { return sofar; }
 		}
 	}
-	else if ( (len == 2 && mode[1] == '+') || (len == 3 && mode[1] == '+' && mode[1] == 'b') || (len == 3 && mode[1] == 'b' && mode[1] == '+') )
+	return sofar;
+}
+
+int fseek(FILE* fp, long offset, int whence)
+{
+	return (fp->seek_func) ? fp->seek_func(fp->user, offset, whence) : 0;
+}
+
+void clearerr(FILE* fp)
+{
+	if ( fp->clearerr_func ) { fp->clearerr_func(fp->user); }
+}
+
+int ferror(FILE* fp)
+{
+	if ( !fp->error_func ) { return 0; }
+	return fp->error_func(fp->user);
+}
+
+int feof(FILE* fp)
+{
+	if ( !fp->eof_func ) { return 0; }
+	return fp->eof_func(fp->user);
+}
+
+void rewind(FILE* fp)
+{
+	fseek(fp, 0L, SEEK_SET);
+	clearerr(fp);
+}
+
+long ftell(FILE* fp)
+{
+	if ( !fp->tell_func ) { errno = EBADF; return -1; }
+	return fp->tell_func(fp->user);
+}
+
+int fflush(FILE* fp)
+{
+	if ( !fp )
 	{
-		switch ( mode[0] )
-		{
-			case 'r': oflags = O_RDWR; break;
-			case 'w': oflags = O_RDWR | O_TRUNC | O_CREAT; break;
-			case 'a': oflags = O_RDWR | O_APPEND | O_CREAT; break;
-			default: errno = EINVAL; return NULL;
-		}
+		int result = 0;
+		for ( fp = firstfile; fp; fp = fp->next ) { result |= fflush(fp); }
+		return result;
 	}
-	else { errno = EINVAL; return NULL; }
-
-	// TODO: Does anything else modify this mask?
-	// TODO: POSIX says this should be "S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH",
-	// but Linux applies this in a simple test case!
-	mode_t perms = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
-
-	FILE* file = malloc(sizeof(FILE));
-
-	if ( file == NULL ) { return NULL; }
-
-	int fd = open(filename, oflags, perms);
-
-	if ( fd < 0 ) { free(file); return NULL; }
-
-	file->fd = fd;
-	// TODO: set other stuff here!
-
-	return file;
-}
-
-FILE* freopen(const char* restrict filename, const char *restrict mode, FILE* restrict stream)
-{
-	return NULL;
-}
-
-FILE* popen(const char* command, const char* mode)
-{
-	return NULL;
-}
-
-FILE* tmpfile(void)
-{
-	return NULL;
-}
-
-int fclose(FILE* stream)
-{
-	return -1;
-}
-
-int feof(FILE* stream)
-{
-	return -1;	
-}
-
-int ferror(FILE* stream)
-{
-	return -1;
-}
-
-int fflush(FILE* stream)
-{
-	return -1;
-}
-
-int fgetc(FILE* stream)
-{
-	return -1;
-}
-
-int fgetpos(FILE* restrict stream, fpos_t* restrict pos)
-{
-	return -1;
-}
-
-int fileno(FILE* stream)
-{
-	return -1;
-}
-
-int fprintf(FILE* restrict stream, const char* restrict format, ...)
-{
-	return -1;
-}
-
-int fputc(int c, FILE* stream)
-{
-	return -1;
-}
-
-int fputs(const char* restrict s, FILE* restrict stream)
-{
-	return -1;
-}
-
-int fscanf(FILE* restrict stream, const char* restrict format, ... )
-{
-	return -1;
-}
-
-int fseek(FILE* stream, long offset, int whence)
-{
-	return -1;
-}
-
-int fseeko(FILE* stream, off_t offset, int whence)
-{
-	return -1;
-}
-
-int fsetpos(FILE* stream, const fpos_t* pos)
-{
-	return -1;
-}
-
-int ftrylockfile(FILE* file)
-{
-	return -1;
-}
-
-int getc(FILE* stream)
-{
-	return -1;
-}
-
-int getc_unlocked(FILE* stream)
-{
-	return -1;
-}
-
-int pclose(FILE* steam)
-{
-	return -1;
-}
-
-int putc(int c, FILE* stream)
-{
-	return -1;
-}
-
-int putc_unlocked(int c, FILE* steam)
-{
-	return -1;
-}
-
-int setvbuf(FILE* restrict stream, char* restrict buf, int type, size_t size)
-{
-	return -1;
-}
-
-int ungetc(int c, FILE* stream)
-{
-	return -1;
-}
-
-int vfprintf(FILE* restrict stream, const char* restrict format, va_list ap)
-{
-	return -1;
-}
-
-int vfscanf(FILE* restrict stream, const char* restrict format, va_list arg)
-{
-	return -1;
-}
-
-int vprintf(FILE* restrict stream, const char* restrict format, va_list ap)
-{
-	return -1;
-}
-
-long ftell(FILE* stream)
-{
-	return -1;
-}
-
-off_t ftello(FILE* stream)
-{
-	return -1;
-}
-
-size_t fread(void* restrict ptr, size_t size, size_t nitems, FILE* restrict stream)
-{
+	if ( !fp->write_func ) { errno = EBADF; return EOF; }
+	if ( !fp->bufferused ) { return 0; }
+	size_t written = fp->write_func(fp->buffer, 1, fp->bufferused, fp->user);
+	if ( written < fp->bufferused ) { return EOF; }
+	fp->bufferused = 0;
 	return 0;
 }
 
-size_t fwrite(const void* restrict ptr, size_t size, size_t nitems, FILE* restrict stream)
+int fclose(FILE* fp)
 {
-	return 0;
+	int result = fflush(fp);
+	result |= (fp->close_func) ? fp->close_func(fp->user) : 0;
+	funregister(fp);
+	if ( fp->free_func ) { fp->free_func(fp); }
+	return result;
 }
 
-void clearerr(FILE* stream)
+int fileno(FILE* fp)
 {
-		
+	int result = (fp->fileno_func) ? fp->fileno_func(fp->user) : -1;
+	if ( result < 0 ) { errno = EBADF; }
+	return result;
 }
 
-void flockfile(FILE* file)
+static void ffreefile(FILE* fp)
 {
-	
+	free(fp->buffer);
+	free(fp);
 }
 
-void funlockfile(FILE* file)
+FILE* fnewfile(void)
 {
-	
+	FILE* fp = (FILE*) calloc(sizeof(FILE), 1);
+	if ( !fp ) { return NULL; }
+	fp->buffersize = BUFSIZ;
+	fp->buffer = (char*) malloc(fp->buffersize);
+	if ( !fp->buffer ) { free(fp); return NULL; }
+	fp->flags = 0;
+	fp->free_func = ffreefile;
+	fregister(fp);
+	return fp;
 }
 
-void rewind(FILE* stream)
+int fcloseall(void)
 {
-	
+	int result = 0;
+	while ( firstfile ) { result |= fclose(firstfile); }
+	return (result) ? EOF : 0;
 }
-
-void setbuf(FILE* restrict stream, char* restrict buf)
-{
-	
-}
-
-#endif
 

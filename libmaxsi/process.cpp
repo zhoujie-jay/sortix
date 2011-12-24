@@ -25,6 +25,7 @@
 #include "platform.h"
 #include "syscall.h"
 #include "process.h"
+#include <stdio.h>
 
 namespace Maxsi
 {
@@ -57,6 +58,7 @@ namespace Maxsi
 
 		DUAL_FUNCTION(void, exit, Exit, (int status))
 		{
+			fcloseall();
 			_exit(status);
 		}
 

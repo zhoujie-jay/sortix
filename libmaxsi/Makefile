@@ -28,7 +28,11 @@ LDFLAGS=$(CPULDFLAGS)
 ASFLAGS=$(CPUASFLAGS)
 NASMFLAGS=$(CPUNASMFLAGS)
 
-COBJS=c/file.o
+COBJS=\
+c/file.o \
+c/fdio.o \
+c/stdio.o \
+
 CHEADERS=\
 c/h/unistd.h \
 c/h/stdlib.h \
@@ -47,6 +51,7 @@ c/h/sys/types.h \
 c/h/sys/wait.h \
 c/h/stdio.h \
 c/h/signal.h \
+c/h/stdint.h \
 
 COMMONOBJS=c++.o memory.o heap.o string.o error.o format.o
 SORTIXOBJS:=$(addprefix sortix/,$(COMMONOBJS))

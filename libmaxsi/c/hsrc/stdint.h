@@ -17,43 +17,23 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	init.cpp
-	Initializes the process by setting up the heap, signal handling,
-	static memory and other useful things.
+	stdint.h
+	Integer types.
 
 ******************************************************************************/
 
-#include "platform.h"
-#include "signal.h"
-#include "string.h"
-#include "io.h"
-#include "memory.h"
+/* TODO: POSIX-1.2008 compliance is only partial */
 
-namespace Maxsi
-{
-	extern "C" { char program_invocation_name_data[256] = ""; }
-	extern "C" { char* program_invocation_name = program_invocation_name_data; }
+#ifndef	_UNISTD_H
+#define	_UNISTD_H 1
 
-	extern "C" void init_error_functions();
-	extern "C" void init_stdio();
+#include <features.h>
 
-	extern "C" void initialize_standard_library(int argc, char* argv[])
-	{
-		if ( argc )
-		{
-			String::Copy(program_invocation_name, argv[0]);
-		}
+__BEGIN_DECLS
 
-		// Initialize stuff such as errno.
-		init_error_functions();
+@include(intn_t.h)
 
-		// It's probably best to initialize the Unix signals early on.
-		Signal::Init();
+__END_DECLS
 
-		// Initialize the dynamic heap.
-		Memory::Init();
+#endif
 
-		// Initialize stdio.
-		init_stdio();
-	}
-}

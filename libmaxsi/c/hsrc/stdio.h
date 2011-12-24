@@ -29,18 +29,17 @@
 
 __BEGIN_DECLS
 
-@include(FILE.h)
-
-struct _fpos_t;
-typedef struct _fpos_t fpos_t;
-
 @include(off_t.h)
 @include(size_t.h)
 @include(ssize_t.h)
 @include(va_list.h)
 @include(NULL.h)
 
-/* TODO: Implement BUFSIZ */
+@include(FILE.h)
+
+struct _fpos_t;
+typedef struct _fpos_t fpos_t;
+
 /* TODO: Implement L_ctermid */
 #if __POSIX_OBSOLETE <= 200801
 /* TODO: Implement L_tmpnam */
@@ -76,8 +75,22 @@ extern FILE* stderr;
 #define stdout stdout
 #define stderr stderr
 
+extern void clearerr(FILE* stream);
+extern int fclose(FILE* stream);
+extern int feof(FILE* stream);
+extern int ferror(FILE* stream);
+extern int fflush(FILE* stream);
+extern int fileno(FILE* stream);
+extern int fprintf(FILE* restrict stream, const char* restrict format, ...);
+extern size_t fread(void* restrict ptr, size_t size, size_t nitems, FILE* restrict stream);
+extern int fseek(FILE* stream, long offset, int whence);
+extern long ftell(FILE* stream);
+extern size_t fwrite(const void* restrict ptr, size_t size, size_t nitems, FILE* restrict stream);
 extern void perror(const char* s);
 extern int printf(const char* restrict format, ...);
+extern void rewind(FILE* stream);
+extern int vfprintf(FILE* restrict stream, const char* restrict format, va_list ap);
+extern int vprintf(const char* restrict format, va_list ap);
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #ifndef SORTIX_UNIMPLEMENTED
@@ -91,18 +104,11 @@ extern FILE* open_memstream(char** bufp, size_t* sizep);
 extern FILE* popen(const char* command, const char* mode);
 extern FILE* tmpfile(void);
 extern int dprintf(int fildes, const char* restrict format, ...);
-extern int fclose(FILE* stream);
-extern int feof(FILE* stream);
-extern int ferror(FILE* stream);
-extern int fflush(FILE* stream);
 extern int fgetc(FILE* stream);
 extern int fgetpos(FILE* restrict stream, fpos_t* restrict pos);
-extern int fileno(FILE* stream);
-extern int fprintf(FILE* restrict stream, const char* restrict format, ...);
 extern int fputc(int c, FILE* stream);
 extern int fputs(const char* restrict s, FILE* restrict stream);
 extern int fscanf(FILE* restrict stream, const char* restrict format, ... );
-extern int fseek(FILE* stream, long offset, int whence);
 extern int fseeko(FILE* stream, off_t offset, int whence);
 extern int fsetpos(FILE* stream, const fpos_t* pos);
 extern int ftrylockfile(FILE* file);
@@ -126,23 +132,16 @@ extern int sprintf(char* restrict s, const char* restrict format, ...);
 extern int sscanf(const char* restrict s, const char* restrict format, ...);
 extern int ungetc(int c, FILE* stream);
 extern int vdprintf(int fildes, const char* restrict format, va_list ap);
-extern int vfprintf(FILE* restrict stream, const char* restrict format, va_list ap);
 extern int vfscanf(FILE* restrict stream, const char* restrict format, va_list arg);
-extern int vprintf(const char* restrict format, va_list ap);
 extern int vscanf(const char* restrict format, va_list arg);
 extern int vsnprintf(char* restrict, size_t, const char* restrict, va_list);
 extern int vsprintf(char* restrict s, const char* restrict format, va_list ap);
 extern int vsscanf(const char* restrict s, const char* restrict format, va_list arg);
-extern long ftell(FILE* stream);
 extern off_t ftello(FILE* stream);
-extern size_t fread(void* restrict ptr, size_t size, size_t nitems, FILE* restrict stream);
-extern size_t fwrite(const void* restrict ptr, size_t size, size_t nitems, FILE* restrict stream);
 extern ssize_t getdelim(char** restrict lineptr, size_t* restrict n, int delimiter, FILE* restrict stream);
 extern ssize_t getline(char** restrict lineptr, size_t* restrict n, FILE* restrict stream);
-extern void clearerr(FILE* stream);
 extern void flockfile(FILE* file);
 extern void funlockfile(FILE* file);
-extern void rewind(FILE* stream);
 extern void setbuf(FILE* restrict stream, char* restrict buf);
 
 #if __POSIX_OBSOLETE <= 200801
@@ -150,6 +149,13 @@ extern char* gets(char* s);
 extern char* tmpnam(char* s);
 extern char* tempnam(const char* dir, const char* pfx);
 #endif
+#endif
+
+#ifdef SORTIX_EXTENSIONS
+void fregister(FILE* fp);
+void funregister(FILE* fp);
+FILE* fnewfile(void);
+int fcloseall(void);
 #endif
 
 __END_DECLS

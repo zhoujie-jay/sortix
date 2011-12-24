@@ -33,6 +33,7 @@
 #include <string.h>
 #include <error.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 namespace Maxsi
 {
@@ -72,11 +73,38 @@ namespace Maxsi
 	}
 
 #ifdef LIBMAXSI_LIBC
+	size_t FileWriteCallback(void* user, const char* string, size_t stringlen)
+	{
+		FILE* fp = (FILE*) user;
+		return fwrite(string, 1, stringlen, fp);
+	}
+
+	extern "C" int vfprintf(FILE* fp, const char* /*restrict*/ format, va_list list)
+	{
+		size_t result = Maxsi::Format::Virtual(FileWriteCallback, fp, format, list);
+		return (int) result;
+	}
+
+	extern "C" int fprintf(FILE* fp, const char* /*restrict*/ format, ...)
+	{
+		va_list list;
+		va_start(list, format);
+		size_t result = vfprintf(fp, format, list);
+		va_end(list);
+		return (int) result;
+	}
+
+	extern "C" int vprintf(const char* /*restrict*/ format, va_list list)
+	{
+		size_t result = vfprintf(stdout, format, list);
+		return (int) result;
+	}
+
 	extern "C" int printf(const char* /*restrict*/ format, ...)
 	{
 		va_list list;
 		va_start(list, format);
-		size_t result = Maxsi::Format::Virtual(PrintCallback, NULL, format, list);
+		size_t result = vprintf(format, list);
 		va_end(list);
 		return (int) result;
 	}
@@ -87,7 +115,7 @@ namespace Maxsi
 
 		va_list list;
 		va_start(list, format);
-		size_t result = Maxsi::Format::Virtual(PrintCallback, NULL, format, list);
+		vprintf(format, list);
 		va_end(list);
 
 		printf(": %s\n", strerror(errnum));

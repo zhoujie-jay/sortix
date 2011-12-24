@@ -22,7 +22,8 @@ void command()
 	const char* wd = getcwd(cwd, CWD_SIZE);
 	if ( !wd ) { wd = "?"; }
 
-	printf("root@sortix %s # ", wd);	
+	printf("root@sortix %s # ", wd);
+	fflush(stdout);
 
 	const size_t commandsize = 128;
 	char command[commandsize + 1];
@@ -39,7 +40,7 @@ void command()
 
 		if ( codepoint == '\b' )
 		{
-			if ( 0 < commandused ) { printf("\b"); commandused--; }
+			if ( 0 < commandused ) { printf("\b"); fflush(stdout); commandused--; }
 			continue;
 		}
 
@@ -47,6 +48,7 @@ void command()
 
 		char msg[2]; msg[0] = codepoint; msg[1] = '\0';
 		printf("%s", msg);
+		fflush(stdout);
 
 		if ( codepoint == '\n' ) { command[commandused] = '\0'; break; }
 
