@@ -111,14 +111,14 @@ namespace Maxsi
 
 	extern "C" void error(int status, int errnum, const char *format, ...)
 	{
-		printf("%s: ", program_invocation_name);
+		fprintf(stderr, "%s: ", program_invocation_name);
 
 		va_list list;
 		va_start(list, format);
-		vprintf(format, list);
+		vfprintf(stderr, format, list);
 		va_end(list);
 
-		printf(": %s\n", strerror(errnum));
+		fprintf(stderr, ": %s\n", strerror(errnum));
 		if ( status ) { exit(status); }
 	}
 
