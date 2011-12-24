@@ -642,6 +642,15 @@ namespace Maxsi
 			ASSERT(ValidateHeap());
 			#endif
 		}
+
+		extern "C" void* calloc(size_t nmemb, size_t size)
+		{
+			size_t total = nmemb * size;
+			void* result = Allocate(total);
+			if ( !result ) { return NULL; }	
+			Memory::Set(result, 0, total);
+			return result;
+		}
 	}
 }
 

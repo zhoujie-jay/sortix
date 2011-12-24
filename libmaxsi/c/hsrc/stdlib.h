@@ -46,6 +46,7 @@ typedef int div_t, ldiv_t, lldiv_t;
 /* TODO: WEXITSTATUS, WIFEXITED, WIFSIGNALED, WIFSTOPPED, WNOHANG, WSTOPSIG, WTERMSIG, WUNTRACED is missing here */
 
 int atoi(const char*);
+void* calloc(size_t, size_t);
 void exit(int);
 void _Exit(int status);
 void free(void*);
@@ -67,7 +68,6 @@ int atoi(const char*);
 long atol(const char*);
 long long atoll(const char*);
 void* bsearch(const void*, const void*, size_t, size_t, int (*)(const void*, const void*));
-void* calloc(size_t, size_t);
 div_t div(int, int);
 double drand48(void);
 double erand48(unsigned short [3]);
