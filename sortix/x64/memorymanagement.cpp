@@ -51,10 +51,10 @@ namespace Sortix
 			// to zeroes. Since these structures are already used, doing it here
 			// will be very dangerous.
 
-			PML* const BOOTPML4 = (PML* const) 0x01000UL;
-			PML* const BOOTPML3 = (PML* const) 0x06000UL;
-			PML* const BOOTPML2 = (PML* const) 0x07000UL;
-			PML* const BOOTPML1 = (PML* const) 0x08000UL;
+			PML* const BOOTPML4 = (PML* const) 0x21000UL;
+			PML* const BOOTPML3 = (PML* const) 0x26000UL;
+			PML* const BOOTPML2 = (PML* const) 0x27000UL;
+			PML* const BOOTPML1 = (PML* const) 0x28000UL;
 
 			// First order of business is to map the virtual memory structures
 			// to the pre-defined locations in the virtual address space.
@@ -76,8 +76,8 @@ namespace Sortix
 			BOOTPML1->entry[511] = (addr_t) BOOTPML4 | flags;
 
 			// Add some predefined room for forking address spaces.
-			PML* const FORKPML2 = (PML* const) 0x09000UL;
-			PML* const FORKPML1 = (PML* const) 0x0A000UL;
+			PML* const FORKPML2 = (PML* const) 0x29000UL;
+			PML* const FORKPML1 = (PML* const) 0x2A000UL;
 			
 			BOOTPML3->entry[0] = (addr_t) FORKPML2 | flags | PML_FORK;
 			BOOTPML2->entry[0] = (addr_t) FORKPML1 | flags | PML_FORK;
@@ -89,10 +89,10 @@ namespace Sortix
 			// course, we still have no physical page allocator, so that's the
 			// next step.
 
-			PML* const PHYSPML3 = (PML* const) 0x0B000UL;
-			PML* const PHYSPML2 = (PML* const) 0x0C000UL;
-			PML* const PHYSPML1 = (PML* const) 0x0D000UL;
-			PML* const PHYSPML0 = (PML* const) 0x0E000UL;
+			PML* const PHYSPML3 = (PML* const) 0x2B000UL;
+			PML* const PHYSPML2 = (PML* const) 0x2C000UL;
+			PML* const PHYSPML1 = (PML* const) 0x2D000UL;
+			PML* const PHYSPML0 = (PML* const) 0x2E000UL;
 
 			BOOTPML4->entry[509] = (addr_t) PHYSPML3 | flags;
 			PHYSPML3->entry[0]   = (addr_t) PHYSPML2 | flags;
@@ -140,7 +140,7 @@ namespace Sortix
 			// Switch to the address space from when the world was originally
 			// created. It should contain the kernel, the whole kernel, and
 			// nothing but the kernel.
-			PML* const BOOTPML4 = (PML* const) 0x01000UL;
+			PML* const BOOTPML4 = (PML* const) 0x21000UL;
 			SwitchAddressSpace((addr_t) BOOTPML4);
 		}
 

@@ -41,8 +41,8 @@ namespace Sortix
 		{
 			CPU::SyscallRegisters* syscall_state_ptr;
 			unsigned system_was_incomplete;
-			size_t SYSCALL_MAX = SYSCALL_MAX_NUM;
-			void* syscall_list[SYSCALL_MAX_NUM];
+			size_t SYSCALL_MAX;
+			volatile void* syscall_list[SYSCALL_MAX_NUM];
 		}
 
 		int BadSyscall()
@@ -53,7 +53,8 @@ namespace Sortix
 
 		void Init()
 		{
-			for ( size_t i = 0; i < SYSCALL_MAX; i++ )
+			SYSCALL_MAX = SYSCALL_MAX_NUM;
+			for ( size_t i = 0; i < SYSCALL_MAX_NUM; i++ )
 			{
 				syscall_list[i] = (void*) BadSyscall;
 			}
@@ -61,10 +62,10 @@ namespace Sortix
 
 		void Register(size_t index, void* funcptr)
 		{
-			if ( SYSCALL_MAX <= index )
+			if ( SYSCALL_MAX_NUM <= index )
 			{
 				PanicF("attempted to register syscall 0x%p to index %zu, but "
-				       "SYSCALL_MAX = %zu", funcptr, index, SYSCALL_MAX);
+				       "SYSCALL_MAX_NYN = %zu", funcptr, index, SYSCALL_MAX_NUM);
 			}
 
 			syscall_list[index] = funcptr; 

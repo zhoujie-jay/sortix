@@ -57,8 +57,8 @@ multiboot_entry:
 	# Store the magic value.
 	mov %eax, 0x100004
 
-	# Clear the first $0xE000 bytes following 0x1000.
-	movl $0x1000, %edi
+	# Clear the first $0xE000 bytes following 0x21000.
+	movl $0x21000, %edi
 	mov %edi, %cr3
 	xorl %eax, %eax
 	movl $0xE000, %ecx
@@ -70,16 +70,16 @@ multiboot_entry:
 	# first 2 MiB. We also do this with 0x200 to allow forking the page.
 
 	# Page-Map Level 4
-	movl $0x2207, (%edi)
+	movl $0x22207, (%edi)
 	addl $0x1000, %edi
 
 	# Page-Directory Pointer Table
-	movl $0x3207, (%edi)
+	movl $0x23207, (%edi)
 	addl $0x1000, %edi
 
 	# Page-Directory (no user-space access here)
-	movl $0x4203, (%edi) # (First 2 MiB)
-	movl $0x5203, 8(%edi) # (Second 2 MiB)
+	movl $0x24203, (%edi) # (First 2 MiB)
+	movl $0x25203, 8(%edi) # (Second 2 MiB)
 	addl $0x1000, %edi
 
 	# Page-Table

@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 #include "platform.h"
+#include <libmaxsi/memory.h>
 #include "panic.h"
 #include "thread.h"
 #include "process.h"
@@ -53,7 +54,7 @@ namespace Sortix
 	namespace Scheduler
 	{
 		byte dummythreaddata[sizeof(Thread)];
-		Thread* dummythread = (Thread*) &dummythreaddata;
+		Thread* dummythread;
 		Thread* currentthread;
 		Thread* idlethread;
 		Thread* firstrunnablethread;
@@ -67,6 +68,8 @@ namespace Sortix
 			// currentthread is accessed. This lets us avoid checking whether
 			// currentthread is NULL (which it only will be once) which gives
 			// simpler code.
+			dummythread = (Thread*) &dummythreaddata;
+			Maxsi::Memory::Set(dummythread, 0, sizeof(*dummythread));
 			currentthread = dummythread;
 			firstrunnablethread = NULL;
 			firstsleepingthread = NULL;
