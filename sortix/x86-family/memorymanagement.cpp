@@ -291,6 +291,12 @@ namespace Sortix
 
 		addr_t SwitchAddressSpace(addr_t addrspace)
 		{
+			if ( currentdir != Page::AlignDown(currentdir) )
+			{
+				PanicF("Attempted to switch to address space 0x%zx, but it "
+				       "wasn't page aligned!", currentdir);
+			}
+
 			// Don't switch if we are already there.
 			if ( addrspace == currentdir ) { return currentdir; }
 

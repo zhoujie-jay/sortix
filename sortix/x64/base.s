@@ -41,7 +41,8 @@ _beginkernel:
 	movw $0x758, 0xB83F8
 
 	# Initialize the stack pointer.
-	movq $stackend, %rsp
+	movq $stack, %rsp
+	addq $65536, %rsp # 64 KiB, see kernel.cpp
 
 	# Reset EFLAGS.
 	# pushl	$0

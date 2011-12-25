@@ -31,8 +31,9 @@
 .type _beginkernel, @function
 beginkernel:
 _beginkernel:
-	# Initialize the stack pointer.
-	mov	$stackend, %esp
+	# Initialize the stack pointer. The magic value is from kernel.cpp.
+	movl $stack, %esp
+	addl $65536, %esp # 64 KiB, see kernel.cpp
 
 	# Reset EFLAGS.
 	# pushl	$0

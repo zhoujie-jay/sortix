@@ -56,8 +56,8 @@ using namespace Maxsi;
 
 void* RunApplication(void* Parameter);
 
+// Keep the stack size aligned with $CPU/base.s
 extern "C" { size_t stack[64*1024] = {0}; }
-extern "C" { size_t stackend = 0; }
 
 namespace Sortix
 {
