@@ -117,6 +117,39 @@ namespace Sortix
 			return 0;		
 		}
 
+// TODO: Get these from unistd.h or something.
+#ifndef SEEK_SET
+#define SEEK_SET 0 /* Seek from beginning of file.  */
+#endif
+#ifndef SEEK_CUR
+#define SEEK_CUR 1 /* Seek from current position.  */
+#endif
+#ifndef SEEK_END
+#define SEEK_END 2 /* Seek from end of file.  */
+#endif
+
+		void SysSeek(int fd, off_t* offset, int whence)
+		{
+			// TODO: Validate that offset is a legal user-space off_t!
+			Process* process = CurrentProcess();
+			Device* dev = process->descriptors.Get(fd);
+			if ( !dev ) { Error::Set(EBADF); *offset = -1; return; }
+			if ( !dev->IsType(Device::BUFFER) ) { Error::Set(EBADF); *offset = -1; return; }
+			DevBuffer* buffer = (DevBuffer*) dev;
+			off_t origin;
+			switch ( whence )
+			{
+				case SEEK_SET: origin = 0; break;
+				case SEEK_CUR: origin = buffer->Position(); break;
+				case SEEK_END: origin = buffer->Size(); break;
+				default: Error::Set(EINVAL); *offset = -1; break;
+			}
+			off_t newposition = origin + *offset;
+			if ( newposition < 0 ) { Error::Set(EINVAL); *offset = -1; return; }
+			if ( !buffer->Seek(newposition) ) { *offset = -1; return; }
+			*offset = buffer->Position();
+		}
+
 		int SysClose(int fd)
 		{
 			Process* process = CurrentProcess();
@@ -150,6 +183,7 @@ namespace Sortix
 			Syscall::Register(SYSCALL_CLOSE, (void*) SysClose);
 			Syscall::Register(SYSCALL_DUP, (void*) SysDup);
 			Syscall::Register(SYSCALL_ISATTY, (void*) SysIsATTY);
+			Syscall::Register(SYSCALL_SEEK, (void*) SysSeek);
 		}
 	}
 }

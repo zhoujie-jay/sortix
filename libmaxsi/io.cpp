@@ -49,6 +49,7 @@ namespace Maxsi
 	DEFN_SYSCALL2(char*, SysGetCWD, SYSCALL_GETCWD, char*, size_t);
 	DEFN_SYSCALL1(int, SysUnlink, SYSCALL_UNLINK, const char*);
 	DEFN_SYSCALL1(int, SysIsATTY, SYSCALL_ISATTY, int);
+	DEFN_SYSCALL3_VOID(SysSeek, SYSCALL_SEEK, int, off_t*, int);
 
 	size_t Print(const char* string)
 	{
@@ -149,6 +150,12 @@ namespace Maxsi
 		}
 
 		return 0;
+	}
+
+	extern "C" off_t lseek(int fd, off_t offset, int whence)
+	{
+		SysSeek(fd, &offset, whence);
+		return offset;
 	}
 
 	extern "C" int pipe(int pipefd[2])
