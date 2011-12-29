@@ -74,16 +74,16 @@ static size_t fdio_write(const void* ptr, size_t size, size_t nmemb, void* user)
 	return sofar;
 }
 
-static int fdio_seek(void* user, long offset, int whence)
+static int fdio_seek(void* user, off_t offset, int whence)
 {
 	fdio_t* fdio = (fdio_t*) user;
 	return (int) lseek(fdio->fd, offset, whence);
 }
 
-static long fdio_tell(void* user)
+static off_t fdio_tell(void* user)
 {
 	fdio_t* fdio = (fdio_t*) user;
-	return (int) lseek(fdio->fd, 0, SEEK_CUR);
+	return lseek(fdio->fd, 0, SEEK_CUR);
 }
 
 static void fdio_clearerr(void* user)

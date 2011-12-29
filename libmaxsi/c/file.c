@@ -91,9 +91,14 @@ size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* fp)
 	return sofar;
 }
 
-int fseek(FILE* fp, long offset, int whence)
+int fseeko(FILE* fp, off_t offset, int whence)
 {
 	return (fp->seek_func) ? fp->seek_func(fp->user, offset, whence) : 0;
+}
+
+int fseek(FILE* fp, long offset, int whence)
+{
+	return fseeko(fp, offset, whence);
 }
 
 void clearerr(FILE* fp)
@@ -119,10 +124,15 @@ void rewind(FILE* fp)
 	clearerr(fp);
 }
 
-long ftell(FILE* fp)
+off_t ftello(FILE* fp)
 {
 	if ( !fp->tell_func ) { errno = EBADF; return -1; }
 	return fp->tell_func(fp->user);
+}
+
+long ftell(FILE* fp)
+{
+	return (long) ftello(fp);
 }
 
 int fflush(FILE* fp)
