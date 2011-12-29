@@ -7,9 +7,8 @@ typedef struct _FILE
 {
 	/* This is non-standard, but useful. If you allocate your own FILE and
 	   register it with fregister, feel free to use modify the following members
-	   to customize how it works. Do not call or use these data structures,
-	   though, as the standard library library may do various kinds of buffering
-	   and locale/encoding conversion. */
+	   to customize how it works. Don't call the functions directly, though, as
+	   the standard library does various kinds of buffering and conversion. */
 	size_t buffersize;
 	char* buffer;
 	void* user;
