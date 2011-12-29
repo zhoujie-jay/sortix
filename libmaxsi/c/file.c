@@ -193,3 +193,16 @@ int fcloseall(void)
 	return (result) ? EOF : 0;
 }
 
+int fgetc(FILE* fp)
+{
+	char c;
+	if ( fread(&c, 1, sizeof(char), fp) < sizeof(char) ) { return EOF; }
+	return c;
+}
+
+int fputc(int c, FILE* fp)
+{
+	if ( fwrite(&c, 1, sizeof(char), fp) < sizeof(char) ) { return EOF; }
+	return c;
+}
+
