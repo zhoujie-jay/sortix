@@ -37,3 +37,13 @@ int init_stdio()
 	stderr = fdio_newfile(2, "w");
 	return 0;
 }
+
+int getchar(void)
+{
+	return fgetc(stdin);
+}
+
+int putchar(int c)
+{
+	return fputc(c, stdout);
+}
