@@ -191,3 +191,14 @@ FILE* fopen(const char* path, const char* mode)
 	return fp;
 }
 
+int remove(const char* pathname)
+{
+	int result = unlink(pathname);
+	if ( result && errno == EISDIR )
+	{
+		// TODO: rmdir is unimplemented.
+		// result = rmdir(pathname);
+	}
+	return result;
+}
+
