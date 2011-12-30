@@ -206,3 +206,12 @@ int fputc(int c, FILE* fp)
 	return c;
 }
 
+int getc(FILE* fp)
+{
+	return fgetc(fp);
+}
+
+int putc(int c, FILE* fp)
+{
+	return fputc(c, fp);
+}
