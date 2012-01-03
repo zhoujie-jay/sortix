@@ -30,6 +30,6 @@ LDFLAGS=$(CPULDFLAGS)
 CC=gcc
 CFLAGS=$(CPUFLAGS) $(FLAGS) $(INCLUDES)
 CXX=g++
-CXXFLAGS=$(CPUFLAGS) $(FLAGS) $(INCLUDES) -fno-exceptions
+CXXFLAGS=$(CPUFLAGS) $(FLAGS) $(INCLUDES) -fno-exceptions -fno-rtti
 
 
