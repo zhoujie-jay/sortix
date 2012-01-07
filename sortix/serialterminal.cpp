@@ -69,6 +69,13 @@ namespace Sortix
 			int c;
 			while ( (c=UART::TryPopChar()) != -1 )
 			{
+				#warning Support for hooking the serial input up against the keyboard API have broken
+				#if 0
+				// TODO: This is no longer compatible with the keyboard API, so
+				// it has been commented out. Besides, JSSortix isn't really
+				// supported anyway. It'd be nice to refactor this into a
+				// SerialKeyboard class or something.
+
 				using namespace Maxsi::Keyboard;
 
 				if ( !isEsc && c == '\e' ) { isEsc = true; continue; }
@@ -121,6 +128,7 @@ namespace Sortix
 					c &= ~(1<<7); c |= DEPRESSED;
 				}
 				Keyboard::QueueKeystroke(c);
+				#endif
 			}
 		}
 

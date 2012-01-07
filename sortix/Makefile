@@ -42,7 +42,7 @@ ifdef X86FAMILY
     CPUFLAGS:=$(CPUFLAGS) -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow
 endif
 
-DIRS=. x64 x86 x86-family fs
+DIRS=. x64 x86 x86-family fs kb kb/layout
 
 DEFINES:=-DSORTIX_KERNEL $(CPUDEFINES)
 ifeq ($(JSSORTIX),1)
@@ -69,6 +69,9 @@ log.o \
 utf8.o \
 panic.o \
 keyboard.o \
+kbapiadapter.o \
+kb/ps2.o \
+kb/layout/us.o \
 scheduler.o \
 syscall.o \
 sound.o \

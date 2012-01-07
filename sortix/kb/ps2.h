@@ -17,44 +17,51 @@
 	You should have received a copy of the GNU General Public License along
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	keyboard.h
-	An interface to keyboards.
+	kb/ps2.h
+	A driver for the PS2 Keyboard.
 
 ******************************************************************************/
 
-#ifndef SORTIX_KEYBOARD_H
-#define SORTIX_KEYBOARD_H
+#ifndef SORTIX_KB_PS2_H
+#define SORTIX_KB_PS2_H
+
+#include "../keyboard.h"
 
 namespace Sortix
 {
-	class Keyboard;
-	class KeyboardOwner;
-
-	class Keyboard
+	class PS2Keyboard : public Keyboard
 	{
 	public:
-		static void Init();
+		PS2Keyboard(uint16_t iobase, uint8_t interrupt);
+		virtual ~PS2Keyboard();
+		virtual int Read();
+		virtual size_t GetPending() const;
+		virtual bool HasPending() const;
+		virtual void SetOwner(KeyboardOwner* owner, void* user);
 
 	public:
-		virtual ~Keyboard() { }
-		virtual int Read() = 0;
-		virtual size_t GetPending() const = 0;
-		virtual bool HasPending() const = 0;
-		virtual void SetOwner(KeyboardOwner* owner, void* user) = 0;
-	};
+		void OnInterrupt(CPU::InterruptRegisters* regs);
 
-	class KeyboardOwner
-	{
-	public:
-		virtual ~KeyboardOwner() { }
-		virtual void OnKeystroke(Keyboard* keyboard, void* user) = 0;	
-	};
+	private:
+		uint8_t PopScancode();
+		int DecodeScancode(uint8_t scancode);
+		void UpdateLEDs(int ledval);
+		bool PushKey(int key);
+		int PopKey();
+		void NotifyOwner();
 
-	class KeyboardLayout
-	{
-	public:
-		virtual ~KeyboardLayout() { }
-		virtual uint32_t Translate(int kbkey) = 0;	
+	private:
+		int* queue;
+		size_t queuelength;
+		size_t queueoffset;
+		size_t queueused;
+		KeyboardOwner* owner;
+		void* ownerptr;
+		uint16_t iobase;
+		uint8_t interrupt;
+		bool scancodeescaped;
+		uint8_t leds;
+
 	};
 }
 

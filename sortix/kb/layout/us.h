@@ -17,44 +17,31 @@
 	You should have received a copy of the GNU General Public License along
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	keyboard.h
-	An interface to keyboards.
+	ks/layout/us.h
+	The United States keyboard layout.
 
 ******************************************************************************/
 
-#ifndef SORTIX_KEYBOARD_H
-#define SORTIX_KEYBOARD_H
+#ifndef SORTIX_KB_LAYOUT_US_H
+#define SORTIX_KB_LAYOUT_US_H
+
+#include "../../keyboard.h"
 
 namespace Sortix
 {
-	class Keyboard;
-	class KeyboardOwner;
-
-	class Keyboard
+	class KBLayoutUS : public KeyboardLayout
 	{
 	public:
-		static void Init();
-
+		KBLayoutUS();
+		virtual ~KBLayoutUS();
+		virtual uint32_t Translate(int kbkey);
+	
 	public:
-		virtual ~Keyboard() { }
-		virtual int Read() = 0;
-		virtual size_t GetPending() const = 0;
-		virtual bool HasPending() const = 0;
-		virtual void SetOwner(KeyboardOwner* owner, void* user) = 0;
-	};
+		bool ProcessModifier(int kbkey, int modkey, unsigned flag);
 
-	class KeyboardOwner
-	{
-	public:
-		virtual ~KeyboardOwner() { }
-		virtual void OnKeystroke(Keyboard* keyboard, void* user) = 0;	
-	};
+	private:
+		unsigned modifiers;
 
-	class KeyboardLayout
-	{
-	public:
-		virtual ~KeyboardLayout() { }
-		virtual uint32_t Translate(int kbkey) = 0;	
 	};
 }
 
