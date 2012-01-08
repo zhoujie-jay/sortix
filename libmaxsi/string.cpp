@@ -98,6 +98,63 @@ namespace Maxsi
 			return 0;
 		}
 
+		DUAL_FUNCTION(size_t, strspn, Accept, (const char* str, const char* accept))
+		{
+			size_t acceptlen = 0;
+			while ( accept[acceptlen] ) { acceptlen++; }			
+			for ( size_t result = 0; true; result++ )
+			{
+				char c = str[result];
+				if ( !c ) { return result; }
+				bool matches = false;
+				for ( size_t i = 0; i < acceptlen; i++ )
+				{
+					if ( str[result] != accept[i] ) { continue; }
+					matches = true;
+					break;
+				}
+				if ( !matches ) { return result; }
+			}
+		}
+
+		DUAL_FUNCTION(size_t, strcspn, Reject, (const char* str, const char* reject))
+		{
+			size_t rejectlen = 0;
+			while ( reject[rejectlen] ) { rejectlen++; }			
+			for ( size_t result = 0; true; result++ )
+			{
+				char c = str[result];
+				if ( !c ) { return result; }
+				bool matches = false;
+				for ( size_t i = 0; i < rejectlen; i++ )
+				{
+					if ( str[result] != reject[i] ) { continue; }
+					matches = true;
+					break;
+				}
+				if ( matches ) { return result; }
+			}
+		}
+
+		DUAL_FUNCTION(char*, strtok_r, TokenizeR, (char* str, const char* delim, char** saveptr))
+		{
+			if ( !str && !*saveptr ) { return NULL; }
+			if ( !str ) { str = *saveptr; }
+			str += Accept(str, delim); // Skip leading
+			if ( !*str ) { return NULL; }
+			size_t amount = Reject(str, delim);
+			if ( str[amount] ) { *saveptr = str + amount + 1; }
+			else { *saveptr = NULL; }
+			str[amount] = '\0';
+			return str;
+		}
+
+		DUAL_FUNCTION(char*, strtok, TokenizeR, (char* str, const char* delim))
+		{
+			static char* lasttokensaveptr = NULL;
+			return TokenizeR(str, delim, &lasttokensaveptr);
+		}
+
 		bool StartsWith(const char* haystack, const char* needle)
 		{
 			return CompareN(haystack, needle, Length(needle)) == 0;

@@ -38,10 +38,14 @@ void* memcpy(void* restrict, const void* restrict, size_t);
 void* memset(void*, int, size_t);
 char* strcat(char* restrict, const char* restrict);
 int strcmp(const char*, const char*);
+size_t strcspn(const char*, const char*);
 char* strcpy(char* restrict, const char* restrict);
 char* strerror(int);
 size_t strlen(const char*);
 int strncmp(const char*, const char*, size_t);
+size_t strspn(const char*, const char*);
+char* strtok(char* restrict, const char* restrict);
+char* strtok_r(char* restrict, const char* restrict, char** restrict);
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #ifndef SORTIX_UNIMPLEMENTED
@@ -53,7 +57,6 @@ char* stpncpy(char* restrict, const char* restrict, size_t);
 char* strchr(const char*, int);
 int strcoll(const char*, const char*);
 int strcoll_l(const char*, const char*, locale_t);
-size_t strcspn(const char*, const char*);
 char* strdup(const char*);
 char* strerror_l(int, locale_t);
 int strerror_r(int, char*, size_t);
@@ -64,10 +67,7 @@ size_t strnlen(const char*, size_t);
 char* strpbrk(const char*, const char*);
 char* strrchr(const char*, int);
 char* strsignal(int);
-size_t strspn(const char*, const char*);
 char* strstr(const char*, const char*);
-char* strtok(char* restrict, const char* restrict);
-char* strtok_r(char* restrict, const char* restrict, char** restrict);
 size_t strxfrm(char* restrict, const char* restrict, size_t);
 size_t strxfrm_l(char* restrict, const char* restrict, size_t, locale_t);
 #endif

@@ -29,13 +29,18 @@ namespace Maxsi
 {
 	namespace String
 	{
-		const char ASCII_ESCAPE = 27;		
+		// TODO: Remove this once. Use \e instead.
+		const char ASCII_ESCAPE = 27;
 
 		size_t Length(const char* String);
+		size_t Accept(const char* str, const char* accept);
+		size_t Reject(const char* str, const char* reject);
 		char* Clone(const char* Source);
 		char* Combine(size_t NumParameters, ...);
 		char* Copy(char* Dest, const char* Src);
 		char* Cat(char* Dest, const char* Src);
+		char* Tokenize(char* str, const char* delim);
+		char* TokenizeR(char* str, const char* delim, char** saveptr);
 		int Compare(const char* A, const char* B);
 		int CompareN(const char* A, const char* B, size_t MaxLength);
 		bool StartsWith(const char* Haystack, const char* Needle);
