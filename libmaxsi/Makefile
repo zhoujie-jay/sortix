@@ -29,11 +29,13 @@ ASFLAGS=$(CPUASFLAGS)
 NASMFLAGS=$(CPUNASMFLAGS)
 
 COBJS=\
+c/ctype.o \
 c/file.o \
 c/fdio.o \
 c/stdio.o \
 
 CHEADERS=\
+c/h/ctype.h \
 c/h/unistd.h \
 c/h/stdlib.h \
 c/h/wchar.h \
