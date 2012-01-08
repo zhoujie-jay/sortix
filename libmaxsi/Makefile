@@ -108,10 +108,10 @@ endif
 ifndef LIBMAXSI_NO_LIBC
     OBJS:=$(OBJS) $(COBJS)
     ifndef LIBMAXSI_NO_SHARED
-         BINS:=$(BINS) libc.so
+         BINS:=$(BINS) libc.so libg.so
     endif
     ifndef LIBMAXSI_NO_STATIC
-         BINS:=$(BINS) libc.a
+         BINS:=$(BINS) libc.a libg.a
     endif
 
     HEADERS:=$(MAXSIHEADERS) $(CHEADERS)
@@ -139,6 +139,12 @@ libc.a: libmaxsi.a
 	ln -sf $< $@ 
 
 libc.so: libmaxsi.so
+	ln -sf $< $@ 
+
+libg.a: libc.a
+	ln -sf $< $@ 
+
+libg.so: libc.so
 	ln -sf $< $@ 
 
 start.o: $(CPU)/start.o
@@ -190,7 +196,7 @@ clean:
 # Installation into sysroot
 install:
 	mkdir -p $(SYSROOT)/usr/lib
-	for F in $(BINS); do cp --preserve=links $$F $(SYSROOT)/usr/lib || exit $?; done
+	for F in $(BINS); do cp -P $$F $(SYSROOT)/usr/lib || exit $?; done
 	mkdir -p $(SYSROOT)/usr/include
 	for F in $(CHEADERS); do F=`echo $$F | sed 's/c\/h\///g'`; mkdir -p $(SYSROOT)/usr/include/`dirname $$F`; cp c/h/$$F $(SYSROOT)/usr/include/$$F || exit $?; done
 	mkdir -p $(SYSROOT)/usr/include/libmaxsi
