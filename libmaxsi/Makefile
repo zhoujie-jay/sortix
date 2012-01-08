@@ -93,6 +93,10 @@ sortix-sound.h \
 OBJS:=$(LIBMAXSIOBJS)
 BINS:=
 
+ifndef LIBMAXSI_SHARED
+    LIBMAXSI_NO_SHARED=1
+endif
+
 ifndef LIBMAXSI_NO_SHARED
     BINS:=$(BINS) libmaxsi.so
 endif
