@@ -155,6 +155,34 @@ namespace Maxsi
 			return TokenizeR(str, delim, &lasttokensaveptr);
 		}
 
+		DUAL_FUNCTION(char*, strchrnul, SeekNul, (const char* str, int c))
+		{
+			while ( *str )
+			{
+				if ( *str == c ) { return (char*) str; }
+				str++;
+			}
+			return (char*) str;
+		}
+
+		DUAL_FUNCTION(char*, strrchr, SeekReverse, (const char* str, int c))
+		{
+			const char* last = NULL;
+			while ( *str )
+			{
+				if ( *str == c ) { last = str; }
+				str++;
+			}
+			return (char*) last;
+		}
+
+		DUAL_FUNCTION(char*, strchr, Seek, (const char* str, int c))
+		{
+			char* result = SeekNul(str, c);
+			if ( !*result ) { return NULL; }
+			return result;
+		}
+
 		bool StartsWith(const char* haystack, const char* needle)
 		{
 			return CompareN(haystack, needle, Length(needle)) == 0;

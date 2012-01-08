@@ -41,6 +41,9 @@ namespace Maxsi
 		char* Cat(char* Dest, const char* Src);
 		char* Tokenize(char* str, const char* delim);
 		char* TokenizeR(char* str, const char* delim, char** saveptr);
+		char* Seek(const char* str, int c);
+		char* SeekNul(const char* str, int c);
+		char* SeekReverse(const char* str, int c);
 		int Compare(const char* A, const char* B);
 		int CompareN(const char* A, const char* B, size_t MaxLength);
 		bool StartsWith(const char* Haystack, const char* Needle);
