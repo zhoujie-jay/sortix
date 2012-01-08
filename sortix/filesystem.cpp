@@ -96,6 +96,7 @@ namespace Sortix
 		this->flags = flags;
 		this->offset = 0;
 		this->buffer->Refer();
+		if ( flags & O_TRUNC ) { buffer->Resize(0); }
 	}
 
 	DevFileWrapper::~DevFileWrapper()
