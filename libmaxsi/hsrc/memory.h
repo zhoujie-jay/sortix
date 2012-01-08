@@ -30,12 +30,13 @@ namespace Maxsi
 {
 	namespace Memory
 	{
-		void	Init();
-		void*	Allocate(size_t Size);
-		void	Free(void* Addr);
-		size_t	GetChunkOverhead();
-		void*	Copy(void* Dest, const void* Src, size_t Length);
-		void*	Set(void* Dest, int Value, size_t Length);
+		void Init();
+		void* Allocate(size_t Size);
+		void Free(void* Addr);
+		size_t GetChunkOverhead();
+		void* Copy(void* Dest, const void* Src, size_t Length);
+		void* Set(void* Dest, int Value, size_t Length);
+		int Compare(const void* a, const void* b, size_t size);
 	}
 }
 

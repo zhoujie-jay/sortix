@@ -33,6 +33,7 @@ __BEGIN_DECLS
 @include(size_t.h)
 @include(locale_t.h)
 
+int memcmp(const void*, const void*, size_t);
 void* memcpy(void* restrict, const void* restrict, size_t);
 void* memset(void*, int, size_t);
 char* strcat(char* restrict, const char* restrict);
@@ -46,7 +47,6 @@ int strncmp(const char*, const char*, size_t);
 #ifndef SORTIX_UNIMPLEMENTED
 void* memccpy(void* restrict, const void* restrict, int, size_t);
 void* memchr(const void*, int, size_t);
-int memcmp(const void*, const void*, size_t);
 void* memmove(void*, const void*, size_t);
 char* stpcpy(char* restrict, const char* restrict);
 char* stpncpy(char* restrict, const char* restrict, size_t);

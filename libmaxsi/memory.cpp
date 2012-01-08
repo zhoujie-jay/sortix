@@ -77,5 +77,16 @@ namespace Maxsi
 
 			return Dest;
 		}
+
+		DUAL_FUNCTION(int, memcmp, Compare, (const void* a, const void* b, size_t size))
+		{
+			const byte* buf1 = (const byte*) a;
+			const byte* buf2 = (const byte*) b;
+			for ( size_t i = 0; i < size; i++ )
+			{
+				if ( buf1[i] != buf2[i] ) { return (int)(buf1[i]) - (int)(buf2[i]); }
+			}
+			return 0;
+		}
 	}
 }
