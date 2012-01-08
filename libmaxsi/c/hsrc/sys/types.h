@@ -32,6 +32,7 @@
 __BEGIN_DECLS
 
 @include(useconds_t.h)
+@include(pid_t.h)
 
 __END_DECLS
 
