@@ -30,12 +30,125 @@
 #include "../directory.h"
 #include "../stream.h"
 #include "../vga.h"
+#include "../ata.h"
 #include "devfs.h"
 
 using namespace Maxsi;
 
 namespace Sortix
 {
+	class DevATA : public DevBuffer
+	{
+	public:
+		typedef DevBuffer BaseClass;
+
+	public:
+		DevATA(ATADrive* drive);
+		virtual ~DevATA();
+
+	private:
+		ATADrive* drive;
+		off_t offset;
+
+	public:
+		virtual ssize_t Read(byte* dest, size_t count);
+		virtual ssize_t Write(const byte* src, size_t count);
+		virtual bool IsReadable();
+		virtual bool IsWritable();
+		virtual size_t BlockSize();
+		virtual uintmax_t Size();
+		virtual uintmax_t Position();
+		virtual bool Seek(uintmax_t position);
+		virtual bool Resize(uintmax_t size);
+
+	};
+
+	DevATA::DevATA(ATADrive* drive)
+	{
+		this->drive = drive;
+		offset = 0;
+	}
+
+	DevATA::~DevATA()
+	{
+	}
+
+	ssize_t DevATA::Read(byte* dest, size_t count)
+	{
+		if ( SIZE_MAX < count ) { count = SIZE_MAX; }
+		if ( drive->GetSize() - offset < count ) { count = drive->GetSize() - offset; }
+		size_t amount = drive->Read(offset, dest, count);
+		if ( count && !amount ) { return -1; }
+		offset += amount;
+		return amount;
+	}
+
+	ssize_t DevATA::Write(const byte* src, size_t count)
+	{
+		if ( SIZE_MAX < count ) { count = SIZE_MAX; }
+		if ( drive->GetSize() <= offset && count ) { Error::Set(ENOSPC); return -1; }
+		if ( drive->GetSize() - offset < count ) { count = drive->GetSize() - offset; }
+		size_t amount = drive->Write(offset, src, count);
+		if ( count && !amount ) { return -1; }
+		offset += amount;
+		return amount;
+	}
+
+	bool DevATA::IsReadable()
+	{
+		return true;
+	}
+
+	bool DevATA::IsWritable()
+	{
+		return true;
+	}
+
+	size_t DevATA::BlockSize()
+	{
+		return drive->GetSectorSize();
+	}
+
+	uintmax_t DevATA::Size()
+	{
+		return drive->GetSize();
+	}
+
+	uintmax_t DevATA::Position()
+	{
+		return offset;
+	}
+
+	bool DevATA::Seek(uintmax_t position)
+	{
+		if ( drive->GetSize() <= position ) { Error::Set(ENOSPC); return false; }
+		offset = position;
+		return true;
+	}
+
+	bool DevATA::Resize(uintmax_t size)
+	{
+		Error::Set(EPERM);
+		return false;
+	}
+
+	const size_t NUM_ATAS = 4;
+	DevATA* atalist[NUM_ATAS];
+
+	void InitATADriveList()
+	{
+		for ( size_t i = 0; i < NUM_ATAS; i++ )
+		{
+			atalist[i] = NULL;
+		}
+	}
+
+	void RegisterATADrive(unsigned ataid, ATADrive* drive)
+	{
+		atalist[ataid] = new DevATA(drive);
+		atalist[ataid]->Refer();
+	}
+
 	class DevLogTTY : public DevStream
 	{
 	public:
@@ -177,8 +290,8 @@ namespace Sortix
 
 	int DevDevFSDir::Read(sortix_dirent* dirent, size_t available)
 	{
-		const char* names[] = { "null", "tty", "vga" };
-		const size_t nameslength = 3;
+		const char* names[] = { "null", "tty", "vga", "ata0", "ata1", "ata2", "ata3" };
+		const size_t nameslength = 7;
 
 		if ( available <= sizeof(sortix_dirent) ) { return -1; }
 		if ( nameslength <= position )
@@ -191,6 +304,15 @@ namespace Sortix
 		const char* name = names[position];
 		size_t namelen = String::Length(name);
 		size_t needed = sizeof(sortix_dirent) + namelen + 1;
+
+		if ( name[0] == 'a' && name[1] == 't' && name[2] == 'a' )
+		{
+			if ( !atalist[name[3]-'0'] )
+			{
+				position++;
+				return Read(dirent, available);
+			}
+		}
 
 		if ( available < needed )
 		{
@@ -225,6 +347,23 @@ namespace Sortix
 		if ( String::Compare(path, "/null") == 0 ) { return new DevNull; }
 		if ( String::Compare(path, "/tty") == 0 ) { return new DevLogTTY; }
 		if ( String::Compare(path, "/vga") == 0 ) { return new DevVGA; }
+		if ( path[0] == '/' && path[1] == 'a' && path[2] == 't' && path[3] == 'a' && path[4] && !path[5] )
+		{
+			if ( '0' <= path[4] && path[4] <= '9' )
+			{
+				size_t index = path[4] - '0';
+				if  ( index <= NUM_ATAS && atalist[index] )
+				{
+					bool write = flags & O_WRONLY; // TODO: HACK: O_RDWD != O_WRONLY | O_RDONLY
+					if ( write && !ENABLE_DISKWRITE )
+					{
+						Error::Set(EPERM);
+						return false;
+					}
+					return new DevFileWrapper(atalist[index], flags);
+				}
+			}
+		}
 
 		Error::Set(flags & O_CREAT ? EPERM : ENOENT);
 		return NULL;

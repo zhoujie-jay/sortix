@@ -30,6 +30,8 @@
 
 namespace Sortix
 {
+	class ATADrive;
+
 	class DevDevFS : public DevFileSystem
 	{
 	public: 
@@ -41,6 +43,9 @@ namespace Sortix
 		virtual bool Unlink(const char* path);
 
 	};
+
+	void InitATADriveList();
+	void RegisterATADrive(unsigned ataid, ATADrive* drive);
 }
 
 #endif

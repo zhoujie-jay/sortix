@@ -26,6 +26,7 @@
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "ata.h"
+#include "fs/devfs.h"
 
 // TODO: Use the PCI to detect ATA devices instead of relying on them being on
 // standard locations.
@@ -66,7 +67,7 @@ namespace Sortix
 			unsigned ataid = busid*2 + driveid;
 			ATADrive* drive = bus->Instatiate(driveid);
 			if ( !drive ) { return; }
-			// TODO: Actually use the drive somewhere.
+			RegisterATADrive(ataid, drive);
 		}
 
 		void DetectBus(unsigned busid, uint16_t ioport, uint16_t altio)
@@ -78,6 +79,7 @@ namespace Sortix
 
 		void Init()
 		{
+			InitATADriveList();
 			DetectBus(0, 0x1F0, 0x3F6);
 			DetectBus(1, 0x170, 0x366);
 		}
