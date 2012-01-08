@@ -27,6 +27,7 @@
 #include "io.h"
 #include "format.h"
 #include "string.h"
+#include "memory.h"
 #include <sys/readdirents.h>
 #include <unistd.h>
 #include <errno.h>
@@ -108,6 +109,63 @@ namespace Maxsi
 		size_t result = vprintf(format, list);
 		va_end(list);
 		return (int) result;
+	}
+
+	typedef struct vsnprintf_struct
+	{
+		char* str;
+		size_t size;
+		size_t produced;
+		size_t written;
+	} vsnprintf_t;
+
+	size_t StringPrintCallback(void* user, const char* string, size_t stringlen)
+	{
+		vsnprintf_t* info = (vsnprintf_t*) user;
+		if ( info->produced < info->size )
+		{
+			size_t available = info->size - info->produced;
+			size_t possible = (stringlen < available) ? stringlen : available;
+			Memory::Copy(info->str + info->produced, string, possible);
+			info->written += possible;
+		}
+		info->produced += stringlen;
+		return stringlen;
+	}
+
+	extern "C" int vsnprintf(char* restrict str, size_t size, const char* restrict format, va_list list)
+	{
+		vsnprintf_t info;
+		info.str = str;
+		info.size = (size) ? size-1 : 0;
+		info.produced = 0;
+		info.written = 0;
+		Maxsi::Format::Virtual(StringPrintCallback, &info, format, list);
+		if ( size ) { info.str[info.written] = '\0'; }
+		return (int) info.produced;
+	}
+
+	extern "C" int snprintf(char* restrict str, size_t size, const char* restrict format, ...)
+	{
+		va_list list;
+		va_start(list, format);
+		int result = vsnprintf(str, size, format, list);
+		va_end(list);
+		return result;
+	}
+
+	extern "C" int vsprintf(char* restrict str, const char* restrict format, va_list list)
+	{
+		return vsnprintf(str, SIZE_MAX, format, list);
+	}
+
+	extern "C" int sprintf(char* restrict str, const char* restrict format, ...)
+	{
+		va_list list;
+		va_start(list, format);
+		int result = vsprintf(str, format, list);
+		va_end(list);
+		return result;
 	}
 
 	extern "C" void error(int status, int errnum, const char *format, ...)

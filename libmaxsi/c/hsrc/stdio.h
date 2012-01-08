@@ -100,8 +100,12 @@ extern int putc(int c, FILE* stream);
 extern int putchar(int c);
 extern int remove(const char* path);
 extern void rewind(FILE* stream);
+extern int snprintf(char* restrict s, size_t n, const char* restrict format, ...);
+extern int sprintf(char* restrict s, const char* restrict format, ...);
 extern int vfprintf(FILE* restrict stream, const char* restrict format, va_list ap);
 extern int vprintf(const char* restrict format, va_list ap);
+extern int vsnprintf(char* restrict, size_t, const char* restrict, va_list);
+extern int vsprintf(char* restrict s, const char* restrict format, va_list ap);
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #ifndef SORTIX_UNIMPLEMENTED
@@ -128,15 +132,11 @@ extern int rename(const char* oldname, const char* newname);
 extern int renameat(int oldfd, const char* oldname, int newfd, const char* newname);
 extern int scanf(const char* restrict format, ...);
 extern int setvbuf(FILE* restrict stream, char* restrict buf, int type, size_t size);
-extern int snprintf(char* restrict s, size_t n, const char* restrict format, ...);
-extern int sprintf(char* restrict s, const char* restrict format, ...);
 extern int sscanf(const char* restrict s, const char* restrict format, ...);
 extern int ungetc(int c, FILE* stream);
 extern int vdprintf(int fildes, const char* restrict format, va_list ap);
 extern int vfscanf(FILE* restrict stream, const char* restrict format, va_list arg);
 extern int vscanf(const char* restrict format, va_list arg);
-extern int vsnprintf(char* restrict, size_t, const char* restrict, va_list);
-extern int vsprintf(char* restrict s, const char* restrict format, va_list ap);
 extern int vsscanf(const char* restrict s, const char* restrict format, va_list arg);
 extern ssize_t getdelim(char** restrict lineptr, size_t* restrict n, int delimiter, FILE* restrict stream);
 extern ssize_t getline(char** restrict lineptr, size_t* restrict n, FILE* restrict stream);
