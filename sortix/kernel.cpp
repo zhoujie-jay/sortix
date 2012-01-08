@@ -204,12 +204,7 @@ namespace Sortix
 		initrdsize = 0x280000; // 2 MiB 512 KiB
 #endif
 
-		Memory::RegisterInitRDSize(initrdsize);
-
-#ifndef JSSORTIX
-		// Search for PCI devices and load their drivers.
-		PCI::Init();
-#endif
+		Memory::RegisterInitRDSize(initrdsize);;
 
 		// Initialize the paging and virtual memory.
 		Memory::Init(BootInfo);
@@ -261,6 +256,11 @@ namespace Sortix
 
 		// Set up the initial ram disk.
 		InitRD::Init(initrd, initrdsize);
+
+#ifndef JSSORTIX
+		// Search for PCI devices and load their drivers.
+		PCI::Init();
+#endif
 
 		// Alright, now the system's drivers are loaded and initialized. It is
 		// time to load the initial user-space programs and start execution of

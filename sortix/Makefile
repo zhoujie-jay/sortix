@@ -52,6 +52,11 @@ endif
 ifeq ($(PANIC_SHORT),1)
     DEFINES:=$(DEFINES) -DPANIC_SHORT
 endif 
+ifeq ($(DISKWRITE),1)
+    DEFINES:=$(DEFINES) -DENABLE_DISKWRITE=1
+else
+    DEFINES:=$(DEFINES) -DENABLE_DISKWRITE=0
+endif 
 CPPFLAGSRELEASE=-s $(O)
 CPPFLAGSDEBUG=
 CPPFLAGS=-I.. -I. $(CPUDEFINES) $(CPUFLAGS) -std=gnu++0x -Wall -Wextra -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -fno-exceptions -fno-rtti -fno-stack-protector $(DEFINES) $(CPPFLAGSRELEASE)
@@ -86,6 +91,7 @@ signal.o \
 fs/devfs.o \
 fs/initfs.o \
 fs/ramfs.o \
+ata.o \
 ../libmaxsi/libmaxsi-sortix.a \
 end.o # Must be last
 

@@ -23,8 +23,12 @@
 ******************************************************************************/
 
 #include "platform.h"
+#include <libmaxsi/error.h>
 #include "pci.h"
 #include "log.h"
+#include "ata.h"
+
+using namespace Maxsi;
 
 namespace Sortix
 {
@@ -231,6 +235,7 @@ namespace Sortix
 
 		void Init()
 		{
+			ATA::Init();
 #if 0
 			Log::Print("PCI Devices: ");
 
