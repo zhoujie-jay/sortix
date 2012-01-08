@@ -209,5 +209,6 @@ install:
 	touch deleteme.cpp
 	g++ $(CPUFLAGS) -c deleteme.cpp -o deleteme.o
 	for F in crt0.o crtn.o crt1.o crtend.o crtbeginT.o crti.o; do cp deleteme.o $(SYSROOT)/usr/lib/$$F; done
+	for F in libgcc.so libm.so libstdc++.so; do ld $(CPULDFLAGS) -shared deleteme.o -o $(SYSROOT)/usr/lib/$$F; done
 	rm -f deleteme.o deleteme.cpp
 
