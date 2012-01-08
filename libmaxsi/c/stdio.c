@@ -47,3 +47,12 @@ int putchar(int c)
 {
 	return fputc(c, stdout);
 }
+
+/* This function is quite stupid because of its trailing newline that fputs(3)
+   does not have - but it's still better than gets(3). I'd have left it out if
+   various programs didn't need it. */
+int puts(const char* str)
+{
+	return printf("%s\n", str) < 0 ? EOF : 1;
+}
+
