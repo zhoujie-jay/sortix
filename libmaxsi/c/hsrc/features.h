@@ -29,11 +29,12 @@
 #ifdef	__cplusplus
 	#define __BEGIN_DECLS	extern "C" {
 	#define __END_DECLS		}
-	#define restrict
 #else
 	#define __BEGIN_DECLS
 	#define __END_DECLS
 #endif
+
+#define restrict
 
 #define __POSIX_NO_OBSOLETE
 
