@@ -176,6 +176,7 @@ int unlink(const char*);
 ssize_t write(int, const void*, size_t);
 
 #ifdef SORTIX_EXTENSIONS
+size_t getpagesize(void);
 int memstat(size_t* memused, size_t* memtotal);
 int uptime(uintmax_t* usecssinceboot);
 int writeall(int fd, const void* buffer, size_t len);

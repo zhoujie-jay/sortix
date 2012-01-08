@@ -36,6 +36,7 @@ namespace Maxsi
 #ifndef SORTIX_KERNEL
 		DEFN_SYSCALL2(int, SysMemStat, SYSCALL_MEMSTAT, size_t*, size_t*);
 		DEFN_SYSCALL1(void*, SysSbrk, SYSCALL_SBRK, intptr_t);
+		DEFN_SYSCALL0(size_t, SysGetPageSize, SYSCALL_GET_PAGE_SIZE);
 
 		extern "C" int memstat(size_t* memused, size_t* memtotal)
 		{
@@ -45,6 +46,11 @@ namespace Maxsi
 		extern "C" void* sbrk(intptr_t increment)
 		{
 			return SysSbrk(increment);
+		}
+
+		extern "C" size_t getpagesize(void)
+		{
+			return SysGetPageSize();
 		}
 #endif
 

@@ -62,7 +62,8 @@
 #define SYSCALL_UPTIME 34
 #define SYSCALL_SBRK 35
 #define SYSCALL_SEEK 36
-#define SYSCALL_MAX_NUM 37 /* index of highest constant + 1 */
+#define SYSCALL_GET_PAGE_SIZE 37
+#define SYSCALL_MAX_NUM 38 /* index of highest constant + 1 */
 
 #endif
 

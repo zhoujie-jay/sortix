@@ -732,6 +732,12 @@ namespace Sortix
 		return (void*) newend;
 	}
 
+	size_t SysGetPageSize()
+	{
+		// TODO: Query the virtual memory layer or look up in the process class.
+		return 0x1000UL;
+	}
+
 	void Process::Init()
 	{
 		Syscall::Register(SYSCALL_EXEC, (void*) SysExecVE);
@@ -742,6 +748,7 @@ namespace Sortix
 		Syscall::Register(SYSCALL_WAIT, (void*) SysWait);
 		Syscall::Register(SYSCALL_REGISTER_ERRNO, (void*) SysRegisterErrno);
 		Syscall::Register(SYSCALL_SBRK, (void*) SysSbrk);
+		Syscall::Register(SYSCALL_GET_PAGE_SIZE, (void*) SysGetPageSize);
 
 		nextpidtoallocate = 0;
 
