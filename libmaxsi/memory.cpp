@@ -88,5 +88,15 @@ namespace Maxsi
 			}
 			return 0;
 		}
+
+		DUAL_FUNCTION(void*, memchr, Seek, (const void* s, int c, size_t size))
+		{
+			const byte* buf = (const byte*) s;
+			for ( size_t i = 0; i < size; i++ )
+			{
+				if ( buf[i] == c ) { return (void*) (buf + i); }
+			}
+			return NULL;	
+		}
 	}
 }
