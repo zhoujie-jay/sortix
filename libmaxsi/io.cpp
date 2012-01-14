@@ -53,6 +53,8 @@ namespace Maxsi
 	DEFN_SYSCALL3_VOID(SysSeek, SYSCALL_SEEK, int, off_t*, int);
 	DEFN_SYSCALL2(int, SysMkDir, SYSCALL_MKDIR, const char*, mode_t);
 	DEFN_SYSCALL1(int, SysRmDir, SYSCALL_RMDIR, const char*);
+	DEFN_SYSCALL2(int, SysTruncate, SYSCALL_TRUNCATE, const char*, off_t);
+	DEFN_SYSCALL2(int, SysFTruncate, SYSCALL_FTRUNCATE, int, off_t);
 
 	size_t Print(const char* string)
 	{
@@ -266,6 +268,16 @@ namespace Maxsi
 	extern "C" int rmdir(const char* pathname)
 	{
 		return SysRmDir(pathname);
+	}
+
+	extern "C" int truncate(const char* pathname, off_t length)
+	{
+		return SysTruncate(pathname, length);
+	}
+
+	extern "C" int ftruncate(int fd, off_t length)
+	{
+		return SysFTruncate(fd, length);
 	}
 
 	extern "C" int isatty(int fd)

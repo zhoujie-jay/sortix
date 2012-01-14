@@ -65,7 +65,9 @@
 #define SYSCALL_GET_PAGE_SIZE 37
 #define SYSCALL_MKDIR 38
 #define SYSCALL_RMDIR 39
-#define SYSCALL_MAX_NUM 40 /* index of highest constant + 1 */
+#define SYSCALL_TRUNCATE 40
+#define SYSCALL_FTRUNCATE 41
+#define SYSCALL_MAX_NUM 42 /* index of highest constant + 1 */
 
 #endif
 

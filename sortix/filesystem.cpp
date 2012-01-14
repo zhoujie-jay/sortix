@@ -97,12 +97,28 @@ namespace Sortix
 			return -1;
 		}
 
+		int SysTruncate(const char* pathname, off_t length)
+		{
+			// TODO: Add the proper filesystem support!
+			Error::Set(ENOSYS);
+			return -1;
+		}
+
+		int SysFTruncate(const char* pathname, off_t length)
+		{
+			// TODO: Add the proper filesystem support!
+			Error::Set(ENOSYS);
+			return -1;
+		}
+
 		void Init()
 		{
 			Syscall::Register(SYSCALL_OPEN, (void*) SysOpen);
 			Syscall::Register(SYSCALL_UNLINK, (void*) SysUnlink);
 			Syscall::Register(SYSCALL_MKDIR, (void*) SysMkDir);
 			Syscall::Register(SYSCALL_RMDIR, (void*) SysRmDir);
+			Syscall::Register(SYSCALL_TRUNCATE, (void*) SysTruncate);
+			Syscall::Register(SYSCALL_FTRUNCATE, (void*) SysFTruncate);
 		}
 	}
 
