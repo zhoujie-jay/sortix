@@ -65,7 +65,7 @@ namespace Sortix
 				// space buffer is empty on the next call, so that'll probably
 				// succeed. The directory read function will store the number of
 				// bytes needed in the d_namelen variable and set errno to
-				// EINVAL such that userspace knows we need a larger buffer.
+				// ERANGE such that userspace knows we need a larger buffer.
 				if ( dir->Read(dirent, size) ) { return (prev) ? 0 : -1; }
 
 				// Insert the current dirent into the single-linked list for

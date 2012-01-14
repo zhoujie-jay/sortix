@@ -222,7 +222,7 @@ namespace Sortix
 		if ( available < needed )
 		{
 			dirent->d_namelen = needed;
-			Error::Set(EINVAL);
+			Error::Set(ERANGE);
 			return 0;
 		}
 
