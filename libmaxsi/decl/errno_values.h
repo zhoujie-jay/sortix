@@ -22,5 +22,6 @@
 #define ESRCH 30
 #define ENOTTY 31
 #define ECHILD 32
+#define ENOSYS 33
 
 #endif

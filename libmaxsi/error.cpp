@@ -70,6 +70,7 @@ namespace Maxsi
 				case ESRCH: return (char*) "No such process";
 				case ENOTTY: return (char*) "Not a tty";
 				case ECHILD: return (char*) "No child processes";
+				case ENOSYS: return (char*) "Function not implemented";
 				default: return (char*) "Unknown error condition";
 			}
 		}
