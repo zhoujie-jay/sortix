@@ -70,7 +70,7 @@ namespace Sortix
 
 				// Insert the current dirent into the single-linked list for
 				// easy iteration by userspace.
-				prev->d_next = dirent;
+				if ( prev ) { prev->d_next = dirent; }
 				dirent->d_next = NULL;
 
 				// Check for end-of-directory conditions. Signal to userspace
