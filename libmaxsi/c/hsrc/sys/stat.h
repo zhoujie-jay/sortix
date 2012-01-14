@@ -31,7 +31,10 @@
 
 __BEGIN_DECLS
 
+@include(mode_t.h)
 @include(mode_t_values.h)
+
+int mkdir(const char *path, mode_t mode);
 
 __END_DECLS
 

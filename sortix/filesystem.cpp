@@ -83,10 +83,26 @@ namespace Sortix
 			return Unlink(path) ? 0 : -1;
 		}
 
+		int SysMkDir(const char* pathname, mode_t mode)
+		{
+			// TODO: Add the proper filesystem support!
+			Error::Set(ENOSYS);
+			return -1;
+		}
+
+		int SysRmDir(const char* pathname)
+		{
+			// TODO: Add the proper filesystem support!
+			Error::Set(ENOSYS);
+			return -1;
+		}
+
 		void Init()
 		{
 			Syscall::Register(SYSCALL_OPEN, (void*) SysOpen);
 			Syscall::Register(SYSCALL_UNLINK, (void*) SysUnlink);
+			Syscall::Register(SYSCALL_MKDIR, (void*) SysMkDir);
+			Syscall::Register(SYSCALL_RMDIR, (void*) SysRmDir);
 		}
 	}
 

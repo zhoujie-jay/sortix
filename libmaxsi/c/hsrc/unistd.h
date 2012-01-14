@@ -127,7 +127,6 @@ ssize_t pread(int, void*, size_t, off_t);
 ssize_t pwrite(int, const void*, size_t, off_t);
 ssize_t readlink(const char* restrict, char* restrict, size_t);
 ssize_t readlinkat(int, const char* restrict, char* restrict, size_t);
-int rmdir(const char*);
 int setegid(gid_t);
 int seteuid(uid_t);
 int setgid(gid_t);
@@ -168,6 +167,7 @@ int isatty(int);
 off_t lseek(int, off_t, int);
 int pipe(int [2]);
 ssize_t read(int, void*, size_t);
+int rmdir(const char*);
 unsigned sleep(unsigned);
 #if __POSIX_OBSOLETE <= 200112 || defined(SORTIX_EXTENSIONS)
 int usleep(useconds_t useconds);

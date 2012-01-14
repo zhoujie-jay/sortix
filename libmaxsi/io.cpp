@@ -51,6 +51,8 @@ namespace Maxsi
 	DEFN_SYSCALL1(int, SysUnlink, SYSCALL_UNLINK, const char*);
 	DEFN_SYSCALL1(int, SysIsATTY, SYSCALL_ISATTY, int);
 	DEFN_SYSCALL3_VOID(SysSeek, SYSCALL_SEEK, int, off_t*, int);
+	DEFN_SYSCALL2(int, SysMkDir, SYSCALL_MKDIR, const char*, mode_t);
+	DEFN_SYSCALL1(int, SysRmDir, SYSCALL_RMDIR, const char*);
 
 	size_t Print(const char* string)
 	{
@@ -254,6 +256,16 @@ namespace Maxsi
 	extern "C" int unlink(const char* pathname)
 	{
 		return SysUnlink(pathname);
+	}
+
+	extern "C" int mkdir(const char* pathname, mode_t mode)
+	{
+		return SysMkDir(pathname, mode);
+	}
+
+	extern "C" int rmdir(const char* pathname)
+	{
+		return SysRmDir(pathname);
 	}
 
 	extern "C" int isatty(int fd)
