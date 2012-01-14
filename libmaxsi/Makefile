@@ -33,6 +33,8 @@ c/ctype.o \
 c/file.o \
 c/fdio.o \
 c/stdio.o \
+c/dir.o \
+c/fddir-sortix.o \
 
 CHEADERS=\
 c/h/ctype.h \
@@ -47,6 +49,7 @@ c/h/features.h \
 c/h/string.h \
 c/h/errno.h \
 c/h/error.h \
+c/h/dirent.h \
 c/h/sys/readdirents.h \
 c/h/sys/stat.h \
 c/h/sys/types.h \
