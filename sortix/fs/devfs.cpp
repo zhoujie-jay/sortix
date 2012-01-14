@@ -318,7 +318,7 @@ namespace Sortix
 		{
 			dirent->d_namelen = needed;
 			Error::Set(ERANGE);
-			return 0;
+			return -1;
 		}
 
 		Memory::Copy(dirent->d_name, name, namelen + 1);
