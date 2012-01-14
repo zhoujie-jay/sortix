@@ -217,6 +217,13 @@ namespace Maxsi
 			return Compare(s1, s2);
 		}
 
+		extern "C" char* stpcpy(char* s1, const char* s2)
+		{
+			char* result = Copy(s1, s2);
+			result += Length(s1);
+			return result;
+		}
+
 #if 0
 		char* Combine(size_t NumParameters, ...)
 		{

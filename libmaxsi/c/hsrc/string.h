@@ -37,6 +37,7 @@ void* memchr(const void*, int, size_t);
 int memcmp(const void*, const void*, size_t);
 void* memcpy(void* restrict, const void* restrict, size_t);
 void* memset(void*, int, size_t);
+char* stpcpy(char* restrict, const char* restrict);
 char* strcat(char* restrict, const char* restrict);
 char* strchr(const char*, int);
 int strcmp(const char*, const char*);
@@ -55,7 +56,6 @@ char* strtok_r(char* restrict, const char* restrict, char** restrict);
 #ifndef SORTIX_UNIMPLEMENTED
 void* memccpy(void* restrict, const void* restrict, int, size_t);
 void* memmove(void*, const void*, size_t);
-char* stpcpy(char* restrict, const char* restrict);
 char* stpncpy(char* restrict, const char* restrict, size_t);
 int strcoll_l(const char*, const char*, locale_t);
 char* strdup(const char*);
