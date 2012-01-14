@@ -211,6 +211,12 @@ namespace Maxsi
 			return (negative) ? -result : result;
 		}
 
+		extern "C" int strcoll(const char* s1, const char* s2)
+		{
+			// TODO: Pay attention to locales.
+			return Compare(s1, s2);
+		}
+
 #if 0
 		char* Combine(size_t NumParameters, ...)
 		{
