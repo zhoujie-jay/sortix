@@ -209,7 +209,7 @@ namespace Sortix
 		if ( available <= sizeof(sortix_dirent) ) { return -1; }
 		if ( fs->GetNumFiles() <= position )
 		{
-				dirent->d_namelen = 0;
+			dirent->d_namelen = 0;
 			dirent->d_name[0] = 0;
 			return 0;
 		}
