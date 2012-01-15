@@ -50,21 +50,26 @@ namespace Sortix
 		  "Bad TSS", "Segment not present", "Stack fault",
 		  "General protection fault", "Page fault", "Unknown interrupt",
 		  "Coprocessor fault", "Alignment check", "Machine check",
-		  "SIMD Floating-Point"                                               };
+		  "SIMD Floating-Point" };
 
-		Handler interrupthandlers[256];
+		const size_t NUM_INTERRUPTS = 256UL;
+
+		Handler interrupthandlers[NUM_INTERRUPTS];
+		void* interrupthandlerptr[NUM_INTERRUPTS];
 
 		void Init()
 		{
-			for ( size_t i = 0; i < 256; i++ )
+			for ( size_t i = 0; i < NUM_INTERRUPTS; i++ )
 			{
 				interrupthandlers[i] = NULL;
+				interrupthandlerptr[i] = NULL;
 			}
 		}
 
-		void RegisterHandler(uint8_t n, Interrupt::Handler handler)
+		void RegisterHandler(uint8_t n, Interrupt::Handler handler, void* user)
 		{
 			interrupthandlers[n] = handler;
+			interrupthandlerptr[n] = user;
 		}
 
 		// This gets called from our ASM interrupt handler stub.
@@ -105,7 +110,8 @@ namespace Sortix
 
 			if ( interrupthandlers[regs->int_no] != NULL )
 			{
-				interrupthandlers[regs->int_no](regs);
+				void* user = interrupthandlerptr[regs->int_no];
+				interrupthandlers[regs->int_no](regs, user);
 			}
 		}
 
@@ -133,7 +139,8 @@ namespace Sortix
 
 			if ( interrupthandlers[regs->int_no] )
 			{
-				interrupthandlers[regs->int_no](regs);
+				void* user = interrupthandlerptr[regs->int_no];
+				interrupthandlers[regs->int_no](regs, user);
 			}
 		}
 

@@ -652,7 +652,7 @@ namespace Sortix
 			Layouts::Init();
 
 			// Register our keystroke callback.
-			Interrupt::RegisterHandler(Interrupt::IRQ1, OnIRQ1);
+			Interrupt::RegisterHandler(Interrupt::IRQ1, OnIRQ1, NULL);
 
 			// If any scancodes were already pending, our interrupt handler
 			// will never be called. Let's just discard anything pending.
@@ -685,7 +685,7 @@ namespace Sortix
 			return true;
 		}
 
-		void OnIRQ1(CPU::InterruptRegisters* Regs)
+		void OnIRQ1(CPU::InterruptRegisters* Regs, void* user)
 		{
 			// Read the scancode from the data register.
 			uint8_t Scancode = CPU::InPortB(0x60);

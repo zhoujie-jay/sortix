@@ -54,7 +54,7 @@ namespace Sortix
 			return microsecondssinceboot;
 		}
 
-		void OnInt177(CPU::InterruptRegisters* Regs)
+		void OnInt177(CPU::InterruptRegisters* Regs, void* /*user*/)
 		{
 #ifdef PLATFORM_X86
 			Log::PrintF("ds=0x%x, edi=0x%x, esi=0x%x, ebp=0x%x, esp=0x%x, ebx=0x%x, edx=0x%x, ecx=0x%x, eax=0x%x, int_no=0x%x, err_code=0x%x, eip=0x%x, cs=0x%x, eflags=0x%x, useresp=0x%x, ss=0x%x\n", Regs->ds, Regs->edi, Regs->esi, Regs->ebp, Regs->esp, Regs->ebx, Regs->edx, Regs->ecx, Regs->eax, Regs->int_no, Regs->err_code, Regs->eip, Regs->cs, Regs->eflags, Regs->useresp, Regs->ss);
@@ -99,8 +99,8 @@ namespace Sortix
 			microsecondssinceboot = 0;
 
 			// First, register our timer callback.
-			Interrupt::RegisterHandler(Interrupt::IRQ0, &OnIRQ0);
-			Interrupt::RegisterHandler(177, &OnInt177);
+			Interrupt::RegisterHandler(Interrupt::IRQ0, &OnIRQ0, NULL);
+			Interrupt::RegisterHandler(177, &OnInt177, NULL);
 
 			Syscall::Register(SYSCALL_UPTIME, (void*) SysUptime);
 
@@ -109,7 +109,7 @@ namespace Sortix
 			RequestIQR0();
 		}
 
-		void OnIRQ0(CPU::InterruptRegisters* Regs)
+		void OnIRQ0(CPU::InterruptRegisters* Regs, void* /*user*/)
 		{
 #ifdef PLATFORM_SERIAL
 			SerialTerminal::OnTick();

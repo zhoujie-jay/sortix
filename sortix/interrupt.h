@@ -46,9 +46,9 @@ namespace Sortix
 		const unsigned IRQ14 = 46;
 		const unsigned IRQ15 = 47;
 
-		typedef void (*Handler)(CPU::InterruptRegisters* Registers);
+		typedef void (*Handler)(CPU::InterruptRegisters* regs, void* user);
 
-		void RegisterHandler(uint8_t n, Handler handler);
+		void RegisterHandler(uint8_t n, Handler handler, void* user);
 
 		void Init();
 	}

@@ -31,7 +31,7 @@ namespace Sortix
 	{
 		void Init();
 		void SetLEDs(uint8_t Toggle);
-		void OnIRQ1(CPU::InterruptRegisters* Regs);
+		void OnIRQ1(CPU::InterruptRegisters* Regs, void* user);
 		bool QueueKeystroke(uint32_t keystroke);
 	}
 }
