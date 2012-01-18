@@ -184,7 +184,7 @@ FILE* fopen(const char* path, const char* mode)
 			default: errno = EINVAL; return 0;
 		}
 	}
-	int fd = open(path, fd, 0666);
+	int fd = open(path, omode | oflags, 0666);
 	if ( fd < 0 ) { return NULL; }
 	FILE* fp = fdopen(fd, mode);
 	if ( !fp ) { close(fd); return NULL; }
