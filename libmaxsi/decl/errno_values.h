@@ -23,5 +23,6 @@
 #define ENOTTY 31
 #define ECHILD 32
 #define ENOSYS 33
+#define ENOTSUP 34
 
 #endif

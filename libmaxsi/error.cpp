@@ -71,6 +71,7 @@ namespace Maxsi
 				case ENOTTY: return (char*) "Not a tty";
 				case ECHILD: return (char*) "No child processes";
 				case ENOSYS: return (char*) "Function not implemented";
+				case ENOTSUP: return (char*) "Operation not supported";
 				default: return (char*) "Unknown error condition";
 			}
 		}
