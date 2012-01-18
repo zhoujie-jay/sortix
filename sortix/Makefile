@@ -66,6 +66,7 @@ descriptor_tables.o \
 interrupt.o \
 time.o \
 log.o \
+utf8.o \
 panic.o \
 keyboard.o \
 scheduler.o \
