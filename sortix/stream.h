@@ -35,7 +35,7 @@ namespace Sortix
 		typedef Device BaseClass;
 
 	public:
-		virtual bool IsType(unsigned type) { return type == Device::STREAM; }
+		virtual bool IsType(unsigned type) const { return type == Device::STREAM; }
 
 	public:
 		virtual ssize_t Read(byte* dest, size_t count) = 0;
@@ -51,7 +51,7 @@ namespace Sortix
 		typedef DevStream BaseClass;
 
 	public:
-		virtual bool IsType(unsigned type)
+		virtual bool IsType(unsigned type) const
 		{
 			return type == Device::BUFFER || BaseClass::IsType(type);
 		}

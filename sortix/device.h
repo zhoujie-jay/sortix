@@ -49,7 +49,7 @@ namespace Sortix
 		void Unref();
 
 	public:
-		virtual bool IsType(unsigned type) = 0;
+		virtual bool IsType(unsigned type) const = 0;
 
 	};
 }

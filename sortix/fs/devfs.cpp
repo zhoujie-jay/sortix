@@ -163,7 +163,7 @@ namespace Sortix
 		virtual ssize_t Write(const byte* src, size_t count);
 		virtual bool IsReadable();
 		virtual bool IsWritable();
-		virtual bool IsType(unsigned type);
+		virtual bool IsType(unsigned type) const;
 
 	};
 	
@@ -199,7 +199,7 @@ namespace Sortix
 		return true;
 	}
 
-	bool DevLogTTY::IsType(unsigned type)
+	bool DevLogTTY::IsType(unsigned type) const
 	{
 		return type == Device::TTY || BaseClass::IsType(type);
 	}

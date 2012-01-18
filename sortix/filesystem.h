@@ -58,7 +58,7 @@ namespace Sortix
 		virtual bool Unlink(const char* path) = 0;
 
 	public:
-		virtual bool IsType(unsigned type) { return type == Device::FILESYSTEM; }
+		virtual bool IsType(unsigned type) const { return type == Device::FILESYSTEM; }
 
 	};
 

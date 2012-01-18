@@ -50,7 +50,7 @@ namespace Sortix
 		virtual int Read(sortix_dirent* dirent, size_t available) = 0;
 
 	public:
-		virtual bool IsType(unsigned type) { return type == Device::DIRECTORY; }
+		virtual bool IsType(unsigned type) const { return type == Device::DIRECTORY; }
 
 	};
 
