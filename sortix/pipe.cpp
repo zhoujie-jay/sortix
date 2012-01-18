@@ -25,6 +25,7 @@
 #include "platform.h"
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
+#include "event.h"
 #include "thread.h"
 #include "process.h"
 #include "syscall.h"
@@ -48,8 +49,8 @@ namespace Sortix
 		size_t buffersize;
 		size_t bufferoffset;
 		size_t bufferused;
-		Thread* readwaiting;
-		Thread* writewaiting;
+		Event readevent;
+		Event writeevent;
 
 	public:
 		virtual ssize_t Read(byte* dest, size_t count);
@@ -65,14 +66,10 @@ namespace Sortix
 		this->buffersize = buffersize;
 		this->bufferoffset = 0;
 		this->bufferused = 0;
-		this->readwaiting = NULL;
-		this->writewaiting = NULL;
 	}
 
 	DevPipeStorage::~DevPipeStorage()
 	{
-		if ( readwaiting ) { Syscall::ScheduleResumption(readwaiting); }
-		if ( writewaiting ) { Syscall::ScheduleResumption(writewaiting); }
 		delete[] buffer;
 	}
 
@@ -91,20 +88,13 @@ namespace Sortix
 			Memory::Copy(dest, buffer + bufferoffset, amount);
 			bufferoffset = (bufferoffset + amount) % buffersize;
 			bufferused -= amount;
-			if ( writewaiting )
-			{
-				Syscall::ScheduleResumption(writewaiting);
-				writewaiting = NULL;
-			}
+			writeevent.Signal();
 			if ( bufferused == 0 || amount == count ) { return amount; }
 			return amount + Read(dest + amount, count - amount);
 		}
 
 		Error::Set(EWOULDBLOCK);
-
-		// TODO: Only one thread can wait on a pipe at the same time.
-		ASSERT(readwaiting == NULL);
-		readwaiting = CurrentThread();
+		readevent.Register();
 		return -1;
 	}
 
@@ -120,20 +110,13 @@ namespace Sortix
 			if ( linear < amount ) { amount = linear; }
 			Memory::Copy(buffer + writeoffset, src, amount);
 			bufferused += amount;
-			if ( readwaiting )
-			{
-				Syscall::ScheduleResumption(readwaiting);
-				readwaiting = NULL;
-			}
+			readevent.Signal();
 			if ( buffersize == bufferused || amount == count ) { return amount; }
 			return amount + Write(src + amount, count - amount);
 		}
 
 		Error::Set(EWOULDBLOCK);
-
-		// TODO: Only one thread can wait on a pipe at the same time.
-		ASSERT(writewaiting == NULL);
-		writewaiting = CurrentThread();
+		writeevent.Register();
 		return -1;
 	}
 

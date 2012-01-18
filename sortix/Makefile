@@ -82,6 +82,7 @@ elf.o \
 process.o \
 initrd.o \
 thread.o \
+event.o \
 io.o \
 pipe.o \
 filesystem.o \

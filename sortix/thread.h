@@ -29,6 +29,7 @@
 
 namespace Sortix
 {
+	class Event;
 	class Process;
 	class Thread;
 
@@ -61,6 +62,12 @@ namespace Sortix
 		Process* process;
 		Thread* prevsibling;
 		Thread* nextsibling;
+
+	// These are used internally when a thread is waiting for an Event to
+	// happen. Consider them private.
+	public:
+		Event* event;
+		Thread* eventnextwaiting;
 
 	// These are some things used internally by the scheduler and should not be
 	// touched by anything but it. Consider it private.

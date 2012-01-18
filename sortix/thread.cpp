@@ -42,6 +42,8 @@ namespace Sortix
 		process = NULL;
 		prevsibling = NULL;
 		nextsibling = NULL;
+		event = NULL;
+		eventnextwaiting = NULL;
 		sleepuntil = 0;
 		nextsleepingthread = NULL;
 		schedulerlistprev = NULL;
@@ -62,6 +64,8 @@ namespace Sortix
 		prevsibling = NULL;
 		nextsibling = NULL;
 		state = forkfrom->state;
+		event = NULL;
+		eventnextwaiting = NULL;
 		sleepuntil = forkfrom->sleepuntil;
 		Maxsi::Memory::Copy(&registers, &forkfrom->registers, sizeof(registers));
 		ready = false;
