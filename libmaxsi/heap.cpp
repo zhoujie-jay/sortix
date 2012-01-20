@@ -430,7 +430,7 @@ namespace Maxsi
 
 		DUAL_FUNCTION(void*, malloc, Allocate, (size_t size))
 		{
-			#if 0 < PARANOIA
+			#if 2 <= PARANOIA
 			ASSERT(ValidateHeap());
 			#endif
 
@@ -492,7 +492,7 @@ namespace Maxsi
 				chunk->magic = MAGIC;
 				chunk->GetTrailer()->magic = MAGIC;
 
-				#if 0 < PARANOIA
+				#if 2 <= PARANOIA
 				ASSERT(ValidateHeap());
 				#endif
 
@@ -523,7 +523,7 @@ namespace Maxsi
 			chunk->magic = MAGIC;
 			trailer->magic = MAGIC;
 
-			#if 0 < PARANOIA
+			#if 2 <= PARANOIA
 			ASSERT(ValidateHeap());
 			#endif
 
@@ -610,7 +610,7 @@ namespace Maxsi
 
 		DUAL_FUNCTION(void, free, Free, (void* addr))
 		{
-			#if 0 < PARANOIA
+			#if 2 <= PARANOIA
 			ASSERT(ValidateHeap());
 			#endif
 
@@ -638,7 +638,7 @@ namespace Maxsi
 
 			InsertChunk(chunk);
 
-			#if 0 < PARANOIA
+			#if 2 <= PARANOIA
 			ASSERT(ValidateHeap());
 			#endif
 		}
