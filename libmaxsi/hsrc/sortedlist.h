@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -149,19 +149,18 @@ namespace Maxsi
 			if ( !(flags & FLAG_SORTED) ) { Sort(); }
 			ASSERT(index < listused);
 
-			T result = list[index];
+			// TODO: It may be possible to further speed up removal by delaying
+			// the expensive memory copy operation.
 
-			if ( index == listused-1 )
+			T result = list[index];
+			list[index].~T();
+			for ( size_t i = index+1; i < listused; i++ )
 			{
-				list[--listused].~T();
+				list[i-1] = list[i];
+				list[i].~T();
 			}
-			else
-			{
-				list[index].~T();
-				list[index] = list[--listused];
-				list[listused].~T();
-				flags &= ~FLAG_SORTED;
-			}
+
+			listused--;
 
 			return result;
 		}
