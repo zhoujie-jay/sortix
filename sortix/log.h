@@ -44,22 +44,31 @@ namespace Sortix
 
 		inline size_t Print(const char* str)
 		{
-			if ( deviceCallback ) { return deviceCallback(devicePointer, str, Maxsi::String::Length(str)); }
-			return 0;
+			using namespace Maxsi;
+			if ( !deviceCallback ) { return 0; }
+			return deviceCallback(devicePointer, str, String::Length(str));
+		}
+
+		inline size_t PrintData(const void* ptr, size_t size)
+		{
+			if ( !deviceCallback ) { return 0; }
+			return deviceCallback(devicePointer, (const char*) ptr, size);			
 		}
 
 		inline size_t PrintF(const char* format, ...)
 		{
+			using namespace Maxsi;
 			va_list list;
 			va_start(list, format);
-			size_t result = Maxsi::Format::Virtual(deviceCallback, devicePointer, format, list);
+			size_t result = Format::Virtual(deviceCallback, devicePointer, format, list);
 			va_end(list);
 			return result;
 		}
 
 		inline size_t PrintFV(const char* format, va_list list)
 		{
-			return Maxsi::Format::Virtual(deviceCallback, devicePointer, format, list);
+			using namespace Maxsi;
+			return Format::Virtual(deviceCallback, devicePointer, format, list);
 		}
 	}
 }
