@@ -67,7 +67,9 @@
 #define SYSCALL_RMDIR 39
 #define SYSCALL_TRUNCATE 40
 #define SYSCALL_FTRUNCATE 41
-#define SYSCALL_MAX_NUM 42 /* index of highest constant + 1 */
+#define SYSCALL_SETTERMMODE 42
+#define SYSCALL_GETTERMMODE 43
+#define SYSCALL_MAX_NUM 44 /* index of highest constant + 1 */
 
 #endif
 

@@ -77,6 +77,7 @@ syscall.o \
 sound.o \
 pci.o \
 uart.o \
+terminal.o \
 vgaterminal.o \
 serialterminal.o \
 descriptors.o \

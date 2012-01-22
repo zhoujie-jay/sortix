@@ -51,6 +51,7 @@ c/h/errno.h \
 c/h/error.h \
 c/h/dirent.h \
 c/h/sys/keycodes.h \
+c/h/sys/termmode.h \
 c/h/sys/readdirents.h \
 c/h/sys/stat.h \
 c/h/sys/types.h \
@@ -67,6 +68,7 @@ sortix-sound.o \
 process.o \
 thread.o \
 io.o \
+terminal.o \
 init.o \
 signal.o \
 $(CPU)/signal.o \

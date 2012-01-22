@@ -39,6 +39,7 @@
 #include "syscall.h"
 #include "pci.h"
 #include "uart.h"
+#include "terminal.h"
 #include "serialterminal.h"
 #include "vgaterminal.h"
 #include "elf.h"
@@ -223,6 +224,9 @@ namespace Sortix
 
 		// Initialize the keyboard.
 		Keyboard::Init();
+
+		// Initialize the terminal.
+		Terminal::Init();
 
 		// Initialize the VGA driver.
 		VGA::Init();

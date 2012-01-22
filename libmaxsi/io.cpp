@@ -49,7 +49,6 @@ namespace Maxsi
 	DEFN_SYSCALL1(int, SysChDir, SYSCALL_CHDIR, const char*);
 	DEFN_SYSCALL2(char*, SysGetCWD, SYSCALL_GETCWD, char*, size_t);
 	DEFN_SYSCALL1(int, SysUnlink, SYSCALL_UNLINK, const char*);
-	DEFN_SYSCALL1(int, SysIsATTY, SYSCALL_ISATTY, int);
 	DEFN_SYSCALL3_VOID(SysSeek, SYSCALL_SEEK, int, off_t*, int);
 	DEFN_SYSCALL2(int, SysMkDir, SYSCALL_MKDIR, const char*, mode_t);
 	DEFN_SYSCALL1(int, SysRmDir, SYSCALL_RMDIR, const char*);
@@ -278,11 +277,6 @@ namespace Maxsi
 	extern "C" int ftruncate(int fd, off_t length)
 	{
 		return SysFTruncate(fd, length);
-	}
-
-	extern "C" int isatty(int fd)
-	{
-		return SysIsATTY(fd);
 	}
 #endif
 

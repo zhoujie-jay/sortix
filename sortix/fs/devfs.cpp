@@ -29,6 +29,7 @@
 #include "../filesystem.h"
 #include "../directory.h"
 #include "../stream.h"
+#include "../terminal.h"
 #include "../vga.h"
 #include "../ata.h"
 #include "devfs.h"
@@ -149,10 +150,11 @@ namespace Sortix
 		atalist[ataid]->Refer();
 	}
 
-	class DevLogTTY : public DevStream
+	// TODO: Remove this deprecated class!
+	class DevLogTTY : public DevTerminal
 	{
 	public:
-		typedef DevStream BaseClass;
+		typedef DevTerminal BaseClass;
 
 	public:
 		DevLogTTY();
@@ -163,7 +165,12 @@ namespace Sortix
 		virtual ssize_t Write(const byte* src, size_t count);
 		virtual bool IsReadable();
 		virtual bool IsWritable();
-		virtual bool IsType(unsigned type) const;
+		virtual bool SetMode(unsigned mode);
+		virtual bool SetWidth(unsigned width);
+		virtual bool SetHeight(unsigned height);
+		virtual unsigned GetMode() const;
+		virtual unsigned GetWidth() const;
+		virtual unsigned GetHeight() const;
 
 	};
 	
@@ -199,9 +206,37 @@ namespace Sortix
 		return true;
 	}
 
-	bool DevLogTTY::IsType(unsigned type) const
+	bool DevLogTTY::SetMode(unsigned mode)
 	{
-		return type == Device::TTY || BaseClass::IsType(type);
+		if ( mode ) { Error::Set(ENOSYS); return false; }
+		return true;
+	}
+
+	bool DevLogTTY::SetWidth(unsigned width)
+	{
+		if ( width != GetWidth() ) { Error::Set(ENOTSUP); return false; }
+		return true;
+	}
+
+	bool DevLogTTY::SetHeight(unsigned height)
+	{
+		if ( height != GetHeight() ) { Error::Set(ENOTSUP); return false; }
+		return true;
+	}
+
+	unsigned DevLogTTY::GetMode() const
+	{
+		return 0;
+	}
+
+	unsigned DevLogTTY::GetWidth() const
+	{
+		return 25;
+	}
+
+	unsigned DevLogTTY::GetHeight() const
+	{
+		return 80;
 	}
 
 	class DevNull : public DevStream

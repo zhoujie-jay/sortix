@@ -167,22 +167,12 @@ namespace Sortix
 			return process->descriptors.Allocate(dev);
 		}
 
-		int SysIsATTY(int fd)
-		{
-			Process* process = CurrentProcess();
-			Device* dev = process->descriptors.Get(fd);
-			if ( !dev ) { Error::Set(EBADF); return 0; }
-			if ( !dev->IsType(Device::TTY) ) {  Error::Set(ENOTTY); return 0; }
-			return 1;
-		}
-
 		void Init()
 		{
 			Syscall::Register(SYSCALL_WRITE, (void*) SysWrite);
 			Syscall::Register(SYSCALL_READ, (void*) SysRead);
 			Syscall::Register(SYSCALL_CLOSE, (void*) SysClose);
 			Syscall::Register(SYSCALL_DUP, (void*) SysDup);
-			Syscall::Register(SYSCALL_ISATTY, (void*) SysIsATTY);
 			Syscall::Register(SYSCALL_SEEK, (void*) SysSeek);
 		}
 	}

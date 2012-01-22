@@ -141,5 +141,22 @@
 #define KBKEY_RSUPER (0x80 + 0x5C)
 #define KBKEY_MENU (0x80 + 0x5D)
 
+#define KBKEY_ENCODE(_kbkey) \
+({ \
+	int kbkey = (_kbkey); \
+	uint32_t codepoint = (1U<<30U) | ((unsigned) kbkey); \
+	codepoint &= ~(1U<<31U); \
+	codepoint; \
+})
+
+#define KBKEY_DECODE(_codepoint) \
+({ \
+	uint32_t codepoint = (_codepoint); \
+	if ( !(codepoint & (1U<<30U)) ) { codepoint = 0U; } \
+	if ( codepoint & (1U<<29U) ) { codepoint |= (1U<<31U); } \
+	int kbkey = (int) codepoint; \
+	kbkey; \
+})
+
 #endif
 

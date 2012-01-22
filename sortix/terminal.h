@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
 
 	This file is part of Sortix.
 
@@ -17,42 +17,46 @@
 	You should have received a copy of the GNU General Public License along
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	device.h
-	A base class for all devices.
+	terminal.h
+	Reads data from an input source (such as a keyboard), optionally does line-
+	buffering, and redirects data to an output device (such as the VGA).
 
 ******************************************************************************/
 
-#ifndef SORTIX_DEVICE_H
-#define SORTIX_DEVICE_H
+#ifndef SORTIX_TERMINAL_H
+#define SORTIX_TERMINAL_H
+
+#include "device.h"
+#include "stream.h"
+#include "termmode.h"
 
 namespace Sortix
 {
-	class Device
+	class DevTerminal : public DevStream
 	{
 	public:
-		static const unsigned STREAM = 0;
-		static const unsigned BUFFER = 1;
-		static const unsigned VGABUFFER = 2;
-		static const unsigned FILESYSTEM = 3;
-		static const unsigned DIRECTORY = 4;
-		static const unsigned TERMINAL = 5;
+		typedef DevStream BaseClass;
 
 	public:
-		Device();
-		virtual ~Device();
-
-	private:
-		size_t refcount;
-
-	public:
-		void Refer();
-		void Unref();
+		virtual bool IsType(unsigned type) const
+		{
+			return type == Device::TERMINAL || BaseClass::IsType(type);
+		}
 
 	public:
-		virtual bool IsType(unsigned type) const = 0;
+		virtual bool SetMode(unsigned mode) = 0;
+		virtual bool SetWidth(unsigned width) = 0;
+		virtual bool SetHeight(unsigned height) = 0;
+		virtual unsigned GetMode() const = 0;
+		virtual unsigned GetWidth() const = 0;
+		virtual unsigned GetHeight() const = 0;
 
 	};
-}
 
+	namespace Terminal
+	{
+		void Init();
+	}
+}
 #endif
 
