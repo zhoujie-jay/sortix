@@ -31,6 +31,7 @@
 #define TERMMODE_UTF8 (1U<<3U)
 #define TERMMODE_LINEBUFFER (1U<<4U)
 #define TERMMODE_ECHO (1U<<5U)
+#define TERMMODE_NONBLOCK (1U<<6U)
 
 #endif
 
