@@ -72,6 +72,7 @@ namespace Maxsi
 				case ECHILD: return (char*) "No child processes";
 				case ENOSYS: return (char*) "Function not implemented";
 				case ENOTSUP: return (char*) "Operation not supported";
+				case EBLOCKING: return (char*) "Operation is blocking";
 				default: return (char*) "Unknown error condition";
 			}
 		}

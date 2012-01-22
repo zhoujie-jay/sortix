@@ -356,7 +356,7 @@ namespace Sortix
 			return SysExevVEStage2(state);
 		}
 
-		if ( Error::Last() != EWOULDBLOCK ) { delete state; return -1; }
+		if ( Error::Last() != EBLOCKING ) { delete state; return -1; }
 
 		// The stream will resume our system call once progress has been
 		// made. Our request is certainly not forgotten.

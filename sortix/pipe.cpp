@@ -93,7 +93,7 @@ namespace Sortix
 			return amount + Read(dest + amount, count - amount);
 		}
 
-		Error::Set(EWOULDBLOCK);
+		Error::Set(EBLOCKING);
 		readevent.Register();
 		return -1;
 	}
@@ -115,7 +115,7 @@ namespace Sortix
 			return amount + Write(src + amount, count - amount);
 		}
 
-		Error::Set(EWOULDBLOCK);
+		Error::Set(EBLOCKING);
 		writeevent.Register();
 		return -1;
 	}
