@@ -1,11 +1,11 @@
 #include <libmaxsi/platform.h>
 #include <libmaxsi/io.h>
 #include <libmaxsi/thread.h>
-#include <libmaxsi/keyboard.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/sortix-vga.h>
-#include <libmaxsi/sortix-keyboard.h>
 #include <libmaxsi/sortix-sound.h>
+#include <sys/keycodes.h>
+#include <sys/termmode.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -15,7 +15,6 @@
 #include <string.h>
 
 using namespace Maxsi;
-using namespace Maxsi::Keyboard;
 
 int Init();
 void Reset();
@@ -196,18 +195,24 @@ void Update()
 
 void ReadInput()
 {
-	unsigned method = System::Keyboard::POLL;
-	uint32_t codepoint;
-	while ( (codepoint = System::Keyboard::ReceiveKeystroke(method) ) != 0 )
+	unsigned termmode = TERMMODE_KBKEY
+	                  | TERMMODE_UNICODE
+	                  | TERMMODE_SIGNAL
+	                  | TERMMODE_NONBLOCK;
+	if ( settermmode(0, termmode) ) { error(1, errno, "settermmode"); }
+	while ( true )
 	{
-		bool keyup = codepoint & DEPRESSED;
-		codepoint &= ~DEPRESSED;
-
-		if ( codepoint == '\n' && keyup ) { Reset(); }
-		if ( codepoint == 'w' || codepoint == 'W' ) { p1vup = !keyup; }
-		if ( codepoint == 's' || codepoint == 'S' ) { p1vdown = !keyup; }
-		if ( codepoint == UP ) { p2vup = !keyup; }
-		if ( codepoint == DOWN ) { p2vdown = !keyup; }
+		uint32_t codepoint;
+		ssize_t numbytes = read(0, &codepoint, sizeof(codepoint));
+		if ( !numbytes ) { return; }
+		if ( numbytes < 0 ) { return; }
+		int kbkey = KBKEY_DECODE(codepoint);
+		int abskbkey = (kbkey < 0) ? -kbkey : kbkey;
+		if ( kbkey == KBKEY_ENTER ) { Reset(); }
+		if ( abskbkey == KBKEY_W ) { p1vup = (0 < kbkey); }
+		if ( abskbkey == KBKEY_S ) { p1vdown = (0 < kbkey); }
+		if ( abskbkey == KBKEY_UP ) { p2vup = (0 < kbkey); }
+		if ( abskbkey == KBKEY_DOWN ) { p2vdown = (0 < kbkey); }
 	}
 }
 

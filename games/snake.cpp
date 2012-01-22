@@ -1,9 +1,7 @@
 #include <libmaxsi/platform.h>
-#include <libmaxsi/io.h>
-#include <libmaxsi/thread.h>
-#include <libmaxsi/keyboard.h>
 #include <libmaxsi/sortix-vga.h>
-#include <libmaxsi/sortix-keyboard.h>
+#include <sys/keycodes.h>
+#include <sys/termmode.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -11,9 +9,6 @@
 #include <errno.h>
 #include <error.h>
 #include <string.h>
-
-using namespace Maxsi;
-using namespace Maxsi::Keyboard;
 
 const int width = 80;
 const int height = 25;
@@ -99,21 +94,25 @@ void Update()
 	int newvely = vely;
 
 	// Read the keyboard input from the user.
-	unsigned method = System::Keyboard::POLL;
-	uint32_t codepoint;
-	while ( (codepoint = System::Keyboard::ReceiveKeystroke(method) ) != 0 )
+	unsigned termmode = TERMMODE_KBKEY
+	                  | TERMMODE_UNICODE
+	                  | TERMMODE_SIGNAL
+	                  | TERMMODE_NONBLOCK;
+	if ( settermmode(0, termmode) ) { error(1, errno, "settermmode"); }
+	while ( true )
 	{
-		if ( tabhack && codepoint == '\t' ) { tabhacking = true; }
-		if ( tabhack && codepoint == ('\t' | DEPRESSED ) ) { tabhacking = false; }
-		bool keyup = codepoint & DEPRESSED;
-		if ( keyup ) { continue; }
-		codepoint &= ~DEPRESSED;
-
-		if ( codepoint == '\n' ) { Reset(); return; }
-		if ( codepoint == 'w' || codepoint == 'W' ) { newvelx = 0; newvely = -1; }
-		if ( codepoint == 'a' || codepoint == 'A' ) { newvelx = -1; newvely = 0; }
-		if ( codepoint == 's' || codepoint == 'S' ) { newvelx = 0; newvely = 1; }
-		if ( codepoint == 'd' || codepoint == 'D' ) { newvelx = 1; newvely = 0; }
+		uint32_t codepoint;
+		ssize_t numbytes = read(0, &codepoint, sizeof(codepoint));
+		if ( !numbytes ) { break; }
+		if ( numbytes < 0 ) { break; }
+		int kbkey = KBKEY_DECODE(codepoint);
+		int abskbkey = (kbkey < 0) ? -kbkey : kbkey;
+		if ( tabhack && abskbkey == KBKEY_TAB ) { tabhacking = (0 < kbkey); }
+		if ( kbkey == KBKEY_ENTER ) { Reset(); return; }
+		if ( kbkey == KBKEY_W ) { newvelx = 0; newvely = -1; }
+		if ( kbkey == KBKEY_A ) { newvelx = -1; newvely = 0; }
+		if ( kbkey == KBKEY_S ) { newvelx = 0; newvely = 1; }
+		if ( kbkey == KBKEY_D ) { newvelx = 1; newvely = 0; }
 	}
 
 	if ( tabhack && tabhacking )
@@ -196,7 +195,7 @@ int main(int argc, char* argv[])
 	// Update the game every once in a while.
 	while ( true )
 	{
-		Thread::USleep(speed * 1000);
+		usleep(speed * 1000);
 		Update();
 		FlushVGA();
 	}

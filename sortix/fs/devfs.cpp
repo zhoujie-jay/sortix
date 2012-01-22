@@ -370,6 +370,8 @@ namespace Sortix
 	{
 	}
 
+	extern DevTerminal* tty;
+
 	Device* DevDevFS::Open(const char* path, int flags, mode_t mode)
 	{
 		if ( (flags & O_LOWERFLAGS) == O_SEARCH )
@@ -380,7 +382,7 @@ namespace Sortix
 		}
 
 		if ( String::Compare(path, "/null") == 0 ) { return new DevNull; }
-		if ( String::Compare(path, "/tty") == 0 ) { return new DevLogTTY; }
+		if ( String::Compare(path, "/tty") == 0 ) { tty->Refer(); return tty; }
 		if ( String::Compare(path, "/vga") == 0 ) { return new DevVGA; }
 		if ( path[0] == '/' && path[1] == 'a' && path[2] == 't' && path[3] == 'a' && path[4] && !path[5] )
 		{

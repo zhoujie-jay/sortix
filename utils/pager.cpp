@@ -1,3 +1,5 @@
+#include <sys/keycodes.h>
+#include <sys/termmode.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,10 +7,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <error.h>
-#include <libmaxsi/platform.h>
-#include <libmaxsi/sortix-keyboard.h>
-
-using namespace Maxsi;
 
 int main(int argc, char* argv[])
 {
@@ -45,17 +43,21 @@ int main(int argc, char* argv[])
 				{
 					printf("\n--pager--");
 					fflush(stdout);
-					uint32_t codepoint;
+					settermmode(0, TERMMODE_KBKEY | TERMMODE_SIGNAL);
 					bool doexit = false;
+					int kbkey;
 					do
 					{
-						unsigned method = System::Keyboard::POLL;
-						codepoint = System::Keyboard::ReceiveKeystroke(method);
-						if ( codepoint == Keyboard::DOWN ) { break; }
-						if ( codepoint == Keyboard::PGDOWN ) { linesleft = HEIGHT-1; break; }
-						if ( codepoint == 'q' ) { doexit = true; break; }
-					}
-					while ( codepoint != '\n' );
+						uint32_t codepoint;
+						ssize_t numbytes = read(0, &codepoint, sizeof(codepoint));
+						if ( !numbytes ) { exit(0); }
+						if ( numbytes < 0 ) { error(1, errno, "read(stdin)"); }
+						if ( numbytes < sizeof(codepoint) ) { error(1, errno, "bad stdin"); }
+						if ( !(kbkey = KBKEY_DECODE(codepoint)) ) { continue; }
+						if ( kbkey == KBKEY_DOWN ) { break; }
+						if ( kbkey == KBKEY_PGDOWN ) { linesleft = HEIGHT-1; break; }
+						if ( kbkey == -KBKEY_Q ) { doexit = true; break; }						
+					} while ( kbkey != KBKEY_ENTER );
 					printf("\r\e[J");
 					if ( doexit ) { exit(result); }
 					continue;

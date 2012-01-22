@@ -1,17 +1,18 @@
+#include <sys/keycodes.h>
+#include <sys/termmode.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
 #include <error.h>
-#include <libmaxsi/platform.h>
-#include <libmaxsi/sortix-keyboard.h>
 
-const int MODE_QUIT = 0;
-const int MODE_TEXT = 1;
-const int MODE_CONFIRM_QUIT = 2;
-const int MODE_SAVE = 3;
-const int MODE_LOAD = 4;
+const int MODE_QUIT = 1;
+const int MODE_TEXT = 2;
+const int MODE_CONFIRM_QUIT = 3;
+const int MODE_SAVE = 4;
+const int MODE_LOAD = 5;
 
 const unsigned WIDTH = 80;
 const unsigned HEIGHT = 24;
@@ -23,7 +24,7 @@ unsigned numlines = 1;
 
 char filename[256];
 
-bool bufferchanged;
+bool bufferchanged = false;
 
 void clearbuffers()
 {
@@ -35,12 +36,54 @@ void clearbuffers()
 	bufferchanged = true;
 }
 
-using namespace Maxsi;
-
 void cursorto(unsigned x, unsigned y)
 {
 	printf("\e[%u;%uH", y+1+1, x+1);
 	fflush(stdout);
+}
+
+char* readline(int fd)
+{
+	unsigned oldtermmode;
+	if ( gettermmode(fd, &oldtermmode) ) { return NULL; }
+
+	unsigned termmode = TERMMODE_UNICODE
+	                  | TERMMODE_SIGNAL
+	                  | TERMMODE_UTF8
+	                  | TERMMODE_LINEBUFFER
+	                  | TERMMODE_ECHO;
+	if ( settermmode(fd, termmode) ) { return NULL; }
+
+	size_t lineused = 0;
+	size_t linelength = 32UL;
+	char* line = new char[linelength + 1];
+	line[0] = '\0';
+
+	while ( true )
+	{
+		char c;
+		ssize_t numbytes = read(fd, &c, sizeof(c));
+		if ( numbytes < 0 ) { delete[] line; line = NULL; break; }
+		if ( !numbytes ) { break; }
+		if ( c == '\n' ) { break; }
+
+		if ( lineused == linelength )
+		{
+			size_t newlinelength = 2 * linelength;
+			char* newline = new char[newlinelength];
+			if ( !newline ) { delete[] line; line = NULL; break; }
+			memcpy(newline, line, lineused * sizeof(*line));
+			delete[] line;
+			line = newline;
+			linelength = newlinelength;
+		}
+
+		line[lineused++] = c;
+		line[lineused] = '\0';
+	}
+
+	if ( settermmode(fd, oldtermmode) ) { delete[] line; line = NULL; }
+	return line;
 }
 
 void drawtextmode()
@@ -64,6 +107,7 @@ unsigned textmode()
 	drawtextmode();
 
 	bool ctrl = false;
+	unsigned dectrlmode = 0;
 
 	int oldcursorx = -1;
 	int oldcursory = -1;
@@ -76,46 +120,63 @@ unsigned textmode()
 			oldcursory = cursory;
 		}
 
-		unsigned method = System::Keyboard::POLL;
-		uint32_t codepoint = System::Keyboard::ReceiveKeystroke(method);
+		unsigned termmode = TERMMODE_KBKEY | TERMMODE_UNICODE | TERMMODE_SIGNAL;
+		if ( settermmode(0, termmode) ) { error(1, errno, "settermmode"); }
 
-		if ( codepoint == 0 ) { continue; }
-		if ( codepoint & Keyboard::DEPRESSED )
+		uint32_t codepoint = 0;
+		ssize_t numbytes = read(0, &codepoint, sizeof(codepoint));
+		if ( !numbytes ) { break; }
+		if ( numbytes < 0 ) { error(1, errno, "read stdin"); }
+		if ( numbytes < sizeof(codepoint) ) { 
+			printf("unexpectedly got %zi bytes\n", numbytes);
+			printf("bytes: %x\n", codepoint);
+
+
+fprintf(stderr, "bad stdin data\n"); exit(1); }
+		if ( !codepoint ) { continue; }
+		int kbkey = KBKEY_DECODE(codepoint);
+		if ( kbkey )
 		{
-			if ( codepoint == Keyboard::CTRL | Keyboard::DEPRESSED ) { ctrl = false; }
+			if ( kbkey == -KBKEY_LCTRL && dectrlmode ) { return dectrlmode; }
+			int abskbkey = (kbkey < 0) ? -kbkey : kbkey;
+			if ( abskbkey == KBKEY_LCTRL ) { ctrl = (0 < kbkey); continue; }
+			switch ( kbkey )
+			{
+			case -KBKEY_ESC:
+				return MODE_CONFIRM_QUIT;
+				break;
+			case KBKEY_UP:
+				if ( cursory ) { cursory--; }
+				break;
+			case KBKEY_DOWN:
+				if ( cursory < numlines-1 ) { cursory++; }
+				break;
+			case KBKEY_LEFT:
+				if ( cursorx ) { cursorx--; }
+				break;
+			case KBKEY_RIGHT:
+				if ( cursorx < WIDTH-1 ) { cursorx++; }
+				break;
+			case KBKEY_O:
+				if ( ctrl ) { dectrlmode = MODE_SAVE; }				
+				break;
+			case KBKEY_R:
+				if ( ctrl ) { dectrlmode = MODE_LOAD; }				
+				break;
+			case KBKEY_X:
+				if ( ctrl ) { dectrlmode = MODE_CONFIRM_QUIT; }				
+				break;
+			}
 			continue;
 		}
 
-		if ( ctrl )
-		{
-			if ( codepoint == 'o' || codepoint == 'O' ) { return MODE_SAVE; }
-			if ( codepoint == 'r' || codepoint == 'R' ) { return MODE_LOAD; }
-			if ( codepoint == 'x' || codepoint == 'X' ) { return MODE_CONFIRM_QUIT; }
-			continue;
-		}
+		if ( ctrl ) { continue; }
 
 		switch ( codepoint )
 		{
-			case Keyboard::ESC:
-				return MODE_CONFIRM_QUIT;
-				break;
-			case Keyboard::CTRL:
-				ctrl = true;
-				break;
-			case Keyboard::UP:
-				if ( cursory ) { cursory--; }
-				break;
 			case '\n':
 				cursorx = 0;
-				if ( cursory < HEIGHT-1 ) { numlines++; }
-			case Keyboard::DOWN:
-				if ( cursory < numlines-1 ) { cursory++; }
-				break;
-			case Keyboard::LEFT:
-				if ( cursorx ) { cursorx--; }
-				break;
-			case Keyboard::RIGHT:
-				if ( cursorx < WIDTH-1 ) { cursorx++; }
+				if ( cursory < HEIGHT-1 ) { numlines++; cursory++; }
 				break;
 			case '\b':
 				if ( cursorx )
@@ -179,24 +240,32 @@ unsigned confirmquit()
 	printf("\e37m\e40m\e[2J\e[H");
 	printf("There are unsaved changes: Are you sure you want to quit? (Y/N)\n");
 
+	if ( settermmode(0, TERMMODE_KBKEY | TERMMODE_SIGNAL | TERMMODE_ECHO) )
+	{
+		error(1, errno, "settermmode");
+	}
+
 	while ( true )
 	{
-		unsigned method = System::Keyboard::POLL;
-		uint32_t codepoint = System::Keyboard::ReceiveKeystroke(method);
+		uint32_t codepoint;
+		ssize_t numbytes = read(0, &codepoint, sizeof(codepoint));
+		if ( !numbytes ) { exit(0); }
+		if ( numbytes < 0 ) { error(1, errno, "read stdin"); }
+		if ( numbytes < sizeof(codepoint) ) { fprintf(stderr, "bad stdin data\n"); exit(1); }
+		if ( !codepoint ) { continue; }
 
-		if ( codepoint == 0 ) { continue; }
-		if ( codepoint & Keyboard::DEPRESSED ) { continue; }
+		int kbkey = KBKEY_DECODE(codepoint);
+		if ( !kbkey ) { continue; }
+		if ( 0 < kbkey ) { continue; }
 
-		switch ( codepoint )
+		switch ( kbkey )
 		{
-			case Keyboard::ESC:
+			case -KBKEY_ESC:
 				return MODE_QUIT;
 				break;
-			case 'n':
-			case 'N':
+			case -KBKEY_N:
 				return MODE_TEXT;
-			case 'y':
-			case 'Y':
+			case -KBKEY_Y:
 				return MODE_QUIT;
 			default:
 				printf("Would you like to quit? N for No, Y for Yes\n");
@@ -219,6 +288,7 @@ bool savetofile(const char* path)
 	}
 
 	if ( close(fd) ) { error(0, errno, "close: %s", path); return false; }
+	strcpy(filename, path);
 	return true;
 }
 
@@ -226,54 +296,21 @@ int savemode()
 {
 	printf("\e37m\e40m\e[2J\e[H");
 	printf("Please enter the filename you wish to save the text to and press "
-	       "enter. Type an empty filename or press ESC to abort.\n\n");
+	       "enter. Type an empty filename to abort.\n\n");
 
-	char writefilename[256];
-	strcpy(writefilename, filename);
+	char* storage = NULL;
 
-retry:
-	size_t len = strlen(writefilename);
-	printf("File Name to Write: %s", writefilename);
-	fflush(stdout);
-
-	bool readytosave = false;
-
-	while ( !readytosave )
+	do
 	{
-		unsigned method = System::Keyboard::POLL;
-		uint32_t codepoint = System::Keyboard::ReceiveKeystroke(method);
+		delete[] storage;
+		printf("File to Write: ");
+		fflush(stdout);
+		storage = readline(0);
+		if ( !storage ) { error(1, errno, "readline"); }
+		if ( !storage[0] ) { delete[] storage; return MODE_TEXT; }
+	} while ( !savetofile(storage) );
+	delete[] storage;
 
-		if ( codepoint == 0 ) { continue; }
-		if ( codepoint & Keyboard::DEPRESSED ) { continue; }
-
-		switch ( codepoint )
-		{
-			case Keyboard::ESC:
-				return MODE_TEXT;
-				break;
-			case '\b':
-				if ( 0 < len ) { printf("\b"); fflush(stdout); writefilename[--len] = 0; }
-				break;
-			case '\n':
-				if ( len == 0 ) { return MODE_TEXT; }
-				readytosave = true;
-				printf("\n");
-				break;
-			default:
-				if ( 0x80 <= codepoint ) { continue; }
-				writefilename[len++] = codepoint;
-				writefilename[len+1] = 0;
-				char msg[2];
-				msg[0] = codepoint;
-				msg[1] = 0;
-				printf("%s", msg);
-				fflush(stdout);
-		}
-	}
-
-	if ( !savetofile(writefilename) ) { goto retry; }
-
-	strcpy(filename, writefilename);
 	bufferchanged = false;
 
 	printf("Succesfully saved\n");
@@ -318,6 +355,8 @@ bool loadfromfile(const char* path)
 	cursorx = 0;
 	cursory = 0;
 
+	strcpy(filename, path);
+
 	return true;
 }
 
@@ -325,60 +364,21 @@ int loadmode()
 {
 	printf("\e37m\e40m\e[2J\e[H");
 	printf("Please enter the filename you wish to load text from and press "
-	       "enter. Type an empty filename or press ESC to abort.\n\n");
+	       "enter. Type an empty filename to abort.\n\n");
 
-	char loadfilename[256];
-	loadfilename[0] = 0;
+	char* storage = NULL;
 
-retry:
-	size_t len = strlen(loadfilename);
-	printf("File Name to Load: %s", loadfilename);
-	fflush(stdout);
-
-	bool readytoload = false;
-
-	while ( !readytoload )
+	do
 	{
-		unsigned method = System::Keyboard::POLL;
-		uint32_t codepoint = System::Keyboard::ReceiveKeystroke(method);
+		delete[] storage;
+		printf("File to Load: ");
+		fflush(stdout);
+		storage = readline(0);
+		if ( !storage ) { error(1, errno, "readline"); }
+		if ( !storage[0] ) { delete[] storage; return MODE_TEXT; }
+	} while ( !loadfromfile(storage) );
+	delete[] storage;
 
-		if ( codepoint == 0 ) { continue; }
-		if ( codepoint & Keyboard::DEPRESSED ) { continue; }
-
-		switch ( codepoint )
-		{
-			case Keyboard::ESC:
-				return MODE_TEXT;
-				break;
-			case '\b':
-				if ( 0 < len ) { printf("\b"); fflush(stdout); loadfilename[--len] = 0; }
-				break;
-			case '\n':
-				if ( len == 0 ) { return MODE_TEXT; }
-				readytoload = true;
-				printf("\n");
-				break;
-			default:
-				if ( 0x80 <= codepoint ) { continue; }
-				loadfilename[len++] = codepoint;
-				loadfilename[len+1] = 0;
-				char msg[2];
-				msg[0] = codepoint;
-				msg[1] = 0;
-				printf("%s", msg);
-				fflush(stdout);
-		}
-	}
-
-	if ( !loadfromfile(loadfilename) )
-	{
-		clearbuffers();
-		cursorx = 0;
-		cursory = 0;
-		goto retry;
-	}
-
-	strcpy(filename, loadfilename);
 	bufferchanged = false;
 
 	return MODE_TEXT;

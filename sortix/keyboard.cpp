@@ -28,15 +28,16 @@
 #include "keyboard.h"
 #include "kb/ps2.h"
 #include "kb/layout/us.h"
-#include "kbapiadapter.h"
+#include "logterminal.h"
 
 namespace Sortix
 {
-	KBAPIAdapter* tty;
+	DevTerminal* tty;
 
 	uint32_t SysReceiveKeystroke()
 	{
-		return tty->DequeueKeystroke();
+		// TODO: Deprecated, please remove this.
+		return 0;
 	}
 
 	void Keyboard::Init()
@@ -47,7 +48,7 @@ namespace Sortix
 		KeyboardLayout* kblayout = new KBLayoutUS;
 		if ( !kblayout ) { Panic("Could not allocate keyboard layout driver"); }
 
-		tty = new KBAPIAdapter(keyboard, kblayout);
+		tty = new LogTerminal(keyboard, kblayout);
 		if ( !tty ) { Panic("Could not allocate a simple terminal"); }
 
 		Syscall::Register(SYSCALL_RECEIVE_KEYSTROKE, (void*) SysReceiveKeystroke);

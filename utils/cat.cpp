@@ -1,10 +1,11 @@
+#include <sys/keycodes.h>
+#include <sys/termmode.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
 #include <error.h>
-#include <libmaxsi/sortix-keyboard.h>
 
 int cat(int argc, char* argv[])
 {
@@ -55,19 +56,27 @@ int main(int argc, char* argv[])
 
 	bool lastwasesc = false;
 
-	while (true)
+	// TODO: This is just compatibility with how cat worked in early versions of
+	// Sortix. Ideally, this should be removed and just cat the raw stdin.
+	// Read the keyboard input from the user.
+	unsigned termmode = TERMMODE_KBKEY | TERMMODE_UNICODE | TERMMODE_SIGNAL;
+	if ( settermmode(0, termmode) ) { error(1, errno, "settermmode"); }
+	while ( true )
 	{
-		unsigned method = System::Keyboard::POLL;
-		uint32_t codepoint = System::Keyboard::ReceiveKeystroke(method);
-
-		if ( codepoint == 0 ) { continue; }
-		if ( codepoint & Maxsi::Keyboard::DEPRESSED ) { continue; }
-		if ( codepoint == Maxsi::Keyboard::UP ) { printf("\e[A"); fflush(stdout); continue; }
-		if ( codepoint == Maxsi::Keyboard::DOWN ) { printf("\e[B"); fflush(stdout); continue; }
-		if ( codepoint == Maxsi::Keyboard::RIGHT ) { printf("\e[C"); fflush(stdout); continue; }
-		if ( codepoint == Maxsi::Keyboard::LEFT ) { printf("\e[D"); fflush(stdout); continue; }
-		if ( codepoint == Maxsi::Keyboard::ESC ) { printf("\e["); fflush(stdout); lastwasesc = true; continue; }
+		uint32_t codepoint;
+		ssize_t numbytes = read(0, &codepoint, sizeof(codepoint));
+		if ( !numbytes ) { break; }
+		if ( numbytes < 0 ) { break; }
+		int kbkey = KBKEY_DECODE(codepoint);
+		if ( kbkey < 0 ) { continue; }
+		if ( kbkey == KBKEY_UP ) { printf("\e[A"); fflush(stdout); continue; }
+		if ( kbkey == KBKEY_DOWN ) { printf("\e[B"); fflush(stdout); continue; }
+		if ( kbkey == KBKEY_RIGHT ) { printf("\e[C"); fflush(stdout); continue; }
+		if ( kbkey == KBKEY_LEFT ) { printf("\e[D"); fflush(stdout); continue; }
+		if ( kbkey == KBKEY_ESC ) { printf("\e["); fflush(stdout); lastwasesc = true; continue; }
+		if ( kbkey ) { continue; }
 		if ( lastwasesc && codepoint == '[' ) { continue; }
+
 		if ( codepoint >= 0x80 ) { continue; }
 
 		char msg[2]; msg[0] = codepoint; msg[1] = '\0';

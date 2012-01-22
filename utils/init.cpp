@@ -4,9 +4,9 @@
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
-#include <libmaxsi/thread.h>
 
 using namespace Maxsi;
 
@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 	printf("\r\e[m\e[J");
 	fflush(stdout);
 
-	pid_t childpid = Process::Fork();	
+	pid_t childpid = fork();	
 	if ( childpid < 0 ) { perror("fork"); return 2; }
 
 	return ( childpid == 0 ) ? child() : parent(childpid);

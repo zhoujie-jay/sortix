@@ -1,4 +1,5 @@
 #include <sys/wait.h>
+#include <sys/termmode.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -8,8 +9,6 @@
 #include <fcntl.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/process.h>
-#include <libmaxsi/sortix-keyboard.h>
-#include <libmaxsi/string.h>
 
 using namespace Maxsi;
 
@@ -17,6 +16,13 @@ int status = 0;
 
 void command()
 {
+	unsigned termmode = TERMMODE_UNICODE
+	                  | TERMMODE_SIGNAL
+	                  | TERMMODE_UTF8
+	                  | TERMMODE_LINEBUFFER
+	                  | TERMMODE_ECHO;
+	settermmode(0, termmode);
+
 	const size_t CWD_SIZE = 512;
 	char cwd[CWD_SIZE];
 	const char* wd = getcwd(cwd, CWD_SIZE);
@@ -31,35 +37,23 @@ void command()
 
 	while (true)
 	{
-		unsigned method = System::Keyboard::POLL;
-		uint32_t codepoint = System::Keyboard::ReceiveKeystroke(method);
-
-		if ( codepoint == 0 ) { continue; }
-		if ( codepoint & Maxsi::Keyboard::DEPRESSED ) { continue; }
-		if ( codepoint >= 0x80 ) { continue; }
-
-		if ( codepoint == '\b' )
-		{
-			if ( 0 < commandused ) { printf("\b"); fflush(stdout); commandused--; }
-			continue;
-		}
-
-		if ( commandsize <= commandused && codepoint != '\n' ) { continue; }
-
-		char msg[2]; msg[0] = codepoint; msg[1] = '\0';
-		printf("%s", msg);
-		fflush(stdout);
-
-		if ( codepoint == '\n' ) { command[commandused] = '\0'; break; }
-
-		command[commandused++] = codepoint;
+		char c;
+		ssize_t bytesread = read(1, &c, sizeof(c));
+		if ( bytesread < 0 ) { error(64, errno, "read stdin"); }
+		if ( !bytesread ) { break; }
+		if ( !c ) { continue; }
+		if ( c == '\n' ) { break; }
+		if ( commandsize <= commandused ) { continue; }
+		command[commandused++] = c;
 	}
+
+	command[commandused] = '\0';
 
 	if ( command[0] == '\0' ) { return; }
 
-	if ( String::Compare(command, "$?") == 0 ) { printf("%u\n", status); status = 0; return; }
-	if ( String::Compare(command, "$$") == 0 ) { printf("%u\n", Process::GetPID()); status = 0; return; }
-	if ( String::Compare(command, "$PPID") == 0 ) { printf("%u\n", Process::GetParentPID()); status = 0; return; }
+	if ( strcmp(command, "$?") == 0 ) { printf("%u\n", status); status = 0; return; }
+	if ( strcmp(command, "$$") == 0 ) { printf("%u\n", Process::GetPID()); status = 0; return; }
+	if ( strcmp(command, "$PPID") == 0 ) { printf("%u\n", Process::GetParentPID()); status = 0; return; }
 
 	int argc = 0;
 	const char* argv[256];

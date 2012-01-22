@@ -1,10 +1,7 @@
 #include <libmaxsi/platform.h>
-#include <libmaxsi/io.h>
-#include <libmaxsi/thread.h>
-#include <libmaxsi/keyboard.h>
-#include <libmaxsi/string.h>
 #include <libmaxsi/sortix-vga.h>
-#include <libmaxsi/sortix-keyboard.h>
+#include <sys/keycodes.h>
+#include <sys/termmode.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -12,9 +9,6 @@
 #include <errno.h>
 #include <error.h>
 #include <string.h>
-
-using namespace Maxsi;
-using namespace Maxsi::Keyboard;
 
 const int width = 80;
 const int height = 25;
@@ -118,24 +112,28 @@ void Render()
 void Update()
 {
 	// Read the keyboard input from the user.
-	unsigned method = System::Keyboard::POLL;
-	uint32_t codepoint;
-	while ( (codepoint = System::Keyboard::ReceiveKeystroke(method) ) != 0 )
+	unsigned termmode = TERMMODE_KBKEY
+	                  | TERMMODE_UNICODE
+	                  | TERMMODE_SIGNAL
+	                  | TERMMODE_NONBLOCK;
+	if ( settermmode(0, termmode) ) { error(1, errno, "settermmode"); }
+	while ( true )
 	{
-		bool keyup = codepoint & DEPRESSED;
-		if ( keyup ) { continue; }
-		codepoint &= ~DEPRESSED;
-
-		if ( codepoint == 'r' || codepoint == 'R' ) { running = !running; }
-
-		if ( !running )
+		uint32_t codepoint;
+		ssize_t numbytes = read(0, &codepoint, sizeof(codepoint));
+		if ( !numbytes ) { break; }
+		if ( numbytes < 0 ) { break; }
+		int kbkey = KBKEY_DECODE(codepoint);
+		if ( kbkey == KBKEY_R ) { running = !running; }
+		if ( running ) { continue; }
+		if ( kbkey == KBKEY_C ) { Clear(); }
+		if ( kbkey == KBKEY_W ) { if ( posy > 1 ) { posy--; } }
+		if ( kbkey == KBKEY_A ) { if ( posx > 1 ) { posx--; } }
+		if ( kbkey == KBKEY_S ) { if ( posy < height ) { posy++; } }
+		if ( kbkey == KBKEY_D ) { if ( posx < width ) { posx++; } }
+		if ( kbkey == KBKEY_SPACE )
 		{
-			if ( codepoint == 'c' || codepoint == 'C' ) { Clear(); }
-			if ( codepoint == 'w' || codepoint == 'W' ) { if ( posy > 1 ) { posy--; } }
-			if ( codepoint == 's' || codepoint == 'S' ) { if ( posy < height ) { posy++; } }
-			if ( codepoint == 'a' || codepoint == 'A' ) { if ( posx > 1 ) { posx--; } }
-			if ( codepoint == 'd' || codepoint == 'D' ) { if ( posx < width ) { posx++; } }
-			if ( codepoint == ' ' ) { lastframe[posy * rowstride + posx] = 1 - lastframe[posy * rowstride + posx]; }
+			lastframe[posy * rowstride + posx] = 1 - lastframe[posy * rowstride + posx];
 		}
 	}
 
@@ -161,11 +159,11 @@ int main(int argc, char* argv[])
 	int sleepms = 50;
 	for ( int i = 1; i < argc; i++ )
 	{
-		if ( String::Compare(argv[i], "--help") == 0 ) { return usage(argc, argv); }
-		if ( String::Compare(argv[i], "--usage") == 0 ) { return usage(argc, argv); }
-		if ( String::Compare(argv[i], "--speed") == 0 && 1 < argc-i )
+		if ( strcmp(argv[i], "--help") == 0 ) { return usage(argc, argv); }
+		if ( strcmp(argv[i], "--usage") == 0 ) { return usage(argc, argv); }
+		if ( strcmp(argv[i], "--speed") == 0 && 1 < argc-i )
 		{
-			sleepms = String::ToInt(argv[++i]);
+			sleepms = atoi(argv[++i]);
 		}
 	}
 
@@ -175,7 +173,7 @@ int main(int argc, char* argv[])
 	// Update the game every 50th milisecond.
 	while ( true )
 	{
-		Thread::USleep(sleepms * 1000);
+		usleep(sleepms * 1000);
 		Update();
 	}
 
