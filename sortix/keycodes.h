@@ -143,19 +143,26 @@
 
 #define KBKEY_ENCODE(_kbkey) \
 ({ \
-	int kbkey = (_kbkey); \
-	uint32_t codepoint = (1U<<30U) | ((unsigned) kbkey); \
-	codepoint &= ~(1U<<31U); \
-	codepoint; \
+	int __kbkey = (_kbkey); \
+	uint32_t __codepoint = (1U<<30U) | ((unsigned) __kbkey); \
+	__codepoint &= ~(1U<<31U); \
+	__codepoint; \
 })
 
 #define KBKEY_DECODE(_codepoint) \
 ({ \
-	uint32_t codepoint = (_codepoint); \
-	if ( !(codepoint & (1U<<30U)) ) { codepoint = 0U; } \
-	if ( codepoint & (1U<<29U) ) { codepoint |= (1U<<31U); } \
-	int kbkey = (int) codepoint; \
-	kbkey; \
+	struct { union { int __kbkey; uint32_t __codepoint; }; } __u; \
+	__u.__codepoint = (_codepoint); \
+	if ( __u.__codepoint & (1U<<30U) ) \
+	{ \
+		if ( __u.__codepoint & (1U<<29U) ) { __u.__codepoint |= (1U<<31U); } \
+		else { __u.__codepoint &= ~(1U<<30U); } \
+	} \
+	else  \
+	{ \
+		__u.__codepoint = 0U; \
+	} \
+	__u.__kbkey; \
 })
 
 #endif
