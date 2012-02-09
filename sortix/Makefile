@@ -78,6 +78,7 @@ sound.o \
 pci.o \
 uart.o \
 terminal.o \
+linebuffer.o \
 vgaterminal.o \
 serialterminal.o \
 descriptors.o \
