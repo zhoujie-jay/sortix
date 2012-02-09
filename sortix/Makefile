@@ -79,6 +79,7 @@ pci.o \
 uart.o \
 terminal.o \
 linebuffer.o \
+logterminal.o \
 vgaterminal.o \
 serialterminal.o \
 descriptors.o \
