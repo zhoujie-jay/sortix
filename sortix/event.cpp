@@ -61,7 +61,24 @@ namespace Sortix
 			waiting->event = NULL;
 			Syscall::ScheduleResumption(waiting);
 			waiting = waiting->eventnextwaiting;
-		}		
+		}
+	}
+
+	// TODO: Okay, I realize this is O(N), refactor this to a linked list.
+	void Event::Unregister(Thread* thread)
+	{
+		if ( thread->event != this ) { return; }
+		thread->event = NULL;
+		if ( waiting == thread ) { waiting = thread->eventnextwaiting; return; }
+		for ( Thread* tmp = waiting; tmp; tmp = tmp->eventnextwaiting )
+		{
+			if ( tmp->eventnextwaiting == thread )
+			{
+				tmp->eventnextwaiting = thread->eventnextwaiting;
+				break;
+			}
+		}
+		thread->eventnextwaiting = NULL;
 	}
 }
 

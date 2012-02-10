@@ -38,6 +38,7 @@ namespace Sortix
 	public:
 		void Register();
 		void Signal();
+		void Unregister(Thread* thread);
 
 	private:
 		Thread* waiting;

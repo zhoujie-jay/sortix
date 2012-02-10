@@ -25,6 +25,7 @@
 #include "platform.h"
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
+#include "event.h"
 #include "process.h"
 #include "thread.h"
 #include "scheduler.h"
@@ -54,6 +55,8 @@ namespace Sortix
 		scfunc = NULL;
 		currentsignal = NULL;
 		sighandler = NULL;
+		pidbackup = -1;
+		terminated = false;
 		ResetCallbacks();
 	}
 
@@ -76,6 +79,8 @@ namespace Sortix
 		schedulerlistnext = NULL;
 		scfunc = NULL;
 		sighandler = forkfrom->sighandler;
+		pidbackup = -1;
+		terminated = false;
 		ResetCallbacks();
 	}
 
@@ -89,6 +94,8 @@ namespace Sortix
 		ASSERT(CurrentProcess() == process);
 		ASSERT(nextsleepingthread == NULL);
 
+		if ( event ) { event->Unregister(this); }
+
 		// Delete information about signals being processed.
 		while ( currentsignal )
 		{
@@ -98,6 +105,8 @@ namespace Sortix
 		}
 
 		Memory::UnmapRangeUser(stackpos, stacksize);
+
+		terminated = true;
 	}
 
 	Thread* Thread::Fork()
@@ -179,6 +188,8 @@ namespace Sortix
 	{
 		if ( ready ) { return; }
 		ready = true;
+
+		this->pidbackup = process->pid;
 
 		if ( Time::MicrosecondsSinceBoot() < sleepuntil )
 		{

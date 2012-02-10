@@ -60,6 +60,8 @@ namespace Sortix
 	public:
 		size_t id;
 		Process* process;
+		pid_t pidbackup;
+		bool terminated;
 		Thread* prevsibling;
 		Thread* nextsibling;
 

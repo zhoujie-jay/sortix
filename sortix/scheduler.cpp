@@ -134,6 +134,7 @@ namespace Sortix
 
 			Thread* nextthread = PopNextThread();
 			if ( !nextthread ) { Panic("had no thread to switch to"); }
+			if ( nextthread->terminated ) { PanicF("Running a terminated thread 0x%p", nextthread); }
 
 			LogContextSwitch(currentthread, nextthread);
 			if ( nextthread == currentthread ) { return; }
