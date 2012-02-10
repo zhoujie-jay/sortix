@@ -69,7 +69,6 @@ log.o \
 utf8.o \
 panic.o \
 keyboard.o \
-kbapiadapter.o \
 kb/ps2.o \
 kb/layout/us.o \
 scheduler.o \

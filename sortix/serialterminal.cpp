@@ -24,7 +24,6 @@
 
 #include "platform.h"
 #include <libmaxsi/string.h>
-#include <libmaxsi/keyboard.h>
 #include "log.h"
 #include "vga.h"
 #include "keyboard.h"

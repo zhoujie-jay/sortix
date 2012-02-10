@@ -63,7 +63,6 @@ c/h/stdint.h \
 COMMONOBJS=c++.o memory.o heap.o string.o error.o format.o
 SORTIXOBJS:=$(addprefix sortix/,$(COMMONOBJS))
 LIBMAXSIOBJS:=$(COMMONOBJS) \
-sortix-keyboard.o \
 sortix-sound.o \
 process.o \
 thread.o \
@@ -88,12 +87,10 @@ thread.h \
 process.h \
 types.h \
 format.h \
-keyboard.h \
 sortedlist.h \
 signal.h \
 signalnum.h \
 sortix-vga.h \
-sortix-keyboard.h \
 sortix-sound.h \
 
 OBJS:=$(LIBMAXSIOBJS)

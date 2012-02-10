@@ -34,12 +34,6 @@ namespace Sortix
 {
 	DevTerminal* tty;
 
-	uint32_t SysReceiveKeystroke()
-	{
-		// TODO: Deprecated, please remove this.
-		return 0;
-	}
-
 	void Keyboard::Init()
 	{
 		Keyboard* keyboard = new PS2Keyboard(0x60, Interrupt::IRQ1);
@@ -50,8 +44,6 @@ namespace Sortix
 
 		tty = new LogTerminal(keyboard, kblayout);
 		if ( !tty ) { Panic("Could not allocate a simple terminal"); }
-
-		Syscall::Register(SYSCALL_RECEIVE_KEYSTROKE, (void*) SysReceiveKeystroke);
 	}
 }
 
