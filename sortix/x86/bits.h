@@ -53,7 +53,7 @@ typedef unsigned int __nat;
 typedef __int64_t __intmax_t;
 typedef __uint64_t __uintmax_t;
 
-/* Define an integer able to hold the size of the largest continious memory */
+/* Define an integer able to hold the size of the largest continuous memory */
 /* region and define pointer safe integer types. */
 typedef unsigned int __size_t;
 typedef signed long __ssize_t;
