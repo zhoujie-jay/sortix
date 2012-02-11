@@ -31,7 +31,7 @@ __BEGIN_DECLS
 
 @include(NULL.h)
 
-#define offsetof(type, member) ((size_t) &(type)) - (size_t) (&(member)))
+#define offsetof(type, member) __builtin_offsetof(type, member)
 
 @include(ptrdiff_t.h)
 
