@@ -45,38 +45,6 @@
 	#define _SORTIX_SOURCE 1
 #endif
 
-#ifdef _SORTIX_SOURCE
-	#warning _SORTIX_SOURCE
-#endif
-
-#ifdef _POSIX_SOURCE
-	#warning _POSIX_SOURCE
-#endif
-
-#ifdef _POSIX_C_SOURCE
-	#warning _POSIX_C_SOURCE
-#endif
-
-#ifdef _BSD_SOURCE
-	#warning _BSD_SOURCE
-#endif
-
-#ifdef _SVID_SOURCE
-	#warning _SVID_SOURCE
-#endif
-
-#ifdef _XOPEN_SOURCE
-	#warning _XOPEN_SOURCE
-#endif
-
-#ifdef _XOPEN_SOURCE_EXTENDED
-	#warning XOPEN_SOURCE_EXTENDED
-#endif
-
-#ifdef _GNU_SOURCE
-	#warning _GNU_SOURCE
-#endif
-
 #define restrict
 
 /* TODO: Improve these declarations, perhaps like they are in glibc. */
