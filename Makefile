@@ -123,7 +123,7 @@ debfile: all
 	rm $(DEBDIR)/boot/deb.size
 	dpkg --build $(DEBDIR) $(DEBFILE)
 	rm -rf $(DEBDIR)/DEBIAN
-	(cd builds/$(DEBNAME) && tar cfzv ../$(DEBNAME).tar.gz `ls`)
+	(cd builds/$(DEBNAME) && tar cfz ../$(DEBNAME).tar.gz `ls`)
 	rm -rf $(DEBDIR)
 
 debsource: all
@@ -132,7 +132,7 @@ debsource: all
 	for D in `ls | grep -v builds | grep -v sysroot`; do cp -r $$D $(DEBSRCDIR); done
 	(cd $(DEBSRCDIR) && make distclean)
 	rm -rf $(DEBSRCDIR)/sysroot
-	(cd builds && tar cfzv $(DEBSRCNAME)-src.tar.gz $(DEBSRCNAME)-src)
+	(cd builds && tar cfz $(DEBSRCNAME)-src.tar.gz $(DEBSRCNAME)-src)
 	rm -rf $(DEBSRCDIR)
 
 # Bootable images

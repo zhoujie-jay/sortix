@@ -142,7 +142,7 @@ sortix.bin: sortix-$(BUILDID).tmp
 	nasm $(CPUNASMFLAGS) $< -o $@
 
 clean:
-	for D in $(DIRS); do rm -fv $$D/*.o $$D/*.bin $$D/*.out $$D/*.tmp; done
+	for D in $(DIRS); do rm -f $$D/*.o $$D/*.bin $$D/*.out $$D/*.tmp; done
 
 # Installation into sysroot
 install:
