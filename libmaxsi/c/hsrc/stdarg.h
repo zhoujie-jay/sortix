@@ -31,11 +31,6 @@ __BEGIN_DECLS
 
 @include(va_list.h)
 
-#define va_start(ap, argN) ap = (void*) ((&argN) + 1)
-#define va_copy(dest, src) dest = src
-#define va_arg(ap, type) (ap = (void*) ((type*) ap) + 1, *(((type*) ap) - 1)
-#define va_end(ap) ap = null
-
 __END_DECLS
 
 #endif
