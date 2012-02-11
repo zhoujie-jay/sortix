@@ -53,7 +53,7 @@ char* strtok(char* restrict, const char* restrict);
 char* strtok_r(char* restrict, const char* restrict, char** restrict);
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
-#ifndef SORTIX_UNIMPLEMENTED
+#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 void* memccpy(void* restrict, const void* restrict, int, size_t);
 void* memmove(void*, const void*, size_t);
 char* stpncpy(char* restrict, const char* restrict, size_t);
@@ -72,7 +72,7 @@ size_t strxfrm(char* restrict, const char* restrict, size_t);
 size_t strxfrm_l(char* restrict, const char* restrict, size_t, locale_t);
 #endif
 
-#ifdef SORTIX_EXTENSIONS
+#if defined(_SORTIX_SOURCE) || defined(_GNU_SOURCE)
 char* strchrnul(const char* str, int c);
 #endif
 

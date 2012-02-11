@@ -34,8 +34,52 @@
 	#define __END_DECLS
 #endif
 
+/* By default, assume the source is compiled using the native API. */
+#if !defined(_SORTIX_SOURCE) && \
+    !defined(_POSIX_SOURCE) && !defined(_POSIX_C_SOURCE) && \
+    !defined(_BSD_SOURCE) && \
+    !defined(_SVID_SOURCE) && \
+    !defined(_XOPEN_SOURCE) && !defined(_XOPEN_SOURCE_EXTENDED) && \
+    !defined(_GNU_SOURCE) && \
+    true
+	#define _SORTIX_SOURCE 1
+#endif
+
+#ifdef _SORTIX_SOURCE
+	#warning _SORTIX_SOURCE
+#endif
+
+#ifdef _POSIX_SOURCE
+	#warning _POSIX_SOURCE
+#endif
+
+#ifdef _POSIX_C_SOURCE
+	#warning _POSIX_C_SOURCE
+#endif
+
+#ifdef _BSD_SOURCE
+	#warning _BSD_SOURCE
+#endif
+
+#ifdef _SVID_SOURCE
+	#warning _SVID_SOURCE
+#endif
+
+#ifdef _XOPEN_SOURCE
+	#warning _XOPEN_SOURCE
+#endif
+
+#ifdef _XOPEN_SOURCE_EXTENDED
+	#warning XOPEN_SOURCE_EXTENDED
+#endif
+
+#ifdef _GNU_SOURCE
+	#warning _GNU_SOURCE
+#endif
+
 #define restrict
 
+/* TODO: Improve these declarations, perhaps like they are in glibc. */
 #define __POSIX_NO_OBSOLETE
 
 #ifdef __POSIX_NO_OBSOLETE
@@ -44,13 +88,8 @@
 	#define __POSIX_OBSOLETE 200112L
 #endif
 
-/* Whether sortix-specific extensions to the C library are available. */
-#ifndef SORTIX_NO_EXTENSIONS
-#define SORTIX_EXTENSIONS
-#endif
-
 /* Don't provide things from standard headers that is not implemented. */
-#define SORTIX_UNIMPLEMENTED
+/*#define __SORTIX_SHOW_UNIMPLEMENTED*/
 
 #include <sortix/bits.h>
 

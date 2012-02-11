@@ -61,7 +61,7 @@ __BEGIN_DECLS
 struct tm;
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
-#ifndef SORTIX_UNIMPLEMENTED
+#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 double wcstod(const wchar_t* restrict, wchar_t** restrict);
 FILE* open_wmemstream(wchar_t** bufp, size_t* sizep);
 float wcstof(const wchar_t* restrict, wchar_t** restrict);

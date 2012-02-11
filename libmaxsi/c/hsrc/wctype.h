@@ -35,7 +35,7 @@ __BEGIN_DECLS
 @include(WEOF.h)
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
-#ifndef SORTIX_UNIMPLEMENTED
+#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 int iswalnum(wint_t);
 int iswalnum_l(wint_t, locale_t);
 int iswalpha(wint_t);

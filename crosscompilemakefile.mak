@@ -21,7 +21,7 @@ LIBMAXSIROOT=$(OSROOT)/libmaxsi
 LIBC=$(LIBMAXSIROOT)/start.o $(LIBMAXSIROOT)/libc.a
 LIBS=$(LIBC)
 
-CPPFLAGS=$(CPUDEFINES)
+CPPFLAGS=$(CPUDEFINES) -U_GNU_SOURCE
 FLAGS=-nostdinc -nostdlib -fno-builtin -nostartfiles -nodefaultlibs
 INCLUDES=-I $(LIBMAXSIROOT)/c/h/ -I $(OSROOT)/
 

@@ -34,7 +34,7 @@ __BEGIN_DECLS
 @include(pid_t.h)
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
-#ifndef SORTIX_UNIMPLEMENTED
+#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 int waitid(idtype_t, id_t, siginfo_t*, int);
 #endif
 

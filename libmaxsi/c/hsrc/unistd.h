@@ -74,12 +74,12 @@ __BEGIN_DECLS
 @include(off_t.h)
 @include(pid_t.h)
 @include(useconds_t.h)
-#ifdef SORTIX_EXTENSIONS
+#if defined(_SORTIX_SOURCE)
 @include(intn_t.h)
 #endif
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
-#ifndef SORTIX_UNIMPLEMENTED
+#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 int access(const char*, int);
 unsigned alarm(unsigned);
 int chown(const char*, uid_t, gid_t);
@@ -169,13 +169,13 @@ ssize_t read(int, void*, size_t);
 int rmdir(const char*);
 unsigned sleep(unsigned);
 int truncate(const char*, off_t);
-#if __POSIX_OBSOLETE <= 200112 || defined(SORTIX_EXTENSIONS)
+#if __POSIX_OBSOLETE <= 200112 || defined(_SORTIX_SOURCE)
 int usleep(useconds_t useconds);
 #endif
 int unlink(const char*);
 ssize_t write(int, const void*, size_t);
 
-#ifdef SORTIX_EXTENSIONS
+#if defined(_SORTIX_SOURCE)
 size_t getpagesize(void);
 int memstat(size_t* memused, size_t* memtotal);
 int uptime(uintmax_t* usecssinceboot);

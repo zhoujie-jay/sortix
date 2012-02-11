@@ -43,7 +43,7 @@ DIR* opendir(const char* path);
 struct dirent* readdir(DIR* dir);
 void rewinddir(DIR* dir);
 
-#ifdef SORTIX_EXTENSIONS
+#if defined(_SORTIX_SOURCE)
 void dregister(DIR* dir);
 void dunregister(DIR* dir);
 DIR* dnewdir(void);

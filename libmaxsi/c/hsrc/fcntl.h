@@ -86,7 +86,7 @@ typedef struct _flock flock;
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 int open(const char* path, int oflag, ...);
-#ifndef SORTIX_UNIMPLEMENTED
+#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 int creat(const char* path, mode_t mode);
 int fcntl(int fd, int cmd, ...);
 int openat(int fd, const char* path, int oflag, ...);

@@ -108,7 +108,7 @@ extern int vsnprintf(char* restrict, size_t, const char* restrict, va_list);
 extern int vsprintf(char* restrict s, const char* restrict format, va_list ap);
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
-#ifndef SORTIX_UNIMPLEMENTED
+#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 extern char* ctermid(char* s);
 extern char* fgets(char* restrict s, int n, FILE* restrict stream);
 extern FILE *fmemopen(void* restrict buf, size_t size, const char* restrict mode);
@@ -151,7 +151,7 @@ extern char* tempnam(const char* dir, const char* pfx);
 #endif
 #endif
 
-#ifdef SORTIX_EXTENSIONS
+#if defined(_SORTIX_SOURCE)
 void fregister(FILE* fp);
 void funregister(FILE* fp);
 FILE* fnewfile(void);

@@ -20,7 +20,7 @@ ifeq ($(CPU),x64)
     LIBMAXSI_NO_SHARED=1 # This doesn't work yet
 endif
 
-DEFINES=-DLIBMAXSI_LIBRARY -DSORTIX $(CPUDEFINES)
+DEFINES=-DLIBMAXSI_LIBRARY -DSORTIX -U_GNU_SOURCE $(CPUDEFINES)
 FLAGSRELEASE=-O2
 FLAGSDEBUG=-O2
 FLAGS=$(CPUFLAGS) -std=gnu++0x -Wall -Wextra -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -fno-exceptions -fno-stack-protector -nostdinc $(FLAGSRELEASE) $(DEFINES)

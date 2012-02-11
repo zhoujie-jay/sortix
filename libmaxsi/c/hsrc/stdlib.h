@@ -58,7 +58,7 @@ unsigned long long strtoull(const char* restrict, char** restrict, int);
 long long strtoll(const char* restrict, char** restrict, int);
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
-#ifndef SORTIX_UNIMPLEMENTED
+#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 long a64l(const char* s);
 void abort(void);
 int abs(int value);
