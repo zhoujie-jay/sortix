@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <errno.h>
 #include <sys/readdirents.h>
 #include <dirent.h>
@@ -100,9 +101,10 @@ int fddir_sortix_fd(void* user)
 int fddir_sortix_close(void* user)
 {
 	fddir_sortix_t* info = (fddir_sortix_t*) user;
-	close(info->fd);
+	int result = close(info->fd);
 	free(info->dirent);
 	free(info);
+	return result;
 }
 
 DIR* fdopendir(int fd)
