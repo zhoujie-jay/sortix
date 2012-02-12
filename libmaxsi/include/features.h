@@ -41,7 +41,7 @@
     !defined(_SVID_SOURCE) && \
     !defined(_XOPEN_SOURCE) && !defined(_XOPEN_SOURCE_EXTENDED) && \
     !defined(_GNU_SOURCE) && \
-    true
+    1
 	#define _SORTIX_SOURCE 1
 #endif
 

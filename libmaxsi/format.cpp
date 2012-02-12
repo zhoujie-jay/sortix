@@ -22,9 +22,9 @@
 
 ******************************************************************************/
 
-#include "platform.h"
-#include "string.h"
-#include "format.h"
+#include <libmaxsi/platform.h>
+#include <libmaxsi/string.h>
+#include <libmaxsi/format.h>
 
 namespace Maxsi
 {

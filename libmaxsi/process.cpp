@@ -22,9 +22,9 @@
 
 ******************************************************************************/
 
-#include "platform.h"
-#include "syscall.h"
-#include "process.h"
+#include <libmaxsi/platform.h>
+#include <libmaxsi/syscall.h>
+#include <libmaxsi/process.h>
 #include <stdio.h>
 #include <dirent.h>
 

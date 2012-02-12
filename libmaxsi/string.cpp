@@ -22,9 +22,11 @@
 
 ******************************************************************************/
 
-#include "platform.h"
-#include "string.h"
-#include "memory.h"
+#include <libmaxsi/platform.h>
+#include <libmaxsi/string.h>
+#include <libmaxsi/memory.h>
+#include <stdlib.h>
+#include <string.h>
 
 namespace Maxsi
 {
@@ -223,6 +225,17 @@ namespace Maxsi
 			result += Length(s1);
 			return result;
 		}
+
+#ifndef SORTIX_KERNEL
+		extern "C" char* strdup(const char* input)
+		{
+			size_t inputsize = strlen(input);
+			char* result = (char*) malloc(inputsize + 1);
+			if ( result == NULL ) { return NULL; }
+			memcpy(result, input, inputsize + 1);
+			return result;
+		}
+#endif
 
 #if 0
 		char* Combine(size_t NumParameters, ...)

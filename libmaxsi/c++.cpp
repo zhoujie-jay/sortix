@@ -22,7 +22,7 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <libmaxsi/platform.h>
 
 extern "C" void __cxa_pure_virtual()
 {

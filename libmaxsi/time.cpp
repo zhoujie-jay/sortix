@@ -22,10 +22,10 @@
 
 ******************************************************************************/
 
-#include "platform.h"
-#include "string.h"
-#include "memory.h"
-#include "syscall.h"
+#include <libmaxsi/platform.h>
+#include <libmaxsi/string.h>
+#include <libmaxsi/memory.h>
+#include <libmaxsi/syscall.h>
 
 namespace Maxsi
 {

@@ -22,9 +22,9 @@
 
 ******************************************************************************/
 
-#include "platform.h"
-#include "memory.h"
-#include "error.h"
+#include <libmaxsi/platform.h>
+#include <libmaxsi/memory.h>
+#include <libmaxsi/error.h>
 
 #ifdef SORTIX_KERNEL
 #define HEAP_GROWS_DOWNWARDS

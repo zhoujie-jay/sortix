@@ -59,7 +59,7 @@ else
 endif 
 CPPFLAGSRELEASE=-s $(O)
 CPPFLAGSDEBUG=
-CPPFLAGS=-I.. -I. $(CPUDEFINES) $(CPUFLAGS) -std=gnu++0x -Wall -Wextra -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -fno-exceptions -fno-rtti -fno-stack-protector $(DEFINES) $(CPPFLAGSRELEASE)
+CPPFLAGS=-I ../libmaxsi/preproc -I.. -I. $(CPUDEFINES) $(CPUFLAGS) -std=gnu++0x -Wall -Wextra -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -fno-exceptions -fno-rtti -fno-stack-protector $(DEFINES) $(CPPFLAGSRELEASE)
 OBJS=$(CPUOBJS) \
 kernel.o \
 descriptor_tables.o \

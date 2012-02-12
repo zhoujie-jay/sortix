@@ -5,6 +5,4 @@
 *.so
 *.a
 # Ignore dynamically generated headers.
-/*.h
-c/h/*.h
-c/h/sys/*.h
+preproc

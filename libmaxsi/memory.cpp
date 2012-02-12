@@ -22,11 +22,11 @@
 
 ******************************************************************************/
 
-#include "platform.h"
-#include "memory.h"
-#include "error.h"
+#include <libmaxsi/platform.h>
+#include <libmaxsi/memory.h>
+#include <libmaxsi/error.h>
 #ifndef SORTIX_KERNEL
-#include "syscall.h"
+#include <libmaxsi/syscall.h>
 #endif
 
 namespace Maxsi

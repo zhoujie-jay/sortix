@@ -22,12 +22,12 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <libmaxsi/platform.h>
 #ifdef LIBMAXSI_LIBC
 #include <sys/types.h>
 #endif
-#include "syscall.h"
-#include "thread.h"
+#include <libmaxsi/syscall.h>
+#include <libmaxsi/thread.h>
 
 #ifdef SORTIX_KERNEL
 extern "C" void PanicF(const char* Format, ...);

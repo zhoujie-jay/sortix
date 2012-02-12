@@ -22,12 +22,12 @@
 
 ******************************************************************************/
 
-#include "platform.h"
-#include "syscall.h"
-#include "io.h"
-#include "format.h"
-#include "string.h"
-#include "memory.h"
+#include <libmaxsi/platform.h>
+#include <libmaxsi/syscall.h>
+#include <libmaxsi/io.h>
+#include <libmaxsi/format.h>
+#include <libmaxsi/string.h>
+#include <libmaxsi/memory.h>
 #include <sys/readdirents.h>
 #include <unistd.h>
 #include <errno.h>

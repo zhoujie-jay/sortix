@@ -22,8 +22,8 @@
 
 ******************************************************************************/
 
-#include "platform.h"
-#include "syscall.h"
+#include <libmaxsi/platform.h>
+#include <libmaxsi/syscall.h>
 #include <sys/termmode.h>
 #include <unistd.h>
 

@@ -23,9 +23,9 @@
 
 ******************************************************************************/
 
-#include "platform.h"
-#include "syscall.h"
-#include "sortix-sound.h"
+#include <libmaxsi/platform.h>
+#include <libmaxsi/syscall.h>
+#include <libmaxsi/sortix-sound.h>
 
 namespace System
 {

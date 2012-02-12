@@ -23,11 +23,11 @@
 
 ******************************************************************************/
 
-#include "platform.h"
-#include "signal.h"
-#include "string.h"
-#include "io.h"
-#include "memory.h"
+#include <libmaxsi/platform.h>
+#include <libmaxsi/signal.h>
+#include <libmaxsi/string.h>
+#include <libmaxsi/io.h>
+#include <libmaxsi/memory.h>
 
 namespace Maxsi
 {

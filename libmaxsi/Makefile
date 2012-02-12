@@ -2,12 +2,13 @@ ifndef CPU
     CPU=x86
 endif
 
+BINS=libc.a libg.a libmaxsi.a libmaxsi-sortix.a
+
 ifeq ($(CPU),x86)
     CPUDEFINES=-DPLATFORM_X86
     CPUFLAGS=-m32
     CPULDFLAGS=-melf_i386
     CPUASFLAGS=-32
-    CPUNASMFLAGS=-felf32
 endif
 
 ifeq ($(CPU),x64)
@@ -16,53 +17,24 @@ ifeq ($(CPU),x64)
     CPUFLAGS=-fPIC -m64
     CPULDFLAGS=-melf_x86_64
     CPUASFLAGS=-64
-    CPUNASMFLAGS=-felf64
-    LIBMAXSI_NO_SHARED=1 # This doesn't work yet
 endif
 
-DEFINES=-DLIBMAXSI_LIBRARY -DSORTIX -U_GNU_SOURCE $(CPUDEFINES)
-FLAGSRELEASE=-O2
-FLAGSDEBUG=-O2
-FLAGS=$(CPUFLAGS) -std=gnu++0x -Wall -Wextra -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -fno-exceptions -fno-stack-protector -nostdinc $(FLAGSRELEASE) $(DEFINES)
+CPPINCLUDES=-I preproc -I ..
+CPPFLAGS=-DLIBMAXSI_LIBRARY -DSORTIX -U_GNU_SOURCE $(CPUDEFINES) $(CPPINCLUDES)
+FLAGS=$(CPUFLAGS) -Wall -Wextra -nostdlib -fno-builtin -nostartfiles \
+                  -nodefaultlibs -fno-stack-protector -nostdinc
+CFLAGS=$(FLAGS) -std=c99
+CXXFLAGS=$(FLAGS) -std=gnu++0x -fno-exceptions -nostdinc++ -fno-rtti
 LDFLAGS=$(CPULDFLAGS)
 ASFLAGS=$(CPUASFLAGS)
-NASMFLAGS=$(CPUNASMFLAGS)
 
-COBJS=\
-c/ctype.o \
-c/file.o \
-c/fdio.o \
-c/stdio.o \
-c/dir.o \
-c/fddir-sortix.o \
-
-CHEADERS=\
-c/h/ctype.h \
-c/h/unistd.h \
-c/h/stdlib.h \
-c/h/wchar.h \
-c/h/stddef.h \
-c/h/fcntl.h \
-c/h/stdarg.h \
-c/h/wctype.h \
-c/h/features.h \
-c/h/string.h \
-c/h/errno.h \
-c/h/error.h \
-c/h/dirent.h \
-c/h/sys/keycodes.h \
-c/h/sys/termmode.h \
-c/h/sys/readdirents.h \
-c/h/sys/stat.h \
-c/h/sys/types.h \
-c/h/sys/wait.h \
-c/h/stdio.h \
-c/h/signal.h \
-c/h/stdint.h \
-
-COMMONOBJS=c++.o memory.o heap.o string.o error.o format.o
-SORTIXOBJS:=$(addprefix sortix/,$(COMMONOBJS))
-LIBMAXSIOBJS:=$(COMMONOBJS) \
+OBJS=\
+ctype.o \
+file.o \
+fdio.o \
+stdio.o \
+dir.o \
+fddir-sortix.o \
 sortix-sound.o \
 process.o \
 thread.o \
@@ -74,62 +46,29 @@ $(CPU)/signal.o \
 start.o \
 time.o \
 random.o \
-integer.o
+integer.o \
+c++.o \
+memory.o \
+heap.o \
+string.o \
+error.o \
+format.o \
 
-MAXSIHEADERS=\
-error.h \
-io.h \
-memory.h \
-platform.h \
-string.h \
-syscall.h \
-thread.h \
-process.h \
-types.h \
-format.h \
-sortedlist.h \
-signal.h \
-signalnum.h \
-sortix-vga.h \
-sortix-sound.h \
+UNPROCHEADERDIRS:=$(shell find include -type d)
+UNPROCHEADERS:=$(shell find include -type f)
+HEADERDIRS:=$(patsubst include%,preproc%,$(UNPROCHEADERDIRS))
+HEADERS:=$(patsubst include%,preproc%,$(UNPROCHEADERS))
 
-OBJS:=$(LIBMAXSIOBJS)
-BINS:=
+SORTIXOBJS=\
+c++.o \
+memory.o \
+heap.o \
+string.o \
+error.o \
+format.o \
 
-ifndef LIBMAXSI_SHARED
-    LIBMAXSI_NO_SHARED=1
-endif
-
-ifndef LIBMAXSI_NO_SHARED
-    BINS:=$(BINS) libmaxsi.so
-endif
-
-ifndef LIBMAXSI_NO_STATIC
-    BINS:=$(BINS) libmaxsi.a
-endif
-
-ifndef LIBMAXSI_NO_SORTIX
-    BINS:=$(BINS) libmaxsi-sortix.a
-endif
-
-ifndef LIBMAXSI_NO_LIBC
-    OBJS:=$(OBJS) $(COBJS)
-    ifndef LIBMAXSI_NO_SHARED
-         BINS:=$(BINS) libc.so libg.so
-    endif
-    ifndef LIBMAXSI_NO_STATIC
-         BINS:=$(BINS) libc.a libg.a
-    endif
-
-    HEADERS:=$(MAXSIHEADERS) $(CHEADERS)
-
-else
-    DEFINES:=$(DEFINES) -DLIBMAXSI_NO_LIBC
-endif
-
-CFLAGS:=$(FLAGS) -std=c99 -Ic/h -I..
-CXXFLAGS:=$(FLAGS) -nostdinc++ -fno-rtti -I.. -Ic/h
-SORTIXFLAGS:=$(CXXFLAGS) -DSORTIX_KERNEL -I..  -I../..
+SORTIXOBJS:=$(addprefix sortix/,$(SORTIXOBJS))
+SORTIXCPPFLAGS:=-DSORTIX_KERNEL
 
 all: $(BINS)
 
@@ -157,57 +96,44 @@ libg.so: libc.so
 start.o: $(CPU)/start.o
 	ln -sf $< $@ 
 
-# libmaxsi
+# header preprocessing
+$(HEADERDIRS):
+	mkdir -p $@
 
-*.cpp: $(HEADERS)
+preproc/%: include/% 
+	mxmpp -I decl $< -o $@
 
-%.o: %.cpp
-	g++ -c $< -o $@ $(CXXFLAGS)
-	
-%.h: hsrc/%.h
-	echo "/* WARNING: This header is generated - edits will be lost! */" > $@
-	mxmpp -I decl $< >> $@
+headers: $(HEADERDIRS) $(HEADERS)
+
+# standard library
+%.o: %.c headers
+	gcc -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
+
+%.o: %.cpp headers
+	g++ -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 
 %.o: %.s
 	as $(ASFLAGS) $< -o $@
 
-%.o: %.asm
-	nasm $(CPUNASMFLAGS) $< -o $@
-
-# libc
-
-c/*.c: $(CHEADERS)
-
-c/%.o: c/%.c
-	gcc -c $< -o $@ $(CFLAGS)
-
-c/h/%.h: c/hsrc/%.h
-	mkdir -p c/h
-	mkdir -p c/h/sys
-	echo "/* WARNING: This header is generated - edits will be lost! */" > $@
-	mxmpp -I decl -I c/decl $< >> $@
-
 # libmaxsi-sortix
+sortix:
+	mkdir -p sortix
 
-sortix/*.cpp: $(HEADERS)
-
-sortix/%.o: %.cpp $(HEADERS)
-	g++ -c $< -o $@ $(SORTIXFLAGS)
-
-sortix/%.o: sortix/%.cpp
-	g++ -c $< -o $@ $(SORTIXFLAGS)
+sortix/%.o: %.cpp $(HEADERS) sortix
+	g++ -c $< -o $@ $(CPPFLAGS) $(SORTIXCPPFLAGS) $(CXXFLAGS) 
 
 clean:
-	rm -f *.o sortix/*.o c/*.o x86/*.o x64/*.o *.a *.so $(CHEADERS) $(HEADERS)
+	rm -f *.o sortix/*.o c/*.o x86/*.o x64/*.o *.a *.so
+	rm -f $(OBJS)
+	rm -rf sortix $(HEADERDIRS)
 
 # Installation into sysroot
 install:
 	mkdir -p $(SYSROOT)/usr/lib
 	for F in $(BINS); do cp -P $$F $(SYSROOT)/usr/lib || exit $?; done
+	for D in $(UNPROCHEADERDIRS); do mkdir -p $(SYSROOT)/usr/$$D || exit $?; done
+	for SRC in $(HEADERS); do DEST=`echo $$SRC | sed 's/preproc/include/'`; cp $$SRC $(SYSROOT)/usr/$$DEST || exit $?; done
 	mkdir -p $(SYSROOT)/usr/include
-	for F in $(CHEADERS); do F=`echo $$F | sed 's/c\/h\///g'`; mkdir -p $(SYSROOT)/usr/include/`dirname $$F`; cp c/h/$$F $(SYSROOT)/usr/include/$$F || exit $?; done
-	mkdir -p $(SYSROOT)/usr/include/libmaxsi
-	for F in $(MAXSIHEADERS); do cp $$F $(SYSROOT)/usr/include/libmaxsi || exit $?; done
 	cp start.o $(SYSROOT)/usr/lib/crtbegin.o
 	touch deleteme.cpp
 	g++ $(CPUFLAGS) -c deleteme.cpp -o deleteme.o

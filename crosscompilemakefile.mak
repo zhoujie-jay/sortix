@@ -23,7 +23,7 @@ LIBS=$(LIBC)
 
 CPPFLAGS=$(CPUDEFINES) -U_GNU_SOURCE
 FLAGS=-nostdinc -nostdlib -fno-builtin -nostartfiles -nodefaultlibs
-INCLUDES=-I $(LIBMAXSIROOT)/c/h/ -I $(OSROOT)/
+INCLUDES=-I $(LIBMAXSIROOT)/preproc -I $(OSROOT)/
 
 LD=ld
 LDFLAGS=$(CPULDFLAGS) 
