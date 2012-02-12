@@ -229,7 +229,7 @@ namespace Maxsi
 		struct Chunk
 		{
 		public:
-			size_t size;
+			size_t size; // Includes size of Chunk and Trailer
 			union
 			{
 				size_t magic;
@@ -254,13 +254,15 @@ namespace Maxsi
 				size_t magic;
 				Chunk* prevunused;
 			};
-			size_t size;
+			size_t size; // Includes size of Chunk and Trailer
 
 		public:
 			bool IsUsed() { return magic == MAGIC; }
 			Chunk* GetChunk();
 
 		};
+
+		const size_t OVERHEAD = sizeof(Chunk) + sizeof(Trailer);
 
 		// This is how a real chunk actually looks:
 		//struct RealChunk
@@ -434,7 +436,7 @@ namespace Maxsi
 			ASSERT(ValidateHeap());
 			#endif
 
-			const size_t OVERHEAD = sizeof(Chunk) + sizeof(Trailer);
+			// The size field keeps both the allocation and meta information.
 			size += OVERHEAD;
 
 			// Round up to nearest alignment.
@@ -650,6 +652,22 @@ namespace Maxsi
 			if ( !result ) { return NULL; }	
 			Memory::Set(result, 0, total);
 			return result;
+		}
+
+		// TODO: Implement this function properly.
+		extern "C" void* realloc(void* ptr, size_t size)
+		{
+			if ( !ptr ) { return Allocate(size); }
+			Chunk* chunk = (Chunk*) ((addr_t) ptr - sizeof(Chunk));
+			ASSERT(chunk->IsUsed());
+			ASSERT(chunk->IsSane());
+			size_t allocsize = chunk->size - OVERHEAD;
+			if ( allocsize < size ) { return ptr; }
+			void* newptr = Allocate(size);
+			if ( !newptr ) { return NULL; }
+			Memory::Copy(newptr, ptr, allocsize);
+			Free(ptr);
+			return newptr;
 		}
 	}
 }
