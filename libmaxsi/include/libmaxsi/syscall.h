@@ -148,7 +148,7 @@ namespace Maxsi
 	}
 
 	#define DEFN_SYSCALL1(type, fn, num, P1) \
-	type fn(P1 p1) \
+	type fn(P1) \
 	{ \
 		type a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
@@ -156,7 +156,7 @@ namespace Maxsi
 	}
 
 	#define DEFN_SYSCALL2(type, fn, num, P1, P2) \
-	type fn(P1 p1, P2 p2) \
+	type fn(P1, P2) \
 	{ \
 		type a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
@@ -164,7 +164,7 @@ namespace Maxsi
 	}
 
 	#define DEFN_SYSCALL3(type, fn, num, P1, P2, P3) \
-	type fn(P1 p1, P2 p2, P3 p3) \
+	type fn(P1, P2, P3) \
 	{ \
 		type a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
@@ -172,7 +172,7 @@ namespace Maxsi
 	}
 
 	#define DEFN_SYSCALL4(type, fn, num, P1, P2, P3, P4) \
-	type fn(P1 p1, P2 p2, P3 p3, P4 p4) \
+	type fn(P1, P2, P3, P4) \
 	{ \
 		type a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
@@ -180,7 +180,7 @@ namespace Maxsi
 	}
 
 	#define DEFN_SYSCALL5(type, fn, num, P1, P2, P3, P4, P5) \
-	type fn(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) \
+	type fn(P1, P2, P3, P4, P5) \
 	{ \
 		type a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
@@ -195,35 +195,35 @@ namespace Maxsi
 	}
 
 	#define DEFN_SYSCALL1_VOID(fn, num, P1) \
-	void fn(P1 p1) \
+	void fn(P1) \
 	{ \
 		size_t a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 	#define DEFN_SYSCALL2_VOID(fn, num, P1, P2) \
-	void fn(P1 p1, P2 p2) \
+	void fn(P1, P2) \
 	{ \
 		size_t a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 	#define DEFN_SYSCALL3_VOID(fn, num, P1, P2, P3) \
-	void fn(P1 p1, P2 p2, P3 p3) \
+	void fn(P1, P2, P3) \
 	{ \
 		size_t a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 	#define DEFN_SYSCALL4_VOID(fn, num, P1, P2, P3, P4) \
-	void fn(P1 p1, P2 p2, P3 p3, P4 p4) \
+	void fn(P1, P2, P3, P4) \
 	{ \
 		size_t a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
 	}
 
 	#define DEFN_SYSCALL5_VOID(fn, num, P1, P2, P3, P4, P5) \
-	void fn(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) \
+	void fn(P1, P2, P3, P4, P5) \
 	{ \
 		size_t a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
