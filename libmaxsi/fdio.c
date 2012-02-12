@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
+#include "fdio.h"
 
 const int FDIO_WRITING = (1<<0);
 const int FDIO_READING = (1<<1);
