@@ -100,7 +100,7 @@ start.o: $(CPU)/start.o
 $(HEADERDIRS):
 	mkdir -p $@
 
-preproc/%: include/% 
+preproc/%: include/% $(HEADERDIRS)
 	mxmpp -I decl $< -o $@
 
 headers: $(HEADERDIRS) $(HEADERS)
