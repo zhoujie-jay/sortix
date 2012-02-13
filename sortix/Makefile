@@ -57,9 +57,21 @@ ifeq ($(DISKWRITE),1)
 else
     DEFINES:=$(DEFINES) -DENABLE_DISKWRITE=0
 endif 
-CPPFLAGSRELEASE=-s $(O)
-CPPFLAGSDEBUG=
-CPPFLAGS=-I ../libmaxsi/preproc -I.. -I. $(CPUDEFINES) $(CPUFLAGS) -std=gnu++0x -Wall -Wextra -nostdlib -fno-builtin -nostartfiles -nodefaultlibs -fno-exceptions -fno-rtti -fno-stack-protector $(DEFINES) $(CPPFLAGSRELEASE)
+
+INCLUDES=-I../libmaxsi/preproc -I.. -I.
+CPPFLAGS=$(INCLUDES) $(DEFINES)
+FLAGSRELEASE=-s $(O)
+FLAGSDEBUG=
+FLAGS=$(CPUFLAGS) -Wall  -Wall -Wextra -nostdlib -fno-builtin -nostartfiles \
+      -nodefaultlibs -fno-stack-protector $(FLAGSRELEASE)
+CFLAGS=$(FLAGS)
+CXXFLAGS=$(FLAGS) -std=gnu++0x -fno-exceptions -fno-rtti
+ASFLAGS=$(CPUASFLAGS)
+NASMFLAGS=$(CPUNASMFLAGS)
+
+STATICLIBS=\
+../libmaxsi/libmaxsi-sortix.a \
+
 OBJS=$(CPUOBJS) \
 kernel.o \
 descriptor_tables.o \
@@ -99,8 +111,8 @@ fs/devfs.o \
 fs/initfs.o \
 fs/ramfs.o \
 ata.o \
-../libmaxsi/libmaxsi-sortix.a \
-end.o # Must be last
+$(STATICLIBS) \
+end.o # Must be last, determines kernel size.
 
 JSOBJS:=$(subst .o,-js.o,$(OBJS))
 
@@ -133,13 +145,13 @@ sortix.bin: sortix-$(BUILDID).tmp
 	cp -vu $< $@
 
 %.o: %.cpp
-	g++ -c $< -o $@ $(CPPFLAGS)
+	g++ -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 
 %.o: %.s
-	as $(CPUASFLAGS) $< -o $@
+	as $(ASFLAGS) $< -o $@
 
 %.o: %.asm
-	nasm $(CPUNASMFLAGS) $< -o $@
+	nasm $(NASMFLAGS) $< -o $@
 
 clean:
 	for D in $(DIRS); do rm -f $$D/*.o $$D/*.bin $$D/*.out $$D/*.tmp; done
