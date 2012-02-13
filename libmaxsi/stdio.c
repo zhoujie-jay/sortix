@@ -22,8 +22,11 @@
 
 ******************************************************************************/
 
+#define __SORTIX_STDLIB_REDIRECTS 0
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "fdio.h"
 
 FILE* stdin;
@@ -48,9 +51,54 @@ int putchar(int c)
 	return fputc(c, stdout);
 }
 
-/* This function is quite stupid because of its trailing newline that fputs(3)
-   does not have - but it's still better than gets(3). I'd have left it out if
-   various programs didn't need it. */
+ssize_t getdelim(char** lineptr, size_t* n, int delim, FILE* fp)
+{
+	if ( !lineptr || (*lineptr && !n) || !fp ) { errno = EINVAL; return -1; }
+	const size_t DEFAULT_BUFSIZE = 32UL;
+	int malloced = !*lineptr;
+	if ( malloced ) { *lineptr = (char*) malloc(DEFAULT_BUFSIZE); }
+	if ( !*lineptr ) { return -1; }
+	size_t bufsize = malloced ? DEFAULT_BUFSIZE : *n;
+	if ( n ) { *n = bufsize; }
+	ssize_t written = 0;
+	int c;
+	do
+	{
+		if ( (c = getc(fp)) == EOF ) { goto cleanup; }
+		if ( bufsize <= (size_t) written + 1UL )
+		{
+			size_t newbufsize = 2UL * bufsize;
+			char* newbuf = (char*) realloc(*lineptr, newbufsize);
+			if ( !newbuf ) { goto cleanup; }
+			bufsize = newbufsize;
+			if ( n ) { *n = bufsize; }
+			*lineptr = newbuf;
+		}
+		(*lineptr)[written++] = c;
+	} while ( c != delim );
+	(*lineptr)[written] = 0;
+	return written;
+
+cleanup:
+	free(malloced ? *lineptr : NULL);
+	return -1;
+}
+
+ssize_t getline(char** lineptr, size_t* n, FILE* fp)
+{
+	return getdelim(lineptr, n, '\n', fp);
+}
+
+char* sortix_gets(void)
+{
+	char* buf = NULL;
+	size_t n;
+	if ( getline(&buf, &n, stdin) < 0 ) { return NULL; }
+	size_t linelen = strlen(buf);
+	if ( linelen && buf[linelen-1] == '\n' ) { buf[linelen-1] = 0; }
+	return buf;
+}
+
 int puts(const char* str)
 {
 	return printf("%s\n", str) < 0 ? EOF : 1;

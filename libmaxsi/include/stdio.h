@@ -94,13 +94,18 @@ extern off_t ftello(FILE* stream);
 extern size_t fwrite(const void* restrict ptr, size_t size, size_t nitems, FILE* restrict stream);
 extern int getc(FILE* stream);
 extern int getchar(void);
+extern ssize_t getdelim(char** restrict lineptr, size_t* restrict n, int delimiter, FILE* restrict stream);
+extern ssize_t getline(char** restrict lineptr, size_t* restrict n, FILE* restrict stream);
 extern void perror(const char* s);
 extern int printf(const char* restrict format, ...);
 extern int putc(int c, FILE* stream);
 extern int putchar(int c);
+extern int puts(const char* str);
 extern int remove(const char* path);
 extern void rewind(FILE* stream);
 extern int snprintf(char* restrict s, size_t n, const char* restrict format, ...);
+extern char* sortix_gets(void);
+extern int sortix_puts(const char* str);
 extern int sprintf(char* restrict s, const char* restrict format, ...);
 extern int vfprintf(FILE* restrict stream, const char* restrict format, va_list ap);
 extern int vprintf(const char* restrict format, va_list ap);
@@ -127,7 +132,6 @@ extern int getc_unlocked(FILE* stream);
 extern int pclose(FILE* steam);
 extern int putchar_unlocked(int c);
 extern int putc_unlocked(int c, FILE* steam);
-extern int puts(const char* s);
 extern int rename(const char* oldname, const char* newname);
 extern int renameat(int oldfd, const char* oldname, int newfd, const char* newname);
 extern int scanf(const char* restrict format, ...);
@@ -138,14 +142,11 @@ extern int vdprintf(int fildes, const char* restrict format, va_list ap);
 extern int vfscanf(FILE* restrict stream, const char* restrict format, va_list arg);
 extern int vscanf(const char* restrict format, va_list arg);
 extern int vsscanf(const char* restrict s, const char* restrict format, va_list arg);
-extern ssize_t getdelim(char** restrict lineptr, size_t* restrict n, int delimiter, FILE* restrict stream);
-extern ssize_t getline(char** restrict lineptr, size_t* restrict n, FILE* restrict stream);
 extern void flockfile(FILE* file);
 extern void funlockfile(FILE* file);
 extern void setbuf(FILE* restrict stream, char* restrict buf);
 
 #if __POSIX_OBSOLETE <= 200801
-extern char* gets(char* s);
 extern char* tmpnam(char* s);
 extern char* tempnam(const char* dir, const char* pfx);
 #endif
@@ -156,6 +157,12 @@ void fregister(FILE* fp);
 void funregister(FILE* fp);
 FILE* fnewfile(void);
 int fcloseall(void);
+#endif
+
+#if __SORTIX_STDLIB_REDIRECTS
+inline char* gets(void) { return sortix_gets(); }
+#else
+/* traditional gets(3) is no longer POSIX, hence removed. */
 #endif
 
 __END_DECLS

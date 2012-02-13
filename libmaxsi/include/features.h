@@ -45,6 +45,15 @@
 	#define _SORTIX_SOURCE 1
 #endif
 
+/* Whether to override some "standard" functions with Sortix alternatives. */
+#if !defined(__SORTIX_STDLIB_REDIRECTS)
+	#if defined(_SORTIX_SOURCE)
+		#define __SORTIX_STDLIB_REDIRECTS 1
+	#else
+		#define __SORTIX_STDLIB_REDIRECTS 0
+	#endif
+#endif
+
 #define restrict
 
 /* TODO: Improve these declarations, perhaps like they are in glibc. */
