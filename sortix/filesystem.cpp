@@ -111,6 +111,20 @@ namespace Sortix
 			return -1;
 		}
 
+		int SysStat(const char* pathname, struct stat* st)
+		{
+			// TODO: Add the proper filesystem support!
+			Error::Set(ENOSYS);
+			return -1;
+		}
+
+		int SysFStat(int fd, struct stat* st)
+		{
+			// TODO: Add the proper filesystem support!
+			Error::Set(ENOSYS);
+			return -1;
+		}
+
 		void Init()
 		{
 			Syscall::Register(SYSCALL_OPEN, (void*) SysOpen);
@@ -119,6 +133,8 @@ namespace Sortix
 			Syscall::Register(SYSCALL_RMDIR, (void*) SysRmDir);
 			Syscall::Register(SYSCALL_TRUNCATE, (void*) SysTruncate);
 			Syscall::Register(SYSCALL_FTRUNCATE, (void*) SysFTruncate);
+			Syscall::Register(SYSCALL_STAT, (void*) SysStat);
+			Syscall::Register(SYSCALL_FSTAT, (void*) SysFStat);
 		}
 	}
 

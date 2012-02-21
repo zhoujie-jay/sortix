@@ -40,6 +40,10 @@
 @include(mode_t.h)
 @include(off_t.h)
 @include(gid_t.h)
+@include(ino_t.h)
+@include(nlink_t.h)
+@include(blksize_t.h)
+@include(blkcnt_t.h)
 
 @include(va_list.h)
 

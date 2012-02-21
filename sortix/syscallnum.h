@@ -68,7 +68,9 @@
 #define SYSCALL_FTRUNCATE 41
 #define SYSCALL_SETTERMMODE 42
 #define SYSCALL_GETTERMMODE 43
-#define SYSCALL_MAX_NUM 44 /* index of highest constant + 1 */
+#define SYSCALL_STAT 44
+#define SYSCALL_FSTAT 45
+#define SYSCALL_MAX_NUM 46 /* index of highest constant + 1 */
 
 #endif
 

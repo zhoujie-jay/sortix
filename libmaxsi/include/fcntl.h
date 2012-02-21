@@ -60,8 +60,7 @@ __BEGIN_DECLS
 #define O_TRUNC (1<<13)
 #define O_TTY_INIT (1<<13)
 
-@include(mode_t.h)
-@include(mode_t_values.h)
+#include <sys/stat.h>
 
 /* TODO: AT_FDCWD missing here */
 /* TODO: AT_EACCESS missing here */

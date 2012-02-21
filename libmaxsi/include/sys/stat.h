@@ -22,20 +22,30 @@
 
 ******************************************************************************/
 
-// TODO: Make this header comply with POSIX-1.2008
+/* TODO: Make this header comply with POSIX-1.2008, if it makes sense. */
 
-#ifndef	_STAT_H
-#define	_STAT_H 1
+#ifndef	_SYS_STAT_H
+#define	_SYS_STAT_H 1
 
 #include <features.h>
 
 __BEGIN_DECLS
-
+@include(blkcnt_t.h)
+@include(blksize_t.h)
+@include(ino_t.h)
 @include(mode_t.h)
-@include(mode_t_values.h)
+@include(nlink_t.h)
+@include(uid_t.h)
+@include(gid_t.h)
+@include(off_t.h)
+__END_DECLS
 
+#include <sortix/stat.h>
+
+__BEGIN_DECLS
+int fstat(int fd, struct stat* st);
 int mkdir(const char *path, mode_t mode);
-
+int stat(const char* restrict path, struct stat* restrict st);
 __END_DECLS
 
 #endif

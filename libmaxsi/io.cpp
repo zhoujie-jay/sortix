@@ -29,6 +29,7 @@
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
 #include <sys/readdirents.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
@@ -54,6 +55,8 @@ namespace Maxsi
 	DEFN_SYSCALL1(int, SysRmDir, SYSCALL_RMDIR, const char*);
 	DEFN_SYSCALL2(int, SysTruncate, SYSCALL_TRUNCATE, const char*, off_t);
 	DEFN_SYSCALL2(int, SysFTruncate, SYSCALL_FTRUNCATE, int, off_t);
+	DEFN_SYSCALL2(int, SysStat, SYSCALL_STAT, const char*, struct stat*);
+	DEFN_SYSCALL2(int, SysFStat, SYSCALL_FSTAT, int, struct stat*);
 
 	size_t Print(const char* string)
 	{
@@ -277,6 +280,16 @@ namespace Maxsi
 	extern "C" int ftruncate(int fd, off_t length)
 	{
 		return SysFTruncate(fd, length);
+	}
+
+	extern "C" int stat(const char* path, struct stat* st)
+	{
+		return SysStat(path, st);
+	}
+
+	extern "C" int fstat(int fd, struct stat* st)
+	{
+		return SysFStat(fd, st);
 	}
 #endif
 

@@ -125,6 +125,10 @@ typedef __intmax_t __off_t;
 typedef unsigned int __wctrans_t;  /* TODO: figure out what this does and typedef it properly. This is just a temporary assignment. */
 typedef unsigned int __wctype_t;  /* TODO: figure out what this does and typedef it properly. This is just a temporary assignment. */
 typedef unsigned int __useconds_t;
+typedef __off_t __blksize_t;
+typedef __off_t __blkcnt_t;
+typedef unsigned int __nlink_t;
+typedef __uintmax_t __ino_t;
 
 #endif
 
