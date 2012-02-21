@@ -95,6 +95,7 @@ vgaterminal.o \
 serialterminal.o \
 descriptors.o \
 device.o \
+refcount.o \
 vga.o \
 elf.o \
 process.o \
