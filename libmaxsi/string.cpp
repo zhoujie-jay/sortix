@@ -199,6 +199,16 @@ namespace Maxsi
 			return Result;
 		}
 
+		char* Substring(const char* src, size_t offset, size_t length)
+		{
+			size_t srclen = Length(src);
+			char* dest = new char[length + 1];
+			if ( !dest ) { return NULL; }
+			Memory::Copy(dest, src + offset, length * sizeof(char));
+			dest[length] = 0;
+			return dest;
+		}
+
 		DUAL_FUNCTION(int, atoi, ToInt, (const char* str))
 		{
 			bool negative = ( *str == '-' );

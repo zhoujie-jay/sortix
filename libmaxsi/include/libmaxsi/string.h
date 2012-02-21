@@ -37,6 +37,7 @@ namespace Maxsi
 		size_t Reject(const char* str, const char* reject);
 		char* Clone(const char* Source);
 		char* Combine(size_t NumParameters, ...);
+		char* Substring(const char* src, size_t offset, size_t length);
 		char* Copy(char* Dest, const char* Src);
 		char* Cat(char* Dest, const char* Src);
 		char* Tokenize(char* str, const char* delim);
