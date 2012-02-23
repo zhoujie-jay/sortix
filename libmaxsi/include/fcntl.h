@@ -28,6 +28,8 @@
 #define	_FCNTL_H 1
 
 #include <features.h>
+#include <sortix/fcntl.h>
+#include <sys/stat.h>
 
 __BEGIN_DECLS
 
@@ -40,27 +42,6 @@ __BEGIN_DECLS
 @include(SEEK_SET.h)
 @include(SEEK_CUR.h)
 @include(SEEK_END.h)
-
-/* TODO: Keep these aligned with those in the Sortix kernel */
-#define O_RDONLY 1
-#define O_WRONLY 2
-#define O_RDWR 3
-#define O_EXEC 4
-#define O_SEARCH 5
-#define O_APPEND (1<<3)
-#define O_CLOEXEC (1<<4)
-#define O_CREAT (1<<5)
-#define O_DIRECTORY (1<<6)
-#define O_DSYNC (1<<6)
-#define O_EXCL (1<<7)
-#define O_NOCTTY (1<<8)
-#define O_NOFOLLOW (1<<9)
-#define O_RSYNC (1<<11)
-#define O_SYNC (1<<12)
-#define O_TRUNC (1<<13)
-#define O_TTY_INIT (1<<13)
-
-#include <sys/stat.h>
 
 /* TODO: AT_FDCWD missing here */
 /* TODO: AT_EACCESS missing here */

@@ -27,30 +27,10 @@
 
 #include "device.h"
 #include "stream.h"
+#include "fcntl.h"
 
 namespace Sortix
 {
-	// TODO: These belong in libmaxsi!
-	// TODO: Sortix might never support all of these flags if they are stupid.
-	const int O_RDONLY = 1;
-	const int O_WRONLY = 2;
-	const int O_RDWR = 3;
-	const int O_EXEC = 4;
-	const int O_SEARCH = 5;
-	const int O_LOWERFLAGS = 0x7;
-	const int O_APPEND = (1<<3);
-	const int O_CLOEXEC = (1<<4);
-	const int O_CREAT = (1<<5);
-	const int O_DIRECTORY = (1<<6);
-	const int O_DSYNC = (1<<6);
-	const int O_EXCL = (1<<7);
-	const int O_NOCTTY = (1<<8);
-	const int O_NOFOLLOW = (1<<9);
-	const int O_RSYNC = (1<<11);
-	const int O_SYNC = (1<<12);
-	const int O_TRUNC = (1<<13);
-	const int O_TTY_INIT = (1<<13);
-
 	class DevFileSystem : public Device
 	{
 	public:
