@@ -26,6 +26,7 @@
 #define	_STDIO_H 1
 
 #include <features.h>
+#include <sortix/seek.h>
 
 __BEGIN_DECLS
 
@@ -44,12 +45,6 @@ typedef struct _fpos_t fpos_t;
 #if __POSIX_OBSOLETE <= 200801
 /* TODO: Implement L_tmpnam */
 #endif
-
-/* The possibilities for the third argument to `fseek'.
-   These values should not be changed.  */
-@include(SEEK_SET.h)
-@include(SEEK_CUR.h)
-@include(SEEK_END.h)
 
 /* The possibilities for the third argument to `setvbuf'. */
 #define _IOFBF 0 /* Fully buffered. */

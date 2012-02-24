@@ -29,6 +29,7 @@
 
 #include <features.h>
 #include <sortix/fcntl.h>
+#include <sortix/seek.h>
 #include <sys/stat.h>
 
 __BEGIN_DECLS
@@ -38,10 +39,6 @@ __BEGIN_DECLS
 /* TODO: FD_CLOEXEC missing here */
 
 /* TODO: F_RDLCK, F_UNLCK, F_WRLCK missing here */
-
-@include(SEEK_SET.h)
-@include(SEEK_CUR.h)
-@include(SEEK_END.h)
 
 /* TODO: AT_FDCWD missing here */
 /* TODO: AT_EACCESS missing here */

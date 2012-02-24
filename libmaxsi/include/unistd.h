@@ -29,6 +29,7 @@
 #define	_UNISTD_H 1
 
 #include <features.h>
+#include <sortix/seek.h>
 
 __BEGIN_DECLS
 
@@ -50,10 +51,6 @@ __BEGIN_DECLS
 /* TODO: F_OK, R_OK, W_OK, X_OK is missing here. */
 
 /* TODO: _CS_* is missing here. */
-
-@include(SEEK_CUR.h)
-@include(SEEK_END.h)
-@include(SEEK_SET.h)
 
 /* TODO: F_* is missing here. */
 
