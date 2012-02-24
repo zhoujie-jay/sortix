@@ -24,6 +24,7 @@
 
 #include "platform.h"
 #include <libmaxsi/error.h>
+#include <sortix/seek.h>
 #include "thread.h"
 #include "process.h"
 #include "device.h"
@@ -116,17 +117,6 @@ namespace Sortix
 			Syscall::Incomplete();
 			return 0;		
 		}
-
-// TODO: Get these from unistd.h or something.
-#ifndef SEEK_SET
-#define SEEK_SET 0 /* Seek from beginning of file.  */
-#endif
-#ifndef SEEK_CUR
-#define SEEK_CUR 1 /* Seek from current position.  */
-#endif
-#ifndef SEEK_END
-#define SEEK_END 2 /* Seek from end of file.  */
-#endif
 
 		void SysSeek(int fd, off_t* offset, int whence)
 		{
