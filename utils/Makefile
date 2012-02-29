@@ -14,6 +14,7 @@ sh \
 mxsh \
 clear \
 ls \
+pwd \
 help \
 uptime \
 memstat \
