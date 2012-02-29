@@ -25,7 +25,6 @@
 #include "platform.h"
 #include "scheduler.h"
 #include "../memorymanagement.h"
-#include "descriptor_tables.h"
 
 namespace Sortix
 {

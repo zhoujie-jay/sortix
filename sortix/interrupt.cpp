@@ -23,7 +23,7 @@
 *******************************************************************************/
 
 #include "platform.h"
-#include "descriptor_tables.h"
+#include "x86-family/idt.h"
 #include "interrupt.h"
 
 #include "process.h" // Hack for SIGSEGV

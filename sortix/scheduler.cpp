@@ -32,7 +32,7 @@
 #include "memorymanagement.h"
 #include "syscall.h"
 #include "sound.h" // HACK FOR SIGINT
-#include "descriptor_tables.h"
+#include "x86-family/gdt.h"
 
 namespace Sortix
 {

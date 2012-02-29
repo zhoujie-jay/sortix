@@ -20,13 +20,6 @@ gdt_flush:
 .flush:
     ret
 
-[GLOBAL idt_flush]    ; Allows the C code to call idt_flush().
-
-idt_flush:
-    mov eax, [esp+4]  ; Get the pointer to the IDT, passed as a parameter. 
-    lidt [eax]        ; Load the IDT pointer.
-    ret
-
 [GLOBAL tss_flush]    ; Allows our C code to call tss_flush().
 tss_flush:
    mov ax, 0x2B      ; Load the index of our TSS structure - The index is

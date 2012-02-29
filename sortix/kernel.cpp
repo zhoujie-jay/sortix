@@ -29,7 +29,7 @@
 #include <libmaxsi/format.h>
 #include "log.h"
 #include "panic.h"
-#include "descriptor_tables.h"
+#include "x86-family/gdt.h"	
 #include "time.h"
 #include "keyboard.h"
 #include "multiboot.h"

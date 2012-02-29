@@ -34,6 +34,9 @@ ifdef X86FAMILY
              x86-family/memorymanagement.o \
              $(CPU)/interrupt.o \
              $(CPU)/gdt.o \
+             x86-family/gdt.o \
+             $(CPU)/idt.o \
+             x86-family/idt.o \
              $(CPU)/syscall.o \
              $(CPU)/thread.o \
              $(CPU)/scheduler.o \
@@ -74,7 +77,6 @@ STATICLIBS=\
 
 OBJS=$(CPUOBJS) \
 kernel.o \
-descriptor_tables.o \
 interrupt.o \
 time.o \
 log.o \
