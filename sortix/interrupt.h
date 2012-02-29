@@ -36,7 +36,7 @@ const unsigned IRQ4 = 36;
 const unsigned IRQ5 = 37;
 const unsigned IRQ6 = 38;
 const unsigned IRQ7 = 39;
-const unsigned IRQ8 = 30;
+const unsigned IRQ8 = 40;
 const unsigned IRQ9 = 41;
 const unsigned IRQ10 = 42;
 const unsigned IRQ11 = 43;
@@ -49,10 +49,10 @@ inline void Enable() { asm volatile("sti"); }
 inline void Disable() { asm volatile("cli"); }
 
 typedef void (*Handler)(CPU::InterruptRegisters* regs, void* user);
-void RegisterHandler(uint8_t index, Handler handler, void* user);
+void RegisterHandler(unsigned index, Handler handler, void* user);
 
 typedef void (*RawHandler)(void);
-void RegisterRawHandler(uint8_t index, RawHandler handler, bool userspace);
+void RegisterRawHandler(unsigned index, RawHandler handler, bool userspace);
 
 void Init();
 

@@ -36,7 +36,7 @@ namespace Sortix
 	{
 		extern "C" void gdt_flush(addr_t);
 		extern "C" void tss_flush();
-	
+
 		const size_t GDT_NUM_ENTRIES = 7;
 		gdt_entry_t gdt_entries[GDT_NUM_ENTRIES];
 		gdt_ptr_t   gdt_ptr;
@@ -45,7 +45,7 @@ namespace Sortix
 		const uint8_t GRAN_64_BIT_MODE = 1<<5;
 		const uint8_t GRAN_32_BIT_MODE = 1<<6;
 		const uint8_t GRAN_4KIB_BLOCKS = 1<<7;
-		
+
 		void Init()
 		{
 			gdt_ptr.limit = (sizeof(gdt_entry_t) * GDT_NUM_ENTRIES) -  1;
@@ -159,8 +159,7 @@ namespace Sortix
 
 	namespace IDT
 	{
-		// Lets us access our ASM functions from our C++ code.
-		extern "C" void idt_flush(uint32_t);
+		extern "C" void idt_flush(addr_t);
 
 		idt_entry_t idt_entries[256];
 		idt_ptr_t   idt_ptr;
@@ -171,18 +170,6 @@ namespace Sortix
 			idt_ptr.base  = (addr_t) &idt_entries;
 
 			Memory::Set(&idt_entries, 0, sizeof(idt_entry_t)*256);
-
-			// Remap the irq table.
-			CPU::OutPortB(0x20, 0x11);
-			CPU::OutPortB(0xA0, 0x11);
-			CPU::OutPortB(0x21, 0x20);
-			CPU::OutPortB(0xA1, 0x28);
-			CPU::OutPortB(0x21, 0x04);
-			CPU::OutPortB(0xA1, 0x02);
-			CPU::OutPortB(0x21, 0x01);
-			CPU::OutPortB(0xA1, 0x01);
-			CPU::OutPortB(0x21, 0x0);
-			CPU::OutPortB(0xA1, 0x0);
 		}
 
 		void Flush()

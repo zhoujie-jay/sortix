@@ -37,21 +37,52 @@ void SysExit(int status); // HACK
 
 namespace Interrupt {
 
+const uint16_t PIC_MASTER = 0x20;
+const uint16_t PIC_SLAVE = 0xA0;
+const uint16_t PIC_COMMAND = 0x00;
+const uint16_t PIC_DATA = 0x01;
+const uint8_t PIC_CMD_ENDINTR = 0x20;
+const uint8_t PIC_ICW1_ICW4 = 0x01; // ICW4 (not) needed
+const uint8_t PIC_ICW1_SINGLE = 0x02; // Single (cascade) mode
+const uint8_t PIC_ICW1_INTERVAL4 = 0x04; // Call address interval 4 (8)
+const uint8_t PIC_ICW1_LEVEL = 0x08; // Level triggered (edge) mode
+const uint8_t PIC_CMD_INIT = 0x10;
+const uint8_t PIC_MODE_8086 = 0x01; // 8086/88 (MCS-80/85) mode
+const uint8_t PIC_MODE_AUTO = 0x02; // Auto (normal) EOI
+const uint8_t PIC_MODE_BUF_SLAVE = 0x08; // Buffered mode/slave
+const uint8_t PIC_MODE_BUF_MASTER = 0x0C; // Buffered mode/master
+const uint8_t PIC_MODE_SFNM = 0x10; // Special fully nested (not)
+
 const bool DEBUG_EXCEPTION = false;
 const bool DEBUG_IRQ = false;
 bool initialized;
 
-const size_t numknownexceptions = 20;
+const size_t NUM_KNOWN_EXCEPTIONS = 20;
 const char* exceptions[] =
-{ "Divide by zero", "Debug", "Non maskable interrupt", "Breakpoint", 
-  "Into detected overflow", "Out of bounds", "Invalid opcode",
-  "No coprocessor", "Double fault", "Coprocessor segment overrun",
-  "Bad TSS", "Segment not present", "Stack fault",
-  "General protection fault", "Page fault", "Unknown interrupt",
-  "Coprocessor fault", "Alignment check", "Machine check",
-  "SIMD Floating-Point" };
+{
+	"Divide by zero",
+	"Debug",
+	"Non maskable interrupt",
+	"Breakpoint",
+	"Into detected overflow",
+	"Out of bounds",
+	"Invalid opcode",
+	"No coprocessor",
+	"Double fault",
+	"Coprocessor segment overrun",
+	"Bad TSS",
+	"Segment not present",
+	"Stack fault",
+	"General protection fault",
+	"Page fault",
+	"Unknown interrupt",
+	"Coprocessor fault",
+	"Alignment check",
+	"Machine check",
+	"SIMD Floating-Point",
+};
 
-const size_t NUM_INTERRUPTS = 256UL;
+const unsigned NUM_INTERRUPTS = 256UL;
 
 Handler interrupthandlers[NUM_INTERRUPTS];
 void* interrupthandlerptr[NUM_INTERRUPTS];
@@ -61,11 +92,26 @@ void Init()
 	initialized = false;
 	IDT::Init();
 
-	for ( size_t i = 0; i < NUM_INTERRUPTS; i++ )
+	for ( unsigned i = 0; i < NUM_INTERRUPTS; i++ )
 	{
 		interrupthandlers[i] = NULL;
 		interrupthandlerptr[i] = NULL;
+		RegisterRawHandler(i, interrupt_handler_null, false);
 	}
+
+	// Remap the IRQ table on the PICs.
+	uint8_t mastermask = 0;
+	uint8_t slavemask = 0;
+	CPU::OutPortB(PIC_MASTER + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
+	CPU::OutPortB(PIC_SLAVE + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
+	CPU::OutPortB(PIC_MASTER + PIC_DATA, IRQ0);
+	CPU::OutPortB(PIC_SLAVE + PIC_DATA, IRQ8);
+	CPU::OutPortB(PIC_MASTER + PIC_DATA, 0x04); // Slave PIC at IRQ2
+	CPU::OutPortB(PIC_SLAVE + PIC_DATA, 0x02); // Cascade Identity
+	CPU::OutPortB(PIC_MASTER + PIC_DATA, PIC_MODE_8086);
+	CPU::OutPortB(PIC_SLAVE + PIC_DATA, PIC_MODE_8086);
+	CPU::OutPortB(PIC_MASTER + PIC_DATA, mastermask);
+	CPU::OutPortB(PIC_SLAVE + PIC_DATA, slavemask);
 
 	RegisterRawHandler(0, isr0, false);
 	RegisterRawHandler(1, isr1, false);
@@ -116,11 +162,6 @@ void Init()
 	RegisterRawHandler(46, irq14, false);
 	RegisterRawHandler(47, irq15, false);
 
-	for ( unsigned i = 48; i < 256; i++ )
-	{
-		RegisterRawHandler(48, interrupt_handler_null, false);
-	}
-
 	// TODO: Let the syscall.cpp code register this.
 	RegisterRawHandler(128, syscall_handler, true);
 
@@ -130,14 +171,14 @@ void Init()
 	Interrupt::Enable();
 }
 
-void RegisterHandler(uint8_t n, Interrupt::Handler handler, void* user)
+void RegisterHandler(unsigned n, Interrupt::Handler handler, void* user)
 {
 	interrupthandlers[n] = handler;
 	interrupthandlerptr[n] = user;
 }
 
 // TODO: This function contains magic IDT-related values!
-void RegisterRawHandler(uint8_t index, RawHandler handler, bool userspace)
+void RegisterRawHandler(unsigned index, RawHandler handler, bool userspace)
 {
 	addr_t handlerentry = (addr_t) handler;
 	uint16_t sel = 0x08;
@@ -147,39 +188,43 @@ void RegisterRawHandler(uint8_t index, RawHandler handler, bool userspace)
 	if ( initialized ) { IDT::Flush(); }
 }
 
-// This gets called from our ASM interrupt handler stub.
-extern "C" void ISRHandler(Sortix::CPU::InterruptRegisters* regs)
+void CrashHandler(CPU::InterruptRegisters* regs)
+{
+	const char* message = ( regs->int_no < NUM_KNOWN_EXCEPTIONS )
+	                      ? exceptions[regs->int_no] : "Unknown";
+
+	if ( DEBUG_EXCEPTION ) { regs->LogRegisters(); Log::Print("\n"); }
+
+#ifdef PLATFORM_X64
+	addr_t ip = regs->rip;
+#else
+	addr_t ip = regs->eip;
+#endif
+
+	// Halt and catch fire if we are the kernel.
+	unsigned codemode = regs->cs & 0x3U;
+	if ( codemode == 0 )
+	{
+		PanicF("Unhandled CPU Exception id %zu '%s' at ip=0x%zx "
+		       "(cr2=0x%p, err_code=0x%p)", regs->int_no, message,
+		       ip, regs->cr2, regs->err_code);
+	}
+
+	Log::Print("The current program has crashed and was terminated:\n");
+	Log::PrintF("%s exception at ip=0x%zx (cr2=0x%p, err_code=0x%p)\n",
+	            message, ip, regs->cr2, regs->err_code);
+
+	Sound::Mute();
+
+	CurrentProcess()->Exit(139);
+	Scheduler::ProcessTerminated(regs);
+}
+
+void ISRHandler(Sortix::CPU::InterruptRegisters* regs)
 {
 	if ( regs->int_no < 32 )
 	{
-		const char* message = ( regs->int_no < numknownexceptions )
-		                      ? exceptions[regs->int_no] : "Unknown";
-
-		if ( DEBUG_EXCEPTION ) { regs->LogRegisters(); Log::Print("\n"); }
-
-#ifdef PLATFORM_X64
-		addr_t ip = regs->rip;
-#else
-		addr_t ip = regs->eip;
-#endif
-
-		// Halt and catch fire if we are the kernel.
-		if ( (regs->cs & (0x4-1)) == 0 )
-		{
-			PanicF("Unhandled CPU Exception id %zu '%s' at ip=0x%zx "
-			       "(cr2=0x%p, err_code=0x%p)", regs->int_no, message,
-			       ip, regs->cr2, regs->err_code);
-		}
-
-		Log::Print("The current program has crashed and was terminated:\n");
-		Log::PrintF("%s exception at ip=0x%zx (cr2=0x%p, err_code=0x%p)\n",
-		            message, ip, regs->cr2, regs->err_code);
-
-		Sound::Mute();
-
-		CurrentProcess()->Exit(139);
-		Scheduler::ProcessTerminated(regs);		
-
+		CrashHandler(regs);
 		return;
 	}
 
@@ -190,10 +235,9 @@ extern "C" void ISRHandler(Sortix::CPU::InterruptRegisters* regs)
 	}
 }
 
-// This gets called from our ASM interrupt handler stub.
-extern "C" void IRQHandler(Sortix::CPU::InterruptRegisters* regs)
+void IRQHandler(Sortix::CPU::InterruptRegisters* regs)
 {
-	// TODO! IRQ 7 and 15 might be spurious and might need to be ignored.
+	// TODO: IRQ 7 and 15 might be spurious and might need to be ignored.
 	// See http://wiki.osdev.org/PIC for details (section Spurious IRQs).
 	if ( regs->int_no == 32 + 7 || regs->int_no == 32 + 15 ) { return; }
 
@@ -204,18 +248,16 @@ extern "C" void IRQHandler(Sortix::CPU::InterruptRegisters* regs)
 		Log::Print("\n");
 	}
 
+	unsigned int_no = regs->int_no;
+
 	// Send an EOI (end of interrupt) signal to the PICs.
+	if ( IRQ8 <= int_no ) { CPU::OutPortB(PIC_SLAVE, PIC_CMD_ENDINTR); } 
+	CPU::OutPortB(PIC_MASTER, PIC_CMD_ENDINTR);
 
-	// Send reset signal to slave if this interrupt involved the slave.
-	if (regs->int_no >= 40) { CPU::OutPortB(0xA0, 0x20); } 
-
-	// Send reset signal to master.
-	CPU::OutPortB(0x20, 0x20); 
-
-	if ( interrupthandlers[regs->int_no] )
+	if ( interrupthandlers[int_no] )
 	{
-		void* user = interrupthandlerptr[regs->int_no];
-		interrupthandlers[regs->int_no](regs, user);
+		void* user = interrupthandlerptr[int_no];
+		interrupthandlers[int_no](regs, user);
 	}
 }
 
