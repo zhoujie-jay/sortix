@@ -49,9 +49,6 @@ gdt_flush_postjmp:
 idt_flush:
 	# Load the IDT pointer.
 	lidt (%rdi)
-
-	# Enable interrupts
-	sti
 	ret
 
 .global tss_flush

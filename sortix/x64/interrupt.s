@@ -438,3 +438,8 @@ interrupt_handler_prepare:
 	# Return to where we came from.
 	iretq
 
+.global interrupt_handler_null
+.type interrupt_handler_null, @function
+interrupt_handler_null:
+	iretq
+

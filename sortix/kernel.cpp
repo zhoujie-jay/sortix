@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,13 +14,14 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	kernel.cpp
-	A common interface shared by all devices that can be printed text to.
+	The main kernel initialization routine. Configures hardware and starts an
+	initial process from the init ramdisk, allowing a full operating system. 
 
-******************************************************************************/
+*******************************************************************************/
 
 #include "platform.h"
 #include <libmaxsi/memory.h>
@@ -205,7 +206,7 @@ namespace Sortix
 		initrdsize = 0x280000; // 2 MiB 512 KiB
 #endif
 
-		Memory::RegisterInitRDSize(initrdsize);;
+		Memory::RegisterInitRDSize(initrdsize);
 
 		// Initialize the paging and virtual memory.
 		Memory::Init(BootInfo);
@@ -213,11 +214,8 @@ namespace Sortix
 		// Initialize the GDT and TSS structures.
 		GDT::Init();
 
-		// Initialize the interrupt handler table to zeroes.
+		// Initialize the interrupt handler table and enable interrupts.
 		Interrupt::Init();
-
-		// Initialize the interrupt descriptor tables (enabling interrupts).
-		IDT::Init();
 
 		// Initialize the kernel heap.
 		Maxsi::Memory::Init();

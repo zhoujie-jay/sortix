@@ -25,7 +25,6 @@ gdt_flush:
 idt_flush:
     mov eax, [esp+4]  ; Get the pointer to the IDT, passed as a parameter. 
     lidt [eax]        ; Load the IDT pointer.
-	sti
     ret
 
 [GLOBAL tss_flush]    ; Allows our C code to call tss_flush().

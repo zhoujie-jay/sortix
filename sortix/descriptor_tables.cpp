@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,13 +14,13 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	descriptor_tables.cpp
 	Initializes and handles the GDT, TSS and IDT.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include "platform.h"
 #include <libmaxsi/memory.h>
@@ -183,57 +183,10 @@ namespace Sortix
 			CPU::OutPortB(0xA1, 0x01);
 			CPU::OutPortB(0x21, 0x0);
 			CPU::OutPortB(0xA1, 0x0);
+		}
 
-			SetGate( 0, (addr_t) isr0 , 0x08, 0x8E);
-			SetGate( 1, (addr_t) isr1 , 0x08, 0x8E);
-			SetGate( 2, (addr_t) isr2 , 0x08, 0x8E);
-			SetGate( 3, (addr_t) isr3 , 0x08, 0x8E);
-			SetGate( 4, (addr_t) isr4 , 0x08, 0x8E);
-			SetGate( 5, (addr_t) isr5 , 0x08, 0x8E);
-			SetGate( 6, (addr_t) isr6 , 0x08, 0x8E);
-			SetGate( 7, (addr_t) isr7 , 0x08, 0x8E);
-			SetGate( 8, (addr_t) isr8 , 0x08, 0x8E);
-			SetGate( 9, (addr_t) isr9 , 0x08, 0x8E);
-			SetGate(10, (addr_t) isr10, 0x08, 0x8E);
-			SetGate(11, (addr_t) isr11, 0x08, 0x8E);
-			SetGate(12, (addr_t) isr12, 0x08, 0x8E);
-			SetGate(13, (addr_t) isr13, 0x08, 0x8E);
-			SetGate(14, (addr_t) isr14, 0x08, 0x8E);
-			SetGate(15, (addr_t) isr15, 0x08, 0x8E);
-			SetGate(16, (addr_t) isr16, 0x08, 0x8E);
-			SetGate(17, (addr_t) isr17, 0x08, 0x8E);
-			SetGate(18, (addr_t) isr18, 0x08, 0x8E);
-			SetGate(19, (addr_t) isr19, 0x08, 0x8E);
-			SetGate(20, (addr_t) isr20, 0x08, 0x8E);
-			SetGate(21, (addr_t) isr21, 0x08, 0x8E);
-			SetGate(22, (addr_t) isr22, 0x08, 0x8E);
-			SetGate(23, (addr_t) isr23, 0x08, 0x8E);
-			SetGate(24, (addr_t) isr24, 0x08, 0x8E);
-			SetGate(25, (addr_t) isr25, 0x08, 0x8E);
-			SetGate(26, (addr_t) isr26, 0x08, 0x8E);
-			SetGate(27, (addr_t) isr27, 0x08, 0x8E);
-			SetGate(28, (addr_t) isr28, 0x08, 0x8E);
-			SetGate(29, (addr_t) isr29, 0x08, 0x8E);
-			SetGate(30, (addr_t) isr30, 0x08, 0x8E);
-			SetGate(31, (addr_t) isr31, 0x08, 0x8E);
-			SetGate(32, (addr_t) irq0, 0x08, 0x8E);
-			SetGate(33, (addr_t) irq1, 0x08, 0x8E);
-			SetGate(34, (addr_t) irq2, 0x08, 0x8E);
-			SetGate(35, (addr_t) irq3, 0x08, 0x8E);
-			SetGate(36, (addr_t) irq4, 0x08, 0x8E);
-			SetGate(37, (addr_t) irq5, 0x08, 0x8E);
-			SetGate(38, (addr_t) irq6, 0x08, 0x8E);
-			SetGate(39, (addr_t) irq7, 0x08, 0x8E);
-			SetGate(40, (addr_t) irq8, 0x08, 0x8E);
-			SetGate(41, (addr_t) irq9, 0x08, 0x8E);
-			SetGate(42, (addr_t) irq10, 0x08, 0x8E);
-			SetGate(43, (addr_t) irq11, 0x08, 0x8E);
-			SetGate(44, (addr_t) irq12, 0x08, 0x8E);
-			SetGate(45, (addr_t) irq13, 0x08, 0x8E);
-			SetGate(46, (addr_t) irq14, 0x08, 0x8E);
-			SetGate(47, (addr_t) irq15, 0x08, 0x8E);
-			SetGate(128, (addr_t) syscall_handler, 0x08, 0x8E | 0x60); // System Calls
-
+		void Flush()
+		{
 			idt_flush((addr_t) &idt_ptr);
 		}
 

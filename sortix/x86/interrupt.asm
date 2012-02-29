@@ -157,5 +157,9 @@ irq_common_stub:
     ;sti
     iret           ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
 
+global 
 
-        
+global interrupt_handler_null
+interrupt_handler_null:
+	iret
+
