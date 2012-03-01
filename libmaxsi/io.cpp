@@ -183,7 +183,8 @@ namespace Maxsi
 		vfprintf(stderr, format, list);
 		va_end(list);
 
-		fprintf(stderr, ": %s\n", strerror(errnum));
+		if ( errnum ) { fprintf(stderr, ": %s", strerror(errnum)); }
+		fprintf(stderr, "\n");
 		if ( status ) { exit(status); }
 	}
 
