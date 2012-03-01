@@ -22,6 +22,7 @@ uname \
 idle \
 editor \
 kill \
+column \
 pager \
 
 BINARIES:=$(addprefix $(INITRDDIR)/,$(LOCALBINARIES))
