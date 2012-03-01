@@ -94,6 +94,9 @@ int main(int argc, char* argv[])
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
+		if ( arg[0] != '-' ) { continue; }
+		if ( strcmp(arg, "-") == 0 ) { continue; }
+		argv[i] = NULL;
 		if ( strcmp(arg, "--") == 0 ) { break; }
 		if ( strcmp(arg, "--usage") == 0 ) { usage(argv0); exit(0); }
 		if ( strcmp(arg, "--help") == 0 ) { help(argv0); exit(0); }
@@ -101,26 +104,20 @@ int main(int argc, char* argv[])
 		if ( strcmp(arg, "-c") == 0 )
 		{
 			if ( i+1 == argc ) { usage(argv0); exit(1); }
-			termwidth = atoi(argv[++i]);
-			argv[i] = (char*) "-c"; // TODO: This is a bit hacky.
+			termwidth = atoi(argv[++i]); argv[i] = NULL;
 			continue;
 		}
-		if ( strcmp(arg, "-") == 0 ) { continue; }
-		if ( arg[0] != '-') { continue; }
 		error(0, 0, "unknown option %s", arg);
 		usage(argv0);
 		return 1;
 	}
 	
-	bool parsing = true;
 	bool hadany = false;
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( strcmp(arg, "--") == 0 && parsing ) { parsing = false; break; }
+		if ( !arg ) { continue; }
 		bool isstdin = strcmp(arg, "-") == 0;
-		if ( parsing && arg[0] == '-' && !isstdin ) { continue; }
-		errno = 0;
 		FILE* fp = isstdin ? stdin : fopen(arg, "r");
 		if ( !fp ) { error(1, errno, "fopen failed: %s", arg); }
 		hadany = true;
