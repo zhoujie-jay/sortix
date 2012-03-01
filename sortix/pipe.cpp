@@ -51,12 +51,18 @@ namespace Sortix
 		size_t bufferused;
 		Event readevent;
 		Event writeevent;
+		bool anyreading;
+		bool anywriting;
 
 	public:
 		virtual ssize_t Read(byte* dest, size_t count);
 		virtual ssize_t Write(const byte* src, size_t count);
 		virtual bool IsReadable();
 		virtual bool IsWritable();
+
+	public:
+		void NotReading();
+		void NotWriting();
 
 	};
 
@@ -66,6 +72,8 @@ namespace Sortix
 		this->buffersize = buffersize;
 		this->bufferoffset = 0;
 		this->bufferused = 0;
+		this->anyreading = true;
+		this->anywriting = true;
 	}
 
 	DevPipeStorage::~DevPipeStorage()
@@ -93,6 +101,8 @@ namespace Sortix
 			return amount + Read(dest + amount, count - amount);
 		}
 
+		if ( !anywriting ) { return 0; }
+
 		Error::Set(EBLOCKING);
 		readevent.Register();
 		return -1;
@@ -100,6 +110,7 @@ namespace Sortix
 
 	ssize_t DevPipeStorage::Write(const byte* src, size_t count)
 	{
+		if ( !anyreading ) { /* TODO: SIGPIPE */ }
 		if ( count == 0 ) { return 0; }
 		if ( bufferused < buffersize )
 		{
@@ -119,6 +130,9 @@ namespace Sortix
 		writeevent.Register();
 		return -1;
 	}
+
+	void DevPipeStorage::NotReading() { anyreading = false; }
+	void DevPipeStorage::NotWriting() { anywriting = false; }
 
 	class DevPipeReading : public DevStream
 	{
@@ -148,6 +162,7 @@ namespace Sortix
 
 	DevPipeReading::~DevPipeReading()
 	{
+		((DevPipeStorage*) stream)->NotReading();
 		stream->Unref();
 	}
 
@@ -200,6 +215,7 @@ namespace Sortix
 
 	DevPipeWriting::~DevPipeWriting()
 	{
+		((DevPipeStorage*) stream)->NotWriting();
 		stream->Unref();
 	}
 
