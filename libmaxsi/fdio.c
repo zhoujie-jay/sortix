@@ -170,6 +170,7 @@ FILE* fopen(const char* path, const char* mode)
 	int oflags = 0;
 	char c;
 	// TODO: This is too hacky and a little buggy.
+	const char* origmode = mode;
 	while ( ( c = *mode++ ) )
 	{
 		switch ( c )
@@ -185,6 +186,7 @@ FILE* fopen(const char* path, const char* mode)
 			default: errno = EINVAL; return 0;
 		}
 	}
+	mode = origmode;
 	int fd = open(path, omode | oflags, 0666);
 	if ( fd < 0 ) { return NULL; }
 	FILE* fp = fdopen(fd, mode);
