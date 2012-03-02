@@ -24,6 +24,8 @@ editor \
 kill \
 column \
 pager \
+head \
+tail \
 
 BINARIES:=$(addprefix $(INITRDDIR)/,$(LOCALBINARIES))
 

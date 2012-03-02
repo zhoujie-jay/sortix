@@ -1,0 +1,181 @@
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
+#include <error.h>
+#include <ctype.h>
+
+#ifdef HEAD
+#define TAIL false
+#else
+#define TAIL true
+#endif
+
+const char* STDINNAME = "standard input";
+
+long numlines = 10;
+bool quiet = false;
+bool verbose = false;
+
+bool processfp(const char* inputname, FILE* fp)
+{
+	const bool tail = TAIL;
+	const bool head = !TAIL;
+	if ( !numlines ) { return true; }
+	bool specialleading = (head && 0 < numlines) || (tail && numlines < 0);
+	bool specialtrailing = !specialleading;
+	long abslines = (numlines < 0) ? -numlines : numlines;
+
+	char** buffer = NULL;
+	if ( specialtrailing )
+	{
+		buffer = new char*[abslines];
+		memset(buffer, 0, sizeof(char*) * abslines);
+	}
+
+	long linenum;
+	for ( linenum = 0; true; linenum++ )
+	{
+		char* line = NULL;
+		size_t linesize;
+		ssize_t linelen = getline(&line, &linesize, fp);
+		if ( linelen < 0 )
+		{
+			if ( feof(fp) ) { break; }
+			error(1, errno, "%s", inputname);
+		}
+		if ( specialleading )
+		{
+			bool doprint = false;
+			if ( head && linenum < abslines ) { doprint = true; }
+			else if ( tail && abslines <= linenum ) { doprint = true; }
+			bool done = head && abslines <= linenum+1;
+			if ( doprint ) { printf("%s", line); }
+			free(line);
+			if ( done ) { return true; }
+		}
+		if ( specialtrailing )
+		{
+			long index = linenum % abslines;
+			if ( buffer[index] )
+			{
+				char* bufline = buffer[index];
+				if ( head ) { printf("%s", bufline); }
+				free(bufline);
+			}
+			buffer[index] = line;
+		}
+	}
+
+	if ( specialtrailing && tail )
+	{
+		long numtoprint = linenum < abslines ? linenum : abslines;
+		for ( long i = 0; i < numtoprint; i++ )
+		{
+			long index = (linenum - numtoprint + i) % abslines;
+			printf("%s", buffer[index]);
+			free(buffer[index]);
+		}
+	}
+
+	delete[] buffer;
+
+	return true;
+}
+
+void usage(const char* argv0)
+{
+	printf("usage: %s [-n <numlines>] [-q | -v] [<FILE> ...]\n", argv0);
+}
+
+void errusage(const char* argv0)
+{
+	usage(argv0);
+	exit(1);
+}
+
+void help(const char* argv0)
+{
+	usage(argv0);
+}
+
+void version(const char* argv0)
+{
+	printf("%s (sortix)\n", argv0);
+}
+
+int main(int argc, char* argv[])
+{
+	const char* argv0 = argv[0];
+
+	for ( int i = 1; i < argc; i++ )
+	{
+		const char* arg = argv[i];
+		if ( arg[0] != '-' ) { continue; }
+		argv[i] = NULL;
+		if ( strcmp(arg, "--") == 0 ) { break; }
+		const char* nlinesstr = NULL;
+		if ( strcmp(arg, "--usage") == 0 ) { usage(argv0); return 0; }
+		if ( strcmp(arg, "--help") == 0 ) { help(argv0); return 0; }
+		if ( strcmp(arg, "--version") == 0 ) { version(argv0); return 0; }
+		if ( strcmp(arg, "-q") == 0 ||
+		     strcmp(arg, "--quiet") == 0 ||
+		     strcmp(arg, "--silent") == 0 )
+		{
+			quiet = true;
+			verbose = false;
+			continue;
+		}
+		if ( strcmp(arg, "-v") == 0 ||
+		     strcmp(arg, "--verbose") == 0 )
+		{
+			quiet = false;
+			verbose = true;
+			continue;
+		}
+		if ( strcmp(arg, "-n") == 0 ) { nlinesstr = argv[++i]; argv[i] = NULL; }
+		if ( isdigit(arg[1]) ) { nlinesstr = arg+1; }
+		if ( nlinesstr )
+		{
+			char* nlinesstrend;
+			long nlines = strtol(nlinesstr, &nlinesstrend, 10);
+			if ( *nlinesstrend )
+			{
+				fprintf(stderr, "Bad number of lines: %s\n", nlinesstr);
+				errusage(argv0);
+			}
+			numlines = nlines;
+			continue;
+		}
+		fprintf(stderr, "%s: unrecognized option '%s'\n", argv0, arg);
+		errusage(argv0);
+	}
+
+	size_t numfiles = 0;
+	for ( int i = 1; i < argc; i++ ) { if ( argv[i] ) { numfiles++; } }
+
+	if ( !numfiles )
+	{
+		bool header = verbose;
+		if ( header ) { printf("==> %s <==\n", STDINNAME); }
+		if ( !processfp(STDINNAME, stdin) ) { return 1; }
+		return 0;
+	}
+
+	const char* prefix = "";
+	for ( int i = 1; i < argc; i++ )
+	{
+		if ( !argv[i] ) { continue; }
+		bool isstdin = strcmp(argv[i], "-") == 0;
+		FILE* fp = isstdin ? stdin : fopen(argv[i], "r");
+		if ( !fp ) { error(1, errno, "error opening: %s", argv[i]); }
+		bool header = !quiet && (verbose || 1 < numfiles);
+		if ( header ) { printf("%s==> %s <==\n", prefix, argv[i]); }
+		prefix = "\n";
+		if ( !processfp(isstdin ? STDINNAME : argv[i], fp) ) { return 1; }
+		if ( !isstdin ) { fclose(fp); }
+	}
+
+	return 0;
+}
+
