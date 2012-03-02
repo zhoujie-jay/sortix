@@ -144,8 +144,13 @@ namespace Sortix
 
 			addr_t fractal1 = PMLS[2]->entry[1022];
 
+#if 1
+			Page::Put(fractal1 & PML_ADDRESS);
+			Page::Put(currentdir & PML_ADDRESS);
+#else
 			Page::Put(fractal1);
 			Page::Put(currentdir);
+#endif
 
 			// Switch to the address space from when the world was originally
 			// created. It should contain the kernel, the whole kernel, and
