@@ -56,6 +56,7 @@ namespace Sortix
 		currentsignal = NULL;
 		sighandler = NULL;
 		pidbackup = -1;
+		addrspacebackup = 0UL;
 		terminated = false;
 		ResetCallbacks();
 	}
@@ -80,6 +81,7 @@ namespace Sortix
 		scfunc = NULL;
 		sighandler = forkfrom->sighandler;
 		pidbackup = -1;
+		addrspacebackup = 0UL;
 		terminated = false;
 		ResetCallbacks();
 	}
@@ -190,6 +192,7 @@ namespace Sortix
 		ready = true;
 
 		this->pidbackup = process->pid;
+		this->addrspacebackup = process->addrspace;
 
 		if ( Time::MicrosecondsSinceBoot() < sleepuntil )
 		{

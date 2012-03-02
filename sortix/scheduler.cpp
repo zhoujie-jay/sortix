@@ -143,6 +143,15 @@ namespace Sortix
 			nextthread->LoadRegisters(regs);
 
 			addr_t newaddrspace = nextthread->process->addrspace;
+			if ( unlikely(newaddrspace != Page::AlignDown(newaddrspace)) )
+			{
+				PanicF("Thread 0x%p, process %i (0x%p) (backup: %i), had bad "
+				       "address space variable: 0x%zx: not page-aligned "
+				       "(backup: 0x%zx)\n", nextthread,
+				       nextthread->process->pid, nextthread->process,
+				       nextthread->pidbackup, newaddrspace,
+				       nextthread->addrspacebackup);
+			}
 			Memory::SwitchAddressSpace(newaddrspace);
 			currentthread = nextthread;
 

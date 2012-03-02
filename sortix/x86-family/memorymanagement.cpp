@@ -265,11 +265,14 @@ namespace Sortix
 		addr_t Get()
 		{
 			if ( unlikely(stackused == 0) ) { Error::Set(ENOMEM); return 0; }
-			return STACK[--stackused];
+			addr_t result = STACK[--stackused];
+			ASSERT(result == AlignDown(result));
+			return result;
 		}
 
 		void Put(addr_t page)
 		{
+			ASSERT(page == AlignDown(page));
 			ASSERT(stackused < MAXSTACKLENGTH);
 			STACK[stackused++] = page;
 		}

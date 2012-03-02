@@ -61,6 +61,7 @@ namespace Sortix
 		size_t id;
 		Process* process;
 		pid_t pidbackup;
+		addr_t addrspacebackup;
 		bool terminated;
 		Thread* prevsibling;
 		Thread* nextsibling;
