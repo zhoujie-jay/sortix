@@ -7,6 +7,28 @@
 #include <errno.h>
 #include <error.h>
 
+int docat(const char* inputname, int fd)
+{
+	do
+	{
+		const size_t BUFFER_SIZE = 255;
+		char buffer[BUFFER_SIZE+1];
+		ssize_t bytesread = read(fd, buffer, BUFFER_SIZE);
+		if ( bytesread == 0 ) { break; }
+		if ( bytesread < 0 )
+		{
+			error(0, errno, "read: %s", inputname);
+			return 1;
+		}
+		if ( writeall(1, buffer, bytesread) )
+		{
+			error(0, errno, "write: %s", inputname);
+			return 1;
+		}
+	} while ( true );
+	return 0;
+}
+
 int cat(int argc, char* argv[])
 {
 	int result = 0;
@@ -20,27 +42,8 @@ int cat(int argc, char* argv[])
 			result = 1;
 			continue;
 		}
-
-		do
-		{
-			const size_t BUFFER_SIZE = 255;
-			char buffer[BUFFER_SIZE+1];
-			ssize_t bytesread = read(fd, buffer, BUFFER_SIZE);
-			if ( bytesread == 0 ) { break; }
-			if ( bytesread < 0 )
-			{
-				error(0, errno, "read: %s", argv[i]);
-				result = 1;
-				break;
-			}
-			if ( writeall(1, buffer, bytesread) )
-			{
-				error(0, errno, "write: %s", argv[i]);
-				result = 1;
-				break;
-			}
-		} while ( true );
-
+		
+		result |= docat(argv[i], fd);
 		close(fd);
 	}
 
@@ -53,6 +56,8 @@ int main(int argc, char* argv[])
 	{
 		return cat(argc, argv);
 	}
+
+	if ( !isatty(0) ) { return docat("<stdin>", 0); }
 
 	bool lastwasesc = false;
 
