@@ -26,6 +26,7 @@
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
 #include "log.h"
+#include "calltrace.h"
 #include "panic.h"
 
 using namespace Maxsi;
@@ -37,9 +38,17 @@ namespace Sortix
 #else
 	bool longpanic = true;
 #endif
+	bool panicing = false;
+	bool doublepanic = false;
 
 	void PanicInit()
 	{
+		if ( panicing )
+		{
+			Log::PrintF("Panic while panicing:\n");
+			doublepanic = true;
+			return;
+		}
 		if ( longpanic )
 		{
 			Log::Print("\e[m\e[31;40m\e[2J\e[H");
@@ -71,6 +80,19 @@ namespace Sortix
 			Log::Print("\e[m\e[31m\e[0J");
 			Log::Print("RED MAXSI OF DEATH\n");
 		}
+		panicing = true;
+	}
+
+	void PanicCalltrace()
+	{
+		Log::Print("\n");
+		Calltrace::Perform();
+	}
+
+	void PanicHooks()
+	{
+		if ( doublepanic ) { return; }
+		if ( ENABLE_CALLTRACE ) { PanicCalltrace(); }
 	}
 
 	void PanicHalt()
@@ -85,6 +107,7 @@ namespace Sortix
 	{
 		PanicInit();
 		Log::Print(Error);
+		PanicHooks();
 		PanicHalt();
 	}
 
@@ -95,6 +118,7 @@ namespace Sortix
 		va_start(list, Format);
 		Log::PrintFV(Format, list);
 		va_end(list);
+		PanicHooks();
 		PanicHalt();
 	}
 }

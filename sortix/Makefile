@@ -54,12 +54,17 @@ ifeq ($(JSSORTIX),1)
 endif
 ifeq ($(PANIC_SHORT),1)
     DEFINES:=$(DEFINES) -DPANIC_SHORT
-endif 
+endif
 ifeq ($(DISKWRITE),1)
     DEFINES:=$(DEFINES) -DENABLE_DISKWRITE=1
 else
     DEFINES:=$(DEFINES) -DENABLE_DISKWRITE=0
-endif 
+endif
+ifeq ($(CALLTRACE),1)
+    DEFINES:=$(DEFINES) -DENABLE_CALLTRACE=1
+else
+    DEFINES:=$(DEFINES) -DENABLE_CALLTRACE=0
+endif
 
 INCLUDES=-I../libmaxsi/preproc -I.. -I.
 CPPFLAGS=$(INCLUDES) $(DEFINES)
@@ -81,6 +86,8 @@ interrupt.o \
 time.o \
 log.o \
 utf8.o \
+calltrace.o \
+$(CPU)/calltrace.o \
 panic.o \
 keyboard.o \
 kb/ps2.o \
