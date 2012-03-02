@@ -388,7 +388,7 @@ namespace Sortix
 		return (DevBuffer*) dev;
 	}
 
-	int SysExecVE(const char* filename, int argc, char* const argv[], char* const /*envp*/[])
+	int SysExecVE(const char* filename, char* const argv[], char* const /*envp*/[])
 	{
 		// TODO: Validate that all the pointer-y parameters are SAFE!
 
@@ -400,6 +400,8 @@ namespace Sortix
 		// when the address space is reset.
 		state->filename = String::Clone(filename);
 		if ( !state->filename ) { delete state; return -1; }
+
+		int argc; for ( argc = 0; argv[argc]; argc++ );
 
 		state->argc = argc;
 		state->argv = new char*[state->argc];

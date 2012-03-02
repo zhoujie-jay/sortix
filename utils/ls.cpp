@@ -56,8 +56,8 @@ int main(int argc, char* argv[])
 			close(pipes[0]);
 			close(pipes[1]);
 			const char* columner = "column";
-			const char* argv[] = { columner };
-			Maxsi::Process::Execute(columner, 1, argv);
+			const char* argv[] = { columner, NULL };
+			execv(columner, (char* const*) argv);
 			error(127, errno, "%s", columner);
 		}
 	}

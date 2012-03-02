@@ -7,10 +7,6 @@
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
-#include <libmaxsi/platform.h>
-#include <libmaxsi/process.h>
-
-using namespace Maxsi;
 
 int status = 0;
 
@@ -52,8 +48,8 @@ void command()
 	if ( command[0] == '\0' ) { return; }
 
 	if ( strcmp(command, "$?") == 0 ) { printf("%u\n", status); status = 0; return; }
-	if ( strcmp(command, "$$") == 0 ) { printf("%u\n", Process::GetPID()); status = 0; return; }
-	if ( strcmp(command, "$PPID") == 0 ) { printf("%u\n", Process::GetParentPID()); status = 0; return; }
+	if ( strcmp(command, "$$") == 0 ) { printf("%u\n", getpid()); status = 0; return; }
+	if ( strcmp(command, "$PPID") == 0 ) { printf("%u\n", getppid()); status = 0; return; }
 
 	int argc = 0;
 	const char* argv[256];
@@ -121,10 +117,8 @@ void command()
 		}
 	}
 
-	// Replace the current process with another process image.
-	Process::Execute(argv[0], argc, argv);
-
-	// This is clever. This only happens if the program didn't change.
+	argv[argc] = NULL;
+	execv(argv[0], (char* const*) argv);
 	error(127, errno, "%s", argv[0]);
 }
 

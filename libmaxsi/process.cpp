@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -11,8 +11,8 @@
 
 	LibMaxsi is distributed in the hope that it will be useful, but WITHOUT ANY
 	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
-	more details.
+	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+	details.
 
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
@@ -20,7 +20,7 @@
 	process.cpp
 	Exposes system calls for process creation and management.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <libmaxsi/platform.h>
 #include <libmaxsi/syscall.h>
@@ -33,16 +33,11 @@ namespace Maxsi
 	namespace Process
 	{
 		DEFN_SYSCALL1_VOID(SysExit, SYSCALL_EXIT, int);
-		DEFN_SYSCALL4(int, SysExecVE, SYSCALL_EXEC, const char*, int, char* const*, char* const*);
+		DEFN_SYSCALL3(int, SysExecVE, SYSCALL_EXEC, const char*, char* const*, char* const*);
 		DEFN_SYSCALL0(pid_t, SysFork, SYSCALL_FORK);
 		DEFN_SYSCALL0(pid_t, SysGetPID, SYSCALL_GETPID);
 		DEFN_SYSCALL0(pid_t, SysGetParentPID, SYSCALL_GETPPID);
 		DEFN_SYSCALL3(pid_t, SysWait, SYSCALL_WAIT, pid_t, int*, int);
-
-		int Execute(const char* filepath, int argc, const char** argv)
-		{
-			return SysExecVE(filepath, argc, (char* const*) argv, NULL);
-		}
 
 		void Abort()
 		{
@@ -55,6 +50,17 @@ namespace Maxsi
 		extern "C" void _exit(int status)
 		{
 			SysExit(status);
+		}
+
+		extern "C" int execve(const char* pathname, char* const* argv,
+		                      char* const* envp)
+		{
+			return SysExecVE(pathname, argv, envp);
+		}
+
+		extern "C" int execv(const char* pathname, char* const* argv)
+		{
+			return execve(pathname, argv, NULL);
 		}
 
 		DUAL_FUNCTION(void, exit, Exit, (int status))
