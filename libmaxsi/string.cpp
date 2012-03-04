@@ -84,6 +84,19 @@ namespace Maxsi
 			return OriginalDest;
 		}
 
+		extern "C" char* strncat(char* dest, const char* src, size_t len)
+		{
+			size_t destlen = Length(dest);
+			size_t i;
+
+			for ( i = 0; i < len && src[i]; i++ )
+			{
+				dest[destlen + i] = src[i];
+			}
+			dest[destlen+i] = 0;
+			return dest;
+		}
+
 		DUAL_FUNCTION(int, strcmp, Compare, (const char* A, const char* B))
 		{
 			while ( true )
