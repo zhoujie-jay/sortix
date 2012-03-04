@@ -59,6 +59,14 @@ namespace Maxsi
 			return OriginalDest;
 		}
 
+		extern "C" char* strncpy(char* dest, const char* src, size_t len)
+		{
+			size_t i;
+			for ( i = 0; i < len && src[i]; i++ ) { dest[i] = src[i]; }
+			for ( ; i < len; i++ ) { dest[i] = '\0'; }
+			return dest;
+		}
+
 		DUAL_FUNCTION(char*, strcat, Cat, (char* Dest, const char* Src))
 		{
 			char* OriginalDest = Dest;
