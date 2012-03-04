@@ -313,6 +313,12 @@ namespace Maxsi
 		return -1;
 	}
 
+	// TODO: Implement these in the kernel.
+	extern "C" mode_t umask(mode_t mask)
+	{
+		return 0;
+	}
+
 	// TODO: This is a hacky implementation of a stupid function.
 	char* mktemp(char* templ)
 	{
