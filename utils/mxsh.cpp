@@ -37,6 +37,7 @@ readcmd:
 		     strcmp(token, "&") == 0 ||
 		     strcmp(token, "|") == 0 ||
 		     strcmp(token, ">") == 0 ||
+		     strcmp(token, ">>") == 0 ||
 		     false )
 		{
 			break;
@@ -58,7 +59,7 @@ readcmd:
 	}
 
 	outputfile = NULL;
-	if ( strcmp(execmode, ">") == 0 )
+	if ( strcmp(execmode, ">") == 0 || strcmp(execmode, ">>") == 0 )
 	{
 		outputfile = tokens[cmdend+1];
 		if ( !outputfile ) { fprintf(stderr, "expected filename\n"); goto out; }
@@ -141,7 +142,10 @@ readcmd:
 	if ( outputfile )
 	{
 		close(1);
-		if ( open(outputfile, O_CREAT | O_WRONLY | O_TRUNC | O_APPEND) < 0 )
+		int flags = O_CREAT | O_WRONLY | O_APPEND;
+		fprintf(stderr, "execmode = %s\n", execmode);
+		if ( strcmp(execmode, ">") == 0 ) { flags |= O_TRUNC; }
+		if ( open(outputfile, flags, 0666) < 0 )
 		{
 			error(127, errno, "%s", outputfile);
 		}
