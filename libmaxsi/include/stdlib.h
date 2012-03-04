@@ -45,6 +45,7 @@ typedef int div_t, ldiv_t, lldiv_t;
 
 /* TODO: WEXITSTATUS, WIFEXITED, WIFSIGNALED, WIFSTOPPED, WNOHANG, WSTOPSIG, WTERMSIG, WUNTRACED is missing here */
 
+void abort(void);
 int atoi(const char*);
 void* calloc(size_t, size_t);
 void exit(int);
@@ -61,7 +62,6 @@ long long strtoll(const char* restrict, char** restrict, int);
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 long a64l(const char* s);
-void abort(void);
 int abs(int value);
 int atexit(void (*function)(void));
 double atof(const char* value);
