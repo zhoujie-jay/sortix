@@ -31,6 +31,8 @@
 #include <features.h>
 #include <sortix/seek.h>
 
+#define _SORTIX_ALWAYS_SBRK
+
 __BEGIN_DECLS
 
 /* Currently just say we support the newest POSIX. */
@@ -71,7 +73,7 @@ __BEGIN_DECLS
 @include(off_t.h)
 @include(pid_t.h)
 @include(useconds_t.h)
-#if defined(_SORTIX_SOURCE)
+#if defined(_SORTIX_SOURCE) || defined(_SORTIX_ALWAYS_SBRK)
 @include(intn_t.h)
 #endif
 
@@ -177,6 +179,8 @@ size_t getpagesize(void);
 int memstat(size_t* memused, size_t* memtotal);
 int uptime(uintmax_t* usecssinceboot);
 int writeall(int fd, const void* buffer, size_t len);
+#endif
+#if defined(_SORTIX_SOURCE) || defined(_SORTIX_ALWAYS_SBRK)
 void* sbrk(intptr_t increment);
 #endif
 
