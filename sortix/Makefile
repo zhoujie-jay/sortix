@@ -80,6 +80,16 @@ NASMFLAGS=$(CPUNASMFLAGS)
 STATICLIBS=\
 ../libmaxsi/libmaxsi-sortix.a \
 
+PUBLICHEADERS=\
+$(CPU)/bits.h \
+fcntl.h \
+initrd.h \
+seek.h \
+keycodes.h \
+termmode.h \
+syscallnum.h \
+stat.h \
+
 OBJS=$(CPUOBJS) \
 kernel.o \
 interrupt.o \
@@ -169,5 +179,7 @@ clean:
 # Installation into sysroot
 install:
 	mkdir -p $(SYSROOT)/usr/include/sortix
-	cp $(CPU)/bits.h $(SYSROOT)/usr/include/sortix/bits.h
+	for FILE in $(PUBLICHEADERS); do \
+		cp $$FILE  $(SYSROOT)/usr/include/sortix/`basename $$FILE`; \
+	done
 
