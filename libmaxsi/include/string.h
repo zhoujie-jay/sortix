@@ -52,6 +52,7 @@ int strncmp(const char*, const char*, size_t);
 char* strncpy(char* restrict, const char* restrict, size_t);
 char* strrchr(const char*, int);
 size_t strspn(const char*, const char*);
+char* strstr(const char*, const char*);
 char* strtok(char* restrict, const char* restrict);
 char* strtok_r(char* restrict, const char* restrict, char** restrict);
 
@@ -67,7 +68,6 @@ char* strndup(const char*, size_t);
 size_t strnlen(const char*, size_t);
 char* strpbrk(const char*, const char*);
 char* strsignal(int);
-char* strstr(const char*, const char*);
 size_t strxfrm(char* restrict, const char* restrict, size_t);
 size_t strxfrm_l(char* restrict, const char* restrict, size_t, locale_t);
 #endif
