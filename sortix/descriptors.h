@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
 
 	This file is part of Sortix.
 
@@ -14,13 +14,13 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	descriptors.h
 	Handles file descriptors, socket descriptors, and whatnot for each process.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef SORTIX_DESCRIPTORS_H
 #define SORTIX_DESCRIPTORS_H
@@ -28,6 +28,12 @@
 namespace Sortix
 {
 	class Device;
+
+	struct DescriptorEntry
+	{
+		Device* dev;
+		int flags;
+	};
 
 	class DescriptorTable
 	{
@@ -37,7 +43,7 @@ namespace Sortix
 
 	private:
 		int numdevices; 
-		Device** devices;
+		DescriptorEntry* devices;
 
 	public:
 		int Allocate(Device* object);
@@ -45,14 +51,17 @@ namespace Sortix
 		void Free(int index);
 		void UseReservation(int index, Device* object);
 		bool Fork(DescriptorTable* forkinto);
+		void OnExecute();
 		void Reset();
+		void SetFlags(int index, int flags);
+		int GetFlags(int index);
 
 	public:
 		inline Device* Get(int index)
 		{
 			if ( !devices ) { return NULL; }
 			if ( index < 0 || numdevices <= index ) { return NULL; }
-			return devices[index];
+			return devices[index].dev;
 		}
 
 	};

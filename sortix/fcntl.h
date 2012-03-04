@@ -41,6 +41,10 @@ __BEGIN_DECLS
 #define O_DIRECTORY (1<<6)
 #define O_EXCL (1<<7)
 #define O_TRUNC (1<<8)
+#define O_CLOFORK (1<<9)
+
+#define FD_CLOEXEC (1<<0)
+#define FD_CLOFORK (1<<1)
 
 __END_DECLS
 

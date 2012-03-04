@@ -288,6 +288,8 @@ namespace Sortix
 
 		ExecuteCPU(argc, stackargv, stackpos, entry, regs);
 
+		descriptors.OnExecute();
+
 		return 0;
 	}
 

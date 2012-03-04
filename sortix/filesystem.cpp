@@ -31,6 +31,7 @@
 #include "filesystem.h"
 #include "directory.h"
 #include "mount.h"
+#include <sortix/fcntl.h>
 
 using namespace Maxsi;
 
@@ -75,6 +76,10 @@ namespace Sortix
 			if ( !dev ) { return -1; /* TODO: errno */ }
 			int fd = process->descriptors.Allocate(dev);
 			if ( fd < 0 ) { dev->Unref(); }
+			int fdflags = 0;
+			if ( flags & O_CLOEXEC ) { fdflags |= FD_CLOEXEC; }
+			if ( flags & O_CLOFORK ) { fdflags |= FD_CLOFORK; }
+			process->descriptors.SetFlags(fd, fdflags);
 			return fd;
 		}
 
