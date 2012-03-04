@@ -26,6 +26,8 @@
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/syscall.h>
+#include <errno.h>
+#include <time.h>
 
 namespace Maxsi
 {
@@ -36,6 +38,12 @@ namespace Maxsi
 		extern "C" int uptime(uintmax_t* usecssinceboot)
 		{
 			return SysUptime(usecssinceboot);
+		}
+
+		extern "C" clock_t clock(void)
+		{
+			errno = ENOTSUP;
+			return -1;
 		}
 	}
 }

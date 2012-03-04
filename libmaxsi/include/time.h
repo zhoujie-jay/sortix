@@ -17,25 +17,22 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	types.h
-	Data types.
+	time.h
+	Time declarations.
 
 ******************************************************************************/
 
-// TODO: Make this header comply with POSIX-1.2008
-
-#ifndef	_STAT_H
-#define	_STAT_H 1
+#ifndef	_TIME_H
+#define	_TIME_H 1
 
 #include <features.h>
 
 __BEGIN_DECLS
 
-@include(useconds_t.h)
-@include(pid_t.h)
 @include(clock_t.h)
+
+clock_t clock(void);
 
 __END_DECLS
 
 #endif
-
