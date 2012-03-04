@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 		return cat(argc, argv);
 	}
 
-	if ( !isatty(0) ) { return docat("<stdin>", 0); }
+	if ( !isatty(0) || !isatty(1) ) { return docat("<stdin>", 0); }
 
 	bool lastwasesc = false;
 
