@@ -27,6 +27,7 @@
 #include <libmaxsi/memory.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 namespace Maxsi
 {
@@ -120,6 +121,38 @@ namespace Maxsi
 
 			return 0;
 		}
+
+#ifndef SORTIX_KERNEL
+		inline int charcasecmp(char a, char b)
+		{
+			return tolower(a) == tolower(b);
+		}
+
+		extern "C" int strcasecmp(const char* a, const char* b)
+		{
+			while ( true )
+			{
+				char achar = *a++;
+				char bchar = *b++;
+				if ( !achar && !bchar ) { return 0; }
+				int cmp = charcasecmp(achar, bchar);
+				if ( cmp ) { return cmp; }
+			}
+		}
+
+		extern "C" int strncasecmp(const char* a, const char* b, size_t n)
+		{
+			while ( n-- )
+			{
+				char achar = *a++;
+				char bchar = *b++;
+				if ( !achar && !bchar ) { return 0; }
+				int cmp = charcasecmp(achar, bchar);
+				if ( cmp ) { return cmp; }
+			}
+			return 0;
+		}
+#endif
 
 		DUAL_FUNCTION(size_t, strspn, Accept, (const char* str, const char* accept))
 		{
