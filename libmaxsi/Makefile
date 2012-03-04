@@ -35,6 +35,7 @@ fdio.o \
 stdio.o \
 dir.o \
 fddir-sortix.o \
+setjmp.o \
 sortix-sound.o \
 process.o \
 thread.o \
