@@ -17,41 +17,29 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	time.cpp
-	Useful time functions.
+	sys/time.h
+	Time types.
 
 ******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/string.h>
-#include <libmaxsi/memory.h>
-#include <libmaxsi/syscall.h>
-#include <errno.h>
-#include <sys/time.h>
-#include <time.h>
+#ifndef	_SYS_TIME_H
+#define	_SYS_TIME_H 1
 
-namespace Maxsi
-{
-	namespace Time
-	{
-		DEFN_SYSCALL1(int, SysUptime, SYSCALL_UPTIME, uintmax_t*);
+#include <features.h>
 
-		extern "C" int uptime(uintmax_t* usecssinceboot)
-		{
-			return SysUptime(usecssinceboot);
-		}
+__BEGIN_DECLS
 
-		extern "C" clock_t clock(void)
-		{
-			errno = ENOTSUP;
-			return -1;
-		}
+@include(time_t.h)
+@include(suseconds_t.h)
 
-		extern "C" int gettimeofday(struct timeval* tp, void* /*tzp*/)
-		{
-			tp->tv_sec = 0;
-			tp->tv_usec = 0;
-			return 0;
-		}
-	}
-}
+__END_DECLS
+
+#include <sortix/timeval.h>
+
+__BEGIN_DECLS
+
+int gettimeofday(struct timeval* restrict tp, void* restrict tzp);
+
+__END_DECLS
+
+#endif
