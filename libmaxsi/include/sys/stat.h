@@ -45,6 +45,8 @@ __END_DECLS
 #include <sortix/stat.h>
 
 __BEGIN_DECLS
+int chmod(const char* path, mode_t mode);
+int fchmod(int fd, mode_t mode);
 int fstat(int fd, struct stat* st);
 int mkdir(const char *path, mode_t mode);
 int stat(const char* restrict path, struct stat* restrict st);

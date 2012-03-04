@@ -299,6 +299,20 @@ namespace Maxsi
 		return SysFCntl(fd, cmd, arg);
 	}
 
+	// TODO: Implement these in the kernel.
+	extern "C" int chmod(const char* path, mode_t mode)
+	{
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	// TODO: Implement these in the kernel.
+	extern "C" int fchmod(int fd, mode_t mode)
+	{
+		errno = ENOTSUP;
+		return -1;
+	}
+
 	// TODO: This is a hacky implementation of a stupid function.
 	char* mktemp(char* templ)
 	{
