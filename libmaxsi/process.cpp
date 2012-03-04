@@ -94,6 +94,11 @@ namespace Maxsi
 		{
 			return waitpid(-1, status, 0);
 		}
+
+		extern "C" char* getenv(const char* name)
+		{
+			return NULL;
+		}
 	}
 }
 

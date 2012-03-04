@@ -51,6 +51,7 @@ void* calloc(size_t, size_t);
 void exit(int);
 void _Exit(int status);
 void free(void*);
+char* getenv(const char*);
 void* malloc(size_t);
 int rand(void);
 void* realloc(void*, size_t);
@@ -72,7 +73,6 @@ void* bsearch(const void*, const void*, size_t, size_t, int (*)(const void*, con
 div_t div(int, int);
 double drand48(void);
 double erand48(unsigned short [3]);
-char* getenv(const char*);
 int getsubopt(char**, char* const *, char**);
 int grantpt(int);
 char* initstate(unsigned, char*, size_t);
