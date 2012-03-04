@@ -32,6 +32,7 @@
 __BEGIN_DECLS
 @include(blkcnt_t.h)
 @include(blksize_t.h)
+@include(dev_t.h)
 @include(ino_t.h)
 @include(mode_t.h)
 @include(nlink_t.h)

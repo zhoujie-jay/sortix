@@ -129,6 +129,7 @@ typedef __off_t __blksize_t;
 typedef __off_t __blkcnt_t;
 typedef unsigned int __nlink_t;
 typedef __uintmax_t __ino_t;
+typedef __uintptr_t __dev_t;
 
 #endif
 
