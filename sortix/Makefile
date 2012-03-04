@@ -89,6 +89,7 @@ keycodes.h \
 termmode.h \
 syscallnum.h \
 stat.h \
+timeval.h \
 
 OBJS=$(CPUOBJS) \
 kernel.o \
