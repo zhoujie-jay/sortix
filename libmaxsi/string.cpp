@@ -146,6 +146,13 @@ namespace Maxsi
 			}
 		}
 
+		char* strpbrk(const char* str, const char* accept)
+		{
+			size_t rejectlen = Reject(str, accept);
+			if ( !str[rejectlen] ) { return NULL; }
+			return (char*) str + rejectlen;
+		}
+
 		DUAL_FUNCTION(char*, strtok_r, TokenizeR, (char* str, const char* delim, char** saveptr))
 		{
 			if ( !str && !*saveptr ) { return NULL; }
