@@ -36,8 +36,6 @@ __BEGIN_DECLS
 
 /* TODO: F_* missing here */
 
-/* TODO: FD_CLOEXEC missing here */
-
 /* TODO: F_RDLCK, F_UNLCK, F_WRLCK missing here */
 
 /* TODO: AT_FDCWD missing here */
@@ -61,11 +59,10 @@ struct _flock
 
 typedef struct _flock flock;
 
-/* TODO: These are not implemented in libmaxsi/sortix yet. */
+int fcntl(int fd, int cmd, ...);
 int open(const char* path, int oflag, ...);
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 int creat(const char* path, mode_t mode);
-int fcntl(int fd, int cmd, ...);
 int openat(int fd, const char* path, int oflag, ...);
 #endif
 

@@ -46,6 +46,9 @@ __BEGIN_DECLS
 #define FD_CLOEXEC (1<<0)
 #define FD_CLOFORK (1<<1)
 
+#define F_SETFD 0
+#define F_GETFD 1
+
 __END_DECLS
 
 #endif

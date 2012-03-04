@@ -130,6 +130,21 @@ namespace Sortix
 			return -1;
 		}
 
+		int SysFCntl(int fd, int cmd, unsigned long arg)
+		{
+			Process* process = CurrentProcess();
+			DescriptorTable* descs = &(process->descriptors);
+			Device* dev = descs->Get(fd);
+			if ( !dev ) { Error::Set(EBADF); return -1; }
+			switch ( cmd )
+			{
+			case F_GETFD: return descs->GetFlags(fd);
+			case F_SETFD: descs->SetFlags(fd, (int) arg); return 0;
+			}
+			Error::Set(EINVAL);
+			return 1;
+		}
+
 		void Init()
 		{
 			Syscall::Register(SYSCALL_OPEN, (void*) SysOpen);
@@ -140,6 +155,7 @@ namespace Sortix
 			Syscall::Register(SYSCALL_FTRUNCATE, (void*) SysFTruncate);
 			Syscall::Register(SYSCALL_STAT, (void*) SysStat);
 			Syscall::Register(SYSCALL_FSTAT, (void*) SysFStat);
+			Syscall::Register(SYSCALL_FCNTL, (void*) SysFCntl);
 		}
 	}
 

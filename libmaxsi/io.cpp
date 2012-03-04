@@ -57,6 +57,7 @@ namespace Maxsi
 	DEFN_SYSCALL2(int, SysFTruncate, SYSCALL_FTRUNCATE, int, off_t);
 	DEFN_SYSCALL2(int, SysStat, SYSCALL_STAT, const char*, struct stat*);
 	DEFN_SYSCALL2(int, SysFStat, SYSCALL_FSTAT, int, struct stat*);
+	DEFN_SYSCALL3(int, SysFCntl, SYSCALL_FCNTL, int, int, unsigned long);
 
 	size_t Print(const char* string)
 	{
@@ -291,6 +292,11 @@ namespace Maxsi
 	extern "C" int fstat(int fd, struct stat* st)
 	{
 		return SysFStat(fd, st);
+	}
+
+	extern "C" int fcntl(int fd, int cmd, unsigned long arg)
+	{
+		return SysFCntl(fd, cmd, arg);
 	}
 
 	// TODO: This is a hacky implementation of a stupid function.
