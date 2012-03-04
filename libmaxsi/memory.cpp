@@ -52,6 +52,18 @@ namespace Maxsi
 		{
 			return SysGetPageSize();
 		}
+
+		// TODO: This is a hacky implementation!
+		extern "C" void* memmove(void* _dest, const void* _src, size_t n)
+		{
+			uint8_t* dest = (uint8_t*) _dest;
+			const uint8_t* src = (const uint8_t*) _src;
+			uint8_t* tmp = new uint8_t[n];
+			Memory::Copy(tmp, src, n);
+			Memory::Copy(dest, tmp, n);
+			delete[] tmp;
+			return _dest;
+		}
 #endif
 
 		DUAL_FUNCTION(void*, memcpy, Copy, (void* Dest, const void* Src, size_t Length))
