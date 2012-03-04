@@ -39,7 +39,10 @@ struct stat
 	uid_t st_uid;
 	gid_t st_gid;
 	off_t st_size;
-	/* TODO: st_atim, st_mtim, st_st_ctim */
+	time_t st_atime;
+	time_t st_mtime;
+	time_t st_ctime;
+	/* TODO: st_atim, st_mtim, st_ctim */
 	blksize_t st_blksize;
 	blkcnt_t st_blocks;
 };

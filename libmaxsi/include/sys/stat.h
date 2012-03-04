@@ -39,6 +39,7 @@ __BEGIN_DECLS
 @include(uid_t.h)
 @include(gid_t.h)
 @include(off_t.h)
+@include(time_t.h)
 __END_DECLS
 
 #include <sortix/stat.h>
