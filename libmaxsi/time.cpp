@@ -53,5 +53,11 @@ namespace Maxsi
 			tp->tv_usec = 0;
 			return 0;
 		}
+
+		extern "C" time_t time(time_t* t)
+		{
+			*t = 0;
+			return 0;
+		}
 	}
 }
