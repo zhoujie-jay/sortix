@@ -59,5 +59,10 @@ namespace Maxsi
 			*t = 0;
 			return 0;
 		}
+
+		extern "C" char* ctime(const time_t* timep)
+		{
+			return (char*) "ctime(3) is not implemented";
+		}
 	}
 }
