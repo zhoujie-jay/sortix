@@ -89,6 +89,9 @@ size_t mbstowcs(wchar_t *restrict, const char* restrict, size_t);
 int mbtowc(wchar_t *restrict, const char* restrict, size_t);
 char* mkdtemp(char*);
 int mkstemp(char*);
+#if !defined(_SORTIX_SOURCE)
+char* mktemp(char* templ);
+#endif
 long mrand48(void);
 long nrand48(unsigned short[3]);
 int posix_memalign(void**, size_t, size_t);
