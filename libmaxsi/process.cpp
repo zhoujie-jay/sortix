@@ -39,6 +39,8 @@ namespace Maxsi
 		DEFN_SYSCALL0(pid_t, SysGetParentPID, SYSCALL_GETPPID);
 		DEFN_SYSCALL3(pid_t, SysWait, SYSCALL_WAIT, pid_t, int*, int);
 
+		extern "C" char** environ = NULL;
+
 		void Abort()
 		{
 			// TODO: Send SIGABRT instead!
