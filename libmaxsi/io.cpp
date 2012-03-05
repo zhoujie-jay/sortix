@@ -121,7 +121,7 @@ namespace Maxsi
 
 	// TODO: This is an ugly hack to help build binutils.
 	#warning Ugly sscanf hack to help build binutils
-	extern int sscanf(const char* s, const char* format, ...)
+	extern "C" int sscanf(const char* s, const char* format, ...)
 	{
 		if ( strcmp(format, "%x") != 0 )
 		{
