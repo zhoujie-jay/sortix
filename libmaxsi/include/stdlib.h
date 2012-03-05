@@ -47,6 +47,8 @@ typedef int div_t, ldiv_t, lldiv_t;
 
 void abort(void);
 int atoi(const char*);
+long atol(const char*);
+long long atoll(const char*);
 void* calloc(size_t, size_t);
 void exit(int);
 void _Exit(int status);
@@ -67,9 +69,6 @@ long a64l(const char* s);
 int abs(int value);
 int atexit(void (*function)(void));
 double atof(const char* value);
-int atoi(const char*);
-long atol(const char*);
-long long atoll(const char*);
 void* bsearch(const void*, const void*, size_t, size_t, int (*)(const void*, const void*));
 div_t div(int, int);
 double drand48(void);

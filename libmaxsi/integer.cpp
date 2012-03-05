@@ -106,6 +106,24 @@ namespace Maxsi
 		{
 			return ParseInteger<unsigned long long int, true>(str, endptr, base);
 		}
+
+// TODO: This conflicts with libmaxsi/string.cpp:Maxsi::ToInt().
+#if 0
+		extern "C" int atoi(const char* str)
+		{
+			return strtol(str, (char **) NULL, 10);
+		}
+#endif
+
+		extern "C" long atol(const char* str)
+		{
+			return strtol(str, (char **) NULL, 10);
+		}
+
+		extern "C" long long atoll(const char* str)
+		{
+			return strtoll(str, (char **) NULL, 10);
+		}
 	}
 }
 
