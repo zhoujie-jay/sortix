@@ -119,6 +119,23 @@ namespace Maxsi
 		return (int) result;
 	}
 
+	// TODO: This is an ugly hack to help build binutils.
+	#warning Ugly sscanf hack to help build binutils
+	extern int sscanf(const char* s, const char* format, ...)
+	{
+		if ( strcmp(format, "%x") != 0 )
+		{
+			fprintf(stderr, "sscanf hack doesn't implement: '%s'\n", format);
+			abort();
+		}
+
+		va_list list;
+		va_start(list, format);
+		unsigned* dec = va_arg(list, unsigned*);
+		*dec = strtol(s, NULL, 16);
+		return strlen(s);
+	}
+
 	typedef struct vsnprintf_struct
 	{
 		char* str;

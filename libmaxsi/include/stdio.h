@@ -102,6 +102,7 @@ extern int snprintf(char* restrict s, size_t n, const char* restrict format, ...
 extern char* sortix_gets(void);
 extern int sortix_puts(const char* str);
 extern int sprintf(char* restrict s, const char* restrict format, ...);
+extern int sscanf(const char* restrict s, const char* restrict format, ...);
 extern int vfprintf(FILE* restrict stream, const char* restrict format, va_list ap);
 extern int vprintf(const char* restrict format, va_list ap);
 extern int vsnprintf(char* restrict, size_t, const char* restrict, va_list);
@@ -131,7 +132,6 @@ extern int rename(const char* oldname, const char* newname);
 extern int renameat(int oldfd, const char* oldname, int newfd, const char* newname);
 extern int scanf(const char* restrict format, ...);
 extern int setvbuf(FILE* restrict stream, char* restrict buf, int type, size_t size);
-extern int sscanf(const char* restrict s, const char* restrict format, ...);
 extern int ungetc(int c, FILE* stream);
 extern int vdprintf(int fildes, const char* restrict format, va_list ap);
 extern int vfscanf(FILE* restrict stream, const char* restrict format, va_list arg);
