@@ -192,7 +192,7 @@ namespace Maxsi
 			}
 		}
 
-		char* strpbrk(const char* str, const char* accept)
+		extern "C" char* strpbrk(const char* str, const char* accept)
 		{
 			size_t rejectlen = Reject(str, accept);
 			if ( !str[rejectlen] ) { return NULL; }
@@ -299,7 +299,7 @@ namespace Maxsi
 
 		// TODO: This simple and hacky implementation runs in O(N^2) even though
 		// this problem can be solved in O(N).
-		char* strstr(const char* haystack, const char* needle)
+		extern "C" char* strstr(const char* haystack, const char* needle)
 		{
 			if ( !needle[0] ) { return (char*) haystack; }
 			for ( size_t i = 0; haystack[i]; i++ )
