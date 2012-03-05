@@ -34,7 +34,7 @@ __BEGIN_DECLS
 #endif
 
 #ifndef NDEBUG
-#warning The assert macro is not implemented
+/* #warning The assert macro is not implemented */
 #endif
 
 #define assert(ignore)((void) 0)
