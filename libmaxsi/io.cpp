@@ -290,6 +290,11 @@ namespace Maxsi
 		return SysStat(path, st);
 	}
 
+	extern "C" int lstat(const char* path, struct stat* st)
+	{
+		return SysStat(path, st);
+	}
+
 	extern "C" int fstat(int fd, struct stat* st)
 	{
 		return SysFStat(fd, st);
