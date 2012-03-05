@@ -51,6 +51,7 @@ integer.o \
 c++.o \
 memory.o \
 heap.o \
+sort.o \
 string.o \
 error.o \
 format.o \
