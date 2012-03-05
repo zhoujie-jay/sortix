@@ -320,7 +320,7 @@ namespace Maxsi
 	}
 
 	// TODO: This is a hacky implementation of a stupid function.
-	char* mktemp(char* templ)
+	extern "C" char* mktemp(char* templ)
 	{
 		size_t templlen = strlen(templ);
 		for ( size_t i = templlen-6UL; i < templlen; i++ )
