@@ -30,6 +30,7 @@
 
 #include <features.h>
 #include <sortix/seek.h>
+#include <sortix/unistd.h>
 
 #define _SORTIX_ALWAYS_SBRK
 
@@ -79,7 +80,6 @@ __BEGIN_DECLS
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
-int access(const char*, int);
 unsigned alarm(unsigned);
 int chown(const char*, uid_t, gid_t);
 size_t confstr(int, char*, size_t);
@@ -150,6 +150,7 @@ extern char* optarg;
 extern int opterr, optind, optopt;
 #endif
 
+int access(const char*, int);
 int chdir(const char*);
 int close(int);
 int dup(int);

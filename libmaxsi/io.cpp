@@ -58,6 +58,7 @@ namespace Maxsi
 	DEFN_SYSCALL2(int, SysStat, SYSCALL_STAT, const char*, struct stat*);
 	DEFN_SYSCALL2(int, SysFStat, SYSCALL_FSTAT, int, struct stat*);
 	DEFN_SYSCALL3(int, SysFCntl, SYSCALL_FCNTL, int, int, unsigned long);
+	DEFN_SYSCALL2(int, SysAccess, SYSCALL_ACCESS, const char*, int);
 
 	size_t Print(const char* string)
 	{
@@ -297,6 +298,11 @@ namespace Maxsi
 	extern "C" int fcntl(int fd, int cmd, unsigned long arg)
 	{
 		return SysFCntl(fd, cmd, arg);
+	}
+
+	extern "C" int access(const char* pathname, int mode)
+	{
+		return SysAccess(pathname, mode);
 	}
 
 	// TODO: Implement these in the kernel.

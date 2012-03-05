@@ -90,6 +90,7 @@ termmode.h \
 syscallnum.h \
 stat.h \
 timeval.h \
+unistd.h \
 
 OBJS=$(CPUOBJS) \
 kernel.o \

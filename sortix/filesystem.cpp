@@ -32,6 +32,7 @@
 #include "directory.h"
 #include "mount.h"
 #include <sortix/fcntl.h>
+#include <sortix/unistd.h>
 
 using namespace Maxsi;
 
@@ -81,6 +82,26 @@ namespace Sortix
 			if ( flags & O_CLOFORK ) { fdflags |= FD_CLOFORK; }
 			process->descriptors.SetFlags(fd, fdflags);
 			return fd;
+		}
+
+		int SysAccess(const char* pathname, int mode)
+		{
+			int oflags = 0;
+			bool exec = mode & X_OK;
+			bool read = mode & R_OK;
+			bool write = mode & W_OK;
+			if ( mode == F_OK ) { oflags = O_RDONLY; }
+			if ( exec && !read && !write ) { oflags = O_EXEC; }
+			if ( exec && read && !write ) { oflags = O_EXEC; }
+			if ( exec && !read && write ) { oflags = O_EXEC; }
+			if ( exec && read && write ) { oflags = O_EXEC; }
+			if ( !exec && read && write ) { oflags = O_RDWR; }
+			if ( !exec && !read && write ) { oflags = O_WRONLY; }
+			if ( !exec && read && !write ) { oflags = O_RDONLY; }
+			Device* dev = Open(pathname, oflags, 0);
+			if ( !dev ) { return -1; }
+			dev->Unref();
+			return 0;
 		}
 
 		int SysUnlink(const char* path)
@@ -156,6 +177,7 @@ namespace Sortix
 			Syscall::Register(SYSCALL_STAT, (void*) SysStat);
 			Syscall::Register(SYSCALL_FSTAT, (void*) SysFStat);
 			Syscall::Register(SYSCALL_FCNTL, (void*) SysFCntl);
+			Syscall::Register(SYSCALL_ACCESS, (void*) SysAccess);
 		}
 	}
 
