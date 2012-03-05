@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 FILE* firstfile = NULL;
 
@@ -215,3 +216,12 @@ int putc(int c, FILE* fp)
 {
 	return fputc(c, fp);
 }
+
+int fputs(const char* str, FILE* fp)
+{
+	size_t stringlen = strlen(str);
+	int result = fwrite(str, 1, stringlen, fp);
+	if ( result < stringlen ) { return EOF; }
+	return result;
+}
+
