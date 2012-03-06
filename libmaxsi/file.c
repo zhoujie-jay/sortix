@@ -225,3 +225,23 @@ int fputs(const char* str, FILE* fp)
 	return result;
 }
 
+char* fgets(char* dest, int size, FILE* fp)
+{
+	if ( size <= 0 ) { errno = EINVAL; return NULL; }
+	int i;
+	for ( i = 0; i < size-1; i++ )
+	{
+		int c = getc(fp);
+		if ( c == EOF )
+		{
+			if ( ferror(fp) ) { return NULL; }
+			else { i++; break; } /* EOF */
+		}
+		dest[i] = c;
+		if ( c == '\n' ) { i++; break; }
+	}
+
+	dest[i] = '\0';
+	return dest;
+}
+

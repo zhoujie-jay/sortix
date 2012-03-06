@@ -78,6 +78,7 @@ extern int ferror(FILE* stream);
 extern int fflush(FILE* stream);
 extern int fileno(FILE* stream);
 extern int fgetc(FILE* stream);
+extern char* fgets(char* restrict s, int n, FILE* restrict stream);
 extern FILE* fopen(const char* restrict filename, const char* restrict mode);
 extern int fprintf(FILE* restrict stream, const char* restrict format, ...);
 extern int fputc(int c, FILE* stream);
@@ -111,7 +112,6 @@ extern int vsprintf(char* restrict s, const char* restrict format, va_list ap);
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 extern char* ctermid(char* s);
-extern char* fgets(char* restrict s, int n, FILE* restrict stream);
 extern FILE *fmemopen(void* restrict buf, size_t size, const char* restrict mode);
 extern FILE* freopen(const char* restrict filename, const char *restrict mode, FILE* restrict stream);
 extern FILE* open_memstream(char** bufp, size_t* sizep);
