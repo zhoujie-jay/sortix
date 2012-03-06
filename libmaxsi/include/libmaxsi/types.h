@@ -44,6 +44,8 @@
 @include(nlink_t.h)
 @include(blksize_t.h)
 @include(blkcnt_t.h)
+@include(dev_t.h)
+@include(time_t.h)
 
 @include(va_list.h)
 

@@ -31,6 +31,7 @@
 #include "filesystem.h"
 #include "directory.h"
 #include "mount.h"
+#include <sortix/stat.h>
 #include <sortix/fcntl.h>
 #include <sortix/unistd.h>
 
@@ -137,18 +138,39 @@ namespace Sortix
 			return -1;
 		}
 
+		void HackStat(Device* dev, struct stat* st)
+		{
+			Memory::Set(st, 0, sizeof(*st));
+			st->st_mode = 0777;
+			if ( dev->IsType(Device::BUFFER) )
+			{
+				st->st_mode |= S_IFREG;
+				DevBuffer* buffer = (DevBuffer*) dev;
+				st->st_size = buffer->Size();
+				st->st_blksize = 1;
+				st->st_blocks = st->st_size;
+			}
+			if ( dev->IsType(Device::DIRECTORY) ) { st->st_mode |= S_IFDIR; }
+			st->st_nlink = 1;
+		}
+
 		int SysStat(const char* pathname, struct stat* st)
 		{
-			// TODO: Add the proper filesystem support!
-			Error::Set(ENOSYS);
-			return -1;
+			Device* dev = Open(pathname, O_RDONLY, 0);
+			if ( !dev ) { return -1; }
+			HackStat(dev, st);
+			dev->Unref();
+			return 0;
 		}
 
 		int SysFStat(int fd, struct stat* st)
 		{
-			// TODO: Add the proper filesystem support!
-			Error::Set(ENOSYS);
-			return -1;
+			Process* process = CurrentProcess();
+			DescriptorTable* descs = &(process->descriptors);
+			Device* dev = descs->Get(fd);
+			if ( !dev ) { Error::Set(EBADF); return -1; }
+			HackStat(dev, st);
+			return 0;
 		}
 
 		int SysFCntl(int fd, int cmd, unsigned long arg)
