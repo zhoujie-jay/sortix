@@ -25,6 +25,7 @@
 #define ENOSYS 33
 #define ENOTSUP 34
 #define EBLOCKING 35
+#define EINTR 36
 #define ELAKE 41
 
 #endif

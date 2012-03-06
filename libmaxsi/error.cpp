@@ -73,6 +73,7 @@ namespace Maxsi
 				case ENOSYS: return (char*) "Function not implemented";
 				case ENOTSUP: return (char*) "Operation not supported";
 				case EBLOCKING: return (char*) "Operation is blocking";
+				case EINTR: return (char*) "Interrupted function call";
 				case ELAKE: return (char*) "Sit by a lake";
 				default: return (char*) "Unknown error condition";
 			}
