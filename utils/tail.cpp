@@ -42,7 +42,7 @@ bool processfp(const char* inputname, FILE* fp)
 		if ( linelen < 0 )
 		{
 			if ( feof(fp) ) { break; }
-			error(1, errno, "%s", inputname);
+			error(1, errno, "error reading line: %s", inputname);
 		}
 		if ( specialleading )
 		{
