@@ -41,6 +41,7 @@ process.o \
 thread.o \
 io.o \
 terminal.o \
+kernelinfo.o \
 init.o \
 signal.o \
 $(CPU)/signal.o \

@@ -29,6 +29,7 @@
 #include <libmaxsi/format.h>
 #include "log.h"
 #include "panic.h"
+#include "kernelinfo.h"
 #include "x86-family/gdt.h"	
 #include "time.h"
 #include "keyboard.h"
@@ -255,6 +256,9 @@ namespace Sortix
 
 		// Initialize the scheduler.
 		Scheduler::Init();
+
+		// Initialize the kernel information query syscall.
+		Info::Init();
 
 		// Set up the initial ram disk.
 		InitRD::Init(initrd, initrdsize);

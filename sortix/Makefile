@@ -65,6 +65,9 @@ ifeq ($(CALLTRACE),1)
 else
     DEFINES:=$(DEFINES) -DENABLE_CALLTRACE=0
 endif
+ifdef VERSION
+    DEFINES:=$(DEFINES) -DVERSIONSTR=\"$(VERSION)\"
+endif
 
 INCLUDES=-I../libmaxsi/preproc -I.. -I.
 CPPFLAGS=$(INCLUDES) $(DEFINES)
@@ -118,6 +121,7 @@ descriptors.o \
 device.o \
 refcount.o \
 vga.o \
+kernelinfo.o \
 elf.o \
 process.o \
 initrd.o \

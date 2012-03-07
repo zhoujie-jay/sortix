@@ -72,7 +72,8 @@
 #define SYSCALL_FSTAT 45
 #define SYSCALL_FCNTL 46
 #define SYSCALL_ACCESS 47
-#define SYSCALL_MAX_NUM 48 /* index of highest constant + 1 */
+#define SYSCALL_KERNELINFO 48
+#define SYSCALL_MAX_NUM 49 /* index of highest constant + 1 */
 
 #endif
 

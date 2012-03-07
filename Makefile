@@ -40,6 +40,8 @@ ISOFILE:=builds/$(DEBNAME).iso
 INITRDDIR:=initrd
 INITRD=sortix/sortix.initrd
 
+MFLAGS:=$(MFLAGS) VERSION=$(VERSION)
+
 all: $(INITRD)
 
 suball:
