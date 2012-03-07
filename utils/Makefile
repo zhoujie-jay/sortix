@@ -19,6 +19,7 @@ help \
 uptime \
 memstat \
 uname \
+kernelinfo \
 idle \
 editor \
 kill \
