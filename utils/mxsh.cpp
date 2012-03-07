@@ -143,7 +143,6 @@ readcmd:
 	{
 		close(1);
 		int flags = O_CREAT | O_WRONLY | O_APPEND;
-		fprintf(stderr, "execmode = %s\n", execmode);
 		if ( strcmp(execmode, ">") == 0 ) { flags |= O_TRUNC; }
 		if ( open(outputfile, flags, 0666) < 0 )
 		{
