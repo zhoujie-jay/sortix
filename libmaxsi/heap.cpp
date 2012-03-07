@@ -662,7 +662,7 @@ namespace Maxsi
 			ASSERT(chunk->IsUsed());
 			ASSERT(chunk->IsSane());
 			size_t allocsize = chunk->size - OVERHEAD;
-			if ( allocsize < size ) { return ptr; }
+			if ( size < allocsize ) { return ptr; }
 			void* newptr = Allocate(size);
 			if ( !newptr ) { return NULL; }
 			Memory::Copy(newptr, ptr, allocsize);
