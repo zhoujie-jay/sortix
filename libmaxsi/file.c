@@ -196,14 +196,15 @@ int fcloseall(void)
 
 int fgetc(FILE* fp)
 {
-	char c;
-	if ( fread(&c, 1, sizeof(char), fp) < sizeof(char) ) { return EOF; }
+	unsigned char c;
+	if ( fread(&c, 1, sizeof(c), fp) < sizeof(c) ) { return EOF; }
 	return c;
 }
 
-int fputc(int c, FILE* fp)
+int fputc(int cint, FILE* fp)
 {
-	if ( fwrite(&c, 1, sizeof(char), fp) < sizeof(char) ) { return EOF; }
+	unsigned char c = (unsigned char) cint;
+	if ( fwrite(&c, 1, sizeof(c), fp) < sizeof(c) ) { return EOF; }
 	return c;
 }
 
