@@ -8,9 +8,28 @@
 #include <errno.h>
 #include <error.h>
 
+char* stdinargv[2];
+
 int main(int argc, char* argv[])
 {
-	if ( argc < 2 ) { printf("usage: %s [FILE] ...\n", argv[0]); return 0; }
+	if ( isatty(0) && argc < 2 )
+	{
+		printf("usage: %s [FILE] ...\n", argv[0]);
+		return 0;
+	}
+
+	if ( !isatty(0) && argc < 2 )
+	{
+		stdinargv[0] = argv[0];
+		stdinargv[1] = (char*) "-";
+		argv = stdinargv;
+		argc = 2;
+	}
+
+	int stdinfd = dup(0);
+	close(0);
+	int ttyfd = open("/dev/tty", O_RDONLY);
+	if ( ttyfd != 0 ) { perror("/dev/tty"); return 1; }
 	const int HEIGHT = 25;
 	const int WIDTH = 80;
 	int linesleft = HEIGHT-1;
@@ -18,7 +37,7 @@ int main(int argc, char* argv[])
 	size_t charleft = WIDTH;
 	for ( int i = 1; i < argc; i++ )
 	{
-		int fd = ( strcmp(argv[i], "-") == 0 ) ? 0 : open(argv[i], O_RDONLY);
+		int fd = ( strcmp(argv[i], "-") == 0 ) ? stdinfd : open(argv[i], O_RDONLY);
 		if ( fd < 0 ) { result = 1; perror(argv[i]); continue; }
 		const size_t BUFFER_SIZE = 4096;
 		char buffer[BUFFER_SIZE];
@@ -68,7 +87,7 @@ int main(int argc, char* argv[])
 				if ( c == '\t' ) { charleft &= ~(4-1); }
 			}
 		}
-		if ( fd != 0 ) { close(fd); }
+		if ( fd != stdinfd ) { close(fd); }
 	}
 	return result;
 }
