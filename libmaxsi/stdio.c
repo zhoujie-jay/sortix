@@ -64,7 +64,10 @@ ssize_t getdelim(char** lineptr, size_t* n, int delim, FILE* fp)
 	int c;
 	do
 	{
-		if ( (c = getc(fp)) == EOF ) { goto cleanup; }
+		if ( (c = getc(fp)) == EOF )
+		{
+			if ( written ) { break; } else { goto cleanup; }
+		}
 		if ( bufsize <= (size_t) written + 1UL )
 		{
 			size_t newbufsize = 2UL * bufsize;
