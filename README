@@ -1,0 +1,98 @@
+The Sortix Operating System
+===========================
+Sortix is a hobby operating system. It was originally created as a tool to learn
+more about kernel and operating system design and implementation. Today is
+transforming into a real operating system. The standard library and kernel is
+rich enough that some third party software can and has been ported to Sortix.
+However, the system remains quite limited as of this writing. Many features are
+missing such as proper filesystem support, bitmap graphics, and networking.
+Proper filesystem support is currently being added.
+
+The system aims to be an Unix-clone and is heavily based on POSIX. However, I've
+drawn much inspiration from systems such as Plan 9, GNU/Hurd and MINIX. Indeed,
+I plan to construct a micro-kernel with user-space filesystems, per-process
+namespaces, replacing many system calls with filesystem nodes, and other
+exciting features.
+
+System Requirements
+-------------------
+Sortix has very low system requirements. It also works well under virtual
+machines such as VirtualBox and Qemu.
+
+* A 32-bit x86 or 64-bit x86_64 CPU.
+* A dozen megabyte RAM.
+* A harddisk or cdrom drive or support for booting from USB.
+* A multiboot compliant bootloader if booting from harddisk.
+* A Parallel ATA harddisk, if you wish to access it from Sortix. SATA is not
+  supported yet.
+
+Features
+--------
+The current development version of Sortix offers a traditional multi-process
+protected environment with round-robin scheduling. A quick and dirty shell is
+able to execute programs in foreground or background mode, handle IO redirection
+and piping the standard output of a process into the standard input of another.
+A real shell will be added as the system matures and I get around to finish the
+work in progress shell.
+
+A number of standard utilities are present such as cat, head, tail, clear, cp,
+column, kill, ls, rm, pwd, uname, echo, and uptime. There is even a number of 
+non-standard utilities such as calc, help, init, kernelinfo, memstat, and pager.
+This collection of utilities will continue to grow as it matures and third party
+software is ported. I've currently had some luck porting gzip and parts of
+binutils.
+
+A number of small games is present and uses the VGA textmode to render ASCII
+graphics. Notably you can play two-player Pong, or single-player Snake, or the
+nice and turing-complete Conway's Game of Life. These are probably the main
+attraction of the system for non-technical people.
+
+The Sortix kernel has very basic filesystem support. The root filesystem / is
+simply a single-directory RAM filesystem. The init ramdisk is mounted read-only
+on /bin and various devices are accessable through the /dev filesystem. A lot of
+work is currently going into implementing a fully-working kernel virtual file
+system able to outsource filesystem requests to user-space servers. Once this is
+completed we will be able to shape Sortix into a real microkernel based system.
+
+Job control and Unix signals is not fully or correctly implemented. This means
+that sequences such as Ctrl-C (SIGINT) not always works correctly. This will
+be implemented soon enough (depends partially on VFS; see above).
+
+There currently is no concept of users in the system (only the root user
+exists). I decided to delay making a multi-user system until the base system is
+in place. Note that there is only a single terminal - even though the system is
+a multi-process system, there is only a single /dev/vga and there is no
+framework in place for sharing it.
+
+Technical details
+----------------
+The system is mostly coded in C++, but also contains a few files in C. However,
+the user-land experiences a normal C programming interface as per POSIX.
+Executable files natively uses the ELF format used on GNU/Linux and other
+systems. There is no shared library support yet, but it'll be possible when I
+get around to implement copy-on-write memory, mmap(2) and swapping to disk.
+
+Links
+-----
+You can visit the official website at http://www.maxsi.org/software/sortix/ for
+more information and news. You can also download the newest release and cutting
+edge nightly builds.
+
+You can retrieve the current git master from our gitorious project page from
+https://gitorious.org/sortix/.
+
+License
+-------
+
+Copyright(C) Jonas 'Sortie' Termansen and contributors 2011, 2012.
+
+The Sortix kernel, the filesystem servers, the initrd tools, the utilities, the
+games, and the benchmark programs are licensed under the GNU General Public
+License, either version 3 or (at your option) any later version.
+
+The libmaxsi standard library is licensed under the GNU Lesser General Public
+License, either version 3 or (at your option) any later version.
+
+Sortix is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the gpl.html and lgpl.html files for more information.
