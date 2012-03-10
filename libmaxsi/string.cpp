@@ -45,6 +45,13 @@ namespace Maxsi
 			return Result;
 		}
 
+		extern "C" size_t strnlen(const char* str, size_t maxlen)
+		{
+			size_t result;
+			for ( result = 0; maxlen - result && str[result]; result++ ) { }
+			return result;
+		}
+
 		DUAL_FUNCTION(char*, strcpy, Copy, (char* Dest, const char* Src))
 		{
 			char* OriginalDest = Dest;
