@@ -27,6 +27,7 @@
 #define EBLOCKING 35
 #define EINTR 36
 #define ENOTEMPTY 37
+#define EBUSY 38
 #define ELAKE 41
 
 #endif
