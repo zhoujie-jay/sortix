@@ -74,6 +74,7 @@ namespace Maxsi
 				case ENOTSUP: return (char*) "Operation not supported";
 				case EBLOCKING: return (char*) "Operation is blocking";
 				case EINTR: return (char*) "Interrupted function call";
+				case ENOTEMPTY: return (char*) "Directory not empty";
 				case ELAKE: return (char*) "Sit by a lake";
 				default: return (char*) "Unknown error condition";
 			}
