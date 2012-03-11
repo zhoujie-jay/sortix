@@ -77,6 +77,7 @@ namespace Maxsi
 				case ENOTEMPTY: return (char*) "Directory not empty";
 				case EBUSY: return (char*) "Device or resource busy";
 				case EPIPE: return (char*) "Broken pipe";
+				case EILSEQ: return (char*) "Illegal byte sequence";
 				case ELAKE: return (char*) "Sit by a lake";
 				default: return (char*) "Unknown error condition";
 			}

@@ -29,6 +29,7 @@
 #define ENOTEMPTY 37
 #define EBUSY 38
 #define EPIPE 39
+#define EILSEQ 40
 #define ELAKE 41
 
 #endif
