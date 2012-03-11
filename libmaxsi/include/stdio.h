@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -148,6 +148,17 @@ extern char* tempnam(const char* dir, const char* pfx);
 #endif
 
 #if defined(_SORTIX_SOURCE)
+#include <stdio_ext.h>
+#define fbufsize __fbufsize
+#define freading __freading
+#define fwriting __fwriting
+#define freadable __freadable
+#define fwritable __fwritable
+#define flbf __flbf
+#define fpurge __fpurge
+#define fpending __fpending
+#define flushlbf _flushlbf
+#define fsetlocking __fsetlocking
 void fregister(FILE* fp);
 void funregister(FILE* fp);
 FILE* fnewfile(void);

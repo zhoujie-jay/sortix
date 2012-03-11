@@ -3,6 +3,9 @@
 #define BUFSIZ 8192UL
 #define _FILE_REGISTERED (1<<0)
 #define _FILE_NO_BUFFER (1<<1)
+#define _FILE_LAST_WRITE (1<<2)
+#define _FILE_LAST_READ (1<<3)
+#define _FILE_AUTO_LOCK (1<<4)
 typedef struct _FILE
 {
 	/* This is non-standard, but useful. If you allocate your own FILE and

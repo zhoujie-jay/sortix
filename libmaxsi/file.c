@@ -53,12 +53,14 @@ void funregister(FILE* fp)
 size_t fread(void* ptr, size_t size, size_t nmemb, FILE* fp)
 {
 	if ( !fp->read_func ) { errno = EBADF; return 0; }
-	return fp->read_func(ptr, size, nmemb, fp->user);	
+	fp->flags &= ~_FILE_LAST_WRITE; fp->flags |= _FILE_LAST_READ;
+	return fp->read_func(ptr, size, nmemb, fp->user);
 }
 
 size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* fp)
 {
 	if ( !fp->write_func ) { errno = EBADF; return 0; }
+	fp->flags &= ~_FILE_LAST_READ; fp->flags |= _FILE_LAST_WRITE;
 	char* str = (char*) ptr;
 	size_t total = size * nmemb;
 	size_t sofar = 0;
@@ -168,6 +170,61 @@ int fileno(FILE* fp)
 	return result;
 }
 
+size_t fbufsize(FILE* fp)
+{
+	return fp->buffersize;
+}
+
+int freading(FILE* fp)
+{
+	if ( fp->read_func ) { return 1; }
+	if ( fp->flags & _FILE_LAST_READ ) { return 1; }
+	return 0;
+}
+
+int fwriting(FILE* fp)
+{
+	if ( fp->write_func ) { return 1; }
+	if ( fp->flags & _FILE_LAST_WRITE ) { return 1; }
+	return 0;
+}
+
+int freadable(FILE* fp)
+{
+	return fp->read_func != NULL;
+}
+
+int fwritable(FILE* fp)
+{
+	return fp->write_func != NULL;
+}
+
+int flbf(FILE* fp)
+{
+	return !(fp->flags & _FILE_NO_BUFFER);
+}
+
+void fpurge(FILE* fp)
+{
+	fp->bufferused = 0;
+}
+
+size_t fpending(FILE* fp)
+{
+	return fp->bufferused;
+}
+
+int fsetlocking(FILE* fp, int type)
+{
+	switch ( type )
+	{
+	case FSETLOCKING_INTERNAL: fp->flags |= _FILE_AUTO_LOCK;
+	case FSETLOCKING_BYCALLER: fp->flags &= ~_FILE_AUTO_LOCK;
+	}
+	return (fp->flags & _FILE_AUTO_LOCK) ? FSETLOCKING_INTERNAL
+	                                     : FSETLOCKING_BYCALLER;
+}
+
 static void ffreefile(FILE* fp)
 {
 	free(fp->buffer);
@@ -181,7 +238,7 @@ FILE* fnewfile(void)
 	fp->buffersize = BUFSIZ;
 	fp->buffer = (char*) malloc(fp->buffersize);
 	if ( !fp->buffer ) { free(fp); return NULL; }
-	fp->flags = 0;
+	fp->flags = _FILE_AUTO_LOCK;
 	fp->free_func = ffreefile;
 	fregister(fp);
 	return fp;
@@ -192,6 +249,14 @@ int fcloseall(void)
 	int result = 0;
 	while ( firstfile ) { result |= fclose(firstfile); }
 	return (result) ? EOF : 0;
+}
+
+void flushlbf(void)
+{
+	for ( FILE* fp = firstfile; fp; fp = fp->next )
+	{
+		fflush(fp);
+	}
 }
 
 int fgetc(FILE* fp)
