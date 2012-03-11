@@ -76,6 +76,7 @@ namespace Maxsi
 				case EINTR: return (char*) "Interrupted function call";
 				case ENOTEMPTY: return (char*) "Directory not empty";
 				case EBUSY: return (char*) "Device or resource busy";
+				case EPIPE: return (char*) "Broken pipe";
 				case ELAKE: return (char*) "Sit by a lake";
 				default: return (char*) "Unknown error condition";
 			}
