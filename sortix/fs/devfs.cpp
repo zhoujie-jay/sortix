@@ -285,11 +285,12 @@ namespace Sortix
 
 	Device* DevDevFS::Open(const char* path, int flags, mode_t mode)
 	{
-		if ( (flags & O_LOWERFLAGS) == O_SEARCH )
+		int lowerflags = flags & O_LOWERFLAGS;
+
+		if ( !path[0] || (path[0] == '/' && !path[1]) )
 		{
-			if ( path[0] == 0 || (path[0] == '/' && path[1] == 0) ) { return new DevDevFSDir(); }
-			Error::Set(ENOTDIR);
-			return NULL;
+			if ( lowerflags != O_SEARCH ) { Error::Set(EISDIR); return NULL; }
+			return new DevDevFSDir();
 		}
 
 		if ( String::Compare(path, "/null") == 0 ) { return new DevNull; }
