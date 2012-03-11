@@ -30,6 +30,7 @@
 __BEGIN_DECLS
 
 @include(clock_t.h)
+@include(time_t.h)
 
 clock_t clock(void);
 time_t time(time_t* t);
