@@ -87,6 +87,12 @@ static off_t fdio_tell(void* user)
 	return lseek(fdio->fd, 0, SEEK_CUR);
 }
 
+static void fdio_seterr(void* user)
+{
+	fdio_t* fdio = (fdio_t*) user;
+	fdio->flags |= FDIO_ERROR;
+}
+
 static void fdio_clearerr(void* user)
 {
 	fdio_t* fdio = (fdio_t*) user;
@@ -143,6 +149,7 @@ int fdio_install(FILE* fp, const char* mode, int fd)
 	fp->write_func = fdio_write;
 	fp->seek_func = fdio_seek;
 	fp->tell_func = fdio_tell;
+	fp->seterr_func = fdio_seterr;
 	fp->clearerr_func = fdio_clearerr;
 	fp->eof_func = fdio_eof;
 	fp->error_func = fdio_error;

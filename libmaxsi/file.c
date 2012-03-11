@@ -104,6 +104,11 @@ int fseek(FILE* fp, long offset, int whence)
 	return fseeko(fp, offset, whence);
 }
 
+void fseterr(FILE* fp)
+{
+	if ( fp->seterr_func ) { fp->seterr_func(fp->user); }
+}
+
 void clearerr(FILE* fp)
 {
 	if ( fp->clearerr_func ) { fp->clearerr_func(fp->user); }

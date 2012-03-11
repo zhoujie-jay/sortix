@@ -159,6 +159,7 @@ extern char* tempnam(const char* dir, const char* pfx);
 #define fpending __fpending
 #define flushlbf _flushlbf
 #define fsetlocking __fsetlocking
+void fseterr(FILE* fp);
 void fregister(FILE* fp);
 void funregister(FILE* fp);
 FILE* fnewfile(void);

@@ -19,6 +19,7 @@ typedef struct _FILE
 	size_t (*write_func)(const void* ptr, size_t size, size_t nmemb, void* user);
 	int (*seek_func)(void* user, off_t offset, int whence);
 	off_t (*tell_func)(void* user);
+	void (*seterr_func)(void* user);
 	void (*clearerr_func)(void* user);
 	int (*eof_func)(void* user);
 	int (*error_func)(void* user);
