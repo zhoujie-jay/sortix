@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
 				if ( c == '\n' ) { charleft = WIDTH; }
 				bool eol = (c == '\n') || !charleft;
 				if ( eol ) { charleft = WIDTH; }
-				if ( eol && !linesleft )
+				if ( eol && linesleft <= 1 )
 				{
 					printf("\n--pager--");
 					fflush(stdout);
