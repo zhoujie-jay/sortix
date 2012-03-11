@@ -67,7 +67,14 @@ int main(int argc, char* argv[])
 	{
 retry:
 		ssize_t ret = kernelinfo(argv[i], buf, bufsize);
-		if ( ret < 0 ) { error(1, errno, "kernelinfo(\"%s\")", argv[i]); }
+		if ( ret < 0 )
+		{
+			if ( errno == EINVAL )
+			{
+				error(1, 0, "%s: No such kernel string", argv[i]);
+			}
+			error(1, errno, "kernelinfo(\"%s\")", argv[i]);
+		}
 		if ( ret )
 		{
 			buf = (char*) realloc(buf, ret);
