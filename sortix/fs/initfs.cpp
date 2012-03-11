@@ -205,21 +205,21 @@ namespace Sortix
 	Device* DevInitFS::Open(const char* path, int flags, mode_t mode)
 	{
 		size_t buffersize;
+		int lowerflags = flags & O_LOWERFLAGS;
 
-		if ( (flags & O_LOWERFLAGS) == O_SEARCH )
+		if ( !path[0] || (path[0] == '/' && !path[1]) )
 		{
-			if ( path[0] == 0 || (path[0] == '/' && path[1] == 0) ) { return new DevInitFSDir; }
-			const byte* buffer = InitRD::Open(path, &buffersize);
-			Error::Set(buffer ? ENOTDIR : ENOENT);
-			return NULL;
+			if ( lowerflags != O_SEARCH ) { Error::Set(EISDIR); return NULL; }
+			return new DevInitFSDir();
 		}
 
-		if ( *path++ != '/' ) { return NULL; }
-
-		if ( (flags & O_LOWERFLAGS) != O_RDONLY ) { Error::Set(EROFS); return NULL; }
+		if ( *path++ != '/' ) { Error::Set(ENOENT); return NULL; }
 
 		const byte* buffer = InitRD::Open(path, &buffersize);
 		if ( !buffer ) { Error::Set(ENOENT); return NULL; }
+
+		if ( lowerflags == O_SEARCH ) { Error::Set(ENOTDIR); return NULL; }
+		if ( lowerflags != O_RDONLY ) { Error::Set(EROFS); return NULL; }
 
 		char* newpath = String::Clone(path);
 		if ( !newpath ) { Error::Set(ENOSPC); return NULL; }
