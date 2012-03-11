@@ -48,6 +48,8 @@ __BEGIN_DECLS
 
 #define F_SETFD 0
 #define F_GETFD 1
+#define F_SETFL 2
+#define F_GETFL 3
 
 __END_DECLS
 

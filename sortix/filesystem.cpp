@@ -189,8 +189,24 @@ namespace Sortix
 			if ( !dev ) { Error::Set(EBADF); return -1; }
 			switch ( cmd )
 			{
-			case F_GETFD: return descs->GetFlags(fd);
 			case F_SETFD: descs->SetFlags(fd, (int) arg); return 0;
+			case F_GETFD: return descs->GetFlags(fd);
+			case F_SETFL: Error::Set(ENOSYS); return -1;
+			case F_GETFL:
+					if ( dev->IsType(Device::DIRECTORY) ) { return O_SEARCH; }
+					if ( !dev->IsType(Device::STREAM) )
+					{
+						Error::Set(ENOSYS);
+						return -1;
+					}
+					DevStream* stream = (DevStream*) stream;
+					bool write = stream->IsWritable();
+					bool read = stream->IsReadable();
+					if ( write && read ) { return O_RDWR; }
+					if ( write && !read ) { return O_WRONLY; }
+					if ( !write && read ) { return O_RDONLY; }
+					return O_EXEC;
+				break;
 			}
 			Error::Set(EINVAL);
 			return 1;
