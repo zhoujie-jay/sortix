@@ -142,6 +142,7 @@ namespace Sortix
 		{
 			Memory::Set(st, 0, sizeof(*st));
 			st->st_mode = 0777;
+			st->st_nlink = 1;
 			if ( dev->IsType(Device::BUFFER) )
 			{
 				st->st_mode |= S_IFREG;
@@ -150,13 +151,20 @@ namespace Sortix
 				st->st_blksize = 1;
 				st->st_blocks = st->st_size;
 			}
-			if ( dev->IsType(Device::DIRECTORY) ) { st->st_mode |= S_IFDIR; }
-			st->st_nlink = 1;
+			if ( dev->IsType(Device::DIRECTORY) )
+			{
+				st->st_mode |= S_IFDIR;
+				st->st_nlink = 2;
+			}
 		}
 
 		int SysStat(const char* pathname, struct stat* st)
 		{
 			Device* dev = Open(pathname, O_RDONLY, 0);
+			if ( !dev && Error::Last() == EISDIR )
+			{
+				dev = Open(pathname, O_SEARCH, 0);
+			}
 			if ( !dev ) { return -1; }
 			HackStat(dev, st);
 			dev->Unref();
