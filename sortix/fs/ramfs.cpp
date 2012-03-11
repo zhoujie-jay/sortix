@@ -337,7 +337,7 @@ namespace Sortix
 		return true;
 	}
 
-	const bool BINDEVHACK = false;
+	const bool BINDEVHACK = true;
 
 	size_t DevRAMFS::GetNumFiles()
 	{
