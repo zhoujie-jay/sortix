@@ -36,9 +36,6 @@ int ls(const char* path)
 	DIR* dir = opendir(path);
 	if ( !dir ) { error(2, errno, "%s", path); return 2; }
 
-	// TODO: Hack until mountpoints work correctly.
-	if ( strcmp(path, "/") == 0 ) { printf("bin\ndev\n"); }
-
 	struct dirent* entry;
 	while ( (entry = readdir(dir)) )
 	{

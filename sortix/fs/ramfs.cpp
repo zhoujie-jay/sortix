@@ -337,17 +337,26 @@ namespace Sortix
 		return true;
 	}
 
+	const bool BINDEVHACK = false;
+
 	size_t DevRAMFS::GetNumFiles()
 	{
-		if ( !files ) { return 0; }
-		return files->Length();
+		size_t result = BINDEVHACK ? 2 : 0;
+		if ( files ) { result += files->Length(); }
+		return result;
 	}
 
 	const char* DevRAMFS::GetFilename(size_t index)
 	{
+		switch ( BINDEVHACK ? index : 2 )
+		{
+		case 0: return "bin";
+		case 1: return "dev";
+		}
+		size_t filesindex = BINDEVHACK ? index - 2 : index;
 		if ( !files ) { return NULL; }
-		if ( files->Length() <= index ) { return NULL; }
-		DevRAMFSFile* file = files->Get(index);
+		if ( files->Length() <= filesindex ) { return NULL; }
+		DevRAMFSFile* file = files->Get(filesindex);
 		return file->name;
 	}
 }
