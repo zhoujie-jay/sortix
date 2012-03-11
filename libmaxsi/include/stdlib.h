@@ -35,7 +35,9 @@ __BEGIN_DECLS
 /* TODO: This random interface is stupid. What should a good value be? */
 #define RAND_MAX 32767
 
-/* TODO: MB_CUR_MAX is missing here */
+/* TODO: This is just a value. It's not a compile time constant! */
+#define MB_CUR_MAX 16
+
 /* TODO: div_t, ldiv_t, and lldiv_t is missing here */
 typedef int div_t, ldiv_t, lldiv_t;
 
