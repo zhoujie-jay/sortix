@@ -66,7 +66,7 @@ namespace Maxsi
 				case EPERM: return (char*) "Operation not permitted";
 				case EIO: return (char*) "Input/output error";
 				case ENOEXEC: return (char*) "Exec format error";
-				case EACCESS: return (char*) "Permission denied";
+				case EACCES: return (char*) "Permission denied";
 				case ESRCH: return (char*) "No such process";
 				case ENOTTY: return (char*) "Not a tty";
 				case ECHILD: return (char*) "No child processes";

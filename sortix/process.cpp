@@ -386,7 +386,7 @@ namespace Sortix
 		delete[] abs;
 
 		if ( !dev ) { return NULL; }
-		if ( !dev->IsType(Device::BUFFER) ) { Error::Set(EACCESS); dev->Unref(); return NULL; }
+		if ( !dev->IsType(Device::BUFFER) ) { Error::Set(EACCES); dev->Unref(); return NULL; }
 		return (DevBuffer*) dev;
 	}
 

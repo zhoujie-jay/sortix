@@ -18,7 +18,7 @@
 #define EPERM 26
 #define EIO 27
 #define ENOEXEC 28
-#define EACCESS 29
+#define EACCES 29
 #define ESRCH 30
 #define ENOTTY 31
 #define ECHILD 32
