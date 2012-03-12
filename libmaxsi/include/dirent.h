@@ -29,6 +29,7 @@
 
 __BEGIN_DECLS
 
+@include(size_t.h)
 @include(DIR.h)
 
 struct dirent
