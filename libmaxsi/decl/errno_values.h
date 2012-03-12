@@ -31,5 +31,6 @@
 #define EPIPE 39
 #define EILSEQ 40
 #define ELAKE 41
+#define EMFILE 42
 
 #endif
