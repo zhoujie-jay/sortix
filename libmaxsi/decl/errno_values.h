@@ -33,4 +33,6 @@
 #define ELAKE 41
 #define EMFILE 42
 
+#define EOPNOTSUPP ENOTSUP
+
 #endif
