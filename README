@@ -12,7 +12,9 @@ The system aims to be an Unix-clone and is heavily based on POSIX. However, I've
 drawn much inspiration from systems such as Plan 9, GNU/Hurd and MINIX. Indeed,
 I plan to construct a micro-kernel with user-space filesystems, per-process
 namespaces, replacing many system calls with filesystem nodes, and other
-exciting features.
+exciting features. This design will make it safe to let normal users perform
+operations such as mounting and create their own "sub-operating-system"
+environment where they are the root.
 
 System Requirements
 -------------------
@@ -20,7 +22,7 @@ Sortix has very low system requirements. It also works well under virtual
 machines such as VirtualBox and Qemu.
 
 * A 32-bit x86 or 64-bit x86_64 CPU.
-* A dozen megabyte RAM.
+* A dozen megabytes of RAM.
 * A harddisk or cdrom drive or support for booting from USB.
 * A multiboot compliant bootloader if booting from harddisk.
 * A Parallel ATA harddisk, if you wish to access it from Sortix. SATA is not
@@ -39,8 +41,8 @@ A number of standard utilities are present such as cat, head, tail, clear, cp,
 column, kill, ls, rm, pwd, uname, echo, and uptime. There is even a number of 
 non-standard utilities such as calc, help, init, kernelinfo, memstat, and pager.
 This collection of utilities will continue to grow as it matures and third party
-software is ported. I've currently had some luck porting gzip and parts of
-binutils.
+software is ported. I've currently had some luck partially porting binutils,
+ocaml, and gzip, but the system isn't fully ready for such software yet.
 
 A number of small games is present and uses the VGA textmode to render ASCII
 graphics. Notably you can play two-player Pong, or single-player Snake, or the
@@ -49,20 +51,19 @@ attraction of the system for non-technical people.
 
 The Sortix kernel has very basic filesystem support. The root filesystem / is
 simply a single-directory RAM filesystem. The init ramdisk is mounted read-only
-on /bin and various devices are accessable through the /dev filesystem. A lot of
-work is currently going into implementing a fully-working kernel virtual file
-system able to outsource filesystem requests to user-space servers. Once this is
-completed we will be able to shape Sortix into a real microkernel based system.
+on /bin and various devices are accessable through the /dev filesystem. Work is
+underway to create an ext2 filesystem server, but it won't be of much use until
+the kernel virtual filesystem is completed in the 0.7dev development cycle.
 
 Job control and Unix signals is not fully or correctly implemented. This means
 that sequences such as Ctrl-C (SIGINT) not always works correctly. This will
 be implemented soon enough (depends partially on VFS; see above).
 
-There currently is no concept of users in the system (only the root user
-exists). I decided to delay making a multi-user system until the base system is
-in place. Note that there is only a single terminal - even though the system is
-a multi-process system, there is only a single /dev/vga and there is no
-framework in place for sharing it.
+There currently is no concept of users in the system (only the root user exists
+I decided to delay making a multi-user system until the base system is in place.
+Note that there is only a single terminal - even though the system is a
+multi-process system, there is only a single /dev/vga and there is no framework
+in place for sharing it.
 
 Technical details
 ----------------
@@ -77,7 +78,7 @@ Building
 To build the Sortix source code you need to install a few dependencies. First of
 all you need the GNU Compiler Collection (C and C++), GNU Make, and GNU
 Binutils. You then need to build and install the included macro preprocessor
-mxmpp somewhere in your PATH such as /usr/bin. If you wish to build the 32-bit
+(mxmpp) somewhere in your PATH such as /usr/bin. If you wish to build the 32-bit
 version of Sortix, you need the Netwide Assembler (nasm) as parts of it hasn't
 been ported to the GNU assembler yet. You need a GNU/Linux build system to build
 Sortix, although, it wouldn't be difficult to port the build system to other
@@ -115,6 +116,11 @@ License, either version 3 or (at your option) any later version.
 
 The libmaxsi standard library is licensed under the GNU Lesser General Public
 License, either version 3 or (at your option) any later version.
+
+Any experimental repositories and branches on Gitorious related to Sortix but
+which contains no copyright statements are also released under the GNU General
+Public License, either version 3 or (at your option) any later version. These
+things are so experimental that I didn't add copyright statements yet.
 
 Sortix is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
