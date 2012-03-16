@@ -15,45 +15,24 @@
 	You should have received a copy of the GNU General Public License along with
 	this program. If not, see <http://www.gnu.org/licenses/>.
 
-	cat.cpp
-	Concatenate files and print on the standard output.
+	type.cpp
+	Lets you move the tty cursor around and easily issue ANSI escape codes.
 
 *******************************************************************************/
 
+#include <sys/keycodes.h>
+#include <sys/termmode.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <error.h>
 
-int docat(const char* inputname, int fd)
-{
-	do
-	{
-		const size_t BUFFER_SIZE = 255;
-		char buffer[BUFFER_SIZE+1];
-		ssize_t bytesread = read(fd, buffer, BUFFER_SIZE);
-		if ( bytesread == 0 ) { break; }
-		if ( bytesread < 0 )
-		{
-			error(0, errno, "read: %s", inputname);
-			return 1;
-		}
-		if ( writeall(1, buffer, bytesread) )
-		{
-			error(0, errno, "write: %s", inputname);
-			return 1;
-		}
-	} while ( true );
-	return 0;
-}
-
 void usage(FILE* fp, const char* argv0)
 {
-	fprintf(fp, "usage: %s [FILE ...]\n", argv0);
-	fprintf(fp, "Concatenate files and print on the standard output.\n");
+	fprintf(fp, "usage: %s [--usage | --help | --version]\n", argv0);
+	fprintf(fp, "Lets you type freely onto the tty.\n");
 }
 
 void help(FILE* fp, const char* argv0)
@@ -84,27 +63,38 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 
-	int result = 0;
-
-	bool any = false;
-	for ( int i = 1; i < argc; i++ )
+	if ( !isatty(0) || !isatty(1) )
 	{
-		if ( !argv[i] ) { continue; }
-		any = true;
-		int fd = open(argv[i], O_RDONLY);
-		if ( fd < 0 )
-		{
-			error(0, errno, "%s", argv[i]);
-			result = 1;
-			continue;
-		}
-		
-		result |= docat(argv[i], fd);
-		close(fd);
+		error(1, errno, "standard output and input must be a tty");
 	}
 
-	if ( !any ) { result = docat("<stdin>", 0); }
+	bool lastwasesc = false;
+	unsigned termmode = TERMMODE_KBKEY | TERMMODE_UNICODE | TERMMODE_SIGNAL;
+	if ( settermmode(0, termmode) ) { error(1, errno, "settermmode"); }
+	while ( true )
+	{
+		uint32_t codepoint;
+		ssize_t numbytes = read(0, &codepoint, sizeof(codepoint));
+		if ( !numbytes ) { break; }
+		if ( numbytes < 0 ) { break; }
+		int kbkey = KBKEY_DECODE(codepoint);
+		if ( kbkey < 0 ) { continue; }
+		if ( kbkey == KBKEY_UP ) { printf("\e[A"); fflush(stdout); continue; }
+		if ( kbkey == KBKEY_DOWN ) { printf("\e[B"); fflush(stdout); continue; }
+		if ( kbkey == KBKEY_RIGHT ) { printf("\e[C"); fflush(stdout); continue; }
+		if ( kbkey == KBKEY_LEFT ) { printf("\e[D"); fflush(stdout); continue; }
+		if ( kbkey == KBKEY_ESC ) { printf("\e["); fflush(stdout); lastwasesc = true; continue; }
+		if ( kbkey ) { continue; }
+		if ( lastwasesc && codepoint == '[' ) { continue; }
 
-	return result;
+		if ( codepoint >= 0x80 ) { continue; }
+
+		char msg[2]; msg[0] = codepoint; msg[1] = '\0';
+		printf(msg);
+		lastwasesc = false;
+		fflush(stdout);
+	}
+
+	return 0;
 }
 

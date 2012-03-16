@@ -27,6 +27,7 @@ column \
 pager \
 head \
 tail \
+type \
 
 BINARIES:=$(addprefix $(INITRDDIR)/,$(LOCALBINARIES))
 
