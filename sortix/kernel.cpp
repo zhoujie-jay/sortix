@@ -64,10 +64,6 @@ extern "C" { size_t stack[64*1024] = {0}; }
 
 namespace Sortix
 {
-#ifdef PLATFORM_HTTP
-	namespace HTTP { void Init(); }
-#endif
-
 	void DoBSoD()
 	{
 #ifdef PLATFORM_SERIAL
