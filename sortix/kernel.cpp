@@ -40,6 +40,7 @@
 #include "scheduler.h"
 #include "syscall.h"
 #include "pci.h"
+#include "com.h"
 #include "uart.h"
 #include "terminal.h"
 #include "serialterminal.h"
@@ -184,6 +185,8 @@ namespace Sortix
 
 		if ( BootInfo == NULL ) { Panic("kernel.cpp: The bootinfo structure was NULL. Are your bootloader multiboot compliant?"); }
 
+		COM::EarlyInit();
+
 		addr_t initrd = NULL;
 		size_t initrdsize = 0;
 
@@ -220,6 +223,9 @@ namespace Sortix
 
 		// Initialize the list of kernel devices.
 		DeviceFS::Init();
+
+		// Initialize the COM ports.
+		COM::Init();
 
 		// Initialize the keyboard.
 		Keyboard::Init();

@@ -111,6 +111,7 @@ scheduler.o \
 syscall.o \
 sound.o \
 pci.o \
+com.o \
 uart.o \
 terminal.o \
 linebuffer.o \
