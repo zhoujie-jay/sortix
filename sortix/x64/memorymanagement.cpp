@@ -35,6 +35,7 @@ namespace Sortix
 	{
 		extern size_t stackused;
 		extern size_t stacklength;
+		void ExtendStack();
 	}
 
 	namespace Memory
@@ -131,17 +132,34 @@ namespace Sortix
 
 		void DestroyAddressSpace()
 		{
+			// Look up the last few entries used for the fractal mapping. These
+			// cannot be unmapped as that would destroy the world. Instead, we
+			// will remember them, switch to another adress space, and safely
+			// mark them as unused. Also handling the forking related pages.
+			addr_t fractal3 = (PMLS[4] + 0)->entry[510UL];
+			addr_t fork2 = (PMLS[3] + 510UL)->entry[0];
+			addr_t fractal2 = (PMLS[3] + 510UL)->entry[510];
+			addr_t fork1 = (PMLS[2] + 510UL * 512UL + 510UL)->entry[0];
+			addr_t fractal1 = (PMLS[2] + 510UL * 512UL + 510UL)->entry[510];
+			addr_t dir = currentdir;
+
 			// First let's do the safe part. Garbage collect any PML1/0's left
 			// behind by user-space. These are completely safe to delete.
 			RecursiveFreeUserspacePages(TOPPMLLEVEL, 0);
-
-			// TODO: Right now this just leaks memory.
 
 			// Switch to the address space from when the world was originally
 			// created. It should contain the kernel, the whole kernel, and
 			// nothing but the kernel.
 			PML* const BOOTPML4 = (PML* const) 0x21000UL;
 			SwitchAddressSpace((addr_t) BOOTPML4);
+
+			// Now safely mark the pages as unused.
+			Page::Put(fractal3 & PML_ADDRESS);
+			Page::Put(fractal2 & PML_ADDRESS);
+			Page::Put(fractal1 & PML_ADDRESS);
+			Page::Put(fork2 & PML_ADDRESS);
+			Page::Put(fork1 & PML_ADDRESS);
+			Page::Put(dir & PML_ADDRESS);
 		}
 
 		const size_t KERNEL_STACK_SIZE = 256UL * 1024UL;

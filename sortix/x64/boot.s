@@ -78,8 +78,8 @@ multiboot_entry:
 	addl $0x1000, %edi
 
 	# Page-Directory (no user-space access here)
-	movl $0x24203, (%edi) # (First 2 MiB)
-	movl $0x25203, 8(%edi) # (Second 2 MiB)
+	movl $0x24003, (%edi) # (First 2 MiB)
+	movl $0x25003, 8(%edi) # (Second 2 MiB)
 	addl $0x1000, %edi
 
 	# Page-Table

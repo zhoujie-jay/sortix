@@ -140,7 +140,8 @@ namespace Sortix
 
 			// Make sure Page::Put does NOT cause any Page::Get's internally!
 			const size_t NUM_PAGES = 2;
-			if ( Page::stacklength - Page::stackused < NUM_PAGES ) { Page::ExtendStack(); }
+			size_t pagestackfree = Page::stacklength - Page::stackused;
+			if ( pagestackfree < NUM_PAGES ) { Page::ExtendStack(); }
 
 			addr_t fractal1 = PMLS[2]->entry[1022];
 
