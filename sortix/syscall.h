@@ -44,6 +44,11 @@ namespace Sortix
 		// that its return value shall be discarded.
 		void Incomplete();
 
+		// Call this prior to Incomplete() to signal that the scheduler should
+		// go run something else for a moment. The current thread will not be
+		// marked as blocking.
+		void Yield();
+
 		// For when you want the syscall exit code not to modify registers.
 		void AsIs();
 

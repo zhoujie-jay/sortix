@@ -83,6 +83,12 @@ namespace Sortix
 			Scheduler::Switch(regs);
 		}
 
+		void Yield()
+		{
+			Panic("Syscall::Yield() is not implemented because it caused "
+			      "instability and other issues.");
+		}
+
 		void AsIs()
 		{
 			system_was_incomplete = 1;
