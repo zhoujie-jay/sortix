@@ -59,268 +59,188 @@
 
 using namespace Maxsi;
 
-void* RunApplication(void* Parameter);
-
 // Keep the stack size aligned with $CPU/base.s
 extern "C" { size_t stack[64*1024] = {0}; }
 
-namespace Sortix
+namespace Sortix {
+
+void DoMaxsiLogo()
 {
-	void DoBSoD()
-	{
-#ifdef PLATFORM_SERIAL
-		UART::WriteChar(27);
-		UART::WriteChar(91);
-		UART::WriteChar(48 + 4);
-		UART::WriteChar(48 + 4);
-		UART::WriteChar(109);
-#endif
-
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("Windows Boot Manager has experienced a problem.                                 ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("    Status: 0xc000000f                                                          ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("    Info: An error occured during transferring execution.                       ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("You can try to recover the system with the Microsoft Windows System Recovery    ");
-		Log::Print("Tools. (You might need to restart the system manually).                         ");
-		Log::Print("                                                                                ");
-		Log::Print("If the problem continues, please contact your system administrator or computer  ");
-		Log::Print("manufacturer.                                                                   ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-		Log::Print("                                                                                ");
-
-#ifdef JSSORTIX
-		JSSortix::Exit();
-#else
-		while ( true ) { }
-#endif
-	}
-
-	void DoMaxsiLogo()
-	{
-		Log::Print("\e[37;41m\e[2J"); // Make the background color red.
-		Log::Print("                                                       _                        \n");
-		Log::Print("                                                      / \\                       \n");
-		Log::Print("                  /\\    /\\                           /   \\                      \n");
-		Log::Print("                 /  \\  /  \\                          |   |                      \n");
-		Log::Print("                /    \\/    \\                         |   |                      \n");
-		Log::Print("               |  O    O    \\_______________________ /   |                      \n");
-		Log::Print("               |                                         |                      \n");
-		Log::Print("               | \\_______/                               /                      \n");
-		Log::Print("                \\                                       /                       \n");
-		Log::Print("                  ------       ---------------      ---/                        \n");
-		Log::Print("                       /       \\             /      \\                           \n");
-		Log::Print("                      /         \\           /        \\                          \n");
-		Log::Print("                     /           \\         /          \\                         \n");
-		Log::Print("                    /_____________\\       /____________\\                        \n");
-		Log::Print("                                                                                \n");
-		Log::Print("                           BOOTING OPERATING SYSTEM...                          ");
-	}
-
-	void DoWelcome()
-	{
-#ifdef BSOD
-		DoBSoD();
-#endif
-
-		DoMaxsiLogo();
-	}
-
-	extern "C" void KernelInit(unsigned long Magic, multiboot_info_t* BootInfo)
-	{
-#ifdef JSSORTIX
-		// TODO: Make JSVM multiboot compliant.
-		multiboot_info_t MBInfo; BootInfo = &MBInfo;
-		multiboot_memory_map_t MBMMap;
-
-		MBMMap.addr = 0x100000;
-		MBMMap.len = 0xC00000;
-		MBMMap.type = MULTIBOOT_MEMORY_AVAILABLE;
-		MBMMap.size = sizeof(MBMMap) - sizeof(MBMMap.size);
-		BootInfo->flags = MULTIBOOT_INFO_MEM_MAP;
-		BootInfo->mmap_addr = (multiboot_uint32_t) &MBMMap;
-		BootInfo->mmap_length = sizeof(MBMMap);
-#endif
-
-		// Initialize system calls.
-		Syscall::Init();
-
-		// Initialize the default terminal.
-		Maxsi::Format::Callback logcallback;
-		void* logpointer;
-
-#if PLATFORM_SERIAL
-		// Initialize the serial driver.
-		UART::Init();
-
-		SerialTerminal::Init();
-		logcallback = SerialTerminal::Print;
-		logpointer = NULL;
-
-#else
-		VGATerminal::Init();
-		logcallback = VGATerminal::Print;
-		logpointer = NULL;
-
-#endif
-
-		// Initialize the kernel log.
-		Log::Init(logcallback, logpointer);
-
-		// Display the boot welcome screen.
-		DoWelcome();
-
-		if ( BootInfo == NULL ) { Panic("kernel.cpp: The bootinfo structure was NULL. Are your bootloader multiboot compliant?"); }
-
-		COM::EarlyInit();
-
-		addr_t initrd = NULL;
-		size_t initrdsize = 0;
-
-#ifndef JSSORTIX
-		uint32_t* modules = (uint32_t*) BootInfo->mods_addr;
-		for ( uint32_t I = 0; I < BootInfo->mods_count; I++ )
-		{
-			initrdsize = modules[2*I+1] - modules[2*I+0];
-			initrd = (addr_t) modules[2*I+0];
-			break;
-		}
-
-		if ( !initrd ) { PanicF("No init ramdisk provided"); }
-
-#else
-		// TODO: UGLY HACK because JSVM doesn't support multiboot yet!
-		initrd = (addr_t) 0x180000UL;
-		initrdsize = 0x280000; // 2 MiB 512 KiB
-#endif
-
-		Memory::RegisterInitRDSize(initrdsize);
-
-		// Initialize the paging and virtual memory.
-		Memory::Init(BootInfo);
-
-		// Initialize the GDT and TSS structures.
-		GDT::Init();
-
-		// Initialize the interrupt handler table and enable interrupts.
-		Interrupt::Init();
-
-		// Initialize the kernel heap.
-		Maxsi::Memory::Init();
-
-		// Initialize the list of kernel devices.
-		DeviceFS::Init();
-
-		// Initialize the COM ports.
-		COM::Init();
-
-		// Initialize the keyboard.
-		Keyboard::Init();
-
-		// Initialize the terminal.
-		Terminal::Init();
-
-		// Initialize the VGA driver.
-		VGA::Init();
-
-		// Initialize the sound driver.
-		Sound::Init();
-
-		// Initialize the process system.
-		Process::Init();
-
-		// Initialize the thread system.
-		Thread::Init();
-
-		// Initialize the IO system.
-		IO::Init();
-
-		// Initialize the pipe system.
-		Pipe::Init();
-
-		// Initialize the filesystem system.
-		FileSystem::Init();
-
-		// Initialize the directory system.
-		Directory::Init();
-
-		// Initialize the mount system.
-		Mount::Init();
-
-		// Initialize the scheduler.
-		Scheduler::Init();
-
-		// Initialize the kernel information query syscall.
-		Info::Init();
-
-		// Set up the initial ram disk.
-		InitRD::Init(initrd, initrdsize);
-
-#ifndef JSSORTIX
-		// Search for PCI devices and load their drivers.
-		PCI::Init();
-#endif
-
-		// Alright, now the system's drivers are loaded and initialized. It is
-		// time to load the initial user-space programs and start execution of
-		// the actual operating system.
-
-		byte* program;
-		size_t programsize;
-
-		// Create an address space for the idle process.
-		addr_t idleaddrspace = Memory::Fork();
-		if ( !idleaddrspace ) { Panic("could not fork an idle process address space"); }
-
-		// Create an address space for the initial process.
-		addr_t initaddrspace = Memory::Fork();
-		if ( !initaddrspace ) { Panic("could not fork an initial process address space"); }
-
-		// Create the system idle process.
-		Process* idle = new Process;
-		if ( !idle ) { Panic("could not allocate idle process"); }
-		idle->addrspace = idleaddrspace;
-		Memory::SwitchAddressSpace(idleaddrspace);
-		Scheduler::SetDummyThreadOwner(idle);
-		program = InitRD::Open("idle", &programsize);
-		if ( program == NULL ) { PanicF("initrd did not contain 'idle'"); }
-		addr_t idlestart = ELF::Construct(idle, program, programsize);
-		if ( !idlestart ) { Panic("could not construct ELF image for idle process"); }
-		Thread* idlethread = CreateThread(idlestart);
-		if ( !idlethread ) { Panic("could not create thread for the idle process"); }
-		Scheduler::SetIdleThread(idlethread);
-
-		// Create the initial process.
-		Process* init = new Process;
-		if ( !init ) { Panic("could not allocate init process"); }
-		init->addrspace = initaddrspace;
-		Memory::SwitchAddressSpace(initaddrspace);
-		Scheduler::SetDummyThreadOwner(init);
-		program = InitRD::Open("init", &programsize);
-		if ( program == NULL ) { PanicF("initrd did not contain 'init'"); }
-		addr_t initstart = ELF::Construct(init, program, programsize);
-		if ( !initstart ) { Panic("could not construct ELF image for init process"); }
-		Thread* initthread = CreateThread(initstart);
-		if ( !initthread ) { Panic("could not create thread for the init process"); }
-		Scheduler::SetInitProcess(init);
-
-		// Lastly set up the timer driver and we are ready to run the OS.
-		Time::Init();
-
-		// Run the OS.
-		Scheduler::MainLoop();
-	}
+	Log::Print("\e[37;41m\e[2J"); // Make the background color red.
+	Log::Print("                                                       _                        \n");
+	Log::Print("                                                      / \\                       \n");
+	Log::Print("                  /\\    /\\                           /   \\                      \n");
+	Log::Print("                 /  \\  /  \\                          |   |                      \n");
+	Log::Print("                /    \\/    \\                         |   |                      \n");
+	Log::Print("               |  O    O    \\_______________________ /   |                      \n");
+	Log::Print("               |                                         |                      \n");
+	Log::Print("               | \\_______/                               /                      \n");
+	Log::Print("                \\                                       /                       \n");
+	Log::Print("                  ------       ---------------      ---/                        \n");
+	Log::Print("                       /       \\             /      \\                           \n");
+	Log::Print("                      /         \\           /        \\                          \n");
+	Log::Print("                     /           \\         /          \\                         \n");
+	Log::Print("                    /_____________\\       /____________\\                        \n");
+	Log::Print("                                                                                \n");
 }
+
+void DoWelcome()
+{
+	DoMaxsiLogo();
+	Log::Print("                           BOOTING OPERATING SYSTEM...                          ");
+}
+
+extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
+{
+	// Initialize system calls.
+	Syscall::Init();
+
+	// Detect and initialize any serial COM ports in the system.
+	COM::EarlyInit();
+
+	// Initialize the default terminal.
+	VGATerminal::Init();
+	Maxsi::Format::Callback logcallback = VGATerminal::Print;
+	void* logpointer = NULL;
+
+	// Initialize the kernel log.
+	Log::Init(logcallback, logpointer);
+
+	// Display the boot welcome screen.
+	DoWelcome();
+
+	if ( !bootinfo )
+	{
+		Panic("The bootinfo structure was NULL. Are your bootloader "
+		      "multiboot compliant?");
+	}
+
+	addr_t initrd = NULL;
+	size_t initrdsize = 0;
+
+	uint32_t* modules = (uint32_t*) bootinfo->mods_addr;
+	for ( uint32_t i = 0; i < bootinfo->mods_count; i++ )
+	{
+		initrdsize = modules[2*i+1] - modules[2*i+0];
+		initrd = (addr_t) modules[2*i+0];
+		break;
+	}
+
+	if ( !initrd ) { PanicF("No init ramdisk provided"); }
+
+	Memory::RegisterInitRDSize(initrdsize);
+
+	// Initialize paging and virtual memory.
+	Memory::Init(bootinfo);
+
+	// Initialize the GDT and TSS structures.
+	GDT::Init();
+
+	// Initialize the interrupt handler table and enable interrupts.
+	Interrupt::Init();
+
+	// Initialize the kernel heap.
+	Maxsi::Memory::Init();
+
+	// Initialize the list of kernel devices.
+	DeviceFS::Init();
+
+	// Initialize the COM ports.
+	COM::Init();
+
+	// Initialize the keyboard.
+	Keyboard::Init();
+
+	// Initialize the terminal.
+	Terminal::Init();
+
+	// Initialize the VGA driver.
+	VGA::Init();
+
+	// Initialize the sound driver.
+	Sound::Init();
+
+	// Initialize the process system.
+	Process::Init();
+
+	// Initialize the thread system.
+	Thread::Init();
+
+	// Initialize the IO system.
+	IO::Init();
+
+	// Initialize the pipe system.
+	Pipe::Init();
+
+	// Initialize the filesystem system.
+	FileSystem::Init();
+
+	// Initialize the directory system.
+	Directory::Init();
+
+	// Initialize the mount system.
+	Mount::Init();
+
+	// Initialize the scheduler.
+	Scheduler::Init();
+
+	// Initialize the kernel information query syscall.
+	Info::Init();
+
+	// Set up the initial ram disk.
+	InitRD::Init(initrd, initrdsize);
+
+	// Search for PCI devices and load their drivers.
+	PCI::Init();
+
+	// Alright, now the system's drivers are loaded and initialized. It is
+	// time to load the initial user-space programs and start execution of
+	// the actual operating system.
+
+	byte* program;
+	size_t programsize;
+
+	// Create an address space for the idle process.
+	addr_t idleaddrspace = Memory::Fork();
+	if ( !idleaddrspace ) { Panic("could not fork an idle process address space"); }
+
+	// Create an address space for the initial process.
+	addr_t initaddrspace = Memory::Fork();
+	if ( !initaddrspace ) { Panic("could not fork an initial process address space"); }
+
+	// Create the system idle process.
+	Process* idle = new Process;
+	if ( !idle ) { Panic("could not allocate idle process"); }
+	idle->addrspace = idleaddrspace;
+	Memory::SwitchAddressSpace(idleaddrspace);
+	Scheduler::SetDummyThreadOwner(idle);
+	program = InitRD::Open("idle", &programsize);
+	if ( program == NULL ) { PanicF("initrd did not contain 'idle'"); }
+	addr_t idlestart = ELF::Construct(idle, program, programsize);
+	if ( !idlestart ) { Panic("could not construct ELF image for idle process"); }
+	Thread* idlethread = CreateThread(idlestart);
+	if ( !idlethread ) { Panic("could not create thread for the idle process"); }
+	Scheduler::SetIdleThread(idlethread);
+
+	// Create the initial process.
+	Process* init = new Process;
+	if ( !init ) { Panic("could not allocate init process"); }
+	init->addrspace = initaddrspace;
+	Memory::SwitchAddressSpace(initaddrspace);
+	Scheduler::SetDummyThreadOwner(init);
+	program = InitRD::Open("init", &programsize);
+	if ( program == NULL ) { PanicF("initrd did not contain 'init'"); }
+	addr_t initstart = ELF::Construct(init, program, programsize);
+	if ( !initstart ) { Panic("could not construct ELF image for init process"); }
+	Thread* initthread = CreateThread(initstart);
+	if ( !initthread ) { Panic("could not create thread for the init process"); }
+	Scheduler::SetInitProcess(init);
+
+	// Lastly set up the timer driver and we are ready to run the OS.
+	Time::Init();
+
+	// Run the OS.
+	Scheduler::MainLoop();
+}
+
+} // namespace Sortix
