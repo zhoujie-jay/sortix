@@ -80,6 +80,7 @@ namespace Maxsi
 				case EILSEQ: return (char*) "Illegal byte sequence";
 				case ELAKE: return (char*) "Sit by a lake";
 				case EMFILE: return (char*) "Too many open files";
+				case EAGAIN: return (char*) "Resource temporarily unavailable";
 				default: return (char*) "Unknown error condition";
 			}
 		}

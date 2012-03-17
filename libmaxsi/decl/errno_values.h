@@ -32,6 +32,7 @@
 #define EILSEQ 40
 #define ELAKE 41
 #define EMFILE 42
+#define EAGAIN 43
 
 #define EOPNOTSUPP ENOTSUP
 
