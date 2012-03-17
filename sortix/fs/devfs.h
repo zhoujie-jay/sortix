@@ -44,8 +44,22 @@ namespace Sortix
 
 	};
 
-	void InitATADriveList();
+	namespace DeviceFS {
+
+	struct DevEntry
+	{
+		char* name;
+		Device* dev;
+	};
+
+	void Init();
 	void RegisterATADrive(unsigned ataid, ATADrive* drive);
+	bool RegisterDevice(const char* name, Device* dev);
+	Device* LookUp(const char* name);
+	size_t GetNumDevices();
+	DevEntry* GetDevice(size_t index);
+
+	} // namespace DeviceFS
 }
 
 #endif

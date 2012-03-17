@@ -67,7 +67,7 @@ namespace Sortix
 			unsigned ataid = busid*2 + driveid;
 			ATADrive* drive = bus->Instatiate(driveid);
 			if ( !drive ) { return; }
-			RegisterATADrive(ataid, drive);
+			DeviceFS::RegisterATADrive(ataid, drive);
 		}
 
 		void DetectBus(unsigned busid, uint16_t ioport, uint16_t altio)
@@ -79,7 +79,6 @@ namespace Sortix
 
 		void Init()
 		{
-			InitATADriveList();
 			DetectBus(0, 0x1F0, 0x3F6);
 			DetectBus(1, 0x170, 0x366);
 		}

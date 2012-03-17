@@ -54,6 +54,7 @@
 #include "mount.h"
 #include "directory.h"
 #include "interrupt.h"
+#include "fs/devfs.h"
 
 using namespace Maxsi;
 
@@ -216,6 +217,9 @@ namespace Sortix
 
 		// Initialize the kernel heap.
 		Maxsi::Memory::Init();
+
+		// Initialize the list of kernel devices.
+		DeviceFS::Init();
 
 		// Initialize the keyboard.
 		Keyboard::Init();

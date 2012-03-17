@@ -127,27 +127,10 @@ namespace Sortix
 		return true;
 	}
 
-	bool DevATA::Resize(uintmax_t size)
+	bool DevATA::Resize(uintmax_t /*size*/)
 	{
 		Error::Set(EPERM);
 		return false;
-	}
-
-	const size_t NUM_ATAS = 4;
-	DevATA* atalist[NUM_ATAS];
-
-	void InitATADriveList()
-	{
-		for ( size_t i = 0; i < NUM_ATAS; i++ )
-		{
-			atalist[i] = NULL;
-		}
-	}
-
-	void RegisterATADrive(unsigned ataid, ATADrive* drive)
-	{
-		atalist[ataid] = new DevATA(drive);
-		atalist[ataid]->Refer();
 	}
 
 	class DevNull : public DevStream
@@ -166,7 +149,7 @@ namespace Sortix
 		virtual bool IsWritable();
 
 	};
-	
+
 	DevNull::DevNull()
 	{
 	}
@@ -183,7 +166,7 @@ namespace Sortix
 	ssize_t DevNull::Write(const byte* /*src*/, size_t count)
 	{
 		if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
-		
+
 		// O' glorious bitbucket in the sky, I hereby sacrifice to You, my holy
 		// data in trust You will keep it safe. That You will store it for all
 		// eternity, until the day You will return to User-Land to rule the land
@@ -201,6 +184,85 @@ namespace Sortix
 	{
 		return true;
 	}
+
+	// TODO: Move this namespace into something like devicefs.cpp.
+	namespace DeviceFS {
+
+	size_t entriesused;
+	size_t entrieslength;
+	DevEntry* deventries;
+
+	void Init()
+	{
+		deventries = NULL;
+		entriesused = 0;
+		entrieslength = 0;
+	}
+
+	bool RegisterDevice(const char* name, Device* dev)
+	{
+		if ( entriesused == entrieslength )
+		{
+			size_t newentrieslength = entrieslength ? 32 : 2 * entrieslength;
+			DevEntry* newdeventries = new DevEntry[newentrieslength];
+			if ( !newdeventries ) { return false; }
+			size_t bytes = sizeof(DevEntry) * entriesused;
+			Memory::Copy(newdeventries, deventries, bytes);
+			delete[] deventries;
+			entrieslength = newentrieslength;
+			deventries = newdeventries;
+		}
+
+		char* nameclone = String::Clone(name);
+		if ( !nameclone ) { return false; }
+
+		size_t index = entriesused++;
+		dev->Refer();
+		deventries[index].name = nameclone;
+		deventries[index].dev = dev;
+		return true;
+	}
+
+	Device* LookUp(const char* name)
+	{
+		for ( size_t i = 0; i < entriesused; i++ )
+		{
+			if ( String::Compare(name, deventries[i].name) ) { continue; }
+			deventries[i].dev->Refer();
+			return deventries[i].dev;
+		}
+		return NULL;
+	}
+
+	size_t GetNumDevices()
+	{
+		return entriesused;
+	}
+
+	DevEntry* GetDevice(size_t index)
+	{
+		if ( entriesused <= index ) { return NULL; }
+		return deventries + index;
+	}
+
+	// TODO: Hack to register ATA devices.
+	// FIXME: Move class DevATA into ata.cpp.
+	void RegisterATADrive(unsigned ataid, ATADrive* drive)
+	{
+		DevATA* ata = new DevATA(drive);
+		if ( !ata ) { Panic("Cannot allocate ATA device"); }
+		ata->Refer();
+		ASSERT(ataid < 10);
+		char name[5] = "ataN";
+		name[3] = '0' + ataid;
+		if ( !RegisterDevice(name, ata) )
+		{
+			PanicF("Cannot register /dev/%s", name);
+		}
+		ata->Unref();
+	}
+
+	} // namespace DeviceFS
 
 	class DevDevFSDir : public DevDirectory
 	{
@@ -236,29 +298,29 @@ namespace Sortix
 
 	int DevDevFSDir::Read(sortix_dirent* dirent, size_t available)
 	{
-		const char* names[] = { "null", "tty", "vga", "ata0", "ata1", "ata2", "ata3" };
-		const size_t nameslength = 7;
+		const char* names[] = { "null", "tty", "vga" };
+		const char* name = NULL;
+		if ( position < DeviceFS::GetNumDevices() )
+		{
+			name = DeviceFS::GetDevice(position)->name;
+		}
+		else
+		{
+			const size_t nameslength = 3;
+			size_t index = position - DeviceFS::GetNumDevices();
+			if ( nameslength <= index )
+			{
+				dirent->d_namelen = 0;
+				dirent->d_name[0] = 0;
+				return 0;
+			}
+			name = names[index];
+		}
 
 		if ( available <= sizeof(sortix_dirent) ) { return -1; }
-		if ( nameslength <= position )
-		{
-			dirent->d_namelen = 0;
-			dirent->d_name[0] = 0;
-			return 0;
-		}
 
-		const char* name = names[position];
 		size_t namelen = String::Length(name);
 		size_t needed = sizeof(sortix_dirent) + namelen + 1;
-
-		if ( name[0] == 'a' && name[1] == 't' && name[2] == 'a' )
-		{
-			if ( !atalist[name[3]-'0'] )
-			{
-				position++;
-				return Read(dirent, available);
-			}
-		}
 
 		if ( available < needed )
 		{
@@ -283,7 +345,7 @@ namespace Sortix
 
 	extern DevTerminal* tty;
 
-	Device* DevDevFS::Open(const char* path, int flags, mode_t mode)
+	Device* DevDevFS::Open(const char* path, int flags, mode_t /*mode*/)
 	{
 		int lowerflags = flags & O_LOWERFLAGS;
 
@@ -296,26 +358,21 @@ namespace Sortix
 		if ( String::Compare(path, "/null") == 0 ) { return new DevNull; }
 		if ( String::Compare(path, "/tty") == 0 ) { tty->Refer(); return tty; }
 		if ( String::Compare(path, "/vga") == 0 ) { return new DevVGA; }
-		if ( path[0] == '/' && path[1] == 'a' && path[2] == 't' && path[3] == 'a' && path[4] && !path[5] )
-		{
-			if ( '0' <= path[4] && path[4] <= '9' )
-			{
-				size_t index = path[4] - '0';
-				if  ( index <= NUM_ATAS && atalist[index] )
-				{
-					bool write = flags & O_WRONLY; // TODO: HACK: O_RDWD != O_WRONLY | O_RDONLY
-					if ( write && !ENABLE_DISKWRITE )
-					{
-						Error::Set(EPERM);
-						return false;
-					}
-					return new DevFileWrapper(atalist[index], flags);
-				}
-			}
-		}
 
-		Error::Set(flags & O_CREAT ? EPERM : ENOENT);
-		return NULL;
+		Device* dev = DeviceFS::LookUp(path + 1);
+		if ( !dev )
+		{
+			Error::Set(flags & O_CREAT ? EPERM : ENOENT);
+			return NULL;
+		}
+		if ( dev->IsType(Device::BUFFER) )
+		{
+			DevBuffer* buffer = (DevBuffer*) dev;
+			DevFileWrapper* wrapper = new DevFileWrapper(buffer, flags);
+			buffer->Unref();
+			return wrapper;
+		}
+		return dev;
 	}
 
 	bool DevDevFS::Unlink(const char* path)
