@@ -60,7 +60,7 @@
 using namespace Maxsi;
 
 // Keep the stack size aligned with $CPU/base.s
-extern "C" { size_t stack[64*1024] = {0}; }
+extern "C" { size_t stack[64*1024 / sizeof(size_t)] = {0}; }
 
 namespace Sortix {
 
