@@ -35,6 +35,8 @@ namespace Sortix
 		const nat height = 25;
 		const uint16_t defaultcolor = (COLOR8_LIGHT_GREY << 8) | (COLOR8_BLACK << 12);
 		uint16_t* const vga = (uint16_t* const) 0xB8000;
+		uint16_t vgaattr[width * height];
+		const uint16_t VGAATTR_CHAR = (1U<<0U);
 		nat line;
 		nat column;
 		uint16_t currentcolor;
@@ -78,7 +80,9 @@ namespace Sortix
 			{
 				for ( nat x = 0; x < width; x++ )
 				{
-					vga[y * width + x] = ' ' | defaultcolor;
+					unsigned index = y * width + x;
+					vga[index] = ' ' | defaultcolor;
+					vgaattr[index] = 0;
 				}
 			}
 
@@ -100,13 +104,18 @@ namespace Sortix
 			{
 				for ( nat x = 0; x < width; x++ )
 				{
-					vga[(y-1) * width + x] = vga[y * width + x];
+					unsigned oldindex = y * width + x;
+					unsigned newindex = (y-1) * width + x;
+					vga[newindex] = vga[oldindex];
+					vgaattr[newindex] = vgaattr[oldindex];
 				}
 			}
 
 			for ( nat x = 0; x < width; x++ )
 			{
-				vga[(height-1) * width + x] =  ' ' | currentcolor;
+				unsigned index = (height-1) * width + x;
+				vga[index] =  ' ' | currentcolor;
+				vgaattr[index] = 0;
 			}
 		}
 
@@ -117,19 +126,25 @@ namespace Sortix
 			{
 				for ( nat x = 0; x < width; x++ )
 				{
-					vga[(y) * width + x] = vga[(y-1) * width + x];
+					unsigned oldindex = (y-1) * width + x;
+					unsigned newindex = y * width + x;
+					vga[newindex] = vga[oldindex];
+					vgaattr[newindex] = vgaattr[oldindex];
 				}
 			}
 
 			for ( nat x = 0; x < width; x++ )
 			{
-				vga[x] =  ' ' | currentcolor;
+				unsigned index = x;
+				vga[index] =  ' ' | currentcolor;
+				vgaattr[index] = 0;
 			}
 		}
 
 		// Move to the next line. If at bottom, scroll one line up.
 		void Newline()
 		{
+			vgaattr[line * width + column] |= VGAATTR_CHAR;
 			if ( line < height - 1 )
 			{
 				line++; column = 0;
@@ -185,12 +200,21 @@ namespace Sortix
 						column = 0;
 						break;
 					}
-					// Delete the previous char on this line.
+					// Delete the previous character.
 					case '\b':
 					{
-						// TODO: Properly handle backspace over lines and tabs.
-						if ( column < 1 ) { break; }
-						vga[line * width + (--column)] = ' ' | currentcolor;
+						unsigned pos = line * width + column;
+						while ( pos )
+						{
+							unsigned nextpos = pos-1;
+							vga[nextpos] = ' ' | currentcolor;
+							pos = nextpos;
+							uint16_t attr = vgaattr[pos];
+							vgaattr[pos] = 0;
+							if ( attr & VGAATTR_CHAR ) { break; }
+						}
+						column = pos % width;
+						line = pos / width;
 						break;
 					}
 					// Expand a tab to a few spaces.
@@ -199,6 +223,7 @@ namespace Sortix
 						if ( column == width ) { Newline(); }
 						nat until = 4 - (column % 4);
 						
+						vgaattr[line * width + (column)] |= VGAATTR_CHAR;
 						while ( (until--) != 0 )
 						{
 							vga[line * width + (column++)] = ' ' | currentcolor;
@@ -216,7 +241,9 @@ namespace Sortix
 					default:
 					{
 						if ( column == width ) { Newline(); }
-						vga[line * width + (column++)] = c | currentcolor;
+						unsigned index = line * width + (column++);
+						vga[index] = c | currentcolor;
+						vgaattr[index] |= VGAATTR_CHAR;
 						break;
 					}
 				}
@@ -373,6 +400,7 @@ namespace Sortix
 					for ( nat i = from; i <= to; i++ )
 					{
 						vga[i] = ' ' | currentcolor;
+						vgaattr[i] = 0;
 					}
 
 					break;
@@ -396,7 +424,9 @@ namespace Sortix
 
 					for ( nat i = from; i <= to; i++ )
 					{
-						vga[line * width + i] = ' ' | currentcolor;
+						unsigned index = line * width + i;
+						vga[index] = ' ' | currentcolor;
+						vgaattr[index] = 0;
 					}
 
 					break;
