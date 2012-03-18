@@ -65,7 +65,7 @@ Improvements in Sortix 0.6
 --------------------------
 The 0.6 release improves greatly upon Sortix 0.5.
 
-* Implemented a ATA driver.
+* Implemented an ATA driver.
 * User-space programs can now use dynamic allocation.
 * Standard Error support.
 * Added a new terminal driver allowing standard input from keyboard.
