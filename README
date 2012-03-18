@@ -46,24 +46,97 @@ ocaml, and gzip, but the system isn't fully ready for such software yet.
 
 A number of small games is present and uses the VGA textmode to render ASCII
 graphics. Notably you can play two-player Pong, or single-player Snake, or the
-nice and turing-complete Conway's Game of Life. These are probably the main
+nice and Turing-complete Conway's Game of Life. These are probably the main
 attraction of the system for non-technical people.
 
 The Sortix kernel has very basic filesystem support. The root filesystem / is
 simply a single-directory RAM filesystem. The init ramdisk is mounted read-only
-on /bin and various devices are accessable through the /dev filesystem. Work is
+on /bin and various devices are accessible through the /dev filesystem. Work is
 underway to create an ext2 filesystem server, but it won't be of much use until
 the kernel virtual filesystem is completed in the 0.7dev development cycle.
-
-Job control and Unix signals is not fully or correctly implemented. This means
-that sequences such as Ctrl-C (SIGINT) not always works correctly. This will
-be implemented soon enough (depends partially on VFS; see above).
 
 There currently is no concept of users in the system (only the root user exists
 I decided to delay making a multi-user system until the base system is in place.
 Note that there is only a single terminal - even though the system is a
 multi-process system, there is only a single /dev/vga and there is no framework
 in place for sharing it.
+
+Improvements in Sortix 0.6
+--------------------------
+The 0.6 release improves greatly upon Sortix 0.5.
+
+* Implemented a ATA driver.
+* User-space programs can now use dynamic allocation.
+* Standard Error support.
+* Added a new terminal driver allowing standard input from keyboard.
+* Shell understands pipes, IO redirection and background processes.
+* COM ports are available as /dev/comN.
+* ls now formats files nicely in columns.
+* Added a paging program for displaying text-files page by page.
+* Support for call-traces in the kernel.
+* Fixes to avoid conflicts with GRUB.
+* Countless bug-fixes and small improvements.
+* Massive enhancements to the standard library.
+
+The 0.6 release drops support for the javascript virtual machine used to power
+amazing things such as jslinux. This is largely because Sortix has outgrown it
+and needs a less limited environment, in particular the lack of a VGA and that
+the keyboard events are truncated to that of serial connections is annoying and
+make it possible to keep the games compatible without severe performance
+penalties.
+
+Known bugs
+----------
+There is currently a lot of bugs and small quirks in Sortix. They are caused by
+the system being young and incomplete. They will gradually be fixed as the base
+system improves. They are tolerated in the releases because they are not
+critical and improvement situation from the last release.
+
+Job control and Unix signals is not fully or correctly implemented. This means
+that sequences such as Ctrl-C (SIGINT) not always works correctly. This will
+be implemented soon enough (depends partially on VFS; see above). Whenever you
+hit Ctrl-C the kernel attempts to terminate the currently running process (even
+if it isn't the foreground process). In addition, the kernel can only send
+signals to running processes. This means that that programs that read a line of
+input at a time from the terminal will not be terminated until you press enter.
+This will be fixed when proper support for kernel threads is added.
+
+The shell only looks at whitespace when parsing input lines. This means that
+operators such as & ; and | must be surrounded by whitespace on both sides.
+Support for quotes and escape characters is also not implemented yet. The shell
+does not accept very long lines yet.
+
+Transferring large binary streams over pipes may cause instability in the kernel
+due to a bug that wasn't fixed in time for the 0.6 release. In particular, the
+command $ cat /bin/cat | cat seems to trigger the issue occasionally. This bug
+will likely go away when I rewrite the kernel IO framework.
+
+Some programs change the format of the terminal standard input delivered to
+them. For instance, the pong game needs to capture every keyboard event. However
+running such programs at the same time as programs that need proper line-
+buffered input (such as the shell) causes conflicts and neither program gets
+what it needs causing programs to exit or crash. Note that if the shell fails
+to read in its expected format, it exits with an error code. When it does this
+the init process does too, and the kernel panics. This issue is caused by the
+design of the terminal system and can't be fixed until it is rewritten.
+
+The filesystem is currently hacked together in the kernel. When things go wrong
+you may experience the utilities returning the wrong error codes. This is
+harmless but confusing. All the current kernel filesystem code will be replaced
+a user-space filesystem framework and will be present in the next release.
+
+Improvements scheduled for Sortix 0.7
+-------------------------------------
+* Proper kernel threads.
+* Kernel virtual filesystem.
+* User-space filesystem framework.
+* User-space ext2 filesystem driver.
+* Refactor and extend the standard library.
+* Mount-points.
+* Environmental variables.
+* Improved terminal framework.
+* New and improved shell.
+* Copy-on-write in fork(2) and mmap(2).
 
 Technical details
 ----------------
