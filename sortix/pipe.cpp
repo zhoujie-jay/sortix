@@ -91,14 +91,14 @@ namespace Sortix
 		{
 			if ( bufferused < count ) { count = bufferused; }
 			size_t amount = count;
-			size_t linear = buffersize - bufferused;
+			size_t linear = buffersize - bufferoffset;
 			if ( linear < amount ) { amount = linear; }
+			ASSERT(amount);
 			Memory::Copy(dest, buffer + bufferoffset, amount);
 			bufferoffset = (bufferoffset + amount) % buffersize;
 			bufferused -= amount;
 			writeevent.Signal();
-			if ( bufferused == 0 || amount == count ) { return amount; }
-			return amount + Read(dest + amount, count - amount);
+			return amount;
 		}
 
 		if ( !anywriting ) { return 0; }
@@ -119,11 +119,11 @@ namespace Sortix
 			size_t amount = count;
 			size_t linear = buffersize - writeoffset;
 			if ( linear < amount ) { amount = linear; }
+			ASSERT(amount);
 			Memory::Copy(buffer + writeoffset, src, amount);
 			bufferused += amount;
 			readevent.Signal();
-			if ( buffersize == bufferused || amount == count ) { return amount; }
-			return amount + Write(src + amount, count - amount);
+			return amount;
 		}
 
 		Error::Set(EBLOCKING);
