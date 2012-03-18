@@ -149,6 +149,19 @@ namespace Sortix
 		// display the text.
 		size_t Print(void* /*user*/, const char* string, size_t stringlen)
 		{
+			// Check for the bug where string contains the address 0x80000000
+			// which is not legal to print. It looks like we are trying to
+			// print a string from the stack that wasn't NUL-terminated. I
+			// tracked down the string value comes from LogTerminal, but it
+			// doesn't seem to originate from a write(2) call. Weird stuff.
+			addr_t straddr = (addr_t) string;
+			if ( straddr <= 0x80000000UL && 0x80000000UL <= straddr + stringlen )
+			{
+				PanicF("Trying to print bad string 0x%zx + 0x%zx bytes: this "
+				       "is a known bug, but with an unknown cause.", straddr,
+				        stringlen);
+			}
+
 			// Iterate over each character.
 			size_t left = stringlen;
 			while ( (left--) > 0 )
