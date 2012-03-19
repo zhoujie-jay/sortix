@@ -277,7 +277,7 @@ namespace Sortix
 			STACK[stackused++] = page;
 		}
 	}
-	
+
 	namespace Memory
 	{
 		void InvalidatePage(addr_t /*addr*/)
@@ -510,123 +510,113 @@ namespace Sortix
 			return Unmap<true, false>(mapto);
 		}
 
-		// Create an exact copy of the current address space.
-		// TODO: Copying every frame is endlessly useless in many uses. It'd be
-		// nice to upgrade this to a copy-on-write algorithm.
-		addr_t Fork()
+		void ForkCleanup(size_t i, size_t level)
 		{
-			addr_t newtoppmladdr = Page::Get();
-			if ( newtoppmladdr == 0 ) { return 0; }
-
-			// This is either bad code or very clever code and probably is both.
-			size_t positionstack[TOPPMLLEVEL+1];
-			positionstack[TOPPMLLEVEL] = 0;
-			size_t level = TOPPMLLEVEL;
-			size_t pmloffset = 0;
-			bool failure = false;
-
-			// This call always succeeds.
-			MapKernel(newtoppmladdr, (addr_t) (FORKPML + level));
-			InvalidatePage((addr_t) (FORKPML + level));
-
-			// Recurse over the PMLs and fork what should be forked.
-			while ( positionstack[TOPPMLLEVEL] < ENTRIES )
+			PML* destpml = FORKPML + level;
+			if ( !i ) { return; }
+			for ( size_t n = 0; n < i-1; n++ )
 			{
-				const size_t pos = positionstack[level];
-
-				if ( pos == ENTRIES )
+				addr_t entry = destpml->entry[i];
+				if ( !(entry & PML_FORK ) ) { continue; }
+				addr_t phys = entry & PML_ADDRESS;
+				if ( 1 < level )
 				{
-					(positionstack[++level])++;
-					pmloffset /= ENTRIES;
-					continue;
-				}
-
-				addr_t entry = (PMLS[level] + pmloffset)->entry[pos];
-
-				// If the entry should be forked, fork it!
-				if ( (entry & PML_FORK) && (entry & PML_PRESENT) )
-				{
-					// Pop the physical address of somewhere unused.
-					addr_t phys = Page::Get();
-
-					if ( unlikely(phys == 0) )
-					{
-						// Oh no. Out of memory! We'll have to undo everything
-						// we just did. Argh!
-						failure = true;
-						break;
-					}
-
-					// Map the destination page.
 					addr_t destaddr = (addr_t) (FORKPML + level-1);
 					MapKernel(phys, destaddr);
 					InvalidatePage(destaddr);
-
-					// Set its entry in the owner.
-					addr_t flags = entry & PML_FLAGS;
-					(FORKPML + level)->entry[pos] = phys | flags;
-
-					if ( level == 1 )
-					{
-						size_t offset = pmloffset * ENTRIES + pos;
-
-						// Determine the source page's address.
-						const void* src = (const void*) (offset * 4096UL);
-
-						// Determine the destination page's address.
-						void* dest = (void*) (FORKPML + level - 1);
-
-						Maxsi::Memory::Copy(dest, src, sizeof(PML));
-					}
-					else
-					{
-						// Fork the PML recursively!
-						pmloffset = pmloffset * ENTRIES + pos;
-						positionstack[--level] = 0;
-						continue;
-					}
+					ForkCleanup(ENTRIES+1UL, level-1);
 				}
-				
-				// If this entry should be linked, link it.
-				else
-				{
-					FORKPML[level].entry[pos] = entry;
-				}
-
-				positionstack[level]++;
+				Page::Put(phys);
 			}
+		}
 
-			if ( !failure )
+		// TODO: Copying every frame is endlessly useless in many uses. It'd be
+		// nice to upgrade this to a copy-on-write algorithm.
+		bool Fork(size_t level, size_t pmloffset)
+		{
+			PML* destpml = FORKPML + level;
+			for ( size_t i = 0; i < ENTRIES; i++ )
 			{
-				// Now, the new top pml needs to have its fractal memory fixed.
-				const addr_t flags = PML_PRESENT | PML_WRITABLE;
-				addr_t mapto;
-				addr_t childaddr;
+				addr_t entry = (PMLS[level] + pmloffset)->entry[i];
 
-				(FORKPML + TOPPMLLEVEL)->entry[ENTRIES-1] = newtoppmladdr | flags;
-				childaddr = (FORKPML + TOPPMLLEVEL)->entry[ENTRIES-2] & PML_ADDRESS;
-
-				for ( size_t i = TOPPMLLEVEL-1; i > 0; i-- )
+				// Link the entry if it isn't supposed to be forked.
+				if ( !(entry & PML_FORK ) )
 				{
-					mapto = (addr_t) (FORKPML + i);
-					MapKernel(childaddr, mapto);
-					InvalidatePage(mapto);
-					(FORKPML + i)->entry[ENTRIES-1] = newtoppmladdr | flags;
-					childaddr = (FORKPML + i)->entry[ENTRIES-2] & PML_ADDRESS;
+					destpml->entry[i] = entry;
+					continue;
 				}
 
-				return newtoppmladdr;
+				addr_t phys = Page::Get();
+				if ( unlikely(!phys) ) { ForkCleanup(i, level); return false; }
+
+				addr_t flags = entry & PML_FLAGS;
+				destpml->entry[i] = phys | flags;
+
+				// Map the destination page.
+				addr_t destaddr = (addr_t) (FORKPML + level-1);
+				MapKernel(phys, destaddr);
+				InvalidatePage(destaddr);
+
+				size_t offset = pmloffset * ENTRIES + i;
+
+				if ( 1 < level )
+				{
+					if ( !Fork(level-1, offset) )
+					{
+						Page::Put(phys);
+						ForkCleanup(i, level);
+						return false;
+					}
+					continue;
+				}
+
+				// Determine the source page's address.
+				const void* src = (const void*) (offset * 4096UL);
+
+				// Determine the destination page's address.
+				void* dest = (void*) (FORKPML + level - 1);
+
+				Maxsi::Memory::Copy(dest, src, 4096UL);
 			}
-			
-			// The fork failed, so'll have to clean up the new address space and
-			// free all the pages we forked so far. It'd be nice to detect that
-			// this would happen early on, but it seems to impractical or
-			// inefficient. Let's just do the dirty work and clean up.
 
-			// TODO: Fix this error condition by deleting the new pages.
-			Panic("Out of memory during fork. This isn't supported yet.");
+			return true;
+		}
 
-			return 0;
+		bool Fork(addr_t dir, size_t level, size_t pmloffset)
+		{
+			PML* destpml = FORKPML + level;
+
+			// This call always succeeds.
+			MapKernel(dir, (addr_t) destpml);
+			InvalidatePage((addr_t) destpml);
+
+			return Fork(level, pmloffset);
+		}
+
+		// Create an exact copy of the current address space.
+		addr_t Fork()
+		{
+			addr_t dir = Page::Get();
+			if ( dir == 0 ) { return 0; }
+			if ( !Fork(dir, TOPPMLLEVEL, 0) ) { Page::Put(dir); return 0; }
+
+			// Now, the new top pml needs to have its fractal memory fixed.
+			const addr_t flags = PML_PRESENT | PML_WRITABLE;
+			addr_t mapto;
+			addr_t childaddr;
+
+			(FORKPML + TOPPMLLEVEL)->entry[ENTRIES-1] = dir | flags;
+			childaddr = (FORKPML + TOPPMLLEVEL)->entry[ENTRIES-2] & PML_ADDRESS;
+
+			for ( size_t i = TOPPMLLEVEL-1; i > 0; i-- )
+			{
+				mapto = (addr_t) (FORKPML + i);
+				MapKernel(childaddr, mapto);
+				InvalidatePage(mapto);
+				(FORKPML + i)->entry[ENTRIES-1] = dir | flags;
+				childaddr = (FORKPML + i)->entry[ENTRIES-2] & PML_ADDRESS;
+			}
+			return dir;
 		}
 	}
 }
