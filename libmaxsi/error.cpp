@@ -60,7 +60,7 @@ namespace Maxsi
 				case EROFS: return (char*) "Read-only file system";
 				case EINVAL: return (char*) "Invalid argument";
 				case ENOTDIR: return (char*) "Not a directory";
-				case ENOMEM: return (char*) "Not enough space";
+				case ENOMEM: return (char*) "Not enough memory";
 				case ERANGE: return (char*) "Result too large";
 				case EISDIR: return (char*) "Is a directory";
 				case EPERM: return (char*) "Operation not permitted";
