@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -86,8 +86,9 @@ namespace Sortix
 			if ( pat & 0x4 ) { result |= PML_PAT; }
 			return result;
 		}
-		bool MapKernelPAT(addr_t physical, addr_t mapto, addr_t mtype);
-		bool MapUserPAT(addr_t physical, addr_t mapto, addr_t mtype);
+		bool Map(addr_t physical, addr_t mapto, int prot, addr_t mtype);
+		addr_t ProtectionToPMLFlags(int prot);
+		int PMLFlagsToProtection(addr_t flags);
 	}
 }
 

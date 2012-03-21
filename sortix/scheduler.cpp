@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/mman.h>
 #include <libmaxsi/memory.h>
 #include <sortix/kernel/panic.h>
 #include "thread.h"
@@ -82,7 +83,8 @@ namespace Sortix
 			addr_t stackstart = Memory::GetKernelStack();
 			size_t stacksize = Memory::GetKernelStackSize();
 			addr_t stackend = stackstart - stacksize;
-			if ( !Memory::MapRangeKernel(stackend, stacksize) )
+			int prot = PROT_KREAD | PROT_KWRITE;
+			if ( !Memory::MapRange(stackend, stacksize, prot) )
 			{
 				PanicF("could not create kernel stack (%zx to %zx)",
 				       stackend, stackstart);

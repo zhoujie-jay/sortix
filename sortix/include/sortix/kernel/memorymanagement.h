@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,13 +14,13 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	memorymanagement.h
 	Functions that allow modification of virtual memory.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef SORTIX_MEMORYMANAGEMENT_H
 #define SORTIX_MEMORYMANAGEMENT_H
@@ -32,8 +32,13 @@ namespace Sortix
 {
 	namespace Page
 	{
+		bool Reserve(size_t* counter, size_t amount);
+		bool Reserve(size_t* counter, size_t least, size_t ideal);
+		addr_t GetReserved(size_t* counter);
 		addr_t Get();
 		void Put(addr_t page);
+
+		inline size_t Size() { return 4096UL; }
 
 		// Rounds a memory address down to nearest page.
 		inline addr_t AlignDown(addr_t page) { return page & ~(0xFFFUL); }
@@ -53,14 +58,17 @@ namespace Sortix
 		addr_t Fork();
 		addr_t SwitchAddressSpace(addr_t addrspace);
 		void DestroyAddressSpace();
-		bool MapRangeKernel(addr_t where, size_t bytes);
-		void UnmapRangeKernel(addr_t where, size_t bytes);
-		bool MapRangeUser(addr_t where, size_t bytes);
-		void UnmapRangeUser(addr_t where, size_t bytes);
-		bool MapKernel(addr_t physical, addr_t mapto);
-		bool MapUser(addr_t physical, addr_t mapto);
-		addr_t UnmapKernel(addr_t mapto);
-		addr_t UnmapUser(addr_t mapto);
+		bool Map(addr_t physical, addr_t mapto, int prot);
+		addr_t Unmap(addr_t mapto);
+		addr_t Physical(addr_t mapto);
+		int PageProtection(addr_t mapto);
+		bool LookUp(addr_t mapto, addr_t* physical, int* prot);
+		int ProvidedProtection(int prot);
+		void PageProtect(addr_t mapto, int protection);
+		void PageProtectAdd(addr_t mapto, int protection);
+		void PageProtectSub(addr_t mapto, int protection);
+		bool MapRange(addr_t where, size_t bytes, int protection);
+		bool UnmapRange(addr_t where, size_t bytes);
 		void Statistics(size_t* amountused, size_t* totalmem);
 		addr_t GetKernelStack();
 		size_t GetKernelStackSize();

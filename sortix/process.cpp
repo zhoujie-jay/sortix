@@ -25,6 +25,7 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/unistd.h>
 #include <sortix/fork.h>
+#include <sortix/mman.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
@@ -129,7 +130,7 @@ namespace Sortix
 		ProcessSegment* tmp = segments;
 		while ( tmp != NULL )
 		{
-			Memory::UnmapRangeUser(tmp->position, tmp->size);
+			Memory::UnmapRange(tmp->position, tmp->size);
 			ProcessSegment* todelete = tmp;
 			tmp = tmp->next;
 			delete todelete;
@@ -807,7 +808,7 @@ namespace Sortix
 			if ( unmapfrom < currentend )
 			{
 				size_t unmapbytes = Page::AlignUp(currentend - unmapfrom);
-				Memory::UnmapRangeUser(unmapfrom, unmapbytes);
+				Memory::UnmapRange(unmapfrom, unmapbytes);
 			}
 		}
 		else if ( currentend < newend )
@@ -818,7 +819,8 @@ namespace Sortix
 			if ( mapfrom < newend )
 			{
 				size_t mapbytes = Page::AlignUp(newend - mapfrom);
-				if ( !Memory::MapRangeUser(mapfrom, mapbytes) )
+				int prot = PROT_FORK | PROT_READ | PROT_WRITE | PROT_KREAD | PROT_KWRITE;
+				if ( !Memory::MapRange(mapfrom, mapbytes, prot) )
 				{
 					return (void*) -1UL;
 				}

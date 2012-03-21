@@ -25,6 +25,7 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/stat.h>
+#include <sortix/mman.h>
 #include <sortix/initrd.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
@@ -188,7 +189,7 @@ void Init(addr_t phys, size_t size)
 	size_t amount = 0;
 	while ( amount < size )
 	{
-		if ( !Memory::MapKernel(phys + amount, virt + amount) )
+		if ( !Memory::Map(phys + amount, virt + amount, PROT_KREAD) )
 		{
 			Panic("Unable to map the init ramdisk into virtual memory");
 		}

@@ -93,6 +93,7 @@ interrupt.o \
 time.o \
 log.o \
 utf8.o \
+memorymanagement.o \
 calltrace.o \
 $(CPU)/calltrace.o \
 kthread.o \

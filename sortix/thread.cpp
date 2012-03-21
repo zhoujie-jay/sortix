@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/mman.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "event.h"
@@ -106,7 +107,7 @@ namespace Sortix
 			delete todelete;
 		}
 
-		Memory::UnmapRangeUser(stackpos, stacksize);
+		Memory::UnmapRange(stackpos, stacksize);
 
 		terminated = true;
 	}
@@ -152,7 +153,8 @@ namespace Sortix
 		addr_t stackpos = process->AllocVirtualAddr(stacksize);
 		if ( !stackpos ) { return NULL; }
 
-		if ( !Memory::MapRangeUser(stackpos, stacksize) )
+		int prot = PROT_FORK | PROT_READ | PROT_WRITE | PROT_KREAD | PROT_KWRITE;
+		if ( !Memory::MapRange(stackpos, stacksize, prot) )
 		{
 			// TODO: Free the reserved virtual memory area.
 			return NULL;
@@ -161,7 +163,7 @@ namespace Sortix
 		Thread* thread = new Thread();
 		if ( !thread )
 		{
-			Memory::UnmapRangeUser(stackpos, stacksize);
+			Memory::UnmapRange(stackpos, stacksize);
 			// TODO: Free the reserved virtual memory area.
 			return NULL;
 		}

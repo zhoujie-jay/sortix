@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,19 +14,20 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	memorymanagement.cpp
 	Handles memory for the x86 family of architectures.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "multiboot.h"
 #include <sortix/kernel/panic.h>
+#include <sortix/mman.h>
 #include <sortix/kernel/memorymanagement.h>
 #include "memorymanagement.h"
 #include "syscall.h"
@@ -43,6 +44,7 @@ namespace Sortix
 		void InitPushRegion(addr_t position, size_t length);
 		size_t pagesnotonstack;
 		size_t stackused;
+		size_t stackreserved;
 		size_t stacklength;
 		size_t totalmem;
 	}
@@ -56,7 +58,7 @@ namespace Sortix
 		int SysMemStat(size_t* memused, size_t* memtotal);
 		addr_t PAT2PMLFlags[PAT_NUM];
 
-		void Init(multiboot_info_t* bootinfo)
+		void InitCPU(multiboot_info_t* bootinfo)
 		{
 			const size_t MAXKERNELEND = 0x400000UL; /* 4 MiB */
 			addr_t kernelend = Page::AlignUp((addr_t) &end);
@@ -68,6 +70,7 @@ namespace Sortix
 				            MAXKERNELEND);
 			}
 
+			Page::stackreserved = 0;
 			Page::pagesnotonstack = 0;
 			Page::totalmem = 0;
 
@@ -108,7 +111,7 @@ namespace Sortix
 
 			// Loop over every detected memory region.
 			for (
-			     mmap_t mmap = (mmap_t) bootinfo->mmap_addr;
+			     mmap_t mmap = (mmap_t) (addr_t) bootinfo->mmap_addr;
 			     (addr_t) mmap < bootinfo->mmap_addr + bootinfo->mmap_length;
 			     mmap = (mmap_t) ((addr_t) mmap + mmap->size + sizeof(mmap->size))
 			    )
@@ -145,7 +148,7 @@ namespace Sortix
 					// Don't give any of our modules to the physical page
 					// allocator, we'll need them.
 					bool continuing = false;
-					uint32_t* modules = (uint32_t*) bootinfo->mods_addr;
+					uint32_t* modules = (uint32_t*) (addr_t) bootinfo->mods_addr;
 					for ( uint32_t i = 0; i < bootinfo->mods_count; i++ )
 					{
 						size_t modsize = (size_t) (modules[2*i+1] - modules[2*i+0]);
@@ -188,27 +191,14 @@ namespace Sortix
 
 			// Finish allocating the top level PMLs for the kernels use.
 			AllocateKernelPMLs();
-
-			Syscall::Register(SYSCALL_MEMSTAT, (void*) SysMemStat);
 		}
 
 		void Statistics(size_t* amountused, size_t* totalmem)
 		{
-			size_t memfree = Page::stackused << 12UL;
+			size_t memfree = (Page::stackused - Page::stackreserved) << 12UL;
 			size_t memused = Page::totalmem - memfree;
 			if ( amountused ) { *amountused = memused; }
 			if ( totalmem ) { *totalmem = Page::totalmem; }
-		}
-
-		int SysMemStat(size_t* memused, size_t* memtotal)
-		{
-			size_t used;
-			size_t total;
-			Statistics(&used, &total);
-			// TODO: Check if legal user-space buffers!
-			*memused = used;
-			*memtotal = total;
-			return 0;
 		}
 
 		// Prepare the non-forkable kernel PMLs such that forking the kernel
@@ -249,7 +239,8 @@ namespace Sortix
 
 			// This call will also succeed, since there are plenty of physical
 			// pages available and it might need some.
-			if ( !Memory::MapKernel(page, (addr_t) (STACK + stacklength)) )
+			addr_t virt = (addr_t) (STACK + stacklength);
+			if ( !Memory::Map(page, virt, PROT_KREAD | PROT_KWRITE) )
 			{
 				Panic("Unable to extend page stack, which should have worked");
 			}
@@ -280,16 +271,49 @@ namespace Sortix
 					ExtendStack();
 				}
 
-				STACK[stackused++] = position;
+				addr_t* stackentry = &(STACK[stackused++]);
+				*stackentry = position;
 
 				length -= 4096UL;
 				position += 4096UL;
 			}
 		}
 
+		bool Reserve(size_t* counter, size_t least, size_t ideal)
+		{
+			ASSERT(least < ideal);
+			size_t available = stackused - stackreserved;
+			if ( least < available ) { Error::Set(ENOMEM); return false; }
+			if ( available < ideal ) { ideal = available; }
+			stackreserved += ideal;
+			*counter += ideal;
+			return true;
+		}
+
+		bool Reserve(size_t* counter, size_t amount)
+		{
+			return Reserve(counter, amount, amount);
+		}
+
+		addr_t GetReserved(size_t* counter)
+		{
+			if ( !*counter ) { return false; }
+			ASSERT(stackused); // After all, we did _reserve_ the memory.
+			addr_t result = STACK[--stackused];
+			ASSERT(result == AlignDown(result));
+			stackreserved--;
+			(*counter)--;
+			return result;
+		}
+
 		addr_t Get()
 		{
-			if ( unlikely(stackused == 0) ) { Error::Set(ENOMEM); return 0; }
+			ASSERT(stackreserved <= stackused);
+			if ( unlikely(stackreserved == stackused) )
+			{
+				Error::Set(ENOMEM);
+				return 0;
+			}
 			addr_t result = STACK[--stackused];
 			ASSERT(result == AlignDown(result));
 			return result;
@@ -305,6 +329,76 @@ namespace Sortix
 
 	namespace Memory
 	{
+		addr_t ProtectionToPMLFlags(int prot)
+		{
+			addr_t result = 0;
+			if ( prot & PROT_EXEC ) { result |= PML_USERSPACE; }
+			if ( prot & PROT_READ ) { result |= PML_USERSPACE; }
+			if ( prot & PROT_WRITE ) { result |= PML_USERSPACE | PML_WRITABLE; }
+			if ( prot & PROT_KEXEC ) { result |= 0; }
+			if ( prot & PROT_KREAD ) { result |= 0; }
+			if ( prot & PROT_KWRITE ) { result |= PML_WRITABLE; }
+			if ( prot & PROT_FORK ) { result |= PML_FORK; }
+			return result;
+		}
+
+		int PMLFlagsToProtection(addr_t flags)
+		{
+			int prot = PROT_KREAD | PROT_KEXEC;
+			bool user = flags & PML_USERSPACE;
+			bool write = flags & PML_WRITABLE;
+			if ( user ) { prot |= PROT_EXEC | PROT_READ; }
+			if ( user && write ) { prot |= PROT_WRITE; }
+			return prot;
+		}
+
+		int ProvidedProtection(int prot)
+		{
+			addr_t flags = ProtectionToPMLFlags(prot);
+			return PMLFlagsToProtection(flags);
+		}
+
+		bool LookUp(addr_t mapto, addr_t* physical, int* protection)
+		{
+			// Translate the virtual address into PML indexes.
+			const size_t MASK = (1<<TRANSBITS)-1;
+			size_t pmlchildid[TOPPMLLEVEL + 1];
+			for ( size_t i = 1; i <= TOPPMLLEVEL; i++ )
+			{
+				pmlchildid[i] = (mapto >> (12+(i-1)*TRANSBITS)) & MASK;
+			}
+
+			int prot = PROT_USER | PROT_KERNEL | PROT_FORK;
+
+			// For each PML level, make sure it exists.
+			size_t offset = 0;
+			for ( size_t i = TOPPMLLEVEL; i > 1; i-- )
+			{
+				size_t childid = pmlchildid[i];
+				PML* pml = PMLS[i] + offset;
+
+				addr_t entry = pml->entry[childid];
+				if ( !(entry & PML_PRESENT) ) { return false; }
+				int entryflags = entry & PML_ADDRESS;
+				int entryprot = PMLFlagsToProtection(entryflags);
+				prot &= entryprot;
+
+				// Find the index of the next PML in the fractal mapped memory.
+				offset = offset * ENTRIES + childid;
+			}
+
+			addr_t entry = (PMLS[1] + offset)->entry[pmlchildid[1]];
+			int entryflags = entry & PML_ADDRESS;
+			int entryprot = PMLFlagsToProtection(entryflags);
+			prot &= entryprot;
+			addr_t phys = entry & PML_ADDRESS;
+
+			if ( physical ) { *physical = phys; }
+			if ( protection ) { *protection = prot; }
+
+			return true;
+		}
+
 		void InvalidatePage(addr_t /*addr*/)
 		{
 			// TODO: Actually just call the instruction.
@@ -342,7 +436,7 @@ namespace Sortix
 			return previous;
 		}
 
-		bool MapRangeKernel(addr_t where, size_t bytes)
+		bool MapRange(addr_t where, size_t bytes, int protection)
 		{
 			for ( addr_t page = where; page < where + bytes; page += 4096UL )
 			{
@@ -352,61 +446,31 @@ namespace Sortix
 					while ( where < page )
 					{
 						page -= 4096UL;
-						physicalpage = UnmapKernel(page);
+						physicalpage = Unmap(page);
 						Page::Put(physicalpage);
 					}
 					return false;
 				}
 
-				MapKernel(physicalpage, page);
+				Map(physicalpage, page, protection);
 			}
 
 			return true;
 		}
 
-		void UnmapRangeKernel(addr_t where, size_t bytes)
+		bool UnmapRange(addr_t where, size_t bytes)
 		{
 			for ( addr_t page = where; page < where + bytes; page += 4096UL )
 			{
-				addr_t physicalpage = UnmapKernel(page);
+				addr_t physicalpage = Unmap(page);
 				Page::Put(physicalpage);
 			}
-		}
-
-		bool MapRangeUser(addr_t where, size_t bytes)
-		{
-			for ( addr_t page = where; page < where + bytes; page += 4096UL )
-			{
-				addr_t physicalpage = Page::Get();
-				if ( physicalpage == 0 || !MapUser(physicalpage, page) )
-				{
-					while ( where < page )
-					{
-						page -= 4096UL;
-						physicalpage = UnmapUser(page);
-						Page::Put(physicalpage);
-					}
-					return false;
-				}
-			}
-
 			return true;
 		}
 
-		void UnmapRangeUser(addr_t where, size_t bytes)
+		static bool MapInternal(addr_t physical, addr_t mapto, int prot, addr_t extraflags = 0)
 		{
-			for ( addr_t page = where; page < where + bytes; page += 4096UL )
-			{
-				addr_t physicalpage = UnmapUser(page);
-				Page::Put(physicalpage);
-			}
-		}
-
-		template <bool userspace, bool invalidate>
-		bool Map(addr_t physical, addr_t mapto, addr_t extraflags = 0)
-		{
-			const addr_t userflags = userspace ? (PML_USERSPACE | PML_FORK) : 0;
-			const addr_t flags = userflags | PML_PRESENT | PML_WRITABLE;
+			addr_t flags = ProtectionToPMLFlags(prot) | PML_PRESENT;
 
 			// Translate the virtual address into PML indexes.
 			const size_t MASK = (1<<TRANSBITS)-1;
@@ -416,7 +480,7 @@ namespace Sortix
 				pmlchildid[i] = (mapto >> (12+(i-1)*TRANSBITS)) & MASK;
 			}
 
-			// For each PML level, make sure it exists, and that we may use it.
+			// For each PML level, make sure it exists.
 			size_t offset = 0;
 			for ( size_t i = TOPPMLLEVEL; i > 1; i-- )
 			{
@@ -432,20 +496,16 @@ namespace Sortix
 				{
 					// TODO: Possible memory leak when page allocation fails.
 					addr_t page = Page::Get();
-					if ( page == 0 ) { return false; }
-					entry = page | flags | extraflags;
+
+					if ( !page ) { return false; }
+					addr_t pmlflags = PML_PRESENT | PML_WRITABLE | PML_USERSPACE
+					                | PML_FORK;
+					entry = page | pmlflags;
 
 					// Invalidate the new PML and reset it to zeroes.
 					addr_t pmladdr = (addr_t) (PMLS[i-1] + childoffset);
 					InvalidatePage(pmladdr);
 					Maxsi::Memory::Set((void*) pmladdr, 0, sizeof(PML));
-				}
-				else if ( userspace && !(entry & PML_USERSPACE) )
-				{
-					PanicF("attempted to map physical page %p to virtual page "
-					       "%p with userspace permissions, but the virtual page "
-					       "wasn't in an userspace PML[%zu]. This is a bug in the "
-					       "code calling this function", physical, mapto, i-1);
 				}
 
 				offset = childoffset;
@@ -454,16 +514,39 @@ namespace Sortix
 			// Actually map the physical page to the virtual page.
 			const addr_t entry = physical | flags | extraflags;
 			(PMLS[1] + offset)->entry[pmlchildid[1]] = entry;
-
-			if ( invalidate )
-			{
-				InvalidatePage(mapto);
-			}
-
 			return true;
 		}
 
-		template <bool userspace, bool invalidate>
+		bool Map(addr_t physical, addr_t mapto, int prot)
+		{
+			return MapInternal(physical, mapto, prot);
+		}
+
+		void PageProtect(addr_t mapto, int protection)
+		{
+			addr_t phys;
+			LookUp(mapto, &phys, NULL);
+			Map(phys, mapto, protection);
+		}
+
+		void PageProtectAdd(addr_t mapto, int protection)
+		{
+			addr_t phys;
+			int prot;
+			LookUp(mapto, &phys, &prot);
+			prot |= protection;
+			Map(phys, mapto, prot);
+		}
+
+		void PageProtectSub(addr_t mapto, int protection)
+		{
+			addr_t phys;
+			int prot;
+			LookUp(mapto, &phys, &prot);
+			prot &= ~protection;
+			Map(phys, mapto, prot);
+		}
+
 		addr_t Unmap(addr_t mapto)
 		{
 			// Translate the virtual address into PML indexes.
@@ -474,8 +557,7 @@ namespace Sortix
 				pmlchildid[i] = (mapto >> (12+(i-1)*TRANSBITS)) & MASK;
 			}
 
-			// For each PML level, make sure it exists, and that it belongs to
-			// user-space.
+			// For each PML level, make sure it exists.
 			size_t offset = 0;
 			for ( size_t i = TOPPMLLEVEL; i > 1; i-- )
 			{
@@ -486,15 +568,9 @@ namespace Sortix
 
 				if ( !(entry & PML_PRESENT) )
 				{
-					PanicF("attempted to unmap virtual page %p with userspace, "
-					       " but the virtual page wasn't mapped. This is a bug "
-					       "in the code calling this function", mapto);
-				}
-				else if ( userspace && !(entry & PML_USERSPACE) )
-				{
-					PanicF("attempted to unmap virtual page %p it wasn't in an "
-					       "userspace PML[%zu]. This is a bug in the code "
-					       "calling this function", mapto, i-1);
+					PanicF("Attempted to unmap virtual page %p, but the virtual"
+					       " page was wasn't mapped. This is a bug in the code "
+					       "code calling this function", mapto);
 				}
 
 				// Find the index of the next PML in the fractal mapped memory.
@@ -508,44 +584,13 @@ namespace Sortix
 			// TODO: If all the entries in PML[N] are not-present, then who
 			// unmaps its entry from PML[N-1]?
 
-			if ( invalidate )
-			{
-				Flush();
-			}
-
 			return result;
 		}
 
-		bool MapKernelPAT(addr_t physical, addr_t mapto, addr_t mtype)
+		bool MapPAT(addr_t physical, addr_t mapto, int prot, addr_t mtype)
 		{
 			addr_t extraflags = PAT2PMLFlags[mtype];
-			return Map<false, false>(physical, mapto, extraflags);
-		}
-
-		bool MapKernel(addr_t physical, addr_t mapto)
-		{
-			return MapKernelPAT(physical, mapto, PAT_WB);
-		}
-
-		bool MapUserPAT(addr_t physical, addr_t mapto, addr_t mtype)
-		{
-			addr_t extraflags = PAT2PMLFlags[mtype];
-			return Map<true, false>(physical, mapto, extraflags);
-		}
-
-		bool MapUser(addr_t physical, addr_t mapto)
-		{
-			return MapUserPAT(physical, mapto, PAT_WB);
-		}
-
-		addr_t UnmapKernel(addr_t mapto)
-		{
-			return Unmap<false, false>(mapto);
-		}
-
-		addr_t UnmapUser(addr_t mapto)
-		{
-			return Unmap<true, false>(mapto);
+			return MapInternal(physical, mapto, prot, extraflags);
 		}
 
 		void ForkCleanup(size_t i, size_t level)
@@ -560,7 +605,7 @@ namespace Sortix
 				if ( 1 < level )
 				{
 					addr_t destaddr = (addr_t) (FORKPML + level-1);
-					MapKernel(phys, destaddr);
+					Map(phys, destaddr, PROT_KREAD | PROT_KWRITE);
 					InvalidatePage(destaddr);
 					ForkCleanup(ENTRIES+1UL, level-1);
 				}
@@ -592,7 +637,7 @@ namespace Sortix
 
 				// Map the destination page.
 				addr_t destaddr = (addr_t) (FORKPML + level-1);
-				MapKernel(phys, destaddr);
+				Map(phys, destaddr, PROT_KREAD | PROT_KWRITE);
 				InvalidatePage(destaddr);
 
 				size_t offset = pmloffset * ENTRIES + i;
@@ -625,7 +670,7 @@ namespace Sortix
 			PML* destpml = FORKPML + level;
 
 			// This call always succeeds.
-			MapKernel(dir, (addr_t) destpml);
+			Map(dir, (addr_t) destpml, PROT_KREAD | PROT_KWRITE);
 			InvalidatePage((addr_t) destpml);
 
 			return Fork(level, pmloffset);
@@ -649,7 +694,7 @@ namespace Sortix
 			for ( size_t i = TOPPMLLEVEL-1; i > 0; i-- )
 			{
 				mapto = (addr_t) (FORKPML + i);
-				MapKernel(childaddr, mapto);
+				Map(childaddr, mapto, PROT_KREAD | PROT_KWRITE);
 				InvalidatePage(mapto);
 				(FORKPML + i)->entry[ENTRIES-1] = dir | flags;
 				childaddr = (FORKPML + i)->entry[ENTRIES-2] & PML_ADDRESS;

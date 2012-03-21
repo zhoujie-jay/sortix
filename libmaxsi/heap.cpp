@@ -22,6 +22,7 @@
 
 ******************************************************************************/
 
+#include <sys/mman.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/error.h>
@@ -78,11 +79,11 @@ namespace Maxsi
 
 		void FreeMemory(addr_t where, size_t bytes)
 		{
-			ASSERT( (bytes & (PAGESIZE-1UL)) == 0 );
+			ASSERT(Sortix::Page::IsAligned(where + bytes));
 
 			while ( bytes )
 			{
-				addr_t page = Sortix::Memory::UnmapKernel(where);
+				addr_t page = Sortix::Memory::Unmap(where);
 				Sortix::Page::Put(page);
 
 				bytes -= PAGESIZE;
@@ -92,7 +93,7 @@ namespace Maxsi
 
 		bool AllocateMemory(addr_t where, size_t bytes)
 		{
-			ASSERT( (bytes & (PAGESIZE-1UL)) == 0 );
+			ASSERT(Sortix::Page::IsAligned(where + bytes));
 
 			addr_t pos = where;
 
@@ -105,7 +106,7 @@ namespace Maxsi
 					return false;
 				}
 
-				if ( !Sortix::Memory::MapKernel(page, pos) )
+				if ( !Sortix::Memory::Map(page, pos, PROT_KREAD | PROT_KWRITE) )
 				{
 					Sortix::Page::Put(page);
 					FreeMemory(where, pos-where);

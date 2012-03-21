@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/mman.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "elf.h"
@@ -104,14 +105,20 @@ namespace Sortix
 				segment->size = Page::AlignUp(mapbytes);
 				segment->type = ToProgramSectionType(pht->flags);
 
+				int prot = PROT_FORK | PROT_KREAD | PROT_KWRITE;
+				if ( pht->flags & PF_X ) { prot |= PROT_EXEC; }
+				if ( pht->flags & PF_R ) { prot |= PROT_READ; }
+				if ( pht->flags & PF_W ) { prot |= PROT_WRITE; }
+
 				if ( segment->Intersects(process->segments) )
 				{
 					delete segment;
 					return 0;
 				}
 
-				if ( !Memory::MapRangeUser(mapto, mapbytes))
+				if ( !Memory::MapRange(mapto, mapbytes, prot))
 				{
+					// TODO: Memory leak of segment?
 					return 0;
 				}
 
@@ -184,14 +191,20 @@ namespace Sortix
 				segment->size = Page::AlignUp(mapbytes);
 				segment->type = ToProgramSectionType(pht->flags);
 
+				int prot = PROT_FORK | PROT_KREAD | PROT_KWRITE;
+				if ( pht->flags & PF_X ) { prot |= PROT_EXEC; }
+				if ( pht->flags & PF_R ) { prot |= PROT_READ; }
+				if ( pht->flags & PF_W ) { prot |= PROT_WRITE; }
+
 				if ( segment->Intersects(process->segments) )
 				{
 					delete segment;
 					return 0;
 				}
 
-				if ( !Memory::MapRangeUser(mapto, mapbytes))
+				if ( !Memory::MapRange(mapto, mapbytes, prot))
 				{
+					// TODO: Memory leak of segment?
 					return 0;
 				}
 
