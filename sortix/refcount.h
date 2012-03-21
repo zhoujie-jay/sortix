@@ -36,6 +36,7 @@ namespace Sortix
 	public:
 		void Refer();
 		void Unref();
+		inline size_t Refcount() const { return refcount; }
 
 	private:
 		size_t refcount;
