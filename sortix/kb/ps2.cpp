@@ -22,11 +22,11 @@
 
 ******************************************************************************/
 
-#include "../platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/memory.h>
 #include "../interrupt.h"
 #include "../keyboard.h"
-#include "../keycodes.h"
+#include <sortix/keycodes.h>
 #include "ps2.h"
 
 using namespace Maxsi;

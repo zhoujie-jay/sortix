@@ -22,9 +22,9 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/memory.h>
-#include "panic.h"
+#include <sortix/kernel/panic.h>
 #include "signal.h"
 
 using namespace Maxsi;

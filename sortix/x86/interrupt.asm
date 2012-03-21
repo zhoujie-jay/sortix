@@ -34,7 +34,7 @@
     push long %2
     jmp irq_common_stub
 %endmacro
-        
+
 ISR_NOERRCODE 0
 ISR_NOERRCODE 1
 ISR_NOERRCODE 2
@@ -153,7 +153,7 @@ irq_common_stub:
     ;sti
     iret           ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
 
-global 
+global
 
 global interrupt_handler_null
 interrupt_handler_null:

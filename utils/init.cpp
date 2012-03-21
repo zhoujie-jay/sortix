@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
 	printf("\r\e[m\e[J");
 	fflush(stdout);
 
-	pid_t childpid = fork();	
+	pid_t childpid = fork();
 	if ( childpid < 0 ) { perror("fork"); return 2; }
 
 	return ( childpid == 0 ) ? child() : parent(childpid);

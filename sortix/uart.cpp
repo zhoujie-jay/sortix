@@ -22,7 +22,8 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
+#include "cpu.h"
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
 #include "vga.h"
@@ -36,14 +37,14 @@ namespace Sortix
 	{
 		const nat TXR = 0; // Transmit register
 		const nat RXR = 0; // Receive register
-		const nat IER = 1; // Interrupt Enable 
+		const nat IER = 1; // Interrupt Enable
 		const nat IIR = 2; // Interrupt ID
 		const nat FCR = 2; // FIFO control
 		const nat LCR = 3; // Line control
 		const nat MCR = 4; // Modem control
 		const nat LSR = 5; // Line Status
 		const nat MSR = 6; // Modem Status
-		const nat DLL = 0; // Divisor Latch Low 
+		const nat DLL = 0; // Divisor Latch Low
 		const nat DLM = 1; // Divisor latch High
 
 		const nat LCR_DLAB = 0x80; // Divisor latch access bit
@@ -181,7 +182,7 @@ namespace Sortix
 			CPU::OutPortB(Port + IER, 0);
 
 			int Result = -1;
-		
+
 			if ( CPU::InPortB(Port + LSR) & LSR_READY )
 			{
 				Result = CPU::InPortB(Port);
@@ -207,7 +208,7 @@ namespace Sortix
 
 		void InvalidateVGA()
 		{
-			for ( nat I = 0; I < FrameWidth * FrameHeight; I++ ) { VGALastFrame[I] = 0; }	
+			for ( nat I = 0; I < FrameWidth * FrameHeight; I++ ) { VGALastFrame[I] = 0; }
 		}
 
 		void RenderVGA(const uint16_t* Frame)
@@ -265,7 +266,7 @@ namespace Sortix
 						OldElement = VGALastFrame[Pos];
 
 						nat NewColor = (ConversionTable[ (Element >> 12) & 0xF ] << 3) | (ConversionTable[ (Element >> 8) & 0xF ]);
-		
+
 						// Change the color if we need to.
 						if ( LastColor != NewColor )
 						{

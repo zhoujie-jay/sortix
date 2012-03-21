@@ -22,11 +22,11 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/memory.h>
 #include "multiboot.h"
-#include "panic.h"
-#include "../memorymanagement.h"
+#include <sortix/kernel/panic.h>
+#include <sortix/kernel/memorymanagement.h>
 #include "x86-family/memorymanagement.h"
 
 namespace Sortix
@@ -79,7 +79,7 @@ namespace Sortix
 			// Add some predefined room for forking address spaces.
 			PML* const FORKPML2 = (PML* const) 0x29000UL;
 			PML* const FORKPML1 = (PML* const) 0x2A000UL;
-			
+
 			BOOTPML3->entry[0] = (addr_t) FORKPML2 | flags | PML_FORK;
 			BOOTPML2->entry[0] = (addr_t) FORKPML1 | flags | PML_FORK;
 

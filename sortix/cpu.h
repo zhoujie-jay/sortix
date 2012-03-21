@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -17,29 +17,22 @@
 	You should have received a copy of the GNU General Public License along with
 	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	calltrace.cpp
-	Traverses the stack and prints the callstack, which aids debugging.
+	cpu.h
+	Includes CPU-specific headers.
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include "calltrace.h"
+#ifndef SORTIX_CPU_H
+#define SORTIX_CPU_H
 
-namespace Sortix {
-namespace Calltrace {
+	// Include some x86 headers.
+	#ifdef PLATFORM_X86
+		#include "x86/x86.h"
+	#endif
 
-extern "C" void calltrace();
-extern "C" void calltrace_print_function(size_t index, addr_t ip)
-{
-	Log::PrintF("%zu: 0x%zx\n", index, ip);
-}
+	// Include some x64 headers.
+	#ifdef PLATFORM_X64
+		#include "x64/x64.h"
+	#endif
 
-void Perform()
-{
-	Log::PrintF("Calltrace:\n");
-	calltrace();
-}
-
-} // namespace Calltrace
-} // namespace Sortix
-
+#endif

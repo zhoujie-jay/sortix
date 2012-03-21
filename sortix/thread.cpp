@@ -22,14 +22,14 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "event.h"
 #include "process.h"
 #include "thread.h"
 #include "scheduler.h"
-#include "memorymanagement.h"
+#include <sortix/kernel/memorymanagement.h>
 #include "time.h"
 #include "syscall.h"
 
@@ -120,7 +120,7 @@ namespace Sortix
 		{
 			clonesignal = currentsignal->Fork();
 			if ( !clonesignal ) { return NULL; }
-		} 
+		}
 
 		Thread* clone = new Thread(this);
 		if ( !clone )
@@ -214,9 +214,9 @@ namespace Sortix
 
 		if ( override->signum == SIGKILL )
 		{
-			
+
 		}
-		
+
 
 		override->nextsignal = currentsignal;
 		Maxsi::Memory::Copy(&override->regs, regs, sizeof(override->regs));
@@ -232,7 +232,7 @@ namespace Sortix
 
 		CPU::InterruptRegisters* dest = Syscall::InterruptRegs();
 		CPU::InterruptRegisters* src = &thread->currentsignal->regs;
-		
+
 		Maxsi::Memory::Copy(dest, src, sizeof(CPU::InterruptRegisters));
 		thread->currentsignal = thread->currentsignal->nextsignal;
 		Syscall::AsIs();

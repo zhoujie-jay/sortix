@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
 		usage(argv0);
 		return 1;
 	}
-	
+
 	bool hadany = false;
 	for ( int i = 1; i < argc; i++ )
 	{

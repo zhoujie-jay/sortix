@@ -22,9 +22,9 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include "scheduler.h"
-#include "../memorymanagement.h"
+#include <sortix/kernel/memorymanagement.h>
 
 namespace Sortix
 {

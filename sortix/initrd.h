@@ -22,44 +22,17 @@
 
 ******************************************************************************/
 
-#ifndef SORTIX_INITRD_H
-#define SORTIX_INITRD_H
+#ifndef SORTIX_INITRD_KERNEL_H
+#define SORTIX_INITRD_KERNEL_H
 
 namespace Sortix
 {
 	namespace InitRD
 	{
-		struct Header;
-		struct FileHeader;
-
-		struct Header
-		{
-			char magic[16]; // Contains "sortix-initrd-1"
-			uint32_t numfiles;
-			// FileHeader[numfiles];
-		};
-
-		struct FileHeader
-		{
-			mode_t permissions;
-			uid_t owner;
-			gid_t group;
-			uint32_t size;
-			uint32_t offset; // where the physical data is located.
-			char name[128];
-		};
-
-		struct Trailer
-		{
-			uint8_t sum; // sum of all bytes but the trailer.
-		};
-
-#ifdef SORTIX_KERNEL
 		void Init(addr_t phys, size_t size);
 		byte* Open(const char* filepath, size_t* size);
 		const char* GetFilename(size_t index);
 		size_t GetNumFiles();
-#endif
 	}
 }
 

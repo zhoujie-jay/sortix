@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
 			result = 1;
 			continue;
 		}
-		
+
 		result |= docat(argv[i], fd);
 		close(fd);
 	}

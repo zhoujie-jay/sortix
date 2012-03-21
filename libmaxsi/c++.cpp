@@ -42,7 +42,7 @@ extern "C" uint64_t __udivdi3(uint64_t a, uint64_t b)
 		power *= 2;
 		divisor *= 2;
 	}
-	
+
 	while ( divisor <= remainder )
 	{
 		remainder -= divisor;
@@ -68,7 +68,7 @@ extern "C" uint64_t __umoddi3(uint64_t a, uint64_t b)
 		power *= 2;
 		divisor *= 2;
 	}
-	
+
 	while ( divisor <= remainder )
 	{
 		remainder -= divisor;

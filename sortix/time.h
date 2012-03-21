@@ -26,12 +26,14 @@
 #ifndef SORTIX_TIME_H
 #define SORTIX_TIME_H
 
+#include "cpu.h"
+
 namespace Sortix
 {
 	namespace Time
 	{
 		void Init();
-		void OnIRQ0(CPU::InterruptRegisters* Registers, void* user);	
+		void OnIRQ0(CPU::InterruptRegisters* Registers, void* user);
 		float GetTimeSinceBoot();
 		uintmax_t MicrosecondsSinceBoot();
 	}

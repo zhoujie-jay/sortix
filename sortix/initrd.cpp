@@ -22,14 +22,15 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
+#include <sortix/initrd.h>
 #include "initrd.h"
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include "syscall.h"
-#include "memorymanagement.h"
+#include <sortix/kernel/memorymanagement.h>
 
-#include "log.h" // DEBUG
+#include <sortix/kernel/log.h> // DEBUG
 
 using namespace Maxsi;
 

@@ -153,7 +153,7 @@ resume_syscall:
 	movq 40(%r11), %r9
 
 	callq *%rax
-	
+
 	leaveq
 	retq
 

@@ -22,10 +22,10 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
-#include "panic.h"
+#include <sortix/kernel/panic.h>
 #include "mount.h"
 #include "fs/ramfs.h"
 #include "fs/initfs.h"

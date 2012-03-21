@@ -22,11 +22,11 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/memory.h>
 #include "multiboot.h"
-#include "panic.h"
-#include "../memorymanagement.h"
+#include <sortix/kernel/panic.h>
+#include <sortix/kernel/memorymanagement.h>
 #include "x86-family/memorymanagement.h"
 
 namespace Sortix

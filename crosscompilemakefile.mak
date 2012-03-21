@@ -17,16 +17,17 @@ ifeq ($(CPU),x64)
 endif
 
 LIBMAXSIROOT=$(OSROOT)/libmaxsi
+SORTIXROOT=$(OSROOT)/sortix
 
 LIBC=$(LIBMAXSIROOT)/start.o $(LIBMAXSIROOT)/libc.a
 LIBS=$(LIBC)
 
 CPPFLAGS=$(CPUDEFINES) -U_GNU_SOURCE -Ulinux -Dsortix
 FLAGS=-nostdinc -nostdlib -fno-builtin -nostartfiles -nodefaultlibs
-INCLUDES=-I $(LIBMAXSIROOT)/preproc -I $(OSROOT)/
+INCLUDES=-I $(LIBMAXSIROOT)/preproc -I $(SORTIXROOT)/include
 
 LD=ld
-LDFLAGS=$(CPULDFLAGS) 
+LDFLAGS=$(CPULDFLAGS)
 CC=gcc
 CFLAGS=$(CPUFLAGS) $(FLAGS) $(INCLUDES)
 CXX=g++

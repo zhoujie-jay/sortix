@@ -73,7 +73,7 @@ namespace Maxsi
 
 		extern "C" void SIG_IGN(int /*signum*/)
 		{
-			
+
 		}
 
 		extern "C" void SIG_ERR(int /*signum*/)
@@ -107,7 +107,7 @@ namespace Maxsi
 			// Tell the kernel which function we want called upon signals.
 			SysRegisterSignalHandler(&SignalHandlerAssembly);
 		}
-	
+
 		Handler RegisterHandler(int signum, Handler handler)
 		{
 			if ( signum < 0 || MAX_SIGNALS <= signum ) { return SIG_ERR; }

@@ -77,7 +77,7 @@ void Reset()
 	switch ( rand() % 4 )
 	{
 		case 0: velx = -1; vely = 0; break;
-		case 1: velx = 1; vely = 0; break; 
+		case 1: velx = 1; vely = 0; break;
 		case 2: velx = 0; vely = -1; break;
 		case 3: velx = 0; vely = -1; break;
 	}
@@ -168,7 +168,7 @@ void Update()
 		switch ( direction[taily * width + tailx] )
 		{
 			case 0: tailx--; break;
-			case 1: tailx++; break; 
+			case 1: tailx++; break;
 			case 2: taily--; break;
 			case 3: taily++; break;
 		}

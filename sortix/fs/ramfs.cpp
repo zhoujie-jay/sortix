@@ -22,7 +22,7 @@
 
 ******************************************************************************/
 
-#include "../platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
@@ -66,7 +66,7 @@ namespace Sortix
 		virtual bool IsWritable();
 
 	};
-	
+
 	DevRAMFSFile::DevRAMFSFile(char* name)
 	{
 		this->name = name;

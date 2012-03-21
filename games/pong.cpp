@@ -160,7 +160,7 @@ void Goal(nat player)
 	System::Sound::SetFrequency(goalfreq);
 	soundleft = 50;
 
-	UpdateUI();	
+	UpdateUI();
 }
 
 void UpdateUI()

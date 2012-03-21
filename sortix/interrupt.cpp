@@ -22,7 +22,7 @@
 
 *******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include "x86-family/idt.h"
 #include "interrupt.h"
 
@@ -251,7 +251,7 @@ void IRQHandler(Sortix::CPU::InterruptRegisters* regs)
 	unsigned int_no = regs->int_no;
 
 	// Send an EOI (end of interrupt) signal to the PICs.
-	if ( IRQ8 <= int_no ) { CPU::OutPortB(PIC_SLAVE, PIC_CMD_ENDINTR); } 
+	if ( IRQ8 <= int_no ) { CPU::OutPortB(PIC_SLAVE, PIC_CMD_ENDINTR); }
 	CPU::OutPortB(PIC_MASTER, PIC_CMD_ENDINTR);
 
 	if ( interrupthandlers[int_no] )

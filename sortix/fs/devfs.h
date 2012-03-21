@@ -34,7 +34,7 @@ namespace Sortix
 
 	class DevDevFS : public DevFileSystem
 	{
-	public: 
+	public:
 		DevDevFS();
 		virtual ~DevDevFS();
 

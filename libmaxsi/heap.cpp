@@ -37,10 +37,10 @@
 #define PARANOIA 1
 
 #ifdef SORTIX_KERNEL
-#include <sortix/platform.h>
-#include <sortix/log.h> // DEBUG
-#include <sortix/memorymanagement.h>
-#include <sortix/panic.h>
+#include <sortix/kernel/platform.h>
+#include <sortix/kernel/log.h> // DEBUG
+#include <sortix/kernel/memorymanagement.h>
+#include <sortix/kernel/panic.h>
 #endif
 
 namespace Maxsi
@@ -649,7 +649,7 @@ namespace Maxsi
 		{
 			size_t total = nmemb * size;
 			void* result = Allocate(total);
-			if ( !result ) { return NULL; }	
+			if ( !result ) { return NULL; }
 			Memory::Set(result, 0, total);
 			return result;
 		}

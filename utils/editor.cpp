@@ -149,7 +149,7 @@ unsigned textmode()
 		ssize_t numbytes = read(0, &codepoint, sizeof(codepoint));
 		if ( !numbytes ) { break; }
 		if ( numbytes < 0 ) { error(1, errno, "read stdin"); }
-		if ( numbytes < sizeof(codepoint) ) { 
+		if ( numbytes < sizeof(codepoint) ) {
 			printf("unexpectedly got %zi bytes\n", numbytes);
 			printf("bytes: %x\n", codepoint);
 
@@ -180,13 +180,13 @@ fprintf(stderr, "bad stdin data\n"); exit(1); }
 				if ( cursorx < WIDTH-1 ) { cursorx++; }
 				break;
 			case KBKEY_O:
-				if ( ctrl ) { dectrlmode = MODE_SAVE; }				
+				if ( ctrl ) { dectrlmode = MODE_SAVE; }
 				break;
 			case KBKEY_R:
-				if ( ctrl ) { dectrlmode = MODE_LOAD; }				
+				if ( ctrl ) { dectrlmode = MODE_LOAD; }
 				break;
 			case KBKEY_X:
-				if ( ctrl ) { dectrlmode = MODE_CONFIRM_QUIT; }				
+				if ( ctrl ) { dectrlmode = MODE_CONFIRM_QUIT; }
 				break;
 			}
 			continue;
@@ -364,8 +364,8 @@ bool loadfromfile(const char* path)
 				cursorx = 0;
 				continue;
 			}
-			
-			if ( WIDTH <= cursorx ) { continue; } 
+
+			if ( WIDTH <= cursorx ) { continue; }
 			buffers[cursory][cursorx++] = buffer[i];
 		}
 	}
@@ -455,7 +455,7 @@ int main(int argc, char* argv[])
 		cursorx = 0;
 		cursory = 0;
 	}
-	
+
 	run();
 
 	return 0;

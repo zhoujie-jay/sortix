@@ -38,7 +38,7 @@ namespace Maxsi
 			size_t Result = 0;
 
 			while ( String[Result] != '\0' )
-			{ 
+			{
 				Result++;
 			}
 
@@ -57,7 +57,7 @@ namespace Maxsi
 			char* OriginalDest = Dest;
 
 			while ( *Src != '\0' )
-			{ 
+			{
 				*Dest = *Src;
 				Dest++; Src++;
 			}
@@ -82,7 +82,7 @@ namespace Maxsi
 			while ( *Dest != '\0' ) { Dest++; }
 
 			while ( *Src != '\0' )
-			{ 
+			{
 				*Dest = *Src;
 				Dest++; Src++;
 			}
@@ -164,7 +164,7 @@ namespace Maxsi
 		DUAL_FUNCTION(size_t, strspn, Accept, (const char* str, const char* accept))
 		{
 			size_t acceptlen = 0;
-			while ( accept[acceptlen] ) { acceptlen++; }			
+			while ( accept[acceptlen] ) { acceptlen++; }
 			for ( size_t result = 0; true; result++ )
 			{
 				char c = str[result];
@@ -183,7 +183,7 @@ namespace Maxsi
 		DUAL_FUNCTION(size_t, strcspn, Reject, (const char* str, const char* reject))
 		{
 			size_t rejectlen = 0;
-			while ( reject[rejectlen] ) { rejectlen++; }			
+			while ( reject[rejectlen] ) { rejectlen++; }
 			for ( size_t result = 0; true; result++ )
 			{
 				char c = str[result];
@@ -339,7 +339,7 @@ namespace Maxsi
 			va_list param_pt;
 
 			va_start(param_pt, NumParameters);
-	
+
 			// First calculate the string length.
 			size_t ResultLength = 0;
 			const char* TMP = 0;
@@ -372,7 +372,7 @@ namespace Maxsi
 					ResultOffset += TMPLength;
 				}
 			}
-	
+
 			return Result;
 		}
 #endif

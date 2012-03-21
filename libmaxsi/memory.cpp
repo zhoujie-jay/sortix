@@ -108,7 +108,7 @@ namespace Maxsi
 			{
 				if ( buf[i] == c ) { return (void*) (buf + i); }
 			}
-			return NULL;	
+			return NULL;
 		}
 	}
 }

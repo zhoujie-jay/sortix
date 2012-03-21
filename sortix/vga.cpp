@@ -22,11 +22,10 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "vga.h"
-#include "memorymanagement.h"
 #include "scheduler.h"
 #include "syscall.h"
 #include "process.h"
@@ -60,7 +59,7 @@ namespace Sortix
 			CPU::OutPortB(0x3D5, (value >> 8) & 0xFF);
 			CPU::OutPortB(0x3D4, 15);
 			CPU::OutPortB(0x3D5, (value >> 0) & 0xFF);
-		}		
+		}
 	}
 
 	DevVGA::DevVGA()

@@ -29,10 +29,10 @@ namespace Maxsi
 	namespace Random
 	{
 		unsigned random_seed = 1337;
-		extern "C" int rand() 
+		extern "C" int rand()
 		{
 			random_seed = random_seed + 37 * 1103515245 + 12345;
-			return random_seed >> 16; 
+			return random_seed >> 16;
 		}
 	}
 }

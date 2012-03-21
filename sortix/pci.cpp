@@ -22,10 +22,11 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
+#include "cpu.h"
 #include <libmaxsi/error.h>
 #include "pci.h"
-#include "log.h"
+#include <sortix/kernel/log.h>
 #include "ata.h"
 
 using namespace Maxsi;
@@ -36,7 +37,7 @@ namespace Sortix
 	{
 		const uint16_t Config_Address = 0xCF8;
 		const uint16_t Config_Data = 0xCFC;
-	
+
 		uint32_t SwapBytes(uint32_t I)
 		{
 			return (I >> 24) | ((I >> 8) & 0x0000FF00) | ((I << 8) & 0x00FF0000) | (I << 24);

@@ -22,12 +22,12 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
-#include "log.h"
+#include <sortix/kernel/log.h>
 #include "calltrace.h"
-#include "panic.h"
+#include <sortix/kernel/panic.h>
 
 using namespace Maxsi;
 

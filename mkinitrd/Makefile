@@ -1,4 +1,4 @@
-CPPFLAGS=-I..
+CPPFLAGS=-I../sortix/include
 CXXFLAGS=-Wall
 
 BINARIES=mkinitrd lsinitrd catinitrd
@@ -12,4 +12,4 @@ clean:
 	rm -f $(BINARIES)
 
 install:
-	
+

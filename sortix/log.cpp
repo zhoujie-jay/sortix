@@ -22,10 +22,10 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
-#include "log.h"
+#include <sortix/kernel/log.h>
 #include "syscall.h"
 
 using namespace Maxsi;

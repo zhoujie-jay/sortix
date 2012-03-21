@@ -22,8 +22,8 @@
 
 ******************************************************************************/
 
-#include "platform.h"
-#include "log.h"
+#include <sortix/kernel/platform.h>
+#include <sortix/kernel/log.h>
 #include "vga.h"
 #include "vgaterminal.h"
 
@@ -222,7 +222,7 @@ namespace Sortix
 					{
 						if ( column == width ) { Newline(); }
 						nat until = 4 - (column % 4);
-						
+
 						vgaattr[line * width + (column)] |= VGAATTR_CHAR;
 						while ( (until--) != 0 )
 						{
@@ -537,7 +537,7 @@ namespace Sortix
 
 				// Left for future standardization, so discard this sequence.
 				else if ( c == ':' )
-				{				
+				{
 					ignoresequence = true;
 				}
 

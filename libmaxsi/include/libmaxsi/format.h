@@ -30,7 +30,7 @@ namespace Maxsi
 	namespace Format
 	{
 		typedef size_t (*Callback)(void* user, const char* string, size_t stringlen);
-		
+
 		size_t Virtual(Callback callback, void* user, const char* format, va_list parameters);
 	}
 }

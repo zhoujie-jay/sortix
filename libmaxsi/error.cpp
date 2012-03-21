@@ -41,7 +41,7 @@ namespace Maxsi
 		extern "C" void init_error_functions()
 		{
 			errno = 0;
-			SysRegisterErrno(&errno);			
+			SysRegisterErrno(&errno);
 		}
 #endif
 

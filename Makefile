@@ -146,7 +146,7 @@ iso: all debsource
 	cp -r isosrc/. $(ISODIR)
 	cp sortix/sortix.bin $(ISODIR)/boot
 	cp $(INITRD) $(ISODIR)/boot/sortix.initrd
-	cp builds/$(DEBSRCNAME)-src.tar.gz $(ISODIR) 
+	cp builds/$(DEBSRCNAME)-src.tar.gz $(ISODIR)
 	grub-mkrescue -o $(ISOFILE) $(ISODIR)
 	rm -rf $(ISODIR)
 

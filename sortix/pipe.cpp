@@ -22,7 +22,7 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "event.h"
@@ -247,7 +247,7 @@ namespace Sortix
 		int SysPipe(int pipefd[2])
 		{
 			// TODO: Validate that pipefd is a valid user-space array!
-			
+
 			size_t buffersize = BUFFER_SIZE;
 			byte* buffer = new byte[buffersize];
 			if ( !buffer ) { return -1; /* TODO: ENOMEM */ }
@@ -271,7 +271,7 @@ namespace Sortix
 				if ( 0 <= readfd ) { process->descriptors.Free(readfd); } else { delete reading; }
 				if ( 0 <= writefd ) { process->descriptors.Free(writefd); } else { delete writing; }
 
-				return -1; /* TODO: ENOMEM/EMFILE/ENFILE */ 
+				return -1; /* TODO: ENOMEM/EMFILE/ENFILE */
 			}
 
 			pipefd[0] = readfd;

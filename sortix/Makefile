@@ -69,7 +69,7 @@ ifdef VERSION
     DEFINES:=$(DEFINES) -DVERSIONSTR=\"$(VERSION)\"
 endif
 
-INCLUDES=-I../libmaxsi/preproc -I.. -I.
+INCLUDES=-I. -Iinclude -I../libmaxsi/preproc
 CPPFLAGS=$(INCLUDES) $(DEFINES)
 FLAGSRELEASE=-s $(O)
 FLAGSDEBUG=
@@ -83,17 +83,8 @@ NASMFLAGS=$(CPUNASMFLAGS)
 STATICLIBS=\
 ../libmaxsi/libmaxsi-sortix.a \
 
-PUBLICHEADERS=\
-$(CPU)/bits.h \
-fcntl.h \
-initrd.h \
-seek.h \
-keycodes.h \
-termmode.h \
-syscallnum.h \
-stat.h \
-timeval.h \
-unistd.h \
+HEADERDIRS:=$(shell find include -type d)
+HEADERS:=$(shell find include -type f)
 
 OBJS=$(CPUOBJS) \
 kernel.o \
@@ -185,8 +176,10 @@ clean:
 
 # Installation into sysroot
 install:
-	mkdir -p $(SYSROOT)/usr/include/sortix
-	for FILE in $(PUBLICHEADERS); do \
-		cp $$FILE  $(SYSROOT)/usr/include/sortix/`basename $$FILE`; \
+	for DIR in $(HEADERDIRS); do \
+		mkdir -p $(SYSROOT)/usr/$$DIR; \
+	done
+	for FILE in $(HEADERS); do \
+		cp $$FILE $(SYSROOT)/usr/$$FILE; \
 	done
 

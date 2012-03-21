@@ -22,7 +22,7 @@
 
 *******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/memory.h>
 #include "descriptors.h"
 #include "device.h"

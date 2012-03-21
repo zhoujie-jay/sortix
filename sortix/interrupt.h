@@ -25,6 +25,8 @@
 #ifndef SORTIX_INTERRUPT_H
 #define SORTIX_INTERRUPT_H
 
+#include "cpu.h"
+
 namespace Sortix {
 namespace Interrupt {
 

@@ -22,13 +22,13 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "utf8.h"
 #include "keyboard.h"
 #include "scheduler.h"
-#include "keycodes.h"
+#include <sortix/keycodes.h>
 #include "terminal.h"
 #include "logterminal.h"
 

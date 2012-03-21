@@ -1,6 +1,6 @@
 Package: SORTIX_PACKAGE_NAME
 Version: SORTIX_VERSION
-Section: kernel 
+Section: kernel
 Priority: optional
 Architecture: SORTIX_ARCH
 Installed-Size: SORTIX_SIZE

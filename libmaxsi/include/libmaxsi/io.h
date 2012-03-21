@@ -29,7 +29,7 @@ namespace Maxsi
 {
 	namespace IO
 	{
-		// TODO: 
+		// TODO:
 
 		enum Seek_t { SEEK_SET, SEEK_CUR, SEEK_END };
 

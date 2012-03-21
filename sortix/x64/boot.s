@@ -46,7 +46,7 @@ multiboot_header:
 	.long -(0x1BADB002 + 0x00000003)
 
 multiboot_entry:
-	
+
 	# We got our multiboot information in various registers. But we are going
 	# to need these registers. But where can we store them then? Oh hey, let's
 	# store then in the code already run!
@@ -165,7 +165,7 @@ GDT64:                           # Global Descriptor Table (64-bit).
 	.word GDTPointer - GDT64 - 1     # Limit.
 	.long GDT64                      # Base.
 	.long 0
-	
+
 Main:
 	# Copy the character B onto the screen so we know it works.
 	movq $0x242, %r15

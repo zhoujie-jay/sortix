@@ -22,7 +22,7 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/memory.h>
 #include "device.h"
 
@@ -35,7 +35,7 @@ namespace Sortix
 
 	Device::~Device()
 	{
-		
+
 	}
 
 	void Device::Unref()

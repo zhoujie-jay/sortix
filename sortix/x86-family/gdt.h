@@ -115,7 +115,7 @@ namespace Sortix
 		} __attribute__((packed));
 #endif
 
-		typedef struct tss_entry_struct tss_entry_t; 
+		typedef struct tss_entry_struct tss_entry_t;
 
 		void Init();
 		void SetGate(int32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);

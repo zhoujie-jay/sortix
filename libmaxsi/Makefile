@@ -19,7 +19,7 @@ ifeq ($(CPU),x64)
     CPUASFLAGS=-64
 endif
 
-CPPINCLUDES=-I preproc -I ..
+CPPINCLUDES=-I preproc -I ../sortix/include
 CPPFLAGS=-DLIBMAXSI_LIBRARY -DSORTIX -U_GNU_SOURCE $(CPUDEFINES) $(CPPINCLUDES)
 FLAGS=$(CPUFLAGS) -Wall -Wextra -nostdlib -fno-builtin -nostartfiles \
                   -nodefaultlibs -fno-stack-protector -nostdinc
@@ -85,19 +85,19 @@ libmaxsi-sortix.a: $(SORTIXOBJS)
 	ar rcs libmaxsi-sortix.a $(SORTIXOBJS)
 
 libc.a: libmaxsi.a
-	ln -sf $< $@ 
+	ln -sf $< $@
 
 libc.so: libmaxsi.so
-	ln -sf $< $@ 
+	ln -sf $< $@
 
 libg.a: libc.a
-	ln -sf $< $@ 
+	ln -sf $< $@
 
 libg.so: libc.so
-	ln -sf $< $@ 
+	ln -sf $< $@
 
 start.o: $(CPU)/start.o
-	ln -sf $< $@ 
+	ln -sf $< $@
 
 # header preprocessing
 $(HEADERDIRS):
@@ -123,7 +123,7 @@ sortix:
 	mkdir -p sortix
 
 sortix/%.o: %.cpp $(HEADERS) sortix
-	g++ -c $< -o $@ $(CPPFLAGS) $(SORTIXCPPFLAGS) $(CXXFLAGS) 
+	g++ -c $< -o $@ $(CPPFLAGS) $(SORTIXCPPFLAGS) $(CXXFLAGS)
 
 clean:
 	rm -f *.o sortix/*.o c/*.o x86/*.o x64/*.o *.a *.so

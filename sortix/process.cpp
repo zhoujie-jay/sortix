@@ -22,7 +22,7 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
@@ -34,7 +34,7 @@
 #include "filesystem.h"
 #include "directory.h"
 #include "scheduler.h"
-#include "memorymanagement.h"
+#include <sortix/kernel/memorymanagement.h>
 #include "initrd.h"
 #include "elf.h"
 #include "syscall.h"
@@ -116,7 +116,7 @@ namespace Sortix
 
 		// Avoid memory leaks.
 		ASSERT(segments == NULL);
-	
+
 		delete[] workingdir;
 
 		// TODO: Delete address space!
@@ -220,7 +220,7 @@ namespace Sortix
 	{
 		Thread* result = NULL;
 		Thread* tmpclone = NULL;
-		
+
 		for ( Thread* tmp = firstthread; tmp != NULL; tmp = tmp->nextsibling )
 		{
 			Thread* clonethread = tmp->Fork();
@@ -324,7 +324,7 @@ namespace Sortix
 			for ( int i = 0; i < argc; i++ ) { delete[] argv[i]; }
 			delete[] argv;
 		}
-	
+
 	};
 
 	int SysExevVEStage2(SysExecVEState* state)
@@ -672,7 +672,7 @@ namespace Sortix
 		// The process needs to have children, otherwise we are waiting for
 		// nothing to happen.
 		if ( !process->firstchild ) { Error::Set(ECHILD); return -1; }
-		
+
 		// Resumes this system call when the wait condition has been met.
 		thread->onchildprocessexit = SysWaitCallback;
 

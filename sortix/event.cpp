@@ -22,7 +22,7 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include "thread.h"
 #include "syscall.h"
 #include "event.h"

@@ -23,12 +23,12 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include "time.h"
 #include "interrupt.h"
 #include "process.h"
 #include "scheduler.h"
-#include "log.h"
+#include <sortix/kernel/log.h>
 #include "sound.h"
 #include "syscall.h"
 
@@ -112,9 +112,9 @@ namespace Sortix
 			Scheduler::Switch(Regs);
 
 			// TODO: There is a horrible bug that causes Sortix to only receive
-			// one IRQ0 on my laptop, but it works in virtual machines. But 
+			// one IRQ0 on my laptop, but it works in virtual machines. But
 			// re-requesting an addtional time seems to work. Hacky and ugly.
-			if ( !didUglyIRQ0Hack ) { RequestIQR0(); didUglyIRQ0Hack = true; } 
+			if ( !didUglyIRQ0Hack ) { RequestIQR0(); didUglyIRQ0Hack = true; }
 		}
 
 		// TODO: Implement all the other useful functions regarding time.

@@ -36,7 +36,7 @@ namespace Sortix
 		extern void* devicePointer;
 
 		void Init(Maxsi::Format::Callback callback, void* user);
-		
+
 		inline void Flush()
 		{
 			if ( deviceCallback ) { deviceCallback(devicePointer, NULL, 0); }
@@ -52,7 +52,7 @@ namespace Sortix
 		inline size_t PrintData(const void* ptr, size_t size)
 		{
 			if ( !deviceCallback ) { return 0; }
-			return deviceCallback(devicePointer, (const char*) ptr, size);			
+			return deviceCallback(devicePointer, (const char*) ptr, size);
 		}
 
 		inline size_t PrintF(const char* format, ...)

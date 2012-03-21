@@ -107,22 +107,22 @@ int main(int argc, char* argv[])
 			verbose = false;
 			argv[i] = NULL;
 		}
-		else if ( strcmp(argv[i], "-v") == 0 ) 
+		else if ( strcmp(argv[i], "-v") == 0 )
 		{
 			verbose = true;
 			argv[i] = NULL;
 		}
-		else if ( strcmp(argv[i], "--usage") == 0 ) 
+		else if ( strcmp(argv[i], "--usage") == 0 )
 		{
 			usage(argc, argv);
 			return 0;
 		}
-		else if ( strcmp(argv[i], "--help") == 0 ) 
+		else if ( strcmp(argv[i], "--help") == 0 )
 		{
 			usage(argc, argv);
 			return 0;
 		}
-		else if ( strcmp(argv[i], "--version") == 0 ) 
+		else if ( strcmp(argv[i], "--version") == 0 )
 		{
 			version();
 			return 0;

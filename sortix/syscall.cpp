@@ -22,11 +22,11 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
 #include "syscall.h"
-#include "syscallnum.h"
-#include "panic.h"
+#include <sortix/syscallnum.h>
+#include <sortix/kernel/panic.h>
 #include "process.h"
 #include "thread.h"
 #include "scheduler.h"
@@ -68,7 +68,7 @@ namespace Sortix
 				       "SYSCALL_MAX_NYN = %zu", funcptr, index, SYSCALL_MAX_NUM);
 			}
 
-			syscall_list[index] = funcptr; 
+			syscall_list[index] = funcptr;
 		}
 
 		void Incomplete()

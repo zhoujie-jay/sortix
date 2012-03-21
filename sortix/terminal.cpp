@@ -22,7 +22,7 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
 #include "syscall.h"
 #include "process.h"
@@ -51,7 +51,7 @@ namespace Sortix
 		DevTerminal* term = (DevTerminal*) dev;
 		// TODO: Check that mode is a valid user-space pointer.
 		*mode = term->GetMode();
-		return 0;		
+		return 0;
 	}
 
 	int SysIsATTY(int fd)

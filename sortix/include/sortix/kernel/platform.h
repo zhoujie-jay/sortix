@@ -68,15 +68,5 @@
 
 	#define USER
 
-	// Include some x86 headers.
-	#ifdef PLATFORM_X86 
-		#include "x86/x86.h"
-	#endif
-
-	// Include some x64 headers.
-	#ifdef PLATFORM_X64 
-		#include "x64/x64.h"
-	#endif
-
 #endif
 

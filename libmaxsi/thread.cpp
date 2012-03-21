@@ -66,7 +66,7 @@ namespace Maxsi
 		// Sortix will never run for that long time, and shouldn't it be unsigned long?
 		void Sleep(long Seconds)
 		{
-			SysSleep(Seconds);			
+			SysSleep(Seconds);
 		}
 
 

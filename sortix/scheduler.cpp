@@ -22,14 +22,14 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/memory.h>
-#include "panic.h"
+#include <sortix/kernel/panic.h>
 #include "thread.h"
 #include "process.h"
 #include "time.h"
 #include "scheduler.h"
-#include "memorymanagement.h"
+#include <sortix/kernel/memorymanagement.h>
 #include "syscall.h"
 #include "sound.h" // HACK FOR SIGINT
 #include "x86-family/gdt.h"

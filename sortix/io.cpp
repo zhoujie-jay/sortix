@@ -22,7 +22,7 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
 #include <sortix/seek.h>
 #include "thread.h"
@@ -115,7 +115,7 @@ namespace Sortix
 
 			// Now go do something else.
 			Syscall::Incomplete();
-			return 0;		
+			return 0;
 		}
 
 		void SysSeek(int fd, off_t* offset, int whence)

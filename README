@@ -38,7 +38,7 @@ A real shell will be added as the system matures and I get around to finish the
 work in progress shell.
 
 A number of standard utilities are present such as cat, head, tail, clear, cp,
-column, kill, ls, rm, pwd, uname, echo, and uptime. There is even a number of 
+column, kill, ls, rm, pwd, uname, echo, and uptime. There is even a number of
 non-standard utilities such as calc, help, init, kernelinfo, memstat, and pager.
 This collection of utilities will continue to grow as it matures and third party
 software is ported. I've currently had some luck partially porting binutils,

@@ -22,7 +22,8 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
+#include "cpu.h"
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "ata.h"
@@ -344,13 +345,13 @@ namespace Sortix
 			if ( !WriteSector(byteoffset/sectorsize, src + sofar) ) { return sofar; }
 			sofar += sectorsize;
 			numbytes -= sectorsize;
-			byteoffset += sectorsize;			
+			byteoffset += sectorsize;
 		}
 
 		if ( numbytes ) { return sofar + Write(byteoffset, src + sofar, numbytes); }
 		return sofar;
 	}
-	
+
 	void ATADrive::Initialize()
 	{
 		bus->SelectDrive(driveid);

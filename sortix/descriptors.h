@@ -42,7 +42,7 @@ namespace Sortix
 		~DescriptorTable();
 
 	private:
-		int numdevices; 
+		int numdevices;
 		DescriptorEntry* devices;
 
 	public:

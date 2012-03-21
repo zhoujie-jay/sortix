@@ -7,7 +7,7 @@ struct dirent;
 #define _DIR_EOF (1<<2)
 typedef struct _DIR
 {
-	void* user;	
+	void* user;
 	int (*read_func)(void* user, struct dirent* dirent, size_t* size);
 	int (*rewind_func)(void* user);
 	int (*fd_func)(void* user);

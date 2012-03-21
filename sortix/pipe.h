@@ -33,7 +33,7 @@ namespace Sortix
 	namespace Pipe
 	{
 		void Init();
-	}	
+	}
 }
 
 #endif

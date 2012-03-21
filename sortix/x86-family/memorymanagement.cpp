@@ -22,12 +22,12 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "multiboot.h"
-#include "panic.h"
-#include "../memorymanagement.h"
+#include <sortix/kernel/panic.h>
+#include <sortix/kernel/memorymanagement.h>
 #include "memorymanagement.h"
 #include "syscall.h"
 

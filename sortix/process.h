@@ -26,6 +26,7 @@
 #define SORTIX_PROCESS_H
 
 #include "descriptors.h"
+#include "cpu.h"
 
 namespace Sortix
 {

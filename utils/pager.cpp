@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 						if ( !(kbkey = KBKEY_DECODE(codepoint)) ) { continue; }
 						if ( kbkey == KBKEY_DOWN ) { break; }
 						if ( kbkey == KBKEY_PGDOWN ) { linesleft = HEIGHT-1; break; }
-						if ( kbkey == -KBKEY_Q ) { doexit = true; break; }						
+						if ( kbkey == -KBKEY_Q ) { doexit = true; break; }
 					} while ( kbkey != KBKEY_ENTER );
 					printf("\r\e[J");
 					if ( doexit ) { exit(result); }

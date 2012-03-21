@@ -24,7 +24,7 @@
 
 #include <libmaxsi/platform.h>
 #include "x64.h"
-#include "log.h"
+#include <sortix/kernel/log.h>
 
 namespace Sortix
 {

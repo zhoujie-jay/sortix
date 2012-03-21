@@ -28,7 +28,7 @@
 
 #include "device.h"
 #include "stream.h"
-#include "termmode.h"
+#include <sortix/termmode.h>
 
 namespace Sortix
 {

@@ -47,14 +47,14 @@ namespace Sortix
 	{
 	public:
 		virtual ~KeyboardOwner() { }
-		virtual void OnKeystroke(Keyboard* keyboard, void* user) = 0;	
+		virtual void OnKeystroke(Keyboard* keyboard, void* user) = 0;
 	};
 
 	class KeyboardLayout
 	{
 	public:
 		virtual ~KeyboardLayout() { }
-		virtual uint32_t Translate(int kbkey) = 0;	
+		virtual uint32_t Translate(int kbkey) = 0;
 	};
 }
 

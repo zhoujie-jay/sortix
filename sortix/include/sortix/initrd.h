@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
 
 	This file is part of Sortix.
 
@@ -17,33 +17,43 @@
 	You should have received a copy of the GNU General Public License along
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	ks/layout/us.h
-	The United States keyboard layout.
+	initrd.h
+	Declares the structure of the Sortix ramdisk.
 
 ******************************************************************************/
 
-#ifndef SORTIX_KB_LAYOUT_US_H
-#define SORTIX_KB_LAYOUT_US_H
-
-#include "../../keyboard.h"
+#ifndef SORTIX_INITRD_H
+#define SORTIX_INITRD_H
 
 namespace Sortix
 {
-	class KBLayoutUS : public KeyboardLayout
+	namespace InitRD
 	{
-	public:
-		KBLayoutUS();
-		virtual ~KBLayoutUS();
-		virtual uint32_t Translate(int kbkey);
+		struct Header;
+		struct FileHeader;
 
-	public:
-		bool ProcessModifier(int kbkey, int modkey, unsigned flag);
+		struct Header
+		{
+			char magic[16]; // Contains "sortix-initrd-1"
+			uint32_t numfiles;
+			// FileHeader[numfiles];
+		};
 
-	private:
-		unsigned modifiers;
+		struct FileHeader
+		{
+			mode_t permissions;
+			uid_t owner;
+			gid_t group;
+			uint32_t size;
+			uint32_t offset; // where the physical data is located.
+			char name[128];
+		};
 
-	};
+		struct Trailer
+		{
+			uint8_t sum; // sum of all bytes but the trailer.
+		};
+	}
 }
 
 #endif
-

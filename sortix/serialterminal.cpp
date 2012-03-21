@@ -22,9 +22,9 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/string.h>
-#include "log.h"
+#include <sortix/kernel/log.h>
 #include "vga.h"
 #include "keyboard.h"
 #include "uart.h"
@@ -102,10 +102,10 @@ namespace Sortix
 					}
 
 					Keyboard::QueueKeystroke(CTRL);
-					Keyboard::QueueKeystroke('A' + sigpending - 1); 
+					Keyboard::QueueKeystroke('A' + sigpending - 1);
 					Keyboard::QueueKeystroke(CTRL | DEPRESSED);
 					sigpending = -1;
-					continue;					
+					continue;
 				}
 				if ( c < 32 ) { sigpending = c; } else { sigpending = -1; }
 				switch ( c )

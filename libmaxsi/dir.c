@@ -86,7 +86,7 @@ struct dirent* readdir(DIR* dir)
 		return NULL;
 	}
 
-	return dir->entry;	
+	return dir->entry;
 }
 
 int closedir(DIR* dir)

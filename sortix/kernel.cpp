@@ -19,22 +19,22 @@
 
 	kernel.cpp
 	The main kernel initialization routine. Configures hardware and starts an
-	initial process from the init ramdisk, allowing a full operating system. 
+	initial process from the init ramdisk, allowing a full operating system.
 
 *******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/format.h>
-#include "log.h"
-#include "panic.h"
+#include <sortix/kernel/log.h>
+#include <sortix/kernel/panic.h>
 #include "kernelinfo.h"
-#include "x86-family/gdt.h"	
+#include "x86-family/gdt.h"
 #include "time.h"
 #include "keyboard.h"
 #include "multiboot.h"
-#include "memorymanagement.h"
+#include <sortix/kernel/memorymanagement.h>
 #include "thread.h"
 #include "process.h"
 #include "scheduler.h"

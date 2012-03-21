@@ -22,12 +22,12 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "elf.h"
-#include "memorymanagement.h"
-#include "panic.h"
+#include <sortix/kernel/memorymanagement.h>
+#include <sortix/kernel/panic.h>
 #include "process.h"
 
 using namespace Maxsi;
@@ -232,7 +232,7 @@ namespace Sortix
 					return Construct64(process, file, filelen);
 				default:
 					return 0;
-			}		
+			}
 		}
 	}
 }

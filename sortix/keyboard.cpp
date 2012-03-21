@@ -22,7 +22,7 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include "interrupt.h"
 #include "syscall.h"
 #include "keyboard.h"

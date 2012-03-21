@@ -116,7 +116,7 @@ namespace Sortix
 
 	public:
 		void (*onchildprocessexit)(Thread*, Process*);
-		
+
 	};
 }
 

@@ -68,7 +68,7 @@
 			}
 	#else
 
-		#define ASSERT(invariant)   
+		#define ASSERT(invariant)
 
 	#endif
 
@@ -80,8 +80,8 @@
 #endif
 
 #ifdef SORTIX_KERNEL
-#include <sortix/platform.h>
-#include <sortix/log.h>
-#include <sortix/panic.h>
+#include <sortix/kernel/platform.h>
+#include <sortix/kernel/log.h>
+#include <sortix/kernel/panic.h>
 #endif
 

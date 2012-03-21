@@ -18,7 +18,7 @@
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
 	start.s
-	A stub for linking to the C runtime on Sortix. 
+	A stub for linking to the C runtime on Sortix.
 
 ******************************************************************************/
 

@@ -26,6 +26,7 @@
 #define SORTIX_SIGNAL_H
 
 #include <libmaxsi/signalnum.h>
+#include "cpu.h"
 
 namespace Sortix
 {

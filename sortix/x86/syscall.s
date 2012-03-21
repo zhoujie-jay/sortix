@@ -136,7 +136,7 @@ resume_syscall:
 	call *%eax
 
 	addl $32, %esp
-	
+
 	leavel
 	retl
 

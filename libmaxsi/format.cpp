@@ -196,7 +196,7 @@ namespace Maxsi
 			#ifdef PLATFORM_X64
 				const nat WORDWIDTH = BIT64;
 			#else
-				const nat WORDWIDTH = 0;	
+				const nat WORDWIDTH = 0;
 			#endif
 
 				// TODO: Support signed datatypes!

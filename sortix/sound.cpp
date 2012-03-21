@@ -22,7 +22,7 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 #include "sound.h"
 #include "syscall.h"
 
@@ -33,10 +33,10 @@ namespace Sortix
 		void Mute()
 		{
 		 	uint8_t TMP = (CPU::InPortB(0x61)) & 0xFC;
-		 
+
 		 	CPU::OutPortB(0x61, TMP);
 		}
-	
+
 		void Play(nat Frequency)
 		{
 			//Set the PIT to the desired frequency

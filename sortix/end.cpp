@@ -24,7 +24,7 @@
 
 ******************************************************************************/
 
-#include "platform.h"
+#include <sortix/kernel/platform.h>
 
 namespace Sortix
 {
