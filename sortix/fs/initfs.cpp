@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -141,11 +141,13 @@ namespace Sortix
 		typedef Device DevDirectory;
 
 	public:
-		DevInitFSDir();
+		DevInitFSDir(uint32_t dir);
 		virtual ~DevInitFSDir();
 
 	private:
 		size_t position;
+		uint32_t dir;
+		uint32_t numfiles;
 
 	public:
 		virtual void Rewind();
@@ -153,9 +155,11 @@ namespace Sortix
 
 	};
 
-	DevInitFSDir::DevInitFSDir()
+	DevInitFSDir::DevInitFSDir(uint32_t dir)
 	{
-		position = 0;
+		this->position = 0;
+		this->dir = dir;
+		this->numfiles = InitRD::GetNumFiles(dir);
 	}
 
 	DevInitFSDir::~DevInitFSDir()
@@ -170,16 +174,19 @@ namespace Sortix
 	int DevInitFSDir::Read(sortix_dirent* dirent, size_t available)
 	{
 		if ( available <= sizeof(sortix_dirent) ) { return -1; }
-		if ( InitRD::GetNumFiles() <= position )
+		if ( numfiles <= position )
 		{
 			dirent->d_namelen = 0;
 			dirent->d_name[0] = 0;
 			return 0;
 		}
 
-		const char* name = InitRD::GetFilename(position);
+		const char* name = InitRD::GetFilename(dir, position);
 		size_t namelen = String::Length(name);
 		size_t needed = sizeof(sortix_dirent) + namelen + 1;
+
+		// Oh right, the kernel is stupid and doesn't support dot and dotdot.
+		if ( name[0] == '.' ) { position++; return Read(dirent, available); }
 
 		if ( available < needed )
 		{
@@ -210,13 +217,16 @@ namespace Sortix
 		if ( !path[0] || (path[0] == '/' && !path[1]) )
 		{
 			if ( lowerflags != O_SEARCH ) { Error::Set(EISDIR); return NULL; }
-			return new DevInitFSDir();
+			return new DevInitFSDir(InitRD::Root());
 		}
 
 		if ( *path++ != '/' ) { Error::Set(ENOENT); return NULL; }
 
-		const byte* buffer = InitRD::Open(path, &buffersize);
-		if ( !buffer ) { Error::Set(ENOENT); return NULL; }
+		uint32_t ino = InitRD::Traverse(InitRD::Root(), path);
+		if ( !ino ) { return NULL; }
+
+		const byte* buffer = InitRD::Open(ino, &buffersize);
+		if ( !buffer ) { return NULL; }
 
 		if ( lowerflags == O_SEARCH ) { Error::Set(ENOTDIR); return NULL; }
 		if ( lowerflags != O_RDONLY ) { Error::Set(EROFS); return NULL; }

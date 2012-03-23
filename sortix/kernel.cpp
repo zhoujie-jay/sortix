@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -197,6 +197,7 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// time to load the initial user-space programs and start execution of
 	// the actual operating system.
 
+	uint32_t inode;
 	byte* program;
 	size_t programsize;
 
@@ -214,7 +215,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	idle->addrspace = idleaddrspace;
 	Memory::SwitchAddressSpace(idleaddrspace);
 	Scheduler::SetDummyThreadOwner(idle);
-	program = InitRD::Open("idle", &programsize);
+	inode = InitRD::Traverse(InitRD::Root(), "idle");
+	if ( inode == NULL ) { PanicF("initrd did not contain 'idle'"); }
+	program = InitRD::Open(inode, &programsize);
 	if ( program == NULL ) { PanicF("initrd did not contain 'idle'"); }
 	addr_t idlestart = ELF::Construct(idle, program, programsize);
 	if ( !idlestart ) { Panic("could not construct ELF image for idle process"); }
@@ -228,7 +231,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	init->addrspace = initaddrspace;
 	Memory::SwitchAddressSpace(initaddrspace);
 	Scheduler::SetDummyThreadOwner(init);
-	program = InitRD::Open("init", &programsize);
+	inode = InitRD::Traverse(InitRD::Root(), "init");
+	if ( inode == NULL ) { PanicF("initrd did not contain 'init'"); }
+	program = InitRD::Open(inode, &programsize);
 	if ( program == NULL ) { PanicF("initrd did not contain 'init'"); }
 	addr_t initstart = ELF::Construct(init, program, programsize);
 	if ( !initstart ) { Panic("could not construct ELF image for init process"); }

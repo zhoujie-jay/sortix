@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of Sortix.
 
@@ -59,17 +59,25 @@ struct stat
 #define S_IWUSR 0200
 #define S_IRUSR 0400
 #define S_IRWXU 0700
-#define S_IFDIR 0040000
-#define S_IFBLK 0060000
-#define S_IFREG 0100000
-#define S_IFLNK 0200000 /* not the same as in Linux */
-/* TODO: Define the other useful values and implement their features. */
-
-#define S_ISBLK(m) ((m) & S_IFBLK)
-#define S_ISDIR(m) ((m) & S_IFDIR)
-#define S_ISREG(m) ((m) & S_IFREG)
-#define S_ISLNK(m) ((m) & S_IFLNK)
-/* TODO: Define the other useful macros and implement their features. */
+#define S_IFMT 0xF000
+#define S_IFSOCK 0xC000
+#define S_IFLNK 0xA000
+#define S_IFREG 0x8000
+#define S_IFBLK 0x6000
+#define S_IFDIR 0x4000
+#define S_IFCHR 0x2000
+#define S_IFIFO 0x1000
+/* Intentionally not part of Sortix. */
+/*#define S_ISUID 0x0800 */
+/*#define S_ISGID 0x0400 */
+#define S_ISVTX 0x0200
+#define S_ISSOCK(mode) ((mode & S_IFMT) == S_IFSOCK)
+#define S_ISLNK(mode) ((mode & S_IFMT) == S_IFLNK)
+#define S_ISREG(mode) ((mode & S_IFMT) == S_IFREG)
+#define S_ISBLK(mode) ((mode & S_IFMT) == S_IFBLK)
+#define S_ISDIR(mode) ((mode & S_IFMT) == S_IFDIR)
+#define S_ISCHR(mode) ((mode & S_IFMT) == S_IFCHR)
+#define S_ISFIFO(mode) ((mode & S_IFMT) == S_IFIFO)
 
 __END_DECLS
 

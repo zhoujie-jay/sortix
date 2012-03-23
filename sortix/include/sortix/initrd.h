@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of Sortix.
 
@@ -14,46 +14,89 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	initrd.h
-	Declares the structure of the Sortix ramdisk.
+	The Sortix init ramdisk filesystem format.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef SORTIX_INITRD_H
 #define SORTIX_INITRD_H
 
-namespace Sortix
+#include <features.h>
+
+__BEGIN_DECLS
+
+#define INITRD_ALGO_CRC32 0
+
+#define INITRD_S_IXOTH 01
+#define INITRD_S_IWOTH 02
+#define INITRD_S_IROTH 03
+#define INITRD_S_IRWXO 07
+#define INITRD_S_IXGRP 010
+#define INITRD_S_IWGRP 020
+#define INITRD_S_IRGRP 040
+#define INITRD_S_IRWXG 070
+#define INITRD_S_IXUSR 0100
+#define INITRD_S_IWUSR 0200
+#define INITRD_S_IRUSR 0400
+#define INITRD_S_IRWXU 0700
+#define INITRD_S_IFMT 0xF000
+#define INITRD_S_IFSOCK 0xC000
+#define INITRD_S_IFLNK 0xA000
+#define INITRD_S_IFREG 0x8000
+#define INITRD_S_IFBLK 0x6000
+#define INITRD_S_IFDIR 0x4000
+#define INITRD_S_IFCHR 0x2000
+#define INITRD_S_IFIFO 0x1000
+/* Intentionally not part of Sortix. */
+/*#define INITRD_S_ISUID 0x0800 */
+/*#define INITRD_S_ISGID 0x0400 */
+#define INITRD_S_ISVTX 0x0200
+#define INITRD_S_ISSOCK(mode) ((mode & INITRD_S_IFMT) == INITRD_S_IFSOCK)
+#define INITRD_S_ISLNK(mode) ((mode & INITRD_S_IFMT) == INITRD_S_IFLNK)
+#define INITRD_S_ISREG(mode) ((mode & INITRD_S_IFMT) == INITRD_S_IFREG)
+#define INITRD_S_ISBLK(mode) ((mode & INITRD_S_IFMT) == INITRD_S_IFBLK)
+#define INITRD_S_ISDIR(mode) ((mode & INITRD_S_IFMT) == INITRD_S_IFDIR)
+#define INITRD_S_ISCHR(mode) ((mode & INITRD_S_IFMT) == INITRD_S_IFCHR)
+#define INITRD_S_ISFIFO(mode) ((mode & INITRD_S_IFMT) == INITRD_S_IFIFO)
+
+typedef struct initrd_superblock
 {
-	namespace InitRD
-	{
-		struct Header;
-		struct FileHeader;
+	char magic[16]; // "sortix-initrd-2"
+	uint32_t fssize;
+	uint32_t revision;
+	uint32_t inodesize;
+	uint32_t inodecount;
+	uint32_t inodeoffset;
+	uint32_t root;
+	uint32_t sumalgorithm;
+	uint32_t sumsize;
+} initrd_superblock_t;
 
-		struct Header
-		{
-			char magic[16]; // Contains "sortix-initrd-1"
-			uint32_t numfiles;
-			// FileHeader[numfiles];
-		};
+typedef struct initrd_inode
+{
+	uint32_t mode;
+	uint32_t uid;
+	uint32_t gid;
+	uint32_t nlink;
+	uint64_t ctime;
+	uint64_t mtime;
+	uint32_t dataoffset;
+	uint32_t size;
+} initrd_inode_t;
 
-		struct FileHeader
-		{
-			mode_t permissions;
-			uid_t owner;
-			gid_t group;
-			uint32_t size;
-			uint32_t offset; // where the physical data is located.
-			char name[128];
-		};
+typedef struct initrd_dirent
+{
+	uint32_t inode;
+	uint16_t reclen;
+	uint16_t namelen;
+	char name[0];
+} initrd_dirent_t;
 
-		struct Trailer
-		{
-			uint8_t sum; // sum of all bytes but the trailer.
-		};
-	}
-}
+__END_DECLS
 
 #endif
+

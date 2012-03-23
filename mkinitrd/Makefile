@@ -1,12 +1,15 @@
+SORTIXKERNEL=../sortix
+LIBMAXSI=../libmaxsi
+
 CPPFLAGS=-I../sortix/include
 CXXFLAGS=-Wall
 
-BINARIES=mkinitrd lsinitrd catinitrd
+BINARIES=mkinitrd initrdfs
 
 all: $(BINARIES)
 
-%: %.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $< -o $@
+%: %.cpp crc32.cpp $(LIBMAXSI)/ioleast.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $< crc32.cpp $(LIBMAXSI)/ioleast.cpp -o $@
 
 clean:
 	rm -f $(BINARIES)

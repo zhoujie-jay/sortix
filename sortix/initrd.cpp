@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,119 +14,222 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	initrd.cpp
-	Declares the structure of the Sortix ramdisk.
+	Provides low-level access to a Sortix init ramdisk.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/memorymanagement.h>
+#include <sortix/stat.h>
 #include <sortix/initrd.h>
-#include "initrd.h"
+#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
+#include <libmaxsi/crc32.h>
+#include "initrd.h"
 #include "syscall.h"
-#include <sortix/kernel/memorymanagement.h>
-
-#include <sortix/kernel/log.h> // DEBUG
 
 using namespace Maxsi;
 
-namespace Sortix
+namespace Sortix {
+namespace InitRD {
+
+uint8_t* initrd;
+size_t initrdsize;
+const initrd_superblock_t* sb;
+
+static uint32_t HostModeToInitRD(mode_t mode)
 {
-	namespace InitRD
+	uint32_t result = mode & 0777; // Lower 9 bits per POSIX and tradition.
+	if ( S_ISVTX & mode ) { result |= INITRD_S_ISVTX; }
+	if ( S_ISSOCK(mode) ) { result |= INITRD_S_IFSOCK; }
+	if ( S_ISLNK(mode) ) { result |= INITRD_S_IFLNK; }
+	if ( S_ISREG(mode) ) { result |= INITRD_S_IFREG; }
+	if ( S_ISBLK(mode) ) { result |= INITRD_S_IFBLK; }
+	if ( S_ISDIR(mode) ) { result |= INITRD_S_IFDIR; }
+	if ( S_ISCHR(mode) ) { result |= INITRD_S_IFCHR; }
+	if ( S_ISFIFO(mode) ) { result |= INITRD_S_IFIFO; }
+	return result;
+}
+
+static mode_t InitRDModeToHost(uint32_t mode)
+{
+	mode_t result = mode & 0777; // Lower 9 bits per POSIX and tradition.
+	if ( INITRD_S_ISVTX & mode ) { result |= S_ISVTX; }
+	if ( INITRD_S_ISSOCK(mode) ) { result |= S_IFSOCK; }
+	if ( INITRD_S_ISLNK(mode) ) { result |= S_IFLNK; }
+	if ( INITRD_S_ISREG(mode) ) { result |= S_IFREG; }
+	if ( INITRD_S_ISBLK(mode) ) { result |= S_IFBLK; }
+	if ( INITRD_S_ISDIR(mode) ) { result |= S_IFDIR; }
+	if ( INITRD_S_ISCHR(mode) ) { result |= S_IFCHR; }
+	if ( INITRD_S_ISFIFO(mode) ) { result |= S_IFIFO; }
+	return result;
+}
+
+uint32_t Root()
+{
+	return sb->root;
+}
+
+static const initrd_inode_t* GetInode(uint32_t inode)
+{
+	if ( sb->inodecount <= inode ) { Error::Set(EINVAL); return NULL; }
+	uint32_t pos = sb->inodeoffset + sb->inodesize * inode;
+	return (const initrd_inode_t*) (initrd + pos);
+}
+
+bool Stat(uint32_t ino, struct stat* st)
+{
+	const initrd_inode_t* inode = GetInode(ino);
+	if ( !inode ) { return false; }
+	st->st_ino = ino;
+	st->st_mode = HostModeToInitRD(inode->mode);
+	st->st_nlink = inode->nlink;
+	st->st_uid = inode->uid;
+	st->st_gid = inode->gid;
+	st->st_size = inode->size;
+	st->st_atime = inode->mtime;
+	st->st_ctime = inode->ctime;
+	st->st_mtime = inode->mtime;
+	st->st_blksize = 1;
+	st->st_blocks = inode->size;
+	return true;
+}
+
+uint8_t* Open(uint32_t ino, size_t* size)
+{
+	const initrd_inode_t* inode = GetInode(ino);
+	if ( !inode ) { return NULL; }
+	*size = inode->size;
+	return initrd + inode->dataoffset;
+}
+
+uint32_t Traverse(uint32_t ino, const char* name)
+{
+	const initrd_inode_t* inode = GetInode(ino);
+	if ( !inode ) { return 0; }
+	if ( !INITRD_S_ISDIR(inode->mode) ) { Error::Set(ENOTDIR); return 0; }
+	uint32_t offset = 0;
+	while ( offset < inode->size )
 	{
-		byte* initrd;
-		size_t initrdsize;
-#ifdef JSSORTIX
-		// JSVM never tells JSSortix how big the initrd is!
-		const bool CHECK_CHECKSUM = false;
-#else
-		const bool CHECK_CHECKSUM = true;
-#endif
-
-		size_t GetNumFiles()
+		uint32_t pos = inode->dataoffset + offset;
+		const initrd_dirent* dirent = (const initrd_dirent*) (initrd + pos);
+		if ( dirent->namelen && !String::Compare(dirent->name, name) )
 		{
-			Header* header = (Header*) initrd;
-			return header->numfiles;
+			return dirent->inode;
 		}
-		const char* GetFilename(size_t index)
-		{
-			Header* header = (Header*) initrd;
-			if ( index >= header->numfiles ) { return NULL; }
-			FileHeader* fhtbl = (FileHeader*) (initrd + sizeof(Header));
-			FileHeader* fileheader = &(fhtbl[index]);
-			return fileheader->name;
-		}
+		offset += dirent->reclen;
+	}
+	Error::Set(ENOENT);
+	return 0;
+}
 
-		uint8_t ContinueChecksum(uint8_t checksum,  const void* p, size_t size)
-		{
-			const uint8_t* buffer = (const uint8_t*) p;
-			while ( size-- )
-			{
-				checksum += *buffer++;
-			}
-			return checksum;
-		}
 
-		void CheckSum()
-		{
-			Trailer* trailer = (Trailer*) (initrd + initrdsize - sizeof(Trailer));
-			uint8_t checksum = ContinueChecksum(0, initrd, initrdsize - sizeof(Trailer));
-			if ( trailer->sum != checksum )
-			{
-				PanicF("InitRD Checksum failed: the ramdisk may have been "
-				       "corrupted by the bootloader: Got %u instead of %u "
-				       "when checking the ramdisk at 0x%p + 0x%zx bytes\n",
-				       checksum, trailer->sum, initrd, initrdsize);
-			}
-		}
+const char* GetFilename(uint32_t dir, size_t index)
+{
+	const initrd_inode_t* inode = GetInode(dir);
+	if ( !inode ) { return 0; }
+	if ( !INITRD_S_ISDIR(inode->mode) ) { Error::Set(ENOTDIR); return 0; }
+	uint32_t offset = 0;
+	while ( offset < inode->size )
+	{
+		uint32_t pos = inode->dataoffset + offset;
+		const initrd_dirent* dirent = (const initrd_dirent*) (initrd + pos);
+		if ( index-- == 0 ) { return dirent->name; }
+		offset += dirent->reclen;
+	}
+	Error::Set(EINVAL);
+	return NULL;
+}
 
-		void Init(addr_t phys, size_t size)
-		{
-			// First up, map the initrd onto the kernel's address space.
-			addr_t virt = Memory::GetInitRD();
-			size_t amount = 0;
-			while ( amount < size )
-			{
-				if ( !Memory::MapKernel(phys + amount, virt + amount) )
-				{
-					Panic("Unable to map the init ramdisk into virtual memory");
-				}
-				amount += 0x1000UL;
-			}
+size_t GetNumFiles(uint32_t dir)
+{
+	const initrd_inode_t* inode = GetInode(dir);
+	if ( !inode ) { return 0; }
+	if ( !INITRD_S_ISDIR(inode->mode) ) { Error::Set(ENOTDIR); return 0; }
+	uint32_t offset = 0;
+	size_t numentries = 0;
+	while ( offset < inode->size )
+	{
+		uint32_t pos = inode->dataoffset + offset;
+		const initrd_dirent* dirent = (const initrd_dirent*) (initrd + pos);
+		numentries++;
+		offset += dirent->reclen;
+	}
+	return numentries;
+}
 
-			Memory::Flush();
-
-			initrd = (byte*) virt;
-			initrdsize = size;
-			if ( size < sizeof(Header) ) { PanicF("initrd.cpp: initrd is too small"); }
-			Header* header = (Header*) initrd;
-			if ( String::Compare(header->magic, "sortix-initrd-1") != 0 ) { PanicF("initrd.cpp: invalid magic value in the initrd"); }
-			size_t sizeneeded = sizeof(Header) + header->numfiles * sizeof(FileHeader);
-			if ( size < sizeneeded ) { PanicF("initrd.cpp: initrd is too small"); }
-			// TODO: We need to do more validation here!
-
-			if ( CHECK_CHECKSUM ) { CheckSum(); }
-		}
-
-		byte* Open(const char* filepath, size_t* size)
-		{
-			Header* header = (Header*) initrd;
-			FileHeader* fhtbl = (FileHeader*) (initrd + sizeof(Header));
-			for ( uint32_t i = 0; i < header->numfiles; i++ )
-			{
-				FileHeader* fileheader = &(fhtbl[i]);
-
-				if ( String::Compare(filepath, fileheader->name) != 0 ) { continue; }
-
-				*size = fileheader->size;
-				return initrd + fileheader->offset;
-			}
-
-			return NULL;
-		}
+void CheckSum()
+{
+	uint32_t amount = sb->fssize - sb->sumsize;
+	uint8_t* filesum = initrd + amount;
+	if ( sb->sumalgorithm != INITRD_ALGO_CRC32 )
+	{
+		Log::PrintF("Warning: InitRD checksum algorithm not supported\n");
+		return;
+	}
+	uint32_t crc32 = *((uint32_t*) filesum);
+	uint32_t filecrc32 = CRC32::Hash(initrd, amount);
+	if ( crc32 != filecrc32 )
+	{
+		PanicF("InitRD had checksum %X, expected %X: this means the ramdisk "
+		       "may have been corrupted by the bootloader.", filecrc32, crc32);
 	}
 }
+
+void Init(addr_t phys, size_t size)
+{
+	// First up, map the initrd onto the kernel's address space.
+	addr_t virt = Memory::GetInitRD();
+	size_t amount = 0;
+	while ( amount < size )
+	{
+		if ( !Memory::MapKernel(phys + amount, virt + amount) )
+		{
+			Panic("Unable to map the init ramdisk into virtual memory");
+		}
+		amount += 0x1000UL;
+	}
+
+	Memory::Flush();
+
+	initrd = (uint8_t*) virt;
+	initrdsize = size;
+
+	if ( size < sizeof(*sb) ) { PanicF("initrd is too small"); }
+	sb = (const initrd_superblock_t*) initrd;
+
+	if ( !String::StartsWith(sb->magic, "sortix-initrd") )
+	{
+		Panic("Invalid magic value in initrd. This means the ramdisk may have "
+		      "been corrupted by the bootloader, or that an incompatible file "
+		      "has been passed to the kernel.");
+	}
+
+	if ( String::Compare(sb->magic, "sortix-initrd-1") == 0 )
+	{
+		Panic("Sortix initrd format version 1 is no longer supported.");
+	}
+
+	if ( String::Compare(sb->magic, "sortix-initrd-2") != 0 )
+	{
+		Panic("The initrd has a format that isn't supported. Perhaps it is "
+		      "too new? Try downgrade or regenerate the initrd.");
+	}
+
+	if ( size < sb->fssize )
+	{
+		PanicF("The initrd said it is %u bytes, but the kernel was only passed "
+		       "%zu bytes by the bootloader, which is not enough.", sb->fssize,
+		       size);
+	}
+
+	CheckSum();
+}
+
+} // namespace InitRD
+} // namespace Sortix

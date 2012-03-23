@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of Sortix.
 
@@ -18,271 +18,408 @@
 	with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	mkinitrd.cpp
-	Produces a simple ramdisk meant for bootstrapping the Sortix kernel.
+	Produces a simple ramdisk filesystem readable by the Sortix kernel.
 
-******************************************************************************/
+*******************************************************************************/
 
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <error.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <dirent.h>
 #include <unistd.h>
 #include <sortix/initrd.h>
 
-bool writeall(int fd, const void* p, size_t size)
+#include "crc32.h"
+
+#if !defined(sortix)
+__BEGIN_DECLS
+size_t preadall(int fd, void* buf, size_t count, off_t off);
+size_t preadleast(int fd, void* buf, size_t least, size_t max, off_t off);
+size_t pwriteall(int fd, const void* buf, size_t count, off_t off);
+size_t pwriteleast(int fd, const void* buf, size_t least, size_t max, off_t off);
+size_t readall(int fd, void* buf, size_t count);
+size_t readleast(int fd, void* buf, size_t least, size_t max);
+size_t writeall(int fd, const void* buf, size_t count);
+size_t writeleast(int fd, const void* buf, size_t least, size_t max);
+__END_DECLS
+#endif
+
+uint32_t HostModeToInitRD(mode_t mode)
 {
-	const uint8_t* buffer = (const uint8_t*) p;
+	uint32_t result = mode & 0777; // Lower 9 bits per POSIX and tradition.
+	if ( S_ISVTX & mode ) { result |= INITRD_S_ISVTX; }
+	if ( S_ISSOCK(mode) ) { result |= INITRD_S_IFSOCK; }
+	if ( S_ISLNK(mode) ) { result |= INITRD_S_IFLNK; }
+	if ( S_ISREG(mode) ) { result |= INITRD_S_IFREG; }
+	if ( S_ISBLK(mode) ) { result |= INITRD_S_IFBLK; }
+	if ( S_ISDIR(mode) ) { result |= INITRD_S_IFDIR; }
+	if ( S_ISCHR(mode) ) { result |= INITRD_S_IFCHR; }
+	if ( S_ISFIFO(mode) ) { result |= INITRD_S_IFIFO; }
+	return result;
+}
 
-	size_t bytesWritten = 0;
+mode_t InitRDModeToHost(uint32_t mode)
+{
+	mode_t result = mode & 0777; // Lower 9 bits per POSIX and tradition.
+	if ( INITRD_S_ISVTX & mode ) { result |= S_ISVTX; }
+	if ( INITRD_S_ISSOCK(mode) ) { result |= S_IFSOCK; }
+	if ( INITRD_S_ISLNK(mode) ) { result |= S_IFLNK; }
+	if ( INITRD_S_ISREG(mode) ) { result |= S_IFREG; }
+	if ( INITRD_S_ISBLK(mode) ) { result |= S_IFBLK; }
+	if ( INITRD_S_ISDIR(mode) ) { result |= S_IFDIR; }
+	if ( INITRD_S_ISCHR(mode) ) { result |= S_IFCHR; }
+	if ( INITRD_S_ISFIFO(mode) ) { result |= S_IFIFO; }
+	return result;
+}
 
-	while ( bytesWritten < size )
+struct Node;
+struct DirEntry;
+
+struct DirEntry
+{
+	char* name;
+	Node* node;
+};
+
+struct Node
+{
+	char* path;
+	uint32_t ino;
+	uint32_t nlink;
+	size_t direntsused;
+	size_t direntslength;
+	DirEntry* dirents;
+	mode_t mode;
+	time_t ctime;
+	time_t mtime;
+};
+
+void FreeNode(Node* node)
+{
+	if ( 1 < node->nlink ) { node->nlink--; return; }
+	for ( size_t i = 0; i < node->direntsused; i++ )
 	{
-		ssize_t written = write(fd, buffer + bytesWritten, size - bytesWritten);
-		if ( written < 0 ) { return false; }
-		bytesWritten += written;
+		DirEntry* entry = node->dirents + i;
+		if ( strcmp(entry->name, ".") != 0 && strcmp(entry->name, "..") != 0 )
+		{
+			FreeNode(entry->node);
+		}
+		free(entry->name);
+	}
+	free(node->dirents);
+	free(node->path);
+	free(node);
+}
+
+Node* RecursiveSearch(const char* rootpath, uint32_t* ino, Node* parent = NULL)
+{
+	struct stat st;
+	if ( lstat(rootpath, &st) ) { perror(rootpath); return NULL; }
+
+	Node* node = (Node*) calloc(1, sizeof(Node));
+	if ( !node ) { return NULL; }
+
+	node->mode = st.st_mode;
+	node->ino = (*ino)++;
+	node->ctime = st.st_ctime;
+	node->mtime = st.st_mtime;
+
+	char* pathclone = strdup(rootpath);
+	if ( !pathclone ) { perror("strdup"); free(node); return NULL; }
+
+	node->path = pathclone;
+
+	if ( !S_ISDIR(st.st_mode) ) { return node; }
+
+	DIR* dir = opendir(rootpath);
+	if ( !dir ) { perror(rootpath); FreeNode(node); return NULL; }
+
+	size_t rootpathlen = strlen(rootpath);
+
+	bool successful = true;
+	struct dirent* entry;
+	while ( (entry = readdir(dir)) )
+	{
+		size_t namelen = strlen(entry->d_name);
+		size_t subpathlen = namelen + 1 + rootpathlen;
+		char* subpath = (char*) malloc(subpathlen+1);
+		if ( !subpath ) { perror("malloc"); successful = false; break; }
+		stpcpy(stpcpy(stpcpy(subpath, rootpath), "/"), entry->d_name);
+
+		Node* child = NULL;
+		if ( !strcmp(entry->d_name, ".") ) { child = node; }
+		if ( !strcmp(entry->d_name, "..") ) { child = parent ? parent : node; }
+		if ( !child ) { child = RecursiveSearch(subpath, ino, node); }
+		free(subpath);
+		if ( !child ) { successful = false; break; }
+
+		if ( node->direntsused == node->direntslength )
+		{
+			size_t oldlength = node->direntslength;
+			size_t newlength = oldlength ? 2 * oldlength : 8;
+			size_t newsize = sizeof(DirEntry) * newlength;
+			DirEntry* newdirents = (DirEntry*) realloc(node->dirents, newsize);
+			if ( !newdirents ) { perror("realloc"); successful = false; break; }
+			node->dirents = newdirents;
+			node->direntslength = newlength;
+		}
+
+		char* nameclone = strdup(entry->d_name);
+		if ( !nameclone ) { perror("strdup"); successful = false; break; }
+
+		DirEntry* entry = node->dirents + node->direntsused++;
+
+		entry->name = nameclone;
+		entry->node = child;
+	}
+
+	closedir(dir);
+	if ( !successful ) { FreeNode(node); return NULL; }
+	return node;
+}
+
+bool WriteNode(struct initrd_superblock* sb, int fd, const char* outputname,
+               Node* node)
+{ {
+	uint32_t filesize = 0;
+	uint32_t origfssize = sb->fssize;
+	uint32_t dataoff = origfssize;
+	uint32_t filestart = dataoff;
+
+	if ( S_ISLNK(node->mode) ) // Symbolic link
+	{
+		const size_t NAME_SIZE = 1024UL;
+		char name[NAME_SIZE];
+		ssize_t namelen = readlink(node->path, name, NAME_SIZE);
+		if ( namelen < 0 ) { goto ioreadlink; }
+		filesize = (uint32_t) namelen;
+		if ( pwriteall(fd, name, filesize, dataoff) < filesize ) goto ioread;
+		dataoff += filesize;
+	}
+	else if ( S_ISREG(node->mode) ) // Regular file
+	{
+		int nodefd = open(node->path, O_RDONLY);
+		if ( nodefd < 0 ) { goto ioopen; }
+		const size_t BUFFER_SIZE = 16UL * 1024UL;
+		uint8_t buffer[BUFFER_SIZE];
+		ssize_t amount;
+		while ( 0 < (amount = read(nodefd, buffer, BUFFER_SIZE)) )
+		{
+			if ( pwriteall(fd, buffer, amount, dataoff) < (size_t) amount )
+			{
+				close(nodefd);
+				goto iowrite;
+			}
+			dataoff += amount;
+			filesize += amount;
+		}
+		close(nodefd);
+		if ( amount < 0 ) { goto ioread; }
+	}
+	else if ( S_ISDIR(node->mode) ) // Directory
+	{
+		for ( size_t i = 0; i < node->direntsused; i++ )
+		{
+			DirEntry* entry = node->dirents + i;
+			const char* name = entry->name;
+			size_t namelen = strlen(entry->name);
+			struct initrd_dirent dirent;
+			dirent.inode = entry->node->ino;
+			dirent.namelen = (uint16_t) namelen;
+			dirent.reclen = sizeof(dirent) + dirent.namelen + 1;
+			dirent.reclen += dirent.reclen % 4; // Align entries.
+			size_t entsize = sizeof(dirent);
+			ssize_t hdramt = pwriteall(fd, &dirent, entsize, dataoff);
+			ssize_t nameamt = pwriteall(fd, name, namelen+1, dataoff + entsize);
+			if ( hdramt < (ssize_t) entsize || nameamt < (ssize_t) (namelen+1) )
+				goto iowrite;
+			filesize += dirent.reclen;
+			dataoff += dirent.reclen;
+		}
+	}
+
+	struct initrd_inode inode;
+	inode.mode = HostModeToInitRD(node->mode);
+	inode.uid = 1;
+	inode.gid = 1;
+	inode.nlink = node->nlink;
+	inode.ctime = (uint64_t) node->ctime;
+	inode.mtime = (uint64_t) node->mtime;
+	inode.dataoffset = filestart;
+	inode.size = filesize;
+
+	uint32_t inodepos = sb->inodeoffset + node->ino * sb->inodesize;
+	uint32_t inodesize = sizeof(inode);
+	if ( pwriteall(fd, &inode, inodesize, inodepos) < inodesize ) goto iowrite;
+
+	uint32_t increment = dataoff - origfssize;
+	sb->fssize += increment;
+
+	return true;
+}
+  ioreadlink:
+	error(0, errno, "readlink: %s", node->path);
+	return false;
+  ioopen:
+	error(0, errno, "open: %s", node->path);
+	return false;
+  ioread:
+	error(0, errno, "read: %s", node->path);
+	return false;
+  iowrite:
+	error(0, errno, "write: %s", outputname);
+	return false;
+}
+
+bool WriteNodeRecursive(struct initrd_superblock* sb, int fd,
+                        const char* outputname, Node* node)
+{
+	if ( !WriteNode(sb, fd, outputname, node) ) { return false; }
+
+	if ( !S_ISDIR(node->mode) ) { return true; }
+
+	for ( size_t i = 0; i < node->direntsused; i++ )
+	{
+		DirEntry* entry = node->dirents + i;
+		const char* name = entry->name;
+		Node* child = entry->node;
+		if ( !strcmp(name, ".") || !strcmp(name, ".." ) ) { continue; }
+		if ( !WriteNodeRecursive(sb, fd, outputname, child) ) { return false; }
 	}
 
 	return true;
 }
 
-uint8_t ContinueChecksum(uint8_t checksum, const void* p, size_t size)
+bool Format(const char* outputname, int fd, uint32_t inodecount, Node* root)
 {
-	const uint8_t* buffer = (const uint8_t*) p;
-	while ( size-- )
+	struct initrd_superblock sb;
+	memset(&sb, 0, sizeof(sb));
+	strncpy(sb.magic, "sortix-initrd-2", sizeof(sb.magic));
+	sb.revision = 0;
+	sb.fssize = sizeof(sb);
+	sb.inodesize = sizeof(initrd_inode);
+	sb.inodeoffset = sizeof(sb);
+	sb.inodecount = inodecount;
+	sb.root = root->ino;
+
+	uint32_t inodebytecount = sb.inodesize * sb.inodecount;
+	sb.fssize += inodebytecount;
+
+	if ( !WriteNodeRecursive(&sb, fd, outputname, root) ) { return false; }
+
+	uint32_t crcsize = sizeof(uint32_t);
+	sb.sumalgorithm = INITRD_ALGO_CRC32;
+	sb.sumsize = crcsize;
+	sb.fssize += sb.sumsize;
+
+	if ( pwriteall(fd, &sb, sizeof(sb), 0) < sizeof(sb) )
 	{
-		checksum += *buffer++;
+		error(0, errno, "write: %s", outputname);
+		return false;
 	}
-	return checksum;
+
+	uint32_t checksize = sb.fssize - sb.sumsize;
+	uint32_t crc;
+	if ( !CRC32File(&crc, outputname, fd, 0, checksize) ) { return false; }
+	if ( pwriteall(fd, &crc, crcsize, checksize) < crcsize ) { return false; }
+
+	return true;
 }
 
-void usage(int argc, char* argv[])
+bool Format(const char* pathname, uint32_t inodecount, Node* root)
 {
-	printf("usage: %s [OPTIONS] <files>\n", argv[0]);
-	printf("Options:\n");
-	printf("  -o <file>                Write the ramdisk to this file\n");
-	printf("  -q                       Surpress normal output\n");
-	printf("  -v                       Be verbose\n");
-	printf("  --usage                  Display this screen\n");
-	printf("  --help                   Display this screen\n");
-	printf("  --version                Display version information\n");
+	int fd = open(pathname, O_RDWR | O_CREAT | O_TRUNC, 0666);
+	bool result = Format(pathname, fd, inodecount, root);
+	close(fd);
+	return result;
 }
 
-void version()
+void Usage(FILE* fp, const char* argv0)
 {
-	printf("mkinitrd 0.1\n");
-	printf("Copyright (C) 2011 Jonas 'Sortie' Termansen\n");
-	printf("This is free software; see the source for copying conditions.  There is NO\n");
-	printf("warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n");
-	printf("website: http://www.maxsi.org/software/sortix/\n");
+	fprintf(fp, "usage: %s <ROOT> -o <DEST>\n", argv0);
+	fprintf(fp, "Creates a init ramdisk for the Sortix kernel.\n");
 }
 
-bool verbose = false;
+void Help(FILE* fp, const char* argv0)
+{
+	Usage(fp, argv0);
+}
+
+void Version(FILE* fp, const char* argv0)
+{
+	fprintf(fp, "mkinitrd 0.2\n");
+	fprintf(fp, "Copyright (C) 2012 Jonas 'Sortie' Termansen\n");
+	fprintf(fp, "This is free software; see the source for copying conditions.  There is NO\n");
+	fprintf(fp, "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n");
+	fprintf(fp, "website: http://www.maxsi.org/software/sortix/\n");
+}
 
 int main(int argc, char* argv[])
 {
+	const char* argv0 = argv[0];
+	if ( argc < 2 ) { Usage(stdout, argv0); exit(0); }
 	const char* dest = NULL;
-
-	if ( argc < 2 ) { usage(argc, argv); return 0; }
-
-	uint32_t numfiles = 0;
-
 	for ( int i = 1; i < argc; i++ )
 	{
-		if ( strcmp(argv[i], "-o") == 0 )
+		int argsleft = argc - i - 1;
+		const char* arg = argv[i];
+		if ( arg[0] != '-' ) { continue; }
+		argv[i] = NULL;
+		if ( !strcmp(arg, "--") ) { break; }
+		if ( !strcmp(arg, "--help") ) { Help(stdout, argv0); exit(0); }
+		if ( !strcmp(arg, "--usage") ) { Usage(stdout, argv0); exit(0); }
+		if ( !strcmp(arg, "--version") ) { Version(stdout, argv0); exit(0); }
+		if ( !strcmp(arg, "-o") || !strcmp(arg, "--output") )
 		{
-			if ( i + 1 < argc )
+			if ( argsleft < 1 )
 			{
-				dest = argv[i+1];
-				argv[i+1] = NULL;
+				fprintf(stderr, "No output file specified\n");
+				Usage(stderr, argv0);
+				exit(1);
 			}
-			argv[i] = NULL;
-			i++;
+			dest = argv[++i]; argv[i] = NULL;
+			continue;
 		}
-		else if ( strcmp(argv[i], "-q") == 0 )
-		{
-			verbose = false;
-			argv[i] = NULL;
-		}
-		else if ( strcmp(argv[i], "-v") == 0 )
-		{
-			verbose = true;
-			argv[i] = NULL;
-		}
-		else if ( strcmp(argv[i], "--usage") == 0 )
-		{
-			usage(argc, argv);
-			return 0;
-		}
-		else if ( strcmp(argv[i], "--help") == 0 )
-		{
-			usage(argc, argv);
-			return 0;
-		}
-		else if ( strcmp(argv[i], "--version") == 0 )
-		{
-			version();
-			return 0;
-		}
-		else
-		{
-			numfiles++;
-		}
+		fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
+		Usage(stderr, argv0);
+		exit(1);
 	}
 
-	if ( dest == NULL )
-	{
-		fprintf(stderr, "%s: no output file specified\n", argv[0]);
-		return 0;
-	}
-
-	int fd = open(dest, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-	if ( fd < 0 )
-	{
-		error(0, errno, "%s", dest);
-		return 1;
-	}
-
-	// Keep track of the file checksum.
-	Sortix::InitRD::Trailer trailer;
-	trailer.sum = 0;
-
-	// Write the initrd headers.
-	Sortix::InitRD::Header header;
-	memset(&header, 0, sizeof(header));
-	strcpy(header.magic, "sortix-initrd-1");
-	header.numfiles = numfiles;
-	trailer.sum = ContinueChecksum(trailer.sum, &header, sizeof(header));
-	if ( !writeall(fd, &header, sizeof(header)) )
-	{
-		error(0, errno, "write: %s", dest);
-		close(fd);
-		unlink(dest);
-		return 1;
-	}
-
-	uint32_t fileoffset = sizeof(header) + numfiles * sizeof(Sortix::InitRD::FileHeader);
-
-	uint32_t filenum = 0;
+	const char* rootstr = NULL;
+	int args = 0;
 	for ( int i = 1; i < argc; i++ )
 	{
-		const char* file = argv[i];
-
-		if ( file == NULL ) { continue; }
-
-		Sortix::InitRD::FileHeader fileheader;
-		memset(&fileheader, 0, sizeof(fileheader));
-
-		if ( sizeof(fileheader.name) - 1 < strlen(file) )
-		{
-			fprintf(stderr, "%s: file name is too long: %s\n", argv[0], file);
-			close(fd);
-			unlink(dest);
-			return 1;
-		}
-
-		int filefd = open(file, O_RDONLY);
-		if ( filefd < 0 )
-		{
-			error(0, errno, "%s", file);
-			close(fd);
-			unlink(dest);
-			return 1;
-		}
-
-		if ( verbose )
-		{
-			fprintf(stderr, "%s\n", file);
-		}
-
-		struct stat st;
-		if ( fstat(filefd, &st) != 0 )
-		{
-			error(0, errno, "stat: %s", file);
-			close(fd);
-			unlink(dest);
-			return 1;
-		}
-
-		uint32_t filesize = st.st_size;
-		fileheader.permissions = 0755;
-		fileheader.size = filesize;
-		fileheader.owner = 1;
-		fileheader.group = 1;
-		fileheader.offset = fileoffset;
-		strcpy(fileheader.name, file);
-
-		off_t fileheaderpos = sizeof(header) + filenum * sizeof(Sortix::InitRD::FileHeader);
-		if ( lseek(fd, fileheaderpos, SEEK_SET ) < 0 )
-		{
-			error(0, errno, "seek: %s", dest);
-			close(fd);
-			unlink(dest);
-			return 1;
-		}
-
-		trailer.sum = ContinueChecksum(trailer.sum, &fileheader, sizeof(fileheader));
-		if ( !writeall(fd, &fileheader, sizeof(fileheader)) )
-		{
-			error(0, errno, "write: %s", dest);
-			close(fd);
-			unlink(dest);
-			return 1;
-		}
-
-		if ( lseek(fd, fileoffset, SEEK_SET ) < 0 )
-		{
-			error(0, errno, "seek: %s", dest);
-			close(fd);
-			unlink(dest);
-			return 1;
-		}
-
-		const size_t BUFFER_SIZE = 16384UL;
-		uint8_t buffer[BUFFER_SIZE];
-
-		uint32_t readsofar = 0;
-		while ( readsofar < filesize )
-		{
-			uint32_t left = filesize-readsofar;
-			size_t toread = (left < BUFFER_SIZE) ? left : BUFFER_SIZE;
-			ssize_t bytesread = read(filefd, buffer, toread);
-			if ( bytesread <= 0 )
-			{
-				error(0, errno, "read: %s", file);
-				close(fd);
-				unlink(dest);
-				return 1;
-			}
-
-			trailer.sum = ContinueChecksum(trailer.sum, &buffer, bytesread);
-			if ( !writeall(fd, buffer, bytesread) )
-			{
-				error(0, errno, "write: %s", dest);
-				close(fd);
-				unlink(dest);
-				return 1;
-			}
-
-			readsofar += bytesread;
-		}
-
-		fileoffset += filesize;
-		filenum++;
-
-		close(filefd);
+		if ( !argv[i] ) { continue; }
+		args++;
+		rootstr = argv[i];
 	}
 
-	if ( !writeall(fd, &trailer, sizeof(trailer)) )
+	const char* errmsg = NULL;
+	if ( !errmsg && args < 1 ) { errmsg = "no root specified"; }
+	if ( !errmsg && 1 < args ) { errmsg = "too many roots"; }
+	if ( !errmsg && !dest ) { errmsg = "no destination specified"; }
+
+	if ( errmsg )
 	{
-		error(0, errno, "write: %s", dest);
-		close(fd);
-		unlink(dest);
-		return 1;
+		fprintf(stderr, "%s: %s\n", argv0, errmsg),
+		Usage(stderr, argv0);
+		exit(1);
 	}
+
+	uint32_t inodecount = 1;
+	Node* root = RecursiveSearch(rootstr, &inodecount);
+	if ( !root ) { exit(1); }
+
+	if ( !Format(dest, inodecount, root) ) { exit(1); }
+
+	FreeNode(root);
 
 	return 0;
 }
+

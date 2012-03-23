@@ -69,7 +69,7 @@ everything-all-archs:
 
 # Initializing RamDisk
 $(INITRD): suball
-	(cd $(INITRDDIR) && ../mkinitrd/mkinitrd * -o ../$(INITRD))
+	mkinitrd/mkinitrd initrd -o $(INITRD)
 
 # Statistics
 linecount:
