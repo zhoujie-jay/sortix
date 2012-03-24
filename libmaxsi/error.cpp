@@ -81,6 +81,7 @@ namespace Maxsi
 				case ELAKE: return (char*) "Sit by a lake";
 				case EMFILE: return (char*) "Too many open files";
 				case EAGAIN: return (char*) "Resource temporarily unavailable";
+				case EEOF: return (char*) "End of file";
 				default: return (char*) "Unknown error condition";
 			}
 		}

@@ -33,6 +33,7 @@
 #define ELAKE 41
 #define EMFILE 42
 #define EAGAIN 43
+#define EEOF 44
 
 #define EOPNOTSUPP ENOTSUP
 
