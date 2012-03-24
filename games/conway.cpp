@@ -58,7 +58,7 @@ void Clear()
 
 bool FlushVGA()
 {
-	return writeall(vgafd, frame, sizeof(frame)) == 0;
+	return writeall(vgafd, frame, sizeof(frame)) < sizeof(frame);
 }
 
 int Init()

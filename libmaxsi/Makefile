@@ -40,6 +40,7 @@ sortix-sound.o \
 process.o \
 thread.o \
 io.o \
+ioleast.o \
 terminal.o \
 kernelinfo.o \
 init.o \

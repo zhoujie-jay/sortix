@@ -304,7 +304,7 @@ bool savetofile(const char* path)
 	{
 		size_t len = strlen(buffers[y]);
 		buffers[y][len] = '\n';
-		bool result = !writeall(fd, buffers[y], len+1);
+		bool result = writeall(fd, buffers[y], len+1) == len+1;
 		buffers[y][len] = 0;
 		if ( !result ) { error(0, errno, "write: %s", path); close(fd); return false; }
 	}

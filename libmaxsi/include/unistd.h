@@ -178,8 +178,15 @@ ssize_t write(int, const void*, size_t);
 #if defined(_SORTIX_SOURCE)
 size_t getpagesize(void);
 int memstat(size_t* memused, size_t* memtotal);
+size_t preadall(int fd, void* buf, size_t count, off_t off);
+size_t preadleast(int fd, void* buf, size_t least, size_t max, off_t off);
+size_t pwriteall(int fd, const void* buf, size_t count, off_t off);
+size_t pwriteleast(int fd, const void* buf, size_t least, size_t max, off_t off);
+size_t readall(int fd, void* buf, size_t count);
+size_t readleast(int fd, void* buf, size_t least, size_t max);
 int uptime(uintmax_t* usecssinceboot);
-int writeall(int fd, const void* buffer, size_t len);
+size_t writeall(int fd, const void* buf, size_t count);
+size_t writeleast(int fd, const void* buf, size_t least, size_t max);
 #endif
 #if defined(_SORTIX_SOURCE) || defined(_SORTIX_ALWAYS_SBRK)
 void* sbrk(intptr_t increment);
