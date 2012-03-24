@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -11,8 +11,8 @@
 
 	LibMaxsi is distributed in the hope that it will be useful, but WITHOUT ANY
 	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
-	more details.
+	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+	details.
 
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
@@ -20,7 +20,7 @@
 	io.cpp
 	Functions for management of input and output.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <libmaxsi/platform.h>
 #include <libmaxsi/syscall.h>
@@ -240,6 +240,18 @@ retry:
 		}
 
 		return 0;
+	}
+
+	extern "C" ssize_t pread(int, void*, size_t, off_t)
+	{
+		errno = ENOSYS;
+		return -1;
+	}
+
+	extern "C" ssize_t pwrite(int, const void*, size_t, off_t)
+	{
+		errno = ENOSYS;
+		return -1;
 	}
 
 	extern "C" off_t lseek(int fd, off_t offset, int whence)

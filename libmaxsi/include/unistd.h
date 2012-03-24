@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -11,8 +11,8 @@
 
 	LibMaxsi is distributed in the hope that it will be useful, but WITHOUT ANY
 	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
-	more details.
+	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+	details.
 
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
@@ -21,7 +21,7 @@
 	The <unistd.h> header defines miscellaneous symbolic constants and types,
 	and declares miscellaneous functions.
 
-******************************************************************************/
+*******************************************************************************/
 
 /* TODO: POSIX-1.2008 compliance is only partial */
 
@@ -119,8 +119,6 @@ int lockf(int, int, off_t);
 int nice(int);
 long pathconf(const char*, int);
 int pause(void);
-ssize_t pread(int, void*, size_t, off_t);
-ssize_t pwrite(int, const void*, size_t, off_t);
 ssize_t readlink(const char* restrict, char* restrict, size_t);
 ssize_t readlinkat(int, const char* restrict, char* restrict, size_t);
 int setegid(gid_t);
@@ -165,6 +163,8 @@ pid_t getppid(void);
 int isatty(int);
 off_t lseek(int, off_t, int);
 int pipe(int [2]);
+ssize_t pread(int, void*, size_t, off_t);
+ssize_t pwrite(int, const void*, size_t, off_t);
 ssize_t read(int, void*, size_t);
 int rmdir(const char*);
 unsigned sleep(unsigned);

@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,13 +14,13 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	io.cpp
 	Provides system calls for input and output.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
@@ -78,6 +78,13 @@ namespace Sortix
 			return 0;
 		}
 
+		// TODO: Not implemented yet due to stupid internal kernel design.
+		ssize_t SysPWrite(int fd, const byte* buffer, size_t count, off_t off)
+		{
+			Error::Set(ENOSYS);
+			return -1;
+		}
+
 		struct SysRead_t
 		{
 			union { size_t align1; int fd; };
@@ -116,6 +123,13 @@ namespace Sortix
 			// Now go do something else.
 			Syscall::Incomplete();
 			return 0;
+		}
+
+		// TODO: Not implemented yet due to stupid internal kernel design.
+		ssize_t SysPRead(int fd, byte* buffer, size_t count, off_t off)
+		{
+			Error::Set(ENOSYS);
+			return -1;
 		}
 
 		void SysSeek(int fd, off_t* offset, int whence)
@@ -160,7 +174,9 @@ namespace Sortix
 		void Init()
 		{
 			Syscall::Register(SYSCALL_WRITE, (void*) SysWrite);
+			Syscall::Register(SYSCALL_PWRITE, (void*) SysPWrite);
 			Syscall::Register(SYSCALL_READ, (void*) SysRead);
+			Syscall::Register(SYSCALL_PREAD, (void*) SysPRead);
 			Syscall::Register(SYSCALL_CLOSE, (void*) SysClose);
 			Syscall::Register(SYSCALL_DUP, (void*) SysDup);
 			Syscall::Register(SYSCALL_SEEK, (void*) SysSeek);
