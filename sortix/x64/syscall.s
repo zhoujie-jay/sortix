@@ -73,7 +73,7 @@ syscall_handler:
 	movl $0, system_was_incomplete
 
 	# Reset the kernel errno.
-	movl $0, errno
+	movl $0, global_errno
 
 	# Make sure the requested system call is valid.
 	cmp SYSCALL_MAX, %rax

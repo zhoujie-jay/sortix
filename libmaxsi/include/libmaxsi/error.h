@@ -37,6 +37,16 @@ namespace Maxsi
 	{
 		inline int Last() { return errno; }
 		inline void Set(int error) { errno = error; }
+
+		inline int* GetErrnoLocation()
+		{
+			return get_errno_location();
+		}
+
+		inline void SetErrnoLocationFunc(errno_location_func_t func)
+		{
+			set_errno_location_func(func);
+		}
 	}
 }
 

@@ -33,17 +33,29 @@
 namespace Maxsi {
 namespace Error {
 
-extern "C" { int errno = 0; }
+extern "C" { int global_errno = 0; }
+extern "C" { errno_location_func_t errno_location_func = NULL; }
 
 #ifndef SORTIX_KERNEL
 DEFN_SYSCALL1(int, SysRegisterErrno, SYSCALL_REGISTER_ERRNO, int*);
 
 extern "C" void init_error_functions()
 {
-	errno = 0;
-	SysRegisterErrno(&errno);
+	global_errno = 0;
+	SysRegisterErrno(&global_errno);
 }
 #endif
+
+extern "C" int* get_errno_location(void)
+{
+	if ( errno_location_func ) { return errno_location_func(); }
+	return &global_errno;
+}
+
+extern "C" void set_errno_location_func(errno_location_func_t func)
+{
+	errno_location_func = func;
+}
 
 extern "C" const char* sortix_strerror(int errnum)
 {

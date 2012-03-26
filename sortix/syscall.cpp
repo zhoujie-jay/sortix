@@ -104,9 +104,9 @@ namespace Sortix
 			int error = Error::Last();
 			if ( !error ) { return; }
 			Process* process = CurrentProcess();
-			if ( !process->errno ) { return; }
+			if ( !process->errnop ) { return; }
 			// TODO: Validate that process->errno is in userspace memory!
-			*process->errno = error;
+			*process->errnop = error;
 		}
 
 		extern "C" size_t resume_syscall(void* scfunc, size_t scsize, size_t* scstate);

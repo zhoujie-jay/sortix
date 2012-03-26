@@ -204,7 +204,7 @@ namespace Sortix
 
 		// Copy variables.
 		clone->mmapfrom = mmapfrom;
-		clone->errno = errno;
+		clone->errnop = errnop;
 		if ( workingdir ) { clone->workingdir = String::Clone(workingdir); }
 		else { clone->workingdir = NULL; }
 
@@ -783,7 +783,7 @@ namespace Sortix
 
 	int SysRegisterErrno(int* errnop)
 	{
-		CurrentProcess()->errno = errnop;
+		CurrentProcess()->errnop = errnop;
 		return 0;
 	}
 
