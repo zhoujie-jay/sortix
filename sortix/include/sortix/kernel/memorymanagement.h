@@ -40,6 +40,9 @@ namespace Sortix
 
 		// Rounds a memory address up to nearest page.
 		inline addr_t AlignUp(addr_t page) { return AlignDown(page + 0xFFFUL); }
+
+		// Tests whether an address is page aligned.
+		inline bool IsAligned(addr_t page) { return AlignDown(page) == page; }
 	}
 
 	namespace Memory
