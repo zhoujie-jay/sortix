@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -11,8 +11,8 @@
 
 	LibMaxsi is distributed in the hope that it will be useful, but WITHOUT ANY
 	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
-	more details.
+	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+	details.
 
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
@@ -20,7 +20,7 @@
 	stdlib.h
 	Standard library definitions.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef	_STDLIB_H
 #define	_STDLIB_H 1
@@ -48,6 +48,7 @@ typedef int div_t, ldiv_t, lldiv_t;
 /* TODO: WEXITSTATUS, WIFEXITED, WIFSIGNALED, WIFSTOPPED, WNOHANG, WSTOPSIG, WTERMSIG, WUNTRACED is missing here */
 
 void abort(void);
+int abs(int value);
 int atoi(const char*);
 long atol(const char*);
 long long atoll(const char*);
@@ -56,6 +57,8 @@ void exit(int);
 void _Exit(int status);
 void free(void*);
 char* getenv(const char*);
+long labs(long);
+long long llabs(long long);
 void* malloc(size_t);
 #if !defined(_SORTIX_SOURCE)
 char* mktemp(char* templ);
@@ -71,7 +74,6 @@ long long strtoll(const char* restrict, char** restrict, int);
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 long a64l(const char* s);
-int abs(int value);
 int atexit(void (*function)(void));
 double atof(const char* value);
 void* bsearch(const void*, const void*, size_t, size_t, int (*)(const void*, const void*));
@@ -83,10 +85,8 @@ int grantpt(int);
 char* initstate(unsigned, char*, size_t);
 long jrand48(unsigned short [3]);
 char* l64a(long);
-long labs(long);
 void lcong48(unsigned short [7]);
 ldiv_t ldiv(long, long);
-long long llabs(long long);
 lldiv_t lldiv(long long, long long);
 long lrand48(void);
 int mblen(const char*, size_t);

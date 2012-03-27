@@ -49,6 +49,7 @@ $(CPU)/signal.o \
 start.o \
 time.o \
 random.o \
+abs.o \
 integer.o \
 c++.o \
 memory.o \
