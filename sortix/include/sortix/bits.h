@@ -22,11 +22,19 @@
 
 ******************************************************************************/
 
-#ifdef PLATFORM_X86
-#include "x86/bits.h"
+#if !defined(PLATFORM_X86) && !defined(PLATFORM_X64)
+	#if defined(__LP64__)
+		#define PLATFORM_X64
+	#else
+		#define PLATFORM_X86
+	#endif
 #endif
 
-#ifdef PLATFORM_X64
+#if defined(PLATFORM_X86)
+#include "x86/bits.h"
+#elif defined(PLATFORM_X64)
 #include "x64/bits.h"
+#else
+#warning Unsupported platform
 #endif
 
