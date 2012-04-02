@@ -34,6 +34,7 @@
 #define EMFILE 42
 #define EAGAIN 43
 #define EEOF 44
+#define EBOUND 45
 
 #define EOPNOTSUPP ENOTSUP
 

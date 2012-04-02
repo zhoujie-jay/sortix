@@ -82,6 +82,7 @@ namespace Maxsi
 				case EMFILE: return (char*) "Too many open files";
 				case EAGAIN: return (char*) "Resource temporarily unavailable";
 				case EEOF: return (char*) "End of file";
+				case EBOUND: return (char*) "Out of bounds";
 				default: return (char*) "Unknown error condition";
 			}
 		}
