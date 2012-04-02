@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/unistd.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
@@ -431,8 +432,11 @@ namespace Sortix
 		return SysExevVEStage2(state);
 	}
 
-	pid_t SysFork()
+	pid_t SysRFork(int flags)
 	{
+		// TODO: Properly support rfork(2).
+		if ( flags != RFFORK ) { Error::Set(ENOSYS); return -1; }
+
 		// Prepare the state of the clone.
 		Syscall::SyscallRegs()->result = 0;
 		CurrentThread()->SaveRegisters(Syscall::InterruptRegs());
@@ -441,6 +445,11 @@ namespace Sortix
 		if ( !clone ) { return -1; }
 
 		return clone->pid;
+	}
+
+	pid_t SysFork()
+	{
+		return SysRFork(RFFORK);
 	}
 
 	pid_t SysGetPID()
@@ -746,6 +755,7 @@ namespace Sortix
 	{
 		Syscall::Register(SYSCALL_EXEC, (void*) SysExecVE);
 		Syscall::Register(SYSCALL_FORK, (void*) SysFork);
+		Syscall::Register(SYSCALL_RFORK, (void*) SysRFork);
 		Syscall::Register(SYSCALL_GETPID, (void*) SysGetPID);
 		Syscall::Register(SYSCALL_GETPPID, (void*) SysGetParentPID);
 		Syscall::Register(SYSCALL_EXIT, (void*) SysExit);

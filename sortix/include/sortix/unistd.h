@@ -34,6 +34,17 @@ __BEGIN_DECLS
 #define X_OK 1 /* Test for execute permission. */
 #define F_OK 0 /* Test for existence. */
 
+#define RFCLONE (1<<0) /* Creates child, otherwise affect current process. */
+#define RFPID (1<<1) /* Allocates new PID. */
+#define RFFDG (1<<2) /* Fork file descriptor table. */
+#define RFMEM (1<<3) /* Shares address space. */
+#define RFFMEM (1<<4) /* Forks address space. */
+#define RFCWD (1<<5) /* Forks current directory pointer. */
+#define RFNS (1<<6) /* Forks namespace. */
+
+#define RFPROC (RFCLONE | RFPID | RFFMEM | RFCWD) /* Create new process. */
+#define RFFORK (RFPROC | RFFDG) /* Traditional fork(2) behavior. */
+
 __END_DECLS
 
 #endif

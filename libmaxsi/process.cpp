@@ -35,6 +35,7 @@ namespace Maxsi
 		DEFN_SYSCALL1_VOID(SysExit, SYSCALL_EXIT, int);
 		DEFN_SYSCALL3(int, SysExecVE, SYSCALL_EXEC, const char*, char* const*, char* const*);
 		DEFN_SYSCALL0(pid_t, SysFork, SYSCALL_FORK);
+		DEFN_SYSCALL1(pid_t, SysRFork, SYSCALL_RFORK, int);
 		DEFN_SYSCALL0(pid_t, SysGetPID, SYSCALL_GETPID);
 		DEFN_SYSCALL0(pid_t, SysGetParentPID, SYSCALL_GETPPID);
 		DEFN_SYSCALL3(pid_t, SysWait, SYSCALL_WAIT, pid_t, int*, int);
@@ -75,6 +76,11 @@ namespace Maxsi
 		DUAL_FUNCTION(pid_t, fork, Fork, ())
 		{
 			return SysFork();
+		}
+
+		extern "C" int rfork(int flags)
+		{
+			return SysRFork(flags);
 		}
 
 		DUAL_FUNCTION(pid_t, getpid, GetPID, ())
