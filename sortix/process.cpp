@@ -259,7 +259,10 @@ namespace Sortix
 		ResetAddressSpace();
 	}
 
-	int Process::Execute(const char* programname, const byte* program, size_t programsize, int argc, const char* const* argv, CPU::InterruptRegisters* regs)
+	int Process::Execute(const char* programname, const byte* program,
+	                     size_t programsize, int argc, const char* const* argv,
+	                     int envc, const char* const* envp,
+	                     CPU::InterruptRegisters* regs)
 	{
 		ASSERT(CurrentProcess() == this);
 
@@ -269,10 +272,11 @@ namespace Sortix
 		// TODO: This may be an ugly hack!
 		// TODO: Move this to x86/process.cpp.
 
+		addr_t stackpos = CurrentThread()->stackpos + CurrentThread()->stacksize;
+
 		// Alright, move argv onto the new stack! First figure out exactly how
 		// big argv actually is.
-		addr_t stackpos = CurrentThread()->stackpos + CurrentThread()->stacksize;
-		addr_t argvpos = stackpos - sizeof(char*) * argc;
+		addr_t argvpos = stackpos - sizeof(char*) * (argc+1);
 		char** stackargv = (char**) argvpos;
 
 		size_t argvsize = 0;
@@ -285,9 +289,31 @@ namespace Sortix
 			Maxsi::Memory::Copy(dest, argv[i], len);
 		}
 
-		stackpos = argvpos - argvsize;
+		stackargv[argc] = NULL;
 
-		ExecuteCPU(argc, stackargv, stackpos, entry, regs);
+		if ( argvsize % 16UL ) { argvsize += 16 - (argvsize % 16UL); }
+
+		// And then move envp onto the stack.
+		addr_t envppos = argvpos - argvsize - sizeof(char*) * (envc+1);
+		char** stackenvp = (char**) envppos;
+
+		size_t envpsize = 0;
+		for ( int i = 0; i < envc; i++ )
+		{
+			size_t len = String::Length(envp[i]) + 1;
+			envpsize += len;
+			char* dest = ((char*) envppos) - envpsize;
+			stackenvp[i] = dest;
+			Maxsi::Memory::Copy(dest, envp[i], len);
+		}
+
+		stackenvp[envc] = NULL;
+
+		if ( envpsize % 16UL ) { envpsize += 16 - (envpsize % 16UL); }
+
+		stackpos = envppos - envpsize;
+
+		ExecuteCPU(argc, stackargv, envc, stackenvp, stackpos, entry, regs);
 
 		descriptors.OnExecute();
 
@@ -303,7 +329,9 @@ namespace Sortix
 		size_t count;
 		size_t sofar;
 		int argc;
+		int envc;
 		char** argv;
+		char** envp;
 
 	public:
 		SysExecVEState()
@@ -315,6 +343,8 @@ namespace Sortix
 			sofar = 0;
 			argc = 0;
 			argv = NULL;
+			envc = 0;
+			envp = NULL;
 		}
 
 		~SysExecVEState()
@@ -324,6 +354,8 @@ namespace Sortix
 			delete[] buffer;
 			for ( int i = 0; i < argc; i++ ) { delete[] argv[i]; }
 			delete[] argv;
+			for ( int i = 0; i < envc; i++ ) { delete[] envp[i]; }
+			delete[] envp;
 		}
 
 	};
@@ -350,7 +382,10 @@ namespace Sortix
 			{
 				CPU::InterruptRegisters* regs = Syscall::InterruptRegs();
 				Process* process = CurrentProcess();
-				int result = process->Execute(state->filename, state->buffer, state->count, state->argc, state->argv, regs);
+				int result = process->Execute(state->filename, state->buffer,
+				                              state->count, state->argc,
+				                              state->argv, state->envc,
+				                              state->envp, regs);
 				if ( result == 0 ) { Syscall::AsIs(); }
 				delete state;
 				return result;
@@ -391,7 +426,7 @@ namespace Sortix
 		return (DevBuffer*) dev;
 	}
 
-	int SysExecVE(const char* filename, char* const argv[], char* const /*envp*/[])
+	int SysExecVE(const char* filename, char* const argv[], char* const envp[])
 	{
 		// TODO: Validate that all the pointer-y parameters are SAFE!
 
@@ -404,17 +439,29 @@ namespace Sortix
 		state->filename = String::Clone(filename);
 		if ( !state->filename ) { delete state; return -1; }
 
-		int argc; for ( argc = 0; argv[argc]; argc++ );
+		int argc; for ( argc = 0; argv && argv[argc]; argc++ );
+		int envc; for ( envc = 0; envp && envp[envc]; envc++ );
 
-		state->argc = argc;
-		state->argv = new char*[state->argc];
-		Maxsi::Memory::Set(state->argv, 0, sizeof(char*) * state->argc);
+		state->argv = new char*[argc+1];
 		if ( !state->argv ) { delete state; return -1; }
+		state->argc = argc;
+		Maxsi::Memory::Set(state->argv, 0, sizeof(char*) * (state->argc+1));
 
 		for ( int i = 0; i < state->argc; i++ )
 		{
 			state->argv[i] = String::Clone(argv[i]);
 			if ( !state->argv[i] ) { delete state; return -1; }
+		}
+
+		state->envp = new char*[envc+1];
+		if ( !state->envp ) { delete state; return -1; }
+		state->envc = envc;
+		Maxsi::Memory::Set(state->envp, 0, sizeof(char*) * (state->envc+1));
+
+		for ( int i = 0; i < state->envc; i++ )
+		{
+			state->envp[i] = String::Clone(envp[i]);
+			if ( !state->envp[i] ) { delete state; return -1; }
 		}
 
 		Process* process = CurrentProcess();

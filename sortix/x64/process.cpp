@@ -27,10 +27,14 @@
 
 namespace Sortix
 {
-	void Process::ExecuteCPU(int argc, char** argv, addr_t stackpos, addr_t entry, CPU::InterruptRegisters* regs)
+	void Process::ExecuteCPU(int argc, char** argv, int envc, char** envp,
+	                         addr_t stackpos, addr_t entry,
+	                         CPU::InterruptRegisters* regs)
 	{
 		regs->rdi = argc;
 		regs->rsi = (size_t) argv;
+		regs->rdx = envc;
+		regs->rcx = (size_t) envp;
 		regs->rip = entry;
 		regs->userrsp = stackpos & ~(15UL);
 		regs->rbp = stackpos;

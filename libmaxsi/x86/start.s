@@ -30,6 +30,8 @@
 .type _start, @function
 _start:
 
+	movl %ecx, environ # envp
+
 	# Arguments for main
 	push %ebx # argv
 	push %eax # argc

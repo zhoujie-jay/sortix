@@ -29,6 +29,8 @@
 .type _start, @function
 _start:
 
+	movq %rcx, environ # envp
+
 	pushq %rsi
 	pushq %rdi
 

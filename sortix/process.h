@@ -96,7 +96,10 @@ namespace Sortix
 		bool sigint;
 
 	public:
-		int Execute(const char* programname, const byte* program, size_t programsize, int argc, const char* const* argv, CPU::InterruptRegisters* regs);
+		int Execute(const char* programname, const byte* program,
+		            size_t programsize, int argc, const char* const* argv,
+		            int envc, const char* const* envp,
+		            CPU::InterruptRegisters* regs);
 		void ResetAddressSpace();
 		void Exit(int status);
 
@@ -108,7 +111,9 @@ namespace Sortix
 
 	private:
 		Thread* ForkThreads(Process* processclone);
-		void ExecuteCPU(int argc, char** argv, addr_t stackpos, addr_t entry, CPU::InterruptRegisters* regs);
+		void ExecuteCPU(int argc, char** argv, int envc, char** envp,
+		                addr_t stackpos, addr_t entry,
+		                CPU::InterruptRegisters* regs);
 
 	public:
 		void ResetForExecute();
