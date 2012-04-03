@@ -432,10 +432,10 @@ namespace Sortix
 		return SysExevVEStage2(state);
 	}
 
-	pid_t SysRFork(int flags)
+	pid_t SysSFork(int flags)
 	{
-		// TODO: Properly support rfork(2).
-		if ( flags != RFFORK ) { Error::Set(ENOSYS); return -1; }
+		// TODO: Properly support sfork(2).
+		if ( flags != SFFORK ) { Error::Set(ENOSYS); return -1; }
 
 		// Prepare the state of the clone.
 		Syscall::SyscallRegs()->result = 0;
@@ -449,7 +449,7 @@ namespace Sortix
 
 	pid_t SysFork()
 	{
-		return SysRFork(RFFORK);
+		return SysSFork(SFFORK);
 	}
 
 	pid_t SysGetPID()
@@ -755,7 +755,7 @@ namespace Sortix
 	{
 		Syscall::Register(SYSCALL_EXEC, (void*) SysExecVE);
 		Syscall::Register(SYSCALL_FORK, (void*) SysFork);
-		Syscall::Register(SYSCALL_RFORK, (void*) SysRFork);
+		Syscall::Register(SYSCALL_SFORK, (void*) SysSFork);
 		Syscall::Register(SYSCALL_GETPID, (void*) SysGetPID);
 		Syscall::Register(SYSCALL_GETPPID, (void*) SysGetParentPID);
 		Syscall::Register(SYSCALL_EXIT, (void*) SysExit);

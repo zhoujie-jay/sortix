@@ -32,14 +32,6 @@
 #include <sortix/seek.h>
 #include <sortix/unistd.h>
 
-/* BSD compatibility: The problem with RFMEM is that isn't default to share, but
-   default to make a copy. However, Sortix rforks wants to make sharing default
-   and forking only happens if you ask for it. The Sortix RFFMEM extension
-   reverses this logic. */
-#if defined(RFMEM) && !defined(_BSD_SOURCE) && !defined(_WANT_RFMEM)
-#undef RFMEM
-#endif
-
 #define _SORTIX_ALWAYS_SBRK
 
 __BEGIN_DECLS
@@ -190,7 +182,7 @@ size_t pwriteall(int fd, const void* buf, size_t count, off_t off);
 size_t pwriteleast(int fd, const void* buf, size_t least, size_t max, off_t off);
 size_t readall(int fd, void* buf, size_t count);
 size_t readleast(int fd, void* buf, size_t least, size_t max);
-pid_t rfork(int flags);
+pid_t sfork(int flags);
 int uptime(uintmax_t* usecssinceboot);
 size_t writeall(int fd, const void* buf, size_t count);
 size_t writeleast(int fd, const void* buf, size_t least, size_t max);

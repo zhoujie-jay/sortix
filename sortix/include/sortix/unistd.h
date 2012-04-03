@@ -34,16 +34,37 @@ __BEGIN_DECLS
 #define X_OK 1 /* Test for execute permission. */
 #define F_OK 0 /* Test for existence. */
 
-#define RFCLONE (1<<0) /* Creates child, otherwise affect current process. */
-#define RFPID (1<<1) /* Allocates new PID. */
-#define RFFDG (1<<2) /* Fork file descriptor table. */
-#define RFMEM (1<<3) /* Shares address space. */
-#define RFFMEM (1<<4) /* Forks address space. */
-#define RFCWD (1<<5) /* Forks current directory pointer. */
-#define RFNS (1<<6) /* Forks namespace. */
+/* The sfork system call is much like the rfork system call found in Plan 9 and
+   BSD systems, however it works slightly differently and was renamed to avoid
+   conflicts with existing programs. In particular, it never forks an item
+   unless its bit is set, whereas rfork sometimes forks an item by default. If
+   you wish to fork certain items simply set the proper flags. Note that since
+   flags may be added from time to time, you should use various compound flags
+   defined below such as SFFORK and SFALL. It can be useful do combine these
+   compount flags with bitoperations, for instance "I want traditional fork,
+   except share the working dir pointer" is sfork(SFFORK & ~SFCWD). */
+#define SFPROC (1<<0) /* Creates child, otherwise affect current process. */
+#define SFPID (1<<1) /* Allocates new PID. */
+#define SFFD (1<<2) /* Fork file descriptor table. */
+#define SFMEM (1<<3) /* Forks address space. */
+#define SFCWD (1<<4) /* Forks current directory pointer. */
+#define SFROOT (1<<5) /* Forks root directory pointer. */
+#define SFNAME (1<<6) /* Forks namespace. */
+#define SFSIG (1<<7) /* Forks signal table. */
+#define SFCSIG (1<<8) /* Child will have no pending signals, like fork(2). */
 
-#define RFPROC (RFCLONE | RFPID | RFFMEM | RFCWD) /* Create new process. */
-#define RFFORK (RFPROC | RFFDG) /* Traditional fork(2) behavior. */
+/* Provides traditional fork(2) behavior; use this instead of the above values
+   if you want "as fork(2), but also fork foo", or "as fork(2), except bar". In
+   those cases it is better to sfork(SFFORK & ~SFFOO); or sfork(SFFORK | SFBAR);
+   as that would allow to add new flags to SFFORK if a new kernel feature is
+   added to the system that applications don't know about yet. */
+#define SFFORK (SFPROC | SFPID | SFFD | SFMEM | SFCWD | SFROOT | SFCSIG)
+
+/* This allows creating a process that is completely forked from the original
+   process, unlike SFFORK which does share a few things (such as the process
+   namespace). Note that there is a few unset high bits in this value, these
+   are reserved and must not be set. */
+#define SFALL ((1<<20)-1)
 
 __END_DECLS
 
