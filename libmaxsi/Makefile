@@ -50,6 +50,7 @@ start.o \
 time.o \
 random.o \
 abs.o \
+env.o \
 integer.o \
 c++.o \
 memory.o \

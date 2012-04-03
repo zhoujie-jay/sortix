@@ -56,20 +56,39 @@ void* calloc(size_t, size_t);
 void exit(int);
 void _Exit(int status);
 void free(void*);
-char* getenv(const char*);
 long labs(long);
 long long llabs(long long);
 void* malloc(size_t);
 #if !defined(_SORTIX_SOURCE)
 char* mktemp(char* templ);
 #endif
+int putenv(char*);
 void qsort(void*, size_t, size_t, int (*)(const void*, const void*));
 int rand(void);
 void* realloc(void*, size_t);
+int setenv(const char*, const char*, int);
 long strtol(const char* restrict, char** restrict, int);
 unsigned long strtoul(const char* restrict, char** restrict, int);
 unsigned long long strtoull(const char* restrict, char** restrict, int);
 long long strtoll(const char* restrict, char** restrict, int);
+int unsetenv(const char*);
+
+#if defined(_SORTIX_SOURCE) || defined(_WANT_SORTIX_ENV)
+const char* const* getenviron(void);
+size_t envlength(void);
+const char* getenvindexed(size_t index);
+const char* sortix_getenv(const char* name);
+#endif
+#if (defined(_SOURCE_SOURCE) && __SORTIX_STDLIB_REDIRECTS) || \
+    defined(_WANT_SORTIX_ENV)
+const char* getenv(const char* name) asm ("sortix_getenv");
+#else
+char* getenv(const char*);
+#endif
+#if defined(_SORTIX_SOURCE) || defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE) \
+    || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+int clearenv(void);
+#endif
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
@@ -99,11 +118,9 @@ long nrand48(unsigned short[3]);
 int posix_memalign(void**, size_t, size_t);
 int posix_openpt(int);
 char* ptsname(int);
-int putenv(char*);
 long random(void);
 char* realpath(const char* restrict, char* restrict);
 unsigned short *seed48(unsigned short [3]);
-int setenv(const char*, const char*, int);
 void setkey(const char*);
 char* setstate(char*);
 void srand(unsigned);
@@ -114,7 +131,6 @@ float strtof(const char* restrict, char** restrict);
 long double strtold(const char* restrict, char** restrict);
 int system(const char*);
 int unlockpt(int);
-int unsetenv(const char*);
 size_t wcstombs(char* restrict, const wchar_t *restrict, size_t);
 int wctomb(char*, wchar_t);
 
