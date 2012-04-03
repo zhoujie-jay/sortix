@@ -22,11 +22,13 @@
 
 *******************************************************************************/
 
+#define _WANT_ENVIRON
 #include <libmaxsi/platform.h>
 #include <libmaxsi/syscall.h>
 #include <libmaxsi/process.h>
 #include <stdio.h>
 #include <dirent.h>
+#include <unistd.h>
 
 namespace Maxsi
 {
@@ -61,7 +63,7 @@ namespace Maxsi
 
 		extern "C" int execv(const char* pathname, char* const* argv)
 		{
-			return execve(pathname, argv, NULL);
+			return execve(pathname, argv, environ);
 		}
 
 		DUAL_FUNCTION(void, exit, Exit, (int status))
