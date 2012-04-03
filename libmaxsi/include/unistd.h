@@ -76,6 +76,10 @@ __BEGIN_DECLS
 @include(intn_t.h)
 #endif
 
+#if defined(_WANT_ENVIRON)
+extern char** environ;
+#endif
+
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 unsigned alarm(unsigned);
