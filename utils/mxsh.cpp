@@ -42,7 +42,7 @@ int runcommandline(const char** tokens)
 	int pipein = 0;
 	int pipeout = 1;
 	int pipeinnext = 0;
-	char* const* argv;
+	char** argv;
 	size_t cmdlen;
 	const char* execmode;
 	const char* outputfile;
@@ -90,7 +90,7 @@ readcmd:
 	}
 
 	cmdnext = cmdend + 1;
-	argv = (char* const*) (tokens + cmdstart);
+	argv = (char**) (tokens + cmdstart);
 
 	internal = false;
 	internalresult = 0;
@@ -109,6 +109,16 @@ readcmd:
 	{
 		int exitcode = argv[1] ? atoi(argv[1]) : 0;
 		exit(exitcode);
+	}
+	if ( strcmp(argv[0], "unset") == 0 )
+	{
+		internal = true;
+		unsetenv(argv[1] ? argv[1] : "");
+	}
+	if ( strcmp(argv[0], "clearenv") == 0 )
+	{
+		internal = true;
+		clearenv();
 	}
 
 	childpid = internal ? getpid() : fork();
@@ -172,6 +182,23 @@ readcmd:
 		}
 	}
 
+	for ( char** argp = argv; *argp; argp++ )
+	{
+		char* arg = *argp;
+		if ( arg[0] != '$' ) { continue; }
+		arg = getenv(arg+1);
+		if ( !arg ) { arg = ""; }
+		*argp = arg;
+	}
+
+	if ( !strcmp(argv[0], "env") )
+	{
+		for ( size_t i = 0; i < envlength(); i++ )
+		{
+			printf("%s\n", getenvindexed(i));
+		}
+		exit(0);
+	}
 
 	execv(argv[0], argv);
 	error(127, errno, "%s", argv[0]);
@@ -224,6 +251,13 @@ void command()
 	if ( strcmp(command, "$?") == 0 ) { printf("%u\n", status); status = 0; return; }
 	if ( strcmp(command, "$$") == 0 ) { printf("%u\n", getpid()); status = 0; return; }
 	if ( strcmp(command, "$PPID") == 0 ) { printf("%u\n", getppid()); status = 0; return; }
+
+	if ( strchr(command, '=') )
+	{
+		if ( putenv(strdup(command)) ) { perror("putenv"); status = 1; return; }
+		status = 0;
+		return;
+	}
 
 	int argc = 0;
 	const char* argv[256];
