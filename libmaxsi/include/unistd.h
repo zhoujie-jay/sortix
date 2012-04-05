@@ -29,6 +29,10 @@
 #define	_UNISTD_H 1
 
 #include <features.h>
+#if defined(_SORTIX_SOURCE)
+#include <stdint.h>
+#include <sortix/fork.h>
+#endif
 #include <sortix/seek.h>
 #include <sortix/unistd.h>
 
@@ -187,6 +191,7 @@ size_t pwriteleast(int fd, const void* buf, size_t least, size_t max, off_t off)
 size_t readall(int fd, void* buf, size_t count);
 size_t readleast(int fd, void* buf, size_t least, size_t max);
 pid_t sfork(int flags);
+pid_t sforkr(int flags, sforkregs_t* regs);
 int uptime(uintmax_t* usecssinceboot);
 size_t writeall(int fd, const void* buf, size_t count);
 size_t writeleast(int fd, const void* buf, size_t least, size_t max);

@@ -46,6 +46,7 @@ kernelinfo.o \
 init.o \
 signal.o \
 $(CPU)/signal.o \
+$(CPU)/fork.o \
 start.o \
 time.o \
 random.o \

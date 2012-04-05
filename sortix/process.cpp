@@ -24,6 +24,7 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/unistd.h>
+#include <sortix/fork.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
@@ -479,24 +480,61 @@ namespace Sortix
 		return SysExevVEStage2(state);
 	}
 
-	pid_t SysSFork(int flags)
+	pid_t SysSForkR(int flags, sforkregs_t* regs)
 	{
-		// TODO: Properly support sfork(2).
+		// TODO: Properly support sforkr(2).
 		if ( flags != SFFORK ) { Error::Set(ENOSYS); return -1; }
 
-		// Prepare the state of the clone.
-		Syscall::SyscallRegs()->result = 0;
-		CurrentThread()->SaveRegisters(Syscall::InterruptRegs());
+		CPU::InterruptRegisters cpuregs;
+		Maxsi::Memory::Set(&cpuregs, 0, sizeof(cpuregs));
+#if defined(PLATFORM_X64)
+		cpuregs.rip = regs->rip;
+		cpuregs.userrsp = regs->rsp;
+		cpuregs.rax = regs->rax;
+		cpuregs.rbx = regs->rbx;
+		cpuregs.rcx = regs->rcx;
+		cpuregs.rdx = regs->rdx;
+		cpuregs.rdi = regs->rdi;
+		cpuregs.rsi = regs->rsi;
+		cpuregs.rbp = regs->rbp;
+		cpuregs.r8  = regs->r8;
+		cpuregs.r9  = regs->r9;
+		cpuregs.r10 = regs->r10;
+		cpuregs.r11 = regs->r11;
+		cpuregs.r12 = regs->r12;
+		cpuregs.r13 = regs->r13;
+		cpuregs.r14 = regs->r14;
+		cpuregs.r15 = regs->r15;
+		cpuregs.cs = 0x18 | 0x3;
+		cpuregs.ds = 0x20 | 0x3;
+		cpuregs.ss = 0x20 | 0x3;
+		//cpuregs.rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+		cpuregs.rflags = (1<<1) | (1<<9) | (1<<21);
+#elif defined(PLATFORM_X86)
+		cpuregs.eip = regs->eip;
+		cpuregs.useresp = regs->esp;
+		cpuregs.eax = regs->eax;
+		cpuregs.ebx = regs->ebx;
+		cpuregs.ecx = regs->ecx;
+		cpuregs.edx = regs->edx;
+		cpuregs.edi = regs->edi;
+		cpuregs.esi = regs->esi;
+		cpuregs.ebp = regs->ebp;
+		cpuregs.cs = 0x18 | 0x3;
+		cpuregs.ds = 0x20 | 0x3;
+		cpuregs.ss = 0x20 | 0x3;
+		//cpuregs.eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+		cpuregs.eflags = (1<<1) | (1<<9) | (1<<21);
+#else
+		#error SysSForkR needs to know about your platform
+#endif
+
+		CurrentThread()->SaveRegisters(&cpuregs);
 
 		Process* clone = CurrentProcess()->Fork();
 		if ( !clone ) { return -1; }
 
 		return clone->pid;
-	}
-
-	pid_t SysFork()
-	{
-		return SysSFork(SFFORK);
 	}
 
 	pid_t SysGetPID()
@@ -801,8 +839,7 @@ namespace Sortix
 	void Process::Init()
 	{
 		Syscall::Register(SYSCALL_EXEC, (void*) SysExecVE);
-		Syscall::Register(SYSCALL_FORK, (void*) SysFork);
-		Syscall::Register(SYSCALL_SFORK, (void*) SysSFork);
+		Syscall::Register(SYSCALL_SFORKR, (void*) SysSForkR);
 		Syscall::Register(SYSCALL_GETPID, (void*) SysGetPID);
 		Syscall::Register(SYSCALL_GETPPID, (void*) SysGetParentPID);
 		Syscall::Register(SYSCALL_EXIT, (void*) SysExit);

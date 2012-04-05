@@ -17,22 +17,31 @@
 	You should have received a copy of the GNU General Public License along with
 	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	sortix/unistd.h
-	Standard symbolic constants and types for Sortix.
+	sortix/x86/fork.h
+	Declarations related to the fork family of system calls on x86 Sortix.
 
 *******************************************************************************/
 
-#ifndef SORTIX_UNISTD_H
-#define SORTIX_UNISTD_H
+#ifndef SORTIX_X86_FORK_H
+#define SORTIX_X86_FORK_H
 
 #include <features.h>
 
 __BEGIN_DECLS
 
-#define R_OK 4 /* Test for read permission. */
-#define W_OK 2 /* Test for write permission. */
-#define X_OK 1 /* Test for execute permission. */
-#define F_OK 0 /* Test for existence. */
+struct sforkregs_x86
+{
+	uint32_t eip;
+	uint32_t eax;
+	uint32_t ebx;
+	uint32_t ecx;
+	uint32_t edx;
+	uint32_t edi;
+	uint32_t esi;
+	uint32_t esp;
+	uint32_t ebp;
+	uint32_t eflags;
+};
 
 __END_DECLS
 

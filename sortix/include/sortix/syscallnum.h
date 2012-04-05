@@ -35,7 +35,6 @@
 #define SYSCALL_SET_FREQUENCY 9
 #define SYSCALL_EXEC 10
 #define SYSCALL_PRINT_PATH_FILES 11
-#define SYSCALL_FORK 12
 #define SYSCALL_GETPID 13
 #define SYSCALL_GETPPID 14
 #define SYSCALL_GET_FILEINFO 15
@@ -74,7 +73,7 @@
 #define SYSCALL_KERNELINFO 48
 #define SYSCALL_PREAD 49
 #define SYSCALL_PWRITE 50
-#define SYSCALL_SFORK 51
+#define SYSCALL_SFORKR 51
 #define SYSCALL_MAX_NUM 52 /* index of highest constant + 1 */
 
 #endif
