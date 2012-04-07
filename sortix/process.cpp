@@ -832,8 +832,7 @@ namespace Sortix
 
 	size_t SysGetPageSize()
 	{
-		// TODO: Query the virtual memory layer or look up in the process class.
-		return 0x1000UL;
+		return Page::Size();
 	}
 
 	void Process::Init()
