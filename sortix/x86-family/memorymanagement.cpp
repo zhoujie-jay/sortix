@@ -51,7 +51,7 @@ namespace Sortix
 
 	namespace Memory
 	{
-		addr_t currentdir;
+		addr_t currentdir = 0;
 
 		void InitCPU();
 		void AllocateKernelPMLs();
@@ -409,6 +409,11 @@ namespace Sortix
 		void Flush()
 		{
 			asm volatile("mov %0, %%cr3":: "r"(currentdir));
+		}
+
+		addr_t GetAddressSpace()
+		{
+			return currentdir;
 		}
 
 		addr_t SwitchAddressSpace(addr_t addrspace)

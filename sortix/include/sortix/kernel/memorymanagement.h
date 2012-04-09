@@ -56,6 +56,7 @@ namespace Sortix
 		void InvalidatePage(addr_t addr);
 		void Flush();
 		addr_t Fork();
+		addr_t GetAddressSpace();
 		addr_t SwitchAddressSpace(addr_t addrspace);
 		void DestroyAddressSpace();
 		bool Map(addr_t physical, addr_t mapto, int prot);
