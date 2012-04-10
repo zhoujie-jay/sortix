@@ -146,7 +146,7 @@ namespace Sortix
 				case SEEK_SET: origin = 0; break;
 				case SEEK_CUR: origin = buffer->Position(); break;
 				case SEEK_END: origin = buffer->Size(); break;
-				default: Error::Set(EINVAL); *offset = -1; break;
+				default: Error::Set(EINVAL); *offset = -1; return;
 			}
 			off_t newposition = origin + *offset;
 			if ( newposition < 0 ) { Error::Set(EINVAL); *offset = -1; return; }
