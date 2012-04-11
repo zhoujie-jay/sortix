@@ -443,3 +443,11 @@ interrupt_handler_prepare:
 interrupt_handler_null:
 	iretq
 
+.global asm_interrupts_are_enabled
+.type asm_interrupts_are_enabled, @function
+asm_interrupts_are_enabled:
+	pushfq
+	popq %rax
+	andq $0x000200, %rax # FLAGS_INTERRUPT
+	retq
+

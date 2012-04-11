@@ -47,6 +47,9 @@ const unsigned IRQ13 = 45;
 const unsigned IRQ14 = 46;
 const unsigned IRQ15 = 47;
 
+extern "C" unsigned long asm_interrupts_are_enabled();
+
+inline bool IsEnabled() { return asm_interrupts_are_enabled(); }
 inline void Enable() { asm volatile("sti"); }
 inline void Disable() { asm volatile("cli"); }
 
