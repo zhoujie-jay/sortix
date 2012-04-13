@@ -32,6 +32,15 @@
 
 int status = 0;
 
+void updatepwd()
+{
+	const size_t CWD_SIZE = 512;
+	char cwd[CWD_SIZE];
+	const char* wd = getcwd(cwd, CWD_SIZE);
+	if ( !wd ) { wd = "?"; }
+	setenv("PWD", wd, 1);
+}
+
 int runcommandline(const char** tokens)
 {
 	int result = 127;
@@ -104,6 +113,7 @@ readcmd:
 			error(0, errno, "cd: %s", newdir);
 			internalresult = 1;
 		}
+		updatepwd();
 	}
 	if ( strcmp(argv[0], "exit") == 0 )
 	{
@@ -224,12 +234,7 @@ void command()
 	                  | TERMMODE_ECHO;
 	settermmode(0, termmode);
 
-	const size_t CWD_SIZE = 512;
-	char cwd[CWD_SIZE];
-	const char* wd = getcwd(cwd, CWD_SIZE);
-	if ( !wd ) { wd = "?"; }
-
-	printf("root@sortix %s # ", wd);
+	printf("root@sortix %s # ", getenv("PWD"));
 	fflush(stdout);
 
 	const size_t commandsize = 128;
@@ -298,6 +303,7 @@ int main(int argc, char* argv[])
 	setenv("$", pidstr, 1);
 	setenv("PPID", ppidstr, 1);
 	setenv("?", "0", 1);
+	updatepwd();
 	while ( true ) { command(); }
 }
 
