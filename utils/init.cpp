@@ -28,13 +28,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-int parent(pid_t childid)
-{
-	int status;
-	waitpid(childid, &status, 0);
-	return status;
-}
-
 int child()
 {
 	const char* programname = "sh";
@@ -44,6 +37,27 @@ int child()
 	error(0, errno, "%s", programname);
 
 	return 2;
+}
+
+int runsystem()
+{
+	pid_t childpid = fork();
+	if ( childpid < 0 ) { perror("fork"); return 2; }
+
+	if ( childpid )
+	{
+		int status;
+		waitpid(childpid, &status, 0);
+		// TODO: Use the proper macro!
+		if ( 128 <= status )
+		{
+			printf("Looks like the system crashed, trying to bring it back up.\n");
+			return runsystem();
+		}
+		return status;
+	}
+
+	return child();
 }
 
 int main(int argc, char* argv[])
@@ -56,9 +70,6 @@ int main(int argc, char* argv[])
 	printf("\r\e[m\e[J");
 	fflush(stdout);
 
-	pid_t childpid = fork();
-	if ( childpid < 0 ) { perror("fork"); return 2; }
-
-	return ( childpid == 0 ) ? child() : parent(childpid);
+	return runsystem();
 }
 
