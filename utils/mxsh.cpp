@@ -139,7 +139,7 @@ readcmd:
 			goto readcmd;
 		}
 
-		int status = internalresult;
+		status = internalresult;
 		if ( !internal && waitpid(childpid, &status, 0) < 0 )
 		{
 			perror("waitpid");
@@ -181,6 +181,10 @@ readcmd:
 			error(127, errno, "%s", outputfile);
 		}
 	}
+
+	char statusstr[32];
+	sprintf(statusstr, "%i", status);
+	setenv("?", statusstr, 1);
 
 	for ( char** argp = argv; *argp; argp++ )
 	{
@@ -248,10 +252,6 @@ void command()
 
 	if ( command[0] == '\0' ) { return; }
 
-	if ( strcmp(command, "$?") == 0 ) { printf("%u\n", status); status = 0; return; }
-	if ( strcmp(command, "$$") == 0 ) { printf("%u\n", getpid()); status = 0; return; }
-	if ( strcmp(command, "$PPID") == 0 ) { printf("%u\n", getppid()); status = 0; return; }
-
 	if ( strchr(command, '=') )
 	{
 		if ( putenv(strdup(command)) ) { perror("putenv"); status = 1; return; }
@@ -290,6 +290,14 @@ void command()
 
 int main(int argc, char* argv[])
 {
+	char pidstr[32];
+	char ppidstr[32];
+	sprintf(pidstr, "%i", getpid());
+	sprintf(ppidstr, "%i", getppid());
+	setenv("SHELL", argv[0], 1);
+	setenv("$", pidstr, 1);
+	setenv("PPID", ppidstr, 1);
+	setenv("?", "0", 1);
 	while ( true ) { command(); }
 }
 
