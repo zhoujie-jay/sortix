@@ -52,6 +52,12 @@ extern "C" unsigned long asm_interrupts_are_enabled();
 inline bool IsEnabled() { return asm_interrupts_are_enabled(); }
 inline void Enable() { asm volatile("sti"); }
 inline void Disable() { asm volatile("cli"); }
+inline bool SetEnabled(bool isenabled)
+{
+	bool wasenabled = IsEnabled();
+	if ( isenabled ) { Enable(); } else { Disable(); }
+	return wasenabled;
+}
 
 typedef void (*Handler)(CPU::InterruptRegisters* regs, void* user);
 void RegisterHandler(unsigned index, Handler handler, void* user);
