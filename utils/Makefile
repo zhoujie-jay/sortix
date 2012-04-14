@@ -21,7 +21,6 @@ memstat \
 chvideomode \
 uname \
 kernelinfo \
-idle \
 editor \
 kill \
 column \
