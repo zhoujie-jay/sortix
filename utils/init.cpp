@@ -22,6 +22,7 @@
 
 #include <sys/wait.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <error.h>
@@ -69,6 +70,10 @@ int main(int argc, char* argv[])
 	// Reset the terminal's color and the rest of it.
 	printf("\r\e[m\e[J");
 	fflush(stdout);
+
+	// By default, compile to the same architecture that the kernel told us that
+	// we are running.
+	setenv("objtype", getenv("cputype"), 0);
 
 	return runsystem();
 }
