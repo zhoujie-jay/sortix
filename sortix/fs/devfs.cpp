@@ -203,7 +203,7 @@ namespace Sortix
 	{
 		if ( entriesused == entrieslength )
 		{
-			size_t newentrieslength = entrieslength ? 32 : 2 * entrieslength;
+			size_t newentrieslength = entrieslength ? 2 * entrieslength : 32;
 			DevEntry* newdeventries = new DevEntry[newentrieslength];
 			if ( !newdeventries ) { return false; }
 			size_t bytes = sizeof(DevEntry) * entriesused;
