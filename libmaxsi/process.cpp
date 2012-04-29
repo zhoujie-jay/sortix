@@ -27,8 +27,11 @@
 #include <libmaxsi/syscall.h>
 #include <libmaxsi/process.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
 
 namespace Maxsi
 {
@@ -63,6 +66,112 @@ namespace Maxsi
 		extern "C" int execv(const char* pathname, char* const* argv)
 		{
 			return execve(pathname, argv, environ);
+		}
+
+		// Note that the only PATH variable in Sortix is the one used here.
+		extern "C" int execvpe(const char* filename, char* const* argv,
+		                       char* const* envp)
+		{
+			if ( strchr(filename, '/') )
+				return execve(filename, argv, envp);
+			size_t filenamelen = strlen(filename);
+			const char* PATH = "/bin";
+			size_t pathlen = strlen(PATH);
+			char* pathname = (char*) malloc(filenamelen + 1 + pathlen + 1);
+			if ( !pathname ) { return -1; }
+			stpcpy(stpcpy(stpcpy(pathname, PATH), "/"), filename);
+			int result = execve(pathname, argv, envp);
+			free(pathname);
+			return result;
+		}
+
+		extern "C" int execvp(const char* filename, char* const* argv)
+		{
+			return execvpe(filename, argv, environ);
+		}
+
+		extern "C" int vexecl(const char* pathname, va_list args)
+		{
+			va_list iter;
+			va_copy(iter, args);
+			size_t numargs = 0;
+			while ( va_arg(iter, const char*) ) { numargs++; }
+			va_end(iter);
+			char** argv = (char**) malloc(sizeof(char*) * (numargs+1));
+			if ( !argv ) { return -1; }
+			for ( size_t i = 0; i <= numargs; i++ )
+			{
+				argv[i] = (char*) va_arg(args, const char*);
+			}
+			int result = execv(pathname, argv);
+			free(argv);
+			return result;
+		}
+
+		extern "C" int vexeclp(const char* filename, va_list args)
+		{
+			va_list iter;
+			va_copy(iter, args);
+			size_t numargs = 0;
+			while ( va_arg(iter, const char*) ) { numargs++; }
+			va_end(iter);
+			char** argv = (char**) malloc(sizeof(char*) * (numargs+1));
+			if ( !argv ) { return -1; }
+			for ( size_t i = 0; i <= numargs; i++ )
+			{
+				argv[i] = (char*) va_arg(args, const char*);
+			}
+			int result = execvp(filename, argv);
+			free(argv);
+			return result;
+		}
+
+		extern "C" int vexecle(const char* pathname, va_list args)
+		{
+			va_list iter;
+			va_copy(iter, args);
+			size_t numargs = 0;
+			while ( va_arg(iter, const char*) ) { numargs++; }
+			va_end(iter);
+			numargs--; // envp
+			char** argv = (char**) malloc(sizeof(char*) * (numargs+1));
+			if ( !argv ) { return -1; }
+			for ( size_t i = 0; i < numargs; i++ )
+			{
+				argv[i] = (char*) va_arg(args, const char*);
+			}
+			argv[numargs] = NULL;
+			char* const* envp = va_arg(args, char* const*);
+			int result = execve(pathname, argv, envp);
+			free(argv);
+			return result;
+		}
+
+		extern "C" int execl(const char* pathname, ...)
+		{
+			va_list args;
+			va_start(args, pathname);
+			int result = vexecl(pathname, args);
+			va_end(args);
+			return result;
+		}
+
+		extern "C" int execlp(const char* filename, ...)
+		{
+			va_list args;
+			va_start(args, filename);
+			int result = vexeclp(filename, args);
+			va_end(args);
+			return result;
+		}
+
+		extern "C" int execle(const char* pathname, ...)
+		{
+			va_list args;
+			va_start(args, pathname);
+			int result = vexecle(pathname, args);
+			va_end(args);
+			return result;
 		}
 
 		DUAL_FUNCTION(void, exit, Exit, (int status))

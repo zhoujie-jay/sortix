@@ -214,7 +214,7 @@ readcmd:
 		exit(0);
 	}
 
-	execv(argv[0], argv);
+	execvp(argv[0], argv);
 	error(127, errno, "%s", argv[0]);
 	return 127;
 

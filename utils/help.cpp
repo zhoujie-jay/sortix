@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
 
 	const char* programname = "ls";
 	const char* newargv[] = { programname, "/bin", NULL };
-	execv(programname, (char* const*) newargv);
+	execvp(programname, (char* const*) newargv);
 	error(1, errno, "%s", programname);
 
 	return 1;

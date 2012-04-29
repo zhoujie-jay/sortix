@@ -31,6 +31,7 @@
 #include <features.h>
 #if defined(_SORTIX_SOURCE)
 #include <stdint.h>
+#include <stdarg.h>
 #include <sortix/fork.h>
 #endif
 #include <sortix/seek.h>
@@ -93,10 +94,6 @@ char* crypt(const char*, const char*);
 char* ctermid(char*);
 int dup2(int, int);
 void encrypt(char [64], int);
-int execl(const char*, const char*, ...);
-int execle(const char*, const char*, ...);
-int execlp(const char*, const char*, ...);
-int execvp(const char*, char* const []);
 int faccessat(int, const char*, int, int);
 int fchdir(int);
 int fchown(int, uid_t, gid_t);
@@ -159,8 +156,12 @@ int chdir(const char*);
 int close(int);
 int dup(int);
 void _exit(int);
+int execl(const char*, ...);
+int execle(const char*, ...);
+int execlp(const char*, ...);
 int execv(const char*, char* const []);
 int execve(const char*, char* const [], char* const []);
+int execvp(const char*, char* const []);
 pid_t fork(void);
 int ftruncate(int, off_t);
 char* getcwd(char*, size_t);
@@ -182,6 +183,7 @@ int unlink(const char*);
 ssize_t write(int, const void*, size_t);
 
 #if defined(_SORTIX_SOURCE)
+int execvpe(const char*, char* const [], char* const []);
 size_t getpagesize(void);
 int memstat(size_t* memused, size_t* memtotal);
 size_t preadall(int fd, void* buf, size_t count, off_t off);
@@ -193,6 +195,9 @@ size_t readleast(int fd, void* buf, size_t least, size_t max);
 pid_t sfork(int flags);
 pid_t sforkr(int flags, sforkregs_t* regs);
 int uptime(uintmax_t* usecssinceboot);
+int vexecl(const char*, va_list args);
+int vexecle(const char*, va_list args);
+int vexeclp(const char*, va_list args);
 size_t writeall(int fd, const void* buf, size_t count);
 size_t writeleast(int fd, const void* buf, size_t least, size_t max);
 #endif

@@ -33,7 +33,7 @@ int child()
 	const char* programname = "sh";
 	const char* newargv[] = { programname, NULL };
 
-	execv(programname, (char* const*) newargv);
+	execvp(programname, (char* const*) newargv);
 	error(0, errno, "%s", programname);
 
 	return 2;

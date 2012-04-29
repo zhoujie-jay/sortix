@@ -34,10 +34,6 @@
 #include <error.h>
 #include <fcntl.h>
 
-#if defined(sortix)
-#define execvp execv
-#endif
-
 bool longformat = false;
 bool showdotdot = false;
 bool showdotfiles = false;
