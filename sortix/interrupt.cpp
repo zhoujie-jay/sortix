@@ -87,6 +87,38 @@ const unsigned NUM_INTERRUPTS = 256UL;
 Handler interrupthandlers[NUM_INTERRUPTS];
 void* interrupthandlerptr[NUM_INTERRUPTS];
 
+extern "C" void ReprogramPIC()
+{
+	uint8_t mastermask = 0;
+	uint8_t slavemask = 0;
+	CPU::OutPortB(PIC_MASTER + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
+	CPU::OutPortB(PIC_SLAVE + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
+	CPU::OutPortB(PIC_MASTER + PIC_DATA, IRQ0);
+	CPU::OutPortB(PIC_SLAVE + PIC_DATA, IRQ8);
+	CPU::OutPortB(PIC_MASTER + PIC_DATA, 0x04); // Slave PIC at IRQ2
+	CPU::OutPortB(PIC_SLAVE + PIC_DATA, 0x02); // Cascade Identity
+	CPU::OutPortB(PIC_MASTER + PIC_DATA, PIC_MODE_8086);
+	CPU::OutPortB(PIC_SLAVE + PIC_DATA, PIC_MODE_8086);
+	CPU::OutPortB(PIC_MASTER + PIC_DATA, mastermask);
+	CPU::OutPortB(PIC_SLAVE + PIC_DATA, slavemask);
+}
+
+extern "C" void DeprogramPIC()
+{
+	uint8_t mastermask = 0;
+	uint8_t slavemask = 0;
+	CPU::OutPortB(PIC_MASTER + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
+	CPU::OutPortB(PIC_SLAVE + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
+	CPU::OutPortB(PIC_MASTER + PIC_DATA, 0x08);
+	CPU::OutPortB(PIC_SLAVE + PIC_DATA, 0x70);
+	CPU::OutPortB(PIC_MASTER + PIC_DATA, 0x04); // Slave PIC at IRQ2
+	CPU::OutPortB(PIC_SLAVE + PIC_DATA, 0x02); // Cascade Identity
+	CPU::OutPortB(PIC_MASTER + PIC_DATA, PIC_MODE_8086);
+	CPU::OutPortB(PIC_SLAVE + PIC_DATA, PIC_MODE_8086);
+	CPU::OutPortB(PIC_MASTER + PIC_DATA, mastermask);
+	CPU::OutPortB(PIC_SLAVE + PIC_DATA, slavemask);
+}
+
 void Init()
 {
 	initialized = false;
@@ -100,18 +132,7 @@ void Init()
 	}
 
 	// Remap the IRQ table on the PICs.
-	uint8_t mastermask = 0;
-	uint8_t slavemask = 0;
-	CPU::OutPortB(PIC_MASTER + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
-	CPU::OutPortB(PIC_SLAVE + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
-	CPU::OutPortB(PIC_MASTER + PIC_DATA, IRQ0);
-	CPU::OutPortB(PIC_SLAVE + PIC_DATA, IRQ8);
-	CPU::OutPortB(PIC_MASTER + PIC_DATA, 0x04); // Slave PIC at IRQ2
-	CPU::OutPortB(PIC_SLAVE + PIC_DATA, 0x02); // Cascade Identity
-	CPU::OutPortB(PIC_MASTER + PIC_DATA, PIC_MODE_8086);
-	CPU::OutPortB(PIC_SLAVE + PIC_DATA, PIC_MODE_8086);
-	CPU::OutPortB(PIC_MASTER + PIC_DATA, mastermask);
-	CPU::OutPortB(PIC_SLAVE + PIC_DATA, slavemask);
+	ReprogramPIC();
 
 	RegisterRawHandler(0, isr0, false);
 	RegisterRawHandler(1, isr1, false);

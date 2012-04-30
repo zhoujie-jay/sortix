@@ -54,7 +54,7 @@ namespace Sortix
 			return microsecondssinceboot;
 		}
 
-		void RequestIQR0()
+		extern "C" void RequestIRQ0()
 		{
 			// The value we send to the PIT is the value to divide it's input clock
 			// (1193180 Hz) by, to get our required frequency. Important to note is
@@ -95,7 +95,7 @@ namespace Sortix
 
 			didUglyIRQ0Hack = false;
 
-			RequestIQR0();
+			RequestIRQ0();
 		}
 
 		void OnIRQ0(CPU::InterruptRegisters* Regs, void* /*user*/)
@@ -114,7 +114,7 @@ namespace Sortix
 			// TODO: There is a horrible bug that causes Sortix to only receive
 			// one IRQ0 on my laptop, but it works in virtual machines. But
 			// re-requesting an addtional time seems to work. Hacky and ugly.
-			if ( !didUglyIRQ0Hack ) { RequestIQR0(); didUglyIRQ0Hack = true; }
+			if ( !didUglyIRQ0Hack ) { RequestIRQ0(); didUglyIRQ0Hack = true; }
 		}
 
 		// TODO: Implement all the other useful functions regarding time.
