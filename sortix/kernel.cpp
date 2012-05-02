@@ -33,6 +33,7 @@
 #include <libmaxsi/format.h>
 #include <sortix/kernel/log.h>
 #include <sortix/kernel/panic.h>
+#include <sortix/kernel/video.h>
 #include "kernelinfo.h"
 #include "x86-family/gdt.h"
 #include "time.h"
@@ -215,6 +216,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	// Set up the initial ram disk.
 	InitRD::Init(initrd, initrdsize);
+
+	// Initialize the Video Driver framework.
+	Video::Init(&textbufhandle);
 
 	// Search for PCI devices and load their drivers.
 	PCI::Init();
