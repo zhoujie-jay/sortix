@@ -94,6 +94,7 @@ log.o \
 utf8.o \
 calltrace.o \
 $(CPU)/calltrace.o \
+kthread.o \
 panic.o \
 keyboard.o \
 kb/ps2.o \
