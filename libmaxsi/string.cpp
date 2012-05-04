@@ -333,7 +333,7 @@ namespace Maxsi
 		}
 #endif
 
-#if 0
+#if 1
 		char* Combine(size_t NumParameters, ...)
 		{
 			va_list param_pt;
@@ -348,11 +348,12 @@ namespace Maxsi
 			{
 				TMP = va_arg(param_pt, const char*);
 
-				if ( TMP != NULL ) { ResultLength += strlen(TMP); }
+				if ( TMP != NULL ) { ResultLength += Length(TMP); }
 			}
 
 			// Allocate a string with the desired length.
 			char* Result = new char[ResultLength+1];
+			if ( !Result ) { return NULL; }
 
 			Result[0] = 0;
 
@@ -367,8 +368,8 @@ namespace Maxsi
 
 				if ( TMP )
 				{
-					size_t TMPLength = strlen(TMP);
-					strcpy(Result + ResultOffset, TMP);
+					size_t TMPLength = Length(TMP);
+					Copy(Result + ResultOffset, TMP);
 					ResultOffset += TMPLength;
 				}
 			}
