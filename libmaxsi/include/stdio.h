@@ -164,6 +164,7 @@ void fregister(FILE* fp);
 void funregister(FILE* fp);
 FILE* fnewfile(void);
 int fcloseall(void);
+int fpipe(FILE* pipes[2]);
 #endif
 
 #if __SORTIX_STDLIB_REDIRECTS

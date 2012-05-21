@@ -32,6 +32,7 @@ OBJS=\
 ctype.o \
 file.o \
 fdio.o \
+fpipe.o \
 stdio.o \
 dir.o \
 fddir-sortix.o \
