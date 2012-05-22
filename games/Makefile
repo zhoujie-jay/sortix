@@ -9,6 +9,7 @@ LOCALBINARIES:=\
 pong \
 conway \
 snake \
+asteroids \
 
 BINARIES:=$(addprefix $(INITRDDIR)/,$(LOCALBINARIES))
 
