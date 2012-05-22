@@ -54,6 +54,7 @@
 #include "elf.h"
 #include "initrd.h"
 #include "vga.h"
+#include "bga.h"
 #include "sound.h"
 #include "io.h"
 #include "pipe.h"
@@ -225,6 +226,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	// Initialize ATA devices.
 	ATA::Init();
+
+	// Initialize the BGA driver.
+	BGA::Init();
 
 	// Alright, now the system's drivers are loaded and initialized. It is
 	// time to load the initial user-space programs and start execution of

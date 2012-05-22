@@ -119,6 +119,7 @@ descriptors.o \
 device.o \
 refcount.o \
 video.o \
+bga.o \
 vga.o \
 kernelinfo.o \
 elf.o \
