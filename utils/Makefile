@@ -18,6 +18,7 @@ pwd \
 help \
 uptime \
 memstat \
+chvideomode \
 uname \
 kernelinfo \
 idle \
