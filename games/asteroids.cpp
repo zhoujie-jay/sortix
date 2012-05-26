@@ -483,7 +483,7 @@ void AsteroidField::Think(float deltatime)
 class Missile : public Actor
 {
 public:
-	Missile(Vector pos, Vector vel, float ttl);
+	Missile(Vector pos, Vector vel, Vector direction, float ttl);
 	virtual bool IsA(const char* classname)
 	{
 		return !strcmp(classname, "Missile") || Actor::IsA(classname);
@@ -494,14 +494,16 @@ public:
 
 private:
 	float ttl;
+	Vector direction;
 
 };
 
-Missile::Missile(Vector pos, Vector vel, float ttl)
+Missile::Missile(Vector pos, Vector vel, Vector direction, float ttl)
 {
 	this->pos = pos;
 	this->vel = vel;
 	this->ttl = ttl;
+	this->direction = direction;
 }
 
 void Missile::Think(float deltatime)
@@ -525,7 +527,7 @@ void Missile::Render()
 	uint32_t shipcolor = MakeColor(31, 255, 31);
 	const float MISSILE_LEN = 5.0f;
 	Vector from = screenpos;
-	Vector to = screenpos + vel * (MISSILE_LEN / vel.Size());
+	Vector to = screenpos + direction * (MISSILE_LEN / direction.Size());
 	DrawLine(shipcolor, from.x, from.y, to.x, to.y);
 }
 
@@ -609,7 +611,7 @@ void Spaceship::Think(float deltatime)
 		const Vector P3(16.0f, 0.0f);
 		Vector spawnpos = pos + P3.Rotate(shipangle) * 1.1;
 		Vector spawnvel = Vector(speed, 0.0).Rotate(shipangle);
-		new Missile(spawnpos, spawnvel, ttl);
+		new Missile(spawnpos, vel + spawnvel, spawnvel, ttl);
 	}
 }
 
