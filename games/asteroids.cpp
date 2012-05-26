@@ -492,7 +492,7 @@ public:
 	virtual void Render();
 	virtual ~Missile();
 
-private:
+protected:
 	float ttl;
 	Vector direction;
 
@@ -535,6 +535,18 @@ Missile::~Missile()
 {
 }
 
+class Firework : public Missile
+{
+public:
+	Firework(Vector pos, Vector vel, Vector direction, float ttl);
+	virtual bool IsA(const char* classname)
+	{
+		return !strcmp(classname, "Firework") || Actor::IsA(classname);
+	}
+	virtual void Think(float deltatime);
+
+};
+
 class Spaceship : public Actor
 {
 public:
@@ -555,14 +567,14 @@ public:
 public:
 	void SetThrust(bool forward, bool backward);
 	void SetTurn(bool turnleft, bool turnright);
-	void SetFiring(bool firing);
+	void SetFiring(bool missile, bool firework);
 
 private:
 	bool turnleft;
 	bool turnright;
 	bool moveforward;
 	bool movebackward;
-	bool firing;
+	bool missile, firework;
 	float shipangle;
 
 };
@@ -573,7 +585,7 @@ Spaceship::Spaceship(float shipangle, Vector pos, Vector vel, Vector acc)
 	this->pos = pos;
 	this->vel = vel;
 	this->acc = acc;
-	turnleft = turnright = moveforward = movebackward = firing = false;
+	turnleft = turnright = moveforward = movebackward = missile = firework  = false;
 }
 
 Spaceship::~Spaceship()
@@ -604,14 +616,15 @@ void Spaceship::Think(float deltatime)
 	float shipspeed = vel.Size();
 	float maxspeed = 50.0f;
 	if ( maxspeed < shipspeed ) { vel *= maxspeed / shipspeed; }
-	if ( firing )
+	if ( missile || firework )
 	{
 		float ttl = 8.0;
 		float speed = 120.0;
 		const Vector P3(16.0f, 0.0f);
 		Vector spawnpos = pos + P3.Rotate(shipangle) * 1.1;
 		Vector spawnvel = Vector(speed, 0.0).Rotate(shipangle);
-		new Missile(spawnpos, vel + spawnvel, spawnvel, ttl);
+		if ( missile ) new Missile(spawnpos, vel + spawnvel, spawnvel, ttl);
+		if ( firework ) new Firework(spawnpos, vel + spawnvel, spawnvel, 0.0);
 	}
 }
 
@@ -644,9 +657,45 @@ void Spaceship::SetTurn(bool turnleft, bool turnright)
 	this->turnright = turnright;
 }
 
-void Spaceship::SetFiring(bool firing)
+void Spaceship::SetFiring(bool missile, bool firework)
 {
-	this->firing = firing;
+	this->missile = missile;
+	this->firework = firework;
+}
+
+Firework::Firework(Vector pos, Vector vel, Vector dir, float ttl) : Missile(pos, vel, dir, ttl)
+{
+}
+
+void Firework::Think(float deltatime)
+{
+	ttl -= deltatime;
+	if ( ttl < 0 )
+	{
+		// Explode in a shower of 8 missiles
+		const float MISSILE_TTL = 3.0;
+		const float MISSILE_SPEED = 8.0;
+		const size_t NUM_MISSILES = 8;
+		const Vector velocity = Vector(MISSILE_SPEED, 0);
+		const float offsetangle = RandomAngle();
+		const float angle = 2 * PI / NUM_MISSILES;
+		for ( size_t i = 0; i < NUM_MISSILES; i++ )
+		{
+			Vector dir = velocity.Rotate(offsetangle + angle * i);
+			new Missile(pos, vel + dir, dir, MISSILE_TTL);
+		}
+		GCDie();
+		return;
+	}
+	for ( Object* obj = firstobject; obj; obj = obj->NextObj() )
+	{
+		if ( !obj->GCIsAlive() ) { continue; }
+		if ( !obj->IsA("Asteroid") ) { continue; }
+		Asteroid* ast = (Asteroid*) obj;
+		if ( !ast->InsideMe(pos) ) { continue; }
+		// Fireworks taken out by asteroids before explosion.
+		GCDie();
+	}
 }
 
 uintmax_t lastframeat;
@@ -666,8 +715,9 @@ void GameLogic()
 	for ( obj = first; obj; obj = obj->NextObj() ) { obj->GCBirth(); }
 	playership->SetThrust(keysdown[KBKEY_UP], keysdown[KBKEY_DOWN]);
 	playership->SetTurn(keysdown[KBKEY_LEFT], keysdown[KBKEY_RIGHT]);
-	playership->SetFiring(keysdown[KBKEY_SPACE]);
+	playership->SetFiring(keysdown[KBKEY_SPACE], keysdown[KBKEY_LCTRL]);
 	keysdown[KBKEY_SPACE] = false;
+	keysdown[KBKEY_LCTRL] = false;
 	for ( obj = first; obj; obj = obj->NextObj() )
 	{
 		if ( !obj->GCIsBorn() ) { continue; }
