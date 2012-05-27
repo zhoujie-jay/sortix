@@ -272,7 +272,7 @@ void command()
 
 	if ( command[0] == '\0' ) { return; }
 
-	if ( strchr(command, '=') )
+	if ( strchr(command, '=') && !strchr(command, ' ') && !strchr(command, '\t') )
 	{
 		if ( putenv(strdup(command)) ) { perror("putenv"); status = 1; return; }
 		status = 0;
