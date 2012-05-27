@@ -96,6 +96,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case EEOF: return "End of file";
 	case EBOUND: return "Out of bounds";
 	case EINIT: return "Not initialized";
+	case ENODRV: return (char*) "No such driver";
 	default: return "Unknown error condition";
 	}
 }

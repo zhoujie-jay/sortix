@@ -36,6 +36,7 @@
 #define EEOF 44
 #define EBOUND 45
 #define EINIT 46
+#define ENODRV 47
 
 #define EOPNOTSUPP ENOTSUP
 
