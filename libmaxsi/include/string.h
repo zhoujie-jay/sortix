@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -20,7 +20,7 @@
 	string.h
 	String operations.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef	_STRING_H
 #define	_STRING_H 1
@@ -46,7 +46,6 @@ int strcoll(const char*, const char*);
 size_t strcspn(const char*, const char*);
 char* strcpy(char* restrict, const char* restrict);
 char* strdup(const char*);
-char* strerror(int);
 size_t strlen(const char*);
 char* strncat(char* restrict, const char* restrict, size_t);
 int strncmp(const char*, const char*, size_t);
@@ -74,6 +73,15 @@ size_t strxfrm_l(char* restrict, const char* restrict, size_t, locale_t);
 
 #if defined(_SORTIX_SOURCE) || defined(_GNU_SOURCE)
 char* strchrnul(const char* str, int c);
+#endif
+
+#if defined(_SORTIX_SOURCE)
+const char* sortix_strerror(int errnum);
+#endif
+#if defined(_SOURCE_SOURCE) && __SORTIX_STDLIB_REDIRECTS
+const char* strerror(int errnum) asm ("sortix_getenv");
+#else
+char* strerror(int errnum);
 #endif
 
 __END_DECLS

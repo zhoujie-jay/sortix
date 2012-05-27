@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -20,8 +20,9 @@
 	error.cpp
 	Error reporting functions and utilities.
 
-******************************************************************************/
+*******************************************************************************/
 
+#define __SORTIX_STDLIB_REDIRECTS 0
 #include <libmaxsi/platform.h>
 #include <libmaxsi/error.h>
 #ifndef SORTIX_KERNEL
@@ -29,64 +30,68 @@
 #include <stdio.h>
 #endif
 
-namespace Maxsi
-{
-	namespace Error
-	{
-		extern "C" { int errno = 0; }
+namespace Maxsi {
+namespace Error {
+
+extern "C" { int errno = 0; }
 
 #ifndef SORTIX_KERNEL
-		DEFN_SYSCALL1(int, SysRegisterErrno, SYSCALL_REGISTER_ERRNO, int*);
+DEFN_SYSCALL1(int, SysRegisterErrno, SYSCALL_REGISTER_ERRNO, int*);
 
-		extern "C" void init_error_functions()
-		{
-			errno = 0;
-			SysRegisterErrno(&errno);
-		}
+extern "C" void init_error_functions()
+{
+	errno = 0;
+	SysRegisterErrno(&errno);
+}
 #endif
 
-		extern "C" char* strerror(int code)
-		{
-			switch ( code )
-			{
-				case ENOTBLK: return (char*) "Block device required";
-				case ENODEV: return (char*) "No such device";
-				case EWOULDBLOCK: return (char*) "Operation would block";
-				case EBADF: return (char*) "Bad file descriptor";
-				case EOVERFLOW: return (char*) "Value too large to be stored in data type";
-				case ENOENT: return (char*) "No such file or directory";
-				case ENOSPC: return (char*) "No space left on device";
-				case EEXIST: return (char*) "File exists";
-				case EROFS: return (char*) "Read-only file system";
-				case EINVAL: return (char*) "Invalid argument";
-				case ENOTDIR: return (char*) "Not a directory";
-				case ENOMEM: return (char*) "Not enough memory";
-				case ERANGE: return (char*) "Result too large";
-				case EISDIR: return (char*) "Is a directory";
-				case EPERM: return (char*) "Operation not permitted";
-				case EIO: return (char*) "Input/output error";
-				case ENOEXEC: return (char*) "Exec format error";
-				case EACCES: return (char*) "Permission denied";
-				case ESRCH: return (char*) "No such process";
-				case ENOTTY: return (char*) "Not a tty";
-				case ECHILD: return (char*) "No child processes";
-				case ENOSYS: return (char*) "Function not implemented";
-				case ENOTSUP: return (char*) "Operation not supported";
-				case EBLOCKING: return (char*) "Operation is blocking";
-				case EINTR: return (char*) "Interrupted function call";
-				case ENOTEMPTY: return (char*) "Directory not empty";
-				case EBUSY: return (char*) "Device or resource busy";
-				case EPIPE: return (char*) "Broken pipe";
-				case EILSEQ: return (char*) "Illegal byte sequence";
-				case ELAKE: return (char*) "Sit by a lake";
-				case EMFILE: return (char*) "Too many open files";
-				case EAGAIN: return (char*) "Resource temporarily unavailable";
-				case EEOF: return (char*) "End of file";
-				case EBOUND: return (char*) "Out of bounds";
-				case EINIT: return (char*) "Not initialized";
-				default: return (char*) "Unknown error condition";
-			}
-		}
+extern "C" const char* sortix_strerror(int errnum)
+{
+	switch ( errnum )
+	{
+	case ENOTBLK: return "Block device required";
+	case ENODEV: return "No such device";
+	case EWOULDBLOCK: return "Operation would block";
+	case EBADF: return "Bad file descriptor";
+	case EOVERFLOW: return "Value too large to be stored in data type";
+	case ENOENT: return "No such file or directory";
+	case ENOSPC: return "No space left on device";
+	case EEXIST: return "File exists";
+	case EROFS: return "Read-only file system";
+	case EINVAL: return "Invalid argument";
+	case ENOTDIR: return "Not a directory";
+	case ENOMEM: return "Not enough memory";
+	case ERANGE: return "Result too large";
+	case EISDIR: return "Is a directory";
+	case EPERM: return "Operation not permitted";
+	case EIO: return "Input/output error";
+	case ENOEXEC: return "Exec format error";
+	case EACCES: return "Permission denied";
+	case ESRCH: return "No such process";
+	case ENOTTY: return "Not a tty";
+	case ECHILD: return "No child processes";
+	case ENOSYS: return "Function not implemented";
+	case ENOTSUP: return "Operation not supported";
+	case EBLOCKING: return "Operation is blocking";
+	case EINTR: return "Interrupted function call";
+	case ENOTEMPTY: return "Directory not empty";
+	case EBUSY: return "Device or resource busy";
+	case EPIPE: return "Broken pipe";
+	case EILSEQ: return "Illegal byte sequence";
+	case ELAKE: return "Sit by a lake";
+	case EMFILE: return "Too many open files";
+	case EAGAIN: return "Resource temporarily unavailable";
+	case EEOF: return "End of file";
+	case EBOUND: return "Out of bounds";
+	case EINIT: return "Not initialized";
+	default: return "Unknown error condition";
 	}
 }
 
+extern "C" char* strerror(int errnum)
+{
+	return (char*) sortix_strerror(errnum);
+}
+
+} // namespace Error
+} // namespace Maxsi
