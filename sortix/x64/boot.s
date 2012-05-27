@@ -31,7 +31,7 @@
 .code32
 start:
 _start:
-	jmp multiboot_entry
+	jmp prepare_kernel_execution
 
 	# Align 32 bits boundary.
 	.align 4
@@ -45,8 +45,7 @@ multiboot_header:
 	# Checksum.
 	.long -(0x1BADB002 + 0x00000003)
 
-multiboot_entry:
-
+prepare_kernel_execution:
 	# We got our multiboot information in various registers. But we are going
 	# to need these registers. But where can we store them then? Oh hey, let's
 	# store then in the code already run!
@@ -126,6 +125,22 @@ Realm64:
 	mov %ax, %es
 	mov %ax, %fs
 	mov %ax, %gs
+
+	# Enable the floating point unit.
+	mov %cr0, %rax
+	and $0xFFFD, %ax
+	or $0x10, %ax
+	mov %rax, %cr0
+	fninit
+
+	# Enable Streaming SIMD Extensions.
+	mov %cr0, %rax
+	and $0xFFFB, %ax
+	or $0x2, %ax
+	mov %rax, %cr0
+	mov %cr4, %rax
+	or $0x600, %rax
+	mov %rax, %cr4
 
 	# Alright, that was the bootstrap code. Now begin preparing to run the
 	# actual 64-bit kernel.

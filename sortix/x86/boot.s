@@ -31,7 +31,7 @@
 .type _start, @function
 start:
 _start:
-	jmp beginkernel
+	jmp prepare_kernel_execution
 
 	# Align 32 bits boundary.
 	.align	4
@@ -45,3 +45,23 @@ multiboot_header:
 	# Checksum.
 	.long	-(0x1BADB002 + 0x00000003)
 
+prepare_kernel_execution:
+	# Enable the floating point unit.
+	mov %eax, 0x100000
+	mov %cr0, %eax
+	and $0xFFFD, %ax
+	or $0x10, %ax
+	mov %eax, %cr0
+	fninit
+
+	# Enable Streaming SIMD Extensions.
+	mov %cr0, %eax
+	and $0xFFFB, %ax
+	or $0x2, %ax
+	mov %eax, %cr0
+	mov %cr4, %eax
+	or $0x600, %eax
+	mov %eax, %cr4
+	mov 0x100000, %eax
+
+	jmp beginkernel
