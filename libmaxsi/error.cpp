@@ -83,6 +83,7 @@ namespace Maxsi
 				case EAGAIN: return (char*) "Resource temporarily unavailable";
 				case EEOF: return (char*) "End of file";
 				case EBOUND: return (char*) "Out of bounds";
+				case EINIT: return (char*) "Not initialized";
 				default: return (char*) "Unknown error condition";
 			}
 		}

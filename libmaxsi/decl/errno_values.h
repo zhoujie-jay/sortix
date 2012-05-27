@@ -35,6 +35,7 @@
 #define EAGAIN 43
 #define EEOF 44
 #define EBOUND 45
+#define EINIT 46
 
 #define EOPNOTSUPP ENOTSUP
 
