@@ -44,13 +44,13 @@ namespace Sortix
 
 		void InitCPU()
 		{
-			PML* const BOOTPML2 = (PML* const) 0x01000UL;
-			PML* const BOOTPML1 = (PML* const) 0x02000UL;
-			PML* const FORKPML1 = (PML* const) 0x03000UL;
-			PML* const IDENPML1 = (PML* const) 0x04000UL;
+			PML* const BOOTPML2 = (PML* const) 0x11000UL;
+			PML* const BOOTPML1 = (PML* const) 0x12000UL;
+			PML* const FORKPML1 = (PML* const) 0x13000UL;
+			PML* const IDENPML1 = (PML* const) 0x14000UL;
 
 			// Initialize the memory structures with zeroes.
-			Maxsi::Memory::Set((PML* const) 0x01000UL, 0, 0x6000UL);
+			Maxsi::Memory::Set((PML* const) 0x11000UL, 0, 0x6000UL);
 
 			// Identity map the first 4 MiB.
 			addr_t flags = PML_PRESENT | PML_WRITABLE;
@@ -80,8 +80,8 @@ namespace Sortix
 			// course, we still have no physical page allocator, so that's the
 			// next step.
 
-			PML* const PHYSPML1 = (PML* const) 0x05000UL;
-			PML* const PHYSPML0 = (PML* const) 0x06000UL;
+			PML* const PHYSPML1 = (PML* const) 0x15000UL;
+			PML* const PHYSPML0 = (PML* const) 0x16000UL;
 
 			BOOTPML2->entry[1021] = (addr_t) PHYSPML1 | flags;
 			PHYSPML1->entry[0]    = (addr_t) PHYSPML0 | flags;
@@ -151,14 +151,16 @@ namespace Sortix
 			// Switch to the address space from when the world was originally
 			// created. It should contain the kernel, the whole kernel, and
 			// nothing but the kernel.
-			PML* const BOOTPML2 = (PML* const) 0x01000UL;
+			PML* const BOOTPML2 = (PML* const) 0x11000UL;
 			SwitchAddressSpace((addr_t) BOOTPML2);
 		}
 
 		const size_t KERNEL_STACK_SIZE = 256UL * 1024UL;
 		const addr_t KERNEL_STACK_END = 0x80001000UL;
 		const addr_t KERNEL_STACK_START = KERNEL_STACK_END + KERNEL_STACK_SIZE;
-		addr_t INITRD = KERNEL_STACK_START;
+		const addr_t VIDEO_MEMORY = KERNEL_STACK_START;
+		const size_t VIDEO_MEMORY_MAX_SIZE = 256UL * 1024UL * 1024UL;
+		const addr_t INITRD = VIDEO_MEMORY + VIDEO_MEMORY_MAX_SIZE;
 		size_t initrdsize = 0;
 		const addr_t HEAPUPPER = 0xFF400000UL;
 
@@ -195,6 +197,16 @@ namespace Sortix
 		size_t GetKernelStackSize()
 		{
 			return KERNEL_STACK_SIZE;
+		}
+
+		addr_t GetVideoMemory()
+		{
+			return VIDEO_MEMORY;
+		}
+
+		size_t GetMaxVideoMemorySize()
+		{
+			return VIDEO_MEMORY_MAX_SIZE;
 		}
 	}
 }

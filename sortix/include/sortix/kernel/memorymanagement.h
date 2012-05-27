@@ -78,6 +78,8 @@ namespace Sortix
 		void RegisterInitRDSize(size_t size);
 		addr_t GetHeapLower();
 		addr_t GetHeapUpper();
+		addr_t GetVideoMemory();
+		size_t GetMaxVideoMemorySize();
 	}
 }
 
