@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -20,10 +20,16 @@
 	platform.h
 	Defines platform specific stuff.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef LIBMAXSI_PLATFORM_H
 #define LIBMAXSI_PLATFORM_H
+
+	#if !defined(PLATFORM_X64) && defined(__x86_64__)
+		#define PLATFORM_X64
+	#elif !defined(PLATFORM_X86) && defined(__i386__)
+		#define PLATFORM_X86
+	#endif
 
 	// Detect which platform we are compiling to and declare some useful macros.
 	#ifdef PLATFORM_X86
