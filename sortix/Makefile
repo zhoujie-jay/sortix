@@ -130,6 +130,7 @@ filesystem.o \
 directory.o \
 mount.o \
 signal.o \
+fs/util.o \
 fs/devfs.o \
 fs/initfs.o \
 fs/ramfs.o \
