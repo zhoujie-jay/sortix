@@ -21,7 +21,9 @@
 *******************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 int main(int argc, char* argv[])
 {
@@ -36,7 +38,13 @@ int main(int argc, char* argv[])
 	const char* prefix = "";
 	for ( int i = startfrom; i < argc; i++ )
 	{
+		errno = 0;
 		printf("%s%s", prefix, argv[i]);
+		if ( errno != 0 )
+		{
+			perror("<stdout>");
+			exit(1);
+		}
 		prefix = " ";
 	}
 
