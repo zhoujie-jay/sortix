@@ -33,6 +33,7 @@
 #include "../vga.h"
 #include "../ata.h"
 #include "devfs.h"
+#include "videofs.h"
 
 using namespace Maxsi;
 
@@ -191,12 +192,15 @@ namespace Sortix
 	size_t entriesused;
 	size_t entrieslength;
 	DevEntry* deventries;
+	DevVideoFS* videofs;
 
 	void Init()
 	{
 		deventries = NULL;
 		entriesused = 0;
 		entrieslength = 0;
+		videofs = new DevVideoFS;
+		if ( !videofs ) { Panic("Unable to allocate videofs\n"); }
 	}
 
 	bool RegisterDevice(const char* name, Device* dev)
@@ -298,7 +302,7 @@ namespace Sortix
 
 	int DevDevFSDir::Read(sortix_dirent* dirent, size_t available)
 	{
-		const char* names[] = { "null", "tty", "vga" };
+		const char* names[] = { "null", "tty", "video", "vga" };
 		const char* name = NULL;
 		if ( position < DeviceFS::GetNumDevices() )
 		{
@@ -306,7 +310,7 @@ namespace Sortix
 		}
 		else
 		{
-			const size_t nameslength = 3;
+			const size_t nameslength = 4;
 			size_t index = position - DeviceFS::GetNumDevices();
 			if ( nameslength <= index )
 			{
@@ -345,7 +349,7 @@ namespace Sortix
 
 	extern DevTerminal* tty;
 
-	Device* DevDevFS::Open(const char* path, int flags, mode_t /*mode*/)
+	Device* DevDevFS::Open(const char* path, int flags, mode_t mode)
 	{
 		int lowerflags = flags & O_LOWERFLAGS;
 
@@ -358,6 +362,11 @@ namespace Sortix
 		if ( String::Compare(path, "/null") == 0 ) { return new DevNull; }
 		if ( String::Compare(path, "/tty") == 0 ) { tty->Refer(); return tty; }
 		if ( String::Compare(path, "/vga") == 0 ) { return new DevVGA; }
+		if ( String::Compare(path, "/video") == 0 ||
+             String::StartsWith(path, "/video/") )
+		{
+			return DeviceFS::videofs->Open(path + String::Length("/video"), flags, mode);
+		}
 
 		Device* dev = DeviceFS::LookUp(path + 1);
 		if ( !dev )
@@ -377,6 +386,12 @@ namespace Sortix
 
 	bool DevDevFS::Unlink(const char* path)
 	{
+		if ( String::Compare(path, "/video") == 0 ||
+             String::StartsWith(path, "/video/") )
+		{
+			return DeviceFS::videofs->Unlink(path);
+		}
+
 		if ( *path == '\0' || ( *path++ == '/' && *path == '\0' ) )
 		{
 			Error::Set(EISDIR);
