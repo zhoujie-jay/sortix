@@ -66,16 +66,41 @@ namespace Maxsi
 		}
 #endif
 
-		DUAL_FUNCTION(void*, memcpy, Copy, (void* Dest, const void* Src, size_t Length))
+		extern "C" void* memcpy_aligned(unsigned long* dest,
+		                                const unsigned long* src,
+		                                size_t length)
 		{
-			char* D = (char*) Dest; const char* S = (const char*) Src;
-
-			for ( size_t I = 0; I < Length; I++ )
+			size_t numcopies = length / sizeof(unsigned long);
+			for ( size_t i = 0; i < numcopies; i++ )
 			{
-				D[I] = S[I];
+				dest[i] = src[i];
 			}
+			return dest;
+		}
 
-			return Dest;
+		static inline bool IsWordAligned(uintptr_t addr)
+		{
+			const size_t WORDSIZE = sizeof(unsigned long);
+			return (addr / WORDSIZE * WORDSIZE) == addr;
+		}
+
+		DUAL_FUNCTION(void*, memcpy, Copy, (void* destptr, const void* srcptr, size_t length))
+		{
+			if ( IsWordAligned((uintptr_t) destptr) &&
+			     IsWordAligned((uintptr_t) srcptr) &&
+			     IsWordAligned(length) )
+			{
+				unsigned long* dest = (unsigned long*) destptr;
+				const unsigned long* src = (const unsigned long*) srcptr;
+				return memcpy_aligned(dest, src, length);
+			}
+			uint8_t* dest = (uint8_t*) destptr;
+			const uint8_t* src = (const uint8_t*) srcptr;
+			for ( size_t i = 0; i < length; i += sizeof(uint8_t) )
+			{
+				dest[i] = src[i];
+			}
+			return dest;
 		}
 
 		DUAL_FUNCTION(void*, memset, Set, (void* Dest, int Value, size_t Length))
