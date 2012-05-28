@@ -359,6 +359,14 @@ retry:
 		}
 		return templ;
 	}
+
+	// TODO: This has been replaced with sysconf(_SC_OPEN_MAX). This is only
+	// here for compatibility with gzip and should be removed as soon as sysconf
+	// is implemented.
+	extern "C" int getdtablesize(void)
+	{
+		return 0x10000;
+	}
 #endif
 
 }
