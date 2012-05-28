@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -20,7 +20,7 @@
 	time.cpp
 	Useful time functions.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <libmaxsi/platform.h>
 #include <libmaxsi/string.h>
@@ -49,18 +49,22 @@ namespace Maxsi
 
 		extern "C" int gettimeofday(struct timeval* tp, void* /*tzp*/)
 		{
-			tp->tv_sec = 0;
-			tp->tv_usec = 0;
+			uintmax_t sinceboot;
+			uptime(&sinceboot);
+			tp->tv_sec = sinceboot / 1000000ULL;
+			tp->tv_usec = sinceboot % 1000000ULL;
 			return 0;
 		}
 
 		extern "C" time_t time(time_t* t)
 		{
-			*t = 0;
-			return 0;
+			struct timeval tv;
+			gettimeofday(&tv, NULL);
+			time_t result = tv.tv_sec;
+			return t ? *t = result : result;
 		}
 
-		extern "C" char* ctime(const time_t* timep)
+		extern "C" char* ctime(const time_t* /*timep*/)
 		{
 			return (char*) "ctime(3) is not implemented";
 		}

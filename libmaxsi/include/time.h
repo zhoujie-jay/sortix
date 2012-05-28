@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -20,7 +20,7 @@
 	time.h
 	Time declarations.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef	_TIME_H
 #define	_TIME_H 1
@@ -31,6 +31,18 @@ __BEGIN_DECLS
 
 @include(clock_t.h)
 @include(time_t.h)
+
+struct tm
+{
+	int tm_sec;
+	int tm_min;
+	int tm_hour;
+	int tm_mday;
+	int tm_mon;
+	int tm_year;
+	int tm_wday;
+	int tm_isdst;
+};
 
 clock_t clock(void);
 time_t time(time_t* t);
