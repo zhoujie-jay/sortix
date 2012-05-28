@@ -74,6 +74,7 @@ void SIG_ERR(int signum);
 
 sighandler_t signal(int signum, sighandler_t handler);
 int kill(pid_t pid, int sig);
+int raise(int sig);
 
 __END_DECLS
 

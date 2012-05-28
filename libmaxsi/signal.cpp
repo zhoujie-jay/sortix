@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -20,7 +20,7 @@
 	signal.cpp
 	Handles the good old unix signals.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <libmaxsi/platform.h>
 #include <libmaxsi/string.h>
@@ -28,6 +28,7 @@
 #include <libmaxsi/syscall.h>
 #include <libmaxsi/process.h>
 #include <libmaxsi/signal.h>
+#include <unistd.h>
 #include <signal.h>
 
 namespace Maxsi
@@ -122,6 +123,11 @@ namespace Maxsi
 		extern "C" int kill(pid_t pid, int signum)
 		{
 			return SysKill(pid, signum);
+		}
+
+		extern "C" int raise(int signum)
+		{
+			kill(getpid(), signum);
 		}
 	}
 }
