@@ -52,6 +52,18 @@ void funregister(FILE* fp)
 
 size_t fread(void* ptr, size_t size, size_t nmemb, FILE* fp)
 {
+	if ( fp->numpushedback && size != 1 ) { errno = ENOSYS; return 0; }
+	if ( fp->numpushedback && nmemb )
+	{
+		unsigned char* buf = (unsigned char*) ptr;
+		size_t amount = nmemb < fp->numpushedback ? nmemb : fp->numpushedback;
+		for ( size_t i = 0; i < amount; i++ )
+		{
+			buf[i] = fp->pushedback[--(fp->numpushedback)];
+		}
+		if ( nmemb <= amount ) { return nmemb; }
+		return amount + fread(buf + amount, size, nmemb - amount, fp);
+	}
 	if ( !fp->read_func ) { errno = EBADF; return 0; }
 	fp->flags &= ~_FILE_LAST_WRITE; fp->flags |= _FILE_LAST_READ;
 	return fp->read_func(ptr, size, nmemb, fp->user);
@@ -96,6 +108,7 @@ size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* fp)
 
 int fseeko(FILE* fp, off_t offset, int whence)
 {
+	fp->numpushedback = 0;
 	return (fp->seek_func) ? fp->seek_func(fp->user, offset, whence) : 0;
 }
 
@@ -122,6 +135,7 @@ int ferror(FILE* fp)
 
 int feof(FILE* fp)
 {
+	if ( fp->numpushedback ) { return 0; }
 	if ( !fp->eof_func ) { return 0; }
 	return fp->eof_func(fp->user);
 }
@@ -135,12 +149,20 @@ void rewind(FILE* fp)
 off_t ftello(FILE* fp)
 {
 	if ( !fp->tell_func ) { errno = EBADF; return -1; }
-	return fp->tell_func(fp->user);
+	return fp->tell_func(fp->user) - fp->numpushedback;
 }
 
 long ftell(FILE* fp)
 {
 	return (long) ftello(fp);
+}
+
+int ungetc(int c, FILE* fp)
+{
+	if ( fp->numpushedback == _FILE_MAX_PUSHBACK ) { errno = ERANGE; return EOF; }
+	unsigned char uc = c;
+	fp->pushedback[fp->numpushedback++] = uc;
+	return uc;
 }
 
 int fflush(FILE* fp)

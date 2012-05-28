@@ -6,6 +6,7 @@
 #define _FILE_LAST_WRITE (1<<2)
 #define _FILE_LAST_READ (1<<3)
 #define _FILE_AUTO_LOCK (1<<4)
+#define _FILE_MAX_PUSHBACK 8
 typedef struct _FILE
 {
 	/* This is non-standard, but useful. If you allocate your own FILE and
@@ -31,5 +32,7 @@ typedef struct _FILE
 	struct _FILE* next;
 	int flags;
 	size_t bufferused;
+	size_t numpushedback;
+	unsigned char pushedback[_FILE_MAX_PUSHBACK];
 } FILE;
 #endif
