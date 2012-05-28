@@ -44,9 +44,22 @@ struct tm
 	int tm_isdst;
 };
 
+struct utimbuf
+{
+	time_t actime;
+	time_t modtime;
+};
+
 clock_t clock(void);
 time_t time(time_t* t);
 char* ctime(const time_t* timep);
+struct tm* localtime_r(const time_t* timer, struct tm* ret);
+struct tm* gmtime_r(const time_t* timer, struct tm* ret);
+#if !defined(_SORTIX_SOURCE)
+struct tm* localtime(const time_t* timer);
+struct tm* gmtime(const time_t* timer);
+#endif
+int utime(const char* filepath, const struct utimbuf* times);
 
 __END_DECLS
 

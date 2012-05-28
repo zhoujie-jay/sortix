@@ -64,9 +64,50 @@ namespace Maxsi
 			return t ? *t = result : result;
 		}
 
+		extern "C" struct tm* localtime_r(const time_t* timer, struct tm* ret)
+		{
+			time_t time = *timer;
+			ret->tm_sec = time % 60; // No leap seconds.
+			ret->tm_min = (time / 60) % 60;
+			ret->tm_hour = (time / 60 / 60) % 24;
+			ret->tm_mday = 0;
+			ret->tm_mon = 0;
+			ret->tm_year = 0;
+			ret->tm_wday = 0;
+			ret->tm_isdst = 0;
+			return ret;
+		}
+
+		extern "C" struct tm* gmtime_r(const time_t* timer, struct tm* ret)
+		{
+			return localtime_r(timer, ret);
+		}
+
+		// TODO: Who the hell designed the below two functions? I vote that
+		// these be removed from Sortix soon - although that'd require fixing
+		// a lot of applications..
+
+		extern "C" struct tm* localtime(const time_t* timer)
+		{
+			static struct tm hack_localtime_ret;
+			return localtime_r(timer, &hack_localtime_ret);
+		}
+
+		extern "C" struct tm* gmtime(const time_t* timer)
+		{
+			static struct tm hack_gmtime_ret;
+			return gmtime_r(timer, &hack_gmtime_ret);
+		}
+
 		extern "C" char* ctime(const time_t* /*timep*/)
 		{
 			return (char*) "ctime(3) is not implemented";
+		}
+
+		extern "C" int utime(const char* filepath, const struct utimbuf* times)
+		{
+			// TODO: Sure, I did that! There is no kernel support for this yet.
+			return 0;
 		}
 	}
 }
