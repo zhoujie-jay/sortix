@@ -45,6 +45,7 @@ ioleast.o \
 terminal.o \
 kernelinfo.o \
 init.o \
+exit.o \
 signal.o \
 $(CPU)/signal.o \
 $(CPU)/fork.o \

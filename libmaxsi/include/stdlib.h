@@ -49,6 +49,7 @@ typedef int div_t, ldiv_t, lldiv_t;
 
 void abort(void);
 int abs(int value);
+int atexit(void (*function)(void));
 int atoi(const char*);
 long atol(const char*);
 long long atoll(const char*);
@@ -62,6 +63,7 @@ void* malloc(size_t);
 #if !defined(_SORTIX_SOURCE)
 char* mktemp(char* templ);
 #endif
+int on_exit(void (*function)(int, void*), void* arg);
 int putenv(char*);
 void qsort(void*, size_t, size_t, int (*)(const void*, const void*));
 int rand(void);
@@ -93,7 +95,6 @@ int clearenv(void);
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 long a64l(const char* s);
-int atexit(void (*function)(void));
 double atof(const char* value);
 void* bsearch(const void*, const void*, size_t, size_t, int (*)(const void*, const void*));
 div_t div(int, int);

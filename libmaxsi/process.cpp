@@ -174,8 +174,11 @@ namespace Maxsi
 			return result;
 		}
 
+		extern "C" void call_exit_handlers(int status);
+
 		DUAL_FUNCTION(void, exit, Exit, (int status))
 		{
+			call_exit_handlers(status);
 			dcloseall();
 			fcloseall();
 			_exit(status);
