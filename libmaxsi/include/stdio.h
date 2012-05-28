@@ -27,15 +27,17 @@
 
 #include <features.h>
 #include <sortix/seek.h>
+#if __STRICT_ANSI__
+#define __need___va_list
+#endif
+#include <stdarg.h>
 
 __BEGIN_DECLS
 
 @include(off_t.h)
 @include(size_t.h)
 @include(ssize_t.h)
-@include(va_list.h)
 @include(NULL.h)
-
 @include(FILE.h)
 
 struct _fpos_t;
@@ -105,10 +107,10 @@ extern char* sortix_gets(void);
 extern int sortix_puts(const char* str);
 extern int sprintf(char* restrict s, const char* restrict format, ...);
 extern int sscanf(const char* restrict s, const char* restrict format, ...);
-extern int vfprintf(FILE* restrict stream, const char* restrict format, va_list ap);
-extern int vprintf(const char* restrict format, va_list ap);
-extern int vsnprintf(char* restrict, size_t, const char* restrict, va_list);
-extern int vsprintf(char* restrict s, const char* restrict format, va_list ap);
+extern int vfprintf(FILE* restrict stream, const char* restrict format, __gnuc_va_list ap);
+extern int vprintf(const char* restrict format, __gnuc_va_list ap);
+extern int vsnprintf(char* restrict, size_t, const char* restrict, __gnuc_va_list);
+extern int vsprintf(char* restrict s, const char* restrict format, __gnuc_va_list ap);
 
 /* TODO: These are not implemented in libmaxsi/sortix yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
@@ -133,10 +135,10 @@ extern int renameat(int oldfd, const char* oldname, int newfd, const char* newna
 extern int scanf(const char* restrict format, ...);
 extern int setvbuf(FILE* restrict stream, char* restrict buf, int type, size_t size);
 extern int ungetc(int c, FILE* stream);
-extern int vdprintf(int fildes, const char* restrict format, va_list ap);
-extern int vfscanf(FILE* restrict stream, const char* restrict format, va_list arg);
-extern int vscanf(const char* restrict format, va_list arg);
-extern int vsscanf(const char* restrict s, const char* restrict format, va_list arg);
+extern int vdprintf(int fildes, const char* restrict format, __gnuc_va_list ap);
+extern int vfscanf(FILE* restrict stream, const char* restrict format, __gnuc_va_list arg);
+extern int vscanf(const char* restrict format, __gnuc_va_list arg);
+extern int vsscanf(const char* restrict s, const char* restrict format, __gnuc_va_list arg);
 extern void flockfile(FILE* file);
 extern void funlockfile(FILE* file);
 extern void setbuf(FILE* restrict stream, char* restrict buf);

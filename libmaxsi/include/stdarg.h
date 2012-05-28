@@ -31,6 +31,8 @@ __BEGIN_DECLS
 
 @include(va_list.h)
 
+#undef __need___va_list
+
 __END_DECLS
 
 #endif
