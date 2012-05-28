@@ -191,7 +191,7 @@ namespace Maxsi
 		return result;
 	}
 
-	extern "C" void error(int status, int errnum, const char *format, ...)
+	extern "C" void gnu_error(int status, int errnum, const char *format, ...)
 	{
 		fprintf(stderr, "%s: ", program_invocation_name);
 
