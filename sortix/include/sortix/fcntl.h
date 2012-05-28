@@ -32,6 +32,7 @@ __BEGIN_DECLS
 #define O_RDONLY 1
 #define O_WRONLY 2
 #define O_RDWR 3
+#define O_ACCMODE (O_RDONLY | O_WRONLY | O_RDWR)
 #define O_EXEC 4
 #define O_SEARCH 5
 #define O_LOWERFLAGS 0x7
