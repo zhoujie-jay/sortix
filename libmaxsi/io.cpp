@@ -367,6 +367,18 @@ retry:
 	{
 		return 0x10000;
 	}
+
+	extern "C" int fscanf(FILE* /*fp*/, const char* /*format*/, ...)
+	{
+		fprintf(stderr, "fscanf(3) is not implemented\n");
+		abort();
+	}
+
+	extern "C" int mbtowc(wchar_t* /*pwd*/, const char* /*s*/, size_t /*n*/)
+	{
+		fprintf(stderr, "mbtowc(3) is not implemented\n");
+		abort();
+	}
 #endif
 
 }
