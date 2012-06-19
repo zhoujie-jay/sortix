@@ -159,6 +159,12 @@ public:
 		y *= scalar;
 	}
 
+	Vector& operator/=(float scalar)
+	{
+		x /= scalar;
+		y /= scalar;
+	}
+
 	const Vector operator+(const Vector& other) const
 	{
 		Vector ret(*this); ret += other; return ret;
@@ -172,6 +178,11 @@ public:
 	const Vector operator*(float scalar) const
 	{
 		Vector ret(*this); ret *= scalar; return ret;
+	}
+
+	const Vector operator/(float scalar) const
+	{
+		Vector ret(*this); ret /= scalar; return ret;
 	}
 
 	bool operator==(const Vector& other) const
@@ -202,6 +213,13 @@ public:
 	float DistanceTo(const Vector& other) const
 	{
 		return (other - *this).Size();
+	}
+
+	const Vector Normalize() const
+	{
+		float size = Size();
+		if ( size == 0.0 ) { size = 1.0f; }
+		return *this / size;
 	}
 
 	const Vector Rotate(float radians) const
@@ -277,7 +295,9 @@ public:
 	{
 		return !strcmp(classname, "Object");
 	}
+	virtual void PreFrame() { }
 	virtual void OnFrame(float deltatime) { }
+	virtual void PostFrame(float deltatime) { }
 	virtual void Render() { }
 
 private:
@@ -299,13 +319,23 @@ public:
 class Actor : public Object
 {
 public:
-	Actor() { }
+	Actor() { mass = 1.0; }
 	virtual ~Actor() { }
 
 public:
+	virtual void PreFrame()
+	{
+		force = Vector(0, 0);
+		otherforce = Vector(0, 0);
+	}
+
 	virtual void OnFrame(float deltatime)
 	{
 		Think(deltatime);
+	}
+
+	virtual void PostFrame(float deltatime)
+	{
 		Move(deltatime);
 	}
 
@@ -321,19 +351,30 @@ public:
 	Vector pos;
 	Vector vel;
 	Vector acc;
+	Vector force;
+	Vector otherforce;
+	float mass;
 
 };
 
 void Actor::Move(float deltatime)
 {
+	acc = (force+otherforce) / mass;
 	vel += acc * deltatime;
 	pos += vel * deltatime;
 }
 
+enum AsteroidType
+{
+	TYPE_NORMAL,
+	TYPE_CRYSTAL,
+	TYPE_NOT_CRYSTAL,
+};
+
 class Asteroid : public Actor
 {
 public:
-	Asteroid(Vector pos, Vector vel, float size);
+	Asteroid(Vector pos, Vector vel, float size, AsteroidType type = TYPE_NORMAL);
 	virtual ~Asteroid() { }
 	virtual bool IsA(const char* classname)
 	{
@@ -348,6 +389,8 @@ private:
 public:
 	bool InsideMe(const Vector& p);
 	void OnHit();
+	float Size() const { return size; }
+	AsteroidType Type() const { return type; }
 
 private:
 	static const size_t MIN_POLYS = 5;
@@ -359,14 +402,25 @@ private:
 	float size;
 	float angle;
 	float turnspeed;
+	AsteroidType type;
 
 };
 
-Asteroid::Asteroid(Vector pos, Vector vel, float size)
+Asteroid::Asteroid(Vector pos, Vector vel, float size, AsteroidType type)
 {
 	this->pos = pos;
 	this->vel = vel;
 	this->size = size;
+	this->type = type;
+	float MASS_PER_UNIT = 1.0;
+	this->mass = MASS_PER_UNIT * 4.0f / 3.0f * size * size * size;
+	if ( type == TYPE_NORMAL )
+	{
+		const float CRYSTAL_CHANCE = 0.1f;
+		const float MAX_SIZE = 64.0;
+		if ( RandomFloat() < CRYSTAL_CHANCE && size < MAX_SIZE )
+			this->type = TYPE_CRYSTAL;
+	}
 	angle = 0.0f;
 	turnspeed = DegreeToRadian(MAX_TURN_SPEED) * (RandomFloat() * 2.0f - 1.0f);
 	numpolygons = MIN_POLYS + rand() % (MAX_POLYS - MIN_POLYS);
@@ -406,7 +460,8 @@ void Asteroid::Render()
 {
 	Vector screenpos = pos - screenoff;
 	uint32_t color = MakeColor(200, 200, 200);
-	float slice = DegreeToRadian(360.0f) / (float) numpolygons;
+	if ( type == TYPE_CRYSTAL )
+		color = MakeColor(100, 100, 255);
 	for ( size_t i = 0; i < numpolygons; i++ )
 	{
 		Vector from = Point(i) + screenpos;
@@ -426,12 +481,12 @@ void Asteroid::OnHit()
 	if ( MINIMUM_SIZE <= sizea )
 	{
 		Vector astvel = vel.Rotate(RandomFloat(0.0, MAX_ANGLE)) * 1.2;
-		new Asteroid(pos + axis, astvel, sizea);
+		new Asteroid(pos + axis, astvel, sizea, type);
 	}
 	if ( MINIMUM_SIZE <= sizeb )
 	{
 		Vector astvel = vel.Rotate(RandomFloat(0.0, -MAX_ANGLE)) * 1.2;
-		new Asteroid(pos - axis, astvel, sizeb);
+		new Asteroid(pos - axis, astvel, sizeb, type);
 	}
 	GCDie();
 }
@@ -535,6 +590,89 @@ Missile::~Missile()
 {
 }
 
+class Attractor : public Actor
+{
+public:
+	Attractor(Vector pos, Vector vel, float growtomass, float rate);
+	virtual ~Attractor() { }
+	virtual bool IsA(const char* classname)
+	{
+		return !strcmp(classname, "Attractor") || Actor::IsA(classname);
+	}
+	virtual void Think(float deltatime);
+	virtual void Render();
+
+public:
+	float size;
+	float growtomass;
+	float rate;
+	float accel;
+	float age;
+
+};
+
+Attractor::Attractor(Vector pos, Vector vel, float growtomass, float rate)
+{
+	this->pos = pos;
+	this->vel = vel;
+	this->growtomass = growtomass;
+	this->rate = rate;
+	this->size = 1.0f;
+	this->mass = 1.0f;
+	this->rate = 0.0;
+	this->accel = 20000.0;
+	this->age = 0.0f;
+}
+
+void Attractor::Think(float deltatime)
+{
+	growtomass = 20000000.0;
+	rate += deltatime * accel;
+	mass += deltatime * rate;
+	size += 5 * deltatime;
+	age += deltatime;
+	float sofar = 2.5 * age;
+	mass = sofar*sofar*sofar*sofar;
+	size = age*age;
+	if ( 1.5*60 <= age ) { GCDie(); return; }
+	for ( Object* obj = firstobject; obj; obj = obj->NextObj() )
+	{
+		if ( obj == this ) { continue; }
+		if ( !obj->GCIsAlive() ) { continue; }
+		if ( !obj->IsA("Actor") ) { continue; }
+		if ( obj->IsA("Attractor") ) { continue; }
+		//if ( obj->IsA("Spaceship") ) { continue; }
+		Actor* other = (Actor*) obj;
+		Vector relative = pos - other->pos;
+		float distsq = relative.SquaredSize();
+		if ( distsq < size ) { distsq = size; }
+		float forcesize = mass * other->mass / distsq;
+		Vector force = relative.Normalize() * forcesize;
+		other->force += force;
+		this->force -= force;
+		if ( distsq < size*size && other->IsA("Asteroid") )
+		{
+			Asteroid* ast = (Asteroid*) other;
+			if ( RandomFloat() < 0.05f )
+				ast->OnHit();
+		}
+	}
+}
+
+void Attractor::Render()
+{
+	const size_t NUM_SIDES = 128;
+	float slice = DegreeToRadian(360.0f / NUM_SIDES);
+	for ( size_t i = 0; i < NUM_SIDES; i++ )
+	{
+		Vector screenpos = pos - screenoff;
+		uint32_t color = MakeColor(255, 0, 0);
+		Vector from = screenpos + Vector(size, 0.0f).Rotate((i+0)*slice);
+		Vector to   = screenpos + Vector(size, 0.0f).Rotate((i+1)*slice);
+		DrawLine(color, from.x, from.y, to.x, to.y);
+	}
+}
+
 class Firework : public Missile
 {
 public:
@@ -567,14 +705,14 @@ public:
 public:
 	void SetThrust(bool forward, bool backward);
 	void SetTurn(bool turnleft, bool turnright);
-	void SetFiring(bool missile, bool firework);
+	void SetFiring(bool missile, bool firework, bool attractor);
 
 private:
 	bool turnleft;
 	bool turnright;
 	bool moveforward;
 	bool movebackward;
-	bool missile, firework;
+	bool missile, firework, attractor;
 	float shipangle;
 
 };
@@ -585,7 +723,9 @@ Spaceship::Spaceship(float shipangle, Vector pos, Vector vel, Vector acc)
 	this->pos = pos;
 	this->vel = vel;
 	this->acc = acc;
-	turnleft = turnright = moveforward = movebackward = missile = firework  = false;
+	this->mass = 1.0;
+	turnleft = turnright = moveforward = movebackward = missile = \
+	attractor = firework = false;
 }
 
 Spaceship::~Spaceship()
@@ -599,10 +739,32 @@ void Spaceship::Think(float deltatime)
 		if ( !obj->GCIsAlive() ) { continue; }
 		if ( !obj->IsA("Asteroid") ) { continue; }
 		Asteroid* ast = (Asteroid*) obj;
-		if ( !ast->InsideMe(pos) ) { continue; }
-		ast->OnHit();
-		pos.y = 16384 - pos.y;
-		break;
+		bool iscrystal = ast->Type() == TYPE_CRYSTAL;
+		bool isinside = false;
+		if ( iscrystal )
+		{
+			Vector relative = pos - ast->pos;
+			float distsq = relative.SquaredSize();
+			if ( distsq < 4.0 * 4.0 ) { isinside = true; }
+			if ( distsq < 100 ) { distsq = 100; }
+			float constant = 2000.0;
+			float forcesize = constant * mass * ast->mass / distsq;
+			Vector force = relative.Normalize() * forcesize;
+			ast->force += force;
+		}
+		isinside = isinside || ast->InsideMe(pos);
+		if ( isinside && iscrystal )
+		{
+			ast->GCDie();
+			continue;
+		}
+		else if ( isinside )
+		{
+			ast->OnHit();
+			pos.y = 16384 - pos.y;
+			vel = Vector();
+			break;
+		}
 	}
 	const float turnspeed = 100.0;
 	const float turnamount = turnspeed * deltatime;
@@ -612,11 +774,16 @@ void Spaceship::Think(float deltatime)
 	float shipaccel = 0.0;
 	if ( moveforward  ) { shipaccel += shipaccelamount; }
 	if ( movebackward ) { shipaccel -= shipaccelamount; }
-	acc = Vector(shipaccel, 0.0).Rotate(shipangle);
+	force += Vector(shipaccel, 0.0).Rotate(shipangle) * mass;
 	float shipspeed = vel.Size();
 	float maxspeed = 50.0f;
-	if ( maxspeed < shipspeed ) { vel *= maxspeed / shipspeed; }
-	if ( missile || firework )
+	//if ( maxspeed < shipspeed ) { vel *= maxspeed / shipspeed; }
+	if ( maxspeed < shipspeed )
+	{
+		Vector backforce = vel.Normalize() * -shipaccelamount * mass;
+		force += backforce;
+	}
+	if ( missile || firework || attractor )
 	{
 		float ttl = 8.0;
 		float speed = 120.0;
@@ -625,6 +792,7 @@ void Spaceship::Think(float deltatime)
 		Vector spawnvel = Vector(speed, 0.0).Rotate(shipangle);
 		if ( missile ) new Missile(spawnpos, vel + spawnvel, spawnvel, ttl);
 		if ( firework ) new Firework(spawnpos, vel + spawnvel, spawnvel, 0.0);
+		if ( attractor ) new Attractor(spawnpos, vel + spawnvel, 10000.0, 1.001);
 	}
 }
 
@@ -657,10 +825,11 @@ void Spaceship::SetTurn(bool turnleft, bool turnright)
 	this->turnright = turnright;
 }
 
-void Spaceship::SetFiring(bool missile, bool firework)
+void Spaceship::SetFiring(bool missile, bool firework, bool attractor)
 {
 	this->missile = missile;
 	this->firework = firework;
+	this->attractor = attractor;
 }
 
 Firework::Firework(Vector pos, Vector vel, Vector dir, float ttl) : Missile(pos, vel, dir, ttl)
@@ -715,13 +884,24 @@ void GameLogic()
 	for ( obj = first; obj; obj = obj->NextObj() ) { obj->GCBirth(); }
 	playership->SetThrust(keysdown[KBKEY_UP], keysdown[KBKEY_DOWN]);
 	playership->SetTurn(keysdown[KBKEY_LEFT], keysdown[KBKEY_RIGHT]);
-	playership->SetFiring(keysdown[KBKEY_SPACE], keysdown[KBKEY_LCTRL]);
+	playership->SetFiring(keysdown[KBKEY_SPACE], keysdown[KBKEY_LCTRL], keysdown[KBKEY_A]);
+	keysdown[KBKEY_A] = false;
 	keysdown[KBKEY_SPACE] = false;
 	keysdown[KBKEY_LCTRL] = false;
 	for ( obj = first; obj; obj = obj->NextObj() )
 	{
 		if ( !obj->GCIsBorn() ) { continue; }
+		obj->PreFrame();
+	}
+	for ( obj = first; obj; obj = obj->NextObj() )
+	{
+		if ( !obj->GCIsBorn() ) { continue; }
 		obj->OnFrame(deltatime);
+	}
+	for ( obj = first; obj; obj = obj->NextObj() )
+	{
+		if ( !obj->GCIsBorn() ) { continue; }
+		obj->PostFrame(deltatime);
 	}
 	for ( obj = first; obj; )
 	{
