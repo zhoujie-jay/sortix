@@ -30,6 +30,7 @@
 #include <sortix/kernel/memorymanagement.h>
 #include "memorymanagement.h"
 #include "syscall.h"
+#include "msr.h"
 
 using namespace Maxsi;
 
@@ -53,6 +54,7 @@ namespace Sortix
 		void InitCPU();
 		void AllocateKernelPMLs();
 		int SysMemStat(size_t* memused, size_t* memtotal);
+		addr_t PAT2PMLFlags[PAT_NUM];
 
 		void Init(multiboot_info_t* bootinfo)
 		{
@@ -74,6 +76,29 @@ namespace Sortix
 				Panic("memorymanagement.cpp: The memory map flag was't set in "
 				      "the multiboot structure. Are your bootloader multiboot "
 				      "specification compliant?");
+			}
+
+			// If supported, setup the Page Attribute Table feature that allows
+			// us to control the memory type (caching) of memory more precisely.
+			if ( MSR::IsPATSupported() )
+			{
+				MSR::InitializePAT();
+				for ( addr_t i = 0; i < PAT_NUM; i++ )
+					PAT2PMLFlags[i] = EncodePATAsPMLFlag(i);
+			}
+			// Otherwise, reroute all requests to the backwards compatible
+			// scheme. TODO: Not all early 32-bit x86 CPUs supports these
+			// values, so we need yet another fallback.
+			else
+			{
+				PAT2PMLFlags[PAT_UC] = PML_WRTHROUGH | PML_NOCACHE;
+				PAT2PMLFlags[PAT_WC] = PML_WRTHROUGH | PML_NOCACHE; // Approx.
+				PAT2PMLFlags[2] = 0; // No such flag.
+				PAT2PMLFlags[3] = 0; // No such flag.
+				PAT2PMLFlags[PAT_WT] = PML_WRTHROUGH;
+				PAT2PMLFlags[PAT_WP] = PML_WRTHROUGH; // Approx.
+				PAT2PMLFlags[PAT_WB] = 0;
+				PAT2PMLFlags[PAT_UCM] = PML_NOCACHE;
 			}
 
 			// Initialize CPU-specific things.
@@ -378,7 +403,7 @@ namespace Sortix
 		}
 
 		template <bool userspace, bool invalidate>
-		bool Map(addr_t physical, addr_t mapto)
+		bool Map(addr_t physical, addr_t mapto, addr_t extraflags = 0)
 		{
 			const addr_t userflags = userspace ? (PML_USERSPACE | PML_FORK) : 0;
 			const addr_t flags = userflags | PML_PRESENT | PML_WRITABLE;
@@ -408,7 +433,7 @@ namespace Sortix
 					// TODO: Possible memory leak when page allocation fails.
 					addr_t page = Page::Get();
 					if ( page == 0 ) { return false; }
-					entry = page | flags;
+					entry = page | flags | extraflags;
 
 					// Invalidate the new PML and reset it to zeroes.
 					addr_t pmladdr = (addr_t) (PMLS[i-1] + childoffset);
@@ -427,7 +452,8 @@ namespace Sortix
 			}
 
 			// Actually map the physical page to the virtual page.
-			(PMLS[1] + offset)->entry[pmlchildid[1]] = physical | flags;
+			const addr_t entry = physical | flags | extraflags;
+			(PMLS[1] + offset)->entry[pmlchildid[1]] = entry;
 
 			if ( invalidate )
 			{
@@ -490,14 +516,26 @@ namespace Sortix
 			return result;
 		}
 
+		bool MapKernelPAT(addr_t physical, addr_t mapto, addr_t mtype)
+		{
+			addr_t extraflags = PAT2PMLFlags[mtype];
+			return Map<false, false>(physical, mapto, extraflags);
+		}
+
 		bool MapKernel(addr_t physical, addr_t mapto)
 		{
-			return Map<false, false>(physical, mapto);
+			return MapKernelPAT(physical, mapto, PAT_WB);
+		}
+
+		bool MapUserPAT(addr_t physical, addr_t mapto, addr_t mtype)
+		{
+			addr_t extraflags = PAT2PMLFlags[mtype];
+			return Map<true, false>(physical, mapto, extraflags);
 		}
 
 		bool MapUser(addr_t physical, addr_t mapto)
 		{
-			return Map<true, false>(physical, mapto);
+			return MapUserPAT(physical, mapto, PAT_WB);
 		}
 
 		addr_t UnmapKernel(addr_t mapto)
