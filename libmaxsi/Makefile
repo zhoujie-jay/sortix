@@ -39,6 +39,7 @@ dir.o \
 fddir-sortix.o \
 setjmp.o \
 sortix-sound.o \
+readparamstring.o \
 process.o \
 thread.o \
 io.o \
