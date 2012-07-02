@@ -30,6 +30,7 @@ ASFLAGS=$(CPUASFLAGS)
 
 OBJS=\
 ctype.o \
+crc32.o \
 file.o \
 fdio.o \
 fpipe.o \
@@ -76,6 +77,7 @@ heap.o \
 string.o \
 error.o \
 format.o \
+crc32.o \
 
 SORTIXOBJS:=$(addprefix sortix/,$(SORTIXOBJS))
 SORTIXCPPFLAGS:=-DSORTIX_KERNEL

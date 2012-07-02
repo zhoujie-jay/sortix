@@ -239,6 +239,7 @@ namespace Maxsi
 							scanning = false;
 							break;
 						case 'x':
+						case 'X':
 							type |= HEX;
 							scanning = false;
 							break;
