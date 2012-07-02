@@ -14,7 +14,7 @@ endif
 ifeq ($(CPU),x64)
     CPU=x64
     CPUDEFINES=-DPLATFORM_X64
-    CPUFLAGS=-fPIC -m64
+    CPUFLAGS=-fPIC -m64 -mno-red-zone
     CPULDFLAGS=-melf_x86_64
     CPUASFLAGS=-64
 endif
