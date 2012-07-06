@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of Sortix.
 
@@ -39,12 +39,23 @@ extern "C" void kthread_mutex_lock(kthread_mutex_t* mutex)
 {
 }
 
+unsigned long kthread_mutex_lock_signal(kthread_mutex_t* mutex)
+{
+	return 1;
+}
+
 extern "C" void kthread_mutex_unlock(kthread_mutex_t* mutex)
 {
 }
 
 extern "C" void kthread_cond_wait(kthread_cond_t* cond, kthread_mutex_t* mutex)
 {
+}
+
+extern "C" unsigned long kthread_cond_wait_signal(kthread_cond_t* cond,
+                                                  kthread_mutex_t* mutex)
+{
+	return 1;
 }
 
 extern "C" void kthread_cond_signal(kthread_cond_t* cond)
