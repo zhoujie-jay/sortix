@@ -24,8 +24,11 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/log.h>
+#include <libmaxsi/memory.h>
 #include "vga.h"
 #include "vgaterminal.h"
+
+using namespace Maxsi;
 
 namespace Sortix
 {
@@ -102,13 +105,11 @@ namespace Sortix
 		{
 			for ( nat y = 1; y < height; y++ )
 			{
-				for ( nat x = 0; x < width; x++ )
-				{
-					unsigned oldindex = y * width + x;
-					unsigned newindex = (y-1) * width + x;
-					vga[newindex] = vga[oldindex];
-					vgaattr[newindex] = vgaattr[oldindex];
-				}
+				size_t linesize = width * sizeof(uint16_t);
+				size_t fromoff = (y-0) * width;
+				size_t destoff = (y-1) * width;
+				Memory::Copy(vga + destoff, vga + fromoff, linesize);
+				Memory::Copy(vgaattr + destoff, vgaattr + fromoff, linesize);
 			}
 
 			for ( nat x = 0; x < width; x++ )
@@ -124,13 +125,11 @@ namespace Sortix
 		{
 			for ( nat y = 1; y < height; y++ )
 			{
-				for ( nat x = 0; x < width; x++ )
-				{
-					unsigned oldindex = (y-1) * width + x;
-					unsigned newindex = y * width + x;
-					vga[newindex] = vga[oldindex];
-					vgaattr[newindex] = vgaattr[oldindex];
-				}
+				size_t linesize = width * sizeof(uint16_t);
+				size_t fromoff = (y-1) * width;
+				size_t destoff = (y-0) * width;
+				Memory::Copy(vga + destoff, vga + fromoff, linesize);
+				Memory::Copy(vgaattr + destoff, vgaattr + fromoff, linesize);
 			}
 
 			for ( nat x = 0; x < width; x++ )
