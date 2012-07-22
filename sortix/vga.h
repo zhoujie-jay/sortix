@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,13 +14,13 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	vga.h
 	A Video Graphics Array driver.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef SORTIX_VGA_H
 #define SORTIX_VGA_H
@@ -30,6 +30,11 @@
 
 namespace Sortix
 {
+	const size_t VGA_FONT_WIDTH = 8UL;
+	const size_t VGA_FONT_HEIGHT = 16UL;
+	const size_t VGA_FONT_NUMCHARS = 256UL;
+	const size_t VGA_FONT_CHARSIZE = VGA_FONT_WIDTH * VGA_FONT_HEIGHT / 8UL;
+
 	namespace VGA
 	{
 		// TODO: Move these to a better place
@@ -52,6 +57,7 @@ namespace Sortix
 
 		void Init();
 		void SetCursor(nat x, nat y);
+		const uint8_t* GetFont();
 	}
 
 	class DevVGA : public DevBuffer
