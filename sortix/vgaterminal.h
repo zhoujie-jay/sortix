@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,26 +14,26 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	vgaterminal.h
-	A terminal based on the VGA text mode buffer.
+	vgaterminal.cpp
+	A terminal based on a text mode buffer.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef SORTIX_VGATERMINAL_H
 #define SORTIX_VGATERMINAL_H
 
-namespace Sortix
-{
-	namespace VGATerminal
-	{
-		void Init();
-		void Reset();
-		size_t Print(void* user, const char* string, size_t stringlen);
-	}
-}
+namespace Sortix {
+namespace VGATerminal {
+
+void Init();
+void Reset();
+size_t Print(void* user, const char* string, size_t stringlen);
+
+} // namespace VGATerminal
+} // namespace Sortix
 
 #endif
 
