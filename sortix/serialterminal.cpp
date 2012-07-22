@@ -29,7 +29,6 @@
 #include "keyboard.h"
 #include "uart.h"
 #include "serialterminal.h"
-#include "vgaterminal.h"
 #include "scheduler.h"
 
 using namespace Maxsi;
@@ -144,7 +143,10 @@ namespace Sortix
 
 		size_t Print(void* /*user*/, const char* string, size_t stringlen)
 		{
+			#warning Echoing to the VGA terminal is broken
+#if 0
 			if ( ECHO_TO_VGA ) { VGATerminal::Print(NULL, string, stringlen); }
+#endif
 			if ( cursordisabled )
 			{
 				const char* msg = "\e[h";

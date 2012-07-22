@@ -110,8 +110,10 @@ uart.o \
 terminal.o \
 linebuffer.o \
 logterminal.o \
-vgaterminal.o \
+textterminal.o \
 serialterminal.o \
+textbuffer.o \
+vgatextbuffer.o \
 descriptors.o \
 device.o \
 refcount.o \

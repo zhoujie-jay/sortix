@@ -24,6 +24,9 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/textbuffer.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/format.h>
@@ -42,9 +45,10 @@
 #include "pci.h"
 #include "com.h"
 #include "uart.h"
+#include "vgatextbuffer.h"
 #include "terminal.h"
 #include "serialterminal.h"
-#include "vgaterminal.h"
+#include "textterminal.h"
 #include "elf.h"
 #include "initrd.h"
 #include "vga.h"
@@ -90,6 +94,11 @@ void DoWelcome()
 	Log::Print("                           BOOTING OPERATING SYSTEM...                          ");
 }
 
+static size_t PrintToTextTerminal(void* user, const char* str, size_t len)
+{
+	return ((TextTerminal*) user)->Print(str, len);
+}
+
 extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 {
 	// Initialize system calls.
@@ -98,13 +107,19 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Detect and initialize any serial COM ports in the system.
 	COM::EarlyInit();
 
-	// Initialize the default terminal.
-	VGATerminal::Init();
-	Maxsi::Format::Callback logcallback = VGATerminal::Print;
-	void* logpointer = NULL;
+	// Setup a text buffer handle for use by the text terminal.
+	uint16_t* const VGAFB = (uint16_t*) 0xB8000;
+	const size_t VGA_WIDTH = 80;
+	const size_t VGA_HEIGHT = 25;
+	static uint16_t vga_attr_buffer[VGA_WIDTH*VGA_HEIGHT];
+	VGATextBuffer textbuf(VGAFB, vga_attr_buffer, VGA_WIDTH, VGA_HEIGHT);
+	TextBufferHandle textbufhandle(NULL, false, &textbuf, false);
 
-	// Initialize the kernel log.
-	Log::Init(logcallback, logpointer);
+	// Setup a text terminal instance.
+	TextTerminal textterm(&textbufhandle);
+
+	// Register the text terminal as the kernel log and initialize it.
+	Log::Init(PrintToTextTerminal, &textterm);
 
 	// Display the boot welcome screen.
 	DoWelcome();
