@@ -28,63 +28,49 @@
 #include "device.h"
 #include "stream.h"
 
-namespace Sortix
+namespace Sortix {
+
+const size_t VGA_FONT_WIDTH = 8UL;
+const size_t VGA_FONT_HEIGHT = 16UL;
+const size_t VGA_FONT_NUMCHARS = 256UL;
+const size_t VGA_FONT_CHARSIZE = VGA_FONT_WIDTH * VGA_FONT_HEIGHT / 8UL;
+
+namespace VGA {
+
+void Init();
+void SetCursor(unsigned x, unsigned y);
+const uint8_t* GetFont();
+
+} // namespace VGA
+
+// TODO: This class shouldn't be exposed publicly; it is used in a hack in the
+// /dev filesystem. However, vga.cpp should register /dev/vga instead.
+class DevVGA : public DevBuffer
 {
-	const size_t VGA_FONT_WIDTH = 8UL;
-	const size_t VGA_FONT_HEIGHT = 16UL;
-	const size_t VGA_FONT_NUMCHARS = 256UL;
-	const size_t VGA_FONT_CHARSIZE = VGA_FONT_WIDTH * VGA_FONT_HEIGHT / 8UL;
+public:
+	typedef DevBuffer BaseClass;
 
-	namespace VGA
-	{
-		// TODO: Move these to a better place
-		#define COLOR8_BLACK 0
-		#define COLOR8_BLUE 1
-		#define COLOR8_GREEN 2
-		#define COLOR8_CYAN 3
-		#define COLOR8_RED 4
-		#define COLOR8_MAGENTA 5
-		#define COLOR8_BROWN 6
-		#define COLOR8_LIGHT_GREY 7
-		#define COLOR8_DARK_GREY 8
-		#define COLOR8_LIGHT_BLUE 9
-		#define COLOR8_LIGHT_GREEN 10
-		#define COLOR8_LIGHT_CYAN 11
-		#define COLOR8_LIGHT_RED 12
-		#define COLOR8_LIGHT_MAGENTA 13
-		#define COLOR8_LIGHT_BROWN 14
-		#define COLOR8_WHITE 15
+public:
+	DevVGA();
+	virtual ~DevVGA();
 
-		void Init();
-		void SetCursor(nat x, nat y);
-		const uint8_t* GetFont();
-	}
+private:
+	size_t offset;
 
-	class DevVGA : public DevBuffer
-	{
-	public:
-		typedef DevBuffer BaseClass;
+public:
+	virtual ssize_t Read(byte* dest, size_t count);
+	virtual ssize_t Write(const byte* src, size_t count);
+	virtual bool IsReadable();
+	virtual bool IsWritable();
+	virtual size_t BlockSize();
+	virtual uintmax_t Size();
+	virtual uintmax_t Position();
+	virtual bool Seek(uintmax_t position);
+	virtual bool Resize(uintmax_t size);
 
-	public:
-		DevVGA();
-		virtual ~DevVGA();
+};
 
-	private:
-		size_t offset;
-
-	public:
-		virtual ssize_t Read(byte* dest, size_t count);
-		virtual ssize_t Write(const byte* src, size_t count);
-		virtual bool IsReadable();
-		virtual bool IsWritable();
-		virtual size_t BlockSize();
-		virtual uintmax_t Size();
-		virtual uintmax_t Position();
-		virtual bool Seek(uintmax_t position);
-		virtual bool Resize(uintmax_t size);
-
-	};
-}
+} // namespace Sortix
 
 #endif
 

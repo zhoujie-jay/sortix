@@ -24,6 +24,7 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/log.h>
+#include <sortix/vga.h>
 #include <libmaxsi/memory.h>
 #include "vga.h"
 #include "vgaterminal.h"
