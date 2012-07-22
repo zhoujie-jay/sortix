@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of Sortix.
 
@@ -23,30 +23,31 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include "refcount.h"
+#include <sortix/kernel/refcount.h>
 
-namespace Sortix
+namespace Sortix {
+
+Refcounted::Refcounted()
 {
-	Refcounted::Refcounted()
-	{
-		refcount = 1;
-	}
-
-	Refcounted::~Refcounted()
-	{
-		// It's OK to be deleted if our refcount is 1, it won't mess with any
-		// other owners that might need us.
-		ASSERT(refcount <= 1);
-	}
-
-	void Refcounted::Refer()
-	{
-		refcount++;
-	}
-
-	void Refcounted::Unref()
-	{
-		if ( !--refcount ) { delete this; }
-	}
+	refcount = 1;
 }
 
+Refcounted::~Refcounted()
+{
+	// It's OK to be deleted if our refcount is 1, it won't mess with any
+	// other owners that might need us.
+	ASSERT(refcount <= 1);
+}
+
+void Refcounted::Refer()
+{
+	refcount++;
+}
+
+void Refcounted::Unref()
+{
+	if ( !--refcount )
+		delete this;
+}
+
+} // namespace Sortix

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of Sortix.
 
@@ -25,24 +25,24 @@
 #ifndef SORTIX_REFCOUNT_H
 #define SORTIX_REFCOUNT_H
 
-namespace Sortix
+namespace Sortix {
+
+class Refcounted
 {
-	class Refcounted
-	{
-	public:
-		Refcounted();
-		~Refcounted();
+public:
+	Refcounted();
+	~Refcounted();
 
-	public:
-		void Refer();
-		void Unref();
-		inline size_t Refcount() const { return refcount; }
+public:
+	void Refer();
+	void Unref();
+	inline size_t Refcount() const { return refcount; }
 
-	private:
-		size_t refcount;
+private:
+	size_t refcount;
 
-	};
-}
+};
+
+} // namespace Sortix
 
 #endif
-
