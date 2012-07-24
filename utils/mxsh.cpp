@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
+#include <termios.h>
 
 int status = 0;
 
@@ -39,6 +40,19 @@ void updatepwd()
 	const char* wd = getcwd(cwd, CWD_SIZE);
 	if ( !wd ) { wd = "?"; }
 	setenv("PWD", wd, 1);
+}
+
+void updateenv()
+{
+	char str[128];
+	struct winsize ws;
+	if ( tcgetwinsize(0, &ws) == 0 )
+	{
+		sprintf(str, "%zu", ws.ws_col);
+		setenv("COLUMNS", str, 1);
+		sprintf(str, "%zu", ws.ws_row);
+		setenv("LINES", str, 1);
+	}
 }
 
 int runcommandline(const char** tokens)
@@ -192,6 +206,7 @@ readcmd:
 		}
 	}
 
+	updateenv();
 	char statusstr[32];
 	sprintf(statusstr, "%i", status);
 	setenv("?", statusstr, 1);
