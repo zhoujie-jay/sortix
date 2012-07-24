@@ -65,6 +65,22 @@ size_t TextTerminal::Print(const char* string, size_t stringlen)
 	return stringlen;
 }
 
+size_t TextTerminal::Width() const
+{
+	TextBuffer* textbuf = textbufhandle->Acquire();
+	size_t width = textbuf->Width();
+	textbufhandle->Release(textbuf);
+	return width;
+}
+
+size_t TextTerminal::Height() const
+{
+	TextBuffer* textbuf = textbufhandle->Acquire();
+	size_t height = textbuf->Height();
+	textbufhandle->Release(textbuf);
+	return height;
+}
+
 void TextTerminal::PutChar(TextBuffer* textbuf, char c)
 {
 	if ( ansimode )

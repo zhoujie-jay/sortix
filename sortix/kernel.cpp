@@ -99,6 +99,16 @@ static size_t PrintToTextTerminal(void* user, const char* str, size_t len)
 	return ((TextTerminal*) user)->Print(str, len);
 }
 
+static size_t TextTermWidth(void* user)
+{
+	return ((TextTerminal*) user)->Width();
+}
+
+static size_t TextTermHeight(void* user)
+{
+	return ((TextTerminal*) user)->Height();
+}
+
 extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 {
 	// Initialize system calls.
@@ -119,7 +129,7 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	TextTerminal textterm(&textbufhandle);
 
 	// Register the text terminal as the kernel log and initialize it.
-	Log::Init(PrintToTextTerminal, &textterm);
+	Log::Init(PrintToTextTerminal, TextTermWidth, TextTermHeight, &textterm);
 
 	// Display the boot welcome screen.
 	DoWelcome();

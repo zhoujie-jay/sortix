@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of Sortix.
 
@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/termios.h>
 #include <libmaxsi/error.h>
 #include "syscall.h"
 #include "process.h"
@@ -63,11 +64,29 @@ namespace Sortix
 		return 1;
 	}
 
+	int SysTCGetWinSize(int fd, struct winsize* ws)
+	{
+		Process* process = CurrentProcess();
+		Device* dev = process->descriptors.Get(fd);
+		if ( !dev ) { Error::Set(EBADF); return -1; }
+		if ( !dev->IsType(Device::TERMINAL) ) { Error::Set(ENOTTY); return -1; }
+		DevTerminal* term = (DevTerminal*) dev;
+		struct winsize ret;
+		ret.ws_col = term->GetWidth();
+		ret.ws_row = term->GetHeight();
+		ret.ws_xpixel = 0; // Not supported by DevTerminal interface.
+		ret.ws_ypixel = 0; // Not supported by DevTerminal interface.
+		// TODO: Check that ws is a valid user-space pointer.
+		*ws = ret;
+		return 0;
+	}
+
 	void Terminal::Init()
 	{
 		Syscall::Register(SYSCALL_SETTERMMODE, (void*) SysSetTermMode);
 		Syscall::Register(SYSCALL_GETTERMMODE, (void*) SysGetTermMode);
 		Syscall::Register(SYSCALL_ISATTY, (void*) SysIsATTY);
+		Syscall::Register(SYSCALL_TCGETWINSIZE, (void*) SysTCGetWinSize);
 	}
 }
 

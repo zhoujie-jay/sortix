@@ -43,6 +43,7 @@ process.o \
 thread.o \
 io.o \
 ioleast.o \
+winsize.o \
 terminal.o \
 kernelinfo.o \
 init.o \

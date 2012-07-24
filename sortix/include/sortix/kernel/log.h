@@ -1,26 +1,26 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
-	This file is part of Sortix.
+	This file is part of LibMaxsi.
 
-	Sortix is free software: you can redistribute it and/or modify it under the
-	terms of the GNU General Public License as published by the Free Software
-	Foundation, either version 3 of the License, or (at your option) any later
-	version.
+	LibMaxsi is free software: you can redistribute it and/or modify it under
+	the terms of the GNU Lesser General Public License as published by the Free
+	Software Foundation, either version 3 of the License, or (at your option)
+	any later version.
 
-	Sortix is distributed in the hope that it will be useful, but WITHOUT ANY
+	LibMaxsi is distributed in the hope that it will be useful, but WITHOUT ANY
 	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU Lesser General Public License
+	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
 	log.h
 	A system for logging various messages to the kernel log.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef SORTIX_LOG_H
 #define SORTIX_LOG_H
@@ -33,13 +33,28 @@ namespace Sortix
 	namespace Log
 	{
 		extern Maxsi::Format::Callback deviceCallback;
+		extern size_t (*deviceWidth)(void*);
+		extern size_t (*deviceHeight)(void*);
 		extern void* devicePointer;
 
-		void Init(Maxsi::Format::Callback callback, void* user);
+		void Init(Maxsi::Format::Callback callback,
+		          size_t (*widthfunc)(void*),
+		          size_t (*heightfunc)(void*),
+		          void* user);
 
 		inline void Flush()
 		{
 			if ( deviceCallback ) { deviceCallback(devicePointer, NULL, 0); }
+		}
+
+		inline size_t Width()
+		{
+			return deviceWidth(devicePointer);
+		}
+
+		inline size_t Height()
+		{
+			return deviceHeight(devicePointer);
 		}
 
 		inline size_t Print(const char* str)

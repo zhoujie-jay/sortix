@@ -35,6 +35,8 @@ public:
 	TextTerminal(TextBufferHandle* textbufhandle);
 	~TextTerminal();
 	size_t Print(const char* string, size_t stringlen);
+	size_t Width() const;
+	size_t Height() const;
 
 private:
 	void PutChar(TextBuffer* textbuf, char c);
@@ -48,7 +50,7 @@ private:
 	void Reset();
 
 private:
-	TextBufferHandle* textbufhandle;
+	mutable TextBufferHandle* textbufhandle;
 	uint8_t vgacolor;
 	unsigned column;
 	unsigned line;

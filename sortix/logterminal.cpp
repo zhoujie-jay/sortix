@@ -96,12 +96,12 @@ namespace Sortix
 
 	unsigned LogTerminal::GetWidth() const
 	{
-		return 80U;
+		return (unsigned) Log::Width();
 	}
 
 	unsigned LogTerminal::GetHeight() const
 	{
-		return 25U;
+		return (unsigned) Log::Height();
 	}
 
 	void LogTerminal::OnKeystroke(Keyboard* kb, void* /*user*/)

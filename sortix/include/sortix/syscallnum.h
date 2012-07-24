@@ -74,7 +74,8 @@
 #define SYSCALL_PREAD 49
 #define SYSCALL_PWRITE 50
 #define SYSCALL_SFORKR 51
-#define SYSCALL_MAX_NUM 52 /* index of highest constant + 1 */
+#define SYSCALL_TCGETWINSIZE 52
+#define SYSCALL_MAX_NUM 53 /* index of highest constant + 1 */
 
 #endif
 

@@ -35,6 +35,8 @@ namespace Sortix
 	namespace Log
 	{
 		Maxsi::Format::Callback deviceCallback = NULL;
+		size_t (*deviceWidth)(void*) = NULL;
+		size_t (*deviceHeight)(void*) = NULL;
 		void* devicePointer = NULL;
 
 		size_t SysPrintString(const char* str)
@@ -44,9 +46,14 @@ namespace Sortix
 			return Print(str);
 		}
 
-		void Init(Maxsi::Format::Callback callback, void* user)
+		void Init(Maxsi::Format::Callback callback,
+		          size_t (*widthfunc)(void*),
+		          size_t (*heightfunc)(void*),
+		          void* user)
 		{
 			deviceCallback = callback;
+			deviceWidth = widthfunc;
+			deviceHeight = heightfunc;
 			devicePointer = user;
 
 			Syscall::Register(SYSCALL_PRINT_STRING, (void*) SysPrintString);
