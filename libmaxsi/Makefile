@@ -42,7 +42,6 @@ sortix-sound.o \
 readparamstring.o \
 process.o \
 thread.o \
-io.o \
 ioleast.o \
 winsize.o \
 terminal.o \
@@ -66,6 +65,34 @@ sort.o \
 string.o \
 error.o \
 format.o \
+access.o \
+chdir.o \
+chmod.o \
+close.o \
+dup.o \
+errorprint.o \
+fchmod.o \
+fcntl.o \
+fstat.o \
+ftruncate.o \
+getcwd.o \
+getdtablesize.o \
+lseek.o \
+mbtowc.o \
+mkdir.o \
+mktemp.o \
+open.o \
+pipe.o \
+print.o \
+read.o \
+readdirents.o \
+rmdir.o \
+scan.o \
+stat.o \
+truncate.o \
+umask.o \
+unlink.o \
+write.o \
 
 UNPROCHEADERDIRS:=$(shell find include -type d)
 UNPROCHEADERS:=$(shell find include -type f)
