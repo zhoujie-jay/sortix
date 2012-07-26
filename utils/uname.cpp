@@ -34,7 +34,7 @@ const unsigned long PRINT_KERNELREL = 1UL << 2UL;
 const unsigned long PRINT_KERNELVER = 1UL << 3UL;
 const unsigned long PRINT_MACHINE = 1UL << 4UL;
 const unsigned long PRINT_PROCESSOR = 1UL << 5UL;
-const unsigned long PRINT_HARDWARE = 1UL << 6UL;
+const unsigned long PRINT_HWPLATFORM = 1UL << 6UL;
 const unsigned long PRINT_OPSYS = 1UL << 7UL;
 
 const size_t INFOBUFSIZE = 256UL;
@@ -109,7 +109,7 @@ void DoPrint(const char* msg)
 
 void Usage(FILE* fp, const char* argv0)
 {
-	fprintf(fp, "Usage: %s [OPTION]...\n");
+	fprintf(fp, "Usage: %s [OPTION]...\n", argv0);
 	fprintf(fp, "Print certain system information.\n");
 }
 
@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
 				case 'v': flags |= PRINT_KERNELVER; break;
 				case 'm': flags |= PRINT_MACHINE; break;
 				case 'p': flags |= PRINT_PROCESSOR; break;
-				case 'i': flags |= PRINT_HARDWARE; break;
+				case 'i': flags |= PRINT_HWPLATFORM; break;
 				case 'o': flags |= PRINT_OPSYS; break;
 				default:
 					fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, arg[i]);
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
 		else if ( !strcmp(arg, "--processor") )
 			flags |= PRINT_PROCESSOR;
 		else if ( !strcmp(arg, "--hardware-platform") )
-			flags |= PRINT_HARDWARE;
+			flags |= PRINT_HWPLATFORM;
 		else if ( !strcmp(arg, "--operating-system") )
 			flags |= PRINT_OPSYS;
 		else if ( !strcmp(arg, "--help") ) { Help(stdout, argv0); exit(0); }
@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
 		DoPrint(GetMachine());
 	if ( flags & PRINT_PROCESSOR )
 		DoPrint(GetProcessor());
-	if ( flags & PRINT_HARDWARE )
+	if ( flags & PRINT_HWPLATFORM )
 		DoPrint(GetHardwarePlatform());
 	if ( flags & PRINT_OPSYS )
 		DoPrint(GetOperatingSystem());
