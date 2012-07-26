@@ -33,7 +33,7 @@ namespace Maxsi
 {
 	namespace String
 	{
-		DUAL_FUNCTION(size_t, strlen, Length, (const char* String))
+		size_t Length(const char* String)
 		{
 			size_t Result = 0;
 
@@ -45,14 +45,7 @@ namespace Maxsi
 			return Result;
 		}
 
-		extern "C" size_t strnlen(const char* str, size_t maxlen)
-		{
-			size_t result;
-			for ( result = 0; maxlen - result && str[result]; result++ ) { }
-			return result;
-		}
-
-		DUAL_FUNCTION(char*, strcpy, Copy, (char* Dest, const char* Src))
+		char* Copy(char* Dest, const char* Src)
 		{
 			char* OriginalDest = Dest;
 
@@ -67,15 +60,7 @@ namespace Maxsi
 			return OriginalDest;
 		}
 
-		extern "C" char* strncpy(char* dest, const char* src, size_t len)
-		{
-			size_t i;
-			for ( i = 0; i < len && src[i]; i++ ) { dest[i] = src[i]; }
-			for ( ; i < len; i++ ) { dest[i] = '\0'; }
-			return dest;
-		}
-
-		DUAL_FUNCTION(char*, strcat, Cat, (char* Dest, const char* Src))
+		char* Cat(char* Dest, const char* Src)
 		{
 			char* OriginalDest = Dest;
 
@@ -92,20 +77,7 @@ namespace Maxsi
 			return OriginalDest;
 		}
 
-		extern "C" char* strncat(char* dest, const char* src, size_t len)
-		{
-			size_t destlen = Length(dest);
-			size_t i;
-
-			for ( i = 0; i < len && src[i]; i++ )
-			{
-				dest[destlen + i] = src[i];
-			}
-			dest[destlen+i] = 0;
-			return dest;
-		}
-
-		DUAL_FUNCTION(int, strcmp, Compare, (const char* A, const char* B))
+		int Compare(const char* A, const char* B)
 		{
 			while ( true )
 			{
@@ -116,7 +88,7 @@ namespace Maxsi
 			}
 		}
 
-		DUAL_FUNCTION(int, strncmp, CompareN, (const char* A, const char* B, size_t MaxLength))
+		int CompareN(const char* A, const char* B, size_t MaxLength)
 		{
 			while ( MaxLength-- )
 			{
@@ -129,39 +101,7 @@ namespace Maxsi
 			return 0;
 		}
 
-#ifndef SORTIX_KERNEL
-		inline int charcasecmp(char a, char b)
-		{
-			return tolower(a) == tolower(b);
-		}
-
-		extern "C" int strcasecmp(const char* a, const char* b)
-		{
-			while ( true )
-			{
-				char achar = *a++;
-				char bchar = *b++;
-				if ( !achar && !bchar ) { return 0; }
-				int cmp = charcasecmp(achar, bchar);
-				if ( cmp ) { return cmp; }
-			}
-		}
-
-		extern "C" int strncasecmp(const char* a, const char* b, size_t n)
-		{
-			while ( n-- )
-			{
-				char achar = *a++;
-				char bchar = *b++;
-				if ( !achar && !bchar ) { return 0; }
-				int cmp = charcasecmp(achar, bchar);
-				if ( cmp ) { return cmp; }
-			}
-			return 0;
-		}
-#endif
-
-		DUAL_FUNCTION(size_t, strspn, Accept, (const char* str, const char* accept))
+		size_t Accept(const char* str, const char* accept)
 		{
 			size_t acceptlen = 0;
 			while ( accept[acceptlen] ) { acceptlen++; }
@@ -180,7 +120,7 @@ namespace Maxsi
 			}
 		}
 
-		DUAL_FUNCTION(size_t, strcspn, Reject, (const char* str, const char* reject))
+		size_t Reject(const char* str, const char* reject)
 		{
 			size_t rejectlen = 0;
 			while ( reject[rejectlen] ) { rejectlen++; }
@@ -199,14 +139,7 @@ namespace Maxsi
 			}
 		}
 
-		extern "C" char* strpbrk(const char* str, const char* accept)
-		{
-			size_t rejectlen = Reject(str, accept);
-			if ( !str[rejectlen] ) { return NULL; }
-			return (char*) str + rejectlen;
-		}
-
-		DUAL_FUNCTION(char*, strtok_r, TokenizeR, (char* str, const char* delim, char** saveptr))
+		char* TokenizeR(char* str, const char* delim, char** saveptr)
 		{
 			if ( !str && !*saveptr ) { return NULL; }
 			if ( !str ) { str = *saveptr; }
@@ -219,13 +152,13 @@ namespace Maxsi
 			return str;
 		}
 
-		DUAL_FUNCTION(char*, strtok, TokenizeR, (char* str, const char* delim))
+		char* Tokenize(char* str, const char* delim)
 		{
 			static char* lasttokensaveptr = NULL;
 			return TokenizeR(str, delim, &lasttokensaveptr);
 		}
 
-		DUAL_FUNCTION(char*, strchrnul, SeekNul, (const char* str, int c))
+		char* SeekNul(const char* str, int c)
 		{
 			while ( *str )
 			{
@@ -235,7 +168,7 @@ namespace Maxsi
 			return (char*) str;
 		}
 
-		DUAL_FUNCTION(char*, strrchr, SeekReverse, (const char* str, int c))
+		char* SeekReverse(const char* str, int c)
 		{
 			const char* last = NULL;
 			while ( *str )
@@ -246,7 +179,7 @@ namespace Maxsi
 			return (char*) last;
 		}
 
-		DUAL_FUNCTION(char*, strchr, Seek, (const char* str, int c))
+		char* Seek(const char* str, int c)
 		{
 			char* result = SeekNul(str, c);
 			if ( !*result ) { return NULL; }
@@ -277,7 +210,7 @@ namespace Maxsi
 			return dest;
 		}
 
-		DUAL_FUNCTION(int, atoi, ToInt, (const char* str))
+		int ToInt(const char* str)
 		{
 			bool negative = ( *str == '-' );
 			if ( negative ) { str++; }
@@ -291,49 +224,6 @@ namespace Maxsi
 			return (negative) ? -result : result;
 		}
 
-		extern "C" int strcoll(const char* s1, const char* s2)
-		{
-			// TODO: Pay attention to locales.
-			return Compare(s1, s2);
-		}
-
-		extern "C" char* stpcpy(char* s1, const char* s2)
-		{
-			char* result = Copy(s1, s2);
-			result += Length(s1);
-			return result;
-		}
-
-		// TODO: This simple and hacky implementation runs in O(N^2) even though
-		// this problem can be solved in O(N).
-		extern "C" char* strstr(const char* haystack, const char* needle)
-		{
-			if ( !needle[0] ) { return (char*) haystack; }
-			for ( size_t i = 0; haystack[i]; i++ )
-			{
-				bool diff = false;
-				for ( size_t j = 0; needle[j]; j++ )
-				{
-					if ( haystack[i+j] != needle[j] ) { diff = true; break; }
-				}
-				if ( diff ) { continue; }
-				return (char*) haystack + i;
-			}
-			return NULL;
-		}
-
-#ifndef SORTIX_KERNEL
-		extern "C" char* strdup(const char* input)
-		{
-			size_t inputsize = strlen(input);
-			char* result = (char*) malloc(inputsize + 1);
-			if ( result == NULL ) { return NULL; }
-			memcpy(result, input, inputsize + 1);
-			return result;
-		}
-#endif
-
-#if 1
 		char* Combine(size_t NumParameters, ...)
 		{
 			va_list param_pt;
@@ -376,6 +266,5 @@ namespace Maxsi
 
 			return Result;
 		}
-#endif
 	}
 }

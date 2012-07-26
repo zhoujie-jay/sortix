@@ -93,6 +93,28 @@ truncate.o \
 umask.o \
 unlink.o \
 write.o \
+stpcpy.o \
+strcasecmp.o \
+strcat.o \
+strchr.o \
+strchrnul.o \
+strcmp.o \
+strcoll.o \
+strcpy.o \
+strcspn.o \
+strdup.o \
+strlen.o \
+strncasecmp.o \
+strncat.o \
+strncmp.o \
+strncpy.o \
+strnlen.o \
+strpbrk.o \
+strrchr.o \
+strspn.o \
+strstr.o \
+strtok.o \
+strtok_r.o \
 
 UNPROCHEADERDIRS:=$(shell find include -type d)
 UNPROCHEADERS:=$(shell find include -type f)

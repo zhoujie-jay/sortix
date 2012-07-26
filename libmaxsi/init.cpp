@@ -25,9 +25,9 @@
 
 #include <libmaxsi/platform.h>
 #include <libmaxsi/signal.h>
-#include <libmaxsi/string.h>
 #include <libmaxsi/io.h>
 #include <libmaxsi/memory.h>
+#include <string.h>
 
 namespace Maxsi
 {
@@ -40,9 +40,7 @@ namespace Maxsi
 	extern "C" void initialize_standard_library(int argc, char* argv[])
 	{
 		if ( argc )
-		{
-			String::Copy(program_invocation_name, argv[0]);
-		}
+			strcpy(program_invocation_name, argv[0]);
 
 		// Initialize stuff such as errno.
 		init_error_functions();
