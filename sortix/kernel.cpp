@@ -27,6 +27,7 @@
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/textbuffer.h>
+#include <sortix/kernel/pci.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/format.h>
@@ -42,7 +43,7 @@
 #include "process.h"
 #include "scheduler.h"
 #include "syscall.h"
-#include "pci.h"
+#include "ata.h"
 #include "com.h"
 #include "uart.h"
 #include "vgatextbuffer.h"
@@ -217,6 +218,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	// Search for PCI devices and load their drivers.
 	PCI::Init();
+
+	// Initialize ATA devices.
+	ATA::Init();
 
 	// Alright, now the system's drivers are loaded and initialized. It is
 	// time to load the initial user-space programs and start execution of
