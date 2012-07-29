@@ -29,6 +29,7 @@
 #include <string.h>
 #include <errno.h>
 #include <error.h>
+#include <termios.h>
 
 const int MODE_QUIT = 1;
 const int MODE_TEXT = 2;
@@ -442,6 +443,15 @@ void run()
 int main(int argc, char* argv[])
 {
 	if ( !isatty(1) ) { error(1, errno, "stdout must be a tty"); return 1; }
+	struct winsize ws;
+	if ( tcgetwinsize(1, &ws) != 0 )
+		error(1, errno, "tcgetwinsize");
+	if ( ws.ws_col != 80 || ws.ws_row != 25 )
+	{
+		fprintf(stderr, "Sorry, this application only works with 80x25 "
+		                "terminal resolutions, please fix it. :)\n");
+		exit(1);
+	}
 
 	if ( argc < 2 )
 	{
