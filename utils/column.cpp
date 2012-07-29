@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <error.h>
 #include <string.h>
+#include <termios.h>
 
 int termwidth = 80;
 
@@ -111,6 +112,10 @@ void version(const char* argv0)
 
 int main(int argc, char* argv[])
 {
+	struct winsize ws;
+	if ( tcgetwinsize(1, &ws) == 0 )
+		termwidth = ws.ws_col;
+
 	const char* argv0 = argv[0];
 
 	for ( int i = 1; i < argc; i++ )
