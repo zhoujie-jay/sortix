@@ -57,9 +57,9 @@ static TextChar EntryToTextChar(uint16_t entry)
 
 static uint16_t CharToTextEntry(TextChar c)
 {
-	return (uint16_t) c.c | (uint16_t) c.vgacolor << 8U;
+	unsigned char uc = c.c;
+	return (uint16_t) uc | (uint16_t) c.vgacolor << 8U;
 }
-
 
 bool VGATextBuffer::UsablePosition(TextPos pos) const
 {
