@@ -49,6 +49,7 @@ namespace Sortix
 			doublepanic = true;
 			return;
 		}
+		panicing = true;
 		if ( longpanic )
 		{
 			Log::Print("\e[m\e[31;40m\e[2J\e[H");
@@ -80,7 +81,6 @@ namespace Sortix
 			Log::Print("\e[m\e[31m\e[0J");
 			Log::Print("RED MAXSI OF DEATH\n");
 		}
-		panicing = true;
 	}
 
 	void PanicCalltrace()
