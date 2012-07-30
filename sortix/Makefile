@@ -114,6 +114,7 @@ textterminal.o \
 serialterminal.o \
 textbuffer.o \
 vgatextbuffer.o \
+lfbtextbuffer.o \
 descriptors.o \
 device.o \
 refcount.o \
