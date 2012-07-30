@@ -86,7 +86,7 @@ namespace Sortix
 			if ( pat & 0x4 ) { result |= PML_PAT; }
 			return result;
 		}
-		bool Map(addr_t physical, addr_t mapto, int prot, addr_t mtype);
+		bool MapPAT(addr_t physical, addr_t mapto, int prot, addr_t mtype);
 		addr_t ProtectionToPMLFlags(int prot);
 		int PMLFlagsToProtection(addr_t flags);
 	}
