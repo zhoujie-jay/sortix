@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -11,8 +11,8 @@
 
 	LibMaxsi is distributed in the hope that it will be useful, but WITHOUT ANY
 	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
-	more details.
+	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+	details.
 
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
@@ -20,7 +20,7 @@
 	stdio.h
 	Standard buffered input/output.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef	_STDIO_H
 #define	_STDIO_H 1
@@ -167,6 +167,10 @@ void funregister(FILE* fp);
 FILE* fnewfile(void);
 int fcloseall(void);
 int fpipe(FILE* pipes[2]);
+/* Internally used by standard library. */
+#if defined(LIBMAXSI_LIBRARY)
+extern FILE* _firstfile;
+#endif
 #endif
 
 #if __SORTIX_STDLIB_REDIRECTS

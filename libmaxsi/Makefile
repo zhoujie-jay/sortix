@@ -31,7 +31,6 @@ ASFLAGS=$(CPUASFLAGS)
 OBJS=\
 ctype.o \
 crc32.o \
-file.o \
 fdio.o \
 fpipe.o \
 stdio.o \
@@ -115,6 +114,40 @@ strspn.o \
 strstr.o \
 strtok.o \
 strtok_r.o \
+clearerr.o \
+fbufsize.o \
+fclose.o \
+fcloseall.o \
+feof.o \
+ferror.o \
+fflush.o \
+fgetc.o \
+fgets.o \
+fileno.o \
+flbf.o \
+flushlfb.o \
+fnewline.o \
+fpending.o \
+fpurge.o \
+fputc.o \
+fputs.o \
+fread.o \
+freadable.o \
+freading.o \
+fregister.o \
+fseek.o \
+fseeko.o \
+fseterr.o \
+fsetlocking.o \
+ftell.o \
+ftello.o \
+fwritable.o \
+fwrite.o \
+fwriting.o \
+getc.o \
+putc.o \
+rewind.o \
+ungetc.o \
 
 UNPROCHEADERDIRS:=$(shell find include -type d)
 UNPROCHEADERS:=$(shell find include -type f)
