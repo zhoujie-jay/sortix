@@ -27,7 +27,7 @@
 
 extern "C" int strncasecmp(const char* a, const char* b, size_t maxcount)
 {
-	while ( --maxcount )
+	while ( maxcount-- )
 	{
 		char ac = tolower(*a++), bc = tolower(*b++);
 		if ( ac == '\0' && bc == '\0' )

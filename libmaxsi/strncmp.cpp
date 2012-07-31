@@ -26,7 +26,7 @@
 
 extern "C" int strncmp(const char* a, const char* b, size_t maxcount)
 {
-	while ( --maxcount )
+	while ( maxcount-- )
 	{
 		char ac = *a++, bc = *b++;
 		if ( ac == '\0' && bc == '\0' )
