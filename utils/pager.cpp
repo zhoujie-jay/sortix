@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <error.h>
+#include <termios.h>
 
 char* stdinargv[2];
 
@@ -52,8 +53,11 @@ int main(int argc, char* argv[])
 	close(0);
 	int ttyfd = open("/dev/tty", O_RDONLY);
 	if ( ttyfd != 0 ) { perror("/dev/tty"); return 1; }
-	const int HEIGHT = 25;
-	const int WIDTH = 80;
+	struct winsize ws;
+	if ( tcgetwinsize(0, &ws) )
+		error(1, errno, "tcgetwinsize");
+	const int HEIGHT = ws.ws_row;
+	const int WIDTH = ws.ws_col;
 	int linesleft = HEIGHT-1;
 	int result = 0;
 	size_t charleft = WIDTH;
