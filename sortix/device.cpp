@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,15 +14,16 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	device.cpp
 	A base class for all devices.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/kthread.h>
 #include <libmaxsi/memory.h>
 #include "device.h"
 
@@ -30,6 +31,7 @@ namespace Sortix
 {
 	Device::Device()
 	{
+		refcountlock = KTHREAD_MUTEX_INITIALIZER;
 		refcount = 0;
 	}
 
@@ -40,11 +42,17 @@ namespace Sortix
 
 	void Device::Unref()
 	{
-		if ( --refcount == 0 || refcount == SIZE_MAX ) { delete this; }
+		bool shoulddelete = false;
+		kthread_mutex_lock(&refcountlock);
+		shoulddelete = --refcount == 0 || refcount == SIZE_MAX;
+		kthread_mutex_unlock(&refcountlock);
+		if ( shoulddelete )
+			delete this;
 	}
 
 	void Device::Refer()
 	{
+		ScopedLock lock(&refcountlock);
 		refcount++;
 	}
 }
