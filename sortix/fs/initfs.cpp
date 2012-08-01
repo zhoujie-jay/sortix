@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/kthread.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
@@ -53,6 +54,7 @@ namespace Sortix
 		size_t offset;
 		const byte* buffer;
 		size_t buffersize;
+		kthread_mutex_t filelock;
 
 	public:
 		virtual size_t BlockSize();
@@ -73,6 +75,7 @@ namespace Sortix
 		this->buffer = buffer;
 		this->buffersize = buffersize;
 		this->offset = 0;
+		this->filelock = KTHREAD_MUTEX_INITIALIZER;
 	}
 
 	DevInitFSFile::~DevInitFSFile()
@@ -92,11 +95,13 @@ namespace Sortix
 
 	uintmax_t DevInitFSFile::Position()
 	{
+		ScopedLock lock(&filelock);
 		return offset;
 	}
 
 	bool DevInitFSFile::Seek(uintmax_t position)
 	{
+		ScopedLock lock(&filelock);
 		if ( SIZE_MAX < position ) { Error::Set(EOVERFLOW); return false; }
 		offset = position;
 		return true;
@@ -110,6 +115,7 @@ namespace Sortix
 
 	ssize_t DevInitFSFile::Read(byte* dest, size_t count)
 	{
+		ScopedLock lock(&filelock);
 		if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
 		size_t available = count;
 		if ( buffersize < offset + count ) { available = buffersize - offset; }
