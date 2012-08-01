@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of Sortix.
 
@@ -14,18 +14,22 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
+
 
 	logterminal.h
 	A simple terminal that writes to the kernel log.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef SORTIX_LOGTERMINAL_H
 #define SORTIX_LOGTERMINAL_H
 
+#include <sortix/kernel/kthread.h>
+#ifdef GOT_FAKE_KTHREAD
 #include "event.h"
+#endif
 #include "stream.h"
 #include "terminal.h"
 #include "keyboard.h"
@@ -62,10 +66,16 @@ namespace Sortix
 		void CommitLineBuffer();
 
 	private:
+		mutable kthread_mutex_t termlock;
+		kthread_cond_t datacond;
+		size_t numwaiting;
+		size_t numeofs;
 		Keyboard* keyboard;
 		KeyboardLayout* kblayout;
 		LineBuffer linebuffer;
+#ifdef GOT_FAKE_KTHREAD
 		Event queuecommitevent;
+#endif
 		size_t partiallywritten;
 		unsigned mode;
 		bool control;

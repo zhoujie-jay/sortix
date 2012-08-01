@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of Sortix.
 
@@ -14,21 +14,21 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	logterminal.cpp
 	A simple terminal that writes to the kernel log.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/keycodes.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "utf8.h"
 #include "keyboard.h"
 #include "scheduler.h"
-#include <sortix/keycodes.h>
 #include "terminal.h"
 #include "logterminal.h"
 
@@ -55,6 +55,10 @@ namespace Sortix
 		           | TERMMODE_UTF8
 		           | TERMMODE_LINEBUFFER
 		           | TERMMODE_ECHO;
+		this->termlock = KTHREAD_MUTEX_INITIALIZER;
+		this->datacond = KTHREAD_COND_INITIALIZER;
+		this->numwaiting = 0;
+		this->numeofs = 0;
 		keyboard->SetOwner(this, NULL);
 	}
 
@@ -66,6 +70,7 @@ namespace Sortix
 
 	bool LogTerminal::SetMode(unsigned newmode)
 	{
+		ScopedLock lock(&termlock);
 		unsigned oldmode = mode;
 		if ( oldmode & ~SUPPORTED_MODES ) { Error::Set(ENOSYS); return false; }
 		bool oldutf8 = mode & TERMMODE_UTF8;
@@ -79,18 +84,21 @@ namespace Sortix
 
 	bool LogTerminal::SetWidth(unsigned width)
 	{
+		ScopedLock lock(&termlock);
 		if ( width != GetWidth() ) { Error::Set(ENOTSUP); return false; }
 		return true;
 	}
 
 	bool LogTerminal::SetHeight(unsigned height)
 	{
+		ScopedLock lock(&termlock);
 		if ( height != GetHeight() ) { Error::Set(ENOTSUP); return false; }
 		return true;
 	}
 
 	unsigned LogTerminal::GetMode() const
 	{
+		ScopedLock lock(&termlock);
 		return mode;
 	}
 
@@ -116,6 +124,8 @@ namespace Sortix
 	{
 		if ( !kbkey ) { return; }
 
+		ScopedLock lock(&termlock);
+
 		if ( kbkey == KBKEY_LCTRL ) { control = true; }
 		if ( kbkey == -KBKEY_LCTRL ) { control = false; }
 		if ( mode & TERMMODE_SIGNAL && control && kbkey == KBKEY_C )
@@ -123,6 +133,21 @@ namespace Sortix
 			Scheduler::SigIntHack();
 			return;
 		}
+		if ( mode & TERMMODE_SIGNAL && control && kbkey == KBKEY_D )
+		{
+			if ( !linebuffer.CanPop() )
+			{
+				numeofs++;
+#ifdef GOT_ACTUAL_KTHREAD
+				if ( numwaiting )
+					kthread_cond_broadcast(&datacond);
+#else
+				queuecommitevent.Signal();
+#endif
+			}
+			return;
+		}
+
 
 		uint32_t unikbkey = KBKEY_ENCODE(kbkey);
 		QueueUnicode(unikbkey);
@@ -179,13 +204,40 @@ namespace Sortix
 	void LogTerminal::CommitLineBuffer()
 	{
 		linebuffer.Commit();
+#ifdef GOT_ACTUAL_KTHREAD
+		if ( numwaiting )
+			kthread_cond_broadcast(&datacond);
+#else
 		queuecommitevent.Signal();
+#endif
 	}
 
 	ssize_t LogTerminal::Read(byte* dest, size_t count)
 	{
+		ScopedLockSignal lock(&termlock);
+		if ( !lock.IsAcquired() ) { Error::Set(EINTR); return -1; }
 		size_t sofar = 0;
 		size_t left = count;
+#ifdef GOT_ACTUAL_KTHREAD
+		bool blocking = !(mode & TERMMODE_NONBLOCK);
+		while ( left && !linebuffer.CanPop() && blocking && !numeofs )
+		{
+			numwaiting++;
+			bool abort = !kthread_cond_wait_signal(&datacond, &termlock);
+			numwaiting--;
+			if ( abort ) { Error::Set(EINTR); return -1; }
+		}
+		if ( left && !linebuffer.CanPop() && !blocking && !numeofs )
+		{
+			Error::Set(EWOULDBLOCK);
+			return -1;
+		}
+#endif
+		if ( numeofs )
+		{
+			numeofs--;
+			return 0;
+		}
 		while ( left && linebuffer.CanPop() )
 		{
 			uint32_t codepoint = linebuffer.Peek();
@@ -238,6 +290,7 @@ namespace Sortix
 			if ( !partiallywritten ) { linebuffer.Pop(); }
 		}
 
+#ifdef GOT_FAKE_KTHREAD
 		// Block if no data were ready.
 		if ( !sofar )
 		{
@@ -245,6 +298,7 @@ namespace Sortix
 			else { queuecommitevent.Register(); Error::Set(EBLOCKING); }
 			return -1;
 		}
+#endif
 
 		return sofar;
 	}
