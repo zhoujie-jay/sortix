@@ -23,12 +23,13 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/panic.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/memorymanagement.h>
+#include <sortix/mman.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "multiboot.h"
-#include <sortix/kernel/panic.h>
-#include <sortix/mman.h>
-#include <sortix/kernel/memorymanagement.h>
 #include "memorymanagement.h"
 #include "syscall.h"
 #include "msr.h"
@@ -47,6 +48,7 @@ namespace Sortix
 		size_t stackreserved;
 		size_t stacklength;
 		size_t totalmem;
+		kthread_mutex_t pagelock;
 	}
 
 	namespace Memory
@@ -73,6 +75,7 @@ namespace Sortix
 			Page::stackreserved = 0;
 			Page::pagesnotonstack = 0;
 			Page::totalmem = 0;
+			Page::pagelock = KTHREAD_MUTEX_INITIALIZER;
 
 			if ( !( bootinfo->flags & MULTIBOOT_INFO_MEM_MAP ) )
 			{
@@ -279,7 +282,7 @@ namespace Sortix
 			}
 		}
 
-		bool Reserve(size_t* counter, size_t least, size_t ideal)
+		bool ReserveUnlocked(size_t* counter, size_t least, size_t ideal)
 		{
 			ASSERT(least < ideal);
 			size_t available = stackused - stackreserved;
@@ -290,14 +293,26 @@ namespace Sortix
 			return true;
 		}
 
-		bool Reserve(size_t* counter, size_t amount)
+		bool Reserve(size_t* counter, size_t least, size_t ideal)
 		{
-			return Reserve(counter, amount, amount);
+			ScopedLock lock(&pagelock);
+			return ReserveUnlocked(counter, least, ideal);
 		}
 
-		addr_t GetReserved(size_t* counter)
+		bool ReserveUnlocked(size_t* counter, size_t amount)
 		{
-			if ( !*counter ) { return false; }
+			return ReserveUnlocked(counter, amount, amount);
+		}
+
+		bool Reserve(size_t* counter, size_t amount)
+		{
+			ScopedLock lock(&pagelock);
+			return ReserveUnlocked(counter, amount);
+		}
+
+		addr_t GetReservedUnlocked(size_t* counter)
+		{
+			if ( !*counter ) { return 0; }
 			ASSERT(stackused); // After all, we did _reserve_ the memory.
 			addr_t result = STACK[--stackused];
 			ASSERT(result == AlignDown(result));
@@ -306,7 +321,13 @@ namespace Sortix
 			return result;
 		}
 
-		addr_t Get()
+		addr_t GetReserved(size_t* counter)
+		{
+			ScopedLock lock(&pagelock);
+			return GetReservedUnlocked(counter);
+		}
+
+		addr_t GetUnlocked()
 		{
 			ASSERT(stackreserved <= stackused);
 			if ( unlikely(stackreserved == stackused) )
@@ -319,11 +340,33 @@ namespace Sortix
 			return result;
 		}
 
-		void Put(addr_t page)
+		addr_t Get()
+		{
+			ScopedLock lock(&pagelock);
+			return GetUnlocked();
+		}
+
+		void PutUnlocked(addr_t page)
 		{
 			ASSERT(page == AlignDown(page));
 			ASSERT(stackused < MAXSTACKLENGTH);
 			STACK[stackused++] = page;
+		}
+
+		void Put(addr_t page)
+		{
+			ScopedLock lock(&pagelock);
+			PutUnlocked(page);
+		}
+
+		void Lock()
+		{
+			kthread_mutex_lock(&pagelock);
+		}
+
+		void Unlock()
+		{
+			kthread_mutex_unlock(&pagelock);
 		}
 	}
 

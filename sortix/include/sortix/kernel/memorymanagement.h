@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -33,10 +33,17 @@ namespace Sortix
 	namespace Page
 	{
 		bool Reserve(size_t* counter, size_t amount);
+		bool ReserveUnlocked(size_t* counter, size_t amount);
 		bool Reserve(size_t* counter, size_t least, size_t ideal);
+		bool ReserveUnlocked(size_t* counter, size_t least, size_t ideal);
 		addr_t GetReserved(size_t* counter);
+		addr_t GetReservedUnlocked(size_t* counter);
 		addr_t Get();
+		addr_t GetUnlocked();
 		void Put(addr_t page);
+		void PutUnlocked(addr_t page);
+		void Lock();
+		void Unlock();
 
 		inline size_t Size() { return 4096UL; }
 
