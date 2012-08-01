@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,15 +14,16 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	ata.cpp
 	Allowes access to block devices over ATA PIO.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/kthread.h>
 #include "cpu.h"
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
@@ -186,6 +187,7 @@ namespace Sortix
 
 	ATADrive::ATADrive(ATABus* bus, unsigned driveid, uint16_t portoffset, uint16_t altport)
 	{
+		this->atalock = KTHREAD_MUTEX_INITIALIZER;
 		this->bus = bus;
 		this->driveid = driveid;
 		this->iobase = portoffset;
@@ -264,6 +266,7 @@ namespace Sortix
 
 	bool ATADrive::ReadSector(off_t sector, uint8_t* dest)
 	{
+		ScopedLock lock(&atalock);
 		if ( !PrepareIO(false, sector) ) { return false; }
 		uint16_t* destword = (uint16_t*) dest;
 		for ( size_t i = 0; i < sectorsize/2; i++ )
@@ -277,6 +280,7 @@ namespace Sortix
 
 	bool ATADrive::WriteSector(off_t sector, const uint8_t* src)
 	{
+		ScopedLock lock(&atalock);
 		if ( !PrepareIO(true, sector) ) { return false; }
 		const uint16_t* srcword = (const uint16_t*) src;
 		for ( size_t i = 0; i < sectorsize/2; i++ )

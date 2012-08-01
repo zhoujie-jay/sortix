@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,16 +14,18 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	ata.cpp
 	Allowes access to block devices over ATA PIO.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef SORTIX_ATA_H
 #define SORTIX_ATA_H
+
+#include <sortix/kernel/kthread.h>
 
 namespace Sortix
 {
@@ -67,6 +69,7 @@ namespace Sortix
 		bool PrepareIO(bool write, off_t sector);
 
 	private:
+		kthread_mutex_t atalock;
 		unsigned driveid;
 		uint16_t meta[256];
 		uint16_t iobase;
