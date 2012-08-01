@@ -380,14 +380,14 @@ namespace Sortix
 			if ( prot & PROT_WRITE ) { result |= PML_USERSPACE | PML_WRITABLE; }
 			if ( prot & PROT_KEXEC ) { result |= 0; }
 			if ( prot & PROT_KREAD ) { result |= 0; }
-			if ( prot & PROT_KWRITE ) { result |= PML_WRITABLE; }
+			if ( prot & PROT_KWRITE ) { result |= 0; }
 			if ( prot & PROT_FORK ) { result |= PML_FORK; }
 			return result;
 		}
 
 		int PMLFlagsToProtection(addr_t flags)
 		{
-			int prot = PROT_KREAD | PROT_KEXEC;
+			int prot = PROT_KREAD | PROT_KWRITE | PROT_KEXEC;
 			bool user = flags & PML_USERSPACE;
 			bool write = flags & PML_WRITABLE;
 			if ( user ) { prot |= PROT_EXEC | PROT_READ; }
