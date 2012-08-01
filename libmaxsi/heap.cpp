@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -11,8 +11,8 @@
 
 	LibMaxsi is distributed in the hope that it will be useful, but WITHOUT ANY
 	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
-	more details.
+	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+	details.
 
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
@@ -20,7 +20,7 @@
 	heap.cpp
 	Functions that allocate/free memory from a dynamic memory heap.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <sys/mman.h>
 #include <libmaxsi/platform.h>
@@ -39,6 +39,7 @@
 
 #ifdef SORTIX_KERNEL
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/kthread.h>
 #include <sortix/kernel/log.h> // DEBUG
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/panic.h>
@@ -200,6 +201,10 @@ namespace Maxsi
 
 		struct Chunk;
 		struct Trailer;
+
+#ifdef SORTIX_KERNEL
+		Sortix::kthread_mutex_t heaplock;
+#endif
 
 		// The location where the heap originally grows from.
 		addr_t heapstart;
@@ -392,6 +397,9 @@ namespace Maxsi
 			wildernesssize = 0;
 			for ( size_t i = 0; i < NUMBINS; i++ ) { bins[i] = NULL; }
 			bincontainschunks = 0;
+#ifdef SORTIX_KERNEL
+			heaplock = Sortix::KTHREAD_MUTEX_INITIALIZER;
+#endif
 		}
 
 		// Attempts to expand the wilderness such that it contains at least
@@ -433,6 +441,10 @@ namespace Maxsi
 
 		DUAL_FUNCTION(void*, malloc, Allocate, (size_t size))
 		{
+			#ifdef SORTIX_KERNEL
+			Sortix::ScopedLock scopedlock(&heaplock);
+			#endif
+
 			#if 2 <= PARANOIA
 			ASSERT(ValidateHeap());
 			#endif
@@ -613,6 +625,10 @@ namespace Maxsi
 
 		DUAL_FUNCTION(void, free, Free, (void* addr))
 		{
+			#ifdef SORTIX_KERNEL
+			Sortix::ScopedLock scopedlock(&heaplock);
+			#endif
+
 			#if 2 <= PARANOIA
 			ASSERT(ValidateHeap());
 			#endif
