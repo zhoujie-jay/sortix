@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,13 +14,13 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	kb/ps2.cpp
 	A driver for the PS2 Keyboard.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <sortix/kernel/platform.h>
 #include <libmaxsi/memory.h>
@@ -58,6 +58,7 @@ namespace Sortix
 		this->interrupt = interrupt;
 		this->leds = 0;
 		this->scancodeescaped = false;
+		this->kblock = KTHREAD_MUTEX_INITIALIZER;
 		Interrupt::RegisterHandler(interrupt, PS2Keyboard__OnInterrupt, this);
 
 		// If any scancodes were already pending, our interrupt handler will
@@ -71,16 +72,43 @@ namespace Sortix
 		delete[] queue;
 	}
 
+	struct PS2KeyboardWork
+	{
+		PS2Keyboard* kb;
+		uint8_t scancode;
+	};
+
+	static void PS2Keyboard__InterruptWork(void* payload, size_t size)
+	{
+		ASSERT(size == sizeof(PS2KeyboardWork));
+		PS2KeyboardWork* work = (PS2KeyboardWork*) payload;
+		work->kb->InterruptWork(work->scancode);
+	}
+
 	void PS2Keyboard::OnInterrupt(CPU::InterruptRegisters* /*regs*/)
 	{
 		uint8_t scancode = PopScancode();
+#ifdef GOT_ACTUAL_KTHREAD
+		PS2KeyboardWork work;
+		work.kb = this;
+		work.scancode = scancode;
+		Interrupt::ScheduleWork(PS2Keyboard__InterruptWork, &work, sizeof(work));
+#else
+		InterruptWork(scancode);
+#endif
+	}
+
+	void PS2Keyboard::InterruptWork(uint8_t scancode)
+	{
+		kthread_mutex_lock(&kblock);
 		int kbkey = DecodeScancode(scancode);
-		if ( !kbkey ) { return; }
+		if ( !kbkey ) { kthread_mutex_unlock(&kblock); return; }
 
 		if ( !PushKey(kbkey) )
 		{
 			Log::PrintF("Warning: dropping keystroke due to insufficient "
 			            "storage space in PS2 keyboard driver.\n");
+			kthread_mutex_unlock(&kblock);
 			return;
 		}
 
@@ -91,6 +119,8 @@ namespace Sortix
 		if ( kbkey == KBKEY_NUMLOCK ) { newleds ^= LED_NUMLCK; }
 
 		if ( newleds != leds ) { UpdateLEDs(leds = newleds); }
+
+		kthread_mutex_unlock(&kblock);
 
 		NotifyOwner();
 	}
@@ -137,8 +167,10 @@ namespace Sortix
 
 	void PS2Keyboard::SetOwner(KeyboardOwner* owner, void* user)
 	{
+		kthread_mutex_lock(&kblock);
 		this->owner = owner;
 		this->ownerptr = user;
+		kthread_mutex_unlock(&kblock);
 		if ( queueused ) { NotifyOwner(); }
 	}
 
@@ -177,16 +209,19 @@ namespace Sortix
 
 	int PS2Keyboard::Read()
 	{
+		ScopedLock lock(&kblock);
 		return PopKey();
 	}
 
 	size_t PS2Keyboard::GetPending() const
 	{
+		ScopedLock lock(&kblock);
 		return queueused;
 	}
 
 	bool PS2Keyboard::HasPending() const
 	{
+		ScopedLock lock(&kblock);
 		return queueused;
 	}
 }

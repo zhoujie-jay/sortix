@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,17 +14,18 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	kb/ps2.h
 	A driver for the PS2 Keyboard.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef SORTIX_KB_PS2_H
 #define SORTIX_KB_PS2_H
 
+#include <sortix/kernel/kthread.h>
 #include "../keyboard.h"
 
 namespace Sortix
@@ -41,6 +42,7 @@ namespace Sortix
 
 	public:
 		void OnInterrupt(CPU::InterruptRegisters* regs);
+		void InterruptWork(uint8_t scancode);
 
 	private:
 		uint8_t PopScancode();
@@ -61,6 +63,7 @@ namespace Sortix
 		uint8_t interrupt;
 		bool scancodeescaped;
 		uint8_t leds;
+		mutable kthread_mutex_t kblock;
 
 	};
 }
