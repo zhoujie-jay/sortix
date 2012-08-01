@@ -25,6 +25,8 @@
 #include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
+#include "fs/util.h"
+#include "fs/devfs.h"
 #include "vga.h"
 #include "scheduler.h"
 #include "syscall.h"
@@ -129,6 +131,12 @@ void Init()
 	PrintFontChar(vgafont, 'A');
 	PrintFontChar(vgafont, 'S');
 #endif
+	DevMemoryBuffer* vgamembuf = new DevMemoryBuffer(vgafont, vgafontsize,
+	                                                 false, false);
+	if ( !vgamembuf )
+		Panic("Unable to allocate vga font filesystem object");
+	if ( !DeviceFS::RegisterDevice("vgafont", vgamembuf) )
+		Panic("Unable to register vga font filesystem object");
 }
 
 // Changes the position of the hardware cursor.
