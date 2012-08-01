@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of LibMaxsi.
 
@@ -44,7 +44,7 @@ extern "C" size_t readleast(int fd, void* buf, size_t least, size_t max)
 		void* nextbuf = (uint8_t*) buf + amount;
 		size_t nextleast = least - amount;
 		size_t nextmax = max - amount;
-		return readleast(fd, nextbuf, nextleast, nextmax);
+		amount += readleast(fd, nextbuf, nextleast, nextmax);
 	}
 	return amount;
 }
@@ -66,7 +66,7 @@ extern "C" size_t preadleast(int fd, void* buf, size_t least, size_t max,
 		size_t nextleast = least - amount;
 		size_t nextmax = max - amount;
 		off_t nextoff = off + amount;
-		return preadleast(fd, nextbuf, nextleast, nextmax, nextoff);
+		amount += preadleast(fd, nextbuf, nextleast, nextmax, nextoff);
 	}
 	return amount;
 }
@@ -86,7 +86,7 @@ extern "C" size_t writeleast(int fd, const void* buf, size_t least, size_t max)
 		const void* nextbuf = (const uint8_t*) buf + amount;
 		size_t nextleast = least - amount;
 		size_t nextmax = max - amount;
-		return writeleast(fd, nextbuf, nextleast, nextmax);
+		amount += writeleast(fd, nextbuf, nextleast, nextmax);
 	}
 	return amount;
 }
@@ -108,7 +108,7 @@ extern "C" size_t pwriteleast(int fd, const void* buf, size_t least, size_t max,
 		size_t nextleast = least - amount;
 		size_t nextmax = max - amount;
 		off_t nextoff = off + amount;
-		return pwriteleast(fd, nextbuf, nextleast, nextmax, nextoff);
+		amount += pwriteleast(fd, nextbuf, nextleast, nextmax, nextoff);
 	}
 	return amount;
 }
