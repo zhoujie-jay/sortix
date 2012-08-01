@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -23,6 +23,7 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/kthread.h>
 #include <libmaxsi/error.h>
 #include <sortix/seek.h>
 #include "thread.h"
@@ -38,6 +39,7 @@ namespace Sortix
 {
 	namespace IO
 	{
+#ifdef GOT_FAKE_KTHREAD
 		struct SysWrite_t
 		{
 			union { size_t align1; int fd; };
@@ -46,6 +48,7 @@ namespace Sortix
 		};
 
 		STATIC_ASSERT(sizeof(SysWrite_t) <= sizeof(Thread::scstate));
+#endif
 
 		ssize_t SysWrite(int fd, const byte* buffer, size_t count)
 		{
@@ -57,6 +60,7 @@ namespace Sortix
 			if ( !dev->IsType(Device::STREAM) ) { Error::Set(EBADF); return -1; }
 			DevStream* stream = (DevStream*) dev;
 			if ( !stream->IsWritable() ) { Error::Set(EBADF); return -1; }
+#ifdef GOT_FAKE_KTHREAD
 			ssize_t written = stream->Write(buffer, count);
 			if ( 0 <= written ) { return written; }
 			if ( Error::Last() != EBLOCKING ) { return -1; }
@@ -76,6 +80,9 @@ namespace Sortix
 			// Now go do something else.
 			Syscall::Incomplete();
 			return 0;
+#else
+			return stream->Write(buffer, count);
+#endif
 		}
 
 		// TODO: Not implemented yet due to stupid internal kernel design.
@@ -85,6 +92,7 @@ namespace Sortix
 			return -1;
 		}
 
+#ifdef GOT_FAKE_KTHREAD
 		struct SysRead_t
 		{
 			union { size_t align1; int fd; };
@@ -93,6 +101,7 @@ namespace Sortix
 		};
 
 		STATIC_ASSERT(sizeof(SysRead_t) <= sizeof(Thread::scstate));
+#endif
 
 		ssize_t SysRead(int fd, byte* buffer, size_t count)
 		{
@@ -104,6 +113,7 @@ namespace Sortix
 			if ( !dev->IsType(Device::STREAM) ) { Error::Set(EBADF); return -1; }
 			DevStream* stream = (DevStream*) dev;
 			if ( !stream->IsReadable() ) { Error::Set(EBADF); return -1;}
+#ifdef GOT_FAKE_KTHREAD
 			ssize_t bytesread = stream->Read(buffer, count);
 			if ( 0 <= bytesread ) { return bytesread; }
 			if ( Error::Last() != EBLOCKING ) { return -1; }
@@ -123,6 +133,9 @@ namespace Sortix
 			// Now go do something else.
 			Syscall::Incomplete();
 			return 0;
+#else
+			return stream->Read(buffer, count);
+#endif
 		}
 
 		// TODO: Not implemented yet due to stupid internal kernel design.
