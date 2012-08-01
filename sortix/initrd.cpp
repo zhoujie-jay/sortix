@@ -175,6 +175,17 @@ void CheckSum()
 	}
 	uint32_t crc32 = *((uint32_t*) filesum);
 	uint32_t filecrc32 = CRC32::Hash(initrd, amount);
+	uint32_t doublecheck = CRC32::Hash(initrd, amount);
+	if ( filecrc32 != doublecheck )
+	{
+		// Yes, this has happened. This seems like the goto place for such bugs
+		// to trigger, so I added a more accurate warning.
+		Panic("Calculating InitRD checksum two times gave different results: "
+		      "this likely means the kernel have a corruption bug, possibly "
+		      "caused by building libc and kernel with different settings or "
+		      "a bug in the scheduler/interrupt handler or who knows. "
+		      "It is also possible that the laws of logic has changed.");
+	}
 	if ( crc32 != filecrc32 )
 	{
 		PanicF("InitRD had checksum %X, expected %X: this means the ramdisk "
