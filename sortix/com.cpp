@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -23,6 +23,7 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/kthread.h>
 #include <libmaxsi/error.h>
 #include "interrupt.h"
 #include "event.h"
@@ -52,7 +53,17 @@ namespace COM {
 
 // Yet another alternative is to use POLL_HACK, but return EGAIN and let user-
 // space call retry, rather than relying on the broken syscall interstructure.
+#ifndef GOT_ACTUAL_KTHREAD
 #define POLL_EAGAIN 1
+#else
+#define POLL_EAGAIN 0
+#endif
+
+#if !POLL_EAGAIN && !POLL_HACK && defined(GOT_ACTUAL_KTHREAD)
+#error The interrupt-based code was broken in the kthread branch.
+#error You need to port this to the new thread/interrupt API.
+#warning Oh, and fix the above mentioned bugs too.
+#endif
 
 const uint16_t TXR = 0; // Transmit register
 const uint16_t RXR = 0; // Receive register
@@ -222,14 +233,18 @@ public:
 
 private:
 	uint16_t port;
+	kthread_mutex_t portlock;
+#ifdef GOT_FAKE_KTHREAD
 	Event dataevent;
 	Event sentevent;
+#endif
 
 };
 
 DevCOMPort::DevCOMPort(uint16_t port)
 {
 	this->port = port;
+	this->portlock = KTHREAD_MUTEX_INITIALIZER;
 }
 
 DevCOMPort::~DevCOMPort()
@@ -247,7 +262,16 @@ ssize_t DevCOMPort::Read(byte* dest, size_t count)
 {
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
+	ScopedLock lock(&portlock);
 
+#ifdef GOT_ACTUAL_KTHREAD
+	while ( !(CPU::InPortB(port + LSR) & LSR_READY) )
+		if ( Signal::IsPending() )
+		{
+			Error::Set(EINTR);
+			return -1;
+		}
+#else
 	uint8_t lsr;
 	for ( unsigned i = 0; i < TRIES; i++ )
 	{
@@ -265,6 +289,7 @@ ssize_t DevCOMPort::Read(byte* dest, size_t count)
 #endif
 		return -1;
 	}
+#endif
 
 	size_t sofar = 0;
 	do
@@ -281,6 +306,16 @@ ssize_t DevCOMPort::Write(const byte* src, size_t count)
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; };
 
+	ScopedLock lock(&portlock);
+
+#ifdef GOT_ACTUAL_KTHREAD
+	while ( !(CPU::InPortB(port + LSR) & LSR_THRE) )
+		if ( Signal::IsPending() )
+		{
+			Error::Set(EINTR);
+			return -1;
+		}
+#else
 	uint8_t lsr;
 	for ( unsigned i = 0; i < TRIES; i++ )
 	{
@@ -298,6 +333,7 @@ ssize_t DevCOMPort::Write(const byte* src, size_t count)
 #endif
 		return -1;
 	}
+#endif
 
 	size_t sofar = 0;
 	do
@@ -321,7 +357,11 @@ ssize_t DevCOMPort::Read(byte* dest, size_t count)
 	uint8_t lsr = CPU::InPortB(port + LSR);
 	if ( !(lsr & LSR_READY) )
 	{
+#ifdef GOT_ACTUAL_KTHREAD
+		Panic("Can't wait for com data receive event");
+#else
 		dataevent.Register();
+#endif
 		Error::Set(EBLOCKING);
 		return -1;
 	}
@@ -346,7 +386,11 @@ ssize_t DevCOMPort::Write(const byte* src, size_t count)
 	uint8_t lsr = CPU::InPortB(port + LSR);
 	if ( !(lsr & LSR_THRE) )
 	{
+#ifdef GOT_ACTUAL_KTHREAD
+		Panic("Can't wait for com data sent event");
+#else
 		sentevent.Register();
+#endif
 		Error::Set(EBLOCKING);
 		return -1;
 	}
@@ -382,10 +426,18 @@ void DevCOMPort::OnInterrupt()
 		CPU::InPortB(port + LSR);
 		break;
 	case IIR_RECV_DATA:
+#ifdef GOT_ACTUAL_KTHREAD
+		Panic("Can't wait for com data sent event");
+#else
 		dataevent.Signal();
+#endif
 		break;
 	case IIR_SENT_DATA:
+#ifdef GOT_ACTUAL_KTHREAD
+		Panic("Can't wait for com data sent event");
+#else
 		sentevent.Signal();
+#endif
 		CPU::InPortB(port + IIR);
 		break;
 	case IIR_MODEM_STATUS:
