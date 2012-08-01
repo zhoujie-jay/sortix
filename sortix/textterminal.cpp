@@ -36,6 +36,7 @@ const uint16_t ATTR_CHAR = 1U << 0U;
 TextTerminal::TextTerminal(TextBufferHandle* textbufhandle)
 {
 	this->textbufhandle = textbufhandle; textbufhandle->Refer();
+	this->termlock = KTHREAD_MUTEX_INITIALIZER;
 	Reset();
 }
 
@@ -57,6 +58,7 @@ void TextTerminal::Reset()
 
 size_t TextTerminal::Print(const char* string, size_t stringlen)
 {
+	ScopedLock lock(&termlock);
 	TextBuffer* textbuf = textbufhandle->Acquire();
 	for ( size_t i = 0; i < stringlen; i++ )
 		PutChar(textbuf, string[i]);
@@ -67,6 +69,7 @@ size_t TextTerminal::Print(const char* string, size_t stringlen)
 
 size_t TextTerminal::Width() const
 {
+	ScopedLock lock(&termlock);
 	TextBuffer* textbuf = textbufhandle->Acquire();
 	size_t width = textbuf->Width();
 	textbufhandle->Release(textbuf);
@@ -75,6 +78,7 @@ size_t TextTerminal::Width() const
 
 size_t TextTerminal::Height() const
 {
+	ScopedLock lock(&termlock);
 	TextBuffer* textbuf = textbufhandle->Acquire();
 	size_t height = textbuf->Height();
 	textbufhandle->Release(textbuf);

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -23,14 +23,16 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <libmaxsi/error.h>
+#include <libmaxsi/memory.h>
 #include "x86-family/idt.h"
 #include "interrupt.h"
+#include "scheduler.h"
+#include "syscall.h"
 
-#include "process.h" // Hack for SIGSEGV
 #include "sound.h" // Hack for SIGSEGV
-#include "thread.h" // HACK FOR SIGSEGV
-#include "syscall.h" // HACK FOR SIGSEGV
-#include "scheduler.h" // HACK FOR SIGSEGV
+
+using namespace Maxsi;
 
 namespace Sortix {
 void SysExit(int status); // HACK
@@ -53,8 +55,10 @@ const uint8_t PIC_MODE_BUF_SLAVE = 0x08; // Buffered mode/slave
 const uint8_t PIC_MODE_BUF_MASTER = 0x0C; // Buffered mode/master
 const uint8_t PIC_MODE_SFNM = 0x10; // Special fully nested (not)
 
+extern "C" { unsigned long asm_is_cpu_interrupted = 0; }
 const bool DEBUG_EXCEPTION = false;
 const bool DEBUG_IRQ = false;
+const bool DEBUG_ISR = false;
 bool initialized;
 
 const size_t NUM_KNOWN_EXCEPTIONS = 20;
@@ -237,12 +241,20 @@ void CrashHandler(CPU::InterruptRegisters* regs)
 
 	Sound::Mute();
 
-	CurrentProcess()->Exit(139);
-	Scheduler::ProcessTerminated(regs);
+	// Exit the process with the right error code.
+	// TODO: Sent a SIGINT, SIGBUS, or whatever instead.
+	SysExit(139);
 }
 
 void ISRHandler(Sortix::CPU::InterruptRegisters* regs)
 {
+	if ( DEBUG_ISR )
+	{
+		Log::PrintF("ISR%u ", regs->int_no);
+		regs->LogRegisters();
+		Log::Print("\n");
+	}
+
 	if ( regs->int_no < 32 )
 	{
 		CrashHandler(regs);
@@ -287,6 +299,109 @@ extern "C" void interrupt_handler(Sortix::CPU::InterruptRegisters* regs)
 	size_t int_no = regs->int_no;
 	if ( 32 <= int_no && int_no < 48 ) { IRQHandler(regs); }
 	else { ISRHandler(regs); }
+}
+
+// TODO: This implementation is a bit hacky and can be optimized.
+
+uint8_t* queue;
+uint8_t* storage;
+volatile size_t queueoffset;
+volatile size_t queueused;
+size_t queuesize;
+
+struct Package
+{
+	size_t size;
+	size_t payloadoffset;
+	size_t payloadsize;
+	WorkHandler handler; // TODO: May not be correctly aligned on some systems.
+	uint8_t payload[0];
+};
+
+void InitWorker()
+{
+	const size_t QUEUE_SIZE = 4UL*1024UL;
+	STATIC_ASSERT(QUEUE_SIZE % sizeof(Package) == 0);
+	queue = new uint8_t[QUEUE_SIZE];
+	if ( !queue ) { Panic("Can't allocate interrupt worker queue"); }
+	storage = new uint8_t[QUEUE_SIZE];
+	if ( !storage ) { Panic("Can't allocate interrupt worker storage"); }
+	queuesize = QUEUE_SIZE;
+	queueoffset = 0;
+	queueused = 0;
+}
+
+static void WriteToQueue(const void* src, size_t size)
+{
+	const uint8_t* buf = (const uint8_t*) src;
+	size_t writeat = (queueoffset + queueused) % queuesize;
+	size_t available = queuesize - writeat;
+	size_t count = available < size ? available : size;
+	Memory::Copy(queue + writeat, buf, count);
+	queueused += count;
+	if ( count < size ) { WriteToQueue(buf + count, size - count); }
+}
+
+static void ReadFromQueue(void* dest, size_t size)
+{
+	uint8_t* buf = (uint8_t*) dest;
+	size_t available = queuesize - queueoffset;
+	size_t count = available < size ? available : size;
+	Memory::Copy(buf, queue + queueoffset, count);
+	queueused -= count;
+	queueoffset = (queueoffset + count) % queuesize;
+	if ( count < size ) { ReadFromQueue(buf + count, size - count); }
+}
+
+static Package* PopPackage(uint8_t** payloadp, Package* /*prev*/)
+{
+	Package* package = NULL;
+	uint8_t* payload = NULL;
+	Interrupt::Disable();
+
+	if ( !queueused ) { goto out; }
+
+	package = (Package*) storage;
+	ReadFromQueue(package, sizeof(*package));
+	payload = storage + sizeof(*package);
+	ReadFromQueue(payload, package->payloadsize);
+	*payloadp = payload;
+
+out:
+	Interrupt::Enable();
+	return package;
+}
+
+void WorkerThread(void* /*user*/)
+{
+	ASSERT(Interrupt::IsEnabled());
+	uint8_t* payload = NULL;
+	Package* package = NULL;
+	while ( true )
+	{
+		package = PopPackage(&payload, package);
+		if ( !package ) { Scheduler::Yield(); continue; }
+		size_t payloadsize = package->payloadsize;
+		package->handler(payload, payloadsize);
+	}
+}
+
+bool ScheduleWork(WorkHandler handler, void* payload, size_t payloadsize)
+{
+	ASSERT(!Interrupt::IsEnabled());
+
+	Package package;
+	package.size = sizeof(package) + payloadsize;
+	package.payloadoffset = 0; // Currently unused
+	package.payloadsize = payloadsize;
+	package.handler = handler;
+
+	size_t queuefreespace = queuesize - queueused;
+	if ( queuefreespace < package.size ) { return false; }
+
+	WriteToQueue(&package, sizeof(package));
+	WriteToQueue(payload, payloadsize);
+	return true;
 }
 
 } // namespace Interrupt

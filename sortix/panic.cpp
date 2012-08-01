@@ -25,6 +25,7 @@
 #include <sortix/kernel/platform.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
+#include "interrupt.h"
 #include <sortix/kernel/log.h>
 #include "calltrace.h"
 #include <sortix/kernel/panic.h>
@@ -43,6 +44,7 @@ namespace Sortix
 
 	void PanicInit()
 	{
+		Interrupt::Disable();
 		if ( panicing )
 		{
 			Log::PrintF("Panic while panicing:\n");

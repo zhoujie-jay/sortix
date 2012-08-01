@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -11,8 +11,8 @@
 
 	LibMaxsi is distributed in the hope that it will be useful, but WITHOUT ANY
 	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
-	more details.
+	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+	details.
 
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
@@ -20,7 +20,7 @@
 	syscall.h
 	Assembly stubs for declaring system calls in libmaxsi.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifdef SORTIX_KERNEL
 #warning ===
@@ -32,6 +32,7 @@
 #define LIBMAXSI_SYSCALL_H
 
 #include <sortix/syscallnum.h>
+#include <errno.h>
 
 namespace Maxsi
 {
@@ -48,7 +49,10 @@ namespace Maxsi
 	inline type fn() \
 	{ \
 		type a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 		return a; \
 	}
 
@@ -56,7 +60,10 @@ namespace Maxsi
 	inline type fn(P1 p1) \
 	{ \
 		type a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((size_t)p1)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 		return a; \
 	}
 
@@ -64,7 +71,10 @@ namespace Maxsi
 	inline type fn(P1 p1, P2 p2) \
 	{ \
 		type a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((size_t)p1), "c" ((size_t)p2)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 		return a; \
 	}
 
@@ -72,7 +82,10 @@ namespace Maxsi
 	inline type fn(P1 p1, P2 p2, P3 p3) \
 	{ \
 		type a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((size_t)p1), "c" ((size_t)p2), "d" ((size_t)p3)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 		return a; \
 	}
 
@@ -80,15 +93,21 @@ namespace Maxsi
 	inline type fn(P1 p1, P2 p2, P3 p3, P4 p4) \
 	{ \
 		type a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((size_t)p1), "c" ((size_t)p2), "d" ((size_t)p3), "D" ((size_t)p4)); \
-	return a; \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
+		return a; \
 	}
 
 	#define DEFN_SYSCALL5(type, fn, num, P1, P2, P3, P4, P5) \
 	inline type fn(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) \
 	{ \
 		type a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((size_t)p1), "c" ((size_t)p2), "d" ((size_t)p3), "D" ((size_t)p4), "S" ((size_t)p5)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 		return a; \
 	}
 
@@ -96,14 +115,20 @@ namespace Maxsi
 	inline void fn() \
 	{ \
 		size_t a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 	}
 
 	#define DEFN_SYSCALL1_VOID(fn, num, P1) \
 	inline void fn(P1 p1) \
 	{ \
 		size_t a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((size_t)p1)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 	}
 
 	#define DEFN_SYSCALL2_VOID(fn, num, P1, P2) \
@@ -111,27 +136,38 @@ namespace Maxsi
 	{ \
 		size_t a; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((size_t)p1), "c" ((size_t)p2)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 	}
 
 	#define DEFN_SYSCALL3_VOID(fn, num, P1, P2, P3) \
 	inline void fn(P1 p1, P2 p2, P3 p3) \
 	{ \
 		size_t a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((size_t)p1), "c" ((size_t)p2), "d" ((size_t)p3)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 	}
 
 	#define DEFN_SYSCALL4_VOID(fn, num, P1, P2, P3, P4) \
 	inline void fn(P1 p1, P2 p2, P3 p3, P4 p4) \
 	{ \
 		size_t a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((size_t)p1), "c" ((size_t)p2), "d" ((size_t)p3), "D" ((size_t)p4)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 	}
 
 	#define DEFN_SYSCALL5_VOID(fn, num, P1, P2, P3, P4, P5) \
 	inline void fn(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) \
 	{ \
 		size_t a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((size_t)p1), "c" ((size_t)p2), "d" ((size_t)p3), "D" ((size_t)p4), "S" ((size_t)p5)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 	}
 
 #else
@@ -143,7 +179,10 @@ namespace Maxsi
 	type fn() \
 	{ \
 		type a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 		return a; \
 	}
 
@@ -151,7 +190,10 @@ namespace Maxsi
 	type fn(P1) \
 	{ \
 		type a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 		return a; \
 	}
 
@@ -159,7 +201,10 @@ namespace Maxsi
 	type fn(P1, P2) \
 	{ \
 		type a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 		return a; \
 	}
 
@@ -167,7 +212,10 @@ namespace Maxsi
 	type fn(P1, P2, P3) \
 	{ \
 		type a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 		return a; \
 	}
 
@@ -175,7 +223,10 @@ namespace Maxsi
 	type fn(P1, P2, P3, P4) \
 	{ \
 		type a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 		return a; \
 	}
 
@@ -183,7 +234,10 @@ namespace Maxsi
 	type fn(P1, P2, P3, P4, P5) \
 	{ \
 		type a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 		return a; \
 	}
 
@@ -191,42 +245,60 @@ namespace Maxsi
 	void fn() \
 	{ \
 		size_t a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 	}
 
 	#define DEFN_SYSCALL1_VOID(fn, num, P1) \
 	void fn(P1) \
 	{ \
 		size_t a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 	}
 
 	#define DEFN_SYSCALL2_VOID(fn, num, P1, P2) \
 	void fn(P1, P2) \
 	{ \
 		size_t a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 	}
 
 	#define DEFN_SYSCALL3_VOID(fn, num, P1, P2, P3) \
 	void fn(P1, P2, P3) \
 	{ \
 		size_t a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 	}
 
 	#define DEFN_SYSCALL4_VOID(fn, num, P1, P2, P3, P4) \
 	void fn(P1, P2, P3, P4) \
 	{ \
 		size_t a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 	}
 
 	#define DEFN_SYSCALL5_VOID(fn, num, P1, P2, P3, P4, P5) \
 	void fn(P1, P2, P3, P4, P5) \
 	{ \
 		size_t a; \
+		int reterrno; \
 		asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
+		asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
+		if ( reterrno ) { errno = reterrno; } \
 	}
 
 #endif

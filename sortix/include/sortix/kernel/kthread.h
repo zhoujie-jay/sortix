@@ -18,29 +18,39 @@
 	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	kthread.h
-	Fake header providing noop threading functions. This is simply forward
-	compatibility with the upcoming kthread branch and to ease merging.
+	Utility and synchronization mechanisms for kernel threads.
 
 *******************************************************************************/
 
 #ifndef SORTIX_KTHREAD_H
 #define SORTIX_KTHREAD_H
 
-#define GOT_FAKE_KTHREAD
-#warning Using noop kthread functions
+#include <sortix/signal.h>
+#include "../../../signal.h"
+
+#define GOT_ACTUAL_KTHREAD
 
 namespace Sortix {
 
 extern "C" {
 
+inline static void kthread_yield(void) { asm volatile ("int $129"); }
+void kthread_exit(void* param = NULL) SORTIX_NORETURN;
 typedef unsigned kthread_mutex_t;
 const kthread_mutex_t KTHREAD_MUTEX_INITIALIZER = 0;
 unsigned kthread_mutex_trylock(kthread_mutex_t* mutex);
 void kthread_mutex_lock(kthread_mutex_t* mutex);
 unsigned long kthread_mutex_lock_signal(kthread_mutex_t* mutex);
 void kthread_mutex_unlock(kthread_mutex_t* mutex);
-typedef unsigned kthread_cond_t;
-const kthread_cond_t KTHREAD_COND_INITIALIZER = 0;
+struct kthread_cond_elem;
+typedef struct kthread_cond_elem kthread_cond_elem_t;
+struct kthread_cond
+{
+	kthread_cond_elem_t* first;
+	kthread_cond_elem_t* last;
+};
+typedef struct kthread_cond kthread_cond_t;
+const kthread_cond_t KTHREAD_COND_INITIALIZER = { NULL, NULL };
 void kthread_cond_wait(kthread_cond_t* cond, kthread_mutex_t* mutex);
 unsigned long kthread_cond_wait_signal(kthread_cond_t* cond, kthread_mutex_t* mutex);
 void kthread_cond_signal(kthread_cond_t* cond);
@@ -74,6 +84,7 @@ public:
 	{
 		this->mutex = mutex;
 		this->acquired = kthread_mutex_lock_signal(mutex);
+		ASSERT(acquired || Signal::IsPending());
 	}
 
 	~ScopedLockSignal()

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -255,6 +255,20 @@ isr128:
 	pushq $0 # err_code
 	pushq $128 # int_no
 	jmp interrupt_handler_prepare
+.global isr130
+.type isr130, @function
+isr130:
+	cli
+	pushq $0 # err_code
+	pushq $130 # int_no
+	jmp interrupt_handler_prepare
+.global isr131
+.type isr131, @function
+isr131:
+	cli
+	pushq $0 # err_code
+	pushq $131 # int_no
+	jmp interrupt_handler_prepare
 .global irq0
 .type irq0, @function
 irq0:
@@ -367,8 +381,24 @@ irq15:
 	pushq $0 # err_code
 	pushq $47 # int_no
 	jmp interrupt_handler_prepare
+.global yield_cpu_handler
+.type yield_cpu_handler, @function
+yield_cpu_handler:
+	cli
+	pushq $0 # err_code
+	pushq $129 # int_no
+	jmp interrupt_handler_prepare
+.global thread_exit_handler
+.type thread_exit_handler, @function
+thread_exit_handler:
+	cli
+	pushq $0 # err_code
+	pushq $132 # int_no
+	jmp interrupt_handler_prepare
 
 interrupt_handler_prepare:
+	movq $1, asm_is_cpu_interrupted
+
 	pushq %r15
 	pushq %r14
 	pushq %r13
@@ -401,9 +431,26 @@ interrupt_handler_prepare:
 	movq %cr2, %rbp
 	pushq %rbp
 
+	# Push the current kernel errno value.
+	movl global_errno, %ebp
+	pushq %rbp
+
+	# Push whether a signal is pending.
+	movq asm_signal_is_pending, %rbp
+	pushq %rbp
+
 	# Now call the interrupt handler.
 	movq %rsp, %rdi
 	call interrupt_handler
+
+load_interrupted_registers:
+	# Restore whether signals are pending.
+	popq %rbp
+	movq %rbp, asm_signal_is_pending
+
+	# Restore the previous kernel errno.
+	popq %rbp
+	movl %ebp, global_errno
 
 	# Remove CR2 from the stack.
 	addq $8, %rsp
@@ -418,7 +465,7 @@ interrupt_handler_prepare:
 	popq %rdi
 	popq %rsi
 	popq %rbp
-	popq %rsp
+	addq $8, %rsp # Don't pop %rsp, may not be defined.
 	popq %rbx
 	popq %rdx
 	popq %rcx
@@ -435,6 +482,8 @@ interrupt_handler_prepare:
 	# Remove int_no and err_code
 	addq $16, %rsp
 
+	movq $0, asm_is_cpu_interrupted
+
 	# Return to where we came from.
 	iretq
 
@@ -450,4 +499,11 @@ asm_interrupts_are_enabled:
 	popq %rax
 	andq $0x000200, %rax # FLAGS_INTERRUPT
 	retq
+
+.global load_registers
+.type load_registers, @function
+load_registers:
+	# Let the register struct become our temporary stack
+	movq %rdi, %rsp
+	jmp load_interrupted_registers
 

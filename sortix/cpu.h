@@ -35,4 +35,17 @@
 		#include "x64/x64.h"
 	#endif
 
+namespace Sortix {
+namespace CPU {
+
+extern "C" void load_registers(InterruptRegisters* regs, size_t size) SORTIX_NORETURN;
+inline void LoadRegisters(InterruptRegisters* regs) SORTIX_NORETURN;
+inline void LoadRegisters(InterruptRegisters* regs)
+{
+	load_registers(regs, sizeof(*regs));
+}
+
+} // namespace CPU
+} // namespace CPU
+
 #endif

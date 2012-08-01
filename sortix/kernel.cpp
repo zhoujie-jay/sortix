@@ -24,16 +24,19 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/log.h>
+#include <sortix/kernel/panic.h>
+#include <sortix/kernel/video.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/textbuffer.h>
 #include <sortix/kernel/pci.h>
+#include <sortix/kernel/worker.h>
+#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/format.h>
-#include <sortix/kernel/log.h>
-#include <sortix/kernel/panic.h>
-#include <sortix/kernel/video.h>
+#include <sortix/mman.h>
 #include "kernelinfo.h"
 #include "x86-family/gdt.h"
 #include "time.h"
@@ -43,6 +46,7 @@
 #include "thread.h"
 #include "process.h"
 #include "scheduler.h"
+#include "signal.h"
 #include "syscall.h"
 #include "ata.h"
 #include "com.h"
@@ -67,7 +71,8 @@
 using namespace Maxsi;
 
 // Keep the stack size aligned with $CPU/base.s
-extern "C" { size_t stack[64*1024 / sizeof(size_t)] = {0}; }
+const size_t STACK_SIZE = 64*1024;
+extern "C" { size_t stack[STACK_SIZE / sizeof(size_t)] = {0}; }
 
 namespace Sortix {
 
@@ -96,6 +101,11 @@ void DoWelcome()
 	DoMaxsiLogo();
 	Log::Print("                           BOOTING OPERATING SYSTEM...                          ");
 }
+
+// Forward declarations.
+static void BootThread(void* user);
+static void InitThread(void* user);
+static void SystemIdleThread(void* user);
 
 static size_t PrintToTextTerminal(void* user, const char* str, size_t len)
 {
@@ -146,7 +156,7 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	addr_t initrd = NULL;
 	size_t initrdsize = 0;
 
-	uint32_t* modules = (uint32_t*) bootinfo->mods_addr;
+	uint32_t* modules = (uint32_t*) (addr_t) bootinfo->mods_addr;
 	for ( uint32_t i = 0; i < bootinfo->mods_count; i++ )
 	{
 		initrdsize = modules[2*i+1] - modules[2*i+0];
@@ -169,6 +179,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	// Initialize the kernel heap.
 	Maxsi::Memory::Init();
+
+	// Initialize the interrupt worker.
+	Interrupt::InitWorker();
 
 	// Initialize the list of kernel devices.
 	DeviceFS::Init();
@@ -212,6 +225,12 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Initialize the scheduler.
 	Scheduler::Init();
 
+	// Initialize Unix Signals.
+	Signal::Init();
+
+	// Initialize the worker thread data structures.
+	Worker::Init();
+
 	// Initialize the kernel information query syscall.
 	Info::Init();
 
@@ -230,59 +249,139 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Initialize the BGA driver.
 	BGA::Init();
 
-	// Alright, now the system's drivers are loaded and initialized. It is
-	// time to load the initial user-space programs and start execution of
-	// the actual operating system.
+	// Now that the base system has been loaded, it's time to go threaded. First
+	// we create an object that represents this thread.
+	Process* system = new Process;
+	if ( !system ) { Panic("Could not allocate the system process"); }
+	addr_t systemaddrspace = Memory::GetAddressSpace();
+	system->addrspace = systemaddrspace;
 
-	uint32_t inode;
-	byte* program;
-	size_t programsize;
-
-	// Create an address space for the idle process.
-	addr_t idleaddrspace = Memory::Fork();
-	if ( !idleaddrspace ) { Panic("could not fork an idle process address space"); }
-
-	// Create an address space for the initial process.
-	addr_t initaddrspace = Memory::Fork();
-	if ( !initaddrspace ) { Panic("could not fork an initial process address space"); }
-
-	// Create the system idle process.
-	Process* idle = new Process;
-	if ( !idle ) { Panic("could not allocate idle process"); }
-	idle->addrspace = idleaddrspace;
-	Memory::SwitchAddressSpace(idleaddrspace);
-	Scheduler::SetDummyThreadOwner(idle);
-	inode = InitRD::Traverse(InitRD::Root(), "idle");
-	if ( inode == NULL ) { PanicF("initrd did not contain 'idle'"); }
-	program = InitRD::Open(inode, &programsize);
-	if ( program == NULL ) { PanicF("initrd did not contain 'idle'"); }
-	addr_t idlestart = ELF::Construct(idle, program, programsize);
-	if ( !idlestart ) { Panic("could not construct ELF image for idle process"); }
-	Thread* idlethread = CreateThread(idlestart);
-	if ( !idlethread ) { Panic("could not create thread for the idle process"); }
+	// We construct this thread manually for bootstrap reasons. We wish to
+	// create a kernel thread that is the current thread and isn't put into the
+	// scheduler's set of runnable threads, but rather run whenever there is
+	// _nothing_ else to run on this CPU.
+	Thread* idlethread = new Thread;
+	idlethread->process = system;
+	idlethread->kernelstackpos = (addr_t) stack;
+	idlethread->kernelstacksize = STACK_SIZE;
+	idlethread->kernelstackmalloced = false;
+	system->firstthread = idlethread;
 	Scheduler::SetIdleThread(idlethread);
 
-	// Create the initial process.
-	Process* init = new Process;
-	if ( !init ) { Panic("could not allocate init process"); }
-	init->addrspace = initaddrspace;
-	Memory::SwitchAddressSpace(initaddrspace);
-	Scheduler::SetDummyThreadOwner(init);
-	inode = InitRD::Traverse(InitRD::Root(), "init");
-	if ( inode == NULL ) { PanicF("initrd did not contain 'init'"); }
-	program = InitRD::Open(inode, &programsize);
-	if ( program == NULL ) { PanicF("initrd did not contain 'init'"); }
-	addr_t initstart = ELF::Construct(init, program, programsize);
-	if ( !initstart ) { Panic("could not construct ELF image for init process"); }
-	Thread* initthread = CreateThread(initstart);
-	if ( !initthread ) { Panic("could not create thread for the init process"); }
-	Scheduler::SetInitProcess(init);
+	// Let's create a regular kernel thread that can decide what happens next.
+	// Note that we don't do the work here: should it block, then there is
+	// nothing to run. Therefore we must become the system idle thread.
+	RunKernelThread(BootThread, NULL);
 
-	// Lastly set up the timer driver and we are ready to run the OS.
+	// The time driver will run the scheduler on the next timer interrupt.
 	Time::Init();
 
-	// Run the OS.
-	Scheduler::MainLoop();
+	// Become the system idle thread.
+	SystemIdleThread(NULL);
+}
+
+static void SystemIdleThread(void* /*user*/)
+{
+	// Alright, we are now the system idle thread. If there is nothing to do,
+	// then we are run. Note that we must never do any real work here.
+	while(true);
+}
+
+static void BootThread(void* /*user*/)
+{
+	// Hello, threaded world! You can now regard the kernel as a multi-threaded
+	// process with super-root access to the system. Before we boot the full
+	// system we need to start some worker threads.
+
+	// Let's create the interrupt worker thread that executes additional work
+	// requested by interrupt handlers, where such work isn't safe.
+	Thread* interruptworker = RunKernelThread(Interrupt::WorkerThread, NULL);
+	if ( !interruptworker )
+		Panic("Could not create interrupt worker");
+
+	// Create a general purpose worker thread.
+	Thread* workerthread = RunKernelThread(Worker::Thread, NULL);
+	if ( !workerthread )
+		Panic("Unable to create general purpose worker thread");
+
+	// Finally, let's transfer control to a new kernel process that will
+	// eventually run user-space code known as the operating system.
+	addr_t initaddrspace = Memory::Fork();
+	if ( !initaddrspace ) { Panic("Could not create init's address space"); }
+
+	Process* init = new Process;
+	if ( !init ) { Panic("Could not allocate init process"); }
+
+	CurrentProcess()->AddChildProcess(init);
+
+	init->addrspace = initaddrspace;
+	Scheduler::SetInitProcess(init);
+
+	Thread* initthread = RunKernelThread(init, InitThread, NULL);
+	if ( !initthread ) { Panic("Coul not create init thread"); }
+
+	// Wait until init init is done and then shut down the computer.
+	int status;
+	pid_t pid = CurrentProcess()->Wait(init->pid, &status, 0);
+	if ( pid != init->pid )
+		PanicF("Waiting for init to exit returned %i (errno=%i)", pid, errno);
+
+	switch ( status )
+	{
+	case 0: CPU::ShutDown();
+	case 1: CPU::Reboot();
+	default:
+		PanicF("Init returned with unexpected return code %i", status);
+	}
+}
+	
+static void InitThread(void* /*user*/)
+{
+	// We are the init process's first thread. Let's load the init program from
+	// the init ramdisk and transfer execution to it. We will then become a
+	// regular user-space program with root permissions.
+
+	Thread* thread = CurrentThread();
+	Process* process = CurrentProcess();
+
+	uint32_t inode = InitRD::Traverse(InitRD::Root(), "init");
+	if ( !inode ) { Panic("InitRD did not contain an 'init' program."); }
+
+	size_t programsize;
+	uint8_t* program = InitRD::Open(inode, &programsize);
+	if ( !program ) { Panic("InitRD did not contain an 'init' program."); }
+
+	const size_t DEFAULT_STACK_SIZE = 64UL * 1024UL;
+
+	size_t stacksize = 0;
+	if ( !stacksize ) { stacksize = DEFAULT_STACK_SIZE; }
+
+	addr_t stackpos = process->AllocVirtualAddr(stacksize);
+	if ( !stackpos ) { Panic("Could not allocate init stack space"); }
+
+	int prot = PROT_FORK | PROT_READ | PROT_WRITE | PROT_KREAD | PROT_KWRITE;
+	if ( !Memory::MapRange(stackpos, stacksize, prot) )
+	{
+		Panic("Could not allocate init stack memory");
+	}
+
+	thread->stackpos = stackpos;
+	thread->stacksize = stacksize;
+
+	int argc = 1;
+	const char* argv[] = { "init", NULL };
+	int envc = 0;
+	const char* envp[] = { NULL };
+	CPU::InterruptRegisters regs;
+
+	if ( process->Execute("init", program, programsize, argc, argv, envc, envp,
+                          &regs) )
+	{
+		Panic("Unable to execute init program");
+	}
+
+	// Now become the init process and the operation system shall run.
+	CPU::LoadRegisters(&regs);
 }
 
 } // namespace Sortix

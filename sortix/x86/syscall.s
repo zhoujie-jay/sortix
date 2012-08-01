@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,129 +14,84 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	syscall.s
 	An assembly stub that acts as glue for system calls.
 
-******************************************************************************/
+*******************************************************************************/
 
 .global syscall_handler
-.global resume_syscall
 
 .section .text
 .type syscall_handler, @function
 syscall_handler:
-	cli
+	# The processor disabled interrupts during the int $0x80 instruction,
+	# however Sortix system calls runs with interrupts enabled such that they
+	# can be pre-empted.
+	sti
 
-	# Compabillity with InterruptRegisters.
-	pushl $0x0
-	pushl $0x80
-
-	# Push eax, ecx, edx, ebx, esp, ebp, esi, edi
-	pushal
-
-	# Push the user-space data segment.
-	movl %ds, %ebp
+	movl $0, global_errno # Reset errno
 	pushl %ebp
 
-	# Load the kernel data segment.
+	# Grant ourselves kernel permissions to the data segment.
+	movl %ds, %ebp
+	pushl %ebp
 	movw $0x10, %bp
 	movl %ebp, %ds
 	movl %ebp, %es
 	movl %ebp, %fs
 	movl %ebp, %gs
 
-	# Compabillity with InterruptRegisters.
-	movl %cr2, %ebp
-	pushl %ebp
-
-	# Store the state structure's pointer so the call can modify it if needed.
-	mov %esp, syscall_state_ptr
-
-	# By default, assume the system call was complete.
-	movl $0, system_was_incomplete
-
-	# Reset the kernel errno.
-	movl $0, global_errno
-
 	# Make sure the requested system call is valid.
 	cmp SYSCALL_MAX, %eax
-	jb valid_eax
-	xorl %eax, %eax
+	jae fix_syscall
 
-valid_eax:
+valid_syscall:
 	# Read a system call function pointer.
 	xorl %ebp, %ebp
 	movl syscall_list(%ebp,%eax,4), %eax
 
-	# Give the system call function the values given by user-space.
+	# Call the system call.
 	pushl %esi
 	pushl %edi
 	pushl %edx
 	pushl %ecx
 	pushl %ebx
-
-	# Call the system call.
 	calll *%eax
-
-	# Clean up after the call.
 	addl $20, %esp
 
-	# Test if the system call was incomplete
-	movl system_was_incomplete, %ebx
-	testl %ebx, %ebx
-
-	# If the system call was incomplete, the value in %eax is meaningless.
-	jg return_to_userspace
-
-	# The system call was completed, so store the return value.
-	movl %eax, 36(%esp)
-
-	# Don't forget to update userspace's errno value.
-	call update_userspace_errno
-
-return_to_userspace:
-	# Compabillity with InterruptRegisters.
-	addl $4, %esp
-
-	# Restore the user-space data segment.
+	# Restore the previous permissions to data segment.
 	popl %ebp
 	movl %ebp, %ds
 	movl %ebp, %es
 	movl %ebp, %fs
 	movl %ebp, %gs
 
-	popal
+	# Return to user-space, system call result in %eax, errno in %edx.
+	popl %ebp
+	movl global_errno, %edx
 
-	# Compabillity with InterruptRegisters.
-	addl $8, %esp
+	# If any signals are pending, fire them now.
+	movl asm_signal_is_pending, %ecx
+	testl %ecx, %ecx
+	jnz call_signal_dispatcher
 
-	# Return to user-space.
 	iretl
 
-.type resume_syscall, @function
-resume_syscall:
-	pushl %ebp
-	movl %esp, %ebp
+fix_syscall:
+	# Call the null system call instead.
+	xorl %eax, %eax
+	jmp valid_syscall
 
-	movl 8(%esp), %eax
-	movl 16(%esp), %ecx
-
-	pushl 28(%ecx)
-	pushl 24(%ecx)
-	pushl 20(%ecx)
-	pushl 16(%ecx)
-	pushl 12(%ecx)
-	pushl 8(%ecx)
-	pushl 4(%ecx)
-	pushl 0(%ecx)
-
-	call *%eax
-
-	addl $32, %esp
-
-	leavel
-	retl
-
+call_signal_dispatcher:
+	# We can't return to this location after the signal, since if any system
+	# call is made this stack will get reused and all our nice temporaries wil
+	# be garbage. We therefore pass the kernel the state to return to and it'll
+	# handle it for us when the signal is over.
+	movl %esp, %ecx
+	int $130 # Deliver pending signals.
+	# If we end up here, it means that the signal didn't override anything and
+	# that we should just go ahead and return to userspace ourselves.
+	iretl

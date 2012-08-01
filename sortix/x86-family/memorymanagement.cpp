@@ -192,6 +192,8 @@ namespace Sortix
 				            "restrictions.\n", Page::pagesnotonstack * 0x1000UL);
 			}
 
+			Memory::Unmap(0x0); // Remove NULL.
+
 			// Finish allocating the top level PMLs for the kernels use.
 			AllocateKernelPMLs();
 		}

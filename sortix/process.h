@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,19 +14,21 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	process.h
-	Describes a process belonging to a subsystem.
+	A named collection of threads.
 
-******************************************************************************/
+*******************************************************************************/
 
 #ifndef SORTIX_PROCESS_H
 #define SORTIX_PROCESS_H
 
 #include "descriptors.h"
 #include "cpu.h"
+#include <sortix/kernel/kthread.h>
+#include <sortix/fork.h>
 
 namespace Sortix
 {
@@ -34,7 +36,6 @@ namespace Sortix
 	class Process;
 	struct ProcessSegment;
 
-	const size_t DEFAULT_STACK_SIZE = 64*1024;
 	const int SEG_NONE = 0;
 	const int SEG_TEXT = 1;
 	const int SEG_DATA = 2;
@@ -61,6 +62,8 @@ namespace Sortix
 
 	class Process
 	{
+	friend void Process__OnLastThreadExit(void*);
+
 	public:
 		Process();
 		~Process();
@@ -73,27 +76,34 @@ namespace Sortix
 
 	public:
 		addr_t addrspace;
-		int exitstatus;
 		char* workingdir;
 		pid_t pid;
-		int* errnop;
 
-	public:
+	private:
+	// A process may only access its parent if parentlock is locked. A process
+	// may only use its list of children if childlock is locked. A process may
+	// not access its sibling processes.
 		Process* parent;
 		Process* prevsibling;
 		Process* nextsibling;
 		Process* firstchild;
 		Process* zombiechild;
+		kthread_mutex_t childlock;
+		kthread_mutex_t parentlock;
+		kthread_cond_t zombiecond;
+		size_t zombiewaiting;
+		bool iszombie;
+		bool nozombify;
+		addr_t mmapfrom;
+		int exitstatus;
 
 	public:
 		Thread* firstthread;
+		kthread_mutex_t threadlock;
 
 	public:
 		DescriptorTable descriptors;
 		ProcessSegment* segments;
-
-	public:
-		bool sigint;
 
 	public:
 		int Execute(const char* programname, const byte* program,
@@ -102,36 +112,33 @@ namespace Sortix
 		            CPU::InterruptRegisters* regs);
 		void ResetAddressSpace();
 		void Exit(int status);
-
-	public:
-		bool IsSane() { return addrspace != 0; }
+		pid_t Wait(pid_t pid, int* status, int options);
+		bool DeliverSignal(int signum);
+		void OnThreadDestruction(Thread* thread);
+		int GetParentProcessId();
+		void AddChildProcess(Process* child);
+		void ScheduleDeath();
+		void AbortConstruction();
 
 	public:
 		Process* Fork();
 
 	private:
-		Thread* ForkThreads(Process* processclone);
 		void ExecuteCPU(int argc, char** argv, int envc, char** envp,
 		                addr_t stackpos, addr_t entry,
 		                CPU::InterruptRegisters* regs);
+		void OnLastThreadExit();
+		void LastPrayer();
+		void NotifyChildExit(Process* child, bool zombify);
+		void NotifyNewZombies();
 
 	public:
 		void ResetForExecute();
-
-	public:
-		inline size_t DefaultStackSize() { return DEFAULT_STACK_SIZE; }
-
-	private:
-		addr_t mmapfrom;
-
-	public:
 		addr_t AllocVirtualAddr(size_t size);
 
 	public:
-		void OnChildProcessExit(Process* process);
-
-	public:
 		static Process* Get(pid_t pid);
+		static pid_t HackGetForegroundProcess();
 
 	private:
 		static bool Put(Process* process);
@@ -139,6 +146,8 @@ namespace Sortix
 
 	};
 
+	void InitializeThreadRegisters(CPU::InterruptRegisters* regs,
+                                   const sforkregs_t* requested);
 	Process* CurrentProcess();
 }
 

@@ -17,7 +17,6 @@
 	You should have received a copy of the GNU General Public License along with
 	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-
 	logterminal.h
 	A simple terminal that writes to the kernel log.
 

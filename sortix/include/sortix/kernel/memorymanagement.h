@@ -65,7 +65,9 @@ namespace Sortix
 		addr_t Fork();
 		addr_t GetAddressSpace();
 		addr_t SwitchAddressSpace(addr_t addrspace);
-		void DestroyAddressSpace();
+		void DestroyAddressSpace(addr_t fallback = 0,
+		                         void (*func)(addr_t, void*) = NULL,
+		                         void* user = NULL);
 		bool Map(addr_t physical, addr_t mapto, int prot);
 		addr_t Unmap(addr_t mapto);
 		addr_t Physical(addr_t mapto);

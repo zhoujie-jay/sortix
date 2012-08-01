@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,15 +14,19 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	process.cpp
-	Describes a process belonging to a subsystem.
+	A named collection of threads.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/worker.h>
+#include <sortix/kernel/memorymanagement.h>
+#include <sortix/signal.h>
 #include <sortix/unistd.h>
 #include <sortix/fork.h>
 #include <sortix/mman.h>
@@ -37,7 +41,6 @@
 #include "filesystem.h"
 #include "directory.h"
 #include "scheduler.h"
-#include <sortix/kernel/memorymanagement.h>
 #include "initrd.h"
 #include "elf.h"
 #include "syscall.h"
@@ -84,7 +87,8 @@ namespace Sortix
 			return NULL;
 		}
 
-		next->prev = nextclone;
+		if ( nextclone )
+			nextclone->prev = clone;
 		clone->next = nextclone;
 		clone->position = position;
 		clone->size = size;
@@ -96,15 +100,20 @@ namespace Sortix
 	{
 		addrspace = 0;
 		segments = NULL;
-		sigint = false;
 		parent = NULL;
 		prevsibling = NULL;
 		nextsibling = NULL;
 		firstchild = NULL;
 		zombiechild = NULL;
+		parentlock = KTHREAD_MUTEX_INITIALIZER;
+		childlock = KTHREAD_MUTEX_INITIALIZER;
+		zombiecond = KTHREAD_COND_INITIALIZER;
+		zombiewaiting = 0;
+		iszombie = false;
+		nozombify = false;
 		firstthread = NULL;
+		threadlock = KTHREAD_MUTEX_INITIALIZER;
 		workingdir = NULL;
-		errno = NULL;
 		mmapfrom = 0x80000000UL;
 		exitstatus = -1;
 		pid = AllocatePID();
@@ -113,20 +122,156 @@ namespace Sortix
 
 	Process::~Process()
 	{
+		ASSERT(!zombiechild);
+		ASSERT(!firstchild);
+		ASSERT(!addrspace);
+		ASSERT(!segments);
+
 		Remove(this);
+		delete[] workingdir;
+	}
+
+	void Process__OnLastThreadExit(void* user);
+
+	void Process::OnThreadDestruction(Thread* thread)
+	{
+		ASSERT(thread->process == this);
+		kthread_mutex_lock(&threadlock);
+		if ( thread->prevsibling )
+			thread->prevsibling->nextsibling = thread->nextsibling;
+		if ( thread->nextsibling )
+			thread->nextsibling->prevsibling = thread->prevsibling;
+		if ( thread == firstthread )
+			firstthread = thread->nextsibling;
+		if ( firstthread )
+			firstthread->prevsibling = NULL;
+		thread->prevsibling = thread->nextsibling = NULL;
+		bool threadsleft = firstthread;
+		kthread_mutex_unlock(&threadlock);
+
+		// We are called from the threads destructor, let it finish before we
+		// we handle the situation by killing ourselves.
+		if ( !threadsleft )
+			ScheduleDeath();
+	}
+
+	void Process::ScheduleDeath()
+	{
+		// All our threads must have exited at this point.
+		ASSERT(!firstthread);
+		Worker::Schedule(Process__OnLastThreadExit, this);
+	}
+
+	// Useful for killing a partially constructed process without waiting for
+	// it to die and garbage collect its zombie. It is not safe to access this
+	// process after this call as another thread may garbage collect it.
+	void Process::AbortConstruction()
+	{
+		nozombify = true;
+		ScheduleDeath();
+	}
+
+	void Process__OnLastThreadExit(void* user)
+	{
+		return ((Process*) user)->OnLastThreadExit();
+	}
+
+	void Process::OnLastThreadExit()
+	{
+		LastPrayer();
+	}
+
+	static void SwitchCurrentAddrspace(addr_t addrspace, void* user)
+	{
+		((Thread*) user)->SwitchAddressSpace(addrspace);
+	}
+
+	void Process::LastPrayer()
+	{
+		ASSERT(this);
+		// This must never be called twice.
+		ASSERT(!iszombie);
+
+		// This must be called from a thread using another address space as the
+		// address space of this process is about to be destroyed.
+		Thread* curthread = CurrentThread();
+		ASSERT(curthread->process != this);
+
+		// This can't be called if the process is still alive.
+		ASSERT(!firstthread);
+
+		// We need to temporarily reload the correct addrese space of the dying
+		// process such that we can unmap and free its memory.
+		addr_t prevaddrspace = curthread->SwitchAddressSpace(addrspace);
 
 		ResetAddressSpace();
+		descriptors.Reset();
 
-		// Avoid memory leaks.
-		ASSERT(segments == NULL);
+		// Destroy the address space and safely switch to the replacement
+		// address space before things get dangerous.
+		Memory::DestroyAddressSpace(prevaddrspace,
+                                    SwitchCurrentAddrspace,
+                                    curthread);
+		addrspace = 0;
 
-		delete[] workingdir;
+		// Init is nice and will gladly raise our orphaned children and zombies.
+		Process* init = Scheduler::GetInitProcess();
+		ASSERT(init);
+		kthread_mutex_lock(&childlock);
+		while ( firstchild )
+		{
+			ScopedLock firstchildlock(&firstchild->parentlock);
+			ScopedLock initlock(&init->childlock);
+			Process* process = firstchild;
+			firstchild = process->nextsibling;
+			process->parent = init;
+			process->prevsibling = NULL;
+			process->nextsibling = init->firstchild;
+			if ( init->firstchild )
+				init->firstchild->prevsibling = process;
+			init->firstchild = process;
+		}
+		// Since we have no more children (they are with init now), we don't
+		// have to worry about new zombie processes showing up, so just collect
+		// those that are left. Then we satisfiy the invariant !zombiechild that
+		// applies on process termination.
+		bool hadzombies = zombiechild;
+		while ( zombiechild )
+		{
+			ScopedLock zombiechildlock(&zombiechild->parentlock);
+			ScopedLock initlock(&init->childlock);
+			Process* zombie = zombiechild;
+			zombiechild = zombie->nextsibling;
+			zombie->prevsibling = NULL;
+			zombie->nextsibling = init->zombiechild;
+			if ( init->zombiechild )
+				init->zombiechild->prevsibling = zombie;
+			init->zombiechild = zombie;
+		}
+		kthread_mutex_unlock(&childlock);
 
-		// TODO: Delete address space!
+		if ( hadzombies )
+			init->NotifyNewZombies();
+
+		iszombie = true;
+
+		bool zombify = !nozombify;
+
+		// This class instance will be destroyed by our parent process when it
+		// has received and acknowledged our death.
+		kthread_mutex_lock(&parentlock);
+		if ( parent )
+			parent->NotifyChildExit(this, zombify);
+		kthread_mutex_unlock(&parentlock);
+
+		// If nobody is waiting for us, then simply commit suicide.
+		if ( !zombify )
+			delete this;
 	}
 
 	void Process::ResetAddressSpace()
 	{
+		ASSERT(Memory::GetAddressSpace() == addrspace);
 		ProcessSegment* tmp = segments;
 		while ( tmp != NULL )
 		{
@@ -137,7 +282,154 @@ namespace Sortix
 		}
 
 		segments = NULL;
-		errno = NULL;
+	}
+
+	void Process::NotifyChildExit(Process* child, bool zombify)
+	{
+		kthread_mutex_lock(&childlock);
+
+		if ( child->prevsibling )
+			child->prevsibling->nextsibling = child->nextsibling;
+		if ( child->nextsibling )
+			child->nextsibling->prevsibling = child->prevsibling;
+		if ( firstchild == child )
+			firstchild = child->nextsibling;
+		if ( firstchild )
+			firstchild->prevsibling = NULL;
+
+		if ( zombify )
+		{
+			if ( zombiechild )
+				zombiechild->prevsibling = child;
+			child->prevsibling = NULL;
+			child->nextsibling = zombiechild;
+			zombiechild = child;
+		}
+
+		kthread_mutex_unlock(&childlock);
+
+		if ( zombify )
+			NotifyNewZombies();
+	}
+
+	void Process::NotifyNewZombies()
+	{
+		ScopedLock lock(&childlock);
+		// TODO: Send SIGCHLD here?
+		if ( zombiewaiting )
+			kthread_cond_broadcast(&zombiecond);
+	}
+
+	pid_t Process::Wait(pid_t thepid, int* status, int options)
+	{
+		// TODO: Process groups are not supported yet.
+		if ( thepid < -1 || thepid == 0 ) { Error::Set(ENOSYS); return -1; }
+
+		ScopedLock lock(&childlock);
+
+		// A process can only wait if it has children.
+		if ( !firstchild && !zombiechild ) { Error::Set(ECHILD); return -1; }
+
+		// Processes can only wait for their own children to exit.
+		if ( 0 < thepid )
+		{
+			// TODO: This is a slow but multithread safe way to verify that the
+			// target process has the correct parent.
+			bool found = false;
+			for ( Process* p = firstchild; !found && p; p = p->nextsibling )
+				if ( p->pid == thepid )
+					found = true;
+			for ( Process* p = zombiechild; !found && p; p = p->nextsibling )
+				if ( p->pid == thepid )
+					found = true;
+			if ( !found ) { Error::Set(ECHILD); return -1; }
+		}
+
+		Process* zombie = NULL;
+		while ( !zombie )
+		{
+			for ( zombie = zombiechild; zombie; zombie = zombie->nextsibling )
+				if ( thepid == -1 || thepid == zombie->pid )
+					break;
+			if ( zombie )
+				break;
+			zombiewaiting++;
+			kthread_cond_wait(&zombiecond, &childlock);
+			zombiewaiting--;
+		}
+
+		if ( zombie->prevsibling )
+			zombie->prevsibling->nextsibling = zombie->nextsibling;
+		if ( zombie->nextsibling )
+			zombie->nextsibling->prevsibling = zombie->prevsibling;
+		if ( zombiechild == zombie )
+			zombiechild = zombie->nextsibling;
+		if ( zombiechild )
+			zombiechild->prevsibling = NULL;
+
+		thepid = zombie->pid;
+
+		int exitstatus = zombie->exitstatus;
+		if ( exitstatus < 0 )
+			exitstatus = 0;
+
+		// TODO: Validate that status is a valid user-space int!
+		if ( status )
+			*status = exitstatus;
+
+		// And so, the process was fully deleted.
+		delete zombie;
+
+		return thepid;
+	}
+
+	pid_t SysWait(pid_t pid, int* status, int options)
+	{
+		return CurrentProcess()->Wait(pid, status, options);
+	}
+
+	void Process::Exit(int status)
+	{
+		ScopedLock lock(&threadlock);
+		// Status codes can only contain 8 bits according to ISO C and POSIX.
+		if ( exitstatus == -1 )
+			exitstatus = status % 256;
+
+		// Broadcast SIGKILL to all our threads which will begin our long path
+		// of process termination. We simply can't stop the threads as they may
+		// be running in kernel mode doing dangerous stuff. This thread will be
+		// destroyed by SIGKILL once the system call returns.
+		for ( Thread* t = firstthread; t; t = t->nextsibling )
+			t->DeliverSignal(SIGKILL);
+	}
+
+	void SysExit(int status)
+	{
+		CurrentProcess()->Exit(status);
+	}
+
+	bool Process::DeliverSignal(int signum)
+	{
+		// TODO: How to handle signals that kill the process?
+		if ( firstthread )
+			return firstthread->DeliverSignal(signum);
+		Error::Set(EINIT);
+		return false;
+	}
+
+	void Process::AddChildProcess(Process* child)
+	{
+		ScopedLock mylock(&childlock);
+		ScopedLock itslock(&child->parentlock);
+		ASSERT(!child->parent);
+		ASSERT(!child->nextsibling);
+		ASSERT(!child->prevsibling);
+		child->parent = this;
+		child->nextsibling = firstchild;
+		child->prevsibling = NULL;
+		if ( firstchild )
+			firstchild->prevsibling = child;
+		firstchild = child;
 	}
 
 	Process* Process::Fork()
@@ -172,86 +464,34 @@ namespace Sortix
 			delete clone; return NULL;
 		}
 
-		// Now it's too late to clean up here, if anything goes wrong, the
-		// cloned process should be queued for destruction.
+		// Now it's too late to clean up here, if anything goes wrong, we simply
+		// ask the process to commit suicide before it goes live.
 		clone->segments = clonesegments;
 
 		// Remember the relation to the child process.
-		clone->parent = this;
-		if ( firstchild )
-		{
-			firstchild->prevsibling = clone;
-			clone->nextsibling = firstchild;
-			firstchild = clone;
-		}
-		else
-		{
-			firstchild = clone;
-		}
+		AddChildProcess(clone);
 
-		// Fork the file descriptors.
+		bool failure = false;
+
 		if ( !descriptors.Fork(&clone->descriptors) )
-		{
-			Panic("No error handling when forking FDs fails!");
-		}
+			failure = true;
 
-		Thread* clonethreads = ForkThreads(clone);
-		if ( !clonethreads )
-		{
-			Panic("No error handling when forking threads fails!");
-		}
-
-		clone->firstthread = clonethreads;
-
-		// Copy variables.
 		clone->mmapfrom = mmapfrom;
-		clone->errnop = errnop;
-		if ( workingdir ) { clone->workingdir = String::Clone(workingdir); }
-		else { clone->workingdir = NULL; }
 
-		// Now that the cloned process is fully created, we need to signal to
-		// its threads that they should insert themselves into the scheduler.
-		for ( Thread* tmp = clonethreads; tmp != NULL; tmp = tmp->nextsibling )
+		clone->workingdir = NULL;
+		if ( workingdir && !(clone->workingdir = String::Clone(workingdir)) )
+			failure = true;
+
+		// If the proces creation failed, ask the process to commit suicide and
+		// not become a zombie, as we don't wait for it to exit. It will clean
+		// up all the above resources and delete itself.
+		if ( failure )
 		{
-			tmp->Ready();
+			clone->AbortConstruction();
+			return NULL;
 		}
 
 		return clone;
-	}
-
-	Thread* Process::ForkThreads(Process* processclone)
-	{
-		Thread* result = NULL;
-		Thread* tmpclone = NULL;
-
-		for ( Thread* tmp = firstthread; tmp != NULL; tmp = tmp->nextsibling )
-		{
-			Thread* clonethread = tmp->Fork();
-			if ( clonethread == NULL )
-			{
-				while ( tmpclone != NULL )
-				{
-					Thread* todelete = tmpclone;
-					tmpclone = tmpclone->prevsibling;
-					delete todelete;
-				}
-
-				return NULL;
-			}
-
-			clonethread->process = processclone;
-
-			if ( result == NULL ) { result = clonethread; }
-			if ( tmpclone != NULL )
-			{
-				tmpclone->nextsibling = clonethread;
-				clonethread->prevsibling = tmpclone;
-			}
-
-			tmpclone = clonethread;
-		}
-
-		return result;
 	}
 
 	void Process::ResetForExecute()
@@ -315,104 +555,14 @@ namespace Sortix
 
 		stackpos = envppos - envpsize;
 
-		ExecuteCPU(argc, stackargv, envc, stackenvp, stackpos, entry, regs);
-
 		descriptors.OnExecute();
 
+		ExecuteCPU(argc, stackargv, envc, stackenvp, stackpos, entry, regs);
+
 		return 0;
 	}
 
-	class SysExecVEState
-	{
-	public:
-		char* filename;
-		DevBuffer* dev;
-		byte* buffer;
-		size_t count;
-		size_t sofar;
-		int argc;
-		int envc;
-		char** argv;
-		char** envp;
-
-	public:
-		SysExecVEState()
-		{
-			filename = NULL;
-			dev = NULL;
-			buffer = NULL;
-			count = 0;
-			sofar = 0;
-			argc = 0;
-			argv = NULL;
-			envc = 0;
-			envp = NULL;
-		}
-
-		~SysExecVEState()
-		{
-			delete[] filename;
-			if ( dev ) { dev->Unref(); }
-			delete[] buffer;
-			for ( int i = 0; i < argc; i++ ) { delete[] argv[i]; }
-			delete[] argv;
-			for ( int i = 0; i < envc; i++ ) { delete[] envp[i]; }
-			delete[] envp;
-		}
-
-	};
-
-	int SysExevVEStage2(SysExecVEState* state)
-	{
-		if ( !state->dev->IsReadable() ) { Error::Set(EBADF); delete state; return -1; }
-
-		byte* dest = state->buffer + state->sofar;
-		size_t amount = state->count - state->sofar;
-		ssize_t bytesread = state->dev->Read(dest, amount);
-
-		// Check for premature end-of-file.
-		if ( bytesread == 0 && amount != 0 )
-		{
-			Error::Set(EIO); delete state; return -1;
-		}
-
-		// We actually managed to read some data.
-		if ( 0 <= bytesread )
-		{
-			state->sofar += bytesread;
-			if ( state->sofar <= state->count )
-			{
-				CPU::InterruptRegisters* regs = Syscall::InterruptRegs();
-				Process* process = CurrentProcess();
-				int result = process->Execute(state->filename, state->buffer,
-				                              state->count, state->argc,
-				                              state->argv, state->envc,
-				                              state->envp, regs);
-				if ( result == 0 ) { Syscall::AsIs(); }
-				delete state;
-				return result;
-			}
-
-			return SysExevVEStage2(state);
-		}
-
-		if ( Error::Last() != EBLOCKING ) { delete state; return -1; }
-
-		// The stream will resume our system call once progress has been
-		// made. Our request is certainly not forgotten.
-
-		// Resume the system call with these parameters.
-		Thread* thread = CurrentThread();
-		thread->scfunc = (void*) SysExevVEStage2;
-		thread->scstate[0] = (size_t) state;
-		thread->scsize = sizeof(state);
-
-		// Now go do something else.
-		Syscall::Incomplete();
-		return 0;
-	}
-
-	DevBuffer* OpenProgramImage(const char* progname)
+	DevBuffer* OpenProgramImage(const char* progname, const char* wd, const char* path)
 	{
 		char* abs = Directory::MakeAbsolute("/", progname);
 		if ( !abs ) { Error::Set(ENOMEM); return NULL; }
@@ -426,112 +576,126 @@ namespace Sortix
 		return (DevBuffer*) dev;
 	}
 
-	int SysExecVE(const char* filename, char* const argv[], char* const envp[])
+	int SysExecVE(const char* _filename, char* const _argv[], char* const _envp[])
 	{
-		// TODO: Validate that all the pointer-y parameters are SAFE!
-
-		// Use a container class to store everything and handle cleaning up.
-		SysExecVEState* state = new SysExecVEState;
-		if ( !state ) { return -1; }
-
-		// Make a copy of argv and filename as they are going to be destroyed
-		// when the address space is reset.
-		state->filename = String::Clone(filename);
-		if ( !state->filename ) { delete state; return -1; }
-
-		int argc; for ( argc = 0; argv && argv[argc]; argc++ );
-		int envc; for ( envc = 0; envp && envp[envc]; envc++ );
-
-		state->argv = new char*[argc+1];
-		if ( !state->argv ) { delete state; return -1; }
-		state->argc = argc;
-		Maxsi::Memory::Set(state->argv, 0, sizeof(char*) * (state->argc+1));
-
-		for ( int i = 0; i < state->argc; i++ )
-		{
-			state->argv[i] = String::Clone(argv[i]);
-			if ( !state->argv[i] ) { delete state; return -1; }
-		}
-
-		state->envp = new char*[envc+1];
-		if ( !state->envp ) { delete state; return -1; }
-		state->envc = envc;
-		Maxsi::Memory::Set(state->envp, 0, sizeof(char*) * (state->envc+1));
-
-		for ( int i = 0; i < state->envc; i++ )
-		{
-			state->envp[i] = String::Clone(envp[i]);
-			if ( !state->envp[i] ) { delete state; return -1; }
-		}
-
+		char* filename;
+		int argc;
+		int envc;
+		char** argv;
+		char** envp;
+		DevBuffer* dev;
+		uintmax_t needed;
+		size_t sofar;
+		size_t count;
+		uint8_t* buffer;
+		int result = -1;
 		Process* process = CurrentProcess();
-		state->dev = OpenProgramImage(state->filename);
-		if ( !state->dev ) { delete state; return -1; }
+		CPU::InterruptRegisters regs;
+		Maxsi::Memory::Set(&regs, 0, sizeof(regs));
 
-		state->dev->Refer(); // TODO: Rules of GC may change soon.
-		uintmax_t needed = state->dev->Size();
-		if ( SIZE_MAX < needed ) { Error::Set(ENOMEM); delete state; return -1; }
+		filename = String::Clone(_filename);
+		if ( !filename ) { goto cleanup_done; }
 
-		state->count = needed;
-		state->buffer = new byte[state->count];
-		if ( !state->buffer ) { delete state; return -1; }
+		for ( argc = 0; _argv && _argv[argc]; argc++ );
+		for ( envc = 0; _envp && _envp[envc]; envc++ );
 
-		return SysExevVEStage2(state);
+		argv = new char*[argc+1];
+		if ( !argv ) { goto cleanup_filename; }
+		Maxsi::Memory::Set(argv, 0, sizeof(char*) * (argc+1));
+
+		for ( int i = 0; i < argc; i++ )
+		{
+			argv[i] = String::Clone(_argv[i]);
+			if ( !argv[i] ) { goto cleanup_argv; }
+		}
+
+		envp = new char*[envc+1];
+		if ( !envp ) { goto cleanup_argv; }
+		envc = envc;
+		Maxsi::Memory::Set(envp, 0, sizeof(char*) * (envc+1));
+
+		for ( int i = 0; i < envc; i++ )
+		{
+			envp[i] = String::Clone(_envp[i]);
+			if ( !envp[i] ) { goto cleanup_envp; }
+		}
+
+		dev = OpenProgramImage(filename, process->workingdir, "/bin");
+		if ( !dev ) { goto cleanup_envp; }
+
+		dev->Refer(); // TODO: Rules of GC may change soon.
+		needed = dev->Size();
+		if ( SIZE_MAX < needed ) { Error::Set(ENOMEM); goto cleanup_dev; }
+
+		if ( !dev->IsReadable() ) { Error::Set(EBADF); goto cleanup_dev; }
+
+		count = needed;
+		buffer = new byte[count];
+		if ( !buffer ) { goto cleanup_dev; }
+		sofar = 0;
+		while ( sofar < count )
+		{
+			ssize_t bytesread = dev->Read(buffer + sofar, count - sofar);
+			if ( bytesread < 0 ) { goto cleanup_buffer; }
+			if ( bytesread == 0 ) { Error::Set(EEOF); return -1; }
+			sofar += bytesread;
+		}
+
+		result = process->Execute(filename, buffer, count, argc, argv, envc,
+		                          envp, &regs);
+
+	cleanup_buffer:
+		delete[] buffer;
+	cleanup_dev:
+		dev->Unref();
+	cleanup_envp:
+		for ( int i = 0; i < envc; i++) { delete[] envp[i]; }
+		delete[] envp;
+	cleanup_argv:
+		for ( int i = 0; i < argc; i++) { delete[] argv[i]; }
+		delete[] argv;
+	cleanup_filename:
+		delete[] filename;
+	cleanup_done:
+		if ( !result ) { CPU::LoadRegisters(&regs); }
+		return result;
 	}
 
 	pid_t SysSForkR(int flags, sforkregs_t* regs)
 	{
+		if ( Signal::IsPending() ) { Error::Set(EINTR); return -1; }
+
 		// TODO: Properly support sforkr(2).
 		if ( flags != SFFORK ) { Error::Set(ENOSYS); return -1; }
 
 		CPU::InterruptRegisters cpuregs;
-		Maxsi::Memory::Set(&cpuregs, 0, sizeof(cpuregs));
-#if defined(PLATFORM_X64)
-		cpuregs.rip = regs->rip;
-		cpuregs.userrsp = regs->rsp;
-		cpuregs.rax = regs->rax;
-		cpuregs.rbx = regs->rbx;
-		cpuregs.rcx = regs->rcx;
-		cpuregs.rdx = regs->rdx;
-		cpuregs.rdi = regs->rdi;
-		cpuregs.rsi = regs->rsi;
-		cpuregs.rbp = regs->rbp;
-		cpuregs.r8  = regs->r8;
-		cpuregs.r9  = regs->r9;
-		cpuregs.r10 = regs->r10;
-		cpuregs.r11 = regs->r11;
-		cpuregs.r12 = regs->r12;
-		cpuregs.r13 = regs->r13;
-		cpuregs.r14 = regs->r14;
-		cpuregs.r15 = regs->r15;
-		cpuregs.cs = 0x18 | 0x3;
-		cpuregs.ds = 0x20 | 0x3;
-		cpuregs.ss = 0x20 | 0x3;
-		//cpuregs.rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
-		cpuregs.rflags = (1<<1) | (1<<9) | (1<<21);
-#elif defined(PLATFORM_X86)
-		cpuregs.eip = regs->eip;
-		cpuregs.useresp = regs->esp;
-		cpuregs.eax = regs->eax;
-		cpuregs.ebx = regs->ebx;
-		cpuregs.ecx = regs->ecx;
-		cpuregs.edx = regs->edx;
-		cpuregs.edi = regs->edi;
-		cpuregs.esi = regs->esi;
-		cpuregs.ebp = regs->ebp;
-		cpuregs.cs = 0x18 | 0x3;
-		cpuregs.ds = 0x20 | 0x3;
-		cpuregs.ss = 0x20 | 0x3;
-		//cpuregs.eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
-		cpuregs.eflags = (1<<1) | (1<<9) | (1<<21);
-#else
-		#error SysSForkR needs to know about your platform
-#endif
+		InitializeThreadRegisters(&cpuregs, regs);
 
-		CurrentThread()->SaveRegisters(&cpuregs);
+		// TODO: Is it a hack to create a new kernel stack here?
+		Thread* curthread = CurrentThread();
+		uint8_t* newkernelstack = new uint8_t[curthread->kernelstacksize];
+		if ( !newkernelstack ) { return -1; }
 
 		Process* clone = CurrentProcess()->Fork();
-		if ( !clone ) { return -1; }
+		if ( !clone ) { delete[] newkernelstack; return -1; }
+
+		// If the thread could not be created, make the process commit suicide
+		// in a manner such that we don't wait for its zombie.
+		Thread* thread = CreateKernelThread(clone, &cpuregs);
+		if ( !thread )
+		{
+			clone->AbortConstruction();
+			return -1;
+		}
+
+		thread->kernelstackpos = (addr_t) newkernelstack;
+		thread->kernelstacksize = curthread->kernelstacksize;
+		thread->kernelstackmalloced = true;
+		thread->stackpos = curthread->stackpos;
+		thread->stacksize = curthread->stacksize;
+		thread->sighandler = curthread->sighandler;
+
+		StartKernelThread(thread);
 
 		return clone->pid;
 	}
@@ -541,19 +705,41 @@ namespace Sortix
 		return CurrentProcess()->pid;
 	}
 
-	pid_t SysGetParentPID()
+	pid_t Process::GetParentProcessId()
 	{
-		Process* parent = CurrentProcess()->parent;
-		if ( !parent ) { return -1; }
-
+		ScopedLock lock(&parentlock);
+		if( !parent )
+			return 0;
 		return parent->pid;
 	}
 
+	pid_t SysGetParentPID()
+	{
+		return CurrentProcess()->GetParentProcessId();
+	}
+
 	pid_t nextpidtoallocate;
+	kthread_mutex_t pidalloclock;
 
 	pid_t Process::AllocatePID()
 	{
+		ScopedLock lock(&pidalloclock);
 		return nextpidtoallocate++;
+	}
+
+	// TODO: This is not thread safe.
+	pid_t Process::HackGetForegroundProcess()
+	{
+		for ( pid_t i = nextpidtoallocate; 1 <= i; i-- )
+		{
+			Process* process = Get(i);
+			if ( !process )
+				continue;
+			if ( process->pid <= 1 )
+				continue;
+			return i;
+		}
+		return 0;
 	}
 
 	int ProcessCompare(Process* a, Process* b)
@@ -574,6 +760,7 @@ namespace Sortix
 
 	Process* Process::Get(pid_t pid)
 	{
+		ScopedLock lock(&pidalloclock);
 		size_t index = pidlist->Search(ProcessPIDCompare, pid);
 		if ( index == SIZE_MAX ) { return NULL; }
 
@@ -582,210 +769,17 @@ namespace Sortix
 
 	bool Process::Put(Process* process)
 	{
+		ScopedLock lock(&pidalloclock);
 		return pidlist->Add(process);
 	}
 
 	void Process::Remove(Process* process)
 	{
+		ScopedLock lock(&pidalloclock);
 		size_t index = pidlist->Search(process);
 		ASSERT(index != SIZE_MAX);
 
 		pidlist->Remove(index);
-	}
-
-	void Process::OnChildProcessExit(Process* process)
-	{
-		ASSERT(process->parent == this);
-
-		for ( Thread* thread = firstthread; thread; thread = thread->nextsibling )
-		{
-			if ( thread->onchildprocessexit )
-			{
-				thread->onchildprocessexit(thread, process);
-			}
-		}
-	}
-
-	void Process::Exit(int status)
-	{
-		// Status codes can only contain 8 bits according to ISO C and POSIX.
-		status %= 256;
-
-		ASSERT(this == CurrentProcess());
-
-		Process* init = Scheduler::GetInitProcess();
-
-		if ( pid == 0 ) { Panic("System idle process exited"); }
-
-		// If the init process terminated successfully, time to halt.
-		if ( this == init )
-		{
-			switch ( status )
-			{
-				case 0: CPU::ShutDown();
-				case 1: CPU::Reboot();
-				default: PanicF("The init process exited abnormally with status code %u\n", status);
-			}
-		}
-
-		// Take care of the orphans, so give them to init.
-		while ( firstchild )
-		{
-			Process* orphan = firstchild;
-			firstchild = orphan->nextsibling;
-			if ( firstchild ) { firstchild->prevsibling = NULL; }
-			orphan->parent = init;
-			orphan->prevsibling = NULL;
-			orphan->nextsibling = init->firstchild;
-			if ( orphan->nextsibling ) { orphan->nextsibling->prevsibling = orphan; }
-			init->firstchild = orphan;
-		}
-
-		// Remove the current process from the family tree.
-		if ( !prevsibling )
-		{
-			parent->firstchild = nextsibling;
-		}
-		else
-		{
-			prevsibling->nextsibling = nextsibling;
-		}
-
-		if ( nextsibling )
-		{
-			nextsibling->prevsibling = prevsibling;
-		}
-
-		// Close all the file descriptors.
-		descriptors.Reset();
-
-		// Make all threads belonging to process unrunnable.
-		for ( Thread* t = firstthread; t; t = t->nextsibling )
-		{
-			Scheduler::EarlyWakeUp(t);
-			Scheduler::SetThreadState(t, Thread::State::NONE);
-		}
-
-		// Delete the threads.
-		while ( firstthread )
-		{
-			Thread* todelete = firstthread;
-			firstthread = firstthread->nextsibling;
-			delete todelete;
-		}
-
-		// Now clean up the address space.
-		ResetAddressSpace();
-
-		// TODO: Actually delete the address space. This is a small memory leak
-		// of a couple pages.
-
-		exitstatus = status;
-		nextsibling = parent->zombiechild;
-		if ( parent->zombiechild ) { parent->zombiechild->prevsibling = this; }
-		parent->zombiechild = this;
-
-		// Notify the parent process that the child has become a zombie.
-		parent->OnChildProcessExit(this);
-
-		// Now, as a final operation, get rid of the address space. This should
-		// return us to the original kernel address space containing nothing
-		// but the kernel.
-		Memory::DestroyAddressSpace();
-	}
-
-	void SysExit(int status)
-	{
-		CurrentProcess()->Exit(status);
-
-		// And so, the process had vanished from existence. But as fate would
-		// have it, soon a replacement took its place.
-		Scheduler::ProcessTerminated(Syscall::InterruptRegs());
-		Syscall::AsIs();
-	}
-
-	struct SysWait_t
-	{
-		union { size_t align1; pid_t pid; };
-		union { size_t align2; int* status; };
-		union { size_t align3; int options; };
-	};
-
-	STATIC_ASSERT(sizeof(SysWait_t) <= sizeof(Thread::scstate));
-
-	void SysWaitCallback(Thread* thread, Process* exitee)
-	{
-		// See if this process matches what we are looking for.
-		SysWait_t* state = (SysWait_t*) thread->scstate;
-		if ( state->pid != -1 && state->pid != exitee->pid ) { return; }
-
-		thread->onchildprocessexit = NULL;
-
-		Syscall::ScheduleResumption(thread);
-	}
-
-	pid_t SysWait(pid_t pid, int* status, int options)
-	{
-		Thread* thread = CurrentThread();
-		Process* process = thread->process;
-
-		if ( pid != -1 )
-		{
-			Process* waitingfor = Process::Get(pid);
-			if ( !waitingfor ) { Error::Set(ECHILD); return -1; }
-			if ( waitingfor->parent != process ) { Error::Set(ECHILD); return -1; }
-		}
-
-		// Find any zombie children matching the search description.
-		for ( Process* zombie = process->zombiechild; zombie; zombie = zombie->nextsibling )
-		{
-			if ( pid != -1 && pid != zombie->pid ) { continue; }
-
-			pid = zombie->pid;
-			// TODO: Validate that status is a valid user-space int!
-			if ( status ) { *status = zombie->exitstatus; }
-
-			if ( zombie == process->zombiechild )
-			{
-				process->zombiechild = zombie->nextsibling;
-				if ( zombie->nextsibling ) { zombie->nextsibling->prevsibling = NULL; }
-			}
-			else
-			{
-				zombie->prevsibling->nextsibling = zombie->nextsibling;
-				if ( zombie->nextsibling ) { zombie->nextsibling->prevsibling = zombie->prevsibling; }
-			}
-
-			// And so, the process was fully deleted.
-			delete zombie;
-
-			return pid;
-		}
-
-		// The process needs to have children, otherwise we are waiting for
-		// nothing to happen.
-		if ( !process->firstchild ) { Error::Set(ECHILD); return -1; }
-
-		// Resumes this system call when the wait condition has been met.
-		thread->onchildprocessexit = SysWaitCallback;
-
-		// Resume the system call with these parameters.
-		thread->scfunc = (void*) SysWait;
-		SysWait_t* state = (SysWait_t*) thread->scstate;
-		state->pid = pid;
-		state->status = status;
-		state->options = options;
-		thread->scsize = sizeof(SysWait_t);
-
-		// Now go do something else.
-		Syscall::Incomplete();
-		return 0;
-	}
-
-	int SysRegisterErrno(int* errnop)
-	{
-		CurrentProcess()->errnop = errnop;
-		return 0;
 	}
 
 	void* SysSbrk(intptr_t increment)
@@ -843,10 +837,10 @@ namespace Sortix
 		Syscall::Register(SYSCALL_GETPPID, (void*) SysGetParentPID);
 		Syscall::Register(SYSCALL_EXIT, (void*) SysExit);
 		Syscall::Register(SYSCALL_WAIT, (void*) SysWait);
-		Syscall::Register(SYSCALL_REGISTER_ERRNO, (void*) SysRegisterErrno);
 		Syscall::Register(SYSCALL_SBRK, (void*) SysSbrk);
 		Syscall::Register(SYSCALL_GET_PAGE_SIZE, (void*) SysGetPageSize);
 
+		pidalloclock = KTHREAD_MUTEX_INITIALIZER;
 		nextpidtoallocate = 0;
 
 		pidlist = new SortedList<Process*>(ProcessCompare);

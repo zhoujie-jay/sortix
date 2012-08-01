@@ -18,52 +18,107 @@
 	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	kthread.cpp
-	Fake header providing noop threading functions. This is simply forward
-	compatibility with the upcoming kthread branch and to ease merging.
+	Utility and synchronization mechanisms for kernel threads.
 
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/worker.h>
+#include <sortix/signal.h>
+#include "signal.h"
+#include "thread.h"
+#include "scheduler.h"
 
 namespace Sortix {
 
-// This isn't as bad as it looks. Kernel code traditionally runs with interrupts
-// disabled so there are no race conditions.
-
-extern "C" unsigned kthread_mutex_trylock(kthread_mutex_t* mutex)
+// The kernel thread needs another stack to delete its own stack.
+static void kthread_do_kill_thread(void* user)
 {
+	Thread* thread = (Thread*) user;
+	while ( thread->state != Thread::State::DEAD )
+		kthread_yield();
+	delete thread;
 }
 
-extern "C" void kthread_mutex_lock(kthread_mutex_t* mutex)
+extern "C" void kthread_exit(void* /*param*/)
 {
+	Worker::Schedule(kthread_do_kill_thread, CurrentThread());
+	Scheduler::ExitThread();
 }
 
-unsigned long kthread_mutex_lock_signal(kthread_mutex_t* mutex)
+struct kthread_cond_elem
 {
-	return 1;
-}
-
-extern "C" void kthread_mutex_unlock(kthread_mutex_t* mutex)
-{
-}
+	kthread_cond_elem_t* next;
+	volatile unsigned long woken;
+};
 
 extern "C" void kthread_cond_wait(kthread_cond_t* cond, kthread_mutex_t* mutex)
 {
+	kthread_cond_elem_t elem;
+	elem.next = NULL;
+	elem.woken = 0;
+	if ( cond->last ) { cond->last->next = &elem; }
+	if ( !cond->last ) { cond->last = cond->first = &elem; }
+	while ( !elem.woken )
+	{
+		kthread_mutex_unlock(mutex);
+		Scheduler::Yield();
+		kthread_mutex_lock(mutex);
+	}
 }
 
 extern "C" unsigned long kthread_cond_wait_signal(kthread_cond_t* cond,
                                                   kthread_mutex_t* mutex)
 {
+	if ( Signal::IsPending() )
+		return 0;
+	kthread_cond_elem_t elem;
+	elem.next = NULL;
+	elem.woken = 0;
+	if ( cond->last ) { cond->last->next = &elem; }
+	if ( !cond->last ) { cond->last = cond->first = &elem; }
+	while ( !elem.woken )
+	{
+		if ( Signal::IsPending() )
+		{
+			if ( cond->first == &elem )
+			{
+				cond->first = elem.next;
+				if ( cond->last == &elem )
+					cond->last = NULL;
+			}
+			else
+			{
+				kthread_cond_elem_t* prev = cond->first;
+				while ( prev->next != &elem )
+					prev = prev->next;
+				prev->next = elem.next;
+				if ( cond->last == &elem )
+					cond->last = prev;
+			}
+			// Note that the thread still owns the mutex.
+			return 0;			
+		}
+		kthread_mutex_unlock(mutex);
+		Scheduler::Yield();
+		kthread_mutex_lock(mutex);
+	}
 	return 1;
 }
 
 extern "C" void kthread_cond_signal(kthread_cond_t* cond)
 {
+	kthread_cond_elem_t* elem = cond->first;
+	if ( !elem ) { return; }
+	if ( !(cond->first = elem->next) ) { cond->last = NULL; }
+	elem->next = NULL;
+	elem->woken = 1;
 }
 
 extern "C" void kthread_cond_broadcast(kthread_cond_t* cond)
 {
+	while ( cond->first ) { kthread_cond_signal(cond); }
 }
 
 } // namespace Sortix

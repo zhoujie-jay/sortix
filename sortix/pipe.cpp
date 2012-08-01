@@ -24,11 +24,13 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
+#include <sortix/signal.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #ifdef GOT_FAKE_KTHREAD
 #include "event.h"
 #endif
+#include "signal.h"
 #include "thread.h"
 #include "process.h"
 #include "syscall.h"
@@ -159,8 +161,7 @@ namespace Sortix
 		}
 		if ( !anyreading )
 		{
-			// TODO: Implement better signal support and uncomment.
-			//CurrentThread()->DeliverSignal(SIGPIPE);
+			CurrentThread()->DeliverSignal(SIGPIPE);
 			Error::Set(EPIPE);
 			return -1;
 		}

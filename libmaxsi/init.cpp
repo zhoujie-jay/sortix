@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -11,20 +11,19 @@
 
 	LibMaxsi is distributed in the hope that it will be useful, but WITHOUT ANY
 	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
-	more details.
+	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+	details.
 
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
 	init.cpp
-	Initializes the process by setting up the heap, signal handling,
-	static memory and other useful things.
+	Initializes the process by setting up the heap, signal handling, static
+	memory and other useful things.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <libmaxsi/platform.h>
-#include <libmaxsi/signal.h>
 #include <libmaxsi/io.h>
 #include <libmaxsi/memory.h>
 #include <string.h>
@@ -36,6 +35,7 @@ namespace Maxsi
 
 	extern "C" void init_error_functions();
 	extern "C" void init_stdio();
+	extern "C" void init_signal();
 
 	extern "C" void initialize_standard_library(int argc, char* argv[])
 	{
@@ -46,7 +46,7 @@ namespace Maxsi
 		init_error_functions();
 
 		// It's probably best to initialize the Unix signals early on.
-		Signal::Init();
+		init_signal();
 
 		// Initialize the dynamic heap.
 		Memory::Init();

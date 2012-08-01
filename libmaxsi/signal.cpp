@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -11,8 +11,8 @@
 
 	LibMaxsi is distributed in the hope that it will be useful, but WITHOUT ANY
 	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
-	more details.
+	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+	details.
 
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
@@ -26,7 +26,6 @@
 #include <libmaxsi/memory.h>
 #include <libmaxsi/syscall.h>
 #include <libmaxsi/process.h>
-#include <libmaxsi/signal.h>
 #include <unistd.h>
 #include <signal.h>
 
@@ -34,6 +33,8 @@ namespace Maxsi
 {
 	namespace Signal
 	{
+		typedef void (*Handler)(int);
+
 		void Core(int signum)
 		{
 			 Process::Exit(128 + signum);
@@ -41,33 +42,33 @@ namespace Maxsi
 
 		extern "C" void SIG_DFL(int signum)
 		{
-			if ( signum == Signal::HUP ) { Process::Exit(128 + signum); } else
-			if ( signum == Signal::INT ) { Process::Exit(128 + signum); } else
-			if ( signum == Signal::QUIT ) { Core(signum); } else
-			if ( signum == Signal::TRAP ) { Core(signum); } else
-			if ( signum == Signal::ABRT ) { Core(signum); } else
-			if ( signum == Signal::EMT ) { Core(signum); } else
-			if ( signum == Signal::FPE ) { Core(signum); } else
-			if ( signum == Signal::KILL ) { Process::Exit(128 + signum); } else
-			if ( signum == Signal::BUS ) { Core(signum); } else
-			if ( signum == Signal::SEGV ) { Core(signum); } else
-			if ( signum == Signal::SYS ) { Core(signum); } else
-			if ( signum == Signal::PIPE ) { Process::Exit(128 + signum); } else
-			if ( signum == Signal::ALRM ) { Process::Exit(128 + signum); } else
-			if ( signum == Signal::TERM ) { Process::Exit(128 + signum); } else
-			if ( signum == Signal::USR1 ) { Process::Exit(128 + signum); } else
-			if ( signum == Signal::USR2 ) { Process::Exit(128 + signum); } else
-			if ( signum == Signal::CHLD ) { /* Ignore this signal. */ } else
-			if ( signum == Signal::PWR ) { /* Ignore this signal. */ } else
-			if ( signum == Signal::WINCH ) { /* Ignore this signal. */ } else
-			if ( signum == Signal::URG ) { /* Ignore this signal. */ } else
-			if ( signum == Signal::CONT ) { /* Ignore this signal. */ } else
-			if ( signum == Signal::VTALRM ) { /* Ignore this signal. */ } else
-			if ( signum == Signal::XCPU ) { Core(signum); } else
-			if ( signum == Signal::XFSZ ) { Core(signum); } else
-			if ( signum == Signal::WAITING ) { /* Ignore this signal. */ } else
-			if ( signum == Signal::LWP ) { /* Ignore this signal. */ } else
-			if ( signum == Signal::AIO ) { /* Ignore this signal. */ } else
+			if ( signum == SIGHUP ) { Process::Exit(128 + signum); } else
+			if ( signum == SIGINT ) { Process::Exit(128 + signum); } else
+			if ( signum == SIGQUIT ) { Core(signum); } else
+			if ( signum == SIGTRAP ) { Core(signum); } else
+			if ( signum == SIGABRT ) { Core(signum); } else
+			if ( signum == SIGEMT ) { Core(signum); } else
+			if ( signum == SIGFPE ) { Core(signum); } else
+			if ( signum == SIGKILL ) { Process::Exit(128 + signum); } else
+			if ( signum == SIGBUS ) { Core(signum); } else
+			if ( signum == SIGSEGV ) { Core(signum); } else
+			if ( signum == SIGSYS ) { Core(signum); } else
+			if ( signum == SIGPIPE ) { Process::Exit(128 + signum); } else
+			if ( signum == SIGALRM ) { Process::Exit(128 + signum); } else
+			if ( signum == SIGTERM ) { Process::Exit(128 + signum); } else
+			if ( signum == SIGUSR1 ) { Process::Exit(128 + signum); } else
+			if ( signum == SIGUSR2 ) { Process::Exit(128 + signum); } else
+			if ( signum == SIGCHLD ) { /* Ignore this signal. */ } else
+			if ( signum == SIGPWR ) { /* Ignore this signal. */ } else
+			if ( signum == SIGWINCH ) { /* Ignore this signal. */ } else
+			if ( signum == SIGURG ) { /* Ignore this signal. */ } else
+			if ( signum == SIGCONT ) { /* Ignore this signal. */ } else
+			if ( signum == SIGVTALRM ) { /* Ignore this signal. */ } else
+			if ( signum == SIGXCPU ) { Core(signum); } else
+			if ( signum == SIGXFSZ ) { Core(signum); } else
+			if ( signum == SIGWAITING ) { /* Ignore this signal. */ } else
+			if ( signum == SIGLWP ) { /* Ignore this signal. */ } else
+			if ( signum == SIGAIO ) { /* Ignore this signal. */ } else
 			{ /* Ignore this signal. */ }
 		}
 
@@ -94,10 +95,10 @@ namespace Maxsi
 		}
 
 		DEFN_SYSCALL1_VOID(SysRegisterSignalHandler, SYSCALL_REGISTER_SIGNAL_HANDLER, sighandler_t);
-		DEFN_SYSCALL0_VOID(SysSigReturn, SYSCALL_SIGRETURN);
 		DEFN_SYSCALL2(int, SysKill, SYSCALL_KILL, pid_t, int);
+		DEFN_SYSCALL1(int, SysRaise, SYSCALL_RAISE, int);
 
-		void Init()
+		extern "C" void init_signal()
 		{
 			for ( int i = 0; i < MAX_SIGNALS; i++ )
 			{
@@ -126,7 +127,7 @@ namespace Maxsi
 
 		extern "C" int raise(int signum)
 		{
-			kill(getpid(), signum);
+			return SysRaise(signum);
 		}
 	}
 }

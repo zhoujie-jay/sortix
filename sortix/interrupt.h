@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -48,10 +48,12 @@ const unsigned IRQ14 = 46;
 const unsigned IRQ15 = 47;
 
 extern "C" unsigned long asm_interrupts_are_enabled();
+extern "C" unsigned long asm_is_cpu_interrupted;
 
 inline bool IsEnabled() { return asm_interrupts_are_enabled(); }
 inline void Enable() { asm volatile("sti"); }
 inline void Disable() { asm volatile("cli"); }
+inline bool IsCPUInterrupted() { return asm_is_cpu_interrupted != 0; }
 inline bool SetEnabled(bool isenabled)
 {
 	bool wasenabled = IsEnabled();
@@ -66,6 +68,11 @@ typedef void (*RawHandler)(void);
 void RegisterRawHandler(unsigned index, RawHandler handler, bool userspace);
 
 void Init();
+void InitWorker();
+void WorkerThread(void* user);
+
+typedef void(*WorkHandler)(void* payload, size_t payloadsize);
+bool ScheduleWork(WorkHandler handler, void* payload, size_t payloadsize);
 
 } // namespace Interrupt
 } // namespace Sortix
@@ -103,6 +110,8 @@ extern "C" void isr29();
 extern "C" void isr30();
 extern "C" void isr31();
 extern "C" void isr128();
+extern "C" void isr130();
+extern "C" void isr131();
 extern "C" void irq0();
 extern "C" void irq1();
 extern "C" void irq2();

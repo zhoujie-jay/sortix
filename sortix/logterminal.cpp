@@ -24,10 +24,12 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/keycodes.h>
+#include <sortix/signal.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "utf8.h"
 #include "keyboard.h"
+#include "process.h"
 #include "scheduler.h"
 #include "terminal.h"
 #include "logterminal.h"
@@ -130,7 +132,10 @@ namespace Sortix
 		if ( kbkey == -KBKEY_LCTRL ) { control = false; }
 		if ( mode & TERMMODE_SIGNAL && control && kbkey == KBKEY_C )
 		{
-			Scheduler::SigIntHack();
+			pid_t pid = Process::HackGetForegroundProcess();
+			Process* process = Process::Get(pid);
+			if ( process )
+				process->DeliverSignal(SIGINT);
 			return;
 		}
 		if ( mode & TERMMODE_SIGNAL && control && kbkey == KBKEY_D )
@@ -299,7 +304,6 @@ namespace Sortix
 			return -1;
 		}
 #endif
-
 		return sofar;
 	}
 

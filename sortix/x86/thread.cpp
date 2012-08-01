@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,13 +14,13 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	thread.cpp
 	x86 specific parts of thread.cpp.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <sortix/kernel/platform.h>
 #include "thread.h"
@@ -42,6 +42,8 @@ namespace Sortix
 		registers.ds = src->ds;
 		registers.ss = src->ss;
 		registers.eflags = src->eflags;
+		registers.kerrno = src->kerrno;
+		registers.signal_pending = src->signal_pending;
 	}
 
 	void Thread::LoadRegisters(CPU::InterruptRegisters* dest)
@@ -59,57 +61,80 @@ namespace Sortix
 		dest->ds = registers.ds;
 		dest->ss = registers.ss;
 		dest->eflags = registers.eflags;
+		dest->kerrno = registers.kerrno;
+		dest->signal_pending = registers.signal_pending;
 	}
 
-	const size_t FLAGS_CARRY        = (1<<0);
-	const size_t FLAGS_RESERVED1    = (1<<1); /* read as one */
-	const size_t FLAGS_PARITY       = (1<<2);
-	const size_t FLAGS_RESERVED2    = (1<<3);
-	const size_t FLAGS_AUX          = (1<<4);
-	const size_t FLAGS_RESERVED3    = (1<<5);
-	const size_t FLAGS_ZERO         = (1<<6);
-	const size_t FLAGS_SIGN         = (1<<7);
-	const size_t FLAGS_TRAP         = (1<<8);
-	const size_t FLAGS_INTERRUPT    = (1<<9);
-	const size_t FLAGS_DIRECTION    = (1<<10);
-	const size_t FLAGS_OVERFLOW     = (1<<11);
-	const size_t FLAGS_IOPRIVLEVEL  = (1<<12) | (1<<13);
-	const size_t FLAGS_NESTEDTASK   = (1<<14);
-	const size_t FLAGS_RESERVED4    = (1<<15);
-	const size_t FLAGS_RESUME       = (1<<16);
-	const size_t FLAGS_VIRTUAL8086  = (1<<17);
-	const size_t FLAGS_ALIGNCHECK   = (1<<18);
-	const size_t FLAGS_VIRTINTR     = (1<<19);
-	const size_t FLAGS_VIRTINTRPEND = (1<<20);
-	const size_t FLAGS_ID           = (1<<21);
+	extern "C" void asm_call_BootstrapKernelThread(void);
 
-	void CreateThreadCPU(Thread* thread, addr_t entry)
+	void SetupKernelThreadRegs(CPU::InterruptRegisters* regs, ThreadEntry entry,
+	                           void* user, addr_t stack, size_t stacksize)
 	{
-		const uint32_t CS = 0x18;
-		const uint32_t DS = 0x20;
-		const uint32_t RPL = 0x3;
+		// Instead of directly calling the desired entry point, we call a small
+		// stub that calls it for us and then destroys the kernel thread if
+		// the entry function returns. Note that since we use a stack based
+		// calling convention, we go through a proxy that uses %edi and %esi
+		// as parameters and pushes them to the stack and then does the call.
+		regs->eip = (addr_t) asm_call_BootstrapKernelThread;
+		regs->useresp = stack + stacksize;
+		regs->eax = 0;
+		regs->ebx = 0;
+		regs->ecx = 0;
+		regs->edx = 0;
+		regs->edi = (addr_t) user;
+		regs->esi = (addr_t) entry;
+		regs->ebp = 0;
+		regs->cs = KCS | KRPL;
+		regs->ds = KDS | KRPL;
+		regs->ss = KDS | KRPL;
+		regs->eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+		regs->kerrno = 0;
+		regs->signal_pending = 0;
+	}
 
-		CPU::InterruptRegisters regs;
-		regs.eip = entry;
-		regs.useresp = thread->stackpos + thread->stacksize;
-		regs.eax = 0;
-		regs.ebx = 0;
-		regs.ecx = 0;
-		regs.edx = 0;
-		regs.edi = 0;
-		regs.esi = 0;
-		regs.ebp = thread->stackpos + thread->stacksize;
-		regs.cs = CS | RPL;
-		regs.ds = DS | RPL;
-		regs.ss = DS | RPL;
-		regs.eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
-
-		thread->SaveRegisters(&regs);
+	void Thread::HandleSignalFixupRegsCPU(CPU::InterruptRegisters* regs)
+	{
+		if ( regs->InUserspace() )
+			return;
+		uint32_t* params = (uint32_t*) regs->ecx;
+		regs->eip = params[0];
+		regs->eflags = params[2];
+		regs->useresp = params[3];
+		regs->cs = UCS | URPL;
+		regs->ds = UDS | URPL;
+		regs->ss = UDS | URPL;
 	}
 
 	void Thread::HandleSignalCPU(CPU::InterruptRegisters* regs)
 	{
-		regs->edi = currentsignal->signum;
+		const size_t STACK_ALIGNMENT = 16UL;
+		const size_t RED_ZONE_SIZE = 128UL;
+		regs->useresp -= RED_ZONE_SIZE;
+		regs->useresp &= ~(STACK_ALIGNMENT-1UL);
+		regs->ebp = regs->useresp;
+		regs->edi = currentsignal;
 		regs->eip = (size_t) sighandler;
+		regs->eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+		regs->kerrno = 0;
+		regs->signal_pending = 0;
+	}
+
+	extern "C" void asm_call_Thread__OnSigKill(void);
+
+	void Thread::GotoOnSigKill(CPU::InterruptRegisters* regs)
+	{
+		regs->eip = (unsigned long) asm_call_Thread__OnSigKill;
+		regs->edi = (unsigned long) this;
+		// TODO: HACK: The -256 is because if we are jumping to the safe stack
+		// we currently are on, this may not be fully supported by interrupt.s
+		// that is quite aware of this (but isn't perfect). If our destination
+		// is further down the stack, then we are probably safe.
+		regs->useresp = regs->ebp = kernelstackpos + kernelstacksize - 256;
+		regs->eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+		regs->cs = KCS | KRPL;
+		regs->ds = KDS | KRPL;
+		regs->ss = KDS | KRPL;
+		regs->kerrno = 0;
+		regs->signal_pending = 0;
 	}
 }

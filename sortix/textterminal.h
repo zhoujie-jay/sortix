@@ -25,6 +25,8 @@
 #ifndef SORTIX_TEXTTERMINAL_H
 #define SORTIX_TEXTTERMINAL_H
 
+#include <sortix/kernel/kthread.h>
+
 namespace Sortix {
 
 class TextBufferHandle;
@@ -51,6 +53,7 @@ private:
 
 private:
 	mutable TextBufferHandle* textbufhandle;
+	mutable kthread_mutex_t termlock;
 	uint8_t vgacolor;
 	unsigned column;
 	unsigned line;

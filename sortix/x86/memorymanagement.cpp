@@ -114,45 +114,53 @@ namespace Sortix
 			PML* pml = PMLS[level] + offset;
 			for ( size_t i = 0; i < ENTRIES; i++ )
 			{
-				if ( !(pml->entry[i] & PML_PRESENT) ) { continue; }
-				if ( !(pml->entry[i] & PML_USERSPACE) ) { continue; }
-				if ( !(pml->entry[i] & PML_FORK) ) { continue; }
+				addr_t entry = pml->entry[i];
+				if ( !(entry & PML_PRESENT) ) { continue; }
+				if ( !(entry & PML_USERSPACE) ) { continue; }
+				if ( !(entry & PML_FORK) ) { continue; }
 				if ( level > 1 ) { RecursiveFreeUserspacePages(level-1, offset * ENTRIES + i); }
 				addr_t addr = pml->entry[i] & PML_ADDRESS;
-				pml->entry[i] = 0;
-				Page::Put(addr);
+				// No need to unmap the page, we just need to mark it as unused.
+				Page::PutUnlocked(addr);
 			}
 		}
 
-		void DestroyAddressSpace()
+		void DestroyAddressSpace(addr_t fallback, void (*func)(addr_t, void*), void* user)
 		{
-			// First let's do the safe part. Garbage collect any PML1/0's left
-			// behind by user-space. These are completely safe to delete.
-			RecursiveFreeUserspacePages(TOPPMLLEVEL, 0);
-
-			// Let's destroy the current address space! Oh wait. If we do that,
-			// hell will break loose half-way when we start unmapping this piece
-			// of code.
-			// Instead, let's just mark the relevant pages as unused and switch
-			// to another address space as fast as humanely possible. Any memory
-			// allocation could potentially modify the current paging structures
-			// and overwrite their contents causing a tripple-fault!
-
-			// Make sure Page::Put does NOT cause any Page::Get's internally!
-			const size_t NUM_PAGES = 2;
-			size_t pagestackfree = Page::stacklength - Page::stackused;
-			if ( pagestackfree < NUM_PAGES ) { Page::ExtendStack(); }
-
+			// Look up the last few entries used for the fractal mapping. These
+			// cannot be unmapped as that would destroy the world. Instead, we
+			// will remember them, switch to another adress space, and safely
+			// mark them as unused. Also handling the forking related pages.
 			addr_t fractal1 = PMLS[2]->entry[1022];
+			addr_t dir = currentdir;
 
-			Page::Put(fractal1 & PML_ADDRESS);
-			Page::Put(currentdir & PML_ADDRESS);
+			// We want to free the pages, but we are still using them ourselves,
+			// so lock the page allocation structure until we are done.
+			Page::Lock();
+
+			// In case any pages wasn't cleaned at this point.
+#warning Page::Put calls may internally Page::Get and then reusing pages we are not done with just yet
+			RecursiveFreeUserspacePages(TOPPMLLEVEL, 0);
 
 			// Switch to the address space from when the world was originally
 			// created. It should contain the kernel, the whole kernel, and
 			// nothing but the kernel.
 			PML* const BOOTPML2 = (PML* const) 0x11000UL;
-			SwitchAddressSpace((addr_t) BOOTPML2);
+			if ( !fallback )
+				fallback = (addr_t) BOOTPML2;
+
+			if ( func )
+				func(fallback, user);
+			else
+				SwitchAddressSpace(fallback);
+
+			// Ok, now we got marked everything left behind as unused, we can
+			// now safely let another thread use the pages.
+			Page::Unlock();
+
+			// These are safe to free since we switched address space.
+			Page::Put(fractal1 & PML_ADDRESS);
+			Page::Put(dir & PML_ADDRESS);
 		}
 
 		const size_t KERNEL_STACK_SIZE = 256UL * 1024UL;

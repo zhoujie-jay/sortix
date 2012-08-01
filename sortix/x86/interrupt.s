@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -255,6 +255,20 @@ isr128:
 	pushl $0 # err_code
 	pushl $128 # int_no
 	jmp interrupt_handler_prepare
+.global isr130
+.type isr130, @function
+isr130:
+	cli
+	pushl $0 # err_code
+	pushl $130 # int_no
+	jmp interrupt_handler_prepare
+.global isr131
+.type isr131, @function
+isr131:
+	cli
+	pushl $0 # err_code
+	pushl $131 # int_no
+	jmp interrupt_handler_prepare
 .global irq0
 .type irq0, @function
 irq0:
@@ -367,8 +381,29 @@ irq15:
 	pushl $0 # err_code
 	pushl $47 # int_no
 	jmp interrupt_handler_prepare
+.global yield_cpu_handler
+.type yield_cpu_handler, @function
+yield_cpu_handler:
+	cli
+	pushl $0 # err_code
+	pushl $129 # int_no
+	jmp interrupt_handler_prepare
+.global thread_exit_handler
+.type thread_exit_handler, @function
+thread_exit_handler:
+	cli
+	pushl $0 # err_code
+	pushl $132 # int_no
+	jmp interrupt_handler_prepare
 
 interrupt_handler_prepare:
+	movl $1, asm_is_cpu_interrupted
+
+	# Check if an interrupt happened while having kernel permissions.
+	testw $0x3, 12(%esp) # cs
+	jz fixup_relocate_stack
+fixup_relocate_stack_complete:
+
 	pushl %eax
 	pushl %ecx
 	pushl %edx
@@ -393,10 +428,27 @@ interrupt_handler_prepare:
 	movl %cr2, %ebp
 	pushl %ebp
 
+	# Push the current kernel errno value.
+	movl global_errno, %ebp
+	pushl %ebp
+
+	# Push whether a signal is pending.
+	movl asm_signal_is_pending, %ebp
+	pushl %ebp
+
 	# Now call the interrupt handler.
 	pushl %esp
 	call interrupt_handler
 	addl $4, %esp
+
+load_interrupted_registers:
+	# Restore whether signals are pending.
+	popl %ebp
+	movl %ebp, asm_signal_is_pending
+
+	# Restore the previous kernel errno.
+	popl %ebp
+	movl %ebp, global_errno
 
 	# Remove CR2 from the stack.
 	addl $4, %esp
@@ -411,7 +463,7 @@ interrupt_handler_prepare:
 	popl %edi
 	popl %esi
 	popl %ebp
-	popl %esp
+	addl $4, %esp # Don't pop %esp, may not be defined.
 	popl %ebx
 	popl %edx
 	popl %ecx
@@ -420,8 +472,106 @@ interrupt_handler_prepare:
 	# Remove int_no and err_code
 	addl $8, %esp
 
+	movl $0, asm_is_cpu_interrupted
+
+	# If interrupted with kernel permissions we may need to switch stack.
+	testw $0x3, 4(%esp) # int_no and err_code now gone, so cs is at 4(%esp).
+	jz fixup_switch_stack
+fixup_switch_stack_complete:
+
 	# Return to where we came from.
 	iret
+
+fixup_relocate_stack:
+	# Ok, so some genius at Intel decided that if the permission level does not
+	# change during an interrupt then the CPU won't push the stack pointer and
+	# it won't reload it during iret. This seriously messes up the scheduler
+	# that wants to preempt kernel threads each with their own stack. The
+	# scheduler will attempt to read (and modify) the stack value which doesn't
+	# exist and worse: the value at that location is likely used by the
+	# interrupted kernel thread. A quick and dirty solution is to simply move
+	# the stack 8 bytes down the stack. Right now there are the 5 elements on
+	# the stack (eflags, cs, eip, err_code, int_no) of 5 bytes each.
+	mov %eax, -4-8(%esp) # Save eax
+	mov 0(%esp), %eax # int_no
+	mov %eax, 0-8(%esp)
+	mov 4(%esp), %eax # err_code
+	mov %eax, 4-8(%esp)
+	mov 8(%esp), %eax # eip
+	mov %eax, 8-8(%esp)
+	mov 12(%esp), %eax # cs
+	mov %eax, 12-8(%esp)
+	mov 16(%esp), %eax # eflags
+	mov %eax, 16-8(%esp)
+	# Next up we have to fake what the CPU should have done: pushed ss and esp.
+	mov %esp, %eax
+	addl $5*4, %eax # Calculate original esp
+	mov %eax, 20-8(%esp)
+	mov %ss, %eax
+	mov %eax, 24-8(%esp)
+	# Now that we moved the stack, it's time to really handle the interrupt.
+	mov -4-8(%esp), %eax
+	subl $8, %esp
+	jmp fixup_relocate_stack_complete
+
+fixup_switch_stack:
+	# Yup, we also have to do special processing when we return from the
+	# interrupt. The problem is that if the iret instruction won't load a new
+	# stack if interrupted with kernel permissions and that the scheduler may
+	# wish to change the current stack during a context switch. We will then
+	# switch the stack before calling iret; but iret needs the return
+	# information on the stack (and now it isn't), so we'll copy our stack onto
+	# our new stack and then fire the interrupt and everyone is happy.
+
+	# In the following code, %esp will point our fixed iret return parameters
+	# that has stack data. However, the processor does not expect this
+	# information as cs hasn't changed. %ebx will point to the new stack plus
+	# room for three 32-bit values (eip, cs, eflags) that will be given to the
+	# actual iret. We will then load the new stack and copy the eip, cs and
+	# eflags to the new stack. However, we have to be careful in the case that
+	# we are switching to the same stack (in which case stuff on the same
+	# horizontal location in the diagram is actually on the same memory
+	# location). We therefore copy to the new stack and carefully avoid
+	# corrupting the destination if %esp + 8 = %ebx, This diagram show the
+	# structure of the stacks and where temporaries will be stored:
+	#      -12     -8      -4      %esp    4       8       12      16      20
+	# old: IECX    IEBX    IEAX    EIP     CS      EFLAGS  ESP     SS      ...
+	# new: IECX    IEBX    IEAX    -       -       EIP     CS      EFLAGS  ...
+	#      -20     -16     -12     -8      -4      %ebx    4       8       12
+
+	mov %eax, -4(%esp) # IEAX, Clobbered as copying temporary
+	mov %ebx, -8(%esp) # IEBX, Clobbered as pointer to new stack
+	mov %ecx, -12(%esp) # IECX, Clobbered as new stack selector
+
+	mov 12(%esp), %ebx # Pointer to new stack
+	sub $3*4, %ebx # Point to eip on the new stack (see diagram)
+	movw 16(%esp), %cx # New ss
+
+	# The order of these does not matter if we are switching to the same stack,
+	# as the memory would be copied to the same location (see diagram).
+	mov -4(%esp), %eax # interrupted eax value
+	mov %eax, -12(%ebx)
+	mov -8(%esp), %eax # interrupted ebx value
+	mov %eax, -16(%ebx)
+	mov -12(%esp), %eax # interrupted ecx value
+	mov %eax, -20(%ebx)
+
+	# The order of these three copies matter if switching to the same stack.
+	mov 8(%esp), %eax # eflags
+	mov %eax, 8(%ebx)
+	mov 4(%esp), %eax # cs
+	mov %eax, 4(%ebx)
+	mov 0(%esp), %eax # eip
+	mov %eax, 0(%ebx)
+
+	mov %cx, %ss # Load new stack selector
+	mov %ebx, %esp # Load new stack pointer
+
+	mov -12(%esp), %eax # restore interrupted eax value
+	mov -16(%esp), %ebx # restore interrupted ebx value
+	mov -20(%esp), %ecx # restore interrupted ecx value
+
+	jmp fixup_switch_stack_complete
 
 .global interrupt_handler_null
 .type interrupt_handler_null, @function
@@ -435,4 +585,11 @@ asm_interrupts_are_enabled:
 	popl %eax
 	andl $0x000200, %eax # FLAGS_INTERRUPT
 	retl
+
+.global load_registers
+.type load_registers, @function
+load_registers:
+	# Let the register struct become our temporary stack
+	movl 4(%esp), %esp
+	jmp load_interrupted_registers
 

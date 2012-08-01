@@ -52,7 +52,6 @@
 #define SYSCALL_UNLINK 27
 #define SYSCALL_REGISTER_ERRNO 28
 #define SYSCALL_REGISTER_SIGNAL_HANDLER 29
-#define SYSCALL_SIGRETURN 30
 #define SYSCALL_KILL 31
 #define SYSCALL_MEMSTAT 32
 #define SYSCALL_ISATTY 33
@@ -75,7 +74,8 @@
 #define SYSCALL_PWRITE 50
 #define SYSCALL_SFORKR 51
 #define SYSCALL_TCGETWINSIZE 52
-#define SYSCALL_MAX_NUM 53 /* index of highest constant + 1 */
+#define SYSCALL_RAISE 53
+#define SYSCALL_MAX_NUM 54 /* index of highest constant + 1 */
 
 #endif
 

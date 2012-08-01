@@ -101,6 +101,7 @@ memorymanagement.o \
 calltrace.o \
 $(CPU)/calltrace.o \
 kthread.o \
+$(CPU)/kthread.o \
 interlock.o \
 $(CPU)/interlock.o \
 panic.o \
@@ -132,7 +133,6 @@ elf.o \
 process.o \
 initrd.o \
 thread.o \
-event.o \
 io.o \
 pipe.o \
 filesystem.o \

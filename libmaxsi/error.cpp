@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -37,12 +37,9 @@ extern "C" { int global_errno = 0; }
 extern "C" { errno_location_func_t errno_location_func = NULL; }
 
 #ifndef SORTIX_KERNEL
-DEFN_SYSCALL1(int, SysRegisterErrno, SYSCALL_REGISTER_ERRNO, int*);
-
 extern "C" void init_error_functions()
 {
 	global_errno = 0;
-	SysRegisterErrno(&global_errno);
 }
 #endif
 

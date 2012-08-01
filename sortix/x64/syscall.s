@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,73 +14,41 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	syscall.s
+	x64/syscall.s
 	An assembly stub that acts as glue for system calls.
 
-******************************************************************************/
+*******************************************************************************/
 
 .global syscall_handler
-.global resume_syscall
 
 .section .text
 .type syscall_handler, @function
 syscall_handler:
-	cli
+	# The processor disabled interrupts during the int $0x80 instruction,
+	# however Sortix system calls runs with interrupts enabled such that they
+	# can be pre-empted.
+	sti
 
-	# Compabillity with InterruptRegisters.
-	pushq $0x0
-	pushq $0x80
-
-	pushq %r15
-	pushq %r14
-	pushq %r13
-	pushq %r12
-	pushq %r11
-	pushq %r10
-	pushq %r9
-	pushq %r8
-	pushq %rax
-	pushq %rcx
-	pushq %rdx
-	pushq %rbx
-	pushq %rsp
+	movl $0, global_errno # Reset errno
 	pushq %rbp
-	pushq %rsi
-	pushq %rdi
 
-	# Push the user-space data segment.
+	# Grant ourselves kernel permissions to the data segment.
 	movl %ds, %ebp
 	pushq %rbp
-
-	# Load the kernel data segment.
 	movw $0x10, %bp
 	movl %ebp, %ds
 	movl %ebp, %es
 	movl %ebp, %fs
 	movl %ebp, %gs
 
-	# Compabillity with InterruptRegisters.
-	movq %cr2, %rbp
-	pushq %rbp
-
-	# Store the state structure's pointer so the call can modify it if needed.
-	movq %rsp, syscall_state_ptr
-
-	# By default, assume the system call was complete.
-	movl $0, system_was_incomplete
-
-	# Reset the kernel errno.
-	movl $0, global_errno
-
-	# Make sure the requested system call is valid.
+	# Make sure the requested system call is valid, if not, then fix it.
 	cmp SYSCALL_MAX, %rax
-	jb valid_rax
-	xorq %rax, %rax
+	jae fix_syscall
 
-valid_rax:
+valid_syscall:
 	# Read a system call function pointer.
 	xorq %rbp, %rbp
 	movq syscall_list(%rbp,%rax,8), %rax
@@ -88,72 +56,40 @@ valid_rax:
 	# Oh how nice, user-space put the parameters in: rdi, rsi, rdx, rcx, r8, r9
 
 	# Call the system call.
-	callq *%rax
+	callq *%rax	
 
-	# Test if the system call was incomplete
-	movl system_was_incomplete, %ebx
-	testl %ebx, %ebx
-
-	# If the system call was incomplete, the value in %eax is meaningless.
-	jg return_to_userspace
-
-	# The system call was completed, so store the return value.
-	movq %rax, 72(%rsp)
-
-	# Don't forget to update userspace's errno value.
-	call update_userspace_errno
-
-return_to_userspace:
-	# Compabillity with InterruptRegisters.
-	addq $8, %rsp
-
-	# Restore the user-space data segment.
+	# Restore the previous permissions to data segment.
 	popq %rbp
 	movl %ebp, %ds
 	movl %ebp, %es
 	movl %ebp, %fs
 	movl %ebp, %gs
 
-	popq %rdi
-	popq %rsi
+	# Return to user-space, system call result in %rax, errno in %edx.
 	popq %rbp
-	popq %rsp
-	popq %rbx
-	popq %rdx
-	popq %rcx
-	popq %rax
-	popq %r8
-	popq %r9
-	popq %r10
-	popq %r11
-	popq %r12
-	popq %r13
-	popq %r14
-	popq %r15
+	movl global_errno, %edx
 
-	# Compabillity with InterruptRegisters.
-	addq $16, %rsp
+	# If any signals are pending, fire them now.
+	movq asm_signal_is_pending, %rdi
+	testq %rdi, %rdi
+	jnz call_signal_dispatcher
 
-	# Return to user-space.
 	iretq
 
-.type resume_syscall, @function
-resume_syscall:
-	pushq %rbp
-	movq %rsp, %rbp
+fix_syscall:
+	# Call the null system call instead.
+	xorq %rax, %rax
+	jmp valid_syscall
 
-	movq %rdi, %rax
-	movq %rdx, %r11
-
-	movq 0(%r11), %rdi
-	movq 8(%r11), %rsi
-	movq 16(%r11), %rdx
-	movq 24(%r11), %rcx
-	movq 32(%r11), %r8
-	movq 40(%r11), %r9
-
-	callq *%rax
-
-	leaveq
-	retq
-
+call_signal_dispatcher:
+	# We can't return to this location after the signal, since if any system
+	# call is made this stack will get reused and all our nice temporaries wil
+	# be garbage. We therefore pass the kernel the state to return to and it'll
+	# handle it for us when the signal is over.
+	movq 0(%rsp), %rdi # userspace rip
+	movq 16(%rsp), %rsi # userspace rflags
+	movq 24(%rsp), %rcx # userspace rsp, note %rdx is used for errno
+	int $130 # Deliver pending signals.
+	# If we end up here, it means that the signal didn't override anything and
+	# that we should just go ahead and return to userspace ourselves.
+	iretq

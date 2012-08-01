@@ -26,10 +26,10 @@
 #include <sortix/kernel/kthread.h>
 #include <libmaxsi/error.h>
 #include "interrupt.h"
-#include "event.h"
 #include "stream.h"
 #include "syscall.h"
 #include "thread.h"
+#include "signal.h"
 #include "fs/devfs.h"
 #include "com.h"
 
