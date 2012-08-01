@@ -72,10 +72,13 @@ endif
 
 INCLUDES=-I. -Iinclude -I../libmaxsi/preproc
 CPPFLAGS=$(INCLUDES) $(DEFINES)
-FLAGSRELEASE=-s $(O)
-FLAGSDEBUG=
+ifeq ($(DEBUG_KERNEL),1)
+    FLAGSDEBUG=-g3
+else
+    FLAGSDEBUG=-s $(O)
+endif
 FLAGS=$(CPUFLAGS) -Wall  -Wall -Wextra -nostdlib -fno-builtin -nostartfiles \
-      -nodefaultlibs -fno-stack-protector $(FLAGSRELEASE)
+      -nodefaultlibs -fno-stack-protector $(FLAGSDEBUG)
 CFLAGS=$(FLAGS)
 CXXFLAGS=$(FLAGS) -std=gnu++0x -fno-exceptions -fno-rtti
 ASFLAGS=$(CPUASFLAGS)
