@@ -73,6 +73,33 @@ private:
 
 };
 
+class DevMemoryBuffer : public DevBuffer
+{
+public:
+	DevMemoryBuffer(uint8_t* buf, size_t bufsize, bool write = true,
+	                bool deletebuf = true);
+	~DevMemoryBuffer();
+
+private:
+	uint8_t* buf;
+	size_t bufsize;
+	size_t off;
+	bool write;
+	bool deletebuf;
+
+public:
+	virtual size_t BlockSize();
+	virtual uintmax_t Size();
+	virtual uintmax_t Position();
+	virtual bool Seek(uintmax_t position);
+	virtual bool Resize(uintmax_t size);
+	virtual ssize_t Read(byte* dest, size_t count);
+	virtual ssize_t Write(const byte* src, size_t count);
+	virtual bool IsReadable();
+	virtual bool IsWritable();
+
+};
+
 } // namespace Sortix
 
 #endif

@@ -141,5 +141,79 @@ bool DevLineCommand::IsWritable()
 	return true;
 }
 
+
+DevMemoryBuffer::DevMemoryBuffer(uint8_t* buf, size_t bufsize, bool write,
+	                             bool deletebuf)
+{
+	this->buf = buf;
+	this->bufsize = bufsize;
+	this->write = write;
+	this->deletebuf = deletebuf;
+}
+
+DevMemoryBuffer::~DevMemoryBuffer()
+{
+	if ( deletebuf )
+		delete[] buf;
+}
+
+size_t DevMemoryBuffer::BlockSize()
+{
+	return 1;
+}
+
+uintmax_t DevMemoryBuffer::Size()
+{
+	return bufsize;
+}
+
+uintmax_t DevMemoryBuffer::Position()
+{
+	return off;
+}
+
+bool DevMemoryBuffer::Seek(uintmax_t position)
+{
+	off = position;
+	return true;
+}
+
+bool DevMemoryBuffer::Resize(uintmax_t size)
+{
+	if ( size != bufsize ) { Error::Set(EPERM); return false; }
+	return true;
+}
+
+ssize_t DevMemoryBuffer::Read(byte* dest, size_t count)
+{
+	if ( bufsize <= off ) { return 0; }
+	size_t available = bufsize - off;
+	if ( available < count ) { count = available; }
+	Memory::Copy(dest, buf + off, count);
+	off += count;
+	return count;
+}
+
+ssize_t DevMemoryBuffer::Write(const byte* src, size_t count)
+{
+	if ( !write ) { Error::Set(EBADF); return -1; }
+	if ( bufsize <= off ) { Error::Set(EPERM); return -1; }
+	size_t available = bufsize - off;
+	if ( available < count ) { count = available; }
+	Memory::Copy(buf + off, src, count);
+	off += count;
+	return count;
+}
+
+bool DevMemoryBuffer::IsReadable()
+{
+	return true;
+}
+
+bool DevMemoryBuffer::IsWritable()
+{
+	return write;
+}
+
 } // namespace Sortix
 
