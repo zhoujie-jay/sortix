@@ -93,6 +93,7 @@ HEADERS:=$(shell find include -type f)
 OBJS=$(CPUOBJS) \
 kernel.o \
 interrupt.o \
+worker.o \
 time.o \
 log.o \
 utf8.o \
