@@ -25,12 +25,25 @@
 #ifndef SORTIX_ENDIAN_H
 #define SORTIX_ENDIAN_H
 
+// Work around older GCC versions that do not define this.
+#if !defined(__BYTE_ORDER__) && (defined(__i386__) || defined(__x86_64__))
+#if !defined(__ORDER_LITTLE_ENDIAN__)
+#define __ORDER_LITTLE_ENDIAN__ 1234
+#endif
+#if !defined(__ORDER_BIG_ENDIAN__)
+#define __ORDER_BIG_ENDIAN__ 4321
+#endif
+#if !defined(__BYTE_ORDER__)
+#define __BYTE_ORDER__ __ORDER_LITTLE_ENDIAN__
+#endif
+#endif
+
 #ifndef __BYTE_ORDER__
 #error Your compiler needs to define the __BYTE_ORDER__ macro family.
 #endif
 
 #if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__ && \
-    __BYTE_ORDER__ != __ORDER_BIG_ENDIAN
+    __BYTE_ORDER__ != __ORDER_BIG_ENDIAN__
 #error Exotic endian detected, you need to port this header.
 #endif
 
