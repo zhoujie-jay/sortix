@@ -80,17 +80,17 @@ namespace Sortix
 			Syscall::Register(SYSCALL_SLEEP, (void*) SysSleep);
 			Syscall::Register(SYSCALL_USLEEP, (void*) SysUSleep);
 
-			addr_t stackstart = Memory::GetKernelStack();
+			addr_t stackhigher = Memory::GetKernelStack();
 			size_t stacksize = Memory::GetKernelStackSize();
-			addr_t stackend = stackstart - stacksize;
+			addr_t stacklower = stackhigher - stacksize;
 			int prot = PROT_KREAD | PROT_KWRITE;
-			if ( !Memory::MapRange(stackend, stacksize, prot) )
+			if ( !Memory::MapRange(stacklower, stacksize, prot) )
 			{
 				PanicF("could not create kernel stack (%zx to %zx)",
-				       stackend, stackstart);
+				       stacklower, stackhigher);
 			}
 
-			GDT::SetKernelStack((size_t*) stackstart);
+			GDT::SetKernelStack(stacklower, stacksize, stackhigher);
 		}
 
 		// The no operating thread is a thread stuck in an infinite loop that

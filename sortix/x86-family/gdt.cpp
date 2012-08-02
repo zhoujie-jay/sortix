@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -142,12 +142,12 @@ namespace Sortix
 #endif
 		}
 
-		void SetKernelStack(size_t* stack)
+		void SetKernelStack(addr_t stacklower, size_t stacksize, addr_t stackhigher)
 		{
 #ifdef PLATFORM_X86
-			tss_entry.esp0 = (uint32_t) stack;
+			tss_entry.esp0 = (uint32_t) stackhigher;
 #elif defined(PLATFORM_X64)
-			tss_entry.stack0 = (uint64_t) stack;
+			tss_entry.stack0 = (uint64_t) stackhigher;
 #else
 			#warning "TSS is not yet supported on this arch!"
 			while(true);

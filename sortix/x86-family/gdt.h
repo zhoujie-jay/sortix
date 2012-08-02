@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -120,7 +120,7 @@ namespace Sortix
 		void Init();
 		void SetGate(int32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);
 		void WriteTSS(int32_t num, uint16_t ss0, addr_t stack0);
-		void SetKernelStack(size_t* stack);
+		void SetKernelStack(addr_t stacklower, size_t stacksize, addr_t stackhigher);
 	}
 }
 
