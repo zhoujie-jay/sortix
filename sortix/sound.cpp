@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/kthread.h>
 #include "sound.h"
 #include "syscall.h"
 
@@ -30,8 +31,11 @@ namespace Sortix
 {
 	namespace Sound
 	{
+		kthread_mutex_t soundlock;
+
 		void Mute()
 		{
+			ScopedLock lock(&soundlock);
 		 	uint8_t TMP = (CPU::InPortB(0x61)) & 0xFC;
 
 		 	CPU::OutPortB(0x61, TMP);
@@ -39,6 +43,7 @@ namespace Sortix
 
 		void Play(nat Frequency)
 		{
+			ScopedLock lock(&soundlock);
 			//Set the PIT to the desired frequency
 			uint32_t Div = 1193180 / Frequency;
 			CPU::OutPortB(0x43, 0xB6);
@@ -61,6 +66,7 @@ namespace Sortix
 
 		void Init()
 		{
+			soundlock = KTHREAD_MUTEX_INITIALIZER;
 			Syscall::Register(SYSCALL_SET_FREQUENCY, (void*) SysSetFrequency);
 		}
 	}
