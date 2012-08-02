@@ -100,6 +100,8 @@ memorymanagement.o \
 calltrace.o \
 $(CPU)/calltrace.o \
 kthread.o \
+interlock.o \
+$(CPU)/interlock.o \
 panic.o \
 keyboard.o \
 kb/ps2.o \
