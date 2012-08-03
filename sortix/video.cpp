@@ -56,6 +56,8 @@ bool ReadParamString(const char* str, ...)
 		va_start(args, str);
 		while ( (keyname = va_arg(args, const char*)) )
 		{
+			if ( String::Compare(keyname, "STOP") == 0 )
+				break;
 			char** nameptr = va_arg(args, char**);
 			if ( String::Compare(keyname, name) ) { continue; }
 			*nameptr = value;
