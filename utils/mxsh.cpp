@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This program is free software: you can redistribute it and/or modify it
 	under the terms of the GNU General Public License as published by the Free
@@ -29,9 +29,15 @@
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <termios.h>
 
 int status = 0;
+
+void on_sigint(int signum)
+{
+	printf("^C\n");
+}
 
 void updatepwd()
 {
@@ -175,6 +181,10 @@ readcmd:
 			goto readcmd;
 		}
 
+		// TODO: Hack, use the right macros!
+		if ( status == 128 + SIGINT )
+			printf("^C\n");
+
 		result = status;
 		goto out;
 	}
@@ -240,7 +250,7 @@ out:
 	return result;
 }
 
-void command()
+void get_and_run_command()
 {
 	unsigned termmode = TERMMODE_UNICODE
 	                  | TERMMODE_SIGNAL
@@ -260,8 +270,20 @@ void command()
 	{
 		char c;
 		ssize_t bytesread = read(1, &c, sizeof(c));
+		if ( bytesread < 0 && errno == EINTR )
+			return;
 		if ( bytesread < 0 ) { error(64, errno, "read stdin"); }
-		if ( !bytesread ) { break; }
+		if ( !bytesread )
+		{
+			if ( getppid() == 1 )
+				printf("\nType exit to shutdown the system.\n");
+			else
+			{
+				printf("exit\n");
+				exit(status);
+			}
+			break;
+		}
 		if ( !c ) { continue; }
 		if ( c == '\n' ) { break; }
 		if ( commandsize <= commandused ) { continue; }
@@ -310,6 +332,7 @@ void command()
 
 int main(int argc, char* argv[])
 {
+	signal(SIGINT, on_sigint);
 	char pidstr[32];
 	char ppidstr[32];
 	sprintf(pidstr, "%i", getpid());
@@ -319,6 +342,6 @@ int main(int argc, char* argv[])
 	setenv("PPID", ppidstr, 1);
 	setenv("?", "0", 1);
 	updatepwd();
-	while ( true ) { command(); }
+	while ( true ) { get_and_run_command(); }
 }
 
