@@ -21,7 +21,7 @@ ifeq ($(CPU),x64)
     BUILDID=x64
     X86FAMILY=1
     CPUDEFINES=-DPLATFORM_X64
-    CPUFLAGS=-m64 -ffreestanding -mcmodel=large -mno-red-zone
+    CPUFLAGS=-m64 -ffreestanding -mno-red-zone
     CPULDFLAGS=-melf64-little -z max-page-size=0x1000
     CPUASFLAGS=-64
     CPUNASMFLAGS=-felf64
