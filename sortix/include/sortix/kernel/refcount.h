@@ -25,6 +25,8 @@
 #ifndef SORTIX_REFCOUNT_H
 #define SORTIX_REFCOUNT_H
 
+#include <sortix/kernel/kthread.h>
+
 namespace Sortix {
 
 class Refcounted
@@ -39,6 +41,7 @@ public:
 	inline size_t Refcount() const { return refcount; }
 
 private:
+	kthread_mutex_t reflock;
 	size_t refcount;
 
 };

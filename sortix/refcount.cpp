@@ -23,12 +23,14 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/kthread.h>
 #include <sortix/kernel/refcount.h>
 
 namespace Sortix {
 
 Refcounted::Refcounted()
 {
+	reflock = KTHREAD_MUTEX_INITIALIZER;
 	refcount = 1;
 }
 
@@ -41,12 +43,16 @@ Refcounted::~Refcounted()
 
 void Refcounted::Refer()
 {
+	ScopedLock lock(&reflock);
 	refcount++;
 }
 
 void Refcounted::Unref()
 {
-	if ( !--refcount )
+	kthread_mutex_lock(&reflock);
+	bool deleteme =  !--refcount;
+	kthread_mutex_unlock(&reflock);
+	if ( deleteme )
 		delete this;
 }
 
