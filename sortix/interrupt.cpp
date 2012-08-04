@@ -255,7 +255,7 @@ void ISRHandler(Sortix::CPU::InterruptRegisters* regs)
 		Log::Print("\n");
 	}
 
-	if ( regs->int_no < 32 )
+	if ( regs->int_no < 32 && regs->int_no != 7 )
 	{
 		CrashHandler(regs);
 		return;

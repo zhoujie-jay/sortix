@@ -59,6 +59,11 @@ namespace Sortix
 		siglevel = 0;
 		sighandler = NULL;
 		terminated = false;
+		fpuinitialized = false;
+		// If malloc isn't 16-byte aligned, then we can't rely on offsets in
+		// our own class, so we'll just fix ourselves nicely up.
+		unsigned long fpuaddr = ((unsigned long) fpuenv+16UL) & ~(16UL-1UL);
+		fpuenvaligned = (uint8_t*) fpuaddr;
 	}
 
 	Thread::~Thread()

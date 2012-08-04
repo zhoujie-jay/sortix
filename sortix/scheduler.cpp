@@ -27,6 +27,7 @@
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include "x86-family/gdt.h"
+#include "x86-family/float.h"
 #include "syscall.h"
 #include "interrupt.h"
 #include "time.h"
@@ -104,6 +105,8 @@ static void DoActualSwitch(CPU::InterruptRegisters* regs)
 	current->SaveRegisters(regs);
 	next->LoadRegisters(regs);
 
+	Float::NotityTaskSwitch();
+
 	addr_t newaddrspace = next->addrspace;
 	Memory::SwitchAddressSpace(newaddrspace);
 	SetCurrentThread(next);
@@ -174,6 +177,7 @@ static void InterruptYieldCPU(CPU::InterruptRegisters* regs, void* /*user*/)
 
 static void ThreadExitCPU(CPU::InterruptRegisters* regs, void* /*user*/)
 {
+	Float::NofityTaskExit(); // Can't use floating point instructions from now.
 	SetThreadState(currentthread, Thread::State::DEAD);
 	InterruptYieldCPU(regs, NULL);
 }

@@ -100,6 +100,9 @@ namespace Sortix
 		Thread* schedulerlistprev;
 		Thread* schedulerlistnext;
 		volatile State state;
+		uint8_t fpuenv[512UL + 16UL];
+		uint8_t* fpuenvaligned;
+		bool fpuinitialized;
 
 	public:
 		addr_t addrspace;

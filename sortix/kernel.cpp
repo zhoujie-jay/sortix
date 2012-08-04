@@ -39,6 +39,7 @@
 #include <sortix/mman.h>
 #include "kernelinfo.h"
 #include "x86-family/gdt.h"
+#include "x86-family/float.h"
 #include "time.h"
 #include "keyboard.h"
 #include "multiboot.h"
@@ -265,6 +266,7 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	idlethread->kernelstackpos = (addr_t) stack;
 	idlethread->kernelstacksize = STACK_SIZE;
 	idlethread->kernelstackmalloced = false;
+	idlethread->fpuinitialized = true;
 	system->firstthread = idlethread;
 	Scheduler::SetIdleThread(idlethread);
 
@@ -272,6 +274,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Note that we don't do the work here: should it block, then there is
 	// nothing to run. Therefore we must become the system idle thread.
 	RunKernelThread(BootThread, NULL);
+
+	// Set up such that floating point registers are lazily switched.
+	Float::Init();
 
 	// The time driver will run the scheduler on the next timer interrupt.
 	Time::Init();
