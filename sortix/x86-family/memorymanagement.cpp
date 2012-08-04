@@ -573,7 +573,8 @@ namespace Sortix
 		void PageProtect(addr_t mapto, int protection)
 		{
 			addr_t phys;
-			LookUp(mapto, &phys, NULL);
+			if ( !LookUp(mapto, &phys, NULL) )
+				return;
 			Map(phys, mapto, protection);
 		}
 
@@ -581,7 +582,8 @@ namespace Sortix
 		{
 			addr_t phys;
 			int prot;
-			LookUp(mapto, &phys, &prot);
+			if ( !LookUp(mapto, &phys, &prot) )
+				return;
 			prot |= protection;
 			Map(phys, mapto, prot);
 		}
@@ -590,7 +592,8 @@ namespace Sortix
 		{
 			addr_t phys;
 			int prot;
-			LookUp(mapto, &phys, &prot);
+			if ( !LookUp(mapto, &phys, &prot) )
+				return;
 			prot &= ~protection;
 			Map(phys, mapto, prot);
 		}
