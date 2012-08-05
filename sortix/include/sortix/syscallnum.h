@@ -72,7 +72,7 @@
 #define SYSCALL_KERNELINFO 48
 #define SYSCALL_PREAD 49
 #define SYSCALL_PWRITE 50
-#define SYSCALL_SFORKR 51
+#define SYSCALL_TFORK 51
 #define SYSCALL_TCGETWINSIZE 52
 #define SYSCALL_RAISE 53
 #define SYSCALL_MAX_NUM 54 /* index of highest constant + 1 */

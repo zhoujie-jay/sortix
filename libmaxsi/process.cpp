@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -39,7 +39,7 @@ namespace Maxsi
 	{
 		DEFN_SYSCALL1_VOID(SysExit, SYSCALL_EXIT, int);
 		DEFN_SYSCALL3(int, SysExecVE, SYSCALL_EXEC, const char*, char* const*, char* const*);
-		DEFN_SYSCALL2(pid_t, SysSForkR, SYSCALL_SFORKR, int, sforkregs_t*);
+		DEFN_SYSCALL2(pid_t, SysTFork, SYSCALL_TFORK, int, tforkregs_t*);
 		DEFN_SYSCALL0(pid_t, SysGetPID, SYSCALL_GETPID);
 		DEFN_SYSCALL0(pid_t, SysGetParentPID, SYSCALL_GETPPID);
 		DEFN_SYSCALL3(pid_t, SysWait, SYSCALL_WAIT, pid_t, int*, int);
@@ -184,16 +184,16 @@ namespace Maxsi
 			_exit(status);
 		}
 
-		extern "C" pid_t sforkr(int flags, sforkregs_t* regs)
+		extern "C" pid_t tfork(int flags, tforkregs_t* regs)
 		{
-			return SysSForkR(flags, regs);
+			return SysTFork(flags, regs);
 		}
 
-		extern "C" pid_t __call_sforkr_with_regs(int flags);
+		extern "C" pid_t __call_tfork_with_regs(int flags);
 
 		extern "C" pid_t sfork(int flags)
 		{
-			return __call_sforkr_with_regs(flags);
+			return __call_tfork_with_regs(flags);
 		}
 
 		DUAL_FUNCTION(pid_t, fork, Fork, ())

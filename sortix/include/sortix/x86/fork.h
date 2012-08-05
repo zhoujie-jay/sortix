@@ -29,7 +29,7 @@
 
 __BEGIN_DECLS
 
-struct sforkregs_x86
+struct tforkregs_x86
 {
 	uint32_t eip;
 	uint32_t eax;

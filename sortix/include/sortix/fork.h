@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of Sortix.
 
@@ -31,6 +31,7 @@
 
 __BEGIN_DECLS
 
+/* TODO: These doesn't belong in this header! */
 #define R_OK 4 /* Test for read permission. */
 #define W_OK 2 /* Test for write permission. */
 #define X_OK 1 /* Test for execute permission. */
@@ -43,9 +44,9 @@ __BEGIN_DECLS
    you wish to fork certain items simply set the proper flags. Note that since
    flags may be added from time to time, you should use various compound flags
    defined below such as SFFORK and SFALL. It can be useful do combine these
-   compount flags with bitoperations, for instance "I want traditional fork,
+   compound flags with bit operations, for instance "I want traditional fork,
    except share the working dir pointer" is sfork(SFFORK & ~SFCWD). */
-#define SFPROC (1<<0) /* Creates child, otherwise affect current process. */
+#define SFPROC (1<<0) /* Creates child, otherwise affect current task. */
 #define SFPID (1<<1) /* Allocates new PID. */
 #define SFFD (1<<2) /* Fork file descriptor table. */
 #define SFMEM (1<<3) /* Forks address space. */
@@ -56,10 +57,11 @@ __BEGIN_DECLS
 #define SFCSIG (1<<8) /* Child will have no pending signals, like fork(2). */
 
 /* Creates a new thread in this process. Beware that it will share the stack of
-   the parent thread and that various threading featues may not have been set up
-   properly. You should use the standard threading API unless you know what you
-   are doing; remember that you can always sfork more stuff after the standard
-   threading API returns control to you. */
+   the parent thread and that various threading features may not have been set
+   up properly. You should use the standard threading API unless you know what
+   you are doing; remember that you can always sfork more stuff after the
+   standard threading API returns control to you. This is useful combined with
+   the tfork System call that lets you control the registers of the new task. */
 #define SFTHREAD (SFPROC | SFCSIG)
 
 /* Provides traditional fork(2) behavior; use this instead of the above values
@@ -75,15 +77,19 @@ __BEGIN_DECLS
    are reserved and must not be set. */
 #define SFALL ((1<<20)-1)
 
+/* This structure tells tfork the initial values of the registers in the new
+   task. It is ignored if no new task is created. sfork works by recording its
+   own state into such a structure and calling tfork. Note that this structure
+   is highly platform specific, portable code should use the standard threading
+   facilities combined with sfork if possible. */
 #ifdef PLATFORM_X86
-typedef struct sforkregs_x86 sforkregs_t;
+typedef struct tforkregs_x86 tforkregs_t;
 #elif defined(PLATFORM_X64)
-typedef struct sforkregs_x64 sforkregs_t;
+typedef struct tforkregs_x64 tforkregs_t;
 #else
-#warning No sforkresgs_cpu structure declared
+#warning No tforkregs_cpu structure declared
 #endif
 
 __END_DECLS
 
 #endif
-

@@ -194,7 +194,7 @@ size_t pwriteleast(int fd, const void* buf, size_t least, size_t max, off_t off)
 size_t readall(int fd, void* buf, size_t count);
 size_t readleast(int fd, void* buf, size_t least, size_t max);
 pid_t sfork(int flags);
-pid_t sforkr(int flags, sforkregs_t* regs);
+pid_t tfork(int flags, tforkregs_t* regs);
 int uptime(uintmax_t* usecssinceboot);
 int vexecl(const char*, va_list args);
 int vexecle(const char*, va_list args);

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of LibMaxsi.
 
@@ -24,15 +24,15 @@
 
 .section .text
 
-.globl __call_sforkr_with_regs
-.type __call_sforkr_with_regs, @function
-__call_sforkr_with_regs:
+.globl __call_tfork_with_regs
+.type __call_tfork_with_regs, @function
+__call_tfork_with_regs:
 	pushl %ebp
 	movl %esp, %ebp
 
 	movl 8(%ebp), %edx # flags parameter, edx need not be preserved.
 
-	# The actual system call expects a struct sforkregs_x86 containing the state
+	# The actual system call expects a struct tforkregs_x86 containing the state
 	# of each register in the child. Since we create an identical copy, we
 	# simply set each member of the structure to our own state. Note that since
 	# the stack goes downwards, we create it in the reverse order.
@@ -47,11 +47,11 @@ __call_sforkr_with_regs:
 	pushl $0 # rax, result of sfork is 0 for the child.
 	pushl $after_fork # rip, child will start execution from here.
 
-	# Call sforkr with a nice pointer to our structure. Note that %edi contains
+	# Call tfork with a nice pointer to our structure. Note that %edi contains
 	# the flag parameter that this function accepted.
 	pushl %esp
 	pushl %edx
-	call sforkr
+	call tfork
 
 after_fork:
 	# The value in %eax determines whether we are child or parent. There is no

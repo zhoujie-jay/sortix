@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of Sortix.
 
@@ -29,7 +29,7 @@
 
 __BEGIN_DECLS
 
-struct sforkregs_x64
+struct tforkregs_x64
 {
 	uint64_t rip;
 	uint64_t rax;

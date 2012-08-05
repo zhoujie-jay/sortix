@@ -661,11 +661,11 @@ namespace Sortix
 		return result;
 	}
 
-	pid_t SysSForkR(int flags, sforkregs_t* regs)
+	pid_t SysTFork(int flags, tforkregs_t* regs)
 	{
 		if ( Signal::IsPending() ) { Error::Set(EINTR); return -1; }
 
-		// TODO: Properly support sforkr(2).
+		// TODO: Properly support tfork(2).
 		if ( flags != SFFORK ) { Error::Set(ENOSYS); return -1; }
 
 		CPU::InterruptRegisters cpuregs;
@@ -832,7 +832,7 @@ namespace Sortix
 	void Process::Init()
 	{
 		Syscall::Register(SYSCALL_EXEC, (void*) SysExecVE);
-		Syscall::Register(SYSCALL_SFORKR, (void*) SysSForkR);
+		Syscall::Register(SYSCALL_TFORK, (void*) SysTFork);
 		Syscall::Register(SYSCALL_GETPID, (void*) SysGetPID);
 		Syscall::Register(SYSCALL_GETPPID, (void*) SysGetParentPID);
 		Syscall::Register(SYSCALL_EXIT, (void*) SysExit);

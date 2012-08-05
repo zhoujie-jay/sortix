@@ -147,7 +147,7 @@ namespace Sortix
 	};
 
 	void InitializeThreadRegisters(CPU::InterruptRegisters* regs,
-                                   const sforkregs_t* requested);
+                                   const tforkregs_t* requested);
 	Process* CurrentProcess();
 }
 

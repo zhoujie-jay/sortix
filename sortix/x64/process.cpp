@@ -51,7 +51,7 @@ namespace Sortix
 	}
 
 	void InitializeThreadRegisters(CPU::InterruptRegisters* regs,
-                                   const sforkregs_t* requested)
+                                   const tforkregs_t* requested)
 	{
 		Maxsi::Memory::Set(regs, 0, sizeof(*regs));
 		regs->rip = requested->rip;
