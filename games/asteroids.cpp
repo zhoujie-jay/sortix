@@ -816,7 +816,9 @@ void Spaceship::Render()
 	Vector p1 = P1.Rotate(shipangle) + screenpos;
 	Vector p2 = P2.Rotate(shipangle) + screenpos;
 	Vector p3 = P3.Rotate(shipangle) + screenpos;
-	uint32_t shipcolor = MakeColor(255, 255, 255);
+	uint32_t shipcolor = MakeColor(200, 200, 200);
+	if ( this == playership )
+		shipcolor = MakeColor(255, 255, 255);
 	DrawLine(shipcolor, p1.x, p1.y, p2.x, p2.y);
 	DrawLine(shipcolor, p2.x, p2.y, p3.x, p3.y);
 	DrawLine(shipcolor, p1.x, p1.y, p3.x, p3.y);
@@ -882,9 +884,55 @@ void Botship::Think(float deltatime)
 {
 	if ( 0.0f < firedelay )
 		firedelay -= deltatime;
-	if ( (missile = firedelay <= 0.0f) )
-		firedelay = 0.05;
-	turnleft = true;
+	const float PLAYER_MAX_DIST = 512.0f;
+	float playerdist = (playership->pos - pos).Size();
+	bool needreturn = PLAYER_MAX_DIST < playerdist;
+	Actor* target = NULL;
+	bool movetotarget = false;
+	Asteroid* asttarget = NULL;
+	float targetsafety = 0.0f;
+	for ( Object* obj = firstobject; !needreturn && obj; obj = obj->NextObj() )
+	{
+		if ( !obj->GCIsAlive() ) { continue; }
+		if ( !obj->IsA("Asteroid") ) { continue; }
+		Asteroid* ast = (Asteroid*) obj;
+		if ( ast->Type() == TYPE_CRYSTAL )
+			continue;
+		Vector mypos = pos + vel * 2.0f;
+		Vector astdir = ast->pos - mypos;
+		float safety = astdir.Size() / (ast->vel.Size() * sqrtf(ast->Size()));
+		if ( !asttarget || safety < targetsafety )
+			asttarget = ast, targetsafety = safety;
+	}
+	target = asttarget;
+	if ( needreturn )
+		target = playership, movetotarget = true;
+	moveforward = movebackward = missile = false;
+	if ( (missile = asttarget && !needreturn && firedelay <= 0.0f) )
+		firedelay = 0.3;
+	if ( target )
+	{
+		// Estimate the location of the target.
+		Vector targetdir = target->pos - pos;
+		float missile_speed = 120.0;
+		float firetime = targetdir.Size() / missile_speed;
+		Vector projectedpos = target->pos + target->vel * firetime;
+		Vector projecteddir = projectedpos - pos;
+
+		// Further estimate the location of the target.
+		float firetimeg2 = projecteddir.Size() / missile_speed;
+		Vector projectedposg2 = target->pos + target->vel * firetimeg2;
+		Vector projecteddirg2 = projectedposg2 - pos;
+
+		// Calculate which direction to look in.
+		Vector forward = Vector(1.0, 0.0).Rotate(shipangle);
+		Vector forwardhat(-forward.y, forward.x);
+		float dotproduct = forwardhat.Dot(projecteddirg2);
+		turnright = 0.0f < dotproduct;
+		turnleft = !turnright;
+	}
+	if ( target && movetotarget )
+		moveforward = true;
 	Spaceship::Think(deltatime);
 }
 
