@@ -262,7 +262,7 @@ void get_and_run_command()
 	printf("root@sortix %s # ", getenv("PWD"));
 	fflush(stdout);
 
-	const size_t commandsize = 128;
+	const size_t commandsize = 1024;
 	char command[commandsize + 1];
 	size_t commandused = 0;
 
