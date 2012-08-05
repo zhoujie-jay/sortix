@@ -1,27 +1,28 @@
 The Sortix Operating System
 ===========================
 Sortix is a hobby operating system. It was originally created as a tool to learn
-more about kernel and operating system design and implementation. Today is
-transforming into a real operating system. The standard library and kernel is
-rich enough that some third party software can and has been ported to Sortix.
-However, the system remains quite limited as of this writing. Many features are
-missing such as proper filesystem support, bitmap graphics, and networking.
-Proper filesystem support is currently being added.
+more about kernel and operating system design and implementation. Today it is
+gradually transforming into a real operating system. The standard library and
+kernel is rich enough that some third party software can and has been ported to
+Sortix. While the system remains limited, there have been added support for
+bitmap graphics and proper filesystem support being worked on. Unfortunately
+there is no support for networking yet. The current release ships with various
+test programs, utility programs and a few games and has support for rendering
+the console in graphics mode.
 
 The system aims to be an Unix-clone and is heavily based on POSIX. However, I've
-drawn much inspiration from systems such as Plan 9, GNU/Hurd and MINIX. Indeed,
-I plan to construct a micro-kernel with user-space filesystems, per-process
-namespaces, replacing many system calls with filesystem nodes, and other
-exciting features. This design will make it safe to let normal users perform
-operations such as mounting and create their own "sub-operating-system"
-environment where they are the root.
+drawn much inspiration from systems such as Plan 9, GNU/Hurd and MINIX. While
+the system doesn't strive to be a microkernel (and today isn't), the plan is to
+have user-space filesystems, per-process namespaces, subusers, and generally
+give regular users more power that traditional Unix systems. If you are
+interested, you can read about my design decisions at http://maxsi.org/blog/.
 
 System Requirements
 -------------------
 Sortix has very low system requirements. It also works well under virtual
 machines such as VirtualBox and Qemu.
 
-* A 32-bit x86 or 64-bit x86_64 CPU.
+* A 32-bit x86 (with SSE) or 64-bit x86_64 CPU.
 * A dozen megabytes of RAM.
 * A harddisk or cdrom drive or support for booting from USB.
 * A multiboot compliant bootloader if booting from harddisk.
@@ -35,55 +36,53 @@ protected environment with round-robin scheduling. A quick and dirty shell is
 able to execute programs in foreground or background mode, handle IO redirection
 and piping the standard output of a process into the standard input of another.
 A real shell will be added as the system matures and I get around to finish the
-work in progress shell.
+work-in-progress shell.
 
 A number of standard utilities are present such as cat, head, tail, clear, cp,
 column, kill, ls, rm, pwd, uname, echo, and uptime. There is even a number of
 non-standard utilities such as calc, help, init, kernelinfo, memstat, and pager.
 This collection of utilities will continue to grow as it matures and third party
 software is ported. I've currently had some luck partially porting binutils,
-ocaml, and gzip, but the system isn't fully ready for such software yet.
+freetype, ocaml, and gzip, but the system isn't fully ready for such software
+yet.
 
 A number of small games is present and uses the VGA textmode to render ASCII
 graphics. Notably you can play two-player Pong, or single-player Snake, or the
-nice and Turing-complete Conway's Game of Life. These are probably the main
+nice and Turing-complete Conway's Game of Life. There is also a small remake of
+the asteroids game which uses 32-bit bitmap graphics. These are probably the main
 attraction of the system for non-technical people.
 
 The Sortix kernel has very basic filesystem support. The root filesystem / is
 simply a single-directory RAM filesystem. The init ramdisk is mounted read-only
 on /bin and various devices are accessible through the /dev filesystem. Work is
 underway to create an ext2 filesystem server, but it won't be of much use until
-the kernel virtual filesystem is completed in the 0.7dev development cycle.
+the kernel virtual filesystem is completed in the 0.8dev development cycle.
 
-There currently is no concept of users in the system (only the root user exists
-I decided to delay making a multi-user system until the base system is in place.
-Note that there is only a single terminal - even though the system is a
-multi-process system, there is only a single /dev/vga and there is no framework
-in place for sharing it.
+There currently is no concept of users in the system (only the root user
+exists). I decided to delay making a multi-user system until the base system is
+in place. Note that there is only a single terminal - even though the system is
+a multi-process system, there is only a single graphics framebuffer and there is
+no framework for sharing it.
 
-Improvements in Sortix 0.6
+Improvements in Sortix 0.7
 --------------------------
-The 0.6 release improves greatly upon Sortix 0.5.
+The 0.7 release improves greatly upon Sortix 0.6.
 
-* Implemented an ATA driver.
-* User-space programs can now use dynamic allocation.
-* Standard Error support.
-* Added a new terminal driver allowing standard input from keyboard.
-* Shell understands pipes, IO redirection and background processes.
-* COM ports are available as /dev/comN.
-* ls now formats files nicely in columns.
-* Added a paging program for displaying text-files page by page.
-* Support for call-traces in the kernel.
-* Fixes to avoid conflicts with GRUB.
-* Countless bug-fixes and small improvements.
-* Massive enhancements to the standard library.
-
-The 0.6 release drops support for the javascript virtual machine used to power
-amazing things such as jslinux. This is largely because Sortix has outgrown it
-and needs a less limited environment, in particular the lack of a VGA and that
-the keyboard events are truncated to that of serial connections is annoying and
-make it possible to keep the games compatible without severe performance
-penalties.
+* Multithreaded and fully preemptive kernel.
+* Support for Streaming SIMD Extensions (SSE).
+* Support for bitmap graphics through new /dev/video/ framework.
+* Environmental variables.
+* Rewritten and powerful initrd format.
+* Init restarts the shell if it crashes.
+* Driver for doing BIOS calls.
+* VBE graphics driver.
+* BGA graphics driver.
+* Console rendering in graphics mode.
+* Asteroids remake.
+* Improved signal handling.
+* VEOF support in terminal driver and shell.
+* Misc. shell improvements.
+* Greatly improved and refactored kernel and standard library.
 
 Known bugs
 ----------
@@ -92,51 +91,41 @@ the system being young and incomplete. They will gradually be fixed as the base
 system improves. They are tolerated in the releases because they are not
 critical and improvement situation from the last release.
 
-Job control and Unix signals is not fully or correctly implemented. This means
-that sequences such as Ctrl-C (SIGINT) not always works correctly. This will
-be implemented soon enough (depends partially on VFS; see above). Whenever you
-hit Ctrl-C the kernel attempts to terminate the currently running process (even
-if it isn't the foreground process). In addition, the kernel can only send
-signals to running processes. This means that that programs that read a line of
-input at a time from the terminal will not be terminated until you press enter.
-This will be fixed when proper support for kernel threads is added.
-
 The shell only looks at whitespace when parsing input lines. This means that
 operators such as & ; and | must be surrounded by whitespace on both sides.
 Support for quotes and escape characters is also not implemented yet. The shell
 does not accept very long lines yet.
-
-Transferring large binary streams over pipes may cause instability in the kernel
-due to a bug that wasn't fixed in time for the 0.6 release. In particular, the
-command $ cat /bin/cat | cat seems to trigger the issue occasionally. This bug
-will likely go away when I rewrite the kernel IO framework.
 
 Some programs change the format of the terminal standard input delivered to
 them. For instance, the pong game needs to capture every keyboard event. However
 running such programs at the same time as programs that need proper line-
 buffered input (such as the shell) causes conflicts and neither program gets
 what it needs causing programs to exit or crash. Note that if the shell fails
-to read in its expected format, it exits with an error code. When it does this
-the init process does too, and the kernel panics. This issue is caused by the
-design of the terminal system and can't be fixed until it is rewritten.
+to read in its expected format, it exits with an error code. This issue is
+caused by the design of the terminal system and can't be fixed until it is
+rewritten.
+
+The editor can only run in 80x25 terminal resolutions. This is because it is
+very hacky and was written before malloc worked. This will be fixed when the
+editor is rewritten.
 
 The filesystem is currently hacked together in the kernel. When things go wrong
 you may experience the utilities returning the wrong error codes. This is
 harmless but confusing. All the current kernel filesystem code will be replaced
 a user-space filesystem framework and will be present in the next release.
 
-Improvements scheduled for Sortix 0.7
+Improvements scheduled for Sortix 0.8
 -------------------------------------
-* Proper kernel threads.
+* New build system based on cross compilation and package management.
 * Kernel virtual filesystem.
 * User-space filesystem framework.
 * User-space ext2 filesystem driver.
 * Refactor and extend the standard library.
 * Mount-points.
-* Environmental variables.
 * Improved terminal framework.
 * New and improved shell.
 * Copy-on-write in fork(2) and mmap(2).
+* And various misc. improvements.
 
 Technical details
 ----------------
@@ -172,29 +161,34 @@ Links
 -----
 You can visit the official website at http://www.maxsi.org/software/sortix/ for
 more information and news. You can also download the newest release and cutting
-edge nightly builds.
+edge nightly builds from https://cs.au.dk/~sortie/sortix/release/.
 
 You can retrieve the current git master from our gitorious project page from
 https://gitorious.org/sortix/.
 
+You can read my blog where I discuss various design decisions in Sortix at
+http://maxsi.org/blog/.
+
 License
 -------
-
 Copyright(C) Jonas 'Sortie' Termansen <sortie@maxsi.org> and contributors 2011,
 2012.
-
-The Sortix kernel, the filesystem servers, the initrd tools, the utilities, the
-games, and the benchmark programs are licensed under the GNU General Public
-License, either version 3 or (at your option) any later version.
-
-The libmaxsi standard library is licensed under the GNU Lesser General Public
-License, either version 3 or (at your option) any later version.
-
-Any experimental repositories and branches on Gitorious related to Sortix but
-which contains no copyright statements are also released under the GNU General
-Public License, either version 3 or (at your option) any later version. These
-things are so experimental that I didn't add copyright statements yet.
 
 Sortix is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE. See the gpl.html and lgpl.html files for more information.
+
+See the individual files for copyright terms. If a file does not contain a
+license header, you can assume it is released under the GNU General Public
+Licenser, either version 3 or (at your option) any later version. This includes
+Sortix-related experimental branches and repositories found on Gitorious: these
+things are so experimental that I didn't add copyright statements.
+
+Unless the license header in the source code states otherwise, the Sortix
+kernel, the filesystem servers, the initrd tools, the utilities, the games, and
+the benchmark programs are licensed under the GNU General Public License, either
+version 3 or (at your option) any later version.
+
+Unless the license header in the source code states otherwise, the libmaxsi
+standard library is licensed under the GNU Lesser General Public License, either
+version 3 or (at your option) any later version.
