@@ -687,6 +687,9 @@ public:
 
 class Spaceship : public Actor
 {
+protected:
+	Spaceship() { }
+
 public:
 	Spaceship(float shipangle,
 	          Vector pos = Vector(0, 0),
@@ -707,7 +710,7 @@ public:
 	void SetTurn(bool turnleft, bool turnright);
 	void SetFiring(bool missile, bool firework, bool attractor);
 
-private:
+protected:
 	bool turnleft;
 	bool turnright;
 	bool moveforward;
@@ -757,6 +760,12 @@ void Spaceship::Think(float deltatime)
 		{
 			ast->GCDie();
 			continue;
+		}
+		else if ( isinside && IsA("Botship") )
+		{
+			ast->OnHit();
+			GCDie();
+			return;
 		}
 		else if ( isinside )
 		{
@@ -832,6 +841,53 @@ void Spaceship::SetFiring(bool missile, bool firework, bool attractor)
 	this->attractor = attractor;
 }
 
+class Botship : public Spaceship
+{
+public:
+	Botship(float shipangle,
+	          Vector pos = Vector(0, 0),
+	          Vector vel = Vector(0, 0),
+	          Vector acc = Vector(0, 0));
+	virtual ~Botship();
+
+public:
+	virtual bool IsA(const char* classname)
+	{
+		return !strcmp(classname, "Botship") || Spaceship::IsA(classname);
+	}
+	virtual void Think(float deltatime);
+
+private:
+	float firedelay;
+
+};
+
+Botship::Botship(float shipangle, Vector pos, Vector vel, Vector acc)
+{
+	this->shipangle = shipangle;
+	this->pos = pos;
+	this->vel = vel;
+	this->acc = acc;
+	this->mass = 1.0;
+	turnleft = turnright = moveforward = movebackward = missile = \
+	attractor = firework = false;
+	firedelay = 0.0f;
+}
+
+Botship::~Botship()
+{
+}
+
+void Botship::Think(float deltatime)
+{
+	if ( 0.0f < firedelay )
+		firedelay -= deltatime;
+	if ( (missile = firedelay <= 0.0f) )
+		firedelay = 0.05;
+	turnleft = true;
+	Spaceship::Think(deltatime);
+}
+
 Firework::Firework(Vector pos, Vector vel, Vector dir, float ttl) : Missile(pos, vel, dir, ttl)
 {
 }
@@ -885,9 +941,13 @@ void GameLogic()
 	playership->SetThrust(keysdown[KBKEY_UP], keysdown[KBKEY_DOWN]);
 	playership->SetTurn(keysdown[KBKEY_LEFT], keysdown[KBKEY_RIGHT]);
 	playership->SetFiring(keysdown[KBKEY_SPACE], keysdown[KBKEY_LCTRL], keysdown[KBKEY_A]);
+	bool makebot = keysdown[KBKEY_B];
 	keysdown[KBKEY_A] = false;
+	keysdown[KBKEY_B] = false;
 	keysdown[KBKEY_SPACE] = false;
 	keysdown[KBKEY_LCTRL] = false;
+	if ( makebot )
+		new Botship(RandomAngle(), playership->pos, playership->vel);
 	for ( obj = first; obj; obj = obj->NextObj() )
 	{
 		if ( !obj->GCIsBorn() ) { continue; }
