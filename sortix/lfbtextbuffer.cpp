@@ -78,7 +78,6 @@ LFBTextBuffer* CreateLFBTextBuffer(uint8_t* lfb, uint32_t lfbformat,
 	ret->chars = chars;
 	Memory::Set(attrs, 0, sizeof(uint16_t) * columns * rows);
 	ret->attrs = attrs;
-	ret->cursorcolor = ColorFromRGB(200, 200, 200);
 	for ( size_t i = 0; i < 16UL; i++ )
 	{
 		uint8_t r = i & 0b0100 ? (i & 0b1000 ? 255 : 191) : 0;
@@ -193,7 +192,7 @@ void LFBTextBuffer::RenderChar(uint16_t vgachar, size_t posx, size_t posy)
 		{
 			uint32_t* line = (uint32_t*) (lfb + pixely * scansize);
 			size_t pixelx = posx * (VGA_FONT_WIDTH+1) + x;
-			line[pixelx] = cursorcolor;
+			line[pixelx] = fgcolor;
 		}
 	}
 }

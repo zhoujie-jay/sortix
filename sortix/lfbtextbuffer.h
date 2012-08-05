@@ -99,7 +99,6 @@ private:
 	size_t pixelsy;
 	size_t scansize;
 	uint32_t colors[16UL];
-	uint32_t cursorcolor;
 	uint32_t lfbformat;
 	bool cursorenabled;
 	TextPos cursorpos;
