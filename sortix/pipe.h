@@ -22,18 +22,19 @@
 
 *******************************************************************************/
 
-
 #ifndef SORTIX_PIPE_H
 #define SORTIX_PIPE_H
 
-#include "stream.h"
+namespace Sortix {
 
-namespace Sortix
-{
-	namespace Pipe
-	{
-		void Init();
-	}
-}
+class Inode;
+
+namespace Pipe {
+
+void Init();
+bool CreatePipes(Inode* pipes[2]);
+
+} // namespace Pipe
+} // namespace Sortix
 
 #endif

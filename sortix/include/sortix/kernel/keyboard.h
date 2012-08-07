@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
     This file is part of Sortix.
 
@@ -17,49 +17,46 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    fs/devfs.h
-    Provides access to various block, character, and other kinds of devices.
+    sortix/kernel/keyboard.h
+    Various interfaces for keyboard devices and layouts.
 
 *******************************************************************************/
 
-#ifndef SORTIX_FS_DEVFS_H
-#define SORTIX_FS_DEVFS_H
+#ifndef SORTIX_KEYBOARD_H
+#define SORTIX_KEYBOARD_H
 
-#include <sortix/kernel/sortedlist.h>
-#include "../filesystem.h"
+namespace Sortix {
 
-namespace Sortix
+class Keyboard;
+class KeyboardOwner;
+
+class Keyboard
 {
-	class ATADrive;
+public:
+	virtual ~Keyboard() { }
+	virtual int Read() = 0;
+	virtual size_t GetPending() const = 0;
+	virtual bool HasPending() const = 0;
+	virtual void SetOwner(KeyboardOwner* owner, void* user) = 0;
 
-	class DevDevFS : public DevFileSystem
-	{
-	public:
-		DevDevFS();
-		virtual ~DevDevFS();
+};
 
-	public:
-		virtual Device* Open(const char* path, int flags, mode_t mode);
-		virtual bool Unlink(const char* path);
+class KeyboardOwner
+{
+public:
+	virtual ~KeyboardOwner() { }
+	virtual void OnKeystroke(Keyboard* keyboard, void* user) = 0;
 
-	};
+};
 
-	namespace DeviceFS {
+class KeyboardLayout
+{
+public:
+	virtual ~KeyboardLayout() { }
+	virtual uint32_t Translate(int kbkey) = 0;
 
-	struct DevEntry
-	{
-		char* name;
-		Device* dev;
-	};
+};
 
-	void Init();
-	void RegisterATADrive(unsigned ataid, ATADrive* drive);
-	bool RegisterDevice(const char* name, Device* dev);
-	Device* LookUp(const char* name);
-	size_t GetNumDevices();
-	DevEntry* GetDevice(size_t index);
-
-	} // namespace DeviceFS
-}
+} // namespace Sortix
 
 #endif

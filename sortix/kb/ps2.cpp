@@ -23,11 +23,11 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/keyboard.h>
+#include <sortix/keycodes.h>
 #include <assert.h>
 #include <string.h>
 #include "../interrupt.h"
-#include "../keyboard.h"
-#include <sortix/keycodes.h>
 #include "ps2.h"
 
 namespace Sortix
@@ -87,14 +87,10 @@ namespace Sortix
 	void PS2Keyboard::OnInterrupt(CPU::InterruptRegisters* /*regs*/)
 	{
 		uint8_t scancode = PopScancode();
-#ifdef GOT_ACTUAL_KTHREAD
 		PS2KeyboardWork work;
 		work.kb = this;
 		work.scancode = scancode;
 		Interrupt::ScheduleWork(PS2Keyboard__InterruptWork, &work, sizeof(work));
-#else
-		InterruptWork(scancode);
-#endif
 	}
 
 	void PS2Keyboard::InterruptWork(uint8_t scancode)

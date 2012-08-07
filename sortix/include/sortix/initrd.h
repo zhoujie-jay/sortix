@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef SORTIX_INITRD_H
-#define SORTIX_INITRD_H
+#ifndef INCLUDE_SORTIX_INITRD_H
+#define INCLUDE_SORTIX_INITRD_H
 
 #include <features.h>
 

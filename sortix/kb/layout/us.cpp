@@ -23,7 +23,7 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include "../../keyboard.h"
+#include <sortix/kernel/keyboard.h>
 #include <sortix/keycodes.h>
 #include "us.h"
 

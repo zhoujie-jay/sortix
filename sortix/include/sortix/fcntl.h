@@ -47,10 +47,14 @@ __BEGIN_DECLS
 #define FD_CLOEXEC (1<<0)
 #define FD_CLOFORK (1<<1)
 
+#define __FD_ALLOWED_FLAGS (FD_CLOEXEC | FD_CLOFORK)
+
 #define F_SETFD 0
 #define F_GETFD 1
 #define F_SETFL 2
 #define F_GETFL 3
+
+#define AT_FDCWD (-100)
 
 __END_DECLS
 

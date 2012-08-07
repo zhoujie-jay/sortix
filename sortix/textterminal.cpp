@@ -33,9 +33,9 @@ namespace Sortix {
 const uint16_t DEFAULT_COLOR = COLOR8_LIGHT_GREY << 0U | COLOR8_BLACK << 4U;
 const uint16_t ATTR_CHAR = 1U << 0U;
 
-TextTerminal::TextTerminal(TextBufferHandle* textbufhandle)
+TextTerminal::TextTerminal(Ref<TextBufferHandle> textbufhandle)
 {
-	this->textbufhandle = textbufhandle; textbufhandle->Refer();
+	this->textbufhandle = textbufhandle;
 	this->termlock = KTHREAD_MUTEX_INITIALIZER;
 	Reset();
 }

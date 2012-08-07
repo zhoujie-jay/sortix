@@ -25,78 +25,30 @@
 #ifndef SORTIX_FS_UTIL_H
 #define SORTIX_FS_UTIL_H
 
-#include "../stream.h"
+#include <sortix/kernel/inode.h>
 
 namespace Sortix {
 
-class DevStringBuffer : public DevBuffer
+class UtilMemoryBuffer : public AbstractInode
 {
 public:
-	DevStringBuffer(char* str);
-	virtual ~DevStringBuffer();
+	UtilMemoryBuffer(dev_t dev, ino_t ino, uid_t owner, gid_t group,
+	                 mode_t mode, uint8_t* buf, size_t bufsize,
+	                 bool write = true, bool deletebuf = true);
+	virtual ~UtilMemoryBuffer();
+	virtual int truncate(ioctx_t* ctx, off_t length);
+	virtual off_t lseek(ioctx_t* ctx, off_t offset, int whence);
+	virtual ssize_t pread(ioctx_t* ctx, uint8_t* buf, size_t count,
+	                      off_t off);
+	virtual ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
+	                       off_t off);
 
 private:
-	char* str;
-	size_t strlength;
-	size_t off;
-
-public:
-	virtual size_t BlockSize();
-	virtual uintmax_t Size();
-	virtual uintmax_t Position();
-	virtual bool Seek(uintmax_t position);
-	virtual bool Resize(uintmax_t size);
-	virtual ssize_t Read(uint8_t* dest, size_t count);
-	virtual ssize_t Write(const uint8_t* src, size_t count);
-	virtual bool IsReadable();
-	virtual bool IsWritable();
-
-};
-
-class DevLineCommand : public DevStream
-{
-public:
-	DevLineCommand(bool (*handler)(void*, const char*), void* user);
-	virtual ~DevLineCommand();
-	virtual ssize_t Read(uint8_t* dest, size_t count);
-	virtual ssize_t Write(const uint8_t* src, size_t count);
-	virtual bool IsReadable();
-	virtual bool IsWritable();
-
-private:
-	bool (*handler)(void*, const char*);
-	void* user;
-	size_t sofar;
-	static const size_t CMDMAX = 255;
-	char cmd[CMDMAX+1];
-	bool handled;
-
-};
-
-class DevMemoryBuffer : public DevBuffer
-{
-public:
-	DevMemoryBuffer(uint8_t* buf, size_t bufsize, bool write = true,
-	                bool deletebuf = true);
-	~DevMemoryBuffer();
-
-private:
+	kthread_mutex_t filelock;
 	uint8_t* buf;
 	size_t bufsize;
-	size_t off;
 	bool write;
 	bool deletebuf;
-
-public:
-	virtual size_t BlockSize();
-	virtual uintmax_t Size();
-	virtual uintmax_t Position();
-	virtual bool Seek(uintmax_t position);
-	virtual bool Resize(uintmax_t size);
-	virtual ssize_t Read(uint8_t* dest, size_t count);
-	virtual ssize_t Write(const uint8_t* src, size_t count);
-	virtual bool IsReadable();
-	virtual bool IsWritable();
 
 };
 

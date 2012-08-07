@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2012.
 
     This file is part of Sortix.
 
@@ -17,48 +17,25 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    directory.h
-    A container for files and other directories.
+    sortix/kernel/fsfunc.h
+    Filesystem related utility functions.
 
 *******************************************************************************/
 
-#ifndef SORTIX_DIRECTORY_H
-#define SORTIX_DIRECTORY_H
+#ifndef SORTIX_FSFUNC_H
+#define SORTIX_FSFUNC_H
 
-#include "device.h"
+namespace Sortix {
 
-namespace Sortix
+static inline bool IsDotOrDotDot(const char* path)
 {
-	// Keep this up to date with <sys/readdirents.h>
-	struct sortix_dirent
-	{
-		struct sortix_dirent* d_next;
-		unsigned char d_type;
-		size_t d_namelen;
-		char d_name[];
-	};
-
-	class DevDirectory : public Device
-	{
-	public:
-		typedef Device BaseClass;
-
-	public:
-		virtual void Rewind() = 0;
-
-		// Precondition: available is at least sizeof(sortix_dirent).
-		virtual int Read(sortix_dirent* dirent, size_t available) = 0;
-
-	public:
-		virtual bool IsType(unsigned type) const { return type == Device::DIRECTORY; }
-
-	};
-
-	namespace Directory
-	{
-		void Init();
-		char* MakeAbsolute(const char* wd, const char* rel);
-	}
+	return path[0] == '.' && ((path[1] == '\0') ||
+	                          (path[1] == '.' && path[2] == '\0'));
 }
+
+bool ModeToDT(mode_t mode);
+bool SplitFinalElem(const char* path, char** dir, char** final);
+
+} // namespace Sortix
 
 #endif

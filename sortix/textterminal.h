@@ -26,6 +26,7 @@
 #define SORTIX_TEXTTERMINAL_H
 
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/refcount.h>
 
 namespace Sortix {
 
@@ -34,7 +35,7 @@ class TextBufferHandle;
 class TextTerminal //: public Printable ?
 {
 public:
-	TextTerminal(TextBufferHandle* textbufhandle);
+	TextTerminal(Ref<TextBufferHandle> textbufhandle);
 	~TextTerminal();
 	size_t Print(const char* string, size_t stringlen);
 	size_t Width() const;
@@ -52,7 +53,7 @@ private:
 	void Reset();
 
 private:
-	mutable TextBufferHandle* textbufhandle;
+	mutable Ref<TextBufferHandle> textbufhandle;
 	mutable kthread_mutex_t termlock;
 	uint8_t vgacolor;
 	unsigned column;

@@ -20,7 +20,10 @@
 
 *******************************************************************************/
 
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <sys/wait.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -76,6 +79,9 @@ int main(int /*argc*/, char* /*argv*/[])
 	// By default, compile to the same architecture that the kernel told us that
 	// we are running.
 	setenv("objtype", getenv("cputype"), 0);
+
+	// Make sure that we have a /tmp directory.
+	mkdir("/tmp", 01777);
 
 	return runsystem();
 }

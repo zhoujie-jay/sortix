@@ -162,8 +162,17 @@ release-all-archs:
 $(INITRD): sysroot
 	mkdir -p `dirname $(INITRD)`
 	echo -n > $(INITRD).filter
+	echo "exclude /boot" >> $(INITRD).filter
+	echo "exclude /dev" >> $(INITRD).filter
+	echo "exclude /next" >> $(INITRD).filter
+	echo "exclude /tmp" >> $(INITRD).filter
+	for OTHER_PLATFORM in $(OTHER_PLATFORMS); do \
+	  echo "exclude /$$OTHER_PLATFORM" >> $(INITRD).filter; \
+	  echo "exclude /etc/$$OTHER_PLATFORM" >> $(INITRD).filter; \
+	  echo "exclude /include/$$OTHER_PLATFORM" >> $(INITRD).filter; \
+	done;
 	if ! which mkinitrd; then echo You need to install mkinitrd; fi
-	mkinitrd --filter $(INITRD).filter "$(SYSROOT)/$(HOST)/bin" -o $(INITRD)
+	mkinitrd --filter $(INITRD).filter "$(SYSROOT)" -o $(INITRD)
 	rm -f $(INITRD).filter
 
 .PHONY: initrd

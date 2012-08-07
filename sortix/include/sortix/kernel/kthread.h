@@ -27,8 +27,6 @@
 
 #include <sortix/signal.h>
 
-#define GOT_ACTUAL_KTHREAD
-
 namespace Sortix {
 
 extern "C" {

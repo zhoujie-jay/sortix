@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -24,11 +24,19 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/copy.h>
+#include <sortix/kernel/descriptor.h>
+#include <sortix/kernel/dtable.h>
+#include <sortix/kernel/mtable.h>
 #include <sortix/kernel/worker.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/string.h>
 #include <sortix/signal.h>
 #include <sortix/unistd.h>
+#include <sortix/fcntl.h>
+#include <sortix/stat.h>
 #include <sortix/fork.h>
 #include <sortix/mman.h>
 #include <sortix/wait.h>
@@ -38,10 +46,6 @@
 #include <string.h>
 #include "thread.h"
 #include "process.h"
-#include "device.h"
-#include "stream.h"
-#include "filesystem.h"
-#include "directory.h"
 #include "scheduler.h"
 #include "initrd.h"
 #include "elf.h"
@@ -113,7 +117,7 @@ namespace Sortix
 		nozombify = false;
 		firstthread = NULL;
 		threadlock = KTHREAD_MUTEX_INITIALIZER;
-		workingdir = NULL;
+		ptrlock = KTHREAD_MUTEX_INITIALIZER;
 		mmapfrom = 0x80000000UL;
 		exitstatus = -1;
 		pid = AllocatePID();
@@ -126,9 +130,30 @@ namespace Sortix
 		assert(!firstchild);
 		assert(!addrspace);
 		assert(!segments);
+		assert(!dtable);
+		assert(!mtable);
+		assert(!cwd);
+		assert(!root);
 
 		Remove(this);
-		delete[] workingdir;
+	}
+
+	void Process::BootstrapTables(Ref<DescriptorTable> dtable, Ref<MountTable> mtable)
+	{
+		ScopedLock lock(&ptrlock);
+		assert(!this->dtable);
+		assert(!this->mtable);
+		this->dtable = dtable;
+		this->mtable = mtable;
+	}
+
+	void Process::BootstrapDirectories(Ref<Descriptor> root)
+	{
+		ScopedLock lock(&ptrlock);
+		assert(!this->root);
+		assert(!this->cwd);
+		this->root = root;
+		this->cwd = root;
 	}
 
 	void Process__OnLastThreadExit(void* user);
@@ -205,7 +230,11 @@ namespace Sortix
 		addr_t prevaddrspace = curthread->SwitchAddressSpace(addrspace);
 
 		ResetAddressSpace();
-		descriptors.Reset();
+
+		if ( dtable ) dtable.Reset();
+		if ( cwd ) cwd.Reset();
+		if ( root ) root.Reset();
+		if ( mtable ) mtable.Reset();
 
 		// Destroy the address space and safely switch to the replacement
 		// address space before things get dangerous.
@@ -436,6 +465,48 @@ namespace Sortix
 		firstchild = child;
 	}
 
+	Ref<MountTable> Process::GetMTable()
+	{
+		ScopedLock lock(&ptrlock);
+		assert(mtable);
+		return mtable;
+	}
+
+	Ref<DescriptorTable> Process::GetDTable()
+	{
+		ScopedLock lock(&ptrlock);
+		assert(dtable);
+		return dtable;
+	}
+
+	Ref<Descriptor> Process::GetRoot()
+	{
+		ScopedLock lock(&ptrlock);
+		assert(root);
+		return root;
+	}
+
+	Ref<Descriptor> Process::GetCWD()
+	{
+		ScopedLock lock(&ptrlock);
+		assert(cwd);
+		return cwd;
+	}
+
+	void Process::SetCWD(Ref<Descriptor> newcwd)
+	{
+		ScopedLock lock(&ptrlock);
+		assert(newcwd);
+		cwd = newcwd;
+	}
+
+	Ref<Descriptor> Process::GetDescriptor(int fd)
+	{
+		ScopedLock lock(&ptrlock);
+		assert(dtable);
+		return dtable->Get(fd);
+	}
+
 	Process* Process::Fork()
 	{
 		assert(CurrentProcess() == this);
@@ -475,16 +546,30 @@ namespace Sortix
 		// Remember the relation to the child process.
 		AddChildProcess(clone);
 
-		bool failure = false;
-
-		if ( !descriptors.Fork(&clone->descriptors) )
-			failure = true;
-
+		// Initialize everything that is safe and can't fail.
 		clone->mmapfrom = mmapfrom;
 
-		clone->workingdir = NULL;
-		if ( workingdir && !(clone->workingdir = String::Clone(workingdir)) )
+		kthread_mutex_lock(&ptrlock);
+		clone->root = root;
+		clone->cwd = cwd;
+		kthread_mutex_unlock(&ptrlock);
+
+		// Initialize things that can fail and abort if needed.
+		bool failure = false;
+
+		kthread_mutex_lock(&ptrlock);
+		if ( !(clone->dtable = dtable->Fork()) )
 			failure = true;
+		//if ( !(clone->mtable = mtable->Fork()) )
+		//	failure = true;
+		clone->mtable = mtable;
+		kthread_mutex_unlock(&ptrlock);
+
+		if ( pid == 1)
+			assert(dtable->Get(1));
+
+		if ( pid == 1)
+			assert(clone->dtable->Get(1));
 
 		// If the proces creation failed, ask the process to commit suicide and
 		// not become a zombie, as we don't wait for it to exit. It will clean
@@ -560,27 +645,20 @@ namespace Sortix
 
 		stackpos = envppos - envpsize;
 
-		descriptors.OnExecute();
+		dtable->OnExecute();
 
 		ExecuteCPU(argc, stackargv, envc, stackenvp, stackpos, entry, regs);
 
 		return 0;
 	}
 
-	DevBuffer* OpenProgramImage(const char* progname, const char* wd, const char* path)
+	// TODO. This is a hack. Please remove this when execve is moved to another
+	// file/class, it doesn't belong here, it's a program loader ffs!
+	Ref<Descriptor> Process::Open(ioctx_t* ctx, const char* path, int flags, mode_t mode)
 	{
-		(void) wd;
-		(void) path;
-		char* abs = Directory::MakeAbsolute("/", progname);
-		if ( !abs ) { errno = ENOMEM; return NULL; }
-
-		// TODO: Use O_EXEC here!
-		Device* dev =  FileSystem::Open(abs, O_RDONLY, 0);
-		delete[] abs;
-
-		if ( !dev ) { return NULL; }
-		if ( !dev->IsType(Device::BUFFER) ) { errno = EACCES; dev->Unref(); return NULL; }
-		return (DevBuffer*) dev;
+		// TODO: Locking the root/cwd pointers. How should that be arranged?
+		Ref<Descriptor> dir = path[0] == '/' ? root : cwd;
+		return dir->open(ctx, path, flags, mode);
 	}
 
 	int SysExecVE(const char* _filename, char* const _argv[], char* const _envp[])
@@ -590,8 +668,9 @@ namespace Sortix
 		int envc;
 		char** argv;
 		char** envp;
-		DevBuffer* dev;
-		uintmax_t needed;
+		ioctx_t ctx;
+		Ref<Descriptor> desc;
+		struct stat st;
 		size_t sofar;
 		size_t count;
 		uint8_t* buffer;
@@ -627,24 +706,25 @@ namespace Sortix
 			if ( !envp[i] ) { goto cleanup_envp; }
 		}
 
-		dev = OpenProgramImage(filename, process->workingdir, "/bin");
-		if ( !dev ) { goto cleanup_envp; }
+		SetupKernelIOCtx(&ctx);
 
-		dev->Refer(); // TODO: Rules of GC may change soon.
-		needed = dev->Size();
-		if ( SIZE_MAX < needed ) { errno = ENOMEM; goto cleanup_dev; }
+		// TODO: Somehow mark the executable as busy and don't permit writes?
+		desc = process->Open(&ctx, filename, O_RDONLY, 0);
+		if ( !desc ) { goto cleanup_envp; }
 
-		if ( !dev->IsReadable() ) { errno = EBADF; goto cleanup_dev; }
+		if ( desc->stat(&ctx, &st) ) { goto cleanup_desc; }
+		if ( st.st_size < 0 ) { errno = EINVAL; goto cleanup_desc; }
+		if ( SIZE_MAX < (uintmax_t) st.st_size ) { errno = ERANGE; goto cleanup_desc; }
 
-		count = needed;
+		count = (size_t) st.st_size;
 		buffer = new uint8_t[count];
-		if ( !buffer ) { goto cleanup_dev; }
+		if ( !buffer ) { goto cleanup_desc; }
 		sofar = 0;
 		while ( sofar < count )
 		{
-			ssize_t bytesread = dev->Read(buffer + sofar, count - sofar);
+			ssize_t bytesread = desc->read(&ctx, buffer + sofar, count - sofar);
 			if ( bytesread < 0 ) { goto cleanup_buffer; }
-			if ( bytesread == 0 ) { errno = EEOF; return -1; }
+			if ( bytesread == 0 ) { errno = EEOF; goto cleanup_buffer; }
 			sofar += bytesread;
 		}
 
@@ -653,8 +733,8 @@ namespace Sortix
 
 	cleanup_buffer:
 		delete[] buffer;
-	cleanup_dev:
-		dev->Unref();
+	cleanup_desc:
+		desc.Reset();
 	cleanup_envp:
 		for ( int i = 0; i < envc; i++) { delete[] envp[i]; }
 		delete[] envp;

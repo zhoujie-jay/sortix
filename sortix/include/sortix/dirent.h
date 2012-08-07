@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2012.
 
     This file is part of Sortix.
 
@@ -17,24 +17,45 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    mount.h
-    Handles system wide mount points and initialization of new file systems.
+    sortix/dirent.h
+    Format of directory entries.
 
 *******************************************************************************/
 
-#ifndef SORTIX_MOUNT_H
-#define SORTIX_MOUNT_H
+#ifndef INCLUDE_SORTIX_DIRENT_H
+#define INCLUDE_SORTIX_DIRENT_H
 
-namespace Sortix
+#include <features.h>
+
+__BEGIN_DECLS
+
+#define DT_UNKNOWN 0
+#define DT_BLK 1
+#define DT_CHR 2
+#define DT_DIR 3
+#define DT_FIFO 4
+#define DT_LNK 5
+#define DT_REG 6
+#define DT_SOCK 7
+
+struct kernel_dirent
 {
-	class DevFileSystem;
+	size_t d_reclen;
+	size_t d_off;
+	size_t d_namelen;
+	ino_t d_ino;
+	dev_t d_dev;
+	unsigned char d_type;
+	char d_name[];
+};
 
-	namespace Mount
-	{
-		void Init();
-		DevFileSystem* WhichFileSystem(const char* path, size_t* pathoffset);
-		bool Register(DevFileSystem* fs, const char* path);
-	}
+static inline struct kernel_dirent* kernel_dirent_next(struct kernel_dirent* ent)
+{
+	if ( !ent->d_off )
+		return NULL;
+	return (struct kernel_dirent*) ((uint8_t*) ent + ent->d_off);
 }
+
+__END_DECLS
 
 #endif

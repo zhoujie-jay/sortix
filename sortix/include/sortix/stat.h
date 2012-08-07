@@ -27,6 +27,7 @@
 #define SORTIX_STAT_H
 
 #include <features.h>
+#include <sys/types.h>
 
 __BEGIN_DECLS
 
@@ -71,6 +72,7 @@ struct stat
 /*#define S_ISUID 0x0800 */
 /*#define S_ISGID 0x0400 */
 #define S_ISVTX 0x0200
+#define S_SETABLE (0777 | 0x0200 | 0x0400 | 0x0800)
 #define S_ISSOCK(mode) ((mode & S_IFMT) == S_IFSOCK)
 #define S_ISLNK(mode) ((mode & S_IFMT) == S_IFLNK)
 #define S_ISREG(mode) ((mode & S_IFMT) == S_IFREG)

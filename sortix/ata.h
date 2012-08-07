@@ -26,9 +26,11 @@
 #define SORTIX_ATA_H
 
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/refcount.h>
 
 namespace Sortix {
 
+class Descriptor;
 class ATABus;
 class ATADrive;
 
@@ -83,7 +85,7 @@ private:
 
 namespace ATA {
 
-void Init();
+void Init(const char* devpath, Ref<Descriptor> slashdev);
 ATABus* CreateBus(uint16_t portoffset, uint16_t altport);
 
 } // namespace ATA

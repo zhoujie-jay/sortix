@@ -39,6 +39,9 @@
 namespace Sortix {
 namespace Scheduler {
 
+const uint32_t SCHED_MAGIC = 0x1234567;
+
+volatile unsigned long premagic;
 static Thread* currentthread;
 } // namespace Scheduler
 Thread* CurrentThread() { return Scheduler::currentthread; }
@@ -51,6 +54,7 @@ Thread* idlethread;
 Thread* firstrunnablethread;
 Thread* firstsleepingthread;
 Process* initprocess;
+volatile unsigned long postmagic;
 
 static inline void SetCurrentThread(Thread* newcurrentthread)
 {
@@ -71,6 +75,8 @@ static Thread* PopNextThread()
 
 static Thread* ValidatedPopNextThread()
 {
+	assert(premagic == SCHED_MAGIC);
+	assert(postmagic == SCHED_MAGIC);
 	Thread* nextthread = PopNextThread();
 	if ( !nextthread ) { Panic("Had no thread to switch to."); }
 	if ( nextthread->terminated )
@@ -120,9 +126,13 @@ static void DoActualSwitch(CPU::InterruptRegisters* regs)
 
 void Switch(CPU::InterruptRegisters* regs)
 {
+	assert(premagic == SCHED_MAGIC);
+	assert(postmagic == SCHED_MAGIC);
 	DoActualSwitch(regs);
 	if ( regs->signal_pending && regs->InUserspace() )
 		Signal::Dispatch(regs);
+	assert(premagic == SCHED_MAGIC);
+	assert(postmagic == SCHED_MAGIC);
 }
 
 const bool DEBUG_BEGINCTXSWITCH = false;
@@ -271,6 +281,8 @@ extern "C" void thread_exit_handler();
 
 void Init()
 {
+	premagic = postmagic = SCHED_MAGIC;
+
 	// We use a dummy so that the first context switch won't crash when the
 	// current thread is accessed. This lets us avoid checking whether it is
 	// NULL (which it only will be once), which gives simpler code.

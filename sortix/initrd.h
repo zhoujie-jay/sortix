@@ -22,21 +22,22 @@
 
 *******************************************************************************/
 
-#ifndef SORTIX_INITRD_KERNEL_H
-#define SORTIX_INITRD_KERNEL_H
+#ifndef SORTIX_INITRD_H
+#define SORTIX_INITRD_H
+
+#include <sortix/kernel/refcount.h>
 
 namespace Sortix {
+
+class Descriptor;
+
 namespace InitRD {
 
-void Init(addr_t phys, size_t size);
-uint32_t Root();
-bool Stat(uint32_t inode, struct stat* st);
-uint8_t* Open(uint32_t inode, size_t* size);
-uint32_t Traverse(uint32_t inode, const char* name);
-const char* GetFilename(uint32_t dir, size_t index);
-size_t GetNumFiles(uint32_t dir);
+bool ExtractInto(Ref<Descriptor> desc);
+bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc);
 
 } // namespace InitRD
+
 } // namespace Sortix
 
 #endif

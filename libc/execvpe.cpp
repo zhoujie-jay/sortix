@@ -26,6 +26,14 @@
 #include <string.h>
 #include <unistd.h>
 
+#if defined(PLATFORM_X86)
+	#define CPUTYPE_STR "i486-sortix"
+#elif defined(PLATFORM_X64)
+	#define CPUTYPE_STR "x86_64-sortix"
+#else
+	#error No cputype environmental variable provided here.
+#endif
+
 // Note that the only PATH variable in Sortix is the one used here.
 extern "C" int execvpe(const char* filename, char* const* argv,
                        char* const* envp)
@@ -33,7 +41,7 @@ extern "C" int execvpe(const char* filename, char* const* argv,
 	if ( strchr(filename, '/') )
 		return execve(filename, argv, envp);
 	size_t filenamelen = strlen(filename);
-	const char* PATH = "/bin";
+	const char* PATH = "/" CPUTYPE_STR "/bin";
 	size_t pathlen = strlen(PATH);
 	char* pathname = (char*) malloc(filenamelen + 1 + pathlen + 1);
 	if ( !pathname ) { return -1; }

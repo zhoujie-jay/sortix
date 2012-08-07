@@ -25,10 +25,11 @@
 #ifndef SORTIX_VGA_H
 #define SORTIX_VGA_H
 
-#include "device.h"
-#include "stream.h"
+#include <sortix/kernel/refcount.h>
 
 namespace Sortix {
+
+class Descriptor;
 
 const size_t VGA_FONT_WIDTH = 8UL;
 const size_t VGA_FONT_HEIGHT = 16UL;
@@ -37,38 +38,11 @@ const size_t VGA_FONT_CHARSIZE = VGA_FONT_WIDTH * VGA_FONT_HEIGHT / 8UL;
 
 namespace VGA {
 
-void Init();
+void Init(const char* devpath, Ref<Descriptor> slashdev);
 void SetCursor(unsigned x, unsigned y);
 const uint8_t* GetFont();
 
 } // namespace VGA
-
-// TODO: This class shouldn't be exposed publicly; it is used in a hack in the
-// /dev filesystem. However, vga.cpp should register /dev/vga instead.
-class DevVGA : public DevBuffer
-{
-public:
-	typedef DevBuffer BaseClass;
-
-public:
-	DevVGA();
-	virtual ~DevVGA();
-
-private:
-	size_t offset;
-
-public:
-	virtual ssize_t Read(uint8_t* dest, size_t count);
-	virtual ssize_t Write(const uint8_t* src, size_t count);
-	virtual bool IsReadable();
-	virtual bool IsWritable();
-	virtual size_t BlockSize();
-	virtual uintmax_t Size();
-	virtual uintmax_t Position();
-	virtual bool Seek(uintmax_t position);
-	virtual bool Resize(uintmax_t size);
-
-};
 
 } // namespace Sortix
 

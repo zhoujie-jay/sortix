@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2012.
 
     This file is part of Sortix.
 
@@ -17,32 +17,33 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    keyboard.cpp
-    An interface to keyboards.
+    sortix/kernel/ioctx.h
+    The context for io operations: who made it, how should data be copied, etc.
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include "interrupt.h"
-#include "syscall.h"
-#include "keyboard.h"
-#include "kb/ps2.h"
-#include "kb/layout/us.h"
-#include "logterminal.h"
+#ifndef SORTIX_IOCTX_H
+#define SORTIX_IOCTX_H
 
-namespace Sortix
+#include <sys/types.h>
+
+#include <stdint.h>
+
+namespace Sortix {
+
+struct ioctx_struct
 {
-	DevTerminal* tty;
+	uid_t uid, auth_uid;
+	gid_t gid, auth_gid;
+	bool (*copy_to_dest)(void* dest, const void* src, size_t n);
+	bool (*copy_from_src)(void* dest, const void* src, size_t n);
+};
 
-	void Keyboard::Init()
-	{
-		Keyboard* keyboard = new PS2Keyboard(0x60, Interrupt::IRQ1);
-		if ( !keyboard ) { Panic("Could not allocate PS2 Keyboard driver"); }
+typedef struct ioctx_struct ioctx_t;
 
-		KeyboardLayout* kblayout = new KBLayoutUS;
-		if ( !kblayout ) { Panic("Could not allocate keyboard layout driver"); }
+void SetupUserIOCtx(ioctx_t* ctx);
+void SetupKernelIOCtx(ioctx_t* ctx);
 
-		tty = new LogTerminal(keyboard, kblayout);
-		if ( !tty ) { Panic("Could not allocate a simple terminal"); }
-	}
-}
+} // namespace Sortix
+
+#endif

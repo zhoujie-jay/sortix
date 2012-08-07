@@ -22,12 +22,116 @@
 
 *******************************************************************************/
 
-#include <sys/syscall.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
-DEFN_SYSCALL2(char*, SysGetCWD, SYSCALL_GETCWD, char*, size_t);
+static int dup_handles_cwd(int fd)
+{
+	if ( fd == AT_FDCWD )
+		return open(".", O_RDONLY | O_DIRECTORY);
+	return dup(fd);
+}
+
+static char* FindDirectoryEntryAt(int dirfd, ino_t inode, dev_t dev)
+{
+	int dupdirfd = dup_handles_cwd(dirfd);
+	if ( dupdirfd < 0 )
+		return NULL;
+	DIR* dir = fdopendir(dupdirfd);
+	if ( !dir ) { close(dupdirfd); return NULL; }
+	struct dirent* entry;
+	while ( (entry = readdir(dir)) )
+	{
+		if ( !strcmp(entry->d_name, "..") )
+			continue;
+		struct stat st;
+		if ( fstatat(dupdirfd, entry->d_name, &st, 0) )
+			continue; // Not ideal, but missing permissions, broken symlinks..
+		if ( st.st_ino == inode && st.st_dev == dev )
+		{
+			char* result = strdup(entry->d_name);
+			closedir(dir);
+			return result;
+		}
+	}
+	closedir(dir);
+	errno = ENOENT;
+	return NULL;
+}
+
+extern "C" char* get_current_dir_name(void)
+{
+	int fd;
+	int parent;
+	struct stat fdst;
+	struct stat parentst;
+	size_t retlen = 0;
+	size_t newretlen;
+	char* ret = NULL;
+	char* newret;
+	char* elem;
+
+	fd = open(".", O_RDONLY | O_DIRECTORY);
+	if ( fd < 0 )
+		goto cleanup_done;
+	if ( fstat(fd, &fdst) )
+		goto cleanup_fd;
+next_parent:
+	parent = openat(fd, "..", O_RDONLY | O_DIRECTORY);
+	if ( parent < 0 )
+		goto cleanup_fd;
+	if ( fstat(parent, &parentst) )
+		goto cleanup_parent;
+	if ( fdst.st_ino == parentst.st_ino &&
+	     fdst.st_dev == parentst.st_dev )
+	{
+		close(fd);
+		close(parent);
+		return ret ? ret : strdup("/");
+	}
+	elem = FindDirectoryEntryAt(parent, fdst.st_ino, fdst.st_dev);
+	if ( !elem )
+		goto cleanup_parent;
+	newretlen = 1 + strlen(elem) + retlen;
+	newret = (char*) malloc(sizeof(char) * (newretlen + 1));
+	if ( !newret )
+		goto cleanup_elem;
+	stpcpy(stpcpy(stpcpy(newret, "/"), elem), ret ? ret : "");
+	free(elem);
+	free(ret);
+	ret = newret;
+	retlen = newretlen;
+	close(fd);
+	fd = parent;
+	fdst = parentst;
+	goto next_parent;
+
+cleanup_elem:
+	free(elem);
+cleanup_parent:
+	close(parent);
+cleanup_fd:
+	close(fd);
+cleanup_done:
+	free(ret);
+	return NULL;
+}
 
 extern "C" char* getcwd(char* buf, size_t size)
 {
-	return SysGetCWD(buf, size);
+	char* cwd = get_current_dir_name();
+	if ( !buf )
+		return cwd;
+	if ( !cwd )
+		return NULL;
+	if ( size < strlen(cwd)+1 ) { free(cwd); errno = ERANGE; return NULL; }
+	strcpy(buf, cwd);
+	free(cwd);
+	return buf;
 }

@@ -105,9 +105,9 @@ size_t currentdrvid;
 bool newdrivers;
 
 kthread_mutex_t videolock;
-TextBufferHandle* textbufhandle;
+Ref<TextBufferHandle> textbufhandle;
 
-void Init(TextBufferHandle* thetextbufhandle)
+void Init(Ref<TextBufferHandle> thetextbufhandle)
 {
 	videolock = KTHREAD_MUTEX_INITIALIZER;
 	textbufhandle = thetextbufhandle;

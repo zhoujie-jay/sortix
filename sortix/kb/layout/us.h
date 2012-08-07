@@ -25,7 +25,7 @@
 #ifndef SORTIX_KB_LAYOUT_US_H
 #define SORTIX_KB_LAYOUT_US_H
 
-#include "../../keyboard.h"
+#include <sortix/kernel/keyboard.h>
 
 namespace Sortix
 {

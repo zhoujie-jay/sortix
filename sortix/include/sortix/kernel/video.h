@@ -25,6 +25,8 @@
 #ifndef SORTIX_VIDEO_H
 #define SORTIX_VIDEO_H
 
+#include <sortix/kernel/refcount.h>
+
 namespace Sortix {
 
 class TextBuffer;
@@ -51,7 +53,7 @@ public:
 
 namespace Video {
 
-void Init(TextBufferHandle* textbufhandle);
+void Init(Ref<TextBufferHandle> textbufhandle);
 bool RegisterDriver(const char* name, VideoDriver* driver);
 char* GetCurrentMode();
 char* GetDriverName(size_t index);

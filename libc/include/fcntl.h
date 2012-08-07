@@ -59,9 +59,9 @@ struct flock
 
 int fcntl(int fd, int cmd, ...);
 int open(const char* path, int oflag, ...);
+int openat(int fd, const char* path, int oflag, ...);
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 int creat(const char* path, mode_t mode);
-int openat(int fd, const char* path, int oflag, ...);
 #endif
 
 __END_DECLS

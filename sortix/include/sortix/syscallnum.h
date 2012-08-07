@@ -49,7 +49,6 @@
 #define SYSCALL_OPEN 23
 #define SYSCALL_READDIRENTS 24
 #define SYSCALL_CHDIR 25
-#define SYSCALL_GETCWD 26
 #define SYSCALL_UNLINK 27
 #define SYSCALL_REGISTER_ERRNO 28
 #define SYSCALL_REGISTER_SIGNAL_HANDLER 29
@@ -78,6 +77,7 @@
 #define SYSCALL_RAISE 53
 #define SYSCALL_OPENAT 54
 #define SYSCALL_DISPMSG_ISSUE 55
-#define SYSCALL_MAX_NUM 56 /* index of highest constant + 1 */
+#define SYSCALL_FSTATAT 56
+#define SYSCALL_MAX_NUM 57 /* index of highest constant + 1 */
 
 #endif

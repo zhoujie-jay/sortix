@@ -43,7 +43,7 @@ int docat(const char* inputname, int fd)
 		}
 		if ( (ssize_t) writeall(1, buffer, bytesread) < bytesread )
 		{
-			error(0, errno, "write: %s", inputname);
+			error(0, errno, "write: <stdout>", inputname);
 			return 1;
 		}
 	} while ( true );

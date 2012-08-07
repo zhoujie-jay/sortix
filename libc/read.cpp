@@ -26,14 +26,11 @@
 #include <errno.h>
 #include <unistd.h>
 
-DEFN_SYSCALL3(ssize_t, SysRead, SYSCALL_READ, int, void*, size_t);
+DEFN_SYSCALL3(ssize_t, sys_read, SYSCALL_READ, int, void*, size_t);
 
 extern "C" ssize_t read(int fd, void* buf, size_t count)
 {
-retry:
-	ssize_t result = SysRead(fd, buf, count);
-	if ( result < 0 && errno == EAGAIN ) { goto retry; }
-	return result;
+	return sys_read(fd, buf, count);
 }
 
 DEFN_SYSCALL4(ssize_t, sys_pread, SYSCALL_PREAD, int, void*, size_t, off_t);

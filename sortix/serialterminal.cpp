@@ -23,9 +23,9 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <sortix/kernel/log.h>
+#include <sortix/kernel/keyboard.h>
+#include <string.h>
 #include "vga.h"
-#include "keyboard.h"
 #include "uart.h"
 #include "serialterminal.h"
 #include "scheduler.h"

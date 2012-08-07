@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -25,16 +25,21 @@
 #ifndef SORTIX_PROCESS_H
 #define SORTIX_PROCESS_H
 
-#include "descriptors.h"
 #include "cpu.h"
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/refcount.h>
 #include <sortix/fork.h>
 
 namespace Sortix
 {
 	class Thread;
 	class Process;
+	class Descriptor;
+	class DescriptorTable;
+	class MountTable;
 	struct ProcessSegment;
+	struct ioctx_struct;
+	typedef struct ioctx_struct ioctx_t;
 
 	const int SEG_NONE = 0;
 	const int SEG_TEXT = 1;
@@ -76,8 +81,28 @@ namespace Sortix
 
 	public:
 		addr_t addrspace;
-		char* workingdir;
 		pid_t pid;
+		uid_t uid;
+		gid_t gid;
+
+	private:
+		kthread_mutex_t ptrlock;
+		Ref<Descriptor> root;
+		Ref<Descriptor> cwd;
+		Ref<MountTable> mtable;
+		Ref<DescriptorTable> dtable;
+
+	public:
+		void BootstrapTables(Ref<DescriptorTable> dtable, Ref<MountTable> mtable);
+		void BootstrapDirectories(Ref<Descriptor> root);
+		Ref<MountTable> GetMTable();
+		Ref<DescriptorTable> GetDTable();
+		Ref<Descriptor> GetRoot();
+		Ref<Descriptor> GetCWD();
+		Ref<Descriptor> GetDescriptor(int fd);
+		// TODO: This should be removed, don't call it.
+		Ref<Descriptor> Open(ioctx_t* ctx, const char* path, int flags, mode_t mode = 0);
+		void SetCWD(Ref<Descriptor> newcwd);
 
 	private:
 	// A process may only access its parent if parentlock is locked. A process
@@ -102,7 +127,6 @@ namespace Sortix
 		kthread_mutex_t threadlock;
 
 	public:
-		DescriptorTable descriptors;
 		ProcessSegment* segments;
 
 	public:

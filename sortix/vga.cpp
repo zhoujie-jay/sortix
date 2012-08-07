@@ -23,15 +23,19 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/inode.h>
+#include <sortix/kernel/descriptor.h>
+#include <sortix/kernel/interlock.h>
 #include <errno.h>
 #include <string.h>
 #include "fs/util.h"
-#include "fs/devfs.h"
 #include "vga.h"
 #include "scheduler.h"
 #include "syscall.h"
 #include "process.h"
-#include "serialterminal.h"
 
 #define TEST_VGAFONT 0
 
@@ -119,7 +123,7 @@ const uint8_t* GetFont()
 	return vgafont;
 }
 
-void Init()
+void Init(const char* devpath, Ref<Descriptor> slashdev)
 {
 	vgafontsize = VGA_FONT_NUMCHARS * VGA_FONT_CHARSIZE;
 	if ( !(vgafont = new uint8_t[vgafontsize]) )
@@ -129,12 +133,25 @@ void Init()
 	PrintFontChar(vgafont, 'A');
 	PrintFontChar(vgafont, 'S');
 #endif
-	DevMemoryBuffer* vgamembuf = new DevMemoryBuffer(vgafont, vgafontsize,
-	                                                 false, false);
-	if ( !vgamembuf )
-		Panic("Unable to allocate vga font filesystem object");
-	if ( !DeviceFS::RegisterDevice("vgafont", vgamembuf) )
-		Panic("Unable to register vga font filesystem object");
+
+	ioctx_t ctx; SetupKernelIOCtx(&ctx);
+
+	// Setup the vgafont device.
+	Ref<Inode> vgafontnode(new UtilMemoryBuffer(slashdev->dev, (ino_t) 0, 0, 0,
+	                                            0660, vgafont, vgafontsize,
+	                                            false, false));
+	if ( !vgafontnode )
+		PanicF("Unable to allocate %s/vgafont inode.", devpath);
+	if ( LinkInodeInDir(&ctx, slashdev, "vgafont", vgafontnode) != 0 )
+		PanicF("Unable to link %s/vgafont to vga font.", devpath);
+
+	// Setup the vga device.
+	Ref<Inode> vganode(new UtilMemoryBuffer(slashdev->dev, (ino_t) 0, 0, 0,
+	                                        0660, VGA, VGA_SIZE, true, false));
+	if ( !vganode )
+		PanicF("Unable to allocate %s/vga inode.", devpath);
+	if ( LinkInodeInDir(&ctx, slashdev, "vga", vganode) != 0 )
+		PanicF("Unable to link %s/vga to vga.", devpath);
 }
 
 // Changes the position of the hardware cursor.
@@ -153,82 +170,4 @@ void SetCursor(unsigned x, unsigned y)
 }
 
 } // namespace VGA
-
-DevVGA::DevVGA()
-{
-	offset = 0;
-}
-
-DevVGA::~DevVGA()
-{
-#ifdef PLATFORM_SERIAL
-	// TODO: HACK: This is a hack that is unrelated to this file.
-	// This is a hack to make the cursor a proper color after the vga buffer
-	// has been radically modified. The best solution would be for the VGA
-	// to ANSI Escape Codes converter to keep track of colors and restoring
-	// them, but this will do for now.
-	Log::PrintF("\e[m");
-#endif
-}
-
-ssize_t DevVGA::Read(uint8_t* dest, size_t count)
-{
-	if ( VGA::VGA_SIZE - offset < count ) { count = VGA::VGA_SIZE - offset; }
-	memcpy(dest, VGA::VGA + offset, count);
-	offset += count;
-	return count;
-}
-
-ssize_t DevVGA::Write(const uint8_t* src, size_t count)
-{
-	if ( offset == VGA::VGA_SIZE && count ) { errno = ENOSPC; return -1; }
-	if ( VGA::VGA_SIZE - offset < count ) { count = VGA::VGA_SIZE - offset; }
-	memcpy(VGA::VGA + offset, src, count);
-	offset = (offset + count) % VGA::VGA_SIZE;
-	VGA::SetCursor(VGA::WIDTH, VGA::HEIGHT-1);
-#ifdef PLATFORM_SERIAL
-	SerialTerminal::OnVGAModified();
-#endif
-	return count;
-}
-
-bool DevVGA::IsReadable()
-{
-	return true;
-}
-
-bool DevVGA::IsWritable()
-{
-	return true;
-}
-
-size_t DevVGA::BlockSize()
-{
-	return 1;
-}
-
-uintmax_t DevVGA::Size()
-{
-	return VGA::VGA_SIZE;
-}
-
-uintmax_t DevVGA::Position()
-{
-	return offset;
-}
-
-bool DevVGA::Seek(uintmax_t position)
-{
-	if ( VGA::VGA_SIZE < position ) { errno = EINVAL; return false; }
-	offset = position;
-	return true;
-}
-
-bool DevVGA::Resize(uintmax_t size)
-{
-	if ( size == VGA::VGA_SIZE ) { return false; }
-	errno = ENOSPC;
-	return false;
-}
-
 } // namespace Sortix

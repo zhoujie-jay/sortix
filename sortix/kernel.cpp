@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -33,15 +33,25 @@
 #include <sortix/kernel/pci.h>
 #include <sortix/kernel/worker.h>
 #include <sortix/kernel/memorymanagement.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/copy.h>
+#include <sortix/kernel/inode.h>
+#include <sortix/kernel/vnode.h>
+#include <sortix/kernel/descriptor.h>
+#include <sortix/kernel/dtable.h>
+#include <sortix/kernel/mtable.h>
+#include <sortix/kernel/keyboard.h>
+#include <sortix/fcntl.h>
+#include <sortix/stat.h>
 #include <sortix/mman.h>
 #include <sortix/wait.h>
+#include <assert.h>
 #include <errno.h>
 #include <malloc.h>
 #include "kernelinfo.h"
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"
 #include "time.h"
-#include "keyboard.h"
 #include "multiboot.h"
 #include "thread.h"
 #include "process.h"
@@ -51,8 +61,8 @@
 #include "ata.h"
 #include "com.h"
 #include "uart.h"
+#include "logterminal.h"
 #include "vgatextbuffer.h"
-#include "terminal.h"
 #include "serialterminal.h"
 #include "textterminal.h"
 #include "elf.h"
@@ -62,12 +72,11 @@
 #include "sound.h"
 #include "io.h"
 #include "pipe.h"
-#include "filesystem.h"
-#include "mount.h"
-#include "directory.h"
 #include "interrupt.h"
 #include "dispmsg.h"
-#include "fs/devfs.h"
+#include "fs/kram.h"
+#include "kb/ps2.h"
+#include "kb/layout/us.h"
 
 // Keep the stack size aligned with $CPU/base.s
 const size_t STACK_SIZE = 64*1024;
@@ -121,9 +130,17 @@ static size_t TextTermHeight(void* user)
 	return ((TextTerminal*) user)->Height();
 }
 
+addr_t initrd;
+size_t initrdsize;
+Ref<TextBufferHandle> textbufhandle;
+
 extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 {
 	(void) magic;
+
+	//
+	// Stage 1. Initialization of Early Environment.
+	//
 
 	// Initialize system calls.
 	Syscall::Init();
@@ -137,10 +154,11 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	const size_t VGA_HEIGHT = 25;
 	static uint16_t vga_attr_buffer[VGA_WIDTH*VGA_HEIGHT];
 	VGATextBuffer textbuf(VGAFB, vga_attr_buffer, VGA_WIDTH, VGA_HEIGHT);
-	TextBufferHandle textbufhandle(NULL, false, &textbuf, false);
+	TextBufferHandle textbufhandlestack(NULL, false, &textbuf, false);
+	textbufhandle = Ref<TextBufferHandle>(&textbufhandlestack);
 
 	// Setup a text terminal instance.
-	TextTerminal textterm(&textbufhandle);
+	TextTerminal textterm(textbufhandle);
 
 	// Register the text terminal as the kernel log and initialize it.
 	Log::Init(PrintToTextTerminal, TextTermWidth, TextTermHeight, &textterm);
@@ -182,8 +200,8 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 		      "multiboot compliant?");
 	}
 
-	addr_t initrd = 0;
-	size_t initrdsize = 0;
+	initrd = 0;
+	initrdsize = 0;
 
 	uint32_t* modules = (uint32_t*) (addr_t) bootinfo->mods_addr;
 	for ( uint32_t i = 0; i < bootinfo->mods_count; i++ )
@@ -209,26 +227,12 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Initialize the kernel heap.
 	_init_heap();
 
-	// Initialize the interrupt worker.
+	// Initialize the interrupt worker (before scheduling is enabled).
 	Interrupt::InitWorker();
 
-	// Initialize the list of kernel devices.
-	DeviceFS::Init();
-
-	// Initialize the COM ports.
-	COM::Init();
-
-	// Initialize the keyboard.
-	Keyboard::Init();
-
-	// Initialize the terminal.
-	Terminal::Init();
-
-	// Initialize the VGA driver.
-	VGA::Init();
-
-	// Initialize the sound driver.
-	Sound::Init();
+	//
+	// Stage 2. Transition to Multithreaded Environment
+	//
 
 	// Initialize the process system.
 	Process::Init();
@@ -236,47 +240,11 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Initialize the thread system.
 	Thread::Init();
 
-	// Initialize the IO system.
-	IO::Init();
-
-	// Initialize the pipe system.
-	Pipe::Init();
-
-	// Initialize the filesystem system.
-	FileSystem::Init();
-
-	// Initialize the directory system.
-	Directory::Init();
-
-	// Initialize the mount system.
-	Mount::Init();
-
-	// Initialize the scheduler.
-	Scheduler::Init();
-
 	// Initialize Unix Signals.
 	Signal::Init();
 
-	// Initialize the worker thread data structures.
-	Worker::Init();
-
-	// Initialize the kernel information query syscall.
-	Info::Init();
-
-	// Set up the initial ram disk.
-	InitRD::Init(initrd, initrdsize);
-
-	// Initialize the Video Driver framework.
-	Video::Init(&textbufhandle);
-
-	// Search for PCI devices and load their drivers.
-	PCI::Init();
-
-	// Initialize ATA devices.
-	ATA::Init();
-
-	// Initialize the BGA driver.
-	BGA::Init();
+	// Initialize the scheduler.
+	Scheduler::Init();
 
 	// Initialize the Display Message framework.
 	DisplayMessage::Init();
@@ -294,6 +262,7 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// _nothing_ else to run on this CPU.
 	Thread* idlethread = new Thread;
 	idlethread->process = system;
+	idlethread->addrspace = idlethread->process->addrspace;
 	idlethread->kernelstackpos = (addr_t) stack;
 	idlethread->kernelstacksize = STACK_SIZE;
 	idlethread->kernelstackmalloced = false;
@@ -302,8 +271,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	Scheduler::SetIdleThread(idlethread);
 
 	// Let's create a regular kernel thread that can decide what happens next.
-	// Note that we don't do the work here: should it block, then there is
-	// nothing to run. Therefore we must become the system idle thread.
+	// Note that we don't do the work here: if all other threads are not running
+	// and this thread isn't runnable, then there is nothing to run. Therefore
+	// we must become the system idle thread.
 	RunKernelThread(BootThread, NULL);
 
 	// Set up such that floating point registers are lazily switched.
@@ -319,27 +289,130 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 static void SystemIdleThread(void* /*user*/)
 {
 	// Alright, we are now the system idle thread. If there is nothing to do,
-	// then we are run. Note that we must never do any real work here.
+	// then we are run. Note that we must never do any real work here as the
+	// idle thread must always be runnable.
 	while(true);
 }
 
 static void BootThread(void* /*user*/)
 {
+	//
+	// Stage 3. Spawning Kernel Worker Threads.
+	//
+
 	// Hello, threaded world! You can now regard the kernel as a multi-threaded
 	// process with super-root access to the system. Before we boot the full
 	// system we need to start some worker threads.
-
 	// Let's create the interrupt worker thread that executes additional work
 	// requested by interrupt handlers, where such work isn't safe.
 	Thread* interruptworker = RunKernelThread(Interrupt::WorkerThread, NULL);
 	if ( !interruptworker )
 		Panic("Could not create interrupt worker");
 
+	// Initialize the worker thread data structures.
+	Worker::Init();
+
 	// Create a general purpose worker thread.
 	Thread* workerthread = RunKernelThread(Worker::Thread, NULL);
 	if ( !workerthread )
 		Panic("Unable to create general purpose worker thread");
 
+	//
+	// Stage 4. Initialize the Filesystem
+	//
+
+	Ref<DescriptorTable> dtable(new DescriptorTable());
+	if ( !dtable )
+		Panic("Unable to allocate descriptor table");
+	Ref<MountTable> mtable(new MountTable());
+	if ( !mtable )
+		Panic("Unable to allocate mount table.");
+	CurrentProcess()->BootstrapTables(dtable, mtable);
+
+	// Let's begin preparing the filesystem.
+	// TODO: Setup the right device id for the KRAMFS dir?
+	Ref<Inode> iroot(new KRAMFS::Dir((dev_t) 0, (ino_t) 0, 0, 0, 0755));
+	if ( !iroot )
+		Panic("Unable to allocate root inode.");
+	ioctx_t ctx; SetupKernelIOCtx(&ctx);
+	Ref<Vnode> vroot(new Vnode(iroot, Ref<Vnode>(NULL), 0, 0));
+	if ( !vroot )
+		Panic("Unable to allocate root vnode.");
+	Ref<Descriptor> droot(new Descriptor(vroot, 0));
+	if ( !droot )
+		Panic("Unable to allocate root descriptor.");
+	CurrentProcess()->BootstrapDirectories(droot);
+
+	// Initialize the root directory.
+	if ( iroot->link_raw(&ctx, ".", iroot) != 0 )
+		Panic("Unable to link /. to /");
+	if ( iroot->link_raw(&ctx, "..", iroot) != 0 )
+		Panic("Unable to link /.. to /");
+
+	// Install the initrd into our fresh RAM filesystem.
+	if ( !InitRD::ExtractFromPhysicalInto(initrd, initrdsize, droot) )
+		Panic("Unable to extract initrd into RAM root filesystem.");
+	// TODO: It's safe to free the original initrd now.
+
+	// Get a descriptor for the /dev directory so we can populate it.
+	if ( droot->mkdir(&ctx, "dev", 0775) != 0 && errno != EEXIST )
+		Panic("Unable to create RAM filesystem /dev directory.");
+	Ref<Descriptor> slashdev = droot->open(&ctx, "dev", O_RDONLY | O_DIRECTORY);
+	if ( !slashdev )
+		Panic("Unable to create descriptor for RAM filesystem /dev directory.");
+
+	//
+	// Stage 5. Loading and Initializing Core Drivers.
+	//
+
+	// Initialize the keyboard.
+	Keyboard* keyboard = new PS2Keyboard(0x60, Interrupt::IRQ1);
+	if ( !keyboard )
+		Panic("Could not allocate PS2 Keyboard driver");
+	KeyboardLayout* kblayout = new KBLayoutUS;
+	if ( !kblayout )
+		Panic("Could not allocate keyboard layout driver");
+
+	// Register the kernel terminal as /dev/tty.
+	Ref<Inode> tty(new LogTerminal(slashdev->dev, 0666, 0, 0, keyboard, kblayout));
+	if ( !tty )
+		Panic("Could not allocate a kernel terminal");
+	if ( LinkInodeInDir(&ctx, slashdev, "tty", tty) != 0 )
+		Panic("Unable to link /dev/tty to kernel terminal.");
+
+	// Initialize the COM ports.
+	COM::Init("/dev", slashdev);
+
+	// Initialize the VGA driver.
+	VGA::Init("/dev", slashdev);
+
+	// Initialize the sound driver.
+	Sound::Init();
+
+	// Initialize the IO system.
+	IO::Init();
+
+	// Initialize the pipe system.
+	Pipe::Init();
+
+	// Initialize the kernel information query syscall.
+	Info::Init();
+
+	// Initialize the Video Driver framework.
+	Video::Init(textbufhandle);
+
+	// Search for PCI devices and load their drivers.
+	PCI::Init();
+
+	// Initialize ATA devices.
+	ATA::Init("/dev", slashdev);
+
+	// Initialize the BGA driver.
+	BGA::Init();
+
+	//
+	// Stage 6. Executing Hosted Environment ("User-Space")
+	//
 	// Finally, let's transfer control to a new kernel process that will
 	// eventually run user-space code known as the operating system.
 	addr_t initaddrspace = Memory::Fork();
@@ -350,11 +423,18 @@ static void BootThread(void* /*user*/)
 
 	CurrentProcess()->AddChildProcess(init);
 
+	// TODO: Why don't we fork from pid=0 and this is done for us?
+	// TODO: Fork dtable and mtable, don't share them!
+	init->BootstrapTables(dtable, mtable);
+	dtable.Reset();
+	mtable.Reset();
+	init->BootstrapDirectories(droot);
 	init->addrspace = initaddrspace;
 	Scheduler::SetInitProcess(init);
 
 	Thread* initthread = RunKernelThread(init, InitThread, NULL);
-	if ( !initthread ) { Panic("Coul not create init thread"); }
+	if ( !initthread )
+		Panic("Could not create init thread");
 
 	// Wait until init init is done and then shut down the computer.
 	int status;
@@ -373,6 +453,14 @@ static void BootThread(void* /*user*/)
 	}
 }
 
+#if defined(PLATFORM_X86)
+	#define CPUTYPE_STR "i486-sortix"
+#elif defined(PLATFORM_X64)
+	#define CPUTYPE_STR "x86_64-sortix"
+#else
+	#error No cputype environmental variable provided here.
+#endif
+
 static void InitThread(void* /*user*/)
 {
 	// We are the init process's first thread. Let's load the init program from
@@ -382,12 +470,36 @@ static void InitThread(void* /*user*/)
 	Thread* thread = CurrentThread();
 	Process* process = CurrentProcess();
 
-	uint32_t inode = InitRD::Traverse(InitRD::Root(), "init");
-	if ( !inode ) { Panic("InitRD did not contain an 'init' program."); }
+	const char* initpath = "/" CPUTYPE_STR "/bin/init";
 
-	size_t programsize;
-	uint8_t* program = InitRD::Open(inode, &programsize);
-	if ( !program ) { Panic("InitRD did not contain an 'init' program."); }
+	ioctx_t ctx; SetupKernelIOCtx(&ctx);
+	Ref<Descriptor> root = CurrentProcess()->GetRoot();
+	Ref<Descriptor> init = root->open(&ctx, initpath, O_EXEC);
+	if ( !init )
+		PanicF("Could not open %s in early kernel RAM filesystem:\n%s",
+		       initpath, strerror(errno));
+	struct stat st;
+	if ( init->stat(&ctx, &st) )
+		PanicF("Could not stat '%s' in initrd.", initpath);
+	assert(0 <= st.st_size);
+	if ( (uintmax_t) SIZE_MAX < (uintmax_t) st.st_size )
+		PanicF("%s is bigger than SIZE_MAX.", initpath);
+	size_t programsize = st.st_size;
+	uint8_t* program = new uint8_t[programsize];
+	if ( !program )
+		PanicF("Unable to allocate 0x%zx bytes needed for %s.", programsize, initpath);
+	size_t sofar = 0;
+	while ( sofar < programsize )
+	{
+		ssize_t numbytes = init->read(&ctx, program+sofar, programsize-sofar);
+		if ( !numbytes )
+			PanicF("Premature EOF when reading %s.", initpath);
+		if ( numbytes < 0 )
+			PanicF("IO error when reading %s.", initpath);
+		sofar += numbytes;
+	}
+
+	init.Reset();
 
 	const size_t DEFAULT_STACK_SIZE = 64UL * 1024UL;
 
@@ -399,32 +511,23 @@ static void InitThread(void* /*user*/)
 
 	int prot = PROT_FORK | PROT_READ | PROT_WRITE | PROT_KREAD | PROT_KWRITE;
 	if ( !Memory::MapRange(stackpos, stacksize, prot) )
-	{
 		Panic("Could not allocate init stack memory");
-	}
 
 	thread->stackpos = stackpos;
 	thread->stacksize = stacksize;
 
 	int argc = 1;
 	const char* argv[] = { "init", NULL };
-#if defined(PLATFORM_X86)
-	const char* cputype = "cputype=i486-sortix";
-#elif defined(PLATFORM_X64)
-	const char* cputype = "cputype=x86_64-sortix";
-#else
-	#warning No cputype environmental variable provided here.
-	const char* cputype = "cputype=unknown-sortix";
-#endif
+	const char* cputype = "cputype=" CPUTYPE_STR;
 	int envc = 1;
 	const char* envp[] = { cputype, NULL };
 	CPU::InterruptRegisters regs;
 
-	if ( process->Execute("init", program, programsize, argc, argv, envc, envp,
-                          &regs) )
-	{
-		Panic("Unable to execute init program");
-	}
+	if ( process->Execute(initpath, program, programsize, argc, argv, envc,
+	                       envp, &regs) )
+		PanicF("Unable to execute %s.", initpath);
+
+	delete[] program;
 
 	// Now become the init process and the operation system shall run.
 	CPU::LoadRegisters(&regs);

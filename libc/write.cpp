@@ -26,14 +26,11 @@
 #include <errno.h>
 #include <unistd.h>
 
-DEFN_SYSCALL3(ssize_t, SysWrite, SYSCALL_WRITE, int, const void*, size_t);
+DEFN_SYSCALL3(ssize_t, sys_write, SYSCALL_WRITE, int, const void*, size_t);
 
 extern "C" ssize_t write(int fd, const void* buf, size_t count)
 {
-retry:
-	ssize_t result = SysWrite(fd, buf, count);
-	if ( result < 0 && errno == EAGAIN ) { goto retry; }
-	return result;
+	return sys_write(fd, buf, count);
 }
 
 DEFN_SYSCALL4(ssize_t, sys_pwrite, SYSCALL_PWRITE, int, const void*, size_t, off_t);

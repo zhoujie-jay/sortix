@@ -24,13 +24,16 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/inode.h>
+#include <sortix/kernel/descriptor.h>
+#include <sortix/kernel/interlock.h>
+#include <sortix/stat.h>
 #include <errno.h>
 #include "interrupt.h"
-#include "stream.h"
-#include "syscall.h"
 #include "thread.h"
 #include "signal.h"
-#include "fs/devfs.h"
 #include "com.h"
 
 namespace Sortix {
@@ -51,13 +54,9 @@ namespace COM {
 
 // Yet another alternative is to use POLL_HACK, but return EGAIN and let user-
 // space call retry, rather than relying on the broken syscall interstructure.
-#ifndef GOT_ACTUAL_KTHREAD
 #define POLL_EAGAIN 1
-#else
-#define POLL_EAGAIN 0
-#endif
 
-#if !POLL_EAGAIN && !POLL_HACK && defined(GOT_ACTUAL_KTHREAD)
+#if !POLL_EAGAIN && !POLL_HACK
 #error The interrupt-based code was broken in the kthread branch.
 #error You need to port this to the new thread/interrupt API.
 #warning Oh, and fix the above mentioned bugs too.
@@ -211,133 +210,97 @@ void EarlyInit()
 	}
 }
 
-class DevCOMPort : public DevStream
+class DevCOMPort : public AbstractInode
 {
 public:
-	typedef DevStream BaseClass;
-
-public:
-	DevCOMPort(uint16_t port);
+	DevCOMPort(dev_t dev, uid_t owner, gid_t group, mode_t mode, uint16_t port);
 	virtual ~DevCOMPort();
-
-public:
-	virtual ssize_t Read(uint8_t* dest, size_t count);
-	virtual ssize_t Write(const uint8_t* src, size_t count);
-	virtual bool IsReadable();
-	virtual bool IsWritable();
+	virtual int sync(ioctx_t* ctx);
+	virtual ssize_t read(ioctx_t* ctx, uint8_t* buf, size_t count);
+	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
 
 public:
 	void OnInterrupt();
 
 private:
-	uint16_t port;
 	kthread_mutex_t portlock;
-#ifdef GOT_FAKE_KTHREAD
-	Event dataevent;
-	Event sentevent;
-#endif
+	uint16_t port;
 
 };
 
-DevCOMPort::DevCOMPort(uint16_t port)
+DevCOMPort::DevCOMPort(dev_t dev, uid_t owner, gid_t group, mode_t mode,
+                       uint16_t port)
 {
+	inode_type = INODE_TYPE_STREAM;
 	this->port = port;
 	this->portlock = KTHREAD_MUTEX_INITIALIZER;
+	this->stat_uid = owner;
+	this->stat_gid = group;
+	this->type = S_IFCHR;
+	this->stat_mode = (mode & S_SETABLE) | this->type;
+	this->dev = dev;
+	this->ino = (ino_t) this;
 }
 
 DevCOMPort::~DevCOMPort()
 {
 }
 
-bool DevCOMPort::IsReadable() { return true; }
-bool DevCOMPort::IsWritable() { return true; }
+int DevCOMPort::sync(ioctx_t* /*ctx*/)
+{
+	// TODO: Not implemented yet, please wait for all outstanding requests.
+	return 0;
+}
 
 #if POLL_HACK
 
-const unsigned TRIES = 1000;
-
-ssize_t DevCOMPort::Read(uint8_t* dest, size_t count)
+ssize_t DevCOMPort::read(ioctx_t* ctx, uint8_t* dest, size_t count)
 {
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
 	ScopedLock lock(&portlock);
 
-#ifdef GOT_ACTUAL_KTHREAD
 	while ( !(CPU::InPortB(port + LSR) & LSR_READY) )
 		if ( Signal::IsPending() )
 		{
 			errno = EINTR;
 			return -1;
 		}
-#else
-	uint8_t lsr;
-	for ( unsigned i = 0; i < TRIES; i++ )
-	{
-		lsr = CPU::InPortB(port + LSR);
-		if ( lsr & LSR_READY ) { break; }
-	}
-
-	if ( !(lsr & LSR_READY) )
-	{
-#if POLL_EAGAIN
-		errno = EAGAIN;
-#else
-		errno = EBLOCKING;
-		Syscall::Yield();
-#endif
-		return -1;
-	}
-#endif
 
 	size_t sofar = 0;
 	do
 	{
 		if ( count <= sofar ) { break; }
-		dest[sofar++] = CPU::InPortB(port + RXR);
+		uint8_t val = CPU::InPortB(port + RXR);
+		if ( !ctx->copy_to_dest(dest + sofar++, &val, sizeof(val)) )
+			return -1;
 	} while ( CPU::InPortB(port + LSR) & LSR_READY);
 
 	return sofar;
 }
 
-ssize_t DevCOMPort::Write(const uint8_t* src, size_t count)
+ssize_t DevCOMPort::write(ioctx_t* ctx, const uint8_t* src, size_t count)
 {
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; };
 
 	ScopedLock lock(&portlock);
 
-#ifdef GOT_ACTUAL_KTHREAD
 	while ( !(CPU::InPortB(port + LSR) & LSR_THRE) )
 		if ( Signal::IsPending() )
 		{
 			errno = EINTR;
 			return -1;
 		}
-#else
-	uint8_t lsr;
-	for ( unsigned i = 0; i < TRIES; i++ )
-	{
-		lsr = CPU::InPortB(port + LSR);
-		if ( lsr & LSR_THRE ) { break; }
-	}
-
-	if ( !(lsr & LSR_THRE) )
-	{
-#if POLL_EAGAIN
-		errno = EAGAIN;
-#else
-		errno = EBLOCKING;
-		Syscall::Yield();
-#endif
-		return -1;
-	}
-#endif
 
 	size_t sofar = 0;
 	do
 	{
 		if ( count <= sofar ) { break; }
-		CPU::OutPortB(port + TXR, src[sofar++]);
+		uint8_t val;
+		if ( !ctx->copy_from_src(&val, src + sofar++, sizeof(val)) )
+			return -1;
+		CPU::OutPortB(port + TXR, val);
 	} while ( CPU::InPortB(port + LSR) & LSR_THRE );
 
 	return sofar;
@@ -345,7 +308,9 @@ ssize_t DevCOMPort::Write(const uint8_t* src, size_t count)
 
 #else
 
-ssize_t DevCOMPort::Read(uint8_t* dest, size_t count)
+#error Yeah, please port these to the new IO interface.
+
+ssize_t DevCOMPort::Read(byte* dest, size_t count)
 {
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
@@ -355,12 +320,8 @@ ssize_t DevCOMPort::Read(uint8_t* dest, size_t count)
 	uint8_t lsr = CPU::InPortB(port + LSR);
 	if ( !(lsr & LSR_READY) )
 	{
-#ifdef GOT_ACTUAL_KTHREAD
 		Panic("Can't wait for com data receive event");
-#else
-		dataevent.Register();
-#endif
-		errno = EBLOCKING;
+		Error::Set(EBLOCKING);
 		return -1;
 	}
 
@@ -384,12 +345,8 @@ ssize_t DevCOMPort::Write(const uint8_t* src, size_t count)
 	uint8_t lsr = CPU::InPortB(port + LSR);
 	if ( !(lsr & LSR_THRE) )
 	{
-#ifdef GOT_ACTUAL_KTHREAD
 		Panic("Can't wait for com data sent event");
-#else
-		sentevent.Register();
-#endif
-		errno = EBLOCKING;
+		Error::Set(EBLOCKING);
 		return -1;
 	}
 
@@ -424,18 +381,10 @@ void DevCOMPort::OnInterrupt()
 		CPU::InPortB(port + LSR);
 		break;
 	case IIR_RECV_DATA:
-#ifdef GOT_ACTUAL_KTHREAD
 		Panic("Can't wait for com data sent event");
-#else
-		dataevent.Signal();
-#endif
 		break;
 	case IIR_SENT_DATA:
-#ifdef GOT_ACTUAL_KTHREAD
 		Panic("Can't wait for com data sent event");
-#else
-		sentevent.Signal();
-#endif
 		CPU::InPortB(port + IIR);
 		break;
 	case IIR_MODEM_STATUS:
@@ -444,7 +393,7 @@ void DevCOMPort::OnInterrupt()
 	}
 }
 
-DevCOMPort* comdevices[1+NUMCOMPORTS];
+Ref<DevCOMPort> comdevices[1+NUMCOMPORTS];
 
 static void UARTIRQHandler(CPU::InterruptRegisters* /*regs*/, void* /*user*/)
 {
@@ -455,12 +404,14 @@ static void UARTIRQHandler(CPU::InterruptRegisters* /*regs*/, void* /*user*/)
 	}
 }
 
-void Init()
+void Init(const char* devpath, Ref<Descriptor> slashdev)
 {
+	ioctx_t ctx; SetupKernelIOCtx(&ctx);
 	for ( size_t i = 1; i <= NUMCOMPORTS; i++ )
 	{
-		if ( !comports[i] ) { comdevices[i] = NULL; continue; }
-		comdevices[i] = new DevCOMPort(comports[i]);
+		if ( !comports[i] ) { comdevices[i] = Ref<DevCOMPort>(); continue; }
+		comdevices[i] = Ref<DevCOMPort>
+			(new DevCOMPort(slashdev->dev, 0, 0, 0660, comports[i]));
 		if ( !comdevices[i] )
 		{
 			PanicF("Unable to allocate device for COM port %zu at 0x%x", i,
@@ -468,10 +419,8 @@ void Init()
 		}
 		char name[5] = "comN";
 		name[3] = '0' + i;
-		if ( !DeviceFS::RegisterDevice(name, comdevices[i]) )
-		{
-			PanicF("Unable to register device /dev/%s", name);
-		}
+		if ( LinkInodeInDir(&ctx, slashdev, name, comdevices[i]) != 0 )
+			PanicF("Unable to link %s/%s to COM port driver.", devpath, name);
 	}
 
 	Interrupt::RegisterHandler(Interrupt::IRQ3, UARTIRQHandler, NULL);

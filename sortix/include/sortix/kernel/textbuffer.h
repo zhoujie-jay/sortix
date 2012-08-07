@@ -72,12 +72,12 @@ public:
 // the screen resolution or the graphics driver. The backing text buffer can
 // only be changed when there are no references (but our own) to the text buffer
 // so don't forget to release it when you are done.
-class TextBufferHandle : public Refcounted
+class TextBufferHandle : public Refcountable
 {
 public:
 	TextBufferHandle(TextBuffer* textbuf = NULL, bool deletebuf = true,
 	                 TextBuffer* def = NULL, bool deletedef = true);
-	~TextBufferHandle();
+	virtual ~TextBufferHandle();
 	TextBuffer* Acquire();
 	void Release(TextBuffer* textbuf);
 	void Replace(TextBuffer* newtextbuf, bool deletebuf = true);
@@ -90,7 +90,6 @@ private:
 	size_t numused;
 	bool deletedef;
 	bool deletebuf;
-
 
 };
 

@@ -17,45 +17,24 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    terminal.h
-    Reads data from an input source (such as a keyboard), optionally does line-
-    buffering, and redirects data to an output device (such as the VGA).
+    sortix/kernel/copy.h
+    The context for io operations: who made it, how should data be copied, etc.
 
 *******************************************************************************/
 
-#ifndef SORTIX_TERMINAL_H
-#define SORTIX_TERMINAL_H
+#ifndef SORTIX_COPY_H
+#define SORTIX_COPY_H
 
-#include "device.h"
-#include "stream.h"
-#include <sortix/termmode.h>
+#include <stddef.h>
 
-namespace Sortix
-{
-	class DevTerminal : public DevStream
-	{
-	public:
-		typedef DevStream BaseClass;
+namespace Sortix {
 
-	public:
-		virtual bool IsType(unsigned type) const
-		{
-			return type == Device::TERMINAL || BaseClass::IsType(type);
-		}
+bool CopyToUser(void* userdst, const void* ksrc, size_t count);
+bool CopyFromUser(void* kdst, const void* usersrc, size_t count);
+bool CopyToKernel(void* kdst, const void* ksrc, size_t count);
+bool CopyFromKernel(void* kdst, const void* ksrc, size_t count);
+char* GetStringFromUser(const char* str);
 
-	public:
-		virtual bool SetMode(unsigned mode) = 0;
-		virtual bool SetWidth(unsigned width) = 0;
-		virtual bool SetHeight(unsigned height) = 0;
-		virtual unsigned GetMode() const = 0;
-		virtual unsigned GetWidth() const = 0;
-		virtual unsigned GetHeight() const = 0;
+} // namespace Sortix
 
-	};
-
-	namespace Terminal
-	{
-		void Init();
-	}
-}
 #endif

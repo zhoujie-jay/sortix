@@ -24,340 +24,270 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/interlock.h>
+#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/copy.h>
+#include <sortix/kernel/inode.h>
+#include <sortix/kernel/vnode.h>
+#include <sortix/kernel/descriptor.h>
+#include <sortix/kernel/dtable.h>
 #include <sortix/signal.h>
+#include <sortix/stat.h>
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
-#ifdef GOT_FAKE_KTHREAD
-#include "event.h"
-#endif
 #include "signal.h"
 #include "thread.h"
 #include "process.h"
 #include "syscall.h"
 #include "pipe.h"
 
-namespace Sortix
+namespace Sortix {
+
+class PipeChannel
 {
-	class DevPipeStorage : public DevStream
+public:
+	PipeChannel(uint8_t* buffer, size_t buffersize);
+	~PipeChannel();
+	void StartReading();
+	void StartWriting();
+	void CloseReading();
+	void CloseWriting();
+	void PerhapsShutdown();
+	ssize_t read(ioctx_t* ctx, uint8_t* buf, size_t count);
+	ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
+
+private:
+	kthread_mutex_t pipelock;
+	kthread_cond_t readcond;
+	kthread_cond_t writecond;
+	uint8_t* buffer;
+	size_t bufferoffset;
+	size_t bufferused;
+	size_t buffersize;
+	bool anyreading;
+	bool anywriting;
+
+};
+
+PipeChannel::PipeChannel(uint8_t* buffer, size_t buffersize)
+{
+	pipelock = KTHREAD_MUTEX_INITIALIZER;
+	readcond = KTHREAD_COND_INITIALIZER;
+	writecond = KTHREAD_COND_INITIALIZER;
+	this->buffer = buffer;
+	this->buffersize = buffersize;
+	bufferoffset = bufferused = 0;
+	anyreading = anywriting = false;
+}
+
+PipeChannel::~PipeChannel()
+{
+	delete[] buffer;
+}
+
+void PipeChannel::StartReading()
+{
+	ScopedLock lock(&pipelock);
+	assert(!anyreading);
+	anyreading = true;
+}
+
+void PipeChannel::StartWriting()
+{
+	ScopedLock lock(&pipelock);
+	assert(!anywriting);
+	anywriting = true;
+}
+
+void PipeChannel::CloseReading()
+{
+	anyreading = false;
+	kthread_cond_broadcast(&writecond);
+	PerhapsShutdown();
+}
+
+void PipeChannel::CloseWriting()
+{
+	anywriting = false;
+	kthread_cond_broadcast(&readcond);
+	PerhapsShutdown();
+}
+
+void PipeChannel::PerhapsShutdown()
+{
+	kthread_mutex_lock(&pipelock);
+	bool deleteme = !anyreading & !anywriting;
+	kthread_mutex_unlock(&pipelock);
+	if ( deleteme )
+		delete this;
+}
+
+ssize_t PipeChannel::read(ioctx_t* ctx, uint8_t* buf, size_t count)
+{
+	ScopedLockSignal lock(&pipelock);
+	if ( !lock.IsAcquired() ) { errno = EINTR; return -1; }
+	while ( anywriting && !bufferused )
 	{
-	public:
-		typedef Device BaseClass;
-
-	public:
-		DevPipeStorage(uint8_t* buffer, size_t buffersize);
-		~DevPipeStorage();
-
-	private:
-		uint8_t* buffer;
-		size_t buffersize;
-		size_t bufferoffset;
-		size_t bufferused;
-#ifdef GOT_FAKE_KTHREAD
-		Event readevent;
-		Event writeevent;
-#endif
-		bool anyreading;
-		bool anywriting;
-		kthread_mutex_t pipelock;
-		kthread_cond_t readcond;
-		kthread_cond_t writecond;
-
-	public:
-		virtual ssize_t Read(uint8_t* dest, size_t count);
-		virtual ssize_t Write(const uint8_t* src, size_t count);
-		virtual bool IsReadable();
-		virtual bool IsWritable();
-
-	public:
-		void NotReading();
-		void NotWriting();
-
-	};
-
-	DevPipeStorage::DevPipeStorage(uint8_t* buffer, size_t buffersize)
-	{
-		this->buffer = buffer;
-		this->buffersize = buffersize;
-		this->bufferoffset = 0;
-		this->bufferused = 0;
-		this->anyreading = true;
-		this->anywriting = true;
-		this->pipelock = KTHREAD_MUTEX_INITIALIZER;
-		this->readcond = KTHREAD_COND_INITIALIZER;
-		this->writecond = KTHREAD_COND_INITIALIZER;
-	}
-
-	DevPipeStorage::~DevPipeStorage()
-	{
-		delete[] buffer;
-	}
-
-	bool DevPipeStorage::IsReadable() { return true; }
-	bool DevPipeStorage::IsWritable() { return true; }
-
-	ssize_t DevPipeStorage::Read(uint8_t* dest, size_t count)
-	{
-		if ( count == 0 ) { return 0; }
-#ifdef GOT_ACTUAL_KTHREAD
-		ScopedLockSignal lock(&pipelock);
-		if ( !lock.IsAcquired() ) { errno = EINTR; return -1; }
-		while ( anywriting && !bufferused )
+		if ( !kthread_cond_wait_signal(&readcond, &pipelock) )
 		{
-			if ( !kthread_cond_wait_signal(&readcond, &pipelock) )
-			{
-				errno = EINTR;
-				return -1;
-			}
-		}
-		if ( !bufferused && !anywriting ) { return 0; }
-		if ( bufferused < count ) { count = bufferused; }
-		size_t amount = count;
-		size_t linear = buffersize - bufferoffset;
-		if ( linear < amount ) { amount = linear; }
-		assert(amount);
-		memcpy(dest, buffer + bufferoffset, amount);
-		bufferoffset = (bufferoffset + amount) % buffersize;
-		bufferused -= amount;
-		kthread_cond_broadcast(&writecond);
-		return amount;
-#else
-		if ( bufferused )
-		{
-			if ( bufferused < count ) { count = bufferused; }
-			size_t amount = count;
-			size_t linear = buffersize - bufferoffset;
-			if ( linear < amount ) { amount = linear; }
-			assert(amount);
-			memcpy(dest, buffer + bufferoffset, amount);
-			bufferoffset = (bufferoffset + amount) % buffersize;
-			bufferused -= amount;
-			writeevent.Signal();
-			return amount;
-		}
-
-		if ( !anywriting ) { return 0; }
-
-		errno = EBLOCKING;
-		readevent.Register();
-		return -1;
-#endif
-	}
-
-	ssize_t DevPipeStorage::Write(const uint8_t* src, size_t count)
-	{
-		if ( count == 0 ) { return 0; }
-#ifdef GOT_ACTUAL_KTHREAD
-		ScopedLockSignal lock(&pipelock);
-		if ( !lock.IsAcquired() ) { errno = EINTR; return -1; }
-		while ( anyreading && bufferused == buffersize )
-		{
-			if ( !kthread_cond_wait_signal(&writecond, &pipelock) )
-			{
-				errno = EINTR;
-				return -1;
-			}
-		}
-		if ( !anyreading )
-		{
-			CurrentThread()->DeliverSignal(SIGPIPE);
-			errno = EPIPE;
+			errno = EINTR;
 			return -1;
 		}
-		if ( buffersize - bufferused < count ) { count = buffersize - bufferused; }
-		size_t writeoffset = (bufferoffset + bufferused) % buffersize;
-		size_t amount = count;
-		size_t linear = buffersize - writeoffset;
-		if ( linear < amount ) { amount = linear; }
-		assert(amount);
-		memcpy(buffer + writeoffset, src, amount);
-		bufferused += amount;
-		kthread_cond_broadcast(&readcond);
-		return amount;
-#else
-		if ( bufferused < buffersize )
-		{
-			if ( buffersize - bufferused < count ) { count = buffersize - bufferused; }
-			size_t writeoffset = (bufferoffset + bufferused) % buffersize;
-			size_t amount = count;
-			size_t linear = buffersize - writeoffset;
-			if ( linear < amount ) { amount = linear; }
-			assert(amount);
-			memcpy(buffer + writeoffset, src, amount);
-			bufferused += amount;
-			readevent.Signal();
-			return amount;
-		}
-
-		errno = EBLOCKING;
-		writeevent.Register();
-		return -1;
-#endif
 	}
-
-	void DevPipeStorage::NotReading()
-	{
-		ScopedLock lock(&pipelock);
-		anyreading = false;
-		kthread_cond_broadcast(&readcond);
-	}
-
-	void DevPipeStorage::NotWriting()
-	{
-		ScopedLock lock(&pipelock);
-		anywriting = false;
-		kthread_cond_broadcast(&writecond);
-	}
-
-	class DevPipeReading : public DevStream
-	{
-	public:
-		typedef Device BaseClass;
-
-	public:
-		DevPipeReading(DevStream* stream);
-		~DevPipeReading();
-
-	private:
-		DevStream* stream;
-
-	public:
-		virtual ssize_t Read(uint8_t* dest, size_t count);
-		virtual ssize_t Write(const uint8_t* src, size_t count);
-		virtual bool IsReadable();
-		virtual bool IsWritable();
-
-	};
-
-	DevPipeReading::DevPipeReading(DevStream* stream)
-	{
-		stream->Refer();
-		this->stream = stream;
-	}
-
-	DevPipeReading::~DevPipeReading()
-	{
-		((DevPipeStorage*) stream)->NotReading();
-		stream->Unref();
-	}
-
-	ssize_t DevPipeReading::Read(uint8_t* dest, size_t count)
-	{
-		return stream->Read(dest, count);
-	}
-
-	ssize_t DevPipeReading::Write(const uint8_t* /*src*/, size_t /*count*/)
-	{
-		errno = EBADF;
-		return -1;
-	}
-
-	bool DevPipeReading::IsReadable()
-	{
-		return true;
-	}
-
-	bool DevPipeReading::IsWritable()
-	{
-		return false;
-	}
-
-	class DevPipeWriting : public DevStream
-	{
-	public:
-		typedef Device BaseClass;
-
-	public:
-		DevPipeWriting(DevStream* stream);
-		~DevPipeWriting();
-
-	private:
-		DevStream* stream;
-
-	public:
-		virtual ssize_t Read(uint8_t* dest, size_t count);
-		virtual ssize_t Write(const uint8_t* src, size_t count);
-		virtual bool IsReadable();
-		virtual bool IsWritable();
-
-	};
-
-	DevPipeWriting::DevPipeWriting(DevStream* stream)
-	{
-		stream->Refer();
-		this->stream = stream;
-	}
-
-	DevPipeWriting::~DevPipeWriting()
-	{
-		((DevPipeStorage*) stream)->NotWriting();
-		stream->Unref();
-	}
-
-	ssize_t DevPipeWriting::Read(uint8_t* /*dest*/, size_t /*count*/)
-	{
-		errno = EBADF;
-		return -1;
-	}
-
-	ssize_t DevPipeWriting::Write(const uint8_t* src, size_t count)
-	{
-		return stream->Write(src, count);
-	}
-
-	bool DevPipeWriting::IsReadable()
-	{
-		return false;
-	}
-
-	bool DevPipeWriting::IsWritable()
-	{
-		return true;
-	}
-
-	namespace Pipe
-	{
-		const size_t BUFFER_SIZE = 4096UL;
-
-		int SysPipe(int pipefd[2])
-		{
-			// TODO: Validate that pipefd is a valid user-space array!
-
-			size_t buffersize = BUFFER_SIZE;
-			uint8_t* buffer = new uint8_t[buffersize];
-			if ( !buffer ) { return -1; /* TODO: ENOMEM */ }
-
-			// Transfer ownership of the buffer to the storage device.
-			DevStream* storage = new DevPipeStorage(buffer, buffersize);
-			if ( !storage ) { delete[] buffer; return -1; /* TODO: ENOMEM */ }
-
-			DevStream* reading = new DevPipeReading(storage);
-			if ( !reading ) { delete storage; return -1; /* TODO: ENOMEM */ }
-
-			DevStream* writing = new DevPipeWriting(storage);
-			if ( !writing ) { delete reading; return -1; /* TODO: ENOMEM */ }
-
-			Process* process = CurrentProcess();
-			int readfd = process->descriptors.Allocate(reading, NULL);
-			int writefd = process->descriptors.Allocate(writing, NULL);
-
-			if ( readfd < 0 || writefd < 0 )
-			{
-				if ( 0 <= readfd ) { process->descriptors.Free(readfd); } else { delete reading; }
-				if ( 0 <= writefd ) { process->descriptors.Free(writefd); } else { delete writing; }
-
-				return -1; /* TODO: ENOMEM/EMFILE/ENFILE */
-			}
-
-			pipefd[0] = readfd;
-			pipefd[1] = writefd;
-
-			return 0;
-		}
-
-		void Init()
-		{
-			Syscall::Register(SYSCALL_PIPE, (void*) SysPipe);
-		}
-	}
+	if ( !bufferused && !anywriting ) { return 0; }
+	if ( bufferused < count ) { count = bufferused; }
+	size_t amount = count;
+	size_t linear = buffersize - bufferoffset;
+	if ( linear < amount ) { amount = linear; }
+	assert(amount);
+	ctx->copy_to_dest(buf, buffer + bufferoffset, amount);
+	bufferoffset = (bufferoffset + amount) % buffersize;
+	bufferused -= amount;
+	kthread_cond_broadcast(&writecond);
+	return amount;
 }
+
+ssize_t PipeChannel::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
+{
+	ScopedLockSignal lock(&pipelock);
+	if ( !lock.IsAcquired() ) { errno = EINTR; return -1; }
+	while ( anyreading && bufferused == buffersize )
+	{
+		if ( !kthread_cond_wait_signal(&writecond, &pipelock) )
+		{
+			errno = EINTR;
+			return -1;
+		}
+	}
+	if ( !anyreading )
+	{
+		CurrentThread()->DeliverSignal(SIGPIPE);
+		errno = EPIPE;
+		return -1;
+	}
+	if ( buffersize - bufferused < count ) { count = buffersize - bufferused; }
+	size_t writeoffset = (bufferoffset + bufferused) % buffersize;
+	size_t amount = count;
+	size_t linear = buffersize - writeoffset;
+	if ( linear < amount ) { amount = linear; }
+	assert(amount);
+	ctx->copy_from_src(buffer + writeoffset, buf, amount);
+	bufferused += amount;
+	kthread_cond_broadcast(&readcond);
+	return amount;
+}
+
+class PipeEndpoint : public AbstractInode
+{
+public:
+	PipeEndpoint(dev_t dev, uid_t owner, gid_t group, mode_t mode,
+	             PipeChannel* channel, bool reading);
+	~PipeEndpoint();
+	virtual ssize_t read(ioctx_t* ctx, uint8_t* buf, size_t count);
+	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
+
+private:
+	kthread_mutex_t pipelock;
+	PipeChannel* channel;
+	bool reading;
+
+};
+
+PipeEndpoint::PipeEndpoint(dev_t dev, uid_t owner, gid_t group, mode_t mode,
+                           PipeChannel* channel, bool reading)
+{
+	inode_type = INODE_TYPE_STREAM;
+	this->dev = dev;
+	this->ino = (ino_t) this;
+	this->channel = channel;
+	this->reading = reading;
+	if ( reading )
+		channel->StartReading();
+	else
+		channel->StartWriting();
+	pipelock = KTHREAD_MUTEX_INITIALIZER;
+	this->stat_uid = owner;
+	this->stat_gid = group;
+	this->type = S_IFCHR;
+	this->stat_mode = (mode & S_SETABLE) | this->type;
+}
+
+PipeEndpoint::~PipeEndpoint()
+{
+	if ( reading )
+		channel->CloseReading();
+	else
+		channel->CloseWriting();
+}
+
+ssize_t PipeEndpoint::read(ioctx_t* ctx, uint8_t* buf, size_t count)
+{
+	if ( !reading ) { errno = EBADF; return -1; }
+	return channel->read(ctx, buf, count);
+}
+
+ssize_t PipeEndpoint::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
+{
+	if ( reading ) { errno = EBADF; return -1; }
+	return channel->write(ctx, buf, count);
+}
+
+namespace Pipe {
+
+const size_t BUFFER_SIZE = 4096UL;
+
+static int sys_pipe(int pipefd[2])
+{
+	Process* process = CurrentProcess();
+	uid_t uid = process->uid;
+	uid_t gid = process->gid;
+	mode_t mode = 0600;
+
+	size_t buffersize = BUFFER_SIZE;
+	uint8_t* buffer = new uint8_t[buffersize];
+	if ( !buffer ) return -1;
+
+	PipeChannel* channel = new PipeChannel(buffer, buffersize);
+	if ( !channel ) { delete[] buffer; return -1; }
+
+	Ref<Inode> recv_inode(new PipeEndpoint(0, uid, gid, mode, channel, true));
+	if ( !recv_inode ) { delete channel; return -1; }
+	Ref<Inode> send_inode(new PipeEndpoint(0, uid, gid, mode, channel, false));
+	if ( !send_inode ) return -1;
+
+	Ref<Vnode> recv_vnode(new Vnode(recv_inode, Ref<Vnode>(NULL), 0, 0));
+	Ref<Vnode> send_vnode(new Vnode(send_inode, Ref<Vnode>(NULL), 0, 0));
+	if ( !recv_vnode || !send_vnode ) return -1;
+
+	Ref<Descriptor> recv_desc(new Descriptor(recv_vnode, 0));
+	Ref<Descriptor> send_desc(new Descriptor(send_vnode, 0));
+	if ( !recv_desc || !send_desc ) return -1;
+
+	Ref<DescriptorTable> dtable = process->GetDTable();
+
+	int recv_index, send_index;
+	if ( 0 <= (recv_index = dtable->Allocate(recv_desc, 0)) )
+	{
+		if ( 0 <= (send_index = dtable->Allocate(send_desc, 0)) )
+		{
+			int ret[2] = { recv_index, send_index };
+			if ( CopyToUser(pipefd, ret, sizeof(ret)) )
+				return 0;
+
+			dtable->Free(send_index);
+		}
+		dtable->Free(recv_index);
+	}
+
+	return -1;
+}
+
+void Init()
+{
+	Syscall::Register(SYSCALL_PIPE, (void*) sys_pipe);
+}
+
+} // namespace Pipe
+} // namespace Sortix

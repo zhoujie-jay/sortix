@@ -17,50 +17,49 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    refcount.cpp
-    A class that implements reference counting.
+    copy.h
+    The context for io operations: who made it, how should data be copied, etc.
 
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <sortix/kernel/kthread.h>
-#include <sortix/kernel/refcount.h>
-#include <assert.h>
+#include <sortix/kernel/copy.h>
+#include <sortix/kernel/string.h>
+#include <string.h>
 
 namespace Sortix {
 
-Refcountable::Refcountable()
+// TODO: These are currently insecure, please check userspace tables before
+// moving data to avoid security problems.
+
+bool CopyToUser(void* userdst, const void* ksrc, size_t count)
 {
-	reflock = KTHREAD_MUTEX_INITIALIZER;
-	refcount = 0;
-	being_deleted = false;
+	memcpy(userdst, ksrc, count);
+	return true;
 }
 
-Refcountable::~Refcountable()
+bool CopyFromUser(void* kdst, const void* usersrc, size_t count)
 {
-	// It's OK to be deleted if our refcount is 1, it won't mess with any
-	// other owners that might need us.
-	assert(refcount <= 1);
+	//Log::PrintF("[copy.cpp] Copying %zu bytes from 0x%zx to 0x%zx\n", count, usersrc, kdst);
+	memcpy(kdst, usersrc, count);
+	return true;
 }
 
-void Refcountable::Refer_Renamed()
+bool CopyToKernel(void* kdst, const void* ksrc, size_t count)
 {
-	ScopedLock lock(&reflock);
-	refcount++;
+	memcpy(kdst, ksrc, count);
+	return true;
 }
 
-void Refcountable::Unref_Renamed()
+bool CopyFromKernel(void* kdst, const void* ksrc, size_t count)
 {
-	assert(!being_deleted);
-	kthread_mutex_lock(&reflock);
-	assert(refcount);
-	bool deleteme = !refcount || !--refcount;
-	kthread_mutex_unlock(&reflock);
-	if ( deleteme )
-	{
-		being_deleted = true;
-		delete this;
-	}
+	memcpy(kdst, ksrc, count);
+	return true;
+}
+
+char* GetStringFromUser(const char* str)
+{
+	return String::Clone(str);
 }
 
 } // namespace Sortix

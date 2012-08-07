@@ -23,12 +23,18 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/vnode.h>
+#include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/crc32.h>
 #include <sortix/kernel/string.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/fsfunc.h>
+#include <sortix/fcntl.h>
+#include <sortix/initrd.h>
 #include <sortix/stat.h>
 #include <sortix/mman.h>
-#include <sortix/initrd.h>
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include "initrd.h"
@@ -37,7 +43,7 @@
 namespace Sortix {
 namespace InitRD {
 
-uint8_t* initrd;
+uint8_t* initrd = NULL;
 size_t initrdsize;
 const initrd_superblock_t* sb;
 
@@ -129,7 +135,6 @@ uint32_t Traverse(uint32_t ino, const char* name)
 	return 0;
 }
 
-
 const char* GetFilename(uint32_t dir, size_t index)
 {
 	const initrd_inode_t* inode = GetInode(dir);
@@ -195,6 +200,7 @@ void CheckSum()
 
 void Init(addr_t phys, size_t size)
 {
+	assert(!initrd);
 	// First up, map the initrd onto the kernel's address space.
 	addr_t virt = Memory::GetInitRD();
 	size_t amount = 0;
@@ -241,6 +247,97 @@ void Init(addr_t phys, size_t size)
 	}
 
 	CheckSum();
+}
+
+static bool ExtractDir(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> node);
+static bool ExtractFile(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> file);
+static bool ExtractNode(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> node);
+
+static bool ExtractDir(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> dir)
+{
+	size_t numfiles = GetNumFiles(ino);
+	for ( size_t i = 0; i < numfiles; i++ )
+	{
+		const char* name = GetFilename(ino, i);
+		if ( !name )
+			return false;
+		if ( IsDotOrDotDot(name) )
+			continue;
+		uint32_t childino = Traverse(ino, name);
+		if ( !childino )
+			return false;
+		const initrd_inode_t* child = GetInode(childino);
+		mode_t mode = InitRDModeToHost(child->mode);
+		if ( INITRD_S_ISDIR(child->mode) )
+		{
+			if ( dir->mkdir(ctx, name, mode) && errno != EEXIST )
+				return false;
+			Ref<Descriptor> desc = dir->open(ctx, name, O_RDWR | O_DIRECTORY, 0);
+			if ( !desc )
+				return false;
+			if ( !ExtractNode(ctx, childino, desc) )
+				return false;
+		}
+		if ( INITRD_S_ISREG(child->mode) )
+		{
+			Ref<Descriptor> desc = dir->open(ctx, name, O_WRONLY | O_CREAT, mode);
+			if ( !desc )
+				return false;
+			if ( !ExtractNode(ctx, childino, desc) )
+				return false;
+		}
+	}
+	return true;
+}
+
+static bool ExtractFile(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> file)
+{
+	size_t filesize;
+	const uint8_t* data = Open(ino, &filesize);
+	if ( !data )
+		return false;
+	if ( file->truncate(ctx, filesize) != 0 )
+		return false;
+	size_t sofar = 0;
+	while ( sofar < filesize )
+	{
+		ssize_t numbytes = file->write(ctx, data + sofar, filesize - sofar);
+		if ( numbytes <= 0 )
+			return false;
+		sofar += numbytes;
+	}
+	return true;
+}
+
+static bool ExtractNode(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> node)
+{
+	const initrd_inode_t* inode = GetInode(ino);
+	if ( !inode )
+		return false;
+	if ( node->chmod(ctx, InitRDModeToHost(inode->mode)) < 0 )
+		return false;
+	if ( node->chown(ctx, inode->uid, inode->gid) < 0 )
+		return false;
+	// TODO: utimes.
+	if ( INITRD_S_ISDIR(inode->mode) )
+		if ( !ExtractDir(ctx, ino, node) )
+			return false;
+	if ( INITRD_S_ISREG(inode->mode) )
+		if ( !ExtractFile(ctx, ino, node) )
+			return false;
+	return true;
+}
+
+bool ExtractInto(Ref<Descriptor> desc)
+{
+	ioctx_t ctx; SetupKernelIOCtx(&ctx);
+	return ExtractNode(&ctx, sb->root, desc);
+}
+
+bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc)
+{
+	Init(physaddr, size);
+	return ExtractInto(desc);
 }
 
 } // namespace InitRD

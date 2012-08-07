@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -29,20 +29,94 @@
 
 namespace Sortix {
 
-class Refcounted
+class Refcountable
 {
 public:
-	Refcounted();
-	~Refcounted();
+	Refcountable();
+	virtual ~Refcountable();
 
 public:
-	void Refer();
-	void Unref();
-	inline size_t Refcount() const { return refcount; }
+	void Refer_Renamed();
+	void Unref_Renamed();
+	size_t Refcount() const { return refcount; }
+	bool IsUnique() const { return refcount == 1; }
 
 private:
 	kthread_mutex_t reflock;
 	size_t refcount;
+
+public:
+	bool being_deleted;
+
+};
+
+template <class T> class Ref
+{
+public:
+	constexpr Ref() : obj(NULL) { }
+	explicit Ref(T* obj) : obj(obj) { if ( obj ) obj->Refer_Renamed(); }
+	template <class U>
+	explicit Ref(U* obj) : obj(obj) { if ( obj ) obj->Refer_Renamed(); }
+	Ref(const Ref<T>& r) : obj(r.Get()) { if ( obj ) obj->Refer_Renamed(); }
+	template <class U>
+	Ref(const Ref<U>& r) : obj(r.Get()) { if ( obj ) obj->Refer_Renamed(); }
+	~Ref() { if ( obj ) obj->Unref_Renamed(); }
+
+	Ref& operator=(const Ref r)
+	{
+		if ( obj ) { obj->Unref_Renamed(); obj = NULL; }
+		if ( (obj = r.Get()) ) obj->Refer_Renamed();
+		return *this;
+	}
+
+	template <class U>
+	Ref operator=(const Ref<U> r)
+	{
+		if ( obj ) { obj->Unref_Renamed(); obj = NULL; }
+		if ( (obj = r.Get()) ) obj->Refer_Renamed();
+		return *this;
+	}
+
+	bool operator==(const Ref& other)
+	{
+		return (*this).Get() == other.Get();
+	}
+
+	template <class U> bool operator==(const Ref<U>& other)
+	{
+		return (*this).Get() == other.Get();
+	}
+
+	template <class U> bool operator==(const U* const& other)
+	{
+		return (*this).Get() == other;
+	}
+
+	bool operator!=(const Ref& other)
+	{
+		return !((*this) == other);
+	}
+
+	template <class U> bool operator!=(const Ref<U>& other)
+	{
+		return !((*this) == other);
+	}
+
+	template <class U> bool operator!=(const U* const& other)
+	{
+		return !((*this) == other);
+	}
+
+	void Reset() { if ( obj ) obj->Unref_Renamed(); obj = NULL; }
+	T* Get() const { return obj; }
+	T& operator *() const { return *obj; }
+	T* operator->() const { return obj; }
+	operator bool() const { return obj != NULL; }
+	size_t Refcount() const { return obj ? obj->Refcount : 0; }
+	bool IsUnique() const { return obj->IsUnique(); }
+
+private:
+	T* obj;
 
 };
 

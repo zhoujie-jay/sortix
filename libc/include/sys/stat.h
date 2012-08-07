@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
     This file is part of the Sortix C Library.
 
@@ -45,13 +45,16 @@ __END_DECLS
 #include <sortix/stat.h>
 
 __BEGIN_DECLS
+
 int chmod(const char* path, mode_t mode);
 int fchmod(int fd, mode_t mode);
 int fstat(int fd, struct stat* st);
+int fstatat(int dirfd, const char* path, struct stat* buf, int flags);
 int lstat(const char* restrict path, struct stat* restrict st);
-int mkdir(const char *path, mode_t mode);
+int mkdir(const char* path, mode_t mode);
 int stat(const char* restrict path, struct stat* restrict st);
 mode_t umask(mode_t mask);
+
 __END_DECLS
 
 #endif

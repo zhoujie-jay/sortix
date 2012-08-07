@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2013.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -19,6 +19,8 @@
     Copy files and directories.
 
 *******************************************************************************/
+
+#include <sys/stat.h>
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -40,24 +42,26 @@ int main(int argc, char* argv[])
 
 	const char* frompath = argv[1];
 	const char* topath = argv[2];
-	char tobuffer[256];
 
 	int fromfd = open(frompath, O_RDONLY);
 	if ( fromfd < 0 ) { error(1, errno, "%s", frompath); return 1; }
 
 	int tofd = open(topath, O_WRONLY | O_TRUNC | O_CREAT, 0777);
 	if ( tofd < 0 )
-	{
-		if ( errno == EISDIR )
-		{
-			strcpy(tobuffer, topath);
-			if ( tobuffer[strlen(tobuffer)-1] != '/' ) { strcat(tobuffer, "/"); }
-			strcat(tobuffer, basename(frompath));
-			topath = tobuffer;
-			tofd = open(topath, O_WRONLY | O_TRUNC | O_CREAT, 0777);
-		}
+		error(1, errno, "%s", topath);
 
-		if ( tofd < 0 ) { error(1, errno, "%s", topath); return 1; }
+	struct stat st;
+	if ( fstat(tofd, &st) )
+		error(1, errno, "stat: %s", topath);
+
+	if ( S_ISDIR(st.st_mode) )
+	{
+		int dirfd = tofd;
+		const char* name = basename(frompath);
+		tofd = openat(dirfd, name, O_WRONLY | O_TRUNC | O_CREAT, 0777);
+		close(dirfd);
+		if ( tofd < 0 )
+			error(1, errno, "%s/%s", topath, name);
 	}
 
 	while ( true )
@@ -67,7 +71,7 @@ int main(int argc, char* argv[])
 		ssize_t bytesread = read(fromfd, buffer, BUFFER_SIZE);
 		if ( bytesread < 0 ) { error(1, errno, "read: %s", frompath); return 1; }
 		if ( bytesread == 0 ) { return 0; }
-		if ( (ssize_t) writeall(tofd, buffer, bytesread) < bytesread )
+		if ( writeall(tofd, buffer, bytesread) < (size_t) bytesread )
 		{
 			error(1, errno, "write: %s", topath);
 			return 1;

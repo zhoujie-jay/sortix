@@ -23,193 +23,93 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/interlock.h>
+#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/inode.h>
+#include <sortix/stat.h>
+#include <sortix/seek.h>
 #include <errno.h>
 #include <string.h>
 #include "util.h"
 
 namespace Sortix {
 
-DevStringBuffer::DevStringBuffer(char* str)
+UtilMemoryBuffer::UtilMemoryBuffer(dev_t dev, ino_t ino, uid_t owner,
+                                   gid_t group, mode_t mode, uint8_t* buf,
+                                   size_t bufsize, bool write, bool deletebuf)
 {
-	this->str = str;
-	strlength = strlen(str);
-	off = 0;
-}
-
-DevStringBuffer::~DevStringBuffer()
-{
-	delete[] str;
-}
-
-size_t DevStringBuffer::BlockSize()
-{
-	return 1;
-}
-
-uintmax_t DevStringBuffer::Size()
-{
-	return strlength;
-}
-
-uintmax_t DevStringBuffer::Position()
-{
-	return off;
-}
-
-bool DevStringBuffer::Seek(uintmax_t position)
-{
-	if ( strlength <= position ) { errno = EINVAL; return false; }
-	off = position;
-	return true;
-}
-
-bool DevStringBuffer::Resize(uintmax_t size)
-{
-	if ( size != strlength ) { errno = EBADF; }
-	return false;
-}
-
-ssize_t DevStringBuffer::Read(uint8_t* dest, size_t count)
-{
-	size_t available = strlength - off;
-	if ( available < count ) { count = available; }
-	memcpy(dest, str + off, count);
-	off += count;
-	return count;
-}
-
-ssize_t DevStringBuffer::Write(const uint8_t* /*src*/, size_t /*count*/)
-{
-	errno = EBADF;
-	return -1;
-}
-
-bool DevStringBuffer::IsReadable()
-{
-	return true;
-}
-
-bool DevStringBuffer::IsWritable()
-{
-	return false;
-}
-
-
-DevLineCommand::DevLineCommand(bool (*handler)(void*, const char*), void* user)
-{
-	this->handler = handler;
-	this->user = user;
-	this->handled = false;
-	this->sofar = 0;
-}
-
-DevLineCommand::~DevLineCommand()
-{
-}
-
-ssize_t DevLineCommand::Read(uint8_t* /*dest*/, size_t /*count*/)
-{
-	errno = EBADF;
-	return -1;
-}
-
-ssize_t DevLineCommand::Write(const uint8_t* src, size_t count)
-{
-	if ( handled ) { errno = EINVAL; return -1; }
-	size_t available = CMDMAX - sofar;
-	if ( !available && count ) { errno = ENOSPC; return -1; }
-	if ( available < count ) { count = available; }
-	memcpy(cmd + sofar, src, count);
-	cmd[sofar += count] = 0;
-	size_t newlinepos = strcspn(cmd, "\n");
-	if ( !cmd[newlinepos] ) { return count; }
-	cmd[newlinepos] = 0;
-	if ( !handler(user, cmd) ) { return -1; }
-	return count;
-}
-
-bool DevLineCommand::IsReadable()
-{
-	return false;
-}
-
-bool DevLineCommand::IsWritable()
-{
-	return true;
-}
-
-
-DevMemoryBuffer::DevMemoryBuffer(uint8_t* buf, size_t bufsize, bool write,
-	                             bool deletebuf)
-{
+	inode_type = INODE_TYPE_FILE;
+	this->filelock = KTHREAD_MUTEX_INITIALIZER;
+	this->stat_uid = owner;
+	this->stat_gid = group;
+	this->type = S_IFREG;
+	this->stat_mode = (mode & S_SETABLE) | this->type;
+	this->stat_blksize = 1;
+	this->stat_size = (off_t) bufsize;
+	this->dev = dev;
+	this->ino = ino ? ino : (ino_t) this;
 	this->buf = buf;
 	this->bufsize = bufsize;
 	this->write = write;
 	this->deletebuf = deletebuf;
 }
 
-DevMemoryBuffer::~DevMemoryBuffer()
+UtilMemoryBuffer::~UtilMemoryBuffer()
 {
 	if ( deletebuf )
 		delete[] buf;
 }
 
-size_t DevMemoryBuffer::BlockSize()
+int UtilMemoryBuffer::truncate(ioctx_t* /*ctx*/, off_t length)
 {
-	return 1;
+	ScopedLock lock(&filelock);
+	if ( (uintmax_t) length != (uintmax_t) bufsize )
+		return errno = ENOTSUP, -1;
+	return 0;
 }
 
-uintmax_t DevMemoryBuffer::Size()
+off_t UtilMemoryBuffer::lseek(ioctx_t* /*ctx*/, off_t offset, int whence)
 {
-	return bufsize;
+	ScopedLock lock(&filelock);
+	if ( whence == SEEK_SET )
+		return offset;
+	if ( whence == SEEK_END )
+		return (off_t) bufsize + offset;
+	errno = EINVAL;
+	return -1;
 }
 
-uintmax_t DevMemoryBuffer::Position()
+ssize_t UtilMemoryBuffer::pread(ioctx_t* ctx, uint8_t* dest, size_t count,
+                                off_t off)
 {
-	return off;
-}
-
-bool DevMemoryBuffer::Seek(uintmax_t position)
-{
-	off = position;
-	return true;
-}
-
-bool DevMemoryBuffer::Resize(uintmax_t size)
-{
-	if ( size != bufsize ) { errno = EPERM; return false; }
-	return true;
-}
-
-ssize_t DevMemoryBuffer::Read(uint8_t* dest, size_t count)
-{
-	if ( bufsize <= off ) { return 0; }
+	ScopedLock lock(&filelock);
+	if ( (uintmax_t) bufsize < (uintmax_t) off )
+		return 0;
 	size_t available = bufsize - off;
-	if ( available < count ) { count = available; }
-	memcpy(dest, buf + off, count);
-	off += count;
+	if ( available < count )
+		count = available;
+	if ( !ctx->copy_to_dest(dest, buf + off, count) )
+		return -1;
 	return count;
 }
 
-ssize_t DevMemoryBuffer::Write(const uint8_t* src, size_t count)
+ssize_t UtilMemoryBuffer::pwrite(ioctx_t* ctx, const uint8_t* src, size_t count,
+                                 off_t off)
 {
+	ScopedLock lock(&filelock);
 	if ( !write ) { errno = EBADF; return -1; }
-	if ( bufsize <= off ) { errno = EPERM; return -1; }
+	// TODO: Avoid having off + count overflow!
+	if ( bufsize < off + count )
+		return 0;
+	if ( (uintmax_t) bufsize <= (uintmax_t) off )
+		return -1;
 	size_t available = bufsize - off;
-	if ( available < count ) { count = available; }
-	memcpy(buf + off, src, count);
-	off += count;
+	if ( available < count )
+		count = available;
+	ctx->copy_from_src(buf + off, src, count);
 	return count;
-}
-
-bool DevMemoryBuffer::IsReadable()
-{
-	return true;
-}
-
-bool DevMemoryBuffer::IsWritable()
-{
-	return write;
 }
 
 } // namespace Sortix

@@ -165,6 +165,7 @@ int execvp(const char*, char* const []);
 pid_t fork(void);
 int ftruncate(int, off_t);
 char* getcwd(char*, size_t);
+char* get_current_dir_name(void);
 pid_t getpid(void);
 pid_t getppid(void);
 int isatty(int);

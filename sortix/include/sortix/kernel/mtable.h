@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -17,27 +17,43 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    fs/videofs.h
-    Provides filesystem access to the video framework.
+    sortix/kernel/mtable.h
+    Class to keep track of mount points.
 
 *******************************************************************************/
 
-#ifndef SORTIX_FS_VIDEOFS_H
-#define SORTIX_FS_VIDEOFS_H
+#ifndef SORTIX_MTABLE_H
+#define SORTIX_MTABLE_H
 
-#include "../filesystem.h"
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/refcount.h>
 
 namespace Sortix {
 
-class DevVideoFS : public DevFileSystem
+class Inode;
+
+typedef struct
+{
+	Ref<Inode> inode;
+	ino_t ino;
+	dev_t dev;
+} mountpoint_t;
+
+class MountTable : public Refcountable
 {
 public:
-	DevVideoFS();
-	virtual ~DevVideoFS();
+	MountTable();
+	~MountTable();
+	Ref<MountTable> Fork();
+	bool AddMount(ino_t ino, dev_t dev, Ref<Inode> inode);
 
-public:
-	virtual Device* Open(const char* path, int flags, mode_t mode);
-	virtual bool Unlink(const char* path);
+public: // Consider these read-only.
+	kthread_mutex_t mtablelock;
+	mountpoint_t* mounts;
+	size_t nummounts;
+
+private:
+	size_t mountsalloced;
 
 };
 

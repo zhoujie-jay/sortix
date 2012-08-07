@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2012.
 
     This file is part of Sortix.
 
@@ -17,43 +17,23 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    fs/ramfs.h
-    A filesystem stored entirely in RAM.
+    sortix/mount.h
+    Constants related to mounting and binding.
 
 *******************************************************************************/
 
-#ifndef SORTIX_FS_RAMFS_H
-#define SORTIX_FS_RAMFS_H
+#ifndef SORTIX_INCLUDE_MOUNT_H
+#define SORTIX_INCLUDE_MOUNT_H
 
-#include <sortix/kernel/sortedlist.h>
-#include "../filesystem.h"
+#include <features.h>
 
-namespace Sortix
-{
-	class DevRAMFSFile;
+__BEGIN_DECLS
 
-	class DevRAMFS : public DevFileSystem
-	{
-	public:
-		DevRAMFS();
-		virtual ~DevRAMFS();
+#define MREPL   (0<<0) /* Replace binding. */
+#define MBEFORE (1<<0) /* Add to start of directory union. */
+#define MAFTER  (2<<0) /* Add to end of directory union. */
+#define MCREATE (1<<2) /* Create files here, otherwise try next in union. */
 
-	public:
-		virtual Device* Open(const char* path, int flags, mode_t mode);
-		virtual bool Unlink(const char* path);
-
-	private:
-		SortedList<DevRAMFSFile*>* files;
-
-	public:
-		size_t GetNumFiles();
-		const char* GetFilename(size_t index);
-
-	private:
-		virtual DevBuffer* OpenFile(const char* path, int flags, mode_t mode);
-		virtual DevBuffer* CreateFile(const char* path, int flags, mode_t mode);
-
-	};
-}
+__END_DECLS
 
 #endif

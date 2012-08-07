@@ -144,6 +144,7 @@ fdio.o \
 fileno.o \
 fork.o \
 fpipe.o \
+fstatat.o \
 fstat.o \
 ftruncate.o \
 getc.o \
@@ -165,8 +166,8 @@ memstat.o \
 mkdir.o \
 mktemp.o \
 on_exit.o \
-open.o \
 openat.o \
+open.o \
 pipe.o \
 print.o \
 putc.o \

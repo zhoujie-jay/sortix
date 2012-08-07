@@ -23,12 +23,18 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/interlock.h>
 #include <sortix/kernel/kthread.h>
-#include "cpu.h"
+#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/inode.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/descriptor.h>
+#include <sortix/stat.h>
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include "ata.h"
-#include "fs/devfs.h"
+#include "cpu.h"
 
 // TODO: Use the PCI to detect ATA devices instead of relying on them being on
 // standard locations.
@@ -62,27 +68,126 @@ const uint8_t CTL_RESET = (1<<2);
 
 namespace ATA {
 
-void DetectDrive(unsigned busid, ATABus* bus, unsigned driveid)
+class ATANode : public AbstractInode
+{
+public:
+	ATANode(ATADrive* drive, uid_t owner, gid_t group, mode_t mode, dev_t dev,
+	        ino_t ino);
+	virtual ~ATANode();
+	virtual int sync(ioctx_t* ctx);
+	virtual int truncate(ioctx_t* ctx, off_t length);
+	virtual off_t lseek(ioctx_t* ctx, off_t offset, int whence);
+	virtual ssize_t pread(ioctx_t* ctx, uint8_t* buf, size_t count,
+	                      off_t off);
+	virtual ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
+	                       off_t off);
+
+private:
+	kthread_mutex_t filelock;
+	ATADrive* drive;
+
+};
+
+ATANode::ATANode(ATADrive* drive, uid_t owner, gid_t group, mode_t mode,
+                 dev_t dev, ino_t /*ino*/)
+{
+	inode_type = INODE_TYPE_FILE;
+	filelock = KTHREAD_MUTEX_INITIALIZER;
+	this->dev = dev;
+	this->ino = (ino_t) this;
+	this->stat_uid = owner;
+	this->stat_gid = group;
+	this->type = S_IFBLK;
+	this->stat_size = (off_t) drive->GetSize();
+	this->stat_mode = (mode & S_SETABLE) | this->type;
+	this->stat_blksize = (blksize_t) drive->GetSectorSize();
+	this->stat_blocks = (blkcnt_t) drive->GetNumSectors();
+	this->drive = drive;
+}
+
+ATANode::~ATANode()
+{
+	delete drive;
+}
+
+int ATANode::sync(ioctx_t* /*ctx*/)
+{
+	// TODO: Actually sync the device here!
+	return 0;
+}
+
+int ATANode::truncate(ioctx_t* /*ctx*/, off_t length)
+{
+	ScopedLock lock(&filelock);
+	if ( length == drive->GetSize() ) { return 0; }
+	errno = EPERM;
+	return -1;
+}
+
+off_t ATANode::lseek(ioctx_t* /*ctx*/, off_t offset, int whence)
+{
+	ScopedLock lock(&filelock);
+	if ( whence == SEEK_SET )
+		return offset;
+	if ( whence == SEEK_END )
+		return (off_t) drive->GetSize() + offset;
+	errno = EINVAL;
+	return -1;
+}
+
+ssize_t ATANode::pread(ioctx_t* /*ctx*/, uint8_t* buf, size_t count, off_t off)
+{
+	// TODO: SECURITY: Use ioctx copy functions to copy or we have a serious
+	// security hole if invoked from user-space!
+	size_t numbytes = drive->Read(off, buf, count);
+	if ( numbytes < count )
+		return -1;
+	return (ssize_t) numbytes;
+}
+
+ssize_t ATANode::pwrite(ioctx_t* /*ctx*/, const uint8_t* buf, size_t count,
+                        off_t off)
+{
+	// TODO: SECURITY: Use ioctx copy functions to copy or we have a serious
+	// security hole if invoked from user-space!
+	size_t numbytes = drive->Write(off, buf, count);
+	if ( numbytes < count )
+		return -1;
+	return (ssize_t) numbytes;
+}
+
+void DetectDrive(const char* devpath, Ref<Descriptor> slashdev, unsigned busid,
+                 ATABus* bus, unsigned driveid)
 {
 	unsigned ataid = busid*2 + driveid;
 	ATADrive* drive = bus->Instatiate(driveid);
-	if ( !drive ) { return; }
-	DeviceFS::RegisterATADrive(ataid, drive);
+	if ( !drive )
+		return;
+	Ref<ATANode> node(new ATANode(drive, 0, 0, 0660, slashdev->dev, 0));
+	if ( !node )
+		Panic("Unable to allocate memory for ATA drive inode.");
+	const size_t NAMELEN = 64;
+	char name[NAMELEN];
+	snprintf(name, NAMELEN, "ata%u", ataid);
+	ioctx_t ctx; SetupKernelIOCtx(&ctx);
+	if ( LinkInodeInDir(&ctx, slashdev, name, node) != 0 )
+		PanicF("Unable to link %s/%s to ATA driver inode.", devpath, name);
 }
 
-void DetectBus(unsigned busid, uint16_t ioport, uint16_t altio)
+void DetectBus(const char* devpath, Ref<Descriptor> slashdev, unsigned busid,
+               uint16_t ioport, uint16_t altio)
 {
 	ATABus* bus = ATA::CreateBus(ioport, altio);
 	if ( !bus )
 		return;
-	DetectDrive(busid, bus, 0);
-	DetectDrive(busid, bus, 1);
+	DetectDrive(devpath, slashdev, busid, bus, 0);
+	DetectDrive(devpath, slashdev, busid, bus, 1);
 }
 
-void Init()
+void Init(const char* devpath, Ref<Descriptor> slashdev)
 {
-	DetectBus(0, 0x1F0, 0x3F6);
-	DetectBus(1, 0x170, 0x366);
+	DetectBus(devpath, slashdev, 0, 0x1F0, 0x3F6);
+	DetectBus(devpath, slashdev, 1, 0x170, 0x366);
 }
 
 ATABus* CreateBus(uint16_t portoffset, uint16_t altport)

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
     This file is part of the Sortix C Library.
 
@@ -17,26 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    sys/readdirents.h
-    Allows reading directory entries directly from a file descriptor.
+    fstatat.cpp
+    Retrieves status of an open file.
 
 *******************************************************************************/
 
-#ifndef _SYS_READDIRENTS_H
-#define _SYS_READDIRENTS_H 1
+#include <sys/stat.h>
+#include <sys/syscall.h>
 
-#include <features.h>
-#include <sys/types.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <sortix/dirent.h>
+DEFN_SYSCALL4(int, sys_fstatat, SYSCALL_FSTATAT, int, const char*, struct stat*, int);
 
-__BEGIN_DECLS
-
-@include(size_t.h)
-
-ssize_t readdirents(int fd, struct kernel_dirent* dirent, size_t size);
-
-__END_DECLS
-
-#endif
+extern "C" int fstatat(int dirfd, const char* path, struct stat* buf, int flags)
+{
+	return sys_fstatat(dirfd, path, buf, flags);
+}

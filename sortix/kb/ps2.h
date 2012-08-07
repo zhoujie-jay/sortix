@@ -26,7 +26,7 @@
 #define SORTIX_KB_PS2_H
 
 #include <sortix/kernel/kthread.h>
-#include "../keyboard.h"
+#include <sortix/kernel/keyboard.h>
 
 namespace Sortix
 {

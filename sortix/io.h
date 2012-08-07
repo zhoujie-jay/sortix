@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
     This file is part of Sortix.
 
@@ -25,12 +25,12 @@
 #ifndef SORTIX_IO_H
 #define SORTIX_IO_H
 
-namespace Sortix
-{
-	namespace IO
-	{
-		void Init();
-	}
-}
+namespace Sortix {
+namespace IO {
+
+void Init();
+
+} // namespace IO
+} // namespace Sortix
 
 #endif

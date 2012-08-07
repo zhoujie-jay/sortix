@@ -26,60 +26,49 @@
 #define SORTIX_LOGTERMINAL_H
 
 #include <sortix/kernel/kthread.h>
-#ifdef GOT_FAKE_KTHREAD
-#include "event.h"
-#endif
-#include "stream.h"
-#include "terminal.h"
-#include "keyboard.h"
+#include <sortix/kernel/inode.h>
+#include <sortix/kernel/keyboard.h>
 #include "linebuffer.h"
 
-namespace Sortix
+namespace Sortix {
+
+class LogTerminal : public AbstractInode, public KeyboardOwner
 {
-	class LogTerminal : public DevTerminal, public KeyboardOwner
-	{
-	public:
-		LogTerminal(Keyboard* keyboard, KeyboardLayout* kblayout);
-		virtual ~LogTerminal();
+public:
+	LogTerminal(dev_t dev, mode_t mode, uid_t owner, gid_t group,
+	            Keyboard* keyboard, KeyboardLayout* kblayout);
+	virtual ~LogTerminal();
 
-	public:
-		virtual ssize_t Read(uint8_t* dest, size_t count);
-		virtual ssize_t Write(const uint8_t* src, size_t count);
-		virtual bool IsReadable();
-		virtual bool IsWritable();
+public:
+	virtual int sync(ioctx_t* ctx);
+	virtual ssize_t read(ioctx_t* ctx, uint8_t* buf, size_t count);
+	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
+	virtual int tcgetwinsize(ioctx_t* ctx, struct winsize* ws);
+	virtual int settermmode(ioctx_t* ctx, unsigned termmode);
+	virtual int gettermmode(ioctx_t* ctx, unsigned* termmode);
 
-	public:
-		virtual bool SetMode(unsigned mode);
-		virtual bool SetWidth(unsigned width);
-		virtual bool SetHeight(unsigned height);
-		virtual unsigned GetMode() const;
-		virtual unsigned GetWidth() const;
-		virtual unsigned GetHeight() const;
+public:
+	virtual void OnKeystroke(Keyboard* keyboard, void* user);
 
-	public:
-		virtual void OnKeystroke(Keyboard* keyboard, void* user);
+private:
+	void ProcessKeystroke(int kbkey);
+	void QueueUnicode(uint32_t unicode);
+	void CommitLineBuffer();
 
-	private:
-		void ProcessKeystroke(int kbkey);
-		void QueueUnicode(uint32_t unicode);
-		void CommitLineBuffer();
+private:
+	mutable kthread_mutex_t termlock;
+	kthread_cond_t datacond;
+	size_t numwaiting;
+	size_t numeofs;
+	Keyboard* keyboard;
+	KeyboardLayout* kblayout;
+	LineBuffer linebuffer;
+	size_t partiallywritten;
+	unsigned termmode;
+	bool control;
 
-	private:
-		mutable kthread_mutex_t termlock;
-		kthread_cond_t datacond;
-		size_t numwaiting;
-		size_t numeofs;
-		Keyboard* keyboard;
-		KeyboardLayout* kblayout;
-		LineBuffer linebuffer;
-#ifdef GOT_FAKE_KTHREAD
-		Event queuecommitevent;
-#endif
-		size_t partiallywritten;
-		unsigned mode;
-		bool control;
+};
 
-	};
-}
+} // namespace Sortix
 
 #endif
