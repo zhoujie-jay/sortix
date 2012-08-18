@@ -173,8 +173,9 @@ extern FILE* _firstfile;
 #endif
 #endif
 
-#if __SORTIX_STDLIB_REDIRECTS
-inline char* gets(void) { return sortix_gets(); }
+#if (defined(_SOURCE_SOURCE) && __SORTIX_STDLIB_REDIRECTS) || \
+    defined(_WANT_SORTIX_GETS)
+extern char* gets(void) asm ("sortix_gets");
 #else
 /* traditional gets(3) is no longer POSIX, hence removed. */
 #endif
