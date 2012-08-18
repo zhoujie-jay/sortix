@@ -43,7 +43,9 @@ process.o \
 thread.o \
 ioleast.o \
 winsize.o \
-terminal.o \
+gettermmode.o \
+settermmode.o \
+isatty.o \
 kernelinfo.o \
 init.o \
 exit.o \
