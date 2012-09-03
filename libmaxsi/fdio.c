@@ -52,11 +52,11 @@ static size_t fdio_read(void* ptr, size_t size, size_t nmemb, void* user)
 	while ( sofar < total )
 	{
 		ssize_t numbytes = read(fdio->fd, buf + sofar, total - sofar);
-		if ( numbytes < 0 ) { fdio->flags |= FDIO_ERROR; return sofar; }
-		if ( numbytes == 0 ) { fdio->flags |= FDIO_EOF; return sofar; }
+		if ( numbytes < 0 ) { fdio->flags |= FDIO_ERROR; break; }
+		if ( numbytes == 0 ) { fdio->flags |= FDIO_EOF; break; }
 		sofar += numbytes;
 	}
-	return sofar;
+	return sofar / size;
 }
 
 static size_t fdio_write(const void* ptr, size_t size, size_t nmemb, void* user)
@@ -69,10 +69,11 @@ static size_t fdio_write(const void* ptr, size_t size, size_t nmemb, void* user)
 	while ( sofar < total )
 	{
 		ssize_t numbytes = write(fdio->fd, buf + sofar, total - sofar);
-		if ( numbytes < 0 ) { fdio->flags |= FDIO_ERROR; return sofar; }
+		if ( numbytes < 0 ) { fdio->flags |= FDIO_ERROR; break; }
+		if ( numbytes == 0 ) { fdio->flags |= FDIO_EOF; break; }
 		sofar += numbytes;
 	}
-	return sofar;
+	return sofar / size;
 }
 
 static int fdio_seek(void* user, off_t offset, int whence)
