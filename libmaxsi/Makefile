@@ -67,6 +67,7 @@ string.o \
 error.o \
 format.o \
 access.o \
+_assert.o \
 chdir.o \
 chmod.o \
 close.o \

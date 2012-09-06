@@ -17,50 +17,19 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	assert.h
-	Verify program assertion.
+	_assert.cpp
+	Reports the occurence of an assertion failure.
 
 ******************************************************************************/
 
-#ifndef	_ASSERT_H
-#define	_ASSERT_H 1
-
-#include <features.h>
-
-/* stdlib.h is not needed, but GCC fixincludes thinks it is, so fool it. */
-#if 0
+#include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
-#endif
 
-__BEGIN_DECLS
-
-/* The actual implementation of assert. */
 void _assert(const char* filename, unsigned int line, const char* functionname,
-             const char* expression) __attribute__ ((noreturn));
-
-__END_DECLS
-
-#endif
-
-/* Rid ourselves of any previous declaration of assert. */
-#ifdef assert
-#undef assert
-#endif
-
-/* Redefine the assert macro on each <assert.h> inclusion. */
-#ifdef NDEBUG
-
-#define assert(ignore) ((void) 0)
-
-#else /* !NDEBUG */
-
-/* Use __builtin_expect to tell the compiler that we don't expect a failure to
-   happen and thus it can do better branch prediction. Naturally we don't
-   optimize for the case where the program is about to abort(). */
-#define assert(invariant) \
-	if ( __builtin_expect(!(invariant), 0) ) \
-	{ \
-		_assert(__FILE__, __LINE__, __PRETTY_FUNCTION__, #invariant); \
-	}
-
-#endif /* !NDEBUG */
+             const char* expression)
+{
+	fprintf(stderr, "Assertion failure: %s:%u: %s: %s\n", filename, line,
+	        functionname, expression);
+	abort();
+}
