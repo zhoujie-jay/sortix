@@ -341,22 +341,30 @@ namespace Sortix
 
 	size_t DevRAMFS::GetNumFiles()
 	{
-		size_t result = BINDEVHACK ? 2 : 0;
+		size_t result = 2 + (BINDEVHACK ? 2 : 0);
 		if ( files ) { result += files->Length(); }
 		return result;
 	}
 
 	const char* DevRAMFS::GetFilename(size_t index)
 	{
-		switch ( BINDEVHACK ? index : 2 )
+		switch ( index )
+		{
+		case 0: return ".";
+		case 1: return "..";
+		default: index -= 2;
+		}
+		if ( BINDEVHACK ) switch ( index )
 		{
 		case 0: return "bin";
 		case 1: return "dev";
+		default: index -= 2;
 		}
-		size_t filesindex = BINDEVHACK ? index - 2 : index;
-		if ( !files ) { return NULL; }
-		if ( files->Length() <= filesindex ) { return NULL; }
-		DevRAMFSFile* file = files->Get(filesindex);
+		if ( !files )
+			return NULL;
+		if ( files->Length() <= index )
+			return NULL;
+		DevRAMFSFile* file = files->Get(index);
 		return file->name;
 	}
 }

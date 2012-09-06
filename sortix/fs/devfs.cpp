@@ -302,7 +302,7 @@ namespace Sortix
 
 	int DevDevFSDir::Read(sortix_dirent* dirent, size_t available)
 	{
-		const char* names[] = { "null", "tty", "video", "vga" };
+		const char* names[] = { ".", "..", "null", "tty", "video", "vga" };
 		const char* name = NULL;
 		if ( position < DeviceFS::GetNumDevices() )
 		{

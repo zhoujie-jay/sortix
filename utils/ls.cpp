@@ -99,11 +99,6 @@ int ls(const char* path)
 	DIR* dir = opendir(path);
 	if ( !dir ) { finishoutput(); error(0, errno, "%s", path); return 2; }
 
-#if defined(sortix)
-	handleentry(path, ".");
-	handleentry(path, "..");
-#endif
-
 	struct dirent* entry;
 	while ( (entry = readdir(dir)) )
 	{

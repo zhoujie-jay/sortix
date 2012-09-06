@@ -191,9 +191,6 @@ namespace Sortix
 		size_t namelen = String::Length(name);
 		size_t needed = sizeof(sortix_dirent) + namelen + 1;
 
-		// Oh right, the kernel is stupid and doesn't support dot and dotdot.
-		if ( name[0] == '.' ) { position++; return Read(dirent, available); }
-
 		if ( available < needed )
 		{
 			dirent->d_namelen = needed;

@@ -200,12 +200,24 @@ Device* MakeFB(int flags, mode_t /*mode*/)
 	return new DevFrameBuffer();
 }
 
+Device* MakeDot(int /*flags*/, mode_t /*mode*/)
+{
+	return NULL;
+}
+
+Device* MakeDotDot(int /*flags*/, mode_t /*mode*/)
+{
+	return NULL;
+}
+
 struct
 {
 	const char* name;
 	Device* (*factory)(int, mode_t);
 } nodes[] =
 {
+	{ ".", MakeDot },
+	{ "..", MakeDotDot },
 	{ "mode", MakeMode },
 	{ "modes", MakeModes },
 	{ "supports", MakeSupports },
