@@ -34,6 +34,7 @@ __BEGIN_DECLS
 
 struct dirent
 {
+	size_t d_reclen;
 	char d_name[0];
 };
 

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This program is free software: you can redistribute it and/or modify it
 	under the terms of the GNU General Public License as published by the Free
@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <dirent.h>
 #include <unistd.h>
@@ -42,10 +43,54 @@ pid_t childpid;
 
 void finishoutput()
 {
+	int errnum = errno;
 	int status;
 	fflush(stdout);
 	if ( childpid ) { close(1); wait(&status); }
 	childpid = 0;
+	errno = errnum;
+}
+
+void ls_perror(const char* s)
+{
+	finishoutput();
+	perror(s);
+}
+
+static struct dirent* dirent_dup(struct dirent* entry)
+{
+	struct dirent* copy = (struct dirent*) malloc(entry->d_reclen);
+	if ( !copy )
+		return NULL;
+	memcpy(copy, entry, entry->d_reclen);
+	return copy;
+}
+
+void ls_error(int status, int errnum, const char* format, ...)
+{
+	finishoutput();
+
+	// TODO: The rest is just plain generic gnu_error(3), how about a function
+	// called gnu_verror(3) that accepts a va_list.
+	fprintf(stderr, "%s: ", program_invocation_name);
+
+	va_list list;
+	va_start(list, format);
+	vfprintf(stderr, format, list);
+	va_end(list);
+
+	if ( errnum )
+		fprintf(stderr, ": %s", strerror(errnum));
+	fprintf(stderr, "\n");
+	if ( status )
+		exit(status);
+}
+
+int sort_dirents(const void* a_void, const void* b_void)
+{
+	struct dirent* a = *(struct dirent**) a_void;
+	struct dirent* b = *(struct dirent**) b_void;
+	return strcmp(a->d_name, b->d_name);
 }
 
 int handleentry(const char* path, const char* name)
@@ -96,28 +141,57 @@ int handleentry(const char* path, const char* name)
 
 int ls(const char* path)
 {
-	DIR* dir = opendir(path);
-	if ( !dir ) { finishoutput(); error(0, errno, "%s", path); return 2; }
+	int ret = 1;
+	DIR* dir;
+	const size_t DEFAULT_ENTRIES_LEN = 4UL;
+	size_t entrieslen = DEFAULT_ENTRIES_LEN;
+	size_t entriesused = 0;
+	size_t entriessize = sizeof(struct dirent*) * entrieslen;
+	struct dirent** entries = (struct dirent**) malloc(entriessize);
+	if ( !entries ) { ls_perror("malloc"); goto cleanup_done; }
+
+	dir = opendir(path);
+	if ( !dir ) { perror(path); ret = 2; goto cleanup_entries; }
 
 	struct dirent* entry;
 	while ( (entry = readdir(dir)) )
 	{
-		int result;
-		if ( (result = handleentry(path, entry->d_name)) ) { return result; }
+		if ( entriesused == entrieslen )
+		{
+			size_t newentrieslen = entrieslen * 2UL;
+			struct dirent** newentries;
+			size_t newentriessize = sizeof(struct dirent*) * newentrieslen;
+			newentries = (struct dirent**) realloc(entries, newentriessize);
+			if ( !newentries ) { ls_perror("realloc"); goto cleanup_dir; }
+			entries = newentries;
+			entrieslen = newentrieslen;
+			entriessize = newentriessize;
+		}
+		struct dirent* copy = dirent_dup(entry);
+		if ( !copy ) { ls_perror("malloc"); goto cleanup_dir; }
+		entries[entriesused++] = copy;
 	}
 
 #if defined(sortix)
-	if ( derror(dir) )
-	{
-		finishoutput();
-		error(0, errno, "readdir: %s", path);
-		return 2;
-	}
+	if ( derror(dir) ) { perror(path); goto cleanup_dir; }
 #endif
 
-	closedir(dir);
+	qsort(entries, entriesused, sizeof(*entries), sort_dirents);
 
-	return 0;
+	for ( size_t i = 0; i < entriesused; i++ )
+	{
+		if ( handleentry(path, entries[i]->d_name) != 0 )
+			goto cleanup_dir;
+	}
+
+cleanup_dir:
+	closedir(dir);
+cleanup_entries:
+	for ( size_t i = 0; i < entriesused; i++ )
+		free(entries[i]);
+	free(entries);
+cleanup_done:
+	return ret;
 }
 
 void usage(FILE* fp, const char* argv0)
