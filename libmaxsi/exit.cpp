@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -18,45 +18,20 @@
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
 	exit.cpp
-	Hooks that is called upon process exit.
+	Terminates the current process.
 
 *******************************************************************************/
 
+#include <dirent.h>
+#include <stdio.h>
 #include <stdlib.h>
 
-struct exithandler
-{
-	void (*hook)(int, void*);
-	void* param;
-	struct exithandler* next;
-}* exit_handler_stack = NULL;
+extern "C" void call_exit_handlers(int status);
 
-extern "C" int on_exit(void (*hook)(int, void*), void* param)
+extern "C" void exit(int status)
 {
-	struct exithandler* handler = (struct exithandler*) malloc(sizeof(struct exithandler));
-	if ( !handler ) { return -1; }
-	handler->hook = hook;
-	handler->param = param;
-	handler->next = exit_handler_stack;
-	exit_handler_stack = handler;
-	return 0;
-}
-
-static void atexit_adapter(int /*status*/, void* user)
-{
-	((void (*)(void)) user)();
-}
-
-extern "C" int atexit(void (*hook)(void))
-{
-	return on_exit(atexit_adapter, (void*) hook);
-}
-
-extern "C" void call_exit_handlers(int status)
-{
-	while ( exit_handler_stack )
-	{
-		exit_handler_stack->hook(status, exit_handler_stack->param);
-		exit_handler_stack = exit_handler_stack->next;
-	}
+	call_exit_handlers(status);
+	dcloseall();
+	fcloseall();
+	_Exit(status);
 }

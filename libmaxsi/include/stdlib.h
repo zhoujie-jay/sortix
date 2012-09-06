@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -47,15 +47,15 @@ typedef int div_t, ldiv_t, lldiv_t;
 
 /* TODO: WEXITSTATUS, WIFEXITED, WIFSIGNALED, WIFSTOPPED, WNOHANG, WSTOPSIG, WTERMSIG, WUNTRACED is missing here */
 
-void abort(void);
+void abort(void) __attribute__ ((noreturn));
 int abs(int value);
 int atexit(void (*function)(void));
 int atoi(const char*);
 long atol(const char*);
 long long atoll(const char*);
 void* calloc(size_t, size_t);
-void exit(int);
-void _Exit(int status);
+void exit(int)  __attribute__ ((noreturn));
+void _Exit(int status)  __attribute__ ((noreturn));
 void free(void*);
 long labs(long);
 long long llabs(long long);

@@ -17,23 +17,22 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	process.h
-	Exposes system calls for process creation and management.
+	_exit.cpp
+	Terminates the current process.
 
 *******************************************************************************/
 
-#ifndef LIBMAXSI_PROCESS_H
-#define LIBMAXSI_PROCESS_H
+#include <libmaxsi/platform.h>
+#include <libmaxsi/syscall.h>
+#include <unistd.h>
 
-namespace Maxsi
+namespace Maxsi {
+DEFN_SYSCALL1_VOID(sys_exit, SYSCALL_EXIT, int);
+} // namespace Maxsi
+using namespace Maxsi;
+
+extern "C" void _exit(int status)
 {
-	namespace Process
-	{
-		pid_t Fork();
-		pid_t GetPID();
-		pid_t GetParentPID();
-	}
+	sys_exit(status);
+	while(true); // TODO: noreturn isn't set on sys_exit.
 }
-
-#endif
-

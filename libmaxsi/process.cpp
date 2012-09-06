@@ -37,25 +37,11 @@ namespace Maxsi
 {
 	namespace Process
 	{
-		DEFN_SYSCALL1_VOID(SysExit, SYSCALL_EXIT, int);
 		DEFN_SYSCALL3(int, SysExecVE, SYSCALL_EXEC, const char*, char* const*, char* const*);
 		DEFN_SYSCALL2(pid_t, SysTFork, SYSCALL_TFORK, int, tforkregs_t*);
 		DEFN_SYSCALL0(pid_t, SysGetPID, SYSCALL_GETPID);
 		DEFN_SYSCALL0(pid_t, SysGetParentPID, SYSCALL_GETPPID);
 		DEFN_SYSCALL3(pid_t, SysWait, SYSCALL_WAIT, pid_t, int*, int);
-
-		void Abort()
-		{
-			// TODO: Send SIGABRT instead!
-			Exit(128 + 6);
-		}
-
-		extern "C" void abort() { return Abort(); }
-
-		extern "C" void _exit(int status)
-		{
-			SysExit(status);
-		}
 
 		extern "C" int execve(const char* pathname, char* const* argv,
 		                      char* const* envp)
@@ -172,16 +158,6 @@ namespace Maxsi
 			int result = vexecle(pathname, args);
 			va_end(args);
 			return result;
-		}
-
-		extern "C" void call_exit_handlers(int status);
-
-		DUAL_FUNCTION(void, exit, Exit, (int status))
-		{
-			call_exit_handlers(status);
-			dcloseall();
-			fcloseall();
-			_exit(status);
 		}
 
 		extern "C" pid_t tfork(int flags, tforkregs_t* regs)

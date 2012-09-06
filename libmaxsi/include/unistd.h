@@ -155,7 +155,7 @@ int access(const char*, int);
 int chdir(const char*);
 int close(int);
 int dup(int);
-void _exit(int);
+void _exit(int)  __attribute__ ((noreturn));
 int execl(const char*, ...);
 int execle(const char*, ...);
 int execlp(const char*, ...);

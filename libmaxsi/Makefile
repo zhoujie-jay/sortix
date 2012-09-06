@@ -48,7 +48,6 @@ settermmode.o \
 isatty.o \
 kernelinfo.o \
 init.o \
-exit.o \
 signal.o \
 $(CPU)/signal.o \
 $(CPU)/fork.o \
@@ -66,6 +65,7 @@ sort.o \
 string.o \
 error.o \
 format.o \
+abort.o \
 access.o \
 _assert.o \
 chdir.o \
@@ -73,6 +73,9 @@ chmod.o \
 close.o \
 dup.o \
 errorprint.o \
+exit.o \
+_exit.o \
+_Exit.o \
 fchmod.o \
 fcntl.o \
 fstat.o \
@@ -83,6 +86,7 @@ lseek.o \
 mbtowc.o \
 mkdir.o \
 mktemp.o \
+on_exit.o \
 open.o \
 pipe.o \
 print.o \

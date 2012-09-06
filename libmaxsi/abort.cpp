@@ -17,23 +17,15 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	process.h
-	Exposes system calls for process creation and management.
+	abort.cpp
+	Abnormal process termination.
 
 *******************************************************************************/
 
-#ifndef LIBMAXSI_PROCESS_H
-#define LIBMAXSI_PROCESS_H
+#include <stdlib.h>
 
-namespace Maxsi
+extern "C" void abort(void)
 {
-	namespace Process
-	{
-		pid_t Fork();
-		pid_t GetPID();
-		pid_t GetParentPID();
-	}
+	// TODO: Send SIGABRT instead!
+	_Exit(128 + 6);
 }
-
-#endif
-

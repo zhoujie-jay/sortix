@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of LibMaxsi.
 
@@ -17,23 +17,15 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	process.h
-	Exposes system calls for process creation and management.
+	_Exit.cpp
+	Terminates the current process.
 
 *******************************************************************************/
 
-#ifndef LIBMAXSI_PROCESS_H
-#define LIBMAXSI_PROCESS_H
+#include <stdlib.h>
+#include <unistd.h>
 
-namespace Maxsi
+extern "C" void _Exit(int status)
 {
-	namespace Process
-	{
-		pid_t Fork();
-		pid_t GetPID();
-		pid_t GetParentPID();
-	}
+	_exit(status);
 }
-
-#endif
-

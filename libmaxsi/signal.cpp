@@ -26,6 +26,7 @@
 #include <libmaxsi/memory.h>
 #include <libmaxsi/syscall.h>
 #include <libmaxsi/process.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
 
@@ -37,27 +38,27 @@ namespace Maxsi
 
 		void Core(int signum)
 		{
-			 Process::Exit(128 + signum);
+			exit(128 + signum);
 		}
 
 		extern "C" void SIG_DFL(int signum)
 		{
-			if ( signum == SIGHUP ) { Process::Exit(128 + signum); } else
-			if ( signum == SIGINT ) { Process::Exit(128 + signum); } else
+			if ( signum == SIGHUP ) { exit(128 + signum); } else
+			if ( signum == SIGINT ) { exit(128 + signum); } else
 			if ( signum == SIGQUIT ) { Core(signum); } else
 			if ( signum == SIGTRAP ) { Core(signum); } else
 			if ( signum == SIGABRT ) { Core(signum); } else
 			if ( signum == SIGEMT ) { Core(signum); } else
 			if ( signum == SIGFPE ) { Core(signum); } else
-			if ( signum == SIGKILL ) { Process::Exit(128 + signum); } else
+			if ( signum == SIGKILL ) { exit(128 + signum); } else
 			if ( signum == SIGBUS ) { Core(signum); } else
 			if ( signum == SIGSEGV ) { Core(signum); } else
 			if ( signum == SIGSYS ) { Core(signum); } else
-			if ( signum == SIGPIPE ) { Process::Exit(128 + signum); } else
-			if ( signum == SIGALRM ) { Process::Exit(128 + signum); } else
-			if ( signum == SIGTERM ) { Process::Exit(128 + signum); } else
-			if ( signum == SIGUSR1 ) { Process::Exit(128 + signum); } else
-			if ( signum == SIGUSR2 ) { Process::Exit(128 + signum); } else
+			if ( signum == SIGPIPE ) { exit(128 + signum); } else
+			if ( signum == SIGALRM ) { exit(128 + signum); } else
+			if ( signum == SIGTERM ) { exit(128 + signum); } else
+			if ( signum == SIGUSR1 ) { exit(128 + signum); } else
+			if ( signum == SIGUSR2 ) { exit(128 + signum); } else
 			if ( signum == SIGCHLD ) { /* Ignore this signal. */ } else
 			if ( signum == SIGPWR ) { /* Ignore this signal. */ } else
 			if ( signum == SIGWINCH ) { /* Ignore this signal. */ } else
@@ -79,7 +80,7 @@ namespace Maxsi
 
 		extern "C" void SIG_ERR(int /*signum*/)
 		{
-			Process::Abort();
+			abort();
 		}
 
 		const int MAX_SIGNALS = 128;
