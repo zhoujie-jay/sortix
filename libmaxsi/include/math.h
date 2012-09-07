@@ -1,6 +1,6 @@
 /******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -30,6 +30,9 @@
 __BEGIN_DECLS
 
 /* TODO: Actually comply with standards by declaring stuff here. */
+double fabs(double x);
+float fabsf(float x);
+long double fabsl(long double x);
 
 __END_DECLS
 

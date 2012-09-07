@@ -77,6 +77,7 @@ errorprint.o \
 exit.o \
 _exit.o \
 _Exit.o \
+fabs.o \
 fchmod.o \
 fcntl.o \
 fstat.o \
