@@ -376,12 +376,12 @@ static void InitThread(void* /*user*/)
 	int argc = 1;
 	const char* argv[] = { "init", NULL };
 #if defined(PLATFORM_X86)
-	const char* cputype = "cputype=i486-pc-sortix";
+	const char* cputype = "cputype=i486-sortix";
 #elif defined(PLATFORM_X64)
-	const char* cputype = "cputype=x86_64-pc-sortix";
+	const char* cputype = "cputype=x86_64-sortix";
 #else
 	#warning No cputype environmental variable provided here.
-	const char* cputype = "cputype=unknown-pc-sortix";
+	const char* cputype = "cputype=unknown-sortix";
 #endif
 	int envc = 1;
 	const char* envp[] = { cputype, NULL };
