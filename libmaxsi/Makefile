@@ -95,7 +95,12 @@ print.o \
 read.o \
 readdirents.o \
 rmdir.o \
-scan.o \
+scanf.o \
+fscanf.o \
+sscanf.o \
+vscanf.o \
+vfscanf.o \
+vsscanf.o \
 stat.o \
 truncate.o \
 umask.o \

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
 
 	This file is part of LibMaxsi.
 
@@ -17,42 +17,15 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	scan.cpp
-	The scanf family of functions.
+	vscanf.cpp
+	Input format conversion.
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
-#include <stdio.h>
 #include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>
 
-namespace Maxsi {
-
-
-// TODO: This is an ugly hack to help build binutils.
-#warning Ugly sscanf hack to help build binutils
-extern "C" int sscanf(const char* s, const char* format, ...)
+extern "C" int vscanf(const char* format, va_list ap)
 {
-	if ( strcmp(format, "%x") != 0 )
-	{
-		fprintf(stderr, "sscanf hack doesn't implement: '%s'\n", format);
-		abort();
-	}
-
-	va_list list;
-	va_start(list, format);
-	unsigned* dec = va_arg(list, unsigned*);
-	*dec = strtol(s, NULL, 16);
-	return strlen(s);
+	return vfscanf(stdin, format, ap);
 }
-
-extern "C" int fscanf(FILE* /*fp*/, const char* /*format*/, ...)
-{
-	fprintf(stderr, "fscanf(3) is not implemented\n");
-	abort();
-}
-
-} // namespace Maxsi
