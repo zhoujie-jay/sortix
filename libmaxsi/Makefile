@@ -68,6 +68,7 @@ format.o \
 abort.o \
 access.o \
 _assert.o \
+bsearch.o \
 chdir.o \
 chmod.o \
 close.o \

@@ -53,6 +53,7 @@ int atexit(void (*function)(void));
 int atoi(const char*);
 long atol(const char*);
 long long atoll(const char*);
+void* bsearch(const void*, const void*, size_t, size_t, int (*)(const void*, const void*));
 void* calloc(size_t, size_t);
 void exit(int)  __attribute__ ((noreturn));
 void _Exit(int status)  __attribute__ ((noreturn));
@@ -96,7 +97,6 @@ int clearenv(void);
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 long a64l(const char* s);
 double atof(const char* value);
-void* bsearch(const void*, const void*, size_t, size_t, int (*)(const void*, const void*));
 div_t div(int, int);
 double drand48(void);
 double erand48(unsigned short [3]);
