@@ -164,7 +164,16 @@ extern "C" int setenv(const char* name, const char* value, int overwrite)
 extern "C" int putenv(char* str)
 {
 	if ( !strchr(str, '=') ) { errno = EINVAL; return -1; }
-	if ( !doputenv(str, NULL, true) ) { return -1; }
+	// TODO: HACK: This voilates POSIX as it mandates that callers must be able
+	// to modify the environment by modifying the string. However, this is bad
+	// design! It also means we got a memory leak since we can't safely free
+	// strings from the environment when overriding them. Therefore we create
+	// a copy of the strings here and use the copy instead. This is a problem
+	// for some applications that will subtly break.
+	char* strcopy = strdup(str);
+	if ( !strcopy )
+		return -1;
+	if ( !doputenv(strcopy, strcopy, true) ) { return -1; }
 	return 0;
 }
 
