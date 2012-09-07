@@ -26,6 +26,7 @@
 #define	_STRING_H 1
 
 #include <features.h>
+#include <strings.h>
 
 __BEGIN_DECLS
 
