@@ -49,7 +49,7 @@ __BEGIN_DECLS
 		union
 		{
 			wint_t __wch;
-	 		char __wchb[4];
+			char __wchb[4];
 		} __value;		/* Value so far. */
 	} mbstate_t;
 	#define __mbstate_t_defined 1

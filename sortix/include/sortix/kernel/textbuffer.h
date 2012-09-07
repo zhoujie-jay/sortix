@@ -90,7 +90,7 @@ private:
 	size_t numused;
 	bool deletedef;
 	bool deletebuf;
-	
+
 
 };
 

@@ -182,7 +182,7 @@ Device* MakeModes(int flags, mode_t /*mode*/)
 	if ( !result ) { delete[] modesstr; }
 out:
 	for ( size_t i = 0; i < nummodes; i++ ) { delete[] modes[i]; }
-	delete[] modes;	
+	delete[] modes;
 	return result;
 }
 

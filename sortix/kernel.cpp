@@ -339,7 +339,7 @@ static void BootThread(void* /*user*/)
 		PanicF("Init returned with unexpected return code %i", status);
 	}
 }
-	
+
 static void InitThread(void* /*user*/)
 {
 	// We are the init process's first thread. Let's load the init program from

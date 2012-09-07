@@ -98,7 +98,7 @@ extern "C" unsigned long kthread_cond_wait_signal(kthread_cond_t* cond,
 					cond->last = prev;
 			}
 			// Note that the thread still owns the mutex.
-			return 0;			
+			return 0;
 		}
 		kthread_mutex_unlock(mutex);
 		Scheduler::Yield();

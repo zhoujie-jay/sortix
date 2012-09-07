@@ -56,7 +56,7 @@ valid_syscall:
 	# Oh how nice, user-space put the parameters in: rdi, rsi, rdx, rcx, r8, r9
 
 	# Call the system call.
-	callq *%rax	
+	callq *%rax
 
 	# Restore the previous permissions to data segment.
 	popq %rbp

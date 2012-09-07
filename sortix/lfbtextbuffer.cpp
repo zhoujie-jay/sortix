@@ -137,7 +137,7 @@ size_t LFBTextBuffer::Height() const
 	return rows;
 }
 
-bool LFBTextBuffer::UsablePosition(TextPos pos) const	
+bool LFBTextBuffer::UsablePosition(TextPos pos) const
 {
 	return pos.x < columns && pos.y < rows;
 }
