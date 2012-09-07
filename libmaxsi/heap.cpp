@@ -32,7 +32,12 @@
 #endif
 
 #ifndef SORTIX_KERNEL
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <assert.h>
+#undef ASSERT
+#define ASSERT(invariant) assert(invariant)
 #endif
 
 #define PARANOIA 1
@@ -231,6 +236,20 @@ namespace Maxsi
 		// Bit N is set if bin[N] contains a chunk.
 		size_t bincontainschunks;
 
+		static bool IsGoodHeapPointer(void* ptr, size_t size)
+		{
+			uintptr_t ptrlower = (uintptr_t) ptr;
+			uintptr_t ptrupper = ptrlower + size;
+#ifdef HEAP_GROWS_DOWNWARDS
+			uintptr_t heaplower = wilderness;
+			uintptr_t heapupper = heapstart;
+#else
+			uintptr_t heaplower = heapstart;
+			uintptr_t heapupper = wilderness;
+#endif
+			return heaplower <= ptrlower && ptrupper <= heapupper;
+		}
+
 		// A preamble to every chunk providing meta-information.
 		struct Chunk
 		{
@@ -301,9 +320,13 @@ namespace Maxsi
 
 		bool Chunk::IsSane()
 		{
+			if ( !IsGoodHeapPointer(this, sizeof(*this)) )
+				return false;
 			if ( !size ) { return false; }
 			size_t binindex = BSR(size);
 			Trailer* trailer = GetTrailer();
+			if ( !IsGoodHeapPointer(trailer, sizeof(*trailer)) )
+				return false;
 			if ( trailer->size != size ) { return false; }
 			if ( IsUsed() )
 			{
@@ -314,10 +337,16 @@ namespace Maxsi
 			{
 				if ( ((addr_t) nextunused) & (ALIGNMENT-1UL) ) { return false; }
 				if ( ((addr_t) trailer->prevunused) & (ALIGNMENT-1UL) ) { return false; }
+				if ( nextunused && !IsGoodHeapPointer(nextunused->GetTrailer(),
+				                                      sizeof(Trailer)) )
+					return false;
 				if ( nextunused && nextunused->GetTrailer()->prevunused != this ) { return false; }
 
 				if ( trailer->prevunused )
 				{
+					if ( !IsGoodHeapPointer(trailer->prevunused,
+					                        sizeof(*trailer->prevunused)) )
+						return false;
 					if ( bins[binindex] == this ) { return false; }
 					if ( trailer->prevunused->nextunused != this ) { return false; }
 				}
@@ -530,10 +559,13 @@ namespace Maxsi
 			#else
 			Chunk* chunk = (Chunk*) (wilderness - wildernesssize);
 			#endif
+			ASSERT(size <= wildernesssize);
 			wildernesssize -= size;
 			heapsize += size;
+			ASSERT(IsGoodHeapPointer(chunk, sizeof(*chunk)));
 			chunk->size = size;
 			Trailer* trailer = chunk->GetTrailer();
+			ASSERT(IsGoodHeapPointer(trailer, sizeof(*trailer)));
 			trailer->size = size;
 			chunk->magic = MAGIC;
 			trailer->magic = MAGIC;
@@ -634,7 +666,6 @@ namespace Maxsi
 			#endif
 
 			if ( !addr) { return; }
-
 			Chunk* chunk = (Chunk*) ((addr_t) addr - sizeof(Chunk));
 			ASSERT(chunk->IsUsed());
 			ASSERT(chunk->IsSane());
