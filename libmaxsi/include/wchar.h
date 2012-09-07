@@ -29,9 +29,10 @@
 
 __BEGIN_DECLS
 
+@include(size_t.h)
+@include(off_t.h)
 @include(FILE.h)
 @include(locale_t.h)
-@include(size_t.h)
 @include(va_list.h)
 @include(wchar_t.h)
 @include(wint_t.h)
