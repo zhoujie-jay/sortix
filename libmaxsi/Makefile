@@ -37,6 +37,7 @@ stdio.o \
 dir.o \
 fddir-sortix.o \
 setjmp.o \
+setlocale.o \
 sortix-sound.o \
 readparamstring.o \
 process.o \
@@ -84,6 +85,7 @@ fstat.o \
 ftruncate.o \
 getcwd.o \
 getdtablesize.o \
+localeconv.o \
 lseek.o \
 mbtowc.o \
 mkdir.o \
