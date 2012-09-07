@@ -27,5 +27,6 @@
 extern "C" int fseeko(FILE* fp, off_t offset, int whence)
 {
 	fp->numpushedback = 0;
+	fflush(fp);
 	return (fp->seek_func) ? fp->seek_func(fp->user, offset, whence) : 0;
 }
