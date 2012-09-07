@@ -24,14 +24,14 @@
 
 #include <libmaxsi/platform.h>
 
-extern "C" void __cxa_pure_virtual()
+extern "C" void __attribute__ ((weak)) __cxa_pure_virtual()
 {
 	// This shouldn't happen. TODO: Possibly crash the kernel here.
 }
 
 #ifdef PLATFORM_X86
 
-extern "C" uint64_t __udivdi3(uint64_t a, uint64_t b)
+extern "C" uint64_t __attribute__ ((weak)) __udivdi3(uint64_t a, uint64_t b)
 {
 	uint64_t result = 0;
 	uint64_t power = 1;
@@ -57,7 +57,7 @@ extern "C" uint64_t __udivdi3(uint64_t a, uint64_t b)
 	return result;
 }
 
-extern "C" uint64_t __umoddi3(uint64_t a, uint64_t b)
+extern "C" uint64_t __attribute__ ((weak)) __umoddi3(uint64_t a, uint64_t b)
 {
 	uint64_t result = 0;
 	uint64_t power = 1;
@@ -83,7 +83,7 @@ extern "C" uint64_t __umoddi3(uint64_t a, uint64_t b)
 	return remainder;
 }
 
-extern "C" int64_t __divdi3(int64_t a, int64_t b)
+extern "C" int64_t __attribute__ ((weak)) __divdi3(int64_t a, int64_t b)
 {
 	if ( a >= 0 && b >= 0 )
 	{
@@ -115,7 +115,7 @@ extern "C" int64_t __divdi3(int64_t a, int64_t b)
 	}
 }
 
-extern "C" int64_t __moddi3(int64_t a, int64_t b)
+extern "C" int64_t __attribute__ ((weak)) __moddi3(int64_t a, int64_t b)
 {
 	if ( a >= 0 && b >= 0 )
 	{
@@ -148,4 +148,3 @@ extern "C" int64_t __moddi3(int64_t a, int64_t b)
 }
 
 #endif
-
