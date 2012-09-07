@@ -29,13 +29,14 @@
 #include "interrupt.h"
 #include "scheduler.h"
 #include "syscall.h"
+#include "signal.h"
+#include "process.h"
 
 #include "sound.h" // Hack for SIGSEGV
 
 using namespace Maxsi;
 
 namespace Sortix {
-void SysExit(int status); // HACK
 
 namespace Interrupt {
 
@@ -235,15 +236,24 @@ void CrashHandler(CPU::InterruptRegisters* regs)
 		       ip, regs->cr2, regs->err_code);
 	}
 
-	Log::Print("The current program has crashed and was terminated:\n");
+	Interrupt::Enable();
+
+	Log::PrintF("The current program (pid %i) has crashed and was terminated:\n",
+	            CurrentProcess()->pid);
 	Log::PrintF("%s exception at ip=0x%zx (cr2=0x%p, err_code=0x%p)\n",
 	            message, ip, regs->cr2, regs->err_code);
+
+	//addr_t topofstack = ((size_t*) regs->useresp)[0];
+	//Log::PrintF("Top of stack is 0x%zx\n", topofstack);
 
 	Sound::Mute();
 
 	// Exit the process with the right error code.
 	// TODO: Sent a SIGINT, SIGBUS, or whatever instead.
-	SysExit(139);
+	CurrentProcess()->Exit(139);
+
+	Interrupt::Disable();
+	Signal::Dispatch(regs);
 }
 
 void ISRHandler(Sortix::CPU::InterruptRegisters* regs)
