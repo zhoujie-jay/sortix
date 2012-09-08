@@ -737,6 +737,8 @@ namespace Sortix
 				continue;
 			if ( process->pid <= 1 )
 				continue;
+			if ( process->iszombie )
+				continue;
 			return i;
 		}
 		return 0;
