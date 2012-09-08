@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of LibMaxsi.
 
@@ -11,42 +11,44 @@
 
 	LibMaxsi is distributed in the hope that it will be useful, but WITHOUT ANY
 	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
-	more details.
+	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+	details.
 
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	start.s
-	A stub for linking to the C runtime on Sortix.
+	crt1.s
+	Implement the _start symbol at which execution begins which performs the
+	task of initializing the standard library and executing the main function.
 
-******************************************************************************/
+*******************************************************************************/
 
-/* NOTE: This is almost identical to what is in crt1.s. crt1.s is used when
+/* NOTE: This is almost identical to what is in start.s. crt1.s is used when
          compiling with the real cross compiler, while start.s is used when
          using the older hacky way of building Sortix. Please try to keep these
          files alike by doing changes both places until we only build Sortix
          with real cross compilers. */
 
-.globl _start
-
 .section .text
 
+.global _start
 .type _start, @function
 _start:
+	movq %rcx, environ # envp
 
-	movl %ecx, environ # envp
-
-	# Arguments for main
-	push %ebx # argv
-	push %eax # argc
-
+	# Prepare signals, memory allocation, stdio and such.
+	pushq %rsi
+	pushq %rdi
 	call initialize_standard_library
 
+	# Run the global constructors.
+	call _init
+
 	# Run main
+	popq %rdi
+	popq %rsi
 	call main
 
 	# Terminate the process with main's exit code.
-	push %eax
+	movl %eax, %edi
 	call exit
-

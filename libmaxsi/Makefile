@@ -2,8 +2,6 @@ ifndef CPU
     CPU=x86
 endif
 
-BINS=libc.a libg.a libmaxsi.a libmaxsi-sortix.a
-
 ifeq ($(CPU),x86)
     CPUDEFINES=-DPLATFORM_X86
     CPUFLAGS=-m32
@@ -52,7 +50,6 @@ init.o \
 signal.o \
 $(CPU)/signal.o \
 $(CPU)/fork.o \
-start.o \
 time.o \
 random.o \
 abs.o \
@@ -165,6 +162,15 @@ putc.o \
 rewind.o \
 ungetc.o \
 
+CRTOBJ=\
+start.o \
+crt1.o \
+crti.o \
+crtn.o \
+
+MISCOBJ=\
+$(CRTOBJ) \
+
 UNPROCHEADERDIRS:=$(shell find include -type d)
 UNPROCHEADERS:=$(shell find include -type f)
 HEADERDIRS:=$(patsubst include%,preproc%,$(UNPROCHEADERDIRS))
@@ -181,6 +187,8 @@ crc32.o \
 
 SORTIXOBJS:=$(addprefix sortix/,$(SORTIXOBJS))
 SORTIXCPPFLAGS:=-DSORTIX_KERNEL
+
+BINS=libc.a libg.a libmaxsi.a libmaxsi-sortix.a $(CRTOBJ)
 
 all: $(BINS)
 
@@ -206,7 +214,16 @@ libg.so: libc.so
 	ln -sf $< $@
 
 start.o: $(CPU)/start.o
-	ln -sf $< $@
+	ln -f $< $@
+
+crt1.o: $(CPU)/crt1.o
+	ln -f $< $@
+
+crti.o: $(CPU)/crti.o
+	ln -f $< $@
+
+crtn.o: $(CPU)/crtn.o
+	ln -f $< $@
 
 # header preprocessing
 $(HEADERDIRS):
@@ -246,10 +263,8 @@ install:
 	for D in $(UNPROCHEADERDIRS); do mkdir -p $(SYSROOT)/usr/$$D || exit $?; done
 	for SRC in $(HEADERS); do DEST=`echo $$SRC | sed 's/preproc/include/'`; cp $$SRC $(SYSROOT)/usr/$$DEST || exit $?; done
 	mkdir -p $(SYSROOT)/usr/include
-	cp start.o $(SYSROOT)/usr/lib/crtbegin.o
 	touch deleteme.cpp
 	g++ $(CPUFLAGS) -c deleteme.cpp -o deleteme.o
-	for F in crt0.o crtn.o crt1.o crtend.o crtbeginT.o crti.o; do cp deleteme.o $(SYSROOT)/usr/lib/$$F; done
 	for F in libgcc.so libm.so libstdc++.so; do ld $(CPULDFLAGS) -shared deleteme.o -o $(SYSROOT)/usr/lib/$$F; done
 	rm -f deleteme.o deleteme.cpp
 
