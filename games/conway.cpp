@@ -63,6 +63,27 @@ bool FlushVGA()
 
 int Init()
 {
+	bool has_vga_mode_set = true;
+	FILE* modefp = fopen("/dev/video/mode", "r");
+	if ( modefp )
+	{
+		char* mode = NULL;
+		size_t modesize;
+		if ( 0 <= getline(&mode, &modesize, modefp) )
+		{
+			if ( strcmp(mode, "driver=none\n") != 0 )
+				has_vga_mode_set = false;
+			free(mode);
+		}
+		fclose(modefp);
+	}
+
+	if ( !has_vga_mode_set )
+	{
+		fprintf(stderr, "Sorry, this game only works in VGA mode.\n");
+		return 1;
+	}
+
 	vgafd = open("/dev/vga", O_RDWR);
 	if ( vgafd < 0 ) { error(0, errno, "unable to open vga device /dev/vga"); return 1; }
 
