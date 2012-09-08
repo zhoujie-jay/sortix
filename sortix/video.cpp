@@ -427,7 +427,7 @@ ssize_t ReadAt(off_t off, void* buf, size_t count)
 	ScopedLock lock(&videolock);
 	DriverEntry* drvent = CurrentDriverEntry();
 	if ( !drvent ) { Error::Set(EINVAL); return -1; }
-	return drvent->driver->WriteAt(off, buf, count);
+	return drvent->driver->ReadAt(off, buf, count);
 }
 
 } // namespace Video

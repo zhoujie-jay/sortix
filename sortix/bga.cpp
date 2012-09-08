@@ -380,7 +380,7 @@ ssize_t BGADriver::WriteAt(off_t off, const void* buf, size_t count)
 	if ( (off_t) framesize <= off )
 		return 0;
 	if ( framesize < off + count )
-		count = off - framesize;
+		count = framesize - off;
 	Maxsi::Memory::Copy(frame + off, buf, count);
 	return count;
 }
@@ -391,7 +391,7 @@ ssize_t BGADriver::ReadAt(off_t off, void* buf, size_t count)
 	if ( (off_t) framesize <= off )
 		return 0;
 	if ( framesize < off + count )
-		count = off - framesize;
+		count = framesize - off;
 	Maxsi::Memory::Copy(buf, frame + off, count);
 	return count;
 }
