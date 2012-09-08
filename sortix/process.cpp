@@ -30,6 +30,7 @@
 #include <sortix/unistd.h>
 #include <sortix/fork.h>
 #include <sortix/mman.h>
+#include <sortix/wait.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
@@ -353,6 +354,8 @@ namespace Sortix
 					break;
 			if ( zombie )
 				break;
+			if ( options & WNOHANG )
+				return 0;
 			zombiewaiting++;
 			kthread_cond_wait(&zombiecond, &childlock);
 			zombiewaiting--;

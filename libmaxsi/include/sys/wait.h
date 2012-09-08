@@ -24,10 +24,11 @@
 
 // TODO: Make this header comply with POSIX-1.2008
 
-#ifndef	_SYS_WAIT_H
-#define	_SYS_WAIT_H 1
+#ifndef _SYS_WAIT_H
+#define _SYS_WAIT_H 1
 
 #include <features.h>
+#include <sortix/wait.h>
 
 __BEGIN_DECLS
 
