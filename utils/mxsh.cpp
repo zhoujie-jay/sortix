@@ -79,6 +79,9 @@ int runcommandline(const char** tokens)
 	bool internal;
 	int internalresult;
 readcmd:
+	// Collect any pending zombie processes.
+	while ( 0 < waitpid(-1, NULL, WNOHANG) );
+
 	cmdstart = cmdnext;
 	for ( cmdend = cmdstart; true; cmdend++ )
 	{

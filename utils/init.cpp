@@ -58,7 +58,9 @@ int runsystem()
 		return status;
 	}
 
-	return child();
+	int ret = child();
+	while ( 0 < waitpid(-1, NULL, WNOHANG) );
+	return ret;
 }
 
 int main(int argc, char* argv[])
