@@ -165,7 +165,7 @@ void Update()
 	Render();
 }
 
-int usage(int argc, char* argv[])
+int usage(int /*argc*/, char* argv[])
 {
 	printf("usage: %s [OPTIONS]\n", argv[0]);
 	printf("Options:\n");

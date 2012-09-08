@@ -35,34 +35,34 @@ void printbytes(unsigned long long bytes)
 	const unsigned EXBI = 6;
 
 	unsigned unit = BYTES;
-	if ( (bytes >> 10ULL) & 1023 ) { unit = KIBI; }
-	if ( (bytes >> 20ULL) & 1023 ) { unit = MEBI; }
-	if ( (bytes >> 30ULL) & 1023 ) { unit = GIBI; }
-	if ( (bytes >> 40ULL) & 1023 ) { unit = TEBI; }
-	if ( (bytes >> 50ULL) & 1023 ) { unit = PEBI; }
-	if ( (bytes >> 60ULL) & 1023 ) { unit = EXBI; }
+	if ( (bytes >> 10ULL) & 1023ULL ) { unit = KIBI; }
+	if ( (bytes >> 20ULL) & 1023ULL ) { unit = MEBI; }
+	if ( (bytes >> 30ULL) & 1023ULL ) { unit = GIBI; }
+	if ( (bytes >> 40ULL) & 1023ULL ) { unit = TEBI; }
+	if ( (bytes >> 50ULL) & 1023ULL ) { unit = PEBI; }
+	if ( (bytes >> 60ULL) & 1023ULL ) { unit = EXBI; }
 
 	switch ( unit )
 	{
 		case EXBI:
-			printf("%u ZiB ", (bytes >> 60ULL) & 1023);
+			printf("%llu ZiB ", (bytes >> 60ULL) & 1023ULL);
 		case PEBI:
-			printf("%u PiB ", (bytes >> 50ULL) & 1023);
+			printf("%llu PiB ", (bytes >> 50ULL) & 1023ULL);
 		case TEBI:
-			printf("%u TiB ", (bytes >> 40ULL) & 1023);
+			printf("%llu TiB ", (bytes >> 40ULL) & 1023ULL);
 		case GIBI:
-			printf("%u GiB ", (bytes >> 30ULL) & 1023);
+			printf("%llu GiB ", (bytes >> 30ULL) & 1023ULL);
 		case MEBI:
-			printf("%u MiB ", (bytes >> 20ULL) & 1023);
+			printf("%llu MiB ", (bytes >> 20ULL) & 1023ULL);
 		case KIBI:
-			printf("%u KiB", (bytes >> 10ULL) & 1023);
+			printf("%llu KiB", (bytes >> 10ULL) & 1023ULL);
 			break;
 		case BYTES:
-			printf("%u B", (bytes >> 0ULL) & 1023);
+			printf("%llu B", (bytes >> 0ULL) & 1023ULL);
 	}
 }
 
-int main(int argc, char* argv[])
+int main(int /*argc*/, char* /*argv*/[])
 {
 	size_t memused = 0;
 	size_t memtotal = 0;

@@ -79,7 +79,6 @@ int main(int argc, char* argv[])
 			}
 			for ( ssize_t i = 0; i < numbytes; i++ )
 			{
-				bool printed = false;
 				char c = buffer[i];
 				if ( c == '\n' ) { charleft = WIDTH; }
 				bool eol = (c == '\n') || !charleft;
@@ -97,7 +96,7 @@ int main(int argc, char* argv[])
 						ssize_t numbytes = read(0, &codepoint, sizeof(codepoint));
 						if ( !numbytes ) { exit(0); }
 						if ( numbytes < 0 ) { error(1, errno, "read(stdin)"); }
-						if ( numbytes < sizeof(codepoint) ) { error(1, errno, "bad stdin"); }
+						if ( numbytes < (ssize_t) sizeof(codepoint) ) { error(1, errno, "bad stdin"); }
 						if ( !(kbkey = KBKEY_DECODE(codepoint)) ) { continue; }
 						if ( kbkey == KBKEY_DOWN ) { break; }
 						if ( kbkey == KBKEY_PGDOWN ) { linesleft = HEIGHT-1; break; }

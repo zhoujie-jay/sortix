@@ -23,7 +23,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-int main(int argc, char* argv[])
+int main(int /*argc*/, char* /*argv*/[])
 {
 	uintmax_t start;
 	if ( uptime(&start) ) { perror("uptime"); return 1; }

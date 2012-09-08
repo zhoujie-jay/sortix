@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
 		ssize_t bytesread = read(fromfd, buffer, BUFFER_SIZE);
 		if ( bytesread < 0 ) { error(1, errno, "read: %s", frompath); return 1; }
 		if ( bytesread == 0 ) { return 0; }
-		if ( writeall(tofd, buffer, bytesread) < bytesread )
+		if ( (ssize_t) writeall(tofd, buffer, bytesread) < bytesread )
 		{
 			error(1, errno, "write: %s", topath);
 			return 1;

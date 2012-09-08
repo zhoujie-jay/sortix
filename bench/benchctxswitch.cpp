@@ -25,7 +25,7 @@
 #include <unistd.h>
 #include <signal.h>
 
-int main(int argc, char* argv[])
+int main(int /*argc*/, char* /*argv*/[])
 {
 	pid_t slavepid = fork();
 	if ( slavepid < 0 ) { perror("fork"); return 1; }

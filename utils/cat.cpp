@@ -41,7 +41,7 @@ int docat(const char* inputname, int fd)
 			error(0, errno, "read: %s", inputname);
 			return 1;
 		}
-		if ( writeall(1, buffer, bytesread) < bytesread )
+		if ( (ssize_t) writeall(1, buffer, bytesread) < bytesread )
 		{
 			error(0, errno, "write: %s", inputname);
 			return 1;

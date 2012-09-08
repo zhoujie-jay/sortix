@@ -89,8 +89,7 @@ int main(int argc, char* argv[])
 
 		if ( codepoint >= 0x80 ) { continue; }
 
-		char msg[2]; msg[0] = codepoint; msg[1] = '\0';
-		printf(msg);
+		putchar(codepoint & 0xFF);
 		lastwasesc = false;
 		fflush(stdout);
 	}

@@ -25,7 +25,7 @@
 #include <error.h>
 #include <unistd.h>
 
-int main(int argc, char* argv[])
+int main(int /*argc*/, char* /*argv*/[])
 {
 	printf("Please enter the name of one of the following programs:\n");
 

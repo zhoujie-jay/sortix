@@ -136,7 +136,7 @@ unsigned textmode()
 	int oldcursory = -1;
 	while ( true )
 	{
-		if ( oldcursorx != cursorx || oldcursory != cursory )
+		if ( oldcursorx != (int) cursorx || oldcursory != (int) cursory )
 		{
 			cursorto(cursorx, cursory);
 			oldcursorx = cursorx;
@@ -150,7 +150,7 @@ unsigned textmode()
 		ssize_t numbytes = read(0, &codepoint, sizeof(codepoint));
 		if ( !numbytes ) { break; }
 		if ( numbytes < 0 ) { error(1, errno, "read stdin"); }
-		if ( numbytes < sizeof(codepoint) ) {
+		if ( numbytes < (ssize_t) sizeof(codepoint) ) {
 			printf("unexpectedly got %zi bytes\n", numbytes);
 			printf("bytes: %x\n", codepoint);
 
@@ -274,7 +274,7 @@ unsigned confirmquit()
 		ssize_t numbytes = read(0, &codepoint, sizeof(codepoint));
 		if ( !numbytes ) { exit(0); }
 		if ( numbytes < 0 ) { error(1, errno, "read stdin"); }
-		if ( numbytes < sizeof(codepoint) ) { fprintf(stderr, "bad stdin data\n"); exit(1); }
+		if ( numbytes < (ssize_t) sizeof(codepoint) ) { fprintf(stderr, "bad stdin data\n"); exit(1); }
 		if ( !codepoint ) { continue; }
 
 		int kbkey = KBKEY_DECODE(codepoint);
@@ -412,7 +412,7 @@ void run()
 	bufferchanged = false;
 
 	unsigned mode = MODE_TEXT;
-	while ( mode != MODE_QUIT )
+	while ( mode != (unsigned) MODE_QUIT )
 	{
 		switch ( mode )
 		{

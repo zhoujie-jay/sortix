@@ -34,7 +34,7 @@
 
 int status = 0;
 
-void on_sigint(int signum)
+void on_sigint(int /*signum*/)
 {
 	printf("^C\n");
 }
@@ -229,7 +229,7 @@ readcmd:
 		char* arg = *argp;
 		if ( arg[0] != '$' ) { continue; }
 		arg = getenv(arg+1);
-		if ( !arg ) { arg = ""; }
+		if ( !arg ) { arg = (char*) ""; }
 		*argp = arg;
 	}
 
@@ -333,7 +333,7 @@ void get_and_run_command()
 	return;
 }
 
-int main(int argc, char* argv[])
+int main(int /*argc*/, char* argv[])
 {
 	signal(SIGINT, on_sigint);
 	char pidstr[32];

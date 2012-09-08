@@ -63,7 +63,7 @@ int runsystem()
 	return ret;
 }
 
-int main(int argc, char* argv[])
+int main(int /*argc*/, char* /*argv*/[])
 {
 	if ( open("/dev/tty", O_RDONLY) != 0 ) { return 2; }
 	if ( open("/dev/tty", O_WRONLY | O_APPEND) != 1 ) { return 2; }

@@ -238,7 +238,7 @@ void ReadInput()
 	}
 }
 
-int usage(int argc, char* argv[])
+int usage(int /*argc*/, char* argv[])
 {
 	printf("usage: %s [OPTIONS]\n", argv[0]);
 	printf("Options:\n");
@@ -272,7 +272,7 @@ int main(int argc, char* argv[])
 		Update();
 		UpdateUI();
 		FlushVGA();
-		if ( soundleft < 0 ) { continue; }
+		if ( /*soundleft < 0*/ false ) { continue; }
 		if ( soundleft <= 50 )
 		{
 			System::Sound::SetFrequency(0);

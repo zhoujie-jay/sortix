@@ -52,7 +52,7 @@ void PrintElement(size_t num, const char* single, const char* multiple)
 	prefix = ", ";
 }
 
-int main(int argc, char* argv[])
+int main(int /*argc*/, char* /*argv*/[])
 {
 	uintmax_t usecssinceboot;
 	if ( uptime(&usecssinceboot) ) { perror("uptime"); return 1; }
