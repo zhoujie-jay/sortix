@@ -2,6 +2,8 @@
 OSROOT=..
 include ../crosscompilemakefile.mak
 
+CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra
+
 INITRDDIR:=../initrd
 LOCALBINARIES:=\
 pong \

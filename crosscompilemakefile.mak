@@ -16,21 +16,21 @@ ifeq ($(CPU),x64)
     CPULDFLAGS=-melf_x86_64
 endif
 
-LIBMAXSIROOT=$(OSROOT)/libmaxsi
-SORTIXROOT=$(OSROOT)/sortix
+LIBMAXSIROOT:=$(OSROOT)/libmaxsi
+SORTIXROOT:=$(OSROOT)/sortix
 
-LIBC=$(LIBMAXSIROOT)/start.o $(LIBMAXSIROOT)/libc.a
-LIBS=$(LIBC)
+LIBC:=$(LIBMAXSIROOT)/start.o $(LIBMAXSIROOT)/libc.a
+LIBS:=$(LIBC)
 
-CPPFLAGS=$(CPUDEFINES) -U_GNU_SOURCE -Ulinux -Dsortix
-FLAGS=-nostdinc -nostdlib -fno-builtin -nostartfiles -nodefaultlibs
-INCLUDES=-I $(LIBMAXSIROOT)/preproc -I $(SORTIXROOT)/include
+CPPFLAGS:=$(CPUDEFINES) -U_GNU_SOURCE -Ulinux -Dsortix
+FLAGS:=-nostdinc -nostdlib -nostartfiles -nodefaultlibs
+INCLUDES:=-I $(LIBMAXSIROOT)/preproc -I $(SORTIXROOT)/include
 
-LD=ld
-LDFLAGS=$(CPULDFLAGS)
-CC=gcc
-CFLAGS=$(CPUFLAGS) $(FLAGS) $(INCLUDES)
-CXX=g++
-CXXFLAGS=$(CPUFLAGS) $(FLAGS) $(INCLUDES) -fno-exceptions -fno-rtti
+LD:=ld
+LDFLAGS:=$(CPULDFLAGS)
+CC:=gcc
+CFLAGS:=$(CPUFLAGS) $(FLAGS) $(INCLUDES)
+CXX:=g++
+CXXFLAGS:=$(CPUFLAGS) $(FLAGS) $(INCLUDES) -fno-exceptions -fno-rtti
 
 
