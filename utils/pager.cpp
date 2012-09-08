@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
 				if ( eol && linesleft ) { linesleft--; }
 				printf("%c", c);
 				charleft--;
-				if ( c == '\t' ) { charleft &= ~(4-1); }
+				if ( c == '\t' ) { charleft &= ~(8-1); }
 			}
 		}
 		if ( fd != stdinfd ) { close(fd); }

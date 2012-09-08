@@ -155,7 +155,7 @@ void TextTerminal::Tab(TextBuffer* textbuf)
 		Newline(textbuf);
 	// TODO: This does not work correctly if the text buffer width is not a
 	// multiple of four and the column is near the edge.
-	unsigned until = 4 - (column % 4);
+	unsigned until = 8 - (column % 8);
 	textbuf->SetCharAttr(TextPos(column, line), ATTR_CHAR);
 	while ( (until--) != 0 )
 		textbuf->SetChar(TextPos(column++, line), TextChar(' ', vgacolor));
