@@ -89,7 +89,7 @@ void FetchKeyboardInput()
 	{
 		int kbkey = KBKEY_DECODE(codepoint);
 		int abskbkey = (kbkey < 0) ? -kbkey : kbkey;
-		if ( MAXKEYNUM <= abskbkey ) { continue; }
+		if ( MAXKEYNUM <= (size_t) abskbkey ) { continue; }
 		keysdown[abskbkey] = 0 < kbkey;
 	}
 }
@@ -114,7 +114,7 @@ void DrawLine(uint32_t color, long x0, long y0, long x1, long y1)
 	long e2;
 	while ( true )
 	{
-		if ( 0 <= x0 && x0 < xres && 0 <= y0 & y0 < yres )
+		if ( 0 <= x0 && (size_t) x0 < xres && 0 <= y0 && y0 < (size_t) yres )
 		{
 			size_t index = y0 * linesize + x0;
 			buf[index] = color;
@@ -145,24 +145,28 @@ public:
 	{
 		x += rhs.x;
 		y += rhs.y;
+		return *this;
 	}
 
 	Vector& operator-=(const Vector& rhs)
 	{
 		x -= rhs.x;
 		y -= rhs.y;
+		return *this;
 	}
 
 	Vector& operator*=(float scalar)
 	{
 		x *= scalar;
 		y *= scalar;
+		return *this;
 	}
 
 	Vector& operator/=(float scalar)
 	{
 		x /= scalar;
 		y /= scalar;
+		return *this;
 	}
 
 	const Vector operator+(const Vector& other) const
@@ -296,8 +300,8 @@ public:
 		return !strcmp(classname, "Object");
 	}
 	virtual void PreFrame() { }
-	virtual void OnFrame(float deltatime) { }
-	virtual void PostFrame(float deltatime) { }
+	virtual void OnFrame(float /*deltatime*/) { }
+	virtual void PostFrame(float /*deltatime*/) { }
 	virtual void Render() { }
 
 private:
@@ -344,7 +348,7 @@ public:
 		return !strcmp(classname, "Actor") || Object::IsA(classname);
 	}
 	virtual void Move(float deltatime);
-	virtual void Think(float deltatime) { }
+	virtual void Think(float /*deltatime*/) { }
 	virtual void Render() { }
 
 public:
@@ -506,7 +510,7 @@ public:
 
 };
 
-void AsteroidField::Think(float deltatime)
+void AsteroidField::Think(float /*deltatime*/)
 {
 	float spawndist = 1500.0f;
 	float maxdist = 1.5 * spawndist;
@@ -1137,7 +1141,7 @@ void InitGame()
 	new AsteroidField;
 }
 
-int main(int argc, char* argv[])
+int main(int /*argc*/, char* argv[])
 {
 #ifndef HACK_DONT_CHECK_FB
 	char* vidmode = GetCurrentVideoMode();
