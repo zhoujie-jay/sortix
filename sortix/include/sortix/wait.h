@@ -31,6 +31,18 @@ __BEGIN_DECLS
 
 #define WNOHANG (1<<0)
 
+#define WEXITSTATUS(status) ((status >> 8) & 0xFF)
+#define WTERMSIG(status) ((status >> 0) & 0x7F)
+#define WSTOPSIG(status) WTERMSIG(status)
+#define WIFEXITED(status) (WTERMSIG(status) == 0)
+#define WIFSIGNALED(status) (WTERMSIG(status) != 0)
+/*#define WIFCONTINUED(status) (WTERMSIG(status) == TODO)*/
+/*#define WIFSTOPPED(status) (WTERMSIG(status) == TODO)*/
+/*#define WIFCONTINUED(status) (WTERMSIG(status) == TODO)*/
+
+#define W_EXITCODE(ret, sig) ((ret) << 8 | (sig))
+#define W_STOPCODE(sig) ((sig) << 8 | 0x7f)
+
 __END_DECLS
 
 #endif

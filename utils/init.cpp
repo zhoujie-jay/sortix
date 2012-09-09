@@ -50,7 +50,7 @@ int runsystem()
 		int status;
 		waitpid(childpid, &status, 0);
 		// TODO: Use the proper macro!
-		if ( 128 <= status )
+		if ( 128 <= WEXITSTATUS(status) || WIFSIGNALED(status) )
 		{
 			printf("Looks like the system crashed, trying to bring it back up.\n");
 			return runsystem();

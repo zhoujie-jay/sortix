@@ -365,14 +365,13 @@ Try make sure the desired driver is loaded and is configured correctly.\n");
 		if ( childpid < 0 ) { perror("fork"); exit(1); }
 		if ( childpid )
 		{
-			// TODO: Use the right WEXITSTATUS-ish macros here!
 			int status;
 			waitpid(childpid, &status, 0);
 			if ( !SetCurrentMode(prevmode) )
 			{
 				error(1, errno, "Unable to restore video mode: %s", prevmode);
 			}
-			exit(status);
+			exit(WEXITSTATUS(status));
 		}
 		execvp(argv[1], argv + 1);
 		perror(argv[1]);

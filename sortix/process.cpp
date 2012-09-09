@@ -374,7 +374,7 @@ namespace Sortix
 
 		int exitstatus = zombie->exitstatus;
 		if ( exitstatus < 0 )
-			exitstatus = 0;
+			exitstatus = W_EXITCODE(128 + SIGKILL, SIGKILL);
 
 		// TODO: Validate that status is a valid user-space int!
 		if ( status )
@@ -396,7 +396,7 @@ namespace Sortix
 		ScopedLock lock(&threadlock);
 		// Status codes can only contain 8 bits according to ISO C and POSIX.
 		if ( exitstatus == -1 )
-			exitstatus = status % 256;
+			exitstatus = W_EXITCODE(status & 0xFF, 0);
 
 		// Broadcast SIGKILL to all our threads which will begin our long path
 		// of process termination. We simply can't stop the threads as they may

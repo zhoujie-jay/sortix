@@ -173,20 +173,25 @@ readcmd:
 		}
 
 		status = internalresult;
-		if ( !internal && waitpid(childpid, &status, 0) < 0 )
+		int exitstatus;
+		if ( !internal && waitpid(childpid, &exitstatus, 0) < 0 )
 		{
 			perror("waitpid");
 			return 127;
 		}
 
+		// TODO: HACK: Most signals can't kill processes yet.
+		if ( WEXITSTATUS(exitstatus) == 128 + SIGINT )
+			printf("^C\n");
+		if ( WTERMSIG(status) == SIGKILL )
+			printf("Killed\n");
+
+		status = WEXITSTATUS(exitstatus);
+
 		if ( strcmp(execmode, ";") == 0 && tokens[cmdnext] && !lastcmd )
 		{
 			goto readcmd;
 		}
-
-		// TODO: Hack, use the right macros!
-		if ( status == 128 + SIGINT )
-			printf("^C\n");
 
 		result = status;
 		goto out;
