@@ -75,6 +75,8 @@ namespace Sortix
 		void DetectBus(unsigned busid, uint16_t ioport, uint16_t altio)
 		{
 			ATABus* bus = ATA::CreateBus(ioport, altio);
+			if ( !bus )
+				return;
 			DetectDrive(busid, bus, 0);
 			DetectDrive(busid, bus, 1);
 		}
