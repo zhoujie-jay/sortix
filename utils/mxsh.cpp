@@ -314,18 +314,32 @@ void get_and_run_command()
 	argv[0] = NULL;
 
 	bool lastwasspace = true;
+	bool escaped = false;
 	for ( size_t i = 0; i <= commandused; i++ )
 	{
 		switch ( command[i] )
 		{
+			case '\\':
+				if ( !escaped )
+				{
+					memmove(command + i, command + i + 1, commandused+1 - (i-1));
+					i--;
+					commandused--;
+					escaped = true;
+					break;
+				}
 			case '\0':
 			case ' ':
 			case '\t':
 			case '\n':
-				command[i] = 0;
-				lastwasspace = true;
-				break;
+				if ( !command[i] || !escaped )
+				{
+					command[i] = 0;
+					lastwasspace = true;
+					break;
+				}
 			default:
+				escaped = false;
 				if ( lastwasspace ) { argv[argc++] = command + i; }
 				lastwasspace = false;
 		}
