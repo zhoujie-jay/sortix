@@ -357,8 +357,9 @@ namespace Sortix
 			if ( options & WNOHANG )
 				return 0;
 			zombiewaiting++;
-			kthread_cond_wait(&zombiecond, &childlock);
+			unsigned long r = kthread_cond_wait_signal(&zombiecond, &childlock);
 			zombiewaiting--;
+			if ( !r ) { Error::Set(EINTR); return -1; }
 		}
 
 		if ( zombie->prevsibling )
