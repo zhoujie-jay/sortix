@@ -61,18 +61,34 @@ typedef signed long __intptr_t;
 typedef unsigned long __uintptr_t;
 typedef signed long __ptrdiff_t;
 
-#define __INT8_MIN (0x80)
-#define __INT16_MIN (0x8000)
-#define __INT32_MIN (0x80000000)
-#define __INT64_MIN (0x8000000000000000ULL)
-#define __INT8_MAX (0x7F)
-#define __INT16_MAX (0x7FFF)
-#define __INT32_MAX (0x7FFFFFFF)
-#define __INT64_MAX (0x7FFFFFFFFFFFFFFFULL)
-#define __UINT8_MAX (0xFF)
-#define __UINT16_MAX (0xFFFF)
-#define __UINT32_MAX (0xFFFFFFFF)
-#define __UINT64_MAX (0xFFFFFFFFFFFFFFFFULL)
+#if defined(__x86_64__)
+#define __WORDSIZE 64
+#elif defined(__i386__)
+#define __WORDSIZE 32
+#else
+#error __WORDSIZE not declared on this CPU.
+#endif
+
+# if __WORDSIZE == 64
+#  define __INT64_C(c)	c ## L
+#  define __UINT64_C(c)	c ## UL
+# else
+#  define __INT64_C(c)	c ## LL
+#  define __UINT64_C(c)	c ## ULL
+# endif
+
+#define __INT8_MIN (127-1)
+#define __INT16_MIN (-32767-1)
+#define __INT32_MIN (-2147483647-1)
+#define __INT64_MIN (-__INT64_C(9223372036854775807)-1)
+#define __INT8_MAX (127)
+#define __INT16_MAX (32767)
+#define __INT32_MAX (2147483647)
+#define __INT64_MAX (__INT64_C(9223372036854775807))
+#define __UINT8_MAX (255)
+#define __UINT16_MAX (65535)
+#define __UINT32_MAX (4294967295U)
+#define __UINT64_MAX (__UINT64_C(18446744073709551615))
 
 #define __INTMAX_MIN __INT64_MIN
 #define __INTMAX_MAX __INT64_MAX
