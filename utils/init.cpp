@@ -55,7 +55,7 @@ int runsystem()
 			printf("Looks like the system crashed, trying to bring it back up.\n");
 			return runsystem();
 		}
-		return status;
+		return WEXITSTATUS(status);
 	}
 
 	int ret = child();

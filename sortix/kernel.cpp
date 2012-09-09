@@ -32,6 +32,7 @@
 #include <sortix/kernel/textbuffer.h>
 #include <sortix/kernel/pci.h>
 #include <sortix/kernel/worker.h>
+#include <sortix/wait.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
@@ -330,6 +331,8 @@ static void BootThread(void* /*user*/)
 	pid_t pid = CurrentProcess()->Wait(init->pid, &status, 0);
 	if ( pid != init->pid )
 		PanicF("Waiting for init to exit returned %i (errno=%i)", pid, errno);
+
+	status = WEXITSTATUS(status);
 
 	switch ( status )
 	{
