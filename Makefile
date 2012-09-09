@@ -12,7 +12,9 @@ ifndef O
     O=-O2
     MFLAGS:=$(MFLAGS) 0=$(O)
 endif
-
+ifndef BENCH
+    BENCH:=1
+endif
 ifeq ($(BENCH),1)
     EXTRAMODULES:=$(EXTRAMODULES) bench
 endif
