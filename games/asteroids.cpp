@@ -254,7 +254,7 @@ bool InsideTriangle(const Vector& a, const Vector& b, const Vector& c,
                     const Vector& p)
 {
 	return !AboveLine(a, b, p) && !AboveLine(b, c, p) && !AboveLine(c, a, p);
-} 
+}
 
 class Object;
 class Actor;
