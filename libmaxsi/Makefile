@@ -192,6 +192,9 @@ BINS=libc.a libg.a libmaxsi.a libmaxsi-sortix.a $(CRTOBJ)
 
 all: $(BINS)
 
+.PHONY: all headers clean install install-include-dirs install-headers \
+        install-lib-dirs install-libs
+
 libmaxsi.a: $(OBJS)
 	ar rcs libmaxsi.a $(OBJS)
 
@@ -257,12 +260,20 @@ clean:
 	rm -rf sortix $(HEADERDIRS)
 
 # Installation into sysroot
-install:
-	mkdir -p $(SYSROOT)/usr/lib
-	for F in $(BINS); do cp -P $$F $(SYSROOT)/usr/lib || exit $?; done
-	for D in $(UNPROCHEADERDIRS); do mkdir -p $(SYSROOT)/usr/$$D || exit $?; done
-	for SRC in $(HEADERS); do DEST=`echo $$SRC | sed 's/preproc/include/'`; cp $$SRC $(SYSROOT)/usr/$$DEST || exit $?; done
+install: install-headers install-libs
+
+install-include-dirs: headers
 	mkdir -p $(SYSROOT)/usr/include
+	for D in $(UNPROCHEADERDIRS); do mkdir -p $(SYSROOT)/usr/$$D || exit $?; done
+
+install-headers: install-include-dirs headers
+	for SRC in $(HEADERS); do DEST=`echo $$SRC | sed 's/preproc/include/'`; cp $$SRC $(SYSROOT)/usr/$$DEST || exit $?; done
+
+install-lib-dirs: all
+	mkdir -p $(SYSROOT)/usr/lib
+
+install-libs: install-lib-dirs all
+	for F in $(BINS); do cp -P $$F $(SYSROOT)/usr/lib || exit $?; done
 	touch deleteme.cpp
 	g++ $(CPUFLAGS) -c deleteme.cpp -o deleteme.o
 	for F in libgcc.so libm.so libstdc++.so; do ld $(CPULDFLAGS) -shared deleteme.o -o $(SYSROOT)/usr/lib/$$F; done

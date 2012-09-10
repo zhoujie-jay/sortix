@@ -49,6 +49,9 @@ all: $(INITRD)
 suball:
 	(for D in $(MODULES); do ($(MAKE) all $(MFLAGS) --directory $$D && $(MAKE) install $(MFLAGS) --directory $$D) || exit $?; done)
 
+sysroot-base-headers:
+	(for D in libmaxsi sortix; do ($(MAKE) install-headers $(MFLAGS) --directory $$D) || exit $?; done)
+
 clean:
 	rm -rf $(SYSROOT)
 	rm -f $(INITRD)

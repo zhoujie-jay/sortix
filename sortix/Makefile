@@ -153,6 +153,10 @@ JSOBJS:=$(subst .o,-js.o,$(OBJS))
 
 all: sortix.bin
 
+.PHONY: all headers clean install install-include-dirs install-headers
+
+headers:
+
 # jssortix compilation
 
 jssortix: jssortix.bin
@@ -192,10 +196,14 @@ clean:
 	for D in $(DIRS); do rm -f $$D/*.o $$D/*.bin $$D/*.out $$D/*.tmp; done
 
 # Installation into sysroot
-install:
+install: install-headers
+
+install-include-dirs: headers
 	for DIR in $(HEADERDIRS); do \
 		mkdir -p $(SYSROOT)/usr/$$DIR; \
 	done
+
+install-headers: install-include-dirs headers
 	for FILE in $(HEADERS); do \
 		cp $$FILE $(SYSROOT)/usr/$$FILE; \
 	done
