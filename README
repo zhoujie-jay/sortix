@@ -5,7 +5,7 @@ more about kernel and operating system design and implementation. Today it is
 gradually transforming into a real operating system. The standard library and
 kernel is rich enough that some third party software can and has been ported to
 Sortix. While the system remains limited, there have been added support for
-bitmap graphics and proper filesystem support being worked on. Unfortunately
+bitmap graphics and proper filesystem support is being worked on. Unfortunately
 there is no support for networking yet. The current release ships with various
 test programs, utility programs and a few games and has support for rendering
 the console in graphics mode.
@@ -38,19 +38,23 @@ and piping the standard output of a process into the standard input of another.
 A real shell will be added as the system matures and I get around to finish the
 work-in-progress shell.
 
-A number of standard utilities are present such as cat, head, tail, clear, cp,
-column, kill, ls, rm, pwd, uname, echo, and uptime. There is even a number of
-non-standard utilities such as calc, help, init, kernelinfo, memstat, and pager.
-This collection of utilities will continue to grow as it matures and third party
-software is ported. I've currently had some luck partially porting binutils,
-freetype, ocaml, and gzip, but the system isn't fully ready for such software
-yet.
+The official distribution contains a number of small utilities one would expect
+on a unix system, such as cp, cat, ls, and so on. There are a lot of common
+utilities missing as I haven't coded them yet. The purpose of the current
+userspace is simply to test the system so don't expect too much.
+
+Unfortunately, for technical reasons, I don't distribute ported third party
+software along with Sortix. This is largely because the build system sucks but
+also that statically linked libraries are big and the initrd is already big
+enough as it is. However, I have successfully ported binutils, gcc, gzip, zlib,
+freetype, GNU hello, and more. Once proper filesystem support is merged, I can
+distribute third party software separately and it can be mounted during boot.
 
 A number of small games is present and uses the VGA textmode to render ASCII
 graphics. Notably you can play two-player Pong, or single-player Snake, or the
 nice and Turing-complete Conway's Game of Life. There is also a small remake of
-the asteroids game which uses 32-bit bitmap graphics. These are probably the main
-attraction of the system for non-technical people.
+the asteroids game which uses 32-bit bitmap graphics. These are probably the
+main attraction of the system for non-technical people.
 
 The Sortix kernel has very basic filesystem support. The root filesystem / is
 simply a single-directory RAM filesystem. The init ramdisk is mounted read-only
@@ -69,20 +73,24 @@ Improvements in Sortix 0.7
 The 0.7 release improves greatly upon Sortix 0.6.
 
 * Multithreaded and fully preemptive kernel.
-* Support for Streaming SIMD Extensions (SSE).
+* Support for Streaming SIMD Extensions (SSE) and floating point numbers.
 * Support for bitmap graphics through new /dev/video/ framework.
 * Environmental variables.
 * Rewritten and powerful initrd format.
 * Init restarts the shell if it crashes.
-* Driver for doing BIOS calls.
-* VBE graphics driver.
 * BGA graphics driver.
 * Console rendering in graphics mode.
 * Asteroids remake.
 * Improved signal handling.
 * VEOF support in terminal driver and shell.
-* Misc. shell improvements.
-* Greatly improved and refactored kernel and standard library.
+* Various shell improvements.
+* Implement scanf function family.
+* Support for using PAT and MTRR to speed up video memory access.
+* Countless improvements to the kernel and the standard library.
+
+In addition, a BIOS call driver was created during the 0.7 cycle as well as a
+VBE graphics driver. However, the BIOS driver only worked on 32-bit CPUs and
+hence wasn't merged in time. As the VBE driver depended on it, it was cut too.
 
 Known bugs
 ----------
@@ -93,8 +101,9 @@ critical and improvement situation from the last release.
 
 The shell only looks at whitespace when parsing input lines. This means that
 operators such as & ; and | must be surrounded by whitespace on both sides.
-Support for quotes and escape characters is also not implemented yet. The shell
-does not accept very long lines yet.
+While quotes aren't implemented, you can work around this by using backslahes
+to escape all characters except newlines. The shell does not accept very long
+lines yet.
 
 Some programs change the format of the terminal standard input delivered to
 them. For instance, the pong game needs to capture every keyboard event. However
@@ -114,9 +123,13 @@ you may experience the utilities returning the wrong error codes. This is
 harmless but confusing. All the current kernel filesystem code will be replaced
 a user-space filesystem framework and will be present in the next release.
 
+The system can partially deadlock if a process exits and zombie children are not
+collected yet.
+
 Improvements scheduled for Sortix 0.8
 -------------------------------------
 * New build system based on cross compilation and package management.
+* Merge BIOS and VBE drivers.
 * Kernel virtual filesystem.
 * User-space filesystem framework.
 * User-space ext2 filesystem driver.
@@ -125,6 +138,7 @@ Improvements scheduled for Sortix 0.8
 * Improved terminal framework.
 * New and improved shell.
 * Copy-on-write in fork(2) and mmap(2).
+* Pointer-safe system calls.
 * And various misc. improvements.
 
 Technical details
