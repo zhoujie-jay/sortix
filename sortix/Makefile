@@ -1,31 +1,27 @@
-ifndef O
-    O:=-O3
-endif
+include ../compiler.mak
+include ../version.mak
+include ../dirs.mak
 
-ifndef CPU
-    CPU=x86
+ifndef OPTLEVEL
+    OPTLEVEL:=-O2
 endif
 
 ifeq ($(CPU),x86)
     BUILDID=x86
     X86FAMILY=1
-    CPUDEFINES=-DPLATFORM_X86
-    CPUFLAGS=-m32
-    CPULDFLAGS=-melf_i386
-    CPUASFLAGS=-32
+    CPUFLAGS=
+    CPULDFLAGS=
     CPUNASMFLAGS=-felf32
-    CPUOBJS=$(CPU)/boot.o $(CPU)/base.o $(CPU)/x86.o
+    CPUOBJS:=$(CPU)/boot.o $(CPU)/base.o $(CPU)/x86.o
 endif
 
 ifeq ($(CPU),x64)
     BUILDID=x64
     X86FAMILY=1
-    CPUDEFINES=-DPLATFORM_X64
-    CPUFLAGS=-m64 -ffreestanding -mno-red-zone
-    CPULDFLAGS=-melf64-little -z max-page-size=0x1000
-    CPUASFLAGS=-64
+    CPUFLAGS=-ffreestanding -mno-red-zone
+    CPULDFLAGS=-z max-page-size=0x1000
     CPUNASMFLAGS=-felf64
-    CPUOBJS=$(CPU)/base.o $(CPU)/x64.o
+    CPUOBJS:=$(CPU)/base.o $(CPU)/x64.o
 endif
 
 ifdef X86FAMILY
@@ -49,11 +45,7 @@ endif
 
 DIRS=. x64 x86 x86-family fs kb kb/layout
 
-DEFINES:=-DSORTIX_KERNEL -U_GNU_SOURCE $(CPUDEFINES)
-ifeq ($(JSSORTIX),1)
-    DEFINES:=$(DEFINES) -DPLATFORM_SERIAL -DJSSORTIX
-    BUILDID:=$(BUILDID)-js
-endif
+DEFINES:=-DSORTIX_KERNEL -U_GNU_SOURCE
 ifeq ($(PANIC_SHORT),1)
     DEFINES:=$(DEFINES) -DPANIC_SHORT
 endif
@@ -71,22 +63,22 @@ ifdef VERSION
     DEFINES:=$(DEFINES) -DVERSIONSTR=\"$(VERSION)\"
 endif
 
-INCLUDES=-I. -Iinclude -I../libmaxsi/preproc
+INCLUDES=-I. -Iinclude
 CPPFLAGS=$(INCLUDES) $(DEFINES)
 ifeq ($(DEBUG_KERNEL),1)
     FLAGSDEBUG=-g3
 else
-    FLAGSDEBUG=-s $(O)
+    FLAGSDEBUG=$(OPTLEVEL)
 endif
-FLAGS=$(CPUFLAGS) -Wall  -Wall -Wextra -nostdlib -fno-builtin -nostartfiles \
+FLAGS=$(CPUFLAGS) -Wall  -Wall -Wextra -nostdlib -nostartfiles \
       -nodefaultlibs -fno-stack-protector $(FLAGSDEBUG)
 CFLAGS=$(FLAGS)
 CXXFLAGS=$(FLAGS) -std=gnu++0x -fno-exceptions -fno-rtti
-ASFLAGS=$(CPUASFLAGS)
+ASFLAGS=
 NASMFLAGS=$(CPUNASMFLAGS)
 
 STATICLIBS=\
-../libmaxsi/libmaxsi-sortix.a \
+-lmaxsi-sortix \
 
 HEADERDIRS:=$(shell find include -type d)
 HEADERS:=$(shell find include -type f)
@@ -146,10 +138,10 @@ fs/initfs.o \
 fs/ramfs.o \
 fs/videofs.o \
 ata.o \
-$(STATICLIBS) \
-end.o # Must be last, determines kernel size.
 
-JSOBJS:=$(subst .o,-js.o,$(OBJS))
+ALLOBJS=\
+$(OBJS) \
+end.o
 
 all: sortix.bin
 
@@ -157,26 +149,18 @@ all: sortix.bin
 
 headers:
 
-# jssortix compilation
-
-jssortix: jssortix.bin
-
-sortix-x86-js.tmp: $(OBJS)
-	ld -melf_i386 -Ttext 100000 -o sortix-x86-js-internal.out $(OBJS)
-	objcopy -O binary sortix-x86-js-internal.out $@
-
 # x64 compilation
 x64/boot.o: x64/boot.s
-	as -64 $< -o $@
+	$(HOSTAS) -64 $< -o $@
 
-sortix-x64.tmp: $(OBJS) x64/boot.o
-	ld -N -melf_x86_64 -Ttext 100000 -o sortix-x64-internal.out x64/boot.o $(OBJS)
-	objcopy sortix-x64-internal.out -O elf32-i386 sortix-x64.tmp
+sortix-x64.tmp: $(ALLOBJS) x64/boot.o
+	$(HOSTLD) -N -melf_x86_64_sortix -Ttext 100000 -o sortix-x64-internal.out x64/boot.o $(OBJS) $(STATICLIBS) end.o
+	$(HOSTOBJCOPY) sortix-x64-internal.out -O elf32-i386 sortix-x64.tmp
 
 # x86 compilation
 
-sortix-x86.tmp: $(OBJS)
-	ld -melf_i386 -Ttext 100000 -o $@ $(OBJS)
+sortix-x86.tmp: $(ALLOBJS)
+	$(HOSTLD) -melf_i386_sortix -Ttext 100000 -o $@ $(OBJS) $(STATICLIBS) end.o
 
 # general rules
 
@@ -184,10 +168,10 @@ sortix.bin: sortix-$(BUILDID).tmp
 	cp -vu $< $@
 
 %.o: %.cpp
-	g++ -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
+	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 
 %.o: %.s
-	as $(ASFLAGS) $< -o $@
+	$(HOSTAS) $< -o $@ $(ASFLAGS)
 
 %.o: %.asm
 	nasm $(NASMFLAGS) $< -o $@
@@ -196,15 +180,26 @@ clean:
 	for D in $(DIRS); do rm -f $$D/*.o $$D/*.bin $$D/*.out $$D/*.tmp; done
 
 # Installation into sysroot
-install: install-headers
+install: install-headers install-kernel
 
 install-include-dirs: headers
-	for DIR in $(HEADERDIRS); do \
-		mkdir -p $(SYSROOT)/usr/$$DIR; \
+	mkdir -p $(INSTALLINCLUDEDIR)
+	DIRS=$$(echo $(HEADERDIRS) | \
+	        tr ' ' '\n' | \
+	        sed 's/include\/*//'); \
+	for D in $$DIRS; do \
+	  mkdir -p $(INSTALLINCLUDEDIR)/$$D || exit $?; \
 	done
 
 install-headers: install-include-dirs headers
-	for FILE in $(HEADERS); do \
-		cp $$FILE $(SYSROOT)/usr/$$FILE; \
+	for SRC in $(HEADERS); do \
+	  DEST=`echo $$SRC | sed 's/include\///'`; \
+	  cp -P $$SRC $(INSTALLINCLUDEDIR)/$$DEST || exit $?; \
 	done
+
+install-kernel: install-kernel-binary
+
+install-kernel-binary:
+	mkdir -p $(INSTALLBOOTDIR)/$(HOST)
+	cp -P sortix.bin $(INSTALLBOOTDIR)/$(HOST)
 

@@ -1,1 +1,3 @@
 *.o
+benchctxswitch
+benchsyscall

@@ -1,36 +1,48 @@
-BITS:=$(shell getconf LONG_BIT)
-ifndef CPU
-    ifeq ($(BITS),64)
-        CPU:=x64
-    else
-        CPU:=x86
-    endif
-    MFLAGS:=$(MFLAGS) CPU=$(CPU)
-endif
+include compiler.mak
+include version.mak
 
-ifndef O
-    O=-O2
-    MFLAGS:=$(MFLAGS) 0=$(O)
+ifneq ($(BUILD_LIBC),0)
+  MODULES:=$(MODULES) libmaxsi
 endif
-ifndef BENCH
-    BENCH:=1
+ALLMODULES:=$(ALLMODULES) libmaxsi
+
+ifneq ($(BUILD_GAMES),0)
+  MODULES:=$(MODULES) games
 endif
-ifeq ($(BENCH),1)
-    EXTRAMODULES:=$(EXTRAMODULES) bench
+ALLMODULES:=$(ALLMODULES) games
+
+ifneq ($(BUILD_MKINITRD),0)
+  MODULES:=$(MODULES) mkinitrd
 endif
+ALLMODULES:=$(ALLMODULES) mkinitrd
+
+ifneq ($(BUILD_UTILS),0)
+  MODULES:=$(MODULES) utils
+endif
+ALLMODULES:=$(ALLMODULES) utils
+
+ifneq ($(BUILD_BENCH),0)
+  MODULES:=$(MODULES) bench
+endif
+ALLMODULES:=$(ALLMODULES) bench
+
+ifneq ($(BUILD_KERNEL),0)
+  MODULES:=$(MODULES) sortix
+endif
+ALLMODULES:=$(ALLMODULES) sortix
 
 ifndef SYSROOT
-    SYSROOT:=$(shell pwd)/sysroot
-    MFLAGS:=$(MFLAGS) SYSROOT=$(SYSROOT)
+  SYSROOT:=$(shell pwd)/sysroot
+  MFLAGS:=$(MFLAGS) SYSROOT=$(SYSROOT)
 endif
 
-REMOTE=192.168.2.6
-REMOTEUSER=sortie
-REMOTECOPYDIR:=/home/$(REMOTEUSER)/Desktop/MaxsiOS
-MODULES=libmaxsi games mkinitrd utils $(EXTRAMODULES) sortix
-ALLMODULES=libmaxsi games mkinitrd utils bench sortix
+ifndef PREFIXNAME
+  PREFIXNAME:=/
+  MFLAGS:=$(MFLAGS) PREFIXNAME=$(PREFIXNAME)
+endif
 
-VERSION=0.8dev
+include dirs.mak
+
 DEBNAME:=sortix_$(VERSION)_$(CPU)
 DEBSRCNAME:=sortix_$(VERSION)
 DEBDIR:=builds/$(DEBNAME)
@@ -39,42 +51,63 @@ DEBFILE:=builds/$(DEBNAME).deb
 PACKAGENAME:=sortix
 ISODIR:=builds/$(DEBNAME)-iso
 ISOFILE:=builds/$(DEBNAME).iso
-INITRDDIR:=initrd
-INITRD=sortix/sortix.initrd
+INITRD=$(INSTALLBOOTDIR)/$(HOST)/sortix.initrd
 
 MFLAGS:=$(MFLAGS) VERSION=$(VERSION)
 
 all: $(INITRD)
 
-suball:
-	(for D in $(MODULES); do ($(MAKE) all $(MFLAGS) --directory $$D && $(MAKE) install $(MFLAGS) --directory $$D) || exit $?; done)
+.PHONY: all suball sysroot-base-headers sysroot-fsh clean distclean \
+        everything everything-all-archs all-archs linecount install uninstall \
+        deb debfile debsource iso run-virtualbox run-virtualbox-debug \
+        clean-builds clean-sysroot
 
-sysroot-base-headers:
-	(for D in libmaxsi sortix; do ($(MAKE) install-headers $(MFLAGS) --directory $$D) || exit $?; done)
+suball: sysroot-base-headers
+	(for D in $(MODULES); do ($(MAKE) all $(MFLAGS) --directory $$D && $(MAKE) install $(MFLAGS) --directory $$D) || exit $$?; done)
+
+sysroot-base-headers: sysroot-fsh
+	(for D in libmaxsi sortix; do ($(MAKE) install-headers $(MFLAGS) --directory $$D) || exit $$?; done)
+
+sysroot-fsh:
+	mkdir -p "$(SYSROOT)"
+	for DIRNAME in bin boot lib include; do (\
+	  mkdir -p "$(SYSROOT)/$$DIRNAME" &&\
+	  mkdir -p "$(SYSROOT)/$$DIRNAME/$(HOST)" \
+	) || exit $$?; done;
+	if [ ! -e "$(SYSROOT)/usr" ]; then ln -s . "$(SYSROOT)/usr"; fi
 
 clean:
-	rm -rf $(SYSROOT)
-	rm -f $(INITRD)
-	rm -f initrd/*
-	(for D in $(ALLMODULES); do $(MAKE) clean $(MFLAGS) --directory $$D || exit $?; done)
+	rm -f "$(INITRD)"
+	rm -f sortix/sortix.initrd # Backwards compatibility, not needed for newer builds.
+	rm -f initrd/* # Backwards compatibility, not needed for newer builds.
+	(for D in $(ALLMODULES); do $(MAKE) clean $(MFLAGS) --directory $$D || exit $$?; done)
 
-distclean: clean cleanbuilds
-
-cleanbuilds:
+clean-builds:
 	rm -rf builds/
 	rm -f sortix.iso
+
+clean-sysroot:
+	rm -rf "$(SYSROOT)"
+
+distclean: clean clean-builds clean-sysroot
 
 everything: all deb iso
 
 everything-all-archs:
 	$(MAKE) clean $(MFLAGS)
-	$(MAKE) everything $(MFLAGS) CPU=x86
+	$(MAKE) everything $(MFLAGS) HOST=i486-sortix
 	$(MAKE) clean $(MFLAGS)
-	$(MAKE) everything $(MFLAGS) CPU=x64
+	$(MAKE) everything $(MFLAGS) HOST=x86_64-sortix
+
+all-archs:
+	$(MAKE) clean $(MFLAGS)
+	$(MAKE) all $(MFLAGS) HOST=i486-sortix
+	$(MAKE) clean $(MFLAGS)
+	$(MAKE) all $(MFLAGS) HOST=x86_64-sortix
 
 # Initializing RamDisk
 $(INITRD): suball
-	mkinitrd/mkinitrd initrd -o $(INITRD)
+	mkinitrd/mkinitrd $(SYSROOT)/bin/$(HOST) -o $(INITRD)
 
 # Statistics
 linecount:
@@ -92,18 +125,6 @@ install: all
 uninstall:
 	rm -f /boot/sortix.bin
 	rm -f /etc/grub.d/42_sortix
-	update-grub
-
-# Remote machine
-
-install-remote: all
-	scp -r ./ $(REMOTE):$(REMOTECOPYDIR)
-	scp sortix/sortix.bin root@$(REMOTE):/boot
-	scp $(INITRD) root@$(REMOTE):/boot
-	ssh root@$(REMOTE) "init 6"
-
-uninstall-remote:
-	ssh root@$(REMOTE) "rm /boot/sortix.bin"
 
 # Packaging
 
@@ -114,7 +135,7 @@ debfile: all
 	mkdir -p $(DEBDIR)
 	mkdir -p $(DEBDIR)/boot
 	cp sortix/sortix.bin $(DEBDIR)/boot
-	cp sortix/sortix.initrd $(DEBDIR)/boot
+	cp $(INITRD) $(DEBDIR)/boot
 	expr \( `stat --printf="%s" $(DEBDIR)/boot/sortix.bin` \
 	      + `stat --printf="%s" $(DEBDIR)/boot/sortix.initrd` \
 	      + 1023 \) / 1024 > $(DEBDIR)/boot/deb.size
@@ -137,14 +158,14 @@ debsource: all
 	rm -rf $(DEBSRCDIR)
 	mkdir -p $(DEBSRCDIR)
 	for D in `ls | grep -v builds | grep -v sysroot`; do cp -r $$D $(DEBSRCDIR); done
-	(cd $(DEBSRCDIR) && make distclean)
+	(cd $(DEBSRCDIR) && make distclean SYSROOT=$(shell pwd)/$(DEBSRCDIR)/sysroot)
 	rm -rf $(DEBSRCDIR)/sysroot
 	(cd builds && tar cfz $(DEBSRCNAME)-src.tar.gz $(DEBSRCNAME)-src)
 	rm -rf $(DEBSRCDIR)
 
 # Bootable images
 
-iso: all debsource
+$(ISOFILE): all debsource
 	rm -rf $(ISODIR)
 	mkdir -p builds
 	mkdir -p $(ISODIR)
@@ -155,8 +176,10 @@ iso: all debsource
 	grub-mkrescue -o $(ISOFILE) $(ISODIR)
 	rm -rf $(ISODIR)
 
+iso: $(ISOFILE)
+
 sortix.iso: iso
-	cp $(ISOFILE) sortix.iso
+	cp $(ISOFILE) $@
 
 # Virtualization
 run-virtualbox: sortix.iso
@@ -164,5 +187,4 @@ run-virtualbox: sortix.iso
 
 run-virtualbox-debug: sortix.iso
 	virtualbox --debug --start-running --startvm sortix
-
 

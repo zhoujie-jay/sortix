@@ -1,29 +1,32 @@
-ifndef CPU
-    CPU=x86
+include ../compiler.mak
+include ../version.mak
+include ../dirs.mak
+
+ifndef OPTLEVEL
+    OPTLEVEL:=-O2
 endif
 
-ifeq ($(CPU),x86)
-    CPUDEFINES=-DPLATFORM_X86
-    CPUFLAGS=-m32
-    CPULDFLAGS=-melf_i386
-    CPUASFLAGS=-32
+ifeq ($(DEBUG_LIBC),1)
+    FLAGSDEBUG=-g3
+else
+    FLAGSDEBUG=$(OPTLEVEL)
 endif
 
-ifeq ($(CPU),x64)
-    CPU=x64
-    CPUDEFINES=-DPLATFORM_X64
-    CPUFLAGS=-fPIC -m64 -mno-red-zone
-    CPULDFLAGS=-melf_x86_64
-    CPUASFLAGS=-64
+CPUDIR:=$(CPU)
+
+ifeq ($(HOST),i486-sortix)
+    CPUFLAGS=
 endif
 
-CPPINCLUDES=-I preproc -I ../sortix/include
-CPPFLAGS=-DLIBMAXSI_LIBRARY -DSORTIX -U_GNU_SOURCE $(CPUDEFINES) $(CPPINCLUDES)
-FLAGS=$(CPUFLAGS) -Wall -Wextra -nostdlib -fno-builtin -nostartfiles \
-                  -nodefaultlibs -fno-stack-protector -nostdinc
+ifeq ($(HOST),x86_64-sortix)
+    CPUFLAGS=-fPIC -mno-red-zone
+endif
+
+CPPINCLUDES=-I preproc
+CPPFLAGS=-DLIBMAXSI_LIBRARY -U_GNU_SOURCE $(CPUDEFINES) $(CPPINCLUDES)
+FLAGS=$(CPUFLAGS) -Wall -Wextra -fno-stack-protector $(FLAGSDEBUG)
 CFLAGS=$(FLAGS) -std=c99
-CXXFLAGS=$(FLAGS) -std=gnu++0x -fno-exceptions -nostdinc++ -fno-rtti
-LDFLAGS=$(CPULDFLAGS)
+CXXFLAGS=$(FLAGS) -std=gnu++0x -fno-exceptions -fno-rtti
 ASFLAGS=$(CPUASFLAGS)
 
 OBJS=\
@@ -48,8 +51,8 @@ isatty.o \
 kernelinfo.o \
 init.o \
 signal.o \
-$(CPU)/signal.o \
-$(CPU)/fork.o \
+$(CPUDIR)/signal.o \
+$(CPUDIR)/fork.o \
 time.o \
 random.o \
 abs.o \
@@ -188,7 +191,7 @@ crc32.o \
 SORTIXOBJS:=$(addprefix sortix/,$(SORTIXOBJS))
 SORTIXCPPFLAGS:=-DSORTIX_KERNEL
 
-BINS=libc.a libg.a libmaxsi.a libmaxsi-sortix.a $(CRTOBJ)
+BINS=libc.a libg.a libm.a libstdc++.a libmaxsi.a libmaxsi-sortix.a $(CRTOBJ)
 
 all: $(BINS)
 
@@ -196,36 +199,33 @@ all: $(BINS)
         install-lib-dirs install-libs
 
 libmaxsi.a: $(OBJS)
-	ar rcs libmaxsi.a $(OBJS)
-
-libmaxsi.so: $(OBJS)
-	ld $(LDFLAGS) -shared -o $@ $(OBJS)
+	$(HOSTAR) rcs libmaxsi.a $(OBJS)
 
 libmaxsi-sortix.a: $(SORTIXOBJS)
-	ar rcs libmaxsi-sortix.a $(SORTIXOBJS)
+	$(HOSTAR) rcs libmaxsi-sortix.a $(SORTIXOBJS)
 
 libc.a: libmaxsi.a
-	ln -sf $< $@
-
-libc.so: libmaxsi.so
 	ln -sf $< $@
 
 libg.a: libc.a
 	ln -sf $< $@
 
-libg.so: libc.so
-	ln -sf $< $@
+libm.a:
+	$(HOSTAR) rcs $@
 
-start.o: $(CPU)/start.o
+libstdc++.a:
+	$(HOSTAR) rcs $@
+
+start.o: $(CPUDIR)/start.o
 	ln -f $< $@
 
-crt1.o: $(CPU)/crt1.o
+crt1.o: $(CPUDIR)/crt1.o
 	ln -f $< $@
 
-crti.o: $(CPU)/crti.o
+crti.o: $(CPUDIR)/crti.o
 	ln -f $< $@
 
-crtn.o: $(CPU)/crtn.o
+crtn.o: $(CPUDIR)/crtn.o
 	ln -f $< $@
 
 # header preprocessing
@@ -239,20 +239,20 @@ headers: $(HEADERDIRS) $(HEADERS)
 
 # standard library
 %.o: %.c headers
-	gcc -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
+	$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
 
 %.o: %.cpp headers
-	g++ -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
+	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 
 %.o: %.s
-	as $(ASFLAGS) $< -o $@
+	$(HOSTAS) $(ASFLAGS) $< -o $@
 
 # libmaxsi-sortix
 sortix:
 	mkdir -p sortix
 
 sortix/%.o: %.cpp $(HEADERS) sortix
-	g++ -c $< -o $@ $(CPPFLAGS) $(SORTIXCPPFLAGS) $(CXXFLAGS)
+	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(SORTIXCPPFLAGS) $(CXXFLAGS)
 
 clean:
 	rm -f *.o sortix/*.o c/*.o x86/*.o x64/*.o *.a *.so
@@ -263,19 +263,26 @@ clean:
 install: install-headers install-libs
 
 install-include-dirs: headers
-	mkdir -p $(SYSROOT)/usr/include
-	for D in $(UNPROCHEADERDIRS); do mkdir -p $(SYSROOT)/usr/$$D || exit $?; done
+	mkdir -p $(INSTALLINCLUDEDIR)
+	DIRS=$$(echo $(UNPROCHEADERDIRS) | \
+	        tr ' ' '\n' | \
+	        sed 's/include\/*//'); \
+	for D in $$DIRS; do \
+	  mkdir -p $(INSTALLINCLUDEDIR)/$$D || exit $?; \
+	done
 
 install-headers: install-include-dirs headers
-	for SRC in $(HEADERS); do DEST=`echo $$SRC | sed 's/preproc/include/'`; cp $$SRC $(SYSROOT)/usr/$$DEST || exit $?; done
+	for SRC in $(HEADERS); do \
+	  DEST=`echo $$SRC | sed 's/preproc\///'`; \
+	  cp -P $$SRC $(INSTALLINCLUDEDIR)/$$DEST || exit $?; \
+	done
 
-install-lib-dirs: all
-	mkdir -p $(SYSROOT)/usr/lib
+install-lib-dirs:
+	mkdir -p $(INSTALLLIBDIR)
+	mkdir -p $(INSTALLLIBDIR)/$(HOST)
 
-install-libs: install-lib-dirs all
-	for F in $(BINS); do cp -P $$F $(SYSROOT)/usr/lib || exit $?; done
-	touch deleteme.cpp
-	g++ $(CPUFLAGS) -c deleteme.cpp -o deleteme.o
-	for F in libgcc.so libm.so libstdc++.so; do ld $(CPULDFLAGS) -shared deleteme.o -o $(SYSROOT)/usr/lib/$$F; done
-	rm -f deleteme.o deleteme.cpp
+install-libs: install-lib-dirs
+	for F in $(BINS); do \
+	  cp -P $$F $(INSTALLLIBDIR)/$(HOST) || exit $?; \
+	done
 

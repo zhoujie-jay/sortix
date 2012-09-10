@@ -1,11 +1,18 @@
-# Set up variables such that we can easily cross-compile.
-OSROOT=..
-include ../crosscompilemakefile.mak
+include ../compiler.mak
+include ../version.mak
+include ../dirs.mak
 
-CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra
+ifndef OPTLEVEL
+  OPTLEVEL=-O2
+endif
 
-INITRDDIR:=../initrd
-LOCALBINARIES:=\
+ifndef CXXFLAGS
+  CXXFLAGS:=$(OPTLEVEL)
+endif
+
+CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
+
+BINARIES:=\
 init \
 calc \
 cat \
@@ -31,21 +38,25 @@ head \
 tail \
 type \
 
-BINARIES:=$(addprefix $(INITRDDIR)/,$(LOCALBINARIES))
+all: $(BINARIES)
 
-all: install
+.PHONY: all install uninstall clean
 
-install: $(LOCALBINARIES)
-	cp $(LOCALBINARIES) $(INITRDDIR)
-	rm -f $(LOCALBINARIES)
+install: all
+	mkdir -p $(INSTALLBINDIR)/$(HOST)
+	install $(BINARIES) $(INSTALLBINDIR)/$(HOST)
+
+uninstall:
+	for FILE in $(INSTALLBINDIR); do \
+		rm -f $(INSTALLBINDIR)/$(HOST)/$$FILE; \
+	done
 
 %: %.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -O2 -c $< -o $@.o
-	$(LD) $(LDFLAGS) $@.o -o $@ $(LIBS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $< -o $@
 
 sh: mxsh
 	cp $< $@
 
 clean:
-	rm -f $(BINARIES) $(LOCALBINARIES) *.o
+	rm -f $(BINARIES) *.o
 
