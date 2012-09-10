@@ -30,7 +30,7 @@ REMOTECOPYDIR:=/home/$(REMOTEUSER)/Desktop/MaxsiOS
 MODULES=libmaxsi games mkinitrd utils $(EXTRAMODULES) sortix
 ALLMODULES=libmaxsi games mkinitrd utils bench sortix
 
-VERSION=0.7dev
+VERSION=0.7
 DEBNAME:=sortix_$(VERSION)_$(CPU)
 DEBSRCNAME:=sortix_$(VERSION)
 DEBDIR:=builds/$(DEBNAME)
