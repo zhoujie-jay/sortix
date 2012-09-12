@@ -20,12 +20,7 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/io.h>
-#include <libmaxsi/thread.h>
-#include <libmaxsi/string.h>
-#include <libmaxsi/sortix-vga.h>
-#include <libmaxsi/sortix-sound.h>
+#include <sortix/vga.h>
 #include <sys/keycodes.h>
 #include <sys/termmode.h>
 #include <stdio.h>
@@ -36,13 +31,11 @@
 #include <error.h>
 #include <string.h>
 
-using namespace Maxsi;
-
 int Init();
 void Reset();
 void ClearScreen();
 void Collision();
-void Goal(nat player);
+void Goal(unsigned player);
 void UpdateUI();
 void Update();
 void ReadInput();
@@ -150,11 +143,11 @@ void ClearScreen()
 
 void Collision()
 {
-	System::Sound::SetFrequency(collisionfreq);
+	//System::Sound::SetFrequency(collisionfreq);
 	soundleft = 40;
 }
 
-void Goal(nat player)
+void Goal(unsigned player)
 {
 	frame[ballx + bally*width] = ' ' | (COLOR8_WHITE << 8);
 
@@ -178,7 +171,7 @@ void Goal(nat player)
 	if ( ballvely > 0 ) { ballvely /= ballvely; }
 	if ( ballvely < 0 ) { ballvely /= -ballvely; }
 
-	System::Sound::SetFrequency(goalfreq);
+	//System::Sound::SetFrequency(goalfreq);
 	soundleft = 50;
 
 	UpdateUI();
@@ -191,10 +184,10 @@ void UpdateUI()
 	char num[12];
 	int len;
 
-	len = String::ConvertUInt32(p1score, num);
+	len = sprintf(num, "%u", p1score);
 	for ( int i = 0; i < len; i++ ) { frame[i] = ( frame[i] & 0xFF00 ) | num[i]; }
 
-	len = String::ConvertUInt32(p2score, num);
+	len = sprintf(num, "%u", p2score);
 	for ( int i = 0; i < len; i++ ) { frame[width - len + i] = ( frame[width - len + i] & 0xFF00 ) | num[i]; }
 }
 
@@ -275,11 +268,11 @@ int main(int argc, char* argv[])
 	int sleepms = 50;
 	for ( int i = 1; i < argc; i++ )
 	{
-		if ( String::Compare(argv[i], "--help") == 0 ) { return usage(argc, argv); }
-		if ( String::Compare(argv[i], "--usage") == 0 ) { return usage(argc, argv); }
-		if ( String::Compare(argv[i], "--speed") == 0 && 1 < argc-i )
+		if ( strcmp(argv[i], "--help") == 0 ) { return usage(argc, argv); }
+		if ( strcmp(argv[i], "--usage") == 0 ) { return usage(argc, argv); }
+		if ( strcmp(argv[i], "--speed") == 0 && 1 < argc-i )
 		{
-			sleepms = String::ToInt(argv[++i]);
+			sleepms = atoi(argv[++i]);
 		}
 	}
 
@@ -288,7 +281,7 @@ int main(int argc, char* argv[])
 
 	while (true)
 	{
-		Thread::USleep(sleepms * 1000);
+		usleep(sleepms * 1000);
 		ReadInput();
 		Update();
 		UpdateUI();
@@ -296,7 +289,7 @@ int main(int argc, char* argv[])
 		if ( /*soundleft < 0*/ false ) { continue; }
 		if ( soundleft <= 50 )
 		{
-			System::Sound::SetFrequency(0);
+			//System::Sound::SetFrequency(0);
 		}
 		else
 		{
