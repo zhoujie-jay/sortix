@@ -26,7 +26,6 @@
 #define SORTIX_KTHREAD_H
 
 #include <sortix/signal.h>
-#include "../../../signal.h"
 
 #define GOT_ACTUAL_KTHREAD
 
@@ -84,7 +83,6 @@ public:
 	{
 		this->mutex = mutex;
 		this->acquired = kthread_mutex_lock_signal(mutex);
-		ASSERT(acquired || Signal::IsPending());
 	}
 
 	~ScopedLockSignal()
