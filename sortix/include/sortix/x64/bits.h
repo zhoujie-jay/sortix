@@ -55,8 +55,8 @@ typedef __uint64_t __uintmax_t;
 
 /* Define an integer able to hold the size of the largest continuous memory */
 /* region and define pointer safe integer types. */
-typedef unsigned long __size_t;
-typedef signed long __ssize_t;
+typedef __SIZE_TYPE__ __size_t;
+typedef signed long int __ssize_t;
 typedef signed long __intptr_t;
 typedef unsigned long __uintptr_t;
 typedef signed long __ptrdiff_t;
