@@ -24,7 +24,6 @@
 *******************************************************************************/
 
 #include <libmaxsi/platform.h>
-#include <libmaxsi/io.h>
 #include <libmaxsi/memory.h>
 #include <string.h>
 
