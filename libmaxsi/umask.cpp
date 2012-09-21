@@ -22,18 +22,13 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
 #include <errno.h>
-
-namespace Maxsi {
 
 // TODO: Implement this in the kernel.
 extern "C" mode_t umask(mode_t mask)
 {
 	return 0;
 }
-
-} // namespace Maxsi

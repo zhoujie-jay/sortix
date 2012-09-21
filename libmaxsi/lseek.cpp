@@ -22,11 +22,8 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
+#include <sys/syscall.h>
 #include <unistd.h>
-
-namespace Maxsi {
 
 DEFN_SYSCALL3_VOID(SysSeek, SYSCALL_SEEK, int, off_t*, int);
 
@@ -35,5 +32,3 @@ extern "C" off_t lseek(int fd, off_t offset, int whence)
 	SysSeek(fd, &offset, whence);
 	return offset;
 }
-
-} // namespace Maxsi

@@ -22,17 +22,21 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
+#include <sys/syscall.h>
 #include <fcntl.h>
-
-namespace Maxsi {
+#include <stdarg.h>
 
 DEFN_SYSCALL3(int, SysOpen, SYSCALL_OPEN, const char*, int, mode_t);
 
-extern "C" int open(const char* path, int flags, mode_t mode)
+extern "C" int open(const char* path, int flags, ...)
 {
+	int mode = 0;
+	if ( flags & O_CREAT )
+	{
+		va_list ap;
+		va_start(ap, flags);
+		mode = va_arg(ap, mode_t);
+		va_end(ap);
+	}
 	return SysOpen(path, flags, mode);
 }
-
-} // namespace Maxsi

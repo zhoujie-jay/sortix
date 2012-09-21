@@ -24,8 +24,8 @@
 
 #include <libmaxsi/platform.h>
 #include <libmaxsi/memory.h>
-#include <libmaxsi/syscall.h>
 #include <libmaxsi/process.h>
+#include <sys/syscall.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>

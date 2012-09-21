@@ -22,11 +22,8 @@
 
 ******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
+#include <sys/syscall.h>
 #include <termios.h>
-
-namespace Maxsi {
 
 DEFN_SYSCALL2(int, SysTCGetWinSize, SYSCALL_TCGETWINSIZE, int, struct winsize*);
 
@@ -34,5 +31,3 @@ extern "C" int tcgetwinsize(int fd, struct winsize* ws)
 {
 	return SysTCGetWinSize(fd, ws);
 }
-
-} // namespace Maxsi

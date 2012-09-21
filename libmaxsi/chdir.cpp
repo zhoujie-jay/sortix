@@ -22,10 +22,8 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
-
-namespace Maxsi {
+#include <sys/syscall.h>
+#include <unistd.h>
 
 DEFN_SYSCALL1(int, SysChDir, SYSCALL_CHDIR, const char*);
 
@@ -33,5 +31,3 @@ extern "C" int chdir(const char* path)
 {
 	return SysChDir(path);
 }
-
-} // namespace Maxsi

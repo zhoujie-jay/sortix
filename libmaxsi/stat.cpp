@@ -22,11 +22,8 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
 #include <sys/stat.h>
-
-namespace Maxsi {
+#include <sys/syscall.h>
 
 DEFN_SYSCALL2(int, SysStat, SYSCALL_STAT, const char*, struct stat*);
 
@@ -40,5 +37,3 @@ extern "C" int lstat(const char* path, struct stat* st)
 {
 	return SysStat(path, st);
 }
-
-} // namespace Maxsi

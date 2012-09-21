@@ -24,7 +24,7 @@
 
 #include <libmaxsi/platform.h>
 #include <libmaxsi/memory.h>
-#include <libmaxsi/syscall.h>
+#include <sys/syscall.h>
 #include <errno.h>
 #include <sys/time.h>
 #include <time.h>

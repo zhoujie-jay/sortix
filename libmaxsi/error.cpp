@@ -26,7 +26,6 @@
 #include <libmaxsi/platform.h>
 #include <libmaxsi/error.h>
 #ifndef SORTIX_KERNEL
-#include <libmaxsi/syscall.h>
 #include <stdio.h>
 #endif
 

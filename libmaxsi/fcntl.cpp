@@ -22,17 +22,17 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
+#include <sys/syscall.h>
 #include <fcntl.h>
-
-namespace Maxsi {
+#include <stdarg.h>
 
 DEFN_SYSCALL3(int, SysFCntl, SYSCALL_FCNTL, int, int, unsigned long);
 
-extern "C" int fcntl(int fd, int cmd, unsigned long arg)
+extern "C" int fcntl(int fd, int cmd, ...)
 {
+	va_list ap;
+	va_start(ap, cmd);
+	unsigned long arg = va_arg(ap, unsigned long);
+	va_end(ap);
 	return SysFCntl(fd, cmd, arg);
 }
-
-} // namespace Maxsi

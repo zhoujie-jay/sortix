@@ -22,11 +22,8 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
 #include <sys/kernelinfo.h>
-
-namespace Maxsi {
+#include <sys/syscall.h>
 
 DEFN_SYSCALL3(ssize_t, SysKernelInfo, SYSCALL_KERNELINFO, const char*, char*, size_t);
 
@@ -34,6 +31,3 @@ extern "C" ssize_t kernelinfo(const char* req, char* resp, size_t resplen)
 {
 	return SysKernelInfo(req, resp, resplen);
 }
-
-} // namespace Maxsi
-

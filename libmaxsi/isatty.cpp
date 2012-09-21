@@ -22,11 +22,8 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
+#include <sys/syscall.h>
 #include <unistd.h>
-
-namespace Maxsi {
 
 DEFN_SYSCALL1(int, sys_isatty, SYSCALL_ISATTY, int);
 
@@ -34,5 +31,3 @@ extern "C" int isatty(int fd)
 {
 	return sys_isatty(fd);
 }
-
-} // namespace Maxsi

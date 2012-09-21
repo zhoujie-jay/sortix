@@ -22,10 +22,8 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
-
-namespace Maxsi {
+#include <sys/syscall.h>
+#include <unistd.h>
 
 DEFN_SYSCALL2(int, SysFTruncate, SYSCALL_FTRUNCATE, int, off_t);
 
@@ -33,5 +31,3 @@ extern "C" int ftruncate(int fd, off_t length)
 {
 	return SysFTruncate(fd, length);
 }
-
-} // namespace Maxsi

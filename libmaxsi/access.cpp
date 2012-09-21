@@ -22,11 +22,8 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
+#include <sys/syscall.h>
 #include <unistd.h>
-
-namespace Maxsi {
 
 DEFN_SYSCALL2(int, SysAccess, SYSCALL_ACCESS, const char*, int);
 
@@ -34,5 +31,3 @@ extern "C" int access(const char* pathname, int mode)
 {
 	return SysAccess(pathname, mode);
 }
-
-} // namespace Maxsi

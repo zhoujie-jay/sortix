@@ -22,11 +22,8 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
+#include <sys/syscall.h>
 #include <sys/termmode.h>
-
-namespace Maxsi {
 
 DEFN_SYSCALL2(int, sys_gettermmode, SYSCALL_GETTERMMODE, int, unsigned*);
 
@@ -34,5 +31,3 @@ extern "C" int gettermmode(int fd, unsigned* mode)
 {
 	return sys_gettermmode(fd, mode);
 }
-
-} // namespace Maxsi

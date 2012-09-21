@@ -24,8 +24,8 @@
 
 #define _WANT_ENVIRON
 #include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
 #include <libmaxsi/process.h>
+#include <sys/syscall.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <dirent.h>

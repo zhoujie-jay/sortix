@@ -22,12 +22,9 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 #include <errno.h>
-
-namespace Maxsi {
 
 // TODO: Implement this in the kernel.
 extern "C" int fchmod(int fd, mode_t mode)
@@ -35,5 +32,3 @@ extern "C" int fchmod(int fd, mode_t mode)
 	errno = ENOSYS;
 	return -1;
 }
-
-} // namespace Maxsi

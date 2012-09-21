@@ -22,10 +22,8 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
-
-namespace Maxsi {
+#include <sys/syscall.h>
+#include <unistd.h>
 
 DEFN_SYSCALL2(int, SysTruncate, SYSCALL_TRUNCATE, const char*, off_t);
 
@@ -33,5 +31,3 @@ extern "C" int truncate(const char* pathname, off_t length)
 {
 	return SysTruncate(pathname, length);
 }
-
-} // namespace Maxsi

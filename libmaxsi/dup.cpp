@@ -22,11 +22,8 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
+#include <sys/syscall.h>
 #include <unistd.h>
-
-namespace Maxsi {
 
 DEFN_SYSCALL1(int, SysDup, SYSCALL_DUP, int);
 
@@ -34,5 +31,3 @@ extern "C" int dup(int fd)
 {
 	return SysDup(fd);
 }
-
-} // namespace Maxsi

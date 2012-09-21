@@ -22,10 +22,8 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
-
-namespace Maxsi {
+#include <sys/syscall.h>
+#include <unistd.h>
 
 DEFN_SYSCALL2(char*, SysGetCWD, SYSCALL_GETCWD, char*, size_t);
 
@@ -33,5 +31,3 @@ extern "C" char* getcwd(char* buf, size_t size)
 {
 	return SysGetCWD(buf, size);
 }
-
-} // namespace Maxsi

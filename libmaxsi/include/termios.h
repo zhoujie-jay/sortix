@@ -28,6 +28,7 @@
 #define	_TERMIOS_H 1
 
 #include <features.h>
+#include <stddef.h>
 #include <sortix/termios.h>
 
 __BEGIN_DECLS

@@ -22,12 +22,9 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
+#include <sys/syscall.h>
 #include <errno.h>
 #include <unistd.h>
-
-namespace Maxsi {
 
 DEFN_SYSCALL3(ssize_t, SysRead, SYSCALL_READ, int, void*, size_t);
 
@@ -44,5 +41,3 @@ extern "C" ssize_t pread(int, void*, size_t, off_t)
 	errno = ENOSYS;
 	return -1;
 }
-
-} // namespace Maxsi

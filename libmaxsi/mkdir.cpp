@@ -22,10 +22,8 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
-
-namespace Maxsi {
+#include <sys/stat.h>
+#include <sys/syscall.h>
 
 DEFN_SYSCALL2(int, SysMkDir, SYSCALL_MKDIR, const char*, mode_t);
 
@@ -33,5 +31,3 @@ extern "C" int mkdir(const char* pathname, mode_t mode)
 {
 	return SysMkDir(pathname, mode);
 }
-
-} // namespace Maxsi

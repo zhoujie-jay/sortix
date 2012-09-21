@@ -22,11 +22,8 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
 #include <sys/readdirents.h>
-
-namespace Maxsi {
+#include <sys/syscall.h>
 
 DEFN_SYSCALL3(int, SysReadDirEnts, SYSCALL_READDIRENTS, int, struct sortix_dirent*, size_t);
 
@@ -34,5 +31,3 @@ extern "C" int readdirents(int fd, struct sortix_dirent* dirent, size_t size)
 {
 	return SysReadDirEnts(fd, dirent, size);
 }
-
-} // namespace Maxsi

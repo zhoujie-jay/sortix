@@ -22,14 +22,10 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/syscall.h>
+#include <sys/syscall.h>
 #include <unistd.h>
 
-namespace Maxsi {
 DEFN_SYSCALL1_VOID(sys_exit, SYSCALL_EXIT, int);
-} // namespace Maxsi
-using namespace Maxsi;
 
 extern "C" void _exit(int status)
 {
