@@ -155,14 +155,15 @@ setjmp.o \
 setlocale.o \
 settermmode.o \
 signal.o \
+sleep.o \
 sortix-sound.o \
 stat.o \
 stdio.o \
-thread.o \
 time.o \
 truncate.o \
 umask.o \
 unlink.o \
+usleep.o \
 vscanf.o \
 winsize.o \
 write.o \
