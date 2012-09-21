@@ -268,7 +268,7 @@ namespace Sortix
 		return buffer->Resize(size);
 	}
 
-	ssize_t DevFileWrapper::Read(byte* dest, size_t count)
+	ssize_t DevFileWrapper::Read(uint8_t* dest, size_t count)
 	{
 		// TODO: Enforce read permission!
 		if ( !buffer->Seek(offset) ) { return -1; }
@@ -278,7 +278,7 @@ namespace Sortix
 		return result;
 	}
 
-	ssize_t DevFileWrapper::Write(const byte* src, size_t count)
+	ssize_t DevFileWrapper::Write(const uint8_t* src, size_t count)
 	{
 		// TODO: Enforce write permission!
 		if ( !buffer->Seek(offset) ) { return -1; }

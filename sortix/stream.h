@@ -38,8 +38,8 @@ namespace Sortix
 		virtual bool IsType(unsigned type) const { return type == Device::STREAM; }
 
 	public:
-		virtual ssize_t Read(byte* dest, size_t count) = 0;
-		virtual ssize_t Write(const byte* src, size_t count) = 0;
+		virtual ssize_t Read(uint8_t* dest, size_t count) = 0;
+		virtual ssize_t Write(const uint8_t* src, size_t count) = 0;
 		virtual bool IsReadable() = 0;
 		virtual bool IsWritable() = 0;
 

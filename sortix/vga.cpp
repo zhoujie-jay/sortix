@@ -40,7 +40,7 @@ using namespace Maxsi;
 namespace Sortix {
 namespace VGA {
 
-uint8_t* const VGA = (byte* const) 0xB8000;
+uint8_t* const VGA = (uint8_t* const) 0xB8000;
 const unsigned WIDTH = 80;
 const unsigned HEIGHT = 25;
 const size_t VGA_SIZE = sizeof(uint16_t) * WIDTH * HEIGHT;
@@ -142,7 +142,7 @@ void Init()
 // Changes the position of the hardware cursor.
 void SetCursor(unsigned x, unsigned y)
 {
-	nat value = x + y * WIDTH;
+	unsigned value = x + y * WIDTH;
 
 	// This sends a command to indicies 14 and 15 in the
 	// CRT Control Register of the VGA controller. These
@@ -173,7 +173,7 @@ DevVGA::~DevVGA()
 #endif
 }
 
-ssize_t DevVGA::Read(byte* dest, size_t count)
+ssize_t DevVGA::Read(uint8_t* dest, size_t count)
 {
 	if ( VGA::VGA_SIZE - offset < count ) { count = VGA::VGA_SIZE - offset; }
 	Maxsi::Memory::Copy(dest, VGA::VGA + offset, count);
@@ -181,7 +181,7 @@ ssize_t DevVGA::Read(byte* dest, size_t count)
 	return count;
 }
 
-ssize_t DevVGA::Write(const byte* src, size_t count)
+ssize_t DevVGA::Write(const uint8_t* src, size_t count)
 {
 	if ( offset == VGA::VGA_SIZE && count ) { Error::Set(ENOSPC); return -1; }
 	if ( VGA::VGA_SIZE - offset < count ) { count = VGA::VGA_SIZE - offset; }

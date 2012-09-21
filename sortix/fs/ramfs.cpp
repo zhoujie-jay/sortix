@@ -50,7 +50,7 @@ namespace Sortix
 
 	private:
 		size_t offset;
-		byte* buffer;
+		uint8_t* buffer;
 		size_t bufferused;
 		size_t buffersize;
 
@@ -60,8 +60,8 @@ namespace Sortix
 		virtual uintmax_t Position();
 		virtual bool Seek(uintmax_t position);
 		virtual bool Resize(uintmax_t size);
-		virtual ssize_t Read(byte* dest, size_t count);
-		virtual ssize_t Write(const byte* src, size_t count);
+		virtual ssize_t Read(uint8_t* dest, size_t count);
+		virtual ssize_t Write(const uint8_t* src, size_t count);
 		virtual bool IsReadable();
 		virtual bool IsWritable();
 
@@ -106,7 +106,7 @@ namespace Sortix
 	bool DevRAMFSFile::Resize(uintmax_t size)
 	{
 		if ( SIZE_MAX < size ) { Error::Set(EOVERFLOW); return false; }
-		byte* newbuffer = new byte[size];
+		uint8_t* newbuffer = new uint8_t[size];
 		if ( !newbuffer ) { Error::Set(ENOSPC); return false; }
 		size_t sharedmemsize = ( size < bufferused ) ? size : bufferused;
 		Memory::Copy(newbuffer, buffer, sharedmemsize);
@@ -117,7 +117,7 @@ namespace Sortix
 		return true;
 	}
 
-	ssize_t DevRAMFSFile::Read(byte* dest, size_t count)
+	ssize_t DevRAMFSFile::Read(uint8_t* dest, size_t count)
 	{
 		if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
 		size_t available = count;
@@ -128,7 +128,7 @@ namespace Sortix
 		return available;
 	}
 
-	ssize_t DevRAMFSFile::Write(const byte* src, size_t count)
+	ssize_t DevRAMFSFile::Write(const uint8_t* src, size_t count)
 	{
 		if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
 		if ( buffersize < offset + count )

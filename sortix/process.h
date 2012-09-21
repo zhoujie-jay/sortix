@@ -106,7 +106,7 @@ namespace Sortix
 		ProcessSegment* segments;
 
 	public:
-		int Execute(const char* programname, const byte* program,
+		int Execute(const char* programname, const uint8_t* program,
 		            size_t programsize, int argc, const char* const* argv,
 		            int envc, const char* const* envp,
 		            CPU::InterruptRegisters* regs);

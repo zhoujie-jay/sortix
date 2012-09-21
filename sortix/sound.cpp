@@ -41,7 +41,7 @@ namespace Sortix
 		 	CPU::OutPortB(0x61, TMP);
 		}
 
-		void Play(nat Frequency)
+		void Play(unsigned Frequency)
 		{
 			ScopedLock lock(&soundlock);
 			//Set the PIT to the desired frequency

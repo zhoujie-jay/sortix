@@ -50,8 +50,8 @@ public:
 	virtual uintmax_t Position();
 	virtual bool Seek(uintmax_t position);
 	virtual bool Resize(uintmax_t size);
-	virtual ssize_t Read(byte* dest, size_t count);
-	virtual ssize_t Write(const byte* src, size_t count);
+	virtual ssize_t Read(uint8_t* dest, size_t count);
+	virtual ssize_t Write(const uint8_t* src, size_t count);
 	virtual bool IsReadable();
 	virtual bool IsWritable();
 
@@ -93,14 +93,14 @@ bool DevFrameBuffer::Resize(uintmax_t /*size*/)
 	return false;
 }
 
-ssize_t DevFrameBuffer::Read(byte* dest, size_t count)
+ssize_t DevFrameBuffer::Read(uint8_t* dest, size_t count)
 {
 	ssize_t result = Video::ReadAt(off, dest, count);
 	if ( 0 <= result ) { off += result; }
 	return result;
 }
 
-ssize_t DevFrameBuffer::Write(const byte* src, size_t count)
+ssize_t DevFrameBuffer::Write(const uint8_t* src, size_t count)
 {
 	ssize_t result = Video::WriteAt(off, src, count);
 	if ( 0 <= result ) { off += result; }

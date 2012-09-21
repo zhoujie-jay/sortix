@@ -223,8 +223,8 @@ public:
 	virtual ~DevCOMPort();
 
 public:
-	virtual ssize_t Read(byte* dest, size_t count);
-	virtual ssize_t Write(const byte* src, size_t count);
+	virtual ssize_t Read(uint8_t* dest, size_t count);
+	virtual ssize_t Write(const uint8_t* src, size_t count);
 	virtual bool IsReadable();
 	virtual bool IsWritable();
 
@@ -258,7 +258,7 @@ bool DevCOMPort::IsWritable() { return true; }
 
 const unsigned TRIES = 1000;
 
-ssize_t DevCOMPort::Read(byte* dest, size_t count)
+ssize_t DevCOMPort::Read(uint8_t* dest, size_t count)
 {
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
@@ -301,7 +301,7 @@ ssize_t DevCOMPort::Read(byte* dest, size_t count)
 	return sofar;
 }
 
-ssize_t DevCOMPort::Write(const byte* src, size_t count)
+ssize_t DevCOMPort::Write(const uint8_t* src, size_t count)
 {
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; };
@@ -347,7 +347,7 @@ ssize_t DevCOMPort::Write(const byte* src, size_t count)
 
 #else
 
-ssize_t DevCOMPort::Read(byte* dest, size_t count)
+ssize_t DevCOMPort::Read(uint8_t* dest, size_t count)
 {
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
@@ -376,7 +376,7 @@ ssize_t DevCOMPort::Read(byte* dest, size_t count)
 	return sofar;
 }
 
-ssize_t DevCOMPort::Write(const byte* src, size_t count)
+ssize_t DevCOMPort::Write(const uint8_t* src, size_t count)
 {
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; };

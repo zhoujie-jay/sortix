@@ -83,7 +83,7 @@ namespace Sortix
 				size_t bytesused = sizeof(sortix_dirent) + dirent->d_namelen + 1;
 				ASSERT(bytesused <= size);
 				size -= bytesused;
-				dirent = (sortix_dirent*) ( ((byte*) dirent) + bytesused );
+				dirent = (sortix_dirent*) ( ((uint8_t*) dirent) + bytesused );
 			}
 		}
 

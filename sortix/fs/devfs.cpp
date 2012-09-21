@@ -53,8 +53,8 @@ namespace Sortix
 		off_t offset;
 
 	public:
-		virtual ssize_t Read(byte* dest, size_t count);
-		virtual ssize_t Write(const byte* src, size_t count);
+		virtual ssize_t Read(uint8_t* dest, size_t count);
+		virtual ssize_t Write(const uint8_t* src, size_t count);
 		virtual bool IsReadable();
 		virtual bool IsWritable();
 		virtual size_t BlockSize();
@@ -75,7 +75,7 @@ namespace Sortix
 	{
 	}
 
-	ssize_t DevATA::Read(byte* dest, size_t count)
+	ssize_t DevATA::Read(uint8_t* dest, size_t count)
 	{
 		if ( SIZE_MAX < count ) { count = SIZE_MAX; }
 		if ( drive->GetSize() - offset < count ) { count = drive->GetSize() - offset; }
@@ -85,7 +85,7 @@ namespace Sortix
 		return amount;
 	}
 
-	ssize_t DevATA::Write(const byte* src, size_t count)
+	ssize_t DevATA::Write(const uint8_t* src, size_t count)
 	{
 		if ( SIZE_MAX < count ) { count = SIZE_MAX; }
 		if ( drive->GetSize() <= offset && count ) { Error::Set(ENOSPC); return -1; }
@@ -144,8 +144,8 @@ namespace Sortix
 		virtual ~DevNull();
 
 	public:
-		virtual ssize_t Read(byte* dest, size_t count);
-		virtual ssize_t Write(const byte* src, size_t count);
+		virtual ssize_t Read(uint8_t* dest, size_t count);
+		virtual ssize_t Write(const uint8_t* src, size_t count);
 		virtual bool IsReadable();
 		virtual bool IsWritable();
 
@@ -159,12 +159,12 @@ namespace Sortix
 	{
 	}
 
-	ssize_t DevNull::Read(byte* /*dest*/, size_t /*count*/)
+	ssize_t DevNull::Read(uint8_t* /*dest*/, size_t /*count*/)
 	{
 		return 0; // Return EOF
 	}
 
-	ssize_t DevNull::Write(const byte* /*src*/, size_t count)
+	ssize_t DevNull::Write(const uint8_t* /*src*/, size_t count)
 	{
 		if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
 

@@ -46,8 +46,8 @@ public:
 	virtual uintmax_t Position();
 	virtual bool Seek(uintmax_t position);
 	virtual bool Resize(uintmax_t size);
-	virtual ssize_t Read(byte* dest, size_t count);
-	virtual ssize_t Write(const byte* src, size_t count);
+	virtual ssize_t Read(uint8_t* dest, size_t count);
+	virtual ssize_t Write(const uint8_t* src, size_t count);
 	virtual bool IsReadable();
 	virtual bool IsWritable();
 
@@ -58,8 +58,8 @@ class DevLineCommand : public DevStream
 public:
 	DevLineCommand(bool (*handler)(void*, const char*), void* user);
 	virtual ~DevLineCommand();
-	virtual ssize_t Read(byte* dest, size_t count);
-	virtual ssize_t Write(const byte* src, size_t count);
+	virtual ssize_t Read(uint8_t* dest, size_t count);
+	virtual ssize_t Write(const uint8_t* src, size_t count);
 	virtual bool IsReadable();
 	virtual bool IsWritable();
 
@@ -93,8 +93,8 @@ public:
 	virtual uintmax_t Position();
 	virtual bool Seek(uintmax_t position);
 	virtual bool Resize(uintmax_t size);
-	virtual ssize_t Read(byte* dest, size_t count);
-	virtual ssize_t Write(const byte* src, size_t count);
+	virtual ssize_t Read(uint8_t* dest, size_t count);
+	virtual ssize_t Write(const uint8_t* src, size_t count);
 	virtual bool IsReadable();
 	virtual bool IsWritable();
 

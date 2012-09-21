@@ -72,7 +72,7 @@ bool DevStringBuffer::Resize(uintmax_t size)
 	return false;
 }
 
-ssize_t DevStringBuffer::Read(byte* dest, size_t count)
+ssize_t DevStringBuffer::Read(uint8_t* dest, size_t count)
 {
 	size_t available = strlength - off;
 	if ( available < count ) { count = available; }
@@ -81,7 +81,7 @@ ssize_t DevStringBuffer::Read(byte* dest, size_t count)
 	return count;
 }
 
-ssize_t DevStringBuffer::Write(const byte* /*src*/, size_t /*count*/)
+ssize_t DevStringBuffer::Write(const uint8_t* /*src*/, size_t /*count*/)
 {
 	Error::Set(EBADF);
 	return -1;
@@ -110,13 +110,13 @@ DevLineCommand::~DevLineCommand()
 {
 }
 
-ssize_t DevLineCommand::Read(byte* /*dest*/, size_t /*count*/)
+ssize_t DevLineCommand::Read(uint8_t* /*dest*/, size_t /*count*/)
 {
 	Error::Set(EBADF);
 	return -1;
 }
 
-ssize_t DevLineCommand::Write(const byte* src, size_t count)
+ssize_t DevLineCommand::Write(const uint8_t* src, size_t count)
 {
 	if ( handled ) { Error::Set(EINVAL); return -1; }
 	size_t available = CMDMAX - sofar;
@@ -184,7 +184,7 @@ bool DevMemoryBuffer::Resize(uintmax_t size)
 	return true;
 }
 
-ssize_t DevMemoryBuffer::Read(byte* dest, size_t count)
+ssize_t DevMemoryBuffer::Read(uint8_t* dest, size_t count)
 {
 	if ( bufsize <= off ) { return 0; }
 	size_t available = bufsize - off;
@@ -194,7 +194,7 @@ ssize_t DevMemoryBuffer::Read(byte* dest, size_t count)
 	return count;
 }
 
-ssize_t DevMemoryBuffer::Write(const byte* src, size_t count)
+ssize_t DevMemoryBuffer::Write(const uint8_t* src, size_t count)
 {
 	if ( !write ) { Error::Set(EBADF); return -1; }
 	if ( bufsize <= off ) { Error::Set(EPERM); return -1; }

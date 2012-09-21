@@ -217,7 +217,7 @@ namespace Sortix
 #endif
 	}
 
-	ssize_t LogTerminal::Read(byte* dest, size_t count)
+	ssize_t LogTerminal::Read(uint8_t* dest, size_t count)
 	{
 		ScopedLockSignal lock(&termlock);
 		if ( !lock.IsAcquired() ) { Error::Set(EINTR); return -1; }
@@ -253,7 +253,7 @@ namespace Sortix
 			if ( !(mode & TERMMODE_UNICODE) && !kbkey ) { ignore = true; }
 			if ( ignore ) { linebuffer.Pop(); continue; }
 
-			byte* buf;
+			uint8_t* buf;
 			size_t bufsize;
 			uint8_t codepointbuf[4];
 			char utf8buf[6];
@@ -266,7 +266,7 @@ namespace Sortix
 					Log::PrintF("Warning: logterminal driver dropping invalid "
 					            "codepoint 0x%x\n", codepoint);
 				}
-				buf = (byte*) utf8buf;
+				buf = (uint8_t*) utf8buf;
 				bufsize = numbytes;
 			}
 			else
@@ -275,13 +275,13 @@ namespace Sortix
 				codepointbuf[1] = (codepoint >> 16U) & 0xFFU;
 				codepointbuf[2] = (codepoint >> 8U) & 0xFFU;
 				codepointbuf[3] = (codepoint >> 0U) & 0xFFU;
-				buf = (byte*) &codepointbuf;
+				buf = (uint8_t*) &codepointbuf;
 				bufsize = sizeof(codepointbuf);
 				// TODO: Whoops, the above is big-endian and the user programs
 				// expect the data to be in the host endian. That's bad. For now
 				// just send the data in host endian, but this will break when
 				// terminals are accessed over the network.
-				buf = (byte*) &codepoint;
+				buf = (uint8_t*) &codepoint;
 			}
 			if ( bufsize < partiallywritten ) { partiallywritten = bufsize; }
 			buf += partiallywritten;
@@ -307,7 +307,7 @@ namespace Sortix
 		return sofar;
 	}
 
-	ssize_t LogTerminal::Write(const byte* src, size_t count)
+	ssize_t LogTerminal::Write(const uint8_t* src, size_t count)
 	{
 		Log::PrintData(src, count);
 		return count;

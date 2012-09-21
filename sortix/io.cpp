@@ -43,14 +43,14 @@ namespace Sortix
 		struct SysWrite_t
 		{
 			union { size_t align1; int fd; };
-			union { size_t align2; const byte* buffer; };
+			union { size_t align2; const uint8_t* buffer; };
 			union { size_t align3; size_t count; };
 		};
 
 		STATIC_ASSERT(sizeof(SysWrite_t) <= sizeof(Thread::scstate));
 #endif
 
-		ssize_t SysWrite(int fd, const byte* buffer, size_t count)
+		ssize_t SysWrite(int fd, const uint8_t* buffer, size_t count)
 		{
 			// TODO: Check that buffer is a valid user-space buffer.
 			if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
@@ -86,7 +86,7 @@ namespace Sortix
 		}
 
 		// TODO: Not implemented yet due to stupid internal kernel design.
-		ssize_t SysPWrite(int fd, const byte* buffer, size_t count, off_t off)
+		ssize_t SysPWrite(int fd, const uint8_t* buffer, size_t count, off_t off)
 		{
 			Error::Set(ENOSYS);
 			return -1;
@@ -96,14 +96,14 @@ namespace Sortix
 		struct SysRead_t
 		{
 			union { size_t align1; int fd; };
-			union { size_t align2; byte* buffer; };
+			union { size_t align2; uint8_t* buffer; };
 			union { size_t align3; size_t count; };
 		};
 
 		STATIC_ASSERT(sizeof(SysRead_t) <= sizeof(Thread::scstate));
 #endif
 
-		ssize_t SysRead(int fd, byte* buffer, size_t count)
+		ssize_t SysRead(int fd, uint8_t* buffer, size_t count)
 		{
 			// TODO: Check that buffer is a valid user-space buffer.
 			if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
@@ -139,7 +139,7 @@ namespace Sortix
 		}
 
 		// TODO: Not implemented yet due to stupid internal kernel design.
-		ssize_t SysPRead(int fd, byte* buffer, size_t count, off_t off)
+		ssize_t SysPRead(int fd, uint8_t* buffer, size_t count, off_t off)
 		{
 			Error::Set(ENOSYS);
 			return -1;

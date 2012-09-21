@@ -129,8 +129,8 @@ namespace Sortix
 				process->segments = segment;
 
 				// Copy as much data as possible and memset the rest to 0.
-				byte* memdest = (byte*) virtualaddr;
-				byte* memsource = (byte*) ( ((addr_t)file) + pht->offset);
+				uint8_t* memdest = (uint8_t*) virtualaddr;
+				uint8_t* memsource = (uint8_t*) ( ((addr_t)file) + pht->offset);
 				Maxsi::Memory::Copy(memdest, memsource, pht->filesize);
 				Maxsi::Memory::Set(memdest + pht->filesize, 0, pht->memorysize - pht->filesize);
 			}
@@ -215,8 +215,8 @@ namespace Sortix
 				process->segments = segment;
 
 				// Copy as much data as possible and memset the rest to 0.
-				byte* memdest = (byte*) virtualaddr;
-				byte* memsource = (byte*) ( ((addr_t)file) + pht->offset);
+				uint8_t* memdest = (uint8_t*) virtualaddr;
+				uint8_t* memsource = (uint8_t*) ( ((addr_t)file) + pht->offset);
 				Maxsi::Memory::Copy(memdest, memsource, pht->filesize);
 				Maxsi::Memory::Set(memdest + pht->filesize, 0, pht->memorysize - pht->filesize);
 			}

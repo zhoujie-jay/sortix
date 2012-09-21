@@ -35,59 +35,59 @@ namespace Sortix
 {
 	namespace UART
 	{
-		const nat TXR = 0; // Transmit register
-		const nat RXR = 0; // Receive register
-		const nat IER = 1; // Interrupt Enable
-		const nat IIR = 2; // Interrupt ID
-		const nat FCR = 2; // FIFO control
-		const nat LCR = 3; // Line control
-		const nat MCR = 4; // Modem control
-		const nat LSR = 5; // Line Status
-		const nat MSR = 6; // Modem Status
-		const nat DLL = 0; // Divisor Latch Low
-		const nat DLM = 1; // Divisor latch High
+		const unsigned TXR = 0; // Transmit register
+		const unsigned RXR = 0; // Receive register
+		const unsigned IER = 1; // Interrupt Enable
+		const unsigned IIR = 2; // Interrupt ID
+		const unsigned FCR = 2; // FIFO control
+		const unsigned LCR = 3; // Line control
+		const unsigned MCR = 4; // Modem control
+		const unsigned LSR = 5; // Line Status
+		const unsigned MSR = 6; // Modem Status
+		const unsigned DLL = 0; // Divisor Latch Low
+		const unsigned DLM = 1; // Divisor latch High
 
-		const nat LCR_DLAB = 0x80; // Divisor latch access bit
-		const nat LCR_SBC = 0x40; // Set break control
-		const nat LCR_SPAR = 0x20; // Stick parity (?)
-		const nat LCR_EPAR = 0x10; // Even parity select
-		const nat LCR_PARITY = 0x08; // Parity Enable
-		const nat LCR_STOP = 0x04; // Stop bits: 0=1 bit, 1=2 bits
-		const nat LCR_WLEN5 = 0x00; // Wordlength: 5 bits
-		const nat LCR_WLEN6 = 0x01; // Wordlength: 6 bits
-		const nat LCR_WLEN7 = 0x02; // Wordlength: 7 bits
-		const nat LCR_WLEN8 = 0x03; // Wordlength: 8 bits
+		const unsigned LCR_DLAB = 0x80; // Divisor latch access bit
+		const unsigned LCR_SBC = 0x40; // Set break control
+		const unsigned LCR_SPAR = 0x20; // Stick parity (?)
+		const unsigned LCR_EPAR = 0x10; // Even parity select
+		const unsigned LCR_PARITY = 0x08; // Parity Enable
+		const unsigned LCR_STOP = 0x04; // Stop bits: 0=1 bit, 1=2 bits
+		const unsigned LCR_WLEN5 = 0x00; // Wordlength: 5 bits
+		const unsigned LCR_WLEN6 = 0x01; // Wordlength: 6 bits
+		const unsigned LCR_WLEN7 = 0x02; // Wordlength: 7 bits
+		const unsigned LCR_WLEN8 = 0x03; // Wordlength: 8 bits
 
-		const nat LSR_TEMT = 0x40; // Transmitter empty
-		const nat LSR_THRE = 0x20; // Transmit-hold-register empty
-		const nat LSR_READY = 0x1;
+		const unsigned LSR_TEMT = 0x40; // Transmitter empty
+		const unsigned LSR_THRE = 0x20; // Transmit-hold-register empty
+		const unsigned LSR_READY = 0x1;
 
-		const nat Port = 0x3f8;
+		const unsigned Port = 0x3f8;
 
-		const nat BASE_BAUD = 1843200/16;
-		const nat BOTH_EMPTY = LSR_TEMT | LSR_THRE;
+		const unsigned BASE_BAUD = 1843200/16;
+		const unsigned BOTH_EMPTY = LSR_TEMT | LSR_THRE;
 
 		const unsigned FrameWidth = 80;
 		const unsigned FrameHeight = 25;
 		uint16_t VGALastFrame[FrameWidth * FrameHeight];
 
-		nat ProbeBaud(nat Port)
+		unsigned ProbeBaud(unsigned Port)
 		{
 			uint8_t lcr = CPU::InPortB(Port + LCR);
 			CPU::OutPortB(Port + LCR, lcr | LCR_DLAB);
 			uint8_t dll = CPU::InPortB(Port + DLL);
 			uint8_t dlm = CPU::InPortB(Port + DLM);
 			CPU::OutPortB(Port + LCR, lcr);
-			nat quot = (dlm << 8) | dll;
+			unsigned quot = (dlm << 8) | dll;
 
 			return BASE_BAUD / quot;
 		}
 
-		void WaitForEmptyBuffers(nat Port)
+		void WaitForEmptyBuffers(unsigned Port)
 		{
 			while ( true )
 			{
-				nat Status = CPU::InPortB(Port + LSR);
+				unsigned Status = CPU::InPortB(Port + LSR);
 
 				if ( (Status & BOTH_EMPTY) == BOTH_EMPTY )
 				{
@@ -96,7 +96,7 @@ namespace Sortix
 			}
 		}
 
-		nat Baud;
+		unsigned Baud;
 
 		void Init()
 		{
@@ -114,7 +114,7 @@ namespace Sortix
 			CPU::OutPortB(Port + FCR, 0); // No FIFO
 			CPU::OutPortB(Port + MCR, 0x3); // DTR + RTS
 
-			nat Divisor = 115200 / Baud;
+			unsigned Divisor = 115200 / Baud;
 			uint8_t C = CPU::InPortB(Port + LCR);
 			CPU::OutPortB(Port + LCR, C | LCR_DLAB);
 			CPU::OutPortB(Port + DLL, Divisor & 0xFF);
@@ -125,7 +125,7 @@ namespace Sortix
 		void Read(uint8_t* Buffer, size_t Size)
 		{
 			// Save the IER and disable interrupts.
-			nat ier = CPU::InPortB(Port + IER);
+			unsigned ier = CPU::InPortB(Port + IER);
 			CPU::OutPortB(Port + IER, 0);
 
 			for ( size_t I = 0; I < Size; I++ )
@@ -145,7 +145,7 @@ namespace Sortix
 			const uint8_t* Buffer = (const uint8_t*) B;
 
 			// Save the IER and disable interrupts.
-			nat ier = CPU::InPortB(Port + IER);
+			unsigned ier = CPU::InPortB(Port + IER);
 			CPU::OutPortB(Port + IER, 0);
 
 			for ( size_t I = 0; I < Size; I++ )
@@ -163,7 +163,7 @@ namespace Sortix
 		void WriteChar(char C)
 		{
 			// Save the IER and disable interrupts.
-			nat ier = CPU::InPortB(Port + IER);
+			unsigned ier = CPU::InPortB(Port + IER);
 			CPU::OutPortB(Port + IER, 0);
 
 			WaitForEmptyBuffers(Port);
@@ -178,7 +178,7 @@ namespace Sortix
 		int TryPopChar()
 		{
 			// Save the IER and disable interrupts.
-			nat ier = CPU::InPortB(Port + IER);
+			unsigned ier = CPU::InPortB(Port + IER);
 			CPU::OutPortB(Port + IER, 0);
 
 			int Result = -1;
@@ -204,37 +204,37 @@ namespace Sortix
 		}
 
 		// Change from VGA color to another color system.
-		nat ConversionTable[16] = { 0, 4, 2, 6, 1, 5, 3, 7, 0, 4, 2, 6, 1, 5, 3, 7 };
+		unsigned ConversionTable[16] = { 0, 4, 2, 6, 1, 5, 3, 7, 0, 4, 2, 6, 1, 5, 3, 7 };
 
 		void InvalidateVGA()
 		{
-			for ( nat I = 0; I < FrameWidth * FrameHeight; I++ ) { VGALastFrame[I] = 0; }
+			for ( unsigned I = 0; I < FrameWidth * FrameHeight; I++ ) { VGALastFrame[I] = 0; }
 		}
 
 		void RenderVGA(const uint16_t* Frame)
 		{
 			const uint16_t* Source = Frame;
 
-			nat LastColor = 1337;
-			nat SkippedSince = 0;
+			unsigned LastColor = 1337;
+			unsigned SkippedSince = 0;
 			bool posundefined = true;
 
-			for ( nat Y = 0; Y < FrameHeight; Y++)
+			for ( unsigned Y = 0; Y < FrameHeight; Y++)
 			{
-				for ( nat X = 0; X < FrameWidth; X++ )
+				for ( unsigned X = 0; X < FrameWidth; X++ )
 				{
-					nat Index = Y * FrameWidth + X;
+					unsigned Index = Y * FrameWidth + X;
 
-					nat Element = Source[Index];
-					nat OldElement = VGALastFrame[Index];
+					unsigned Element = Source[Index];
+					unsigned OldElement = VGALastFrame[Index];
 
 					if ( Element == OldElement ) { continue; }
 
 					// Update the position if we skipped some characters.
 					if ( Index - SkippedSince > 8 || posundefined )
 					{
-						const nat LineId = Y + 1;
-						const nat ColumnId = X + 1;
+						const unsigned LineId = Y + 1;
+						const unsigned ColumnId = X + 1;
 
 						if ( ColumnId > 1 )
 						{
@@ -260,20 +260,20 @@ namespace Sortix
 						posundefined = false;
 					}
 
-					for ( nat Pos = SkippedSince; Pos <= Index; Pos++ )
+					for ( unsigned Pos = SkippedSince; Pos <= Index; Pos++ )
 					{
 						Element = Source[Pos];
 						OldElement = VGALastFrame[Pos];
 
-						nat NewColor = (ConversionTable[ (Element >> 12) & 0xF ] << 3) | (ConversionTable[ (Element >> 8) & 0xF ]);
+						unsigned NewColor = (ConversionTable[ (Element >> 12) & 0xF ] << 3) | (ConversionTable[ (Element >> 8) & 0xF ]);
 
 						// Change the color if we need to.
 						if ( LastColor != NewColor )
 						{
-							nat OldFGColor = LastColor % 8;
-							nat OldBGColor = LastColor / 8;
-							nat FGColor = NewColor % 8;
-							nat BGColor = NewColor / 8;
+							unsigned OldFGColor = LastColor % 8;
+							unsigned OldBGColor = LastColor / 8;
+							unsigned FGColor = NewColor % 8;
+							unsigned BGColor = NewColor / 8;
 							if ( LastColor == 1337 ) { OldFGColor = 9; OldBGColor = 9; }
 
 							if ( (OldFGColor != FGColor) && (OldBGColor != BGColor) )

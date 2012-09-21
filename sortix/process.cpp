@@ -505,7 +505,7 @@ namespace Sortix
 		ResetAddressSpace();
 	}
 
-	int Process::Execute(const char* programname, const byte* program,
+	int Process::Execute(const char* programname, const uint8_t* program,
 	                     size_t programsize, int argc, const char* const* argv,
 	                     int envc, const char* const* envp,
 	                     CPU::InterruptRegisters* regs)
@@ -634,7 +634,7 @@ namespace Sortix
 		if ( !dev->IsReadable() ) { Error::Set(EBADF); goto cleanup_dev; }
 
 		count = needed;
-		buffer = new byte[count];
+		buffer = new uint8_t[count];
 		if ( !buffer ) { goto cleanup_dev; }
 		sofar = 0;
 		while ( sofar < count )

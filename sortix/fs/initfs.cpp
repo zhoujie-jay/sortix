@@ -44,7 +44,7 @@ namespace Sortix
 
 	public:
 		// Transfers ownership of name.
-		DevInitFSFile(char* name, const byte* buffer, size_t buffersize);
+		DevInitFSFile(char* name, const uint8_t* buffer, size_t buffersize);
 		virtual ~DevInitFSFile();
 
 	public:
@@ -52,7 +52,7 @@ namespace Sortix
 
 	private:
 		size_t offset;
-		const byte* buffer;
+		const uint8_t* buffer;
 		size_t buffersize;
 		kthread_mutex_t filelock;
 
@@ -62,14 +62,14 @@ namespace Sortix
 		virtual uintmax_t Position();
 		virtual bool Seek(uintmax_t position);
 		virtual bool Resize(uintmax_t size);
-		virtual ssize_t Read(byte* dest, size_t count);
-		virtual ssize_t Write(const byte* src, size_t count);
+		virtual ssize_t Read(uint8_t* dest, size_t count);
+		virtual ssize_t Write(const uint8_t* src, size_t count);
 		virtual bool IsReadable();
 		virtual bool IsWritable();
 
 	};
 
-	DevInitFSFile::DevInitFSFile(char* name, const byte* buffer, size_t buffersize)
+	DevInitFSFile::DevInitFSFile(char* name, const uint8_t* buffer, size_t buffersize)
 	{
 		this->name = name;
 		this->buffer = buffer;
@@ -113,7 +113,7 @@ namespace Sortix
 		return false;
 	}
 
-	ssize_t DevInitFSFile::Read(byte* dest, size_t count)
+	ssize_t DevInitFSFile::Read(uint8_t* dest, size_t count)
 	{
 		ScopedLock lock(&filelock);
 		if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
@@ -125,7 +125,7 @@ namespace Sortix
 		return available;
 	}
 
-	ssize_t DevInitFSFile::Write(const byte* /*src*/, size_t /*count*/)
+	ssize_t DevInitFSFile::Write(const uint8_t* /*src*/, size_t /*count*/)
 	{
 		Error::Set(EBADF);
 		return false;
@@ -228,7 +228,7 @@ namespace Sortix
 		uint32_t ino = InitRD::Traverse(InitRD::Root(), path);
 		if ( !ino ) { return NULL; }
 
-		const byte* buffer = InitRD::Open(ino, &buffersize);
+		const uint8_t* buffer = InitRD::Open(ino, &buffersize);
 		if ( !buffer ) { return NULL; }
 
 		if ( lowerflags == O_SEARCH ) { Error::Set(ENOTDIR); return NULL; }

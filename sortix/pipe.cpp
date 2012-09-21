@@ -46,11 +46,11 @@ namespace Sortix
 		typedef Device BaseClass;
 
 	public:
-		DevPipeStorage(byte* buffer, size_t buffersize);
+		DevPipeStorage(uint8_t* buffer, size_t buffersize);
 		~DevPipeStorage();
 
 	private:
-		byte* buffer;
+		uint8_t* buffer;
 		size_t buffersize;
 		size_t bufferoffset;
 		size_t bufferused;
@@ -65,8 +65,8 @@ namespace Sortix
 		kthread_cond_t writecond;
 
 	public:
-		virtual ssize_t Read(byte* dest, size_t count);
-		virtual ssize_t Write(const byte* src, size_t count);
+		virtual ssize_t Read(uint8_t* dest, size_t count);
+		virtual ssize_t Write(const uint8_t* src, size_t count);
 		virtual bool IsReadable();
 		virtual bool IsWritable();
 
@@ -76,7 +76,7 @@ namespace Sortix
 
 	};
 
-	DevPipeStorage::DevPipeStorage(byte* buffer, size_t buffersize)
+	DevPipeStorage::DevPipeStorage(uint8_t* buffer, size_t buffersize)
 	{
 		this->buffer = buffer;
 		this->buffersize = buffersize;
@@ -97,7 +97,7 @@ namespace Sortix
 	bool DevPipeStorage::IsReadable() { return true; }
 	bool DevPipeStorage::IsWritable() { return true; }
 
-	ssize_t DevPipeStorage::Read(byte* dest, size_t count)
+	ssize_t DevPipeStorage::Read(uint8_t* dest, size_t count)
 	{
 		if ( count == 0 ) { return 0; }
 #ifdef GOT_ACTUAL_KTHREAD
@@ -145,7 +145,7 @@ namespace Sortix
 #endif
 	}
 
-	ssize_t DevPipeStorage::Write(const byte* src, size_t count)
+	ssize_t DevPipeStorage::Write(const uint8_t* src, size_t count)
 	{
 		if ( count == 0 ) { return 0; }
 #ifdef GOT_ACTUAL_KTHREAD
@@ -223,8 +223,8 @@ namespace Sortix
 		DevStream* stream;
 
 	public:
-		virtual ssize_t Read(byte* dest, size_t count);
-		virtual ssize_t Write(const byte* src, size_t count);
+		virtual ssize_t Read(uint8_t* dest, size_t count);
+		virtual ssize_t Write(const uint8_t* src, size_t count);
 		virtual bool IsReadable();
 		virtual bool IsWritable();
 
@@ -242,12 +242,12 @@ namespace Sortix
 		stream->Unref();
 	}
 
-	ssize_t DevPipeReading::Read(byte* dest, size_t count)
+	ssize_t DevPipeReading::Read(uint8_t* dest, size_t count)
 	{
 		return stream->Read(dest, count);
 	}
 
-	ssize_t DevPipeReading::Write(const byte* /*src*/, size_t /*count*/)
+	ssize_t DevPipeReading::Write(const uint8_t* /*src*/, size_t /*count*/)
 	{
 		Error::Set(EBADF);
 		return -1;
@@ -276,8 +276,8 @@ namespace Sortix
 		DevStream* stream;
 
 	public:
-		virtual ssize_t Read(byte* dest, size_t count);
-		virtual ssize_t Write(const byte* src, size_t count);
+		virtual ssize_t Read(uint8_t* dest, size_t count);
+		virtual ssize_t Write(const uint8_t* src, size_t count);
 		virtual bool IsReadable();
 		virtual bool IsWritable();
 
@@ -295,13 +295,13 @@ namespace Sortix
 		stream->Unref();
 	}
 
-	ssize_t DevPipeWriting::Read(byte* /*dest*/, size_t /*count*/)
+	ssize_t DevPipeWriting::Read(uint8_t* /*dest*/, size_t /*count*/)
 	{
 		Error::Set(EBADF);
 		return -1;
 	}
 
-	ssize_t DevPipeWriting::Write(const byte* src, size_t count)
+	ssize_t DevPipeWriting::Write(const uint8_t* src, size_t count)
 	{
 		return stream->Write(src, count);
 	}
@@ -325,7 +325,7 @@ namespace Sortix
 			// TODO: Validate that pipefd is a valid user-space array!
 
 			size_t buffersize = BUFFER_SIZE;
-			byte* buffer = new byte[buffersize];
+			uint8_t* buffer = new uint8_t[buffersize];
 			if ( !buffer ) { return -1; /* TODO: ENOMEM */ }
 
 			// Transfer ownership of the buffer to the storage device.

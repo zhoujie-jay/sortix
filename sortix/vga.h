@@ -58,8 +58,8 @@ private:
 	size_t offset;
 
 public:
-	virtual ssize_t Read(byte* dest, size_t count);
-	virtual ssize_t Write(const byte* src, size_t count);
+	virtual ssize_t Read(uint8_t* dest, size_t count);
+	virtual ssize_t Write(const uint8_t* src, size_t count);
 	virtual bool IsReadable();
 	virtual bool IsWritable();
 	virtual size_t BlockSize();

@@ -31,7 +31,7 @@ namespace Sortix
 	{
 		void Init();
 		void Mute();
-		void Play(nat Frequency);
+		void Play(unsigned Frequency);
 	}
 }
 
