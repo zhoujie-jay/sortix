@@ -32,15 +32,15 @@
 	#endif
 
 	// Detect which platform we are compiling to and declare some useful macros.
-	#ifdef PLATFORM_X86
+	#if !defined(CPU) && defined(PLATFORM_X86)
 		#define CPU X86
 	#endif
 
-	#ifdef PLATFORM_X64
+	#if !defined(CPU) && defined(PLATFORM_X64)
 		#define CPU X64
 	#endif
 
-	#if defined(PLATFORM_X86) || defined(PLATFORM_X64)
+	#if !defined(CPU_FAMILY) && defined(PLATFORM_X86) || defined(PLATFORM_X64)
 		#define PLATFORM_X86_FAMILY
 		#define CPU_FAMILY X86_FAMILY
 	#endif
@@ -65,29 +65,11 @@
 		#endif
 	#endif
 
-	#ifdef SORTIX_KERNEL
-		#define ASSERT(invariant) \
-			if ( unlikely(!(invariant)) ) \
-			{ \
-				Sortix::PanicF("Assertion failure: %s:%u: %s: %s\n", __FILE__, __LINE__, __PRETTY_FUNCTION__, #invariant); \
-				while ( true ) { } \
-			}
-	#else
-
+	#if !defined(SORTIX_KERNEL) && !defined(ASSERT)
 		#define ASSERT(invariant)
-
 	#endif
-
-	#define STATIC_ASSERT(condition) static_assert(condition, #condition)
 
 	// Define common datatypes.
 	#include "types.h"
 
 #endif
-
-#ifdef SORTIX_KERNEL
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/log.h>
-#include <sortix/kernel/panic.h>
-#endif
-

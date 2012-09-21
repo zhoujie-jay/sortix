@@ -52,7 +52,10 @@
 // Maxsi datatype extentions.
 typedef __nat nat;
 typedef uint8_t byte;
+#ifndef _ADDR_T_DECLARED
+#define _ADDR_T_DECLARED
 typedef uintptr_t addr_t;
+#endif
 
 #endif
 
