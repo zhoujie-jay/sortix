@@ -47,22 +47,9 @@
 
 	// Libmaxsi is also compatible as a C library, if enabled.
 	#ifdef LIBMAXSI_LIBRARY
-		#if defined(SORTIX_KERNEL) && !defined(LIBMAXSI_NO_LIBC)
-			#define LIBMAXSI_NO_LIBC
-		#endif
-
-		#ifndef LIBMAXSI_NO_LIBC
-			#define LIBMAXSI_LIBC
-		#endif
-
-		#ifdef LIBMAXSI_LIBC
-			#define DUAL_FUNCTION(Type, CName, LibMaxsiName, Parameters) \
-				Type LibMaxsiName Parameters __attribute__ ((weak, alias (#CName))); \
-				extern "C" Type CName Parameters
-		#else
-			#define DUAL_FUNCTION(Type, CName, LibMaxsiName, Parameters) \
-				Type LibMaxsiName Parameters
-		#endif
+		#define DUAL_FUNCTION(Type, CName, LibMaxsiName, Parameters) \
+			Type LibMaxsiName Parameters __attribute__ ((weak, alias (#CName))); \
+			extern "C" Type CName Parameters
 	#endif
 
 	#if !defined(SORTIX_KERNEL) && !defined(ASSERT)

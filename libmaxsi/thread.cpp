@@ -23,9 +23,7 @@
 ******************************************************************************/
 
 #include <libmaxsi/platform.h>
-#ifdef LIBMAXSI_LIBC
 #include <sys/types.h>
-#endif
 #include <libmaxsi/syscall.h>
 #include <libmaxsi/thread.h>
 
@@ -58,9 +56,7 @@ namespace Maxsi
 			return SysCreate(&ThreadStartup, Start, Parameter, StackSize);
 		}
 
-#ifdef LIBMAXSI_LIBC
 		extern "C" unsigned sleep(unsigned Seconds) { SysSleep(Seconds); return 0; }
-#endif
 
 		// TODO: Thinking about it, there is no need for this to be a long.
 		// Sortix will never run for that long time, and shouldn't it be unsigned long?
@@ -69,10 +65,7 @@ namespace Maxsi
 			SysSleep(Seconds);
 		}
 
-
-#ifdef LIBMAXSI_LIBC
 		extern "C" int usleep(useconds_t Microseconds) { SysUSleep(Microseconds); return 0; }
-#endif
 
 		void USleep(long Microseconds)
 		{
