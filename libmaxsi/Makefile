@@ -29,95 +29,65 @@ CFLAGS=$(FLAGS) -std=c99
 CXXFLAGS=$(FLAGS) -std=gnu++0x -fno-exceptions -fno-rtti
 ASFLAGS=$(CPUASFLAGS)
 
-OBJS=\
-ctype.o \
-crc32.o \
-fdio.o \
-fpipe.o \
-stdio.o \
-dir.o \
-fddir-sortix.o \
-setjmp.o \
-setlocale.o \
-sortix-sound.o \
-readparamstring.o \
-process.o \
-thread.o \
-ioleast.o \
-winsize.o \
-gettermmode.o \
-settermmode.o \
-isatty.o \
-kernelinfo.o \
-init.o \
-signal.o \
-$(CPUDIR)/signal.o \
-$(CPUDIR)/fork.o \
-time.o \
-random.o \
-abs.o \
-env.o \
-dlfcn.o \
-integer.o \
-c++.o \
-memory.o \
-heap.o \
-sort.o \
-string.o \
-error.o \
-format.o \
+FREEOBJS=\
 abort.o \
-access.o \
-_assert.o \
+abs.o \
 bsearch.o \
-chdir.o \
-chmod.o \
-close.o \
-dup.o \
-errorprint.o \
-exit.o \
-_exit.o \
-_Exit.o \
+clearerr.o \
+c++.o \
+crc32.o \
+ctype.o \
+dir.o \
+error.o \
 fabs.o \
-fchmod.o \
-fcntl.o \
-fstat.o \
-ftruncate.o \
-getcwd.o \
-getdtablesize.o \
-localeconv.o \
-lseek.o \
-mbtowc.o \
-mkdir.o \
-mktemp.o \
-on_exit.o \
-open.o \
-pipe.o \
-print.o \
-read.o \
-readdirents.o \
-rmdir.o \
-scanf.o \
+fbufsize.o \
+fclose.o \
+feof.o \
+ferror.o \
+fflush.o \
+fgetc.o \
+fgets.o \
+flbf.o \
+flushlfb.o \
+fnewline.o \
+format.o \
+fpending.o \
+fpurge.o \
+fputc.o \
+fputs.o \
+freadable.o \
+freading.o \
+fread.o \
+fregister.o \
 fscanf.o \
+fseek.o \
+fseeko.o \
+fseterr.o \
+fsetlocking.o \
+ftell.o \
+ftello.o \
+fwritable.o \
+fwrite.o \
+fwriting.o \
+heap.o \
+integer.o \
+mbtowc.o \
+memory.o \
+readparamstring.o \
+rewind.o \
+sort.o \
 sscanf.o \
-vscanf.o \
-vfscanf.o \
-vsscanf.o \
-stat.o \
-truncate.o \
-umask.o \
-unlink.o \
-write.o \
 stpcpy.o \
 strcasecmp.o \
 strcat.o \
-strchr.o \
 strchrnul.o \
+strchr.o \
 strcmp.o \
 strcoll.o \
 strcpy.o \
 strcspn.o \
 strdup.o \
+string.o \
 strlen.o \
 strncasecmp.o \
 strncat.o \
@@ -130,40 +100,76 @@ strspn.o \
 strstr.o \
 strtok.o \
 strtok_r.o \
-clearerr.o \
-fbufsize.o \
-fclose.o \
-fcloseall.o \
-feof.o \
-ferror.o \
-fflush.o \
-fgetc.o \
-fgets.o \
-fileno.o \
-flbf.o \
-flushlfb.o \
-fnewline.o \
-fpending.o \
-fpurge.o \
-fputc.o \
-fputs.o \
-fread.o \
-freadable.o \
-freading.o \
-fregister.o \
-fseek.o \
-fseeko.o \
-fseterr.o \
-fsetlocking.o \
-ftell.o \
-ftello.o \
-fwritable.o \
-fwrite.o \
-fwriting.o \
-getc.o \
-putc.o \
-rewind.o \
 ungetc.o \
+vfscanf.o \
+vsscanf.o \
+
+HOSTEDOBJS=\
+access.o \
+_assert.o \
+chdir.o \
+chmod.o \
+close.o \
+$(CPUDIR)/fork.o \
+$(CPUDIR)/signal.o \
+dlfcn.o \
+dup.o \
+env.o \
+errorprint.o \
+_exit.o \
+exit.o \
+_Exit.o \
+fchmod.o \
+fcloseall.o \
+fcntl.o \
+fddir-sortix.o \
+fdio.o \
+fileno.o \
+fpipe.o \
+fstat.o \
+ftruncate.o \
+getc.o \
+getcwd.o \
+getdtablesize.o \
+gettermmode.o \
+init.o \
+ioleast.o \
+isatty.o \
+kernelinfo.o \
+localeconv.o \
+lseek.o \
+mkdir.o \
+mktemp.o \
+on_exit.o \
+open.o \
+pipe.o \
+print.o \
+process.o \
+putc.o \
+random.o \
+readdirents.o \
+read.o \
+rmdir.o \
+scanf.o \
+setjmp.o \
+setlocale.o \
+settermmode.o \
+signal.o \
+sortix-sound.o \
+stat.o \
+stdio.o \
+thread.o \
+time.o \
+truncate.o \
+umask.o \
+unlink.o \
+vscanf.o \
+winsize.o \
+write.o \
+
+OBJS=\
+$(FREEOBJS) \
+$(HOSTEDOBJS) \
 
 CRTOBJ=\
 start.o \
@@ -179,16 +185,7 @@ UNPROCHEADERS:=$(shell find include -type f)
 HEADERDIRS:=$(patsubst include%,preproc%,$(UNPROCHEADERDIRS))
 HEADERS:=$(patsubst include%,preproc%,$(UNPROCHEADERS))
 
-SORTIXOBJS=\
-c++.o \
-memory.o \
-heap.o \
-string.o \
-error.o \
-format.o \
-crc32.o \
-
-SORTIXOBJS:=$(addprefix sortix/,$(SORTIXOBJS))
+SORTIXOBJS:=$(addprefix sortix/,$(FREEOBJS))
 SORTIXCPPFLAGS:=-DSORTIX_KERNEL
 
 BINS=libc.a libg.a libm.a libstdc++.a libmaxsi.a libmaxsi-sortix.a $(CRTOBJ)
@@ -250,6 +247,9 @@ headers: $(HEADERDIRS) $(HEADERS)
 # libmaxsi-sortix
 sortix:
 	mkdir -p sortix
+
+sortix/%.o: %.c $(HEADERS) sortix
+	$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(SORTIXCPPFLAGS) $(CFLAGS)
 
 sortix/%.o: %.cpp $(HEADERS) sortix
 	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(SORTIXCPPFLAGS) $(CXXFLAGS)
