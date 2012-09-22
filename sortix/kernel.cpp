@@ -32,19 +32,17 @@
 #include <sortix/kernel/textbuffer.h>
 #include <sortix/kernel/pci.h>
 #include <sortix/kernel/worker.h>
-#include <sortix/wait.h>
-#include <libmaxsi/error.h>
-#include <libmaxsi/memory.h>
-#include <libmaxsi/string.h>
-#include <libmaxsi/format.h>
+#include <sortix/kernel/memorymanagement.h>
 #include <sortix/mman.h>
+#include <sortix/wait.h>
+#include <errno.h>
+#include <malloc.h>
 #include "kernelinfo.h"
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"
 #include "time.h"
 #include "keyboard.h"
 #include "multiboot.h"
-#include <sortix/kernel/memorymanagement.h>
 #include "thread.h"
 #include "process.h"
 #include "scheduler.h"
@@ -69,8 +67,6 @@
 #include "directory.h"
 #include "interrupt.h"
 #include "fs/devfs.h"
-
-using namespace Maxsi;
 
 // Keep the stack size aligned with $CPU/base.s
 const size_t STACK_SIZE = 64*1024;
@@ -180,7 +176,7 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	Interrupt::Init();
 
 	// Initialize the kernel heap.
-	Maxsi::Memory::Init();
+	_init_heap();
 
 	// Initialize the interrupt worker.
 	Interrupt::InitWorker();

@@ -40,6 +40,8 @@
 #define ASSERT(invariant) assert(invariant)
 #endif
 
+#include <malloc.h>
+
 #define PARANOIA 1
 
 #ifdef SORTIX_KERNEL
@@ -429,6 +431,11 @@ namespace Maxsi
 #ifdef SORTIX_KERNEL
 			heaplock = Sortix::KTHREAD_MUTEX_INITIALIZER;
 #endif
+		}
+
+		extern "C" void _init_heap()
+		{
+			Init();
 		}
 
 		// Attempts to expand the wilderness such that it contains at least
