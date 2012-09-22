@@ -156,7 +156,6 @@ setlocale.o \
 settermmode.o \
 signal.o \
 sleep.o \
-sortix-sound.o \
 stat.o \
 stdio.o \
 time.o \
