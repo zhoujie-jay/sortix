@@ -29,6 +29,7 @@
 #include <sortix/mman.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
+#include <assert.h>
 #include "multiboot.h"
 #include "memorymanagement.h"
 #include "syscall.h"
@@ -286,7 +287,7 @@ namespace Sortix
 
 		bool ReserveUnlocked(size_t* counter, size_t least, size_t ideal)
 		{
-			ASSERT(least < ideal);
+			assert(least < ideal);
 			size_t available = stackused - stackreserved;
 			if ( least < available ) { Error::Set(ENOMEM); return false; }
 			if ( available < ideal ) { ideal = available; }
@@ -315,9 +316,9 @@ namespace Sortix
 		addr_t GetReservedUnlocked(size_t* counter)
 		{
 			if ( !*counter ) { return 0; }
-			ASSERT(stackused); // After all, we did _reserve_ the memory.
+			assert(stackused); // After all, we did _reserve_ the memory.
 			addr_t result = STACK[--stackused];
-			ASSERT(result == AlignDown(result));
+			assert(result == AlignDown(result));
 			stackreserved--;
 			(*counter)--;
 			return result;
@@ -331,14 +332,14 @@ namespace Sortix
 
 		addr_t GetUnlocked()
 		{
-			ASSERT(stackreserved <= stackused);
+			assert(stackreserved <= stackused);
 			if ( unlikely(stackreserved == stackused) )
 			{
 				Error::Set(ENOMEM);
 				return 0;
 			}
 			addr_t result = STACK[--stackused];
-			ASSERT(result == AlignDown(result));
+			assert(result == AlignDown(result));
 			return result;
 		}
 
@@ -350,8 +351,8 @@ namespace Sortix
 
 		void PutUnlocked(addr_t page)
 		{
-			ASSERT(page == AlignDown(page));
-			ASSERT(stackused < MAXSTACKLENGTH);
+			assert(page == AlignDown(page));
+			assert(stackused < MAXSTACKLENGTH);
 			STACK[stackused++] = page;
 		}
 

@@ -26,6 +26,7 @@
 #include <sortix/kernel/memorymanagement.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
+#include <assert.h>
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"
 #include "syscall.h"
@@ -114,7 +115,7 @@ static void DoActualSwitch(CPU::InterruptRegisters* regs)
 	addr_t stacklower = next->kernelstackpos;
 	size_t stacksize = next->kernelstacksize;
 	addr_t stackhigher = stacklower + stacksize;
-	ASSERT(stacklower && stacksize && stackhigher);
+	assert(stacklower && stacksize && stackhigher);
 	GDT::SetKernelStack(stacklower, stacksize, stackhigher);
 
 	LogEndSwitch(next, regs);
@@ -186,7 +187,7 @@ static void ThreadExitCPU(CPU::InterruptRegisters* regs, void* /*user*/)
 // nothing, which is only run when the system has nothing to do.
 void SetIdleThread(Thread* thread)
 {
-	ASSERT(!idlethread);
+	assert(!idlethread);
 	idlethread = thread;
 	SetThreadState(thread, Thread::State::NONE);
 	SetCurrentThread(thread);
@@ -217,8 +218,8 @@ void SetThreadState(Thread* thread, Thread::State state)
 	{
 		if ( thread == firstrunnablethread ) { firstrunnablethread = thread->schedulerlistnext; }
 		if ( thread == firstrunnablethread ) { firstrunnablethread = NULL; }
-		ASSERT(thread->schedulerlistprev);
-		ASSERT(thread->schedulerlistnext);
+		assert(thread->schedulerlistprev);
+		assert(thread->schedulerlistnext);
 		thread->schedulerlistprev->schedulerlistnext = thread->schedulerlistnext;
 		thread->schedulerlistnext->schedulerlistprev = thread->schedulerlistprev;
 		thread->schedulerlistprev = NULL;
@@ -238,8 +239,8 @@ void SetThreadState(Thread* thread, Thread::State state)
 
 	thread->state = state;
 
-	ASSERT(thread->state != Thread::State::RUNNABLE || thread->schedulerlistprev);
-	ASSERT(thread->state != Thread::State::RUNNABLE || thread->schedulerlistnext);
+	assert(thread->state != Thread::State::RUNNABLE || thread->schedulerlistprev);
+	assert(thread->state != Thread::State::RUNNABLE || thread->schedulerlistnext);
 
 	Interrupt::SetEnabled(wasenabled);
 }

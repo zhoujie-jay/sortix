@@ -29,6 +29,7 @@
 #include <sortix/signal.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
+#include <assert.h>
 #include "process.h"
 #include "thread.h"
 #include "scheduler.h"
@@ -70,7 +71,7 @@ namespace Sortix
 	{
 		if ( process )
 			process->OnThreadDestruction(this);
-		ASSERT(CurrentThread() != this);
+		assert(CurrentThread() != this);
 		if ( kernelstackmalloced )
 			delete[] (uint8_t*) kernelstackpos;
 		terminated = true;
@@ -101,7 +102,7 @@ namespace Sortix
 
 	Thread* CreateKernelThread(Process* process, CPU::InterruptRegisters* regs)
 	{
-		ASSERT(process && regs && process->addrspace);
+		assert(process && regs && process->addrspace);
 		Thread* thread = new Thread;
 		if ( !thread ) { return NULL; }
 

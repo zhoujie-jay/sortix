@@ -27,6 +27,7 @@
 #include <sortix/signal.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
+#include <assert.h>
 #ifdef GOT_FAKE_KTHREAD
 #include "event.h"
 #endif
@@ -116,7 +117,7 @@ namespace Sortix
 		size_t amount = count;
 		size_t linear = buffersize - bufferoffset;
 		if ( linear < amount ) { amount = linear; }
-		ASSERT(amount);
+		assert(amount);
 		Memory::Copy(dest, buffer + bufferoffset, amount);
 		bufferoffset = (bufferoffset + amount) % buffersize;
 		bufferused -= amount;
@@ -129,7 +130,7 @@ namespace Sortix
 			size_t amount = count;
 			size_t linear = buffersize - bufferoffset;
 			if ( linear < amount ) { amount = linear; }
-			ASSERT(amount);
+			assert(amount);
 			Memory::Copy(dest, buffer + bufferoffset, amount);
 			bufferoffset = (bufferoffset + amount) % buffersize;
 			bufferused -= amount;
@@ -170,7 +171,7 @@ namespace Sortix
 		size_t amount = count;
 		size_t linear = buffersize - writeoffset;
 		if ( linear < amount ) { amount = linear; }
-		ASSERT(amount);
+		assert(amount);
 		Memory::Copy(buffer + writeoffset, src, amount);
 		bufferused += amount;
 		kthread_cond_broadcast(&readcond);
@@ -183,7 +184,7 @@ namespace Sortix
 			size_t amount = count;
 			size_t linear = buffersize - writeoffset;
 			if ( linear < amount ) { amount = linear; }
-			ASSERT(amount);
+			assert(amount);
 			Memory::Copy(buffer + writeoffset, src, amount);
 			bufferused += amount;
 			readevent.Signal();

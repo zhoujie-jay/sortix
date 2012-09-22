@@ -26,6 +26,7 @@
 #include <sortix/kernel/panic.h>
 #include <sortix/signal.h>
 #include <libmaxsi/memory.h>
+#include <assert.h>
 #include "interrupt.h"
 #include "thread.h"
 #include "signal.h"
@@ -80,7 +81,7 @@ const int PRIORITIES[SIG__NUM_DECLARED] =
 
 int Priority(int signum)
 {
-	ASSERT(0 <= signum && signum < SIG_MAX_NUM);
+	assert(0 <= signum && signum < SIG_MAX_NUM);
 	if ( !signum )
 		return -1;
 	if ( SIG__NUM_DECLARED <= signum )
@@ -96,7 +97,7 @@ Queue::Queue()
 
 void Queue::Push(int signum)
 {
-	ASSERT(0 < signum && signum < SIG_MAX_NUM);
+	assert(0 < signum && signum < SIG_MAX_NUM);
 	pending[signum] = true;
 }
 

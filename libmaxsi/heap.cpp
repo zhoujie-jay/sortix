@@ -35,11 +35,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <assert.h>
-#undef ASSERT
-#define ASSERT(invariant) assert(invariant)
 #endif
 
+#include <assert.h>
 #include <malloc.h>
 
 #define PARANOIA 1
@@ -87,7 +85,7 @@ namespace Maxsi
 
 		void FreeMemory(addr_t where, size_t bytes)
 		{
-			ASSERT(Sortix::Page::IsAligned(where + bytes));
+			assert(Sortix::Page::IsAligned(where + bytes));
 
 			while ( bytes )
 			{
@@ -101,7 +99,7 @@ namespace Maxsi
 
 		bool AllocateMemory(addr_t where, size_t bytes)
 		{
-			ASSERT(Sortix::Page::IsAligned(where + bytes));
+			assert(Sortix::Page::IsAligned(where + bytes));
 
 			addr_t pos = where;
 
@@ -172,7 +170,7 @@ namespace Maxsi
 		inline size_t BSR(size_t Value)
 		{
 #if 1
-			ASSERT(Value > 0);
+			assert(Value > 0);
 			for ( size_t I = 8*sizeof(size_t); I > 0; I-- )
 			{
 				if ( Value & ( 1UL << (I-1) ) ) { return I-1; }
@@ -189,7 +187,7 @@ namespace Maxsi
 		inline size_t BSF(size_t Value)
 		{
 #if 1
-			ASSERT(Value > 0);
+			assert(Value > 0);
 			for ( size_t I = 0; I < 8*sizeof(size_t); I++ )
 			{
 				if ( Value & ( 1UL << I ) ) { return I; }
@@ -369,12 +367,12 @@ namespace Maxsi
 			chunk->nextunused = bins[binindex];
 			if ( chunk->nextunused )
 			{
-				ASSERT(chunk->nextunused->IsSane());
+				assert(chunk->nextunused->IsSane());
 				chunk->nextunused->GetTrailer()->prevunused = chunk;
 			}
 			bins[binindex] = chunk;
 			bincontainschunks |= (1UL << binindex);
-			ASSERT(chunk->IsSane());
+			assert(chunk->IsSane());
 		}
 
 		bool ValidateHeap()
@@ -451,7 +449,7 @@ namespace Maxsi
 			const size_t PAGEMASK = ~(PAGESIZE - 1UL);
 			bytesneeded = ( bytesneeded + PAGESIZE - 1UL ) & PAGEMASK;
 
-			ASSERT(bytesneeded >= PAGESIZE);
+			assert(bytesneeded >= PAGESIZE);
 
 			// TODO: Overflow MAY happen here!
 			if ( heapmaxsize <= heapsize + wildernesssize + bytesneeded )
@@ -482,7 +480,7 @@ namespace Maxsi
 			#endif
 
 			#if 2 <= PARANOIA
-			ASSERT(ValidateHeap());
+			assert(ValidateHeap());
 			#endif
 
 			// The size field keeps both the allocation and meta information.
@@ -506,7 +504,7 @@ namespace Maxsi
 				size_t binindex = BSF(availablebins);
 
 				Chunk* chunk = bins[binindex];
-				ASSERT(chunk->IsSane());
+				assert(chunk->IsSane());
 				bins[binindex] = chunk->nextunused;
 
 				size_t binsize = 1UL << binindex;
@@ -522,7 +520,7 @@ namespace Maxsi
 					trailer->prevunused = NULL;
 				}
 
-				ASSERT(!bins[binindex] || bins[binindex]->IsSane());
+				assert(!bins[binindex] || bins[binindex]->IsSane());
 
 				// If we don't use the entire chunk.
 				if ( OVERHEAD <= binsize - size )
@@ -544,7 +542,7 @@ namespace Maxsi
 				chunk->GetTrailer()->magic = MAGIC;
 
 				#if 2 <= PARANOIA
-				ASSERT(ValidateHeap());
+				assert(ValidateHeap());
 				#endif
 
 				addr_t result = ((addr_t) chunk) + sizeof(Chunk);
@@ -566,19 +564,19 @@ namespace Maxsi
 			#else
 			Chunk* chunk = (Chunk*) (wilderness - wildernesssize);
 			#endif
-			ASSERT(size <= wildernesssize);
+			assert(size <= wildernesssize);
 			wildernesssize -= size;
 			heapsize += size;
-			ASSERT(IsGoodHeapPointer(chunk, sizeof(*chunk)));
+			assert(IsGoodHeapPointer(chunk, sizeof(*chunk)));
 			chunk->size = size;
 			Trailer* trailer = chunk->GetTrailer();
-			ASSERT(IsGoodHeapPointer(trailer, sizeof(*trailer)));
+			assert(IsGoodHeapPointer(trailer, sizeof(*trailer)));
 			trailer->size = size;
 			chunk->magic = MAGIC;
 			trailer->magic = MAGIC;
 
 			#if 2 <= PARANOIA
-			ASSERT(ValidateHeap());
+			assert(ValidateHeap());
 			#endif
 
 			addr_t result = ((addr_t) chunk) + sizeof(Chunk);
@@ -606,15 +604,15 @@ namespace Maxsi
 		// Removes a chunk from its bin.
 		void UnlinkChunk(Chunk* chunk)
 		{
-			ASSERT(chunk->IsSane());
+			assert(chunk->IsSane());
 			Trailer* trailer = chunk->GetTrailer();
 			if ( trailer->prevunused )
 			{
-				ASSERT(trailer->prevunused->IsSane());
+				assert(trailer->prevunused->IsSane());
 				trailer->prevunused->nextunused = chunk->nextunused;
 				if ( chunk->nextunused )
 				{
-					ASSERT(chunk->nextunused->IsSane());
+					assert(chunk->nextunused->IsSane());
 					chunk->nextunused->GetTrailer()->prevunused = trailer->prevunused;
 				}
 			}
@@ -622,14 +620,14 @@ namespace Maxsi
 			{
 				if ( chunk->nextunused )
 				{
-					ASSERT(chunk->nextunused->IsSane());
+					assert(chunk->nextunused->IsSane());
 					chunk->nextunused->GetTrailer()->prevunused = NULL;
 				}
 				size_t binindex = BSR(chunk->size);
-				ASSERT(bins[binindex] == chunk);
+				assert(bins[binindex] == chunk);
 				bins[binindex] = chunk->nextunused;
 				if ( !bins[binindex] ) { bincontainschunks ^= 1UL << binindex; }
-				else { ASSERT(bins[binindex]->IsSane()); }
+				else { assert(bins[binindex]->IsSane()); }
 			}
 		}
 
@@ -669,13 +667,13 @@ namespace Maxsi
 			#endif
 
 			#if 2 <= PARANOIA
-			ASSERT(ValidateHeap());
+			assert(ValidateHeap());
 			#endif
 
 			if ( !addr) { return; }
 			Chunk* chunk = (Chunk*) ((addr_t) addr - sizeof(Chunk));
-			ASSERT(chunk->IsUsed());
-			ASSERT(chunk->IsSane());
+			assert(chunk->IsUsed());
+			assert(chunk->IsSane());
 
 			UnifyNeighbors(&chunk);
 
@@ -696,7 +694,7 @@ namespace Maxsi
 			InsertChunk(chunk);
 
 			#if 2 <= PARANOIA
-			ASSERT(ValidateHeap());
+			assert(ValidateHeap());
 			#endif
 		}
 
@@ -714,8 +712,8 @@ namespace Maxsi
 		{
 			if ( !ptr ) { return Allocate(size); }
 			Chunk* chunk = (Chunk*) ((addr_t) ptr - sizeof(Chunk));
-			ASSERT(chunk->IsUsed());
-			ASSERT(chunk->IsSane());
+			assert(chunk->IsUsed());
+			assert(chunk->IsSane());
 			size_t allocsize = chunk->size - OVERHEAD;
 			if ( size < allocsize ) { return ptr; }
 			void* newptr = Allocate(size);

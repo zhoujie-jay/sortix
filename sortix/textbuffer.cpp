@@ -26,6 +26,7 @@
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/textbuffer.h>
+#include <assert.h>
 
 namespace Sortix {
 
@@ -62,9 +63,9 @@ TextBuffer* TextBufferHandle::Acquire()
 
 void TextBufferHandle::Release(TextBuffer* textbuf)
 {
-	ASSERT(textbuf);
+	assert(textbuf);
 	ScopedLock lock(&mutex);
-	ASSERT(numused);
+	assert(numused);
 	if ( !--numused )
 		kthread_cond_signal(&unusedcond);
 }

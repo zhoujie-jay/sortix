@@ -23,13 +23,25 @@
 ******************************************************************************/
 
 #include <assert.h>
+#include <stdint.h>
+#if !defined(SORTIX_KERNEL)
 #include <stdio.h>
 #include <stdlib.h>
+#endif
+#if defined(SORTIX_KERNEL)
+#include <sortix/kernel/decl.h>
+#include <sortix/kernel/panic.h>
+#endif
 
 void _assert(const char* filename, unsigned int line, const char* functionname,
              const char* expression)
 {
+#if !defined(SORTIX_KERNEL)
 	fprintf(stderr, "Assertion failure: %s:%u: %s: %s\n", filename, line,
 	        functionname, expression);
 	abort();
+#else
+	Sortix::PanicF("Assertion failure: %s:%u: %s: %s\n", filename, line,
+	               functionname, expression);
+#endif
 }

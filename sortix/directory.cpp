@@ -26,6 +26,7 @@
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
+#include <assert.h>
 #include "syscall.h"
 #include "process.h"
 #include "device.h"
@@ -81,7 +82,7 @@ namespace Sortix
 				// another one (provide as many as we can).
 				prev = dirent;
 				size_t bytesused = sizeof(sortix_dirent) + dirent->d_namelen + 1;
-				ASSERT(bytesused <= size);
+				assert(bytesused <= size);
 				size -= bytesused;
 				dirent = (sortix_dirent*) ( ((uint8_t*) dirent) + bytesused );
 			}

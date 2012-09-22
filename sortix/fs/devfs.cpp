@@ -26,6 +26,7 @@
 #include <libmaxsi/error.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
+#include <assert.h>
 #include "../filesystem.h"
 #include "../directory.h"
 #include "../stream.h"
@@ -256,7 +257,7 @@ namespace Sortix
 		DevATA* ata = new DevATA(drive);
 		if ( !ata ) { Panic("Cannot allocate ATA device"); }
 		ata->Refer();
-		ASSERT(ataid < 10);
+		assert(ataid < 10);
 		char name[5] = "ataN";
 		name[3] = '0' + ataid;
 		if ( !RegisterDevice(name, ata) )

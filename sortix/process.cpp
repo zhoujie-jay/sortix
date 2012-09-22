@@ -35,6 +35,7 @@
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/sortedlist.h>
+#include <assert.h>
 #include "thread.h"
 #include "process.h"
 #include "device.h"
@@ -123,10 +124,10 @@ namespace Sortix
 
 	Process::~Process()
 	{
-		ASSERT(!zombiechild);
-		ASSERT(!firstchild);
-		ASSERT(!addrspace);
-		ASSERT(!segments);
+		assert(!zombiechild);
+		assert(!firstchild);
+		assert(!addrspace);
+		assert(!segments);
 
 		Remove(this);
 		delete[] workingdir;
@@ -136,7 +137,7 @@ namespace Sortix
 
 	void Process::OnThreadDestruction(Thread* thread)
 	{
-		ASSERT(thread->process == this);
+		assert(thread->process == this);
 		kthread_mutex_lock(&threadlock);
 		if ( thread->prevsibling )
 			thread->prevsibling->nextsibling = thread->nextsibling;
@@ -159,7 +160,7 @@ namespace Sortix
 	void Process::ScheduleDeath()
 	{
 		// All our threads must have exited at this point.
-		ASSERT(!firstthread);
+		assert(!firstthread);
 		Worker::Schedule(Process__OnLastThreadExit, this);
 	}
 
@@ -189,17 +190,17 @@ namespace Sortix
 
 	void Process::LastPrayer()
 	{
-		ASSERT(this);
+		assert(this);
 		// This must never be called twice.
-		ASSERT(!iszombie);
+		assert(!iszombie);
 
 		// This must be called from a thread using another address space as the
 		// address space of this process is about to be destroyed.
 		Thread* curthread = CurrentThread();
-		ASSERT(curthread->process != this);
+		assert(curthread->process != this);
 
 		// This can't be called if the process is still alive.
-		ASSERT(!firstthread);
+		assert(!firstthread);
 
 		// We need to temporarily reload the correct addrese space of the dying
 		// process such that we can unmap and free its memory.
@@ -217,7 +218,7 @@ namespace Sortix
 
 		// Init is nice and will gladly raise our orphaned children and zombies.
 		Process* init = Scheduler::GetInitProcess();
-		ASSERT(init);
+		assert(init);
 		kthread_mutex_lock(&childlock);
 		while ( firstchild )
 		{
@@ -272,7 +273,7 @@ namespace Sortix
 
 	void Process::ResetAddressSpace()
 	{
-		ASSERT(Memory::GetAddressSpace() == addrspace);
+		assert(Memory::GetAddressSpace() == addrspace);
 		ProcessSegment* tmp = segments;
 		while ( tmp != NULL )
 		{
@@ -425,9 +426,9 @@ namespace Sortix
 	{
 		ScopedLock mylock(&childlock);
 		ScopedLock itslock(&child->parentlock);
-		ASSERT(!child->parent);
-		ASSERT(!child->nextsibling);
-		ASSERT(!child->prevsibling);
+		assert(!child->parent);
+		assert(!child->nextsibling);
+		assert(!child->prevsibling);
 		child->parent = this;
 		child->nextsibling = firstchild;
 		child->prevsibling = NULL;
@@ -438,7 +439,7 @@ namespace Sortix
 
 	Process* Process::Fork()
 	{
-		ASSERT(CurrentProcess() == this);
+		assert(CurrentProcess() == this);
 
 		Process* clone = new Process;
 		if ( !clone ) { return NULL; }
@@ -510,7 +511,7 @@ namespace Sortix
 	                     int envc, const char* const* envp,
 	                     CPU::InterruptRegisters* regs)
 	{
-		ASSERT(CurrentProcess() == this);
+		assert(CurrentProcess() == this);
 
 		addr_t entry = ELF::Construct(CurrentProcess(), program, programsize);
 		if ( !entry ) { return -1; }
@@ -783,7 +784,7 @@ namespace Sortix
 	{
 		ScopedLock lock(&pidalloclock);
 		size_t index = pidlist->Search(process);
-		ASSERT(index != SIZE_MAX);
+		assert(index != SIZE_MAX);
 
 		pidlist->Remove(index);
 	}

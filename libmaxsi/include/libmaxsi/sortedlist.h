@@ -30,6 +30,8 @@
 #error Define __STDC_LIMIT_MACROS before including <stdint.h>
 #endif
 
+#include <assert.h>
+
 namespace Maxsi
 {
 	template <class T> class SortedList
@@ -147,7 +149,7 @@ namespace Maxsi
 		T Remove(size_t index)
 		{
 			if ( !(flags & FLAG_SORTED) ) { Sort(); }
-			ASSERT(index < listused);
+			assert(index < listused);
 
 			// TODO: It may be possible to further speed up removal by delaying
 			// the expensive memory copy operation.

@@ -24,6 +24,7 @@
 
 #include <sortix/kernel/platform.h>
 #include <libmaxsi/memory.h>
+#include <assert.h>
 #include "../interrupt.h"
 #include "../keyboard.h"
 #include <sortix/keycodes.h>
@@ -80,7 +81,7 @@ namespace Sortix
 
 	static void PS2Keyboard__InterruptWork(void* payload, size_t size)
 	{
-		ASSERT(size == sizeof(PS2KeyboardWork));
+		assert(size == sizeof(PS2KeyboardWork));
 		PS2KeyboardWork* work = (PS2KeyboardWork*) payload;
 		work->kb->InterruptWork(work->scancode);
 	}

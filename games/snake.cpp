@@ -24,6 +24,7 @@
 #include <libmaxsi/sortix-vga.h>
 #include <sys/keycodes.h>
 #include <sys/termmode.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -204,8 +205,8 @@ void Update()
 		tailmax++;
 		animalx = 2 + (rand() % (width-4));
 		animaly = 2 + (rand() % (height-4));
-		ASSERT(0 <= animalx && animalx < width);
-		ASSERT(0 <= animaly && animaly < height);
+		assert(0 <= animalx && animalx < width);
+		assert(0 <= animaly && animaly < height);
 		if ( maxspeed < speed ) { speed += speedincrease; }
 	}
 

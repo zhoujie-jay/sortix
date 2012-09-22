@@ -25,6 +25,7 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/endian.h>
 #include <sortix/kernel/pci.h>
+#include <assert.h>
 #include "cpu.h" // TODO: Put this in some <sortix/kernel/cpu.h>
 
 // TODO: Verify that the endian conversions in this file actually works. I have
@@ -38,9 +39,9 @@ const uint16_t CONFIG_DATA = 0xCFC;
 
 uint32_t MakeDevAddr(uint8_t bus, uint8_t slot, uint8_t func)
 {
-	//ASSERT(bus < 1UL<<8UL); // bus is 8 bit anyways.
-	ASSERT(slot < 1UL<<5UL);
-	ASSERT(func < 1UL<<3UL);
+	//assert(bus < 1UL<<8UL); // bus is 8 bit anyways.
+	assert(slot < 1UL<<5UL);
+	assert(func < 1UL<<3UL);
 	return func << 8U | slot << 11U | bus << 16U | 1 << 31U;
 }
 
@@ -75,7 +76,7 @@ void Write32(uint32_t devaddr, uint8_t off, uint32_t val)
 
 uint16_t Read16(uint32_t devaddr, uint8_t off)
 {
-	ASSERT((off & 0x1) == 0);
+	assert((off & 0x1) == 0);
 	uint8_t alignedoff = off & ~0x3;
 	union { uint16_t val16[2]; uint32_t val32; };
 	val32 = ReadRaw32(devaddr, alignedoff);

@@ -24,6 +24,7 @@
 
 #include <sortix/kernel/platform.h>
 #include <libmaxsi/memory.h>
+#include <assert.h>
 #include "descriptors.h"
 #include "device.h"
 #include <sortix/fcntl.h>
@@ -99,8 +100,8 @@ namespace Sortix
 
 	void DescriptorTable::Free(int index)
 	{
-		ASSERT(index < numdevices);
-		ASSERT(devices[index].dev);
+		assert(index < numdevices);
+		assert(devices[index].dev);
 
 		if ( devices[index].dev != RESERVED_DEVICE )
 		{
@@ -118,9 +119,9 @@ namespace Sortix
 
 	void DescriptorTable::UseReservation(int index, Device* object)
 	{
-		ASSERT(index < index);
-		ASSERT(devices[index].dev != NULL);
-		ASSERT(devices[index].dev == RESERVED_DEVICE);
+		assert(index < index);
+		assert(devices[index].dev != NULL);
+		assert(devices[index].dev == RESERVED_DEVICE);
 
 		object->Refer();
 		devices[index].dev = object;
@@ -143,7 +144,7 @@ namespace Sortix
 			newlist[i].dev->Refer();
 		}
 
-		ASSERT(!forkinto->devices);
+		assert(!forkinto->devices);
 
 		forkinto->devices = newlist;
 		forkinto->numdevices = numdevices;
@@ -161,15 +162,15 @@ namespace Sortix
 
 	void DescriptorTable::SetFlags(int index, int flags)
 	{
-		ASSERT(0 <= index && index < numdevices);
-		ASSERT(devices[index].dev);
+		assert(0 <= index && index < numdevices);
+		assert(devices[index].dev);
 		devices[index].flags = flags;
 	}
 
 	int DescriptorTable::GetFlags(int index)
 	{
-		ASSERT(0 <= index && index < numdevices);
-		ASSERT(devices[index].dev);
+		assert(0 <= index && index < numdevices);
+		assert(devices[index].dev);
 		return devices[index].flags;
 	}
 }

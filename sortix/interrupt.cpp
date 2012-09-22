@@ -25,6 +25,7 @@
 #include <sortix/kernel/platform.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
+#include <assert.h>
 #include "x86-family/idt.h"
 #include "interrupt.h"
 #include "scheduler.h"
@@ -384,7 +385,7 @@ out:
 
 void WorkerThread(void* /*user*/)
 {
-	ASSERT(Interrupt::IsEnabled());
+	assert(Interrupt::IsEnabled());
 	uint8_t* payload = NULL;
 	Package* package = NULL;
 	while ( true )
@@ -398,7 +399,7 @@ void WorkerThread(void* /*user*/)
 
 bool ScheduleWork(WorkHandler handler, void* payload, size_t payloadsize)
 {
-	ASSERT(!Interrupt::IsEnabled());
+	assert(!Interrupt::IsEnabled());
 
 	Package package;
 	package.size = sizeof(package) + payloadsize;

@@ -26,6 +26,7 @@
 #include <libmaxsi/error.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
+#include <assert.h>
 #include "../filesystem.h"
 #include "../directory.h"
 #include "../stream.h"
@@ -332,7 +333,7 @@ namespace Sortix
 		if ( index == SIZE_MAX ) { Error::Set(ENOENT); return false; }
 
 		Device* dev = files->Remove(index);
-		ASSERT(dev);
+		assert(dev);
 		dev->Unref();
 		return true;
 	}

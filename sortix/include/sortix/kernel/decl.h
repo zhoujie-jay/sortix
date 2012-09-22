@@ -38,13 +38,6 @@ typedef uintptr_t addr_t;
 #define unlikely(x) __builtin_expect((x),0)
 #define STATIC_ASSERT(condition) static_assert(condition, #condition)
 
-#define ASSERT(invariant) \
-	if ( unlikely(!(invariant)) ) \
-	{ \
-		Sortix::PanicF("Assertion failure: %s:%u: %s: %s\n", __FILE__, __LINE__, __PRETTY_FUNCTION__, #invariant); \
-		while ( true ) { } \
-	}
-
 // The following declarations should not be used if possible. They were part of
 // what libmaxsi's old platform.h header declared and the kernel continues to
 // depend on it.

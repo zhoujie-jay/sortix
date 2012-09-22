@@ -52,10 +52,6 @@
 			extern "C" Type CName Parameters
 	#endif
 
-	#if !defined(SORTIX_KERNEL) && !defined(ASSERT)
-		#define ASSERT(invariant)
-	#endif
-
 	// Define common datatypes.
 	#include "types.h"
 

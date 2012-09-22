@@ -23,6 +23,7 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <assert.h>
 #include "../interrupt.h"
 #include "../thread.h"
 #include "float.h"
@@ -39,13 +40,13 @@ static inline void InitFPU()
 
 static inline void SaveState(uint8_t* dest)
 {
-	ASSERT( (((unsigned long) dest) & (16UL-1UL)) == 0 );
+	assert( (((unsigned long) dest) & (16UL-1UL)) == 0 );
 	asm volatile ("fxsave (%0)" : : "r"(dest));
 }
 
 static inline void LoadState(const uint8_t* src)
 {
-	ASSERT( (((unsigned long) src) & (16UL-1UL)) == 0 );
+	assert( (((unsigned long) src) & (16UL-1UL)) == 0 );
 	asm volatile ("fxrstor (%0)" : : "r"(src));
 }
 
@@ -70,7 +71,7 @@ static void OnFPUAccess(CPU::InterruptRegisters* /*regs*/, void* /*user*/)
 void Init()
 {
 	fputhread = CurrentThread();
-	ASSERT(fputhread);
+	assert(fputhread);
 	Interrupt::RegisterHandler(7, OnFPUAccess, NULL);
 }
 

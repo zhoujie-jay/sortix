@@ -25,6 +25,7 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/refcount.h>
+#include <assert.h>
 
 namespace Sortix {
 
@@ -38,7 +39,7 @@ Refcounted::~Refcounted()
 {
 	// It's OK to be deleted if our refcount is 1, it won't mess with any
 	// other owners that might need us.
-	ASSERT(refcount <= 1);
+	assert(refcount <= 1);
 }
 
 void Refcounted::Refer()

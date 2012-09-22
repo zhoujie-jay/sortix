@@ -26,6 +26,7 @@
 #include <sortix/mman.h>
 #include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
+#include <assert.h>
 #include "elf.h"
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/panic.h>
@@ -95,9 +96,9 @@ namespace Sortix
 				addr_t virtualaddr = pht->virtualaddr;
 				addr_t mapto = Page::AlignDown(virtualaddr);
 				addr_t mapbytes = virtualaddr - mapto + pht->memorysize;
-				ASSERT(pht->offset % pht->align == virtualaddr % pht->align);
-				ASSERT(pht->offset + pht->filesize < filelen);
-				ASSERT(pht->filesize <= pht->memorysize);
+				assert(pht->offset % pht->align == virtualaddr % pht->align);
+				assert(pht->offset + pht->filesize < filelen);
+				assert(pht->filesize <= pht->memorysize);
 
 				ProcessSegment* segment = new ProcessSegment;
 				if ( segment == NULL ) { return 0; }
@@ -181,9 +182,9 @@ namespace Sortix
 				addr_t virtualaddr = pht->virtualaddr;
 				addr_t mapto = Page::AlignDown(virtualaddr);
 				addr_t mapbytes = virtualaddr - mapto + pht->memorysize;
-				ASSERT(pht->offset % pht->align == virtualaddr % pht->align);
-				ASSERT(pht->offset + pht->filesize < filelen);
-				ASSERT(pht->filesize <= pht->memorysize);
+				assert(pht->offset % pht->align == virtualaddr % pht->align);
+				assert(pht->offset + pht->filesize < filelen);
+				assert(pht->filesize <= pht->memorysize);
 
 				ProcessSegment* segment = new ProcessSegment;
 				if ( segment == NULL ) { return 0; }

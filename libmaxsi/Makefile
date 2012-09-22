@@ -32,6 +32,7 @@ ASFLAGS=$(CPUASFLAGS)
 FREEOBJS=\
 abort.o \
 abs.o \
+_assert.o \
 bsearch.o \
 clearerr.o \
 c++.o \
@@ -106,7 +107,6 @@ vsscanf.o \
 
 HOSTEDOBJS=\
 access.o \
-_assert.o \
 chdir.o \
 chmod.o \
 close.o \
