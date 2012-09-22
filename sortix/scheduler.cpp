@@ -24,7 +24,6 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/memorymanagement.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <assert.h>
 #include "x86-family/gdt.h"

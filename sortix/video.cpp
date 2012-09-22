@@ -27,7 +27,7 @@
 #include <sortix/kernel/textbuffer.h>
 #include <sortix/kernel/video.h>
 #include <stdarg.h>
-#include <libmaxsi/error.h>
+#include <errno.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 
@@ -37,7 +37,7 @@ namespace Sortix {
 
 bool ReadParamString(const char* str, ...)
 {
-	if ( String::Seek(str, '\n') ) { Error::Set(EINVAL); }
+	if ( String::Seek(str, '\n') ) { errno = EINVAL; }
 	const char* keyname;
 	va_list args;
 	while ( *str )
@@ -45,9 +45,9 @@ bool ReadParamString(const char* str, ...)
 		size_t varlen = String::Reject(str, ",");
 		if ( !varlen ) { str++; continue; }
 		size_t namelen = String::Reject(str, "=");
-		if ( !namelen ) { Error::Set(EINVAL); goto cleanup; }
-		if ( !str[namelen] ) { Error::Set(EINVAL); goto cleanup; }
-		if ( varlen < namelen ) { Error::Set(EINVAL); goto cleanup; }
+		if ( !namelen ) { errno = EINVAL; goto cleanup; }
+		if ( !str[namelen] ) { errno = EINVAL; goto cleanup; }
+		if ( varlen < namelen ) { errno = EINVAL; goto cleanup; }
 		size_t valuelen = varlen - 1 /*=*/ - namelen;
 		char* name = String::Substring(str, 0, namelen);
 		if ( !name ) { goto cleanup; }
@@ -213,7 +213,7 @@ static DriverEntry* GetDriverEntry(const char* drivername)
 			return drivers + i;
 		}
 	}
-	Error::Set(ENODRV);
+	errno = ENODRV;
 	return NULL;
 }
 
@@ -221,10 +221,10 @@ static bool StartUpDriver(VideoDriver* driver, const char* drivername)
 {
 	if ( !driver->StartUp() )
 	{
-		int errnum = Error::Last();
+		int errnum = errno;
 		Log::PrintF("Error: Video driver '%s' was unable to startup\n",
 		            drivername);
-		Error::Set(errnum);
+		errno = errnum;
 		return false;
 	}
 	return true;
@@ -235,10 +235,10 @@ static bool ShutDownDriver(VideoDriver* driver, const char* drivername)
 	textbufhandle->Replace(NULL);
 	if ( !driver->ShutDown() )
 	{
-		int errnum = Error::Last();
+		int errnum = errno;
 		Log::PrintF("Warning: Video driver '%s' did not shutdown cleanly\n",
 		            drivername);
-		Error::Set(errnum);
+		errno = errnum;
 		return false;
 	}
 	return true;
@@ -250,10 +250,10 @@ static bool DriverModeAction(VideoDriver* driver, const char* drivername,
 	textbufhandle->Replace(NULL);
 	if ( !driver->SwitchMode(mode) )
 	{
-		int errnum = Error::Last();
+		int errnum = errno;
 		Log::PrintF("Error: Video driver '%s' could not %s mode '%s'\n",
 		            drivername, action, mode);
-		Error::Set(errnum);
+		errno = errnum;
 		return false;
 	}
 	textbufhandle->Replace(driver->CreateTextBuffer());
@@ -309,7 +309,7 @@ static bool DoSwitchMode(DriverEntry* newdrvent, const char* newmode)
 
 	if ( !StartUpDriver(newdriver, newdrivername) )
 	{
-		errnum = Error::Last();
+		errnum = errno;
 		goto restore_prev_driver;
 	}
 
@@ -317,7 +317,7 @@ static bool DoSwitchMode(DriverEntry* newdrvent, const char* newmode)
 
 	if ( !SwitchDriverMode(newdriver, newdrivername, newmode) )
 	{
-		errnum = Error::Last();
+		errnum = errno;
 		ShutDownDriver(newdriver, newdrivername);
 		currentdrvid = SIZE_MAX;
 		goto restore_prev_driver;
@@ -348,7 +348,7 @@ restore_prev_driver:
 error_out:
 	if ( currentdrvid == SIZE_MAX )
 		Log::PrintF("Warning: Could not fall back upon a video driver\n");
-	Error::Set(errnum); // Return the original error, not the last one.
+	errno = errnum; // Return the original error, not the last one.
 	return false;
 }
 
@@ -410,7 +410,7 @@ off_t FrameSize()
 {
 	ScopedLock lock(&videolock);
 	DriverEntry* drvent = CurrentDriverEntry();
-	if ( !drvent ) { Error::Set(EINVAL); return -1; }
+	if ( !drvent ) { errno = EINVAL; return -1; }
 	return drvent->driver->FrameSize();
 }
 
@@ -418,7 +418,7 @@ ssize_t WriteAt(off_t off, const void* buf, size_t count)
 {
 	ScopedLock lock(&videolock);
 	DriverEntry* drvent = CurrentDriverEntry();
-	if ( !drvent ) { Error::Set(EINVAL); return -1; }
+	if ( !drvent ) { errno = EINVAL; return -1; }
 	return drvent->driver->WriteAt(off, buf, count);
 }
 
@@ -426,7 +426,7 @@ ssize_t ReadAt(off_t off, void* buf, size_t count)
 {
 	ScopedLock lock(&videolock);
 	DriverEntry* drvent = CurrentDriverEntry();
-	if ( !drvent ) { Error::Set(EINVAL); return -1; }
+	if ( !drvent ) { errno = EINVAL; return -1; }
 	return drvent->driver->ReadAt(off, buf, count);
 }
 

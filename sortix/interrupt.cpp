@@ -23,9 +23,9 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <assert.h>
+#include <errno.h>
 #include "x86-family/idt.h"
 #include "interrupt.h"
 #include "scheduler.h"

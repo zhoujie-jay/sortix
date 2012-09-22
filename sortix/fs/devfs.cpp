@@ -23,10 +23,10 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
 #include <assert.h>
+#include <errno.h>
 #include "../filesystem.h"
 #include "../directory.h"
 #include "../stream.h"
@@ -89,7 +89,7 @@ namespace Sortix
 	ssize_t DevATA::Write(const uint8_t* src, size_t count)
 	{
 		if ( SIZE_MAX < count ) { count = SIZE_MAX; }
-		if ( drive->GetSize() <= offset && count ) { Error::Set(ENOSPC); return -1; }
+		if ( drive->GetSize() <= offset && count ) { errno = ENOSPC; return -1; }
 		if ( drive->GetSize() - offset < count ) { count = drive->GetSize() - offset; }
 		size_t amount = drive->Write(offset, src, count);
 		if ( count && !amount ) { return -1; }
@@ -124,14 +124,14 @@ namespace Sortix
 
 	bool DevATA::Seek(uintmax_t position)
 	{
-		if ( drive->GetSize() <= position ) { Error::Set(ENOSPC); return false; }
+		if ( drive->GetSize() <= position ) { errno = ENOSPC; return false; }
 		offset = position;
 		return true;
 	}
 
 	bool DevATA::Resize(uintmax_t /*size*/)
 	{
-		Error::Set(EPERM);
+		errno = EPERM;
 		return false;
 	}
 
@@ -330,7 +330,7 @@ namespace Sortix
 		if ( available < needed )
 		{
 			dirent->d_namelen = needed;
-			Error::Set(ERANGE);
+			errno = ERANGE;
 			return -1;
 		}
 
@@ -356,7 +356,7 @@ namespace Sortix
 
 		if ( !path[0] || (path[0] == '/' && !path[1]) )
 		{
-			if ( lowerflags != O_SEARCH ) { Error::Set(EISDIR); return NULL; }
+			if ( lowerflags != O_SEARCH ) { errno = EISDIR; return NULL; }
 			return new DevDevFSDir();
 		}
 
@@ -372,7 +372,7 @@ namespace Sortix
 		Device* dev = DeviceFS::LookUp(path + 1);
 		if ( !dev )
 		{
-			Error::Set(flags & O_CREAT ? EPERM : ENOENT);
+			errno = flags & O_CREAT ? EPERM : ENOENT;
 			return NULL;
 		}
 		if ( dev->IsType(Device::BUFFER) )
@@ -395,11 +395,11 @@ namespace Sortix
 
 		if ( *path == '\0' || ( *path++ == '/' && *path == '\0' ) )
 		{
-			Error::Set(EISDIR);
+			errno = EISDIR;
 			return false;
 		}
 
-		Error::Set(EPERM);
+		errno = EPERM;
 		return false;
 	}
 }

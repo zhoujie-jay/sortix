@@ -24,9 +24,9 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/video.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
+#include <errno.h>
 #include "../directory.h"
 #include "util.h"
 #include "videofs.h"
@@ -89,7 +89,7 @@ bool DevFrameBuffer::Seek(uintmax_t position)
 
 bool DevFrameBuffer::Resize(uintmax_t /*size*/)
 {
-	Error::Set(EBADF);
+	errno = EBADF;
 	return false;
 }
 
@@ -147,18 +147,18 @@ Device* MakeSetMode(int /*flags*/, mode_t /*mode*/)
 Device* MakeMode(int flags, mode_t mode)
 {
 	int lowerflags = flags & O_LOWERFLAGS;
-	if ( lowerflags == O_SEARCH ) { Error::Set(ENOTDIR); return NULL; }
+	if ( lowerflags == O_SEARCH ) { errno = ENOTDIR; return NULL; }
 	if ( lowerflags == O_RDONLY ) { return MakeGetMode(flags, mode); }
 	if ( lowerflags == O_WRONLY ) { return MakeSetMode(flags, mode); }
-	Error::Set(EPERM);
+	errno = EPERM;
 	return NULL;
 }
 
 Device* MakeModes(int flags, mode_t /*mode*/)
 {
 	int lowerflags = flags & O_LOWERFLAGS;
-	if ( lowerflags == O_SEARCH ) { Error::Set(ENOTDIR); return NULL; }
-	if ( lowerflags != O_RDONLY ) { Error::Set(EPERM); return NULL; }
+	if ( lowerflags == O_SEARCH ) { errno = ENOTDIR; return NULL; }
+	if ( lowerflags != O_RDONLY ) { errno = EPERM; return NULL; }
 	size_t nummodes = 0;
 	char** modes = Video::GetModes(&nummodes);
 	if ( !modes ) { return NULL; }
@@ -189,14 +189,14 @@ out:
 Device* MakeSupports(int flags, mode_t /*mode*/)
 {
 	int lowerflags = flags & O_LOWERFLAGS;
-	if ( lowerflags == O_SEARCH ) { Error::Set(ENOTDIR); return NULL; }
+	if ( lowerflags == O_SEARCH ) { errno = ENOTDIR; return NULL; }
 	return new DevLineCommand(SupportsModeHandler, NULL);
 }
 
 Device* MakeFB(int flags, mode_t /*mode*/)
 {
 	int lowerflags = flags & O_LOWERFLAGS;
-	if ( lowerflags == O_SEARCH ) { Error::Set(ENOTDIR); return NULL; }
+	if ( lowerflags == O_SEARCH ) { errno = ENOTDIR; return NULL; }
 	return new DevFrameBuffer();
 }
 
@@ -275,7 +275,7 @@ int DevVideoFSDir::Read(sortix_dirent* dirent, size_t available)
 	if ( available < needed )
 	{
 		dirent->d_namelen = needed;
-		Error::Set(ERANGE);
+		errno = ERANGE;
 		return -1;
 	}
 
@@ -298,24 +298,24 @@ Device* DevVideoFS::Open(const char* path, int flags, mode_t mode)
 	if ( !String::Compare(path, "") || !String::Compare(path, "/") )
 	{
 		if ( (flags & O_LOWERFLAGS) == O_SEARCH ) { return new DevVideoFSDir; }
-		Error::Set(EISDIR);
+		errno = EISDIR;
 		return NULL;
 	}
 
-	if ( *path++ != '/' ) { Error::Set(ENOENT); return NULL; }
+	if ( *path++ != '/' ) { errno = ENOENT; return NULL; }
 
 	for ( size_t i = 0; i < NumNodes(); i++ )
 	{
 		if ( String::Compare(path, nodes[i].name) ) { continue; }
 		return nodes[i].factory(flags, mode);
 	}
-	Error::Set(ENOENT);
+	errno = ENOENT;
 	return NULL;
 }
 
 bool DevVideoFS::Unlink(const char* /*path*/)
 {
-	Error::Set(EPERM);
+	errno = EPERM;
 	return false;
 }
 

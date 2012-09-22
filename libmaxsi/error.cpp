@@ -1,4 +1,4 @@
-/******************************************************************************
+/*******************************************************************************
 
 	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
@@ -11,8 +11,8 @@
 
 	LibMaxsi is distributed in the hope that it will be useful, but WITHOUT ANY
 	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
-	more details.
+	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+	details.
 
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
@@ -23,14 +23,11 @@
 *******************************************************************************/
 
 #define __SORTIX_STDLIB_REDIRECTS 0
-#include <libmaxsi/platform.h>
-#include <libmaxsi/error.h>
+#include <errno.h>
+#include <stddef.h>
 #ifndef SORTIX_KERNEL
 #include <stdio.h>
 #endif
-
-namespace Maxsi {
-namespace Error {
 
 extern "C" { int global_errno = 0; }
 extern "C" { errno_location_func_t errno_location_func = NULL; }
@@ -102,6 +99,3 @@ extern "C" char* strerror(int errnum)
 {
 	return (char*) sortix_strerror(errnum);
 }
-
-} // namespace Error
-} // namespace Maxsi

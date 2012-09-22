@@ -23,8 +23,8 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
+#include <errno.h>
 #include "fs/util.h"
 #include "fs/devfs.h"
 #include "vga.h"
@@ -183,7 +183,7 @@ ssize_t DevVGA::Read(uint8_t* dest, size_t count)
 
 ssize_t DevVGA::Write(const uint8_t* src, size_t count)
 {
-	if ( offset == VGA::VGA_SIZE && count ) { Error::Set(ENOSPC); return -1; }
+	if ( offset == VGA::VGA_SIZE && count ) { errno = ENOSPC; return -1; }
 	if ( VGA::VGA_SIZE - offset < count ) { count = VGA::VGA_SIZE - offset; }
 	Maxsi::Memory::Copy(VGA::VGA + offset, src, count);
 	offset = (offset + count) % VGA::VGA_SIZE;
@@ -221,7 +221,7 @@ uintmax_t DevVGA::Position()
 
 bool DevVGA::Seek(uintmax_t position)
 {
-	if ( VGA::VGA_SIZE < position ) { Error::Set(EINVAL); return false; }
+	if ( VGA::VGA_SIZE < position ) { errno = EINVAL; return false; }
 	offset = position;
 	return true;
 }
@@ -229,7 +229,7 @@ bool DevVGA::Seek(uintmax_t position)
 bool DevVGA::Resize(uintmax_t size)
 {
 	if ( size == VGA::VGA_SIZE ) { return false; }
-	Error::Set(ENOSPC);
+	errno = ENOSPC;
 	return false;
 }
 

@@ -25,8 +25,8 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/keycodes.h>
 #include <sortix/signal.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
+#include <errno.h>
 #include "utf8.h"
 #include "keyboard.h"
 #include "process.h"
@@ -74,7 +74,7 @@ namespace Sortix
 	{
 		ScopedLock lock(&termlock);
 		unsigned oldmode = mode;
-		if ( oldmode & ~SUPPORTED_MODES ) { Error::Set(ENOSYS); return false; }
+		if ( oldmode & ~SUPPORTED_MODES ) { errno = ENOSYS; return false; }
 		bool oldutf8 = mode & TERMMODE_UTF8;
 		bool newutf8 = newmode & TERMMODE_UTF8;
 		if ( oldutf8 ^ newutf8 ) { partiallywritten = 0; }
@@ -87,14 +87,14 @@ namespace Sortix
 	bool LogTerminal::SetWidth(unsigned width)
 	{
 		ScopedLock lock(&termlock);
-		if ( width != GetWidth() ) { Error::Set(ENOTSUP); return false; }
+		if ( width != GetWidth() ) { errno = ENOTSUP; return false; }
 		return true;
 	}
 
 	bool LogTerminal::SetHeight(unsigned height)
 	{
 		ScopedLock lock(&termlock);
-		if ( height != GetHeight() ) { Error::Set(ENOTSUP); return false; }
+		if ( height != GetHeight() ) { errno = ENOTSUP; return false; }
 		return true;
 	}
 
@@ -220,7 +220,7 @@ namespace Sortix
 	ssize_t LogTerminal::Read(uint8_t* dest, size_t count)
 	{
 		ScopedLockSignal lock(&termlock);
-		if ( !lock.IsAcquired() ) { Error::Set(EINTR); return -1; }
+		if ( !lock.IsAcquired() ) { errno = EINTR; return -1; }
 		size_t sofar = 0;
 		size_t left = count;
 #ifdef GOT_ACTUAL_KTHREAD
@@ -230,11 +230,11 @@ namespace Sortix
 			numwaiting++;
 			bool abort = !kthread_cond_wait_signal(&datacond, &termlock);
 			numwaiting--;
-			if ( abort ) { Error::Set(EINTR); return -1; }
+			if ( abort ) { errno = EINTR; return -1; }
 		}
 		if ( left && !linebuffer.CanPop() && !blocking && !numeofs )
 		{
-			Error::Set(EWOULDBLOCK);
+			errno = EWOULDBLOCK;
 			return -1;
 		}
 #endif
@@ -299,8 +299,8 @@ namespace Sortix
 		// Block if no data were ready.
 		if ( !sofar )
 		{
-			if ( mode & TERMMODE_NONBLOCK ) { Error::Set(EWOULDBLOCK); }
-			else { queuecommitevent.Register(); Error::Set(EBLOCKING); }
+			if ( mode & TERMMODE_NONBLOCK ) { errno = EWOULDBLOCK; }
+			else { queuecommitevent.Register(); errno = EBLOCKING; }
 			return -1;
 		}
 #endif

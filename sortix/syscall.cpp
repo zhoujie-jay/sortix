@@ -23,7 +23,6 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/error.h>
 #include "syscall.h"
 #include <sortix/syscallnum.h>
 #include <sortix/kernel/panic.h>

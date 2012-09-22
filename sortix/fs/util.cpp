@@ -23,9 +23,9 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
+#include <errno.h>
 #include "util.h"
 
 using namespace Maxsi;
@@ -61,14 +61,14 @@ uintmax_t DevStringBuffer::Position()
 
 bool DevStringBuffer::Seek(uintmax_t position)
 {
-	if ( strlength <= position ) { Error::Set(EINVAL); return false; }
+	if ( strlength <= position ) { errno = EINVAL; return false; }
 	off = position;
 	return true;
 }
 
 bool DevStringBuffer::Resize(uintmax_t size)
 {
-	if ( size != strlength ) { Error::Set(EBADF); }
+	if ( size != strlength ) { errno = EBADF; }
 	return false;
 }
 
@@ -83,7 +83,7 @@ ssize_t DevStringBuffer::Read(uint8_t* dest, size_t count)
 
 ssize_t DevStringBuffer::Write(const uint8_t* /*src*/, size_t /*count*/)
 {
-	Error::Set(EBADF);
+	errno = EBADF;
 	return -1;
 }
 
@@ -112,15 +112,15 @@ DevLineCommand::~DevLineCommand()
 
 ssize_t DevLineCommand::Read(uint8_t* /*dest*/, size_t /*count*/)
 {
-	Error::Set(EBADF);
+	errno = EBADF;
 	return -1;
 }
 
 ssize_t DevLineCommand::Write(const uint8_t* src, size_t count)
 {
-	if ( handled ) { Error::Set(EINVAL); return -1; }
+	if ( handled ) { errno = EINVAL; return -1; }
 	size_t available = CMDMAX - sofar;
-	if ( !available && count ) { Error::Set(ENOSPC); return -1; }
+	if ( !available && count ) { errno = ENOSPC; return -1; }
 	if ( available < count ) { count = available; }
 	Memory::Copy(cmd + sofar, src, count);
 	cmd[sofar += count] = 0;
@@ -180,7 +180,7 @@ bool DevMemoryBuffer::Seek(uintmax_t position)
 
 bool DevMemoryBuffer::Resize(uintmax_t size)
 {
-	if ( size != bufsize ) { Error::Set(EPERM); return false; }
+	if ( size != bufsize ) { errno = EPERM; return false; }
 	return true;
 }
 
@@ -196,8 +196,8 @@ ssize_t DevMemoryBuffer::Read(uint8_t* dest, size_t count)
 
 ssize_t DevMemoryBuffer::Write(const uint8_t* src, size_t count)
 {
-	if ( !write ) { Error::Set(EBADF); return -1; }
-	if ( bufsize <= off ) { Error::Set(EPERM); return -1; }
+	if ( !write ) { errno = EBADF; return -1; }
+	if ( bufsize <= off ) { errno = EPERM; return -1; }
 	size_t available = bufsize - off;
 	if ( available < count ) { count = available; }
 	Memory::Copy(buf + off, src, count);

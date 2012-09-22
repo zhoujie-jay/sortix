@@ -27,9 +27,9 @@
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/mman.h>
 #include <sortix/signal.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <assert.h>
+#include <errno.h>
 #include "process.h"
 #include "thread.h"
 #include "scheduler.h"
@@ -258,7 +258,7 @@ namespace Sortix
 
 	bool Thread::DeliverSignal(int signum)
 	{
-		if ( signum <= 0 || 128 <= signum ) { Error::Set(EINVAL); return false; }
+		if ( signum <= 0 || 128 <= signum ) { errno = EINVAL; return false; }
 
 		bool wasenabled = Interrupt::SetEnabled(false);
 		signalqueue.Push(signum);
@@ -271,7 +271,7 @@ namespace Sortix
 	int SysKill(pid_t pid, int signum)
 	{
 		// Protect the system idle process.
-		if ( !pid ) { Error::Set(EPERM); return -1; }
+		if ( !pid ) { errno = EPERM; return -1; }
 
 		// If we kill our own process, deliver the signal to this thread.
 		Thread* currentthread = CurrentThread();
@@ -280,7 +280,7 @@ namespace Sortix
 
 		// TODO: Race condition: The process could be deleted while we use it.
 		Process* process = Process::Get(pid);
-		if ( !process ) { Error::Set(ESRCH); return -1; }
+		if ( !process ) { errno = ESRCH; return -1; }
 
 		// TODO: Protect init?
 		// TODO: Check for permission.

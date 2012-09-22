@@ -23,8 +23,8 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/string.h>
+#include <errno.h>
 #include "syscall.h"
 #include "kernelinfo.h"
 
@@ -49,11 +49,11 @@ const char* KernelInfo(const char* req)
 ssize_t SysKernelInfo(const char* req, char* resp, size_t resplen)
 {
 	const char* str = KernelInfo(req);
-	if ( !str ) { Error::Set(EINVAL); return -1; }
+	if ( !str ) { errno = EINVAL; return -1; }
 	size_t stringlen = String::Length(str);
 	if ( resplen < stringlen + 1 )
 	{
-		Error::Set(ERANGE);
+		errno = ERANGE;
 		return (ssize_t) stringlen;
 	}
 	String::Copy(resp, str);

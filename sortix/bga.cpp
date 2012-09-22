@@ -29,9 +29,9 @@
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/pci.h>
 #include <sortix/mman.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
+#include <errno.h>
 #include "x86-family/memorymanagement.h"
 #include "lfbtextbuffer.h"
 #include "cpu.h"
@@ -287,7 +287,7 @@ bool BGADriver::ShutDown()
 	if ( curmode )
 	{
 		delete[] curmode; curmode = NULL;
-		Error::Set(ENOSYS);
+		errno = ENOSYS;
 		return false; // TODO: Return to VGA Text Mode.
 	}
 	return true;
@@ -295,7 +295,7 @@ bool BGADriver::ShutDown()
 
 char* BGADriver::GetCurrentMode() const
 {
-	if ( !curmode ) { Error::Set(EINVAL); return NULL; }
+	if ( !curmode ) { errno = EINVAL; return NULL; }
 	return String::Clone(curmode);
 }
 

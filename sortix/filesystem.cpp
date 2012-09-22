@@ -23,9 +23,9 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
+#include <errno.h>
 #include "syscall.h"
 #include "process.h"
 #include "filesystem.h"
@@ -46,7 +46,7 @@ namespace Sortix
 			Process* process = CurrentProcess();
 			const char* wd = process->workingdir;
 			char* abs = Directory::MakeAbsolute(wd, path);
-			if ( !abs ) { Error::Set(ENOMEM); return NULL; }
+			if ( !abs ) { errno = ENOMEM; return NULL; }
 
 			size_t pathoffset = 0;
 			DevFileSystem* fs = Mount::WhichFileSystem(abs, &pathoffset);
@@ -61,7 +61,7 @@ namespace Sortix
 			Process* process = CurrentProcess();
 			const char* wd = process->workingdir;
 			char* abs = Directory::MakeAbsolute(wd, path);
-			if ( !abs ) { Error::Set(ENOMEM); return false; }
+			if ( !abs ) { errno = ENOMEM; return false; }
 
 			size_t pathoffset = 0;
 			DevFileSystem* fs = Mount::WhichFileSystem(abs, &pathoffset);
@@ -113,28 +113,28 @@ namespace Sortix
 		int SysMkDir(const char* pathname, mode_t mode)
 		{
 			// TODO: Add the proper filesystem support!
-			Error::Set(ENOSYS);
+			errno = ENOSYS;
 			return -1;
 		}
 
 		int SysRmDir(const char* pathname)
 		{
 			// TODO: Add the proper filesystem support!
-			Error::Set(ENOSYS);
+			errno = ENOSYS;
 			return -1;
 		}
 
 		int SysTruncate(const char* pathname, off_t length)
 		{
 			// TODO: Add the proper filesystem support!
-			Error::Set(ENOSYS);
+			errno = ENOSYS;
 			return -1;
 		}
 
 		int SysFTruncate(const char* pathname, off_t length)
 		{
 			// TODO: Add the proper filesystem support!
-			Error::Set(ENOSYS);
+			errno = ENOSYS;
 			return -1;
 		}
 
@@ -161,7 +161,7 @@ namespace Sortix
 		int SysStat(const char* pathname, struct stat* st)
 		{
 			Device* dev = Open(pathname, O_RDONLY, 0);
-			if ( !dev && Error::Last() == EISDIR )
+			if ( !dev && errno == EISDIR )
 			{
 				dev = Open(pathname, O_SEARCH, 0);
 			}
@@ -176,7 +176,7 @@ namespace Sortix
 			Process* process = CurrentProcess();
 			DescriptorTable* descs = &(process->descriptors);
 			Device* dev = descs->Get(fd);
-			if ( !dev ) { Error::Set(EBADF); return -1; }
+			if ( !dev ) { errno = EBADF; return -1; }
 			HackStat(dev, st);
 			return 0;
 		}
@@ -186,17 +186,17 @@ namespace Sortix
 			Process* process = CurrentProcess();
 			DescriptorTable* descs = &(process->descriptors);
 			Device* dev = descs->Get(fd);
-			if ( !dev ) { Error::Set(EBADF); return -1; }
+			if ( !dev ) { errno = EBADF; return -1; }
 			switch ( cmd )
 			{
 			case F_SETFD: descs->SetFlags(fd, (int) arg); return 0;
 			case F_GETFD: return descs->GetFlags(fd);
-			case F_SETFL: Error::Set(ENOSYS); return -1;
+			case F_SETFL: errno = ENOSYS; return -1;
 			case F_GETFL:
 					if ( dev->IsType(Device::DIRECTORY) ) { return O_SEARCH; }
 					if ( !dev->IsType(Device::STREAM) )
 					{
-						Error::Set(ENOSYS);
+						errno = ENOSYS;
 						return -1;
 					}
 					DevStream* stream = (DevStream*) stream;
@@ -208,7 +208,7 @@ namespace Sortix
 					return O_EXEC;
 				break;
 			}
-			Error::Set(EINVAL);
+			errno = EINVAL;
 			return 1;
 		}
 

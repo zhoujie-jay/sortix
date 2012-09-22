@@ -25,8 +25,8 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
 #include "cpu.h"
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
+#include <errno.h>
 #include "ata.h"
 #include "fs/devfs.h"
 
@@ -93,7 +93,7 @@ namespace Sortix
 			// Detect if there is no such bus.
 			if ( status == 0xFF )
 			{
-				Error::Set(ENODEV);
+				errno = ENODEV;
 				return NULL;
 			}
 			return new ATABus(portoffset, altport);
@@ -119,7 +119,7 @@ namespace Sortix
 
 	ATADrive* ATABus::Instatiate(unsigned driveid)
 	{
-		if ( 1 < driveid ) { Error::Set(EINVAL); return false; }
+		if ( 1 < driveid ) { errno = EINVAL; return false; }
 		curdriveid = 0;
 
 		uint8_t drivemagic = 0xA0 | (driveid << 4);
@@ -133,12 +133,12 @@ namespace Sortix
 		while ( true )
 		{
 			status = CPU::InPortB(iobase + STATUS);
-			if ( !status || status == 0xFF ) { Error::Set(ENODEV); return false; }
+			if ( !status || status == 0xFF ) { errno = ENODEV; return false; }
 			if ( !(status & STATUS_BUSY) ) { break; }
 		}
 		if ( CPU::InPortB(iobase + LBA_MID) || CPU::InPortB(iobase + LBA_MID) )
 		{
-			Error::Set(ENODEV); return false; // ATAPI device not following spec.
+			errno = ENODEV; return false; // ATAPI device not following spec.
 		}
 		while ( !(status & STATUS_DATAREADY) && !(status & STATUS_ERROR) )
 		{
@@ -164,7 +164,7 @@ namespace Sortix
 			{
 				//Log::PrintF("Error status during identify\n");
 			}
-			Error::Set(EIO);
+			errno = EIO;
 			return false;
 		}
 		ATADrive* drive = new ATADrive(this, driveid, iobase, altport);
@@ -174,7 +174,7 @@ namespace Sortix
 	bool ATABus::SelectDrive(unsigned driveid)
 	{
 		if ( driveid == curdriveid ) { return true; }
-		if ( 1 < driveid ) { Error::Set(EINVAL); return false; }
+		if ( 1 < driveid ) { errno = EINVAL; return false; }
 
 		uint8_t drivemagic = 0xA0 | (driveid << 4);
 		CPU::OutPortB(iobase + DRIVE_SELECT, drivemagic);
@@ -227,10 +227,10 @@ namespace Sortix
 
 	bool ATADrive::PrepareIO(bool write, off_t sector)
 	{
-		if ( numsectors <= sector ) { Error::Set(EINVAL); return false; }
+		if ( numsectors <= sector ) { errno = EINVAL; return false; }
 		if ( write && !ENABLE_DISKWRITE )
 		{
-			Error::Set(EPERM);
+			errno = EPERM;
 			return false;
 		}
 		bus->SelectDrive(driveid);
@@ -260,8 +260,8 @@ namespace Sortix
 			uint8_t status = CPU::InPortB(iobase + STATUS);
 			if ( status & STATUS_BUSY ) { continue; }
 			if ( status & STATUS_DATAREADY ) { break; }
-			if ( status & STATUS_ERROR ) { Error::Set(EIO); return false; }
-			if ( status & STATUS_DRIVEFAULT ) { Error::Set(EIO); return false; }
+			if ( status & STATUS_ERROR ) { errno = EIO; return false; }
+			if ( status & STATUS_DRIVEFAULT ) { errno = EIO; return false; }
 		}
 		return true;
 	}
@@ -294,8 +294,8 @@ namespace Sortix
 		while ( true )
 		{
 			uint8_t status = CPU::InPortB(iobase + STATUS);
-			if ( status & STATUS_ERROR ) { Error::Set(EIO); return false; }
-			if ( status & STATUS_DRIVEFAULT ) { Error::Set(EIO); return false; }
+			if ( status & STATUS_ERROR ) { errno = EIO; return false; }
+			if ( status & STATUS_DRIVEFAULT ) { errno = EIO; return false; }
 			if ( !(status & STATUS_BUSY) ) { break; }
 		}
 		return true;

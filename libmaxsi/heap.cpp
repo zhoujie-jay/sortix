@@ -25,7 +25,6 @@
 #include <sys/mman.h>
 #include <libmaxsi/platform.h>
 #include <libmaxsi/memory.h>
-#include <libmaxsi/error.h>
 
 #ifdef SORTIX_KERNEL
 #define HEAP_GROWS_DOWNWARDS
@@ -38,6 +37,7 @@
 #endif
 
 #include <assert.h>
+#include <errno.h>
 #include <malloc.h>
 
 #define PARANOIA 1
@@ -454,7 +454,7 @@ namespace Maxsi
 			// TODO: Overflow MAY happen here!
 			if ( heapmaxsize <= heapsize + wildernesssize + bytesneeded )
 			{
-				Error::Set(ENOMEM);
+				errno = ENOMEM;
 				return true;
 			}
 
@@ -554,7 +554,7 @@ namespace Maxsi
 			// Check if the wilderness can meet our requirements.
 			if ( wildernesssize < size && !ExpandWilderness(size) )
 			{
-				Error::Set(ENOMEM);
+				errno = ENOMEM;
 				return NULL;
 			}
 

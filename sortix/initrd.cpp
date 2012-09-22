@@ -27,10 +27,10 @@
 #include <sortix/stat.h>
 #include <sortix/mman.h>
 #include <sortix/initrd.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/crc32.h>
+#include <errno.h>
 #include "initrd.h"
 #include "syscall.h"
 
@@ -78,7 +78,7 @@ uint32_t Root()
 
 static const initrd_inode_t* GetInode(uint32_t inode)
 {
-	if ( sb->inodecount <= inode ) { Error::Set(EINVAL); return NULL; }
+	if ( sb->inodecount <= inode ) { errno = EINVAL; return NULL; }
 	uint32_t pos = sb->inodeoffset + sb->inodesize * inode;
 	return (const initrd_inode_t*) (initrd + pos);
 }
@@ -113,7 +113,7 @@ uint32_t Traverse(uint32_t ino, const char* name)
 {
 	const initrd_inode_t* inode = GetInode(ino);
 	if ( !inode ) { return 0; }
-	if ( !INITRD_S_ISDIR(inode->mode) ) { Error::Set(ENOTDIR); return 0; }
+	if ( !INITRD_S_ISDIR(inode->mode) ) { errno = ENOTDIR; return 0; }
 	uint32_t offset = 0;
 	while ( offset < inode->size )
 	{
@@ -125,7 +125,7 @@ uint32_t Traverse(uint32_t ino, const char* name)
 		}
 		offset += dirent->reclen;
 	}
-	Error::Set(ENOENT);
+	errno = ENOENT;
 	return 0;
 }
 
@@ -134,7 +134,7 @@ const char* GetFilename(uint32_t dir, size_t index)
 {
 	const initrd_inode_t* inode = GetInode(dir);
 	if ( !inode ) { return 0; }
-	if ( !INITRD_S_ISDIR(inode->mode) ) { Error::Set(ENOTDIR); return 0; }
+	if ( !INITRD_S_ISDIR(inode->mode) ) { errno = ENOTDIR; return 0; }
 	uint32_t offset = 0;
 	while ( offset < inode->size )
 	{
@@ -143,7 +143,7 @@ const char* GetFilename(uint32_t dir, size_t index)
 		if ( index-- == 0 ) { return dirent->name; }
 		offset += dirent->reclen;
 	}
-	Error::Set(EINVAL);
+	errno = EINVAL;
 	return NULL;
 }
 
@@ -151,7 +151,7 @@ size_t GetNumFiles(uint32_t dir)
 {
 	const initrd_inode_t* inode = GetInode(dir);
 	if ( !inode ) { return 0; }
-	if ( !INITRD_S_ISDIR(inode->mode) ) { Error::Set(ENOTDIR); return 0; }
+	if ( !INITRD_S_ISDIR(inode->mode) ) { errno = ENOTDIR; return 0; }
 	uint32_t offset = 0;
 	size_t numentries = 0;
 	while ( offset < inode->size )

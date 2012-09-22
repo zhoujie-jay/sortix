@@ -24,7 +24,6 @@
 
 #include <libmaxsi/platform.h>
 #include <libmaxsi/memory.h>
-#include <libmaxsi/error.h>
 #ifndef SORTIX_KERNEL
 #include <sys/syscall.h>
 #endif

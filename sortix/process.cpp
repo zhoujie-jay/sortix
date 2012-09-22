@@ -31,11 +31,11 @@
 #include <sortix/fork.h>
 #include <sortix/mman.h>
 #include <sortix/wait.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/sortedlist.h>
 #include <assert.h>
+#include <errno.h>
 #include "thread.h"
 #include "process.h"
 #include "device.h"
@@ -325,12 +325,12 @@ namespace Sortix
 	pid_t Process::Wait(pid_t thepid, int* status, int options)
 	{
 		// TODO: Process groups are not supported yet.
-		if ( thepid < -1 || thepid == 0 ) { Error::Set(ENOSYS); return -1; }
+		if ( thepid < -1 || thepid == 0 ) { errno = ENOSYS; return -1; }
 
 		ScopedLock lock(&childlock);
 
 		// A process can only wait if it has children.
-		if ( !firstchild && !zombiechild ) { Error::Set(ECHILD); return -1; }
+		if ( !firstchild && !zombiechild ) { errno = ECHILD; return -1; }
 
 		// Processes can only wait for their own children to exit.
 		if ( 0 < thepid )
@@ -344,7 +344,7 @@ namespace Sortix
 			for ( Process* p = zombiechild; !found && p; p = p->nextsibling )
 				if ( p->pid == thepid )
 					found = true;
-			if ( !found ) { Error::Set(ECHILD); return -1; }
+			if ( !found ) { errno = ECHILD; return -1; }
 		}
 
 		Process* zombie = NULL;
@@ -360,7 +360,7 @@ namespace Sortix
 			zombiewaiting++;
 			unsigned long r = kthread_cond_wait_signal(&zombiecond, &childlock);
 			zombiewaiting--;
-			if ( !r ) { Error::Set(EINTR); return -1; }
+			if ( !r ) { errno = EINTR; return -1; }
 		}
 
 		if ( zombie->prevsibling )
@@ -418,7 +418,7 @@ namespace Sortix
 		// TODO: How to handle signals that kill the process?
 		if ( firstthread )
 			return firstthread->DeliverSignal(signum);
-		Error::Set(EINIT);
+		errno = EINIT;
 		return false;
 	}
 
@@ -570,14 +570,14 @@ namespace Sortix
 	DevBuffer* OpenProgramImage(const char* progname, const char* wd, const char* path)
 	{
 		char* abs = Directory::MakeAbsolute("/", progname);
-		if ( !abs ) { Error::Set(ENOMEM); return NULL; }
+		if ( !abs ) { errno = ENOMEM; return NULL; }
 
 		// TODO: Use O_EXEC here!
 		Device* dev =  FileSystem::Open(abs, O_RDONLY, 0);
 		delete[] abs;
 
 		if ( !dev ) { return NULL; }
-		if ( !dev->IsType(Device::BUFFER) ) { Error::Set(EACCES); dev->Unref(); return NULL; }
+		if ( !dev->IsType(Device::BUFFER) ) { errno = EACCES; dev->Unref(); return NULL; }
 		return (DevBuffer*) dev;
 	}
 
@@ -630,9 +630,9 @@ namespace Sortix
 
 		dev->Refer(); // TODO: Rules of GC may change soon.
 		needed = dev->Size();
-		if ( SIZE_MAX < needed ) { Error::Set(ENOMEM); goto cleanup_dev; }
+		if ( SIZE_MAX < needed ) { errno = ENOMEM; goto cleanup_dev; }
 
-		if ( !dev->IsReadable() ) { Error::Set(EBADF); goto cleanup_dev; }
+		if ( !dev->IsReadable() ) { errno = EBADF; goto cleanup_dev; }
 
 		count = needed;
 		buffer = new uint8_t[count];
@@ -642,7 +642,7 @@ namespace Sortix
 		{
 			ssize_t bytesread = dev->Read(buffer + sofar, count - sofar);
 			if ( bytesread < 0 ) { goto cleanup_buffer; }
-			if ( bytesread == 0 ) { Error::Set(EEOF); return -1; }
+			if ( bytesread == 0 ) { errno = EEOF; return -1; }
 			sofar += bytesread;
 		}
 
@@ -668,10 +668,10 @@ namespace Sortix
 
 	pid_t SysTFork(int flags, tforkregs_t* regs)
 	{
-		if ( Signal::IsPending() ) { Error::Set(EINTR); return -1; }
+		if ( Signal::IsPending() ) { errno = EINTR; return -1; }
 
 		// TODO: Properly support tfork(2).
-		if ( flags != SFFORK ) { Error::Set(ENOSYS); return -1; }
+		if ( flags != SFFORK ) { errno = ENOSYS; return -1; }
 
 		CPU::InterruptRegisters cpuregs;
 		InitializeThreadRegisters(&cpuregs, regs);
@@ -799,10 +799,10 @@ namespace Sortix
 			if ( dataseg && iter->position < dataseg->position ) { continue; }
 			dataseg = iter;
 		}
-		if ( !dataseg ) { Error::Set(ENOMEM); return (void*) -1UL; }
+		if ( !dataseg ) { errno = ENOMEM; return (void*) -1UL; }
 		addr_t currentend = dataseg->position + dataseg->size;
 		addr_t newend = currentend + increment;
-		if ( newend < dataseg->position ) { Error::Set(EINVAL); return (void*) -1UL; }
+		if ( newend < dataseg->position ) { errno = EINVAL; return (void*) -1UL; }
 		if ( newend < currentend )
 		{
 			addr_t unmapfrom = Page::AlignUp(newend);

@@ -25,9 +25,9 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/signal.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <assert.h>
+#include <errno.h>
 #ifdef GOT_FAKE_KTHREAD
 #include "event.h"
 #endif
@@ -103,12 +103,12 @@ namespace Sortix
 		if ( count == 0 ) { return 0; }
 #ifdef GOT_ACTUAL_KTHREAD
 		ScopedLockSignal lock(&pipelock);
-		if ( !lock.IsAcquired() ) { Error::Set(EINTR); return -1; }
+		if ( !lock.IsAcquired() ) { errno = EINTR; return -1; }
 		while ( anywriting && !bufferused )
 		{
 			if ( !kthread_cond_wait_signal(&readcond, &pipelock) )
 			{
-				Error::Set(EINTR);
+				errno = EINTR;
 				return -1;
 			}
 		}
@@ -140,7 +140,7 @@ namespace Sortix
 
 		if ( !anywriting ) { return 0; }
 
-		Error::Set(EBLOCKING);
+		errno = EBLOCKING;
 		readevent.Register();
 		return -1;
 #endif
@@ -151,19 +151,19 @@ namespace Sortix
 		if ( count == 0 ) { return 0; }
 #ifdef GOT_ACTUAL_KTHREAD
 		ScopedLockSignal lock(&pipelock);
-		if ( !lock.IsAcquired() ) { Error::Set(EINTR); return -1; }
+		if ( !lock.IsAcquired() ) { errno = EINTR; return -1; }
 		while ( anyreading && bufferused == buffersize )
 		{
 			if ( !kthread_cond_wait_signal(&writecond, &pipelock) )
 			{
-				Error::Set(EINTR);
+				errno = EINTR;
 				return -1;
 			}
 		}
 		if ( !anyreading )
 		{
 			CurrentThread()->DeliverSignal(SIGPIPE);
-			Error::Set(EPIPE);
+			errno = EPIPE;
 			return -1;
 		}
 		if ( buffersize - bufferused < count ) { count = buffersize - bufferused; }
@@ -191,7 +191,7 @@ namespace Sortix
 			return amount;
 		}
 
-		Error::Set(EBLOCKING);
+		errno = EBLOCKING;
 		writeevent.Register();
 		return -1;
 #endif
@@ -250,7 +250,7 @@ namespace Sortix
 
 	ssize_t DevPipeReading::Write(const uint8_t* /*src*/, size_t /*count*/)
 	{
-		Error::Set(EBADF);
+		errno = EBADF;
 		return -1;
 	}
 
@@ -298,7 +298,7 @@ namespace Sortix
 
 	ssize_t DevPipeWriting::Read(uint8_t* /*dest*/, size_t /*count*/)
 	{
-		Error::Set(EBADF);
+		errno = EBADF;
 		return -1;
 	}
 

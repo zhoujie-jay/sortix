@@ -23,7 +23,7 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/error.h>
+#include <errno.h>
 #include "utf8.h"
 
 using namespace Maxsi;
@@ -42,7 +42,7 @@ namespace Sortix
 			if ( (1U<<16U) <= unicode ) { bytes = 4; bits = 21; }
 			if ( (1U<<21U) <= unicode ) { bytes = 5; bits = 26; }
 			if ( (1U<<26U) <= unicode ) { bytes = 6; bits = 31; }
-			if ( (1U<<31U) <= unicode ) { Error::Set(EINVAL); return 0; }
+			if ( (1U<<31U) <= unicode ) { errno = EINVAL; return 0; }
 
 			uint8_t prefix;
 			unsigned prefixavai;

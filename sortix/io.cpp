@@ -24,8 +24,8 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
-#include <libmaxsi/error.h>
 #include <sortix/seek.h>
+#include <errno.h>
 #include "thread.h"
 #include "process.h"
 #include "device.h"
@@ -56,14 +56,14 @@ namespace Sortix
 			if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
 			Process* process = CurrentProcess();
 			Device* dev = process->descriptors.Get(fd);
-			if ( !dev ) { Error::Set(EBADF); return -1; }
-			if ( !dev->IsType(Device::STREAM) ) { Error::Set(EBADF); return -1; }
+			if ( !dev ) { errno = EBADF; return -1; }
+			if ( !dev->IsType(Device::STREAM) ) { errno = EBADF; return -1; }
 			DevStream* stream = (DevStream*) dev;
-			if ( !stream->IsWritable() ) { Error::Set(EBADF); return -1; }
+			if ( !stream->IsWritable() ) { errno = EBADF; return -1; }
 #ifdef GOT_FAKE_KTHREAD
 			ssize_t written = stream->Write(buffer, count);
 			if ( 0 <= written ) { return written; }
-			if ( Error::Last() != EBLOCKING ) { return -1; }
+			if ( errno != EBLOCKING ) { return -1; }
 
 			// The stream will resume our system call once progress has been
 			// made. Our request is certainly not forgotten.
@@ -88,7 +88,7 @@ namespace Sortix
 		// TODO: Not implemented yet due to stupid internal kernel design.
 		ssize_t SysPWrite(int fd, const uint8_t* buffer, size_t count, off_t off)
 		{
-			Error::Set(ENOSYS);
+			errno = ENOSYS;
 			return -1;
 		}
 
@@ -109,14 +109,14 @@ namespace Sortix
 			if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
 			Process* process = CurrentProcess();
 			Device* dev = process->descriptors.Get(fd);
-			if ( !dev ) { Error::Set(EBADF); return -1; }
-			if ( !dev->IsType(Device::STREAM) ) { Error::Set(EBADF); return -1; }
+			if ( !dev ) { errno = EBADF; return -1; }
+			if ( !dev->IsType(Device::STREAM) ) { errno = EBADF; return -1; }
 			DevStream* stream = (DevStream*) dev;
-			if ( !stream->IsReadable() ) { Error::Set(EBADF); return -1;}
+			if ( !stream->IsReadable() ) { errno = EBADF; return -1;}
 #ifdef GOT_FAKE_KTHREAD
 			ssize_t bytesread = stream->Read(buffer, count);
 			if ( 0 <= bytesread ) { return bytesread; }
-			if ( Error::Last() != EBLOCKING ) { return -1; }
+			if ( errno != EBLOCKING ) { return -1; }
 
 			// The stream will resume our system call once progress has been
 			// made. Our request is certainly not forgotten.
@@ -141,7 +141,7 @@ namespace Sortix
 		// TODO: Not implemented yet due to stupid internal kernel design.
 		ssize_t SysPRead(int fd, uint8_t* buffer, size_t count, off_t off)
 		{
-			Error::Set(ENOSYS);
+			errno = ENOSYS;
 			return -1;
 		}
 
@@ -150,8 +150,8 @@ namespace Sortix
 			// TODO: Validate that offset is a legal user-space off_t!
 			Process* process = CurrentProcess();
 			Device* dev = process->descriptors.Get(fd);
-			if ( !dev ) { Error::Set(EBADF); *offset = -1; return; }
-			if ( !dev->IsType(Device::BUFFER) ) { Error::Set(EBADF); *offset = -1; return; }
+			if ( !dev ) { errno = EBADF; *offset = -1; return; }
+			if ( !dev->IsType(Device::BUFFER) ) { errno = EBADF; *offset = -1; return; }
 			DevBuffer* buffer = (DevBuffer*) dev;
 			off_t origin;
 			switch ( whence )
@@ -159,10 +159,10 @@ namespace Sortix
 				case SEEK_SET: origin = 0; break;
 				case SEEK_CUR: origin = buffer->Position(); break;
 				case SEEK_END: origin = buffer->Size(); break;
-				default: Error::Set(EINVAL); *offset = -1; return;
+				default: errno = EINVAL; *offset = -1; return;
 			}
 			off_t newposition = origin + *offset;
-			if ( newposition < 0 ) { Error::Set(EINVAL); *offset = -1; return; }
+			if ( newposition < 0 ) { errno = EINVAL; *offset = -1; return; }
 			if ( !buffer->Seek(newposition) ) { *offset = -1; return; }
 			*offset = buffer->Position();
 		}
@@ -171,7 +171,7 @@ namespace Sortix
 		{
 			Process* process = CurrentProcess();
 			Device* dev = process->descriptors.Get(fd);
-			if ( !dev ) { Error::Set(EBADF); return -1; }
+			if ( !dev ) { errno = EBADF; return -1; }
 			process->descriptors.Free(fd);
 			return 0;
 		}
@@ -180,7 +180,7 @@ namespace Sortix
 		{
 			Process* process = CurrentProcess();
 			Device* dev = process->descriptors.Get(fd);
-			if ( !dev ) { Error::Set(EBADF); return -1; }
+			if ( !dev ) { errno = EBADF; return -1; }
 			return process->descriptors.Allocate(dev);
 		}
 

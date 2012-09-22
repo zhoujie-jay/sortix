@@ -24,9 +24,9 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
+#include <errno.h>
 #include "../filesystem.h"
 #include "../directory.h"
 #include "../stream.h"
@@ -102,14 +102,14 @@ namespace Sortix
 	bool DevInitFSFile::Seek(uintmax_t position)
 	{
 		ScopedLock lock(&filelock);
-		if ( SIZE_MAX < position ) { Error::Set(EOVERFLOW); return false; }
+		if ( SIZE_MAX < position ) { errno = EOVERFLOW; return false; }
 		offset = position;
 		return true;
 	}
 
 	bool DevInitFSFile::Resize(uintmax_t /*size*/)
 	{
-		Error::Set(EBADF);
+		errno = EBADF;
 		return false;
 	}
 
@@ -127,7 +127,7 @@ namespace Sortix
 
 	ssize_t DevInitFSFile::Write(const uint8_t* /*src*/, size_t /*count*/)
 	{
-		Error::Set(EBADF);
+		errno = EBADF;
 		return false;
 	}
 
@@ -194,7 +194,7 @@ namespace Sortix
 		if ( available < needed )
 		{
 			dirent->d_namelen = needed;
-			Error::Set(ERANGE);
+			errno = ERANGE;
 			return -1;
 		}
 
@@ -219,11 +219,11 @@ namespace Sortix
 
 		if ( !path[0] || (path[0] == '/' && !path[1]) )
 		{
-			if ( lowerflags != O_SEARCH ) { Error::Set(EISDIR); return NULL; }
+			if ( lowerflags != O_SEARCH ) { errno = EISDIR; return NULL; }
 			return new DevInitFSDir(InitRD::Root());
 		}
 
-		if ( *path++ != '/' ) { Error::Set(ENOENT); return NULL; }
+		if ( *path++ != '/' ) { errno = ENOENT; return NULL; }
 
 		uint32_t ino = InitRD::Traverse(InitRD::Root(), path);
 		if ( !ino ) { return NULL; }
@@ -231,21 +231,21 @@ namespace Sortix
 		const uint8_t* buffer = InitRD::Open(ino, &buffersize);
 		if ( !buffer ) { return NULL; }
 
-		if ( lowerflags == O_SEARCH ) { Error::Set(ENOTDIR); return NULL; }
-		if ( lowerflags != O_RDONLY ) { Error::Set(EROFS); return NULL; }
+		if ( lowerflags == O_SEARCH ) { errno = ENOTDIR; return NULL; }
+		if ( lowerflags != O_RDONLY ) { errno = EROFS; return NULL; }
 
 		char* newpath = String::Clone(path);
-		if ( !newpath ) { Error::Set(ENOSPC); return NULL; }
+		if ( !newpath ) { errno = ENOSPC; return NULL; }
 
 		Device* result = new DevInitFSFile(newpath, buffer, buffersize);
-		if ( !result ) { delete[] newpath; Error::Set(ENOSPC); return NULL; }
+		if ( !result ) { delete[] newpath; errno = ENOSPC; return NULL; }
 
 		return result;
 	}
 
 	bool DevInitFS::Unlink(const char* path)
 	{
-		Error::Set(EROFS);
+		errno = EROFS;
 		return false;
 	}
 }

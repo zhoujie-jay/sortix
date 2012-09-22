@@ -24,9 +24,9 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/mman.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <assert.h>
+#include <errno.h>
 #include "elf.h"
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/panic.h>
@@ -142,7 +142,7 @@ namespace Sortix
 		addr_t Construct64(Process* process, const void* file, size_t filelen)
 		{
 			#ifndef PLATFORM_X64
-			Error::Set(ENOEXEC);
+			errno = ENOEXEC;
 			return 0;
 			#else
 			if ( filelen < sizeof(Header64) ) { return 0; }
@@ -228,13 +228,13 @@ namespace Sortix
 
 		addr_t Construct(Process* process, const void* file, size_t filelen)
 		{
-			if ( filelen < sizeof(Header) ) { Error::Set(ENOEXEC); return 0; }
+			if ( filelen < sizeof(Header) ) { errno = ENOEXEC; return 0; }
 			const Header* header = (const Header*) file;
 
 			if ( !(header->magic[0] == 0x7F && header->magic[1] == 'E' &&
                    header->magic[2] == 'L'  && header->magic[3] == 'F'  ) )
 			{
-				Error::Set(ENOEXEC);
+				errno = ENOEXEC;
 				return 0;
 			}
 

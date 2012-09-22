@@ -24,7 +24,7 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
-#include <libmaxsi/error.h>
+#include <errno.h>
 #include "interrupt.h"
 #include "stream.h"
 #include "syscall.h"
@@ -268,7 +268,7 @@ ssize_t DevCOMPort::Read(uint8_t* dest, size_t count)
 	while ( !(CPU::InPortB(port + LSR) & LSR_READY) )
 		if ( Signal::IsPending() )
 		{
-			Error::Set(EINTR);
+			errno = EINTR;
 			return -1;
 		}
 #else
@@ -282,9 +282,9 @@ ssize_t DevCOMPort::Read(uint8_t* dest, size_t count)
 	if ( !(lsr & LSR_READY) )
 	{
 #if POLL_EAGAIN
-		Error::Set(EAGAIN);
+		errno = EAGAIN;
 #else
-		Error::Set(EBLOCKING);
+		errno = EBLOCKING;
 		Syscall::Yield();
 #endif
 		return -1;
@@ -312,7 +312,7 @@ ssize_t DevCOMPort::Write(const uint8_t* src, size_t count)
 	while ( !(CPU::InPortB(port + LSR) & LSR_THRE) )
 		if ( Signal::IsPending() )
 		{
-			Error::Set(EINTR);
+			errno = EINTR;
 			return -1;
 		}
 #else
@@ -326,9 +326,9 @@ ssize_t DevCOMPort::Write(const uint8_t* src, size_t count)
 	if ( !(lsr & LSR_THRE) )
 	{
 #if POLL_EAGAIN
-		Error::Set(EAGAIN);
+		errno = EAGAIN;
 #else
-		Error::Set(EBLOCKING);
+		errno = EBLOCKING;
 		Syscall::Yield();
 #endif
 		return -1;
@@ -362,7 +362,7 @@ ssize_t DevCOMPort::Read(uint8_t* dest, size_t count)
 #else
 		dataevent.Register();
 #endif
-		Error::Set(EBLOCKING);
+		errno = EBLOCKING;
 		return -1;
 	}
 
@@ -391,7 +391,7 @@ ssize_t DevCOMPort::Write(const uint8_t* src, size_t count)
 #else
 		sentevent.Register();
 #endif
-		Error::Set(EBLOCKING);
+		errno = EBLOCKING;
 		return -1;
 	}
 

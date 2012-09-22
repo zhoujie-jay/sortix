@@ -24,7 +24,7 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/termios.h>
-#include <libmaxsi/error.h>
+#include <errno.h>
 #include "syscall.h"
 #include "process.h"
 #include "terminal.h"
@@ -37,8 +37,8 @@ namespace Sortix
 	{
 		Process* process = CurrentProcess();
 		Device* dev = process->descriptors.Get(fd);
-		if ( !dev ) { Error::Set(EBADF); return -1; }
-		if ( !dev->IsType(Device::TERMINAL) ) { Error::Set(ENOTTY); return -1; }
+		if ( !dev ) { errno = EBADF; return -1; }
+		if ( !dev->IsType(Device::TERMINAL) ) { errno = ENOTTY; return -1; }
 		DevTerminal* term = (DevTerminal*) dev;
 		return term->SetMode(mode) ? 0 : -1;
 	}
@@ -47,8 +47,8 @@ namespace Sortix
 	{
 		Process* process = CurrentProcess();
 		Device* dev = process->descriptors.Get(fd);
-		if ( !dev ) { Error::Set(EBADF); return -1; }
-		if ( !dev->IsType(Device::TERMINAL) ) { Error::Set(ENOTTY); return -1; }
+		if ( !dev ) { errno = EBADF; return -1; }
+		if ( !dev->IsType(Device::TERMINAL) ) { errno = ENOTTY; return -1; }
 		DevTerminal* term = (DevTerminal*) dev;
 		// TODO: Check that mode is a valid user-space pointer.
 		*mode = term->GetMode();
@@ -59,8 +59,8 @@ namespace Sortix
 	{
 		Process* process = CurrentProcess();
 		Device* dev = process->descriptors.Get(fd);
-		if ( !dev ) { Error::Set(EBADF); return 0; }
-		if ( !dev->IsType(Device::TERMINAL) ) {  Error::Set(ENOTTY); return 0; }
+		if ( !dev ) { errno = EBADF; return 0; }
+		if ( !dev->IsType(Device::TERMINAL) ) {  errno = ENOTTY; return 0; }
 		return 1;
 	}
 
@@ -68,8 +68,8 @@ namespace Sortix
 	{
 		Process* process = CurrentProcess();
 		Device* dev = process->descriptors.Get(fd);
-		if ( !dev ) { Error::Set(EBADF); return -1; }
-		if ( !dev->IsType(Device::TERMINAL) ) { Error::Set(ENOTTY); return -1; }
+		if ( !dev ) { errno = EBADF; return -1; }
+		if ( !dev->IsType(Device::TERMINAL) ) { errno = ENOTTY; return -1; }
 		DevTerminal* term = (DevTerminal*) dev;
 		struct winsize ret;
 		ret.ws_col = term->GetWidth();

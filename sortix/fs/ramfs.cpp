@@ -23,10 +23,10 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/memory.h>
 #include <assert.h>
+#include <errno.h>
 #include "../filesystem.h"
 #include "../directory.h"
 #include "../stream.h"
@@ -99,16 +99,16 @@ namespace Sortix
 
 	bool DevRAMFSFile::Seek(uintmax_t position)
 	{
-		if ( SIZE_MAX < position ) { Error::Set(EOVERFLOW); return false; }
+		if ( SIZE_MAX < position ) { errno = EOVERFLOW; return false; }
 		offset = position;
 		return true;
 	}
 
 	bool DevRAMFSFile::Resize(uintmax_t size)
 	{
-		if ( SIZE_MAX < size ) { Error::Set(EOVERFLOW); return false; }
+		if ( SIZE_MAX < size ) { errno = EOVERFLOW; return false; }
 		uint8_t* newbuffer = new uint8_t[size];
-		if ( !newbuffer ) { Error::Set(ENOSPC); return false; }
+		if ( !newbuffer ) { errno = ENOSPC; return false; }
 		size_t sharedmemsize = ( size < bufferused ) ? size : bufferused;
 		Memory::Copy(newbuffer, buffer, sharedmemsize);
 		delete[] buffer;
@@ -223,7 +223,7 @@ namespace Sortix
 		if ( available < needed )
 		{
 			dirent->d_namelen = needed;
-			Error::Set(ERANGE);
+			errno = ERANGE;
 			return -1;
 		}
 
@@ -252,31 +252,31 @@ namespace Sortix
 				return new DevRAMFSDir(this);
 			}
 
-			Error::Set(EISDIR);
+			errno = EISDIR;
 			return NULL;
 		}
 
-		if ( (flags & O_LOWERFLAGS) == O_SEARCH ) { Error::Set(ENOTDIR); return NULL; }
+		if ( (flags & O_LOWERFLAGS) == O_SEARCH ) { errno = ENOTDIR; return NULL; }
 
-		if ( *path++ != '/' ) { Error::Set(ENOENT); return NULL; }
+		if ( *path++ != '/' ) { errno = ENOENT; return NULL; }
 
 		size_t pathlen = String::Length(path);
 		for ( size_t i = 0; i < pathlen; i++ )
 		{
-			if ( path[i] == '/' ) { Error::Set(ENOENT); return NULL; }
+			if ( path[i] == '/' ) { errno = ENOENT; return NULL; }
 		}
 
 		DevBuffer* file = OpenFile(path, flags, mode);
 		if ( !file ) { return NULL; }
 		Device* wrapper = new DevFileWrapper(file, flags);
-		if ( !wrapper ) { Error::Set(ENOSPC); return NULL; }
+		if ( !wrapper ) { errno = ENOSPC; return NULL; }
 		return wrapper;
 	}
 
 	DevBuffer* DevRAMFS::OpenFile(const char* path, int flags, mode_t mode)
 	{
 		// Hack to prevent / from being a filename.
-		if ( path == 0 ) { Error::Set(ENOENT); return NULL; }
+		if ( path == 0 ) { errno = ENOENT; return NULL; }
 
 		if ( files )
 		{
@@ -294,26 +294,26 @@ namespace Sortix
 
 	DevBuffer* DevRAMFS::CreateFile(const char* path, int flags, mode_t mode)
 	{
-		if ( !(flags & O_CREAT) ) { Error::Set(ENOENT); return NULL; }
+		if ( !(flags & O_CREAT) ) { errno = ENOENT; return NULL; }
 
 		if ( !files )
 		{
 			files = new SortedList<DevRAMFSFile*>(CompareFiles);
-			if ( !files) { Error::Set(ENOSPC); return NULL; }
+			if ( !files) { errno = ENOSPC; return NULL; }
 		}
 
 		if ( files->Search(LookupFile, path) != SIZE_MAX )
 		{
-			Error::Set(EEXIST);
+			errno = EEXIST;
 			return NULL;
 		}
 
 		char* newpath = String::Clone(path);
-		if ( !newpath ) { Error::Set(ENOSPC); return NULL; }
+		if ( !newpath ) { errno = ENOSPC; return NULL; }
 
 		DevRAMFSFile* file = new DevRAMFSFile(newpath);
-		if ( !file ) { delete[] newpath; Error::Set(ENOSPC); return NULL; }
-		if ( !files->Add(file) ) { delete file; Error::Set(ENOSPC); return NULL; }
+		if ( !file ) { delete[] newpath; errno = ENOSPC; return NULL; }
+		if ( !files->Add(file) ) { delete file; errno = ENOSPC; return NULL; }
 
 		file->Refer();
 
@@ -324,13 +324,13 @@ namespace Sortix
 	{
 		if ( *path == '\0' || ( *path++ == '/' && *path == '\0' ) )
 		{
-			Error::Set(EISDIR);
+			errno = EISDIR;
 			return false;
 		}
 
-		if ( !files ) { Error::Set(ENOENT); return false; }
+		if ( !files ) { errno = ENOENT; return false; }
 		size_t index = files->Search(LookupFile, path);
-		if ( index == SIZE_MAX ) { Error::Set(ENOENT); return false; }
+		if ( index == SIZE_MAX ) { errno = ENOENT; return false; }
 
 		Device* dev = files->Remove(index);
 		assert(dev);

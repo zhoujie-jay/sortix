@@ -1079,12 +1079,11 @@ char* GetCurrentVideoMode()
 
 // TODO: This should be in libc and not use libmaxsi.
 #include <libmaxsi/platform.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/string.h>
 using namespace Maxsi;
-bool ReadParamString(const char* str, ...)
+extern "C" bool ReadParamString(const char* str, ...)
 {
-	if ( String::Seek(str, '\n') ) { Error::Set(EINVAL); }
+	if ( String::Seek(str, '\n') ) { errno = EINVAL; }
 	const char* keyname;
 	va_list args;
 	while ( *str )
@@ -1092,9 +1091,9 @@ bool ReadParamString(const char* str, ...)
 		size_t varlen = String::Reject(str, ",");
 		if ( !varlen ) { str++; continue; }
 		size_t namelen = String::Reject(str, "=");
-		if ( !namelen ) { Error::Set(EINVAL); goto cleanup; }
-		if ( !str[namelen] ) { Error::Set(EINVAL); goto cleanup; }
-		if ( varlen < namelen ) { Error::Set(EINVAL); goto cleanup; }
+		if ( !namelen ) { errno = EINVAL; goto cleanup; }
+		if ( !str[namelen] ) { errno = EINVAL; goto cleanup; }
+		if ( varlen < namelen ) { errno = EINVAL; goto cleanup; }
 		size_t valuelen = varlen - 1 /*=*/ - namelen;
 		char* name = String::Substring(str, 0, namelen);
 		if ( !name ) { goto cleanup; }

@@ -27,9 +27,9 @@
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/mman.h>
-#include <libmaxsi/error.h>
 #include <libmaxsi/memory.h>
 #include <assert.h>
+#include <errno.h>
 #include "multiboot.h"
 #include "memorymanagement.h"
 #include "syscall.h"
@@ -289,7 +289,7 @@ namespace Sortix
 		{
 			assert(least < ideal);
 			size_t available = stackused - stackreserved;
-			if ( least < available ) { Error::Set(ENOMEM); return false; }
+			if ( least < available ) { errno = ENOMEM; return false; }
 			if ( available < ideal ) { ideal = available; }
 			stackreserved += ideal;
 			*counter += ideal;
@@ -335,7 +335,7 @@ namespace Sortix
 			assert(stackreserved <= stackused);
 			if ( unlikely(stackreserved == stackused) )
 			{
-				Error::Set(ENOMEM);
+				errno = ENOMEM;
 				return 0;
 			}
 			addr_t result = STACK[--stackused];
