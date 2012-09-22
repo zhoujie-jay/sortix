@@ -85,6 +85,7 @@ HEADERS:=$(shell find include -type f)
 
 OBJS=$(CPUOBJS) \
 kernel.o \
+crc32.o \
 interrupt.o \
 worker.o \
 time.o \

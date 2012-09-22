@@ -36,7 +36,6 @@ _assert.o \
 bsearch.o \
 clearerr.o \
 c++.o \
-crc32.o \
 ctype.o \
 dir.o \
 error.o \

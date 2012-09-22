@@ -1,34 +1,34 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2012.
-	COPYRIGHT(C) KRZYSZTOF DABROWSKI 1999, 2000.
-	COPYRIGHT(C) ElysiuM deeZine 1999, 2000.
+	Copyright(C) Jonas 'Sortie' Termansen 2012.
+	Copyright(C) Krzysztof Dabrowski 1999, 2000.
+	Copyright(C) ElysiuM deeZine 1999, 2000.
 	Based on implementation by Finn Yannick Jacobs.
 
-	This file is part of LibMaxsi.
+	This file is part of Sortix.
 
-	LibMaxsi is free software: you can redistribute it and/or modify it under
-	the terms of the GNU Lesser General Public License as published by the Free
-	Software Foundation, either version 3 of the License, or (at your option)
-	any later version.
+	Sortix is free software: you can redistribute it and/or modify it under the
+	terms of the GNU General Public License as published by the Free Software
+	Foundation, either version 3 of the License, or (at your option) any later
+	version.
 
-	LibMaxsi is distributed in the hope that it will be useful, but WITHOUT ANY
+	Sortix is distributed in the hope that it will be useful, but WITHOUT ANY
 	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU Lesser General Public License
-	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	crc32.cpp
 	Calculates a CRC32 Checksum of binary data.
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/crc32.h>
+#include <sortix/kernel/platform.h>
+#include <sortix/kernel/crc32.h>
 
-namespace Maxsi {
+namespace Sortix {
 namespace CRC32 {
 
 void GenerateTable(uint32_t tabel[256])
@@ -69,4 +69,4 @@ uint32_t Hash(uint8_t* block, size_t size)
 }
 
 } // namespace CRC32
-} // namespace Maxsi
+} // namespace Sortix

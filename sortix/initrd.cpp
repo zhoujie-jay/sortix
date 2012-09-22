@@ -24,11 +24,11 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/memorymanagement.h>
+#include <sortix/kernel/crc32.h>
 #include <sortix/stat.h>
 #include <sortix/mman.h>
 #include <sortix/initrd.h>
 #include <libmaxsi/string.h>
-#include <libmaxsi/crc32.h>
 #include <errno.h>
 #include <string.h>
 #include "initrd.h"
