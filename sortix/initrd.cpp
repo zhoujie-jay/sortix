@@ -119,7 +119,7 @@ uint32_t Traverse(uint32_t ino, const char* name)
 	{
 		uint32_t pos = inode->dataoffset + offset;
 		const initrd_dirent* dirent = (const initrd_dirent*) (initrd + pos);
-		if ( dirent->namelen && !String::Compare(dirent->name, name) )
+		if ( dirent->namelen && !strcmp(dirent->name, name) )
 		{
 			return dirent->inode;
 		}
@@ -222,12 +222,12 @@ void Init(addr_t phys, size_t size)
 		      "has been passed to the kernel.");
 	}
 
-	if ( String::Compare(sb->magic, "sortix-initrd-1") == 0 )
+	if ( strcmp(sb->magic, "sortix-initrd-1") == 0 )
 	{
 		Panic("Sortix initrd format version 1 is no longer supported.");
 	}
 
-	if ( String::Compare(sb->magic, "sortix-initrd-2") != 0 )
+	if ( strcmp(sb->magic, "sortix-initrd-2") != 0 )
 	{
 		Panic("The initrd has a format that isn't supported. Perhaps it is "
 		      "too new? Try downgrade or regenerate the initrd.");

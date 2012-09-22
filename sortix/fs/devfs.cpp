@@ -232,7 +232,7 @@ namespace Sortix
 	{
 		for ( size_t i = 0; i < entriesused; i++ )
 		{
-			if ( String::Compare(name, deventries[i].name) ) { continue; }
+			if ( strcmp(name, deventries[i].name) ) { continue; }
 			deventries[i].dev->Refer();
 			return deventries[i].dev;
 		}
@@ -360,10 +360,10 @@ namespace Sortix
 			return new DevDevFSDir();
 		}
 
-		if ( String::Compare(path, "/null") == 0 ) { return new DevNull; }
-		if ( String::Compare(path, "/tty") == 0 ) { tty->Refer(); return tty; }
-		if ( String::Compare(path, "/vga") == 0 ) { return new DevVGA; }
-		if ( String::Compare(path, "/video") == 0 ||
+		if ( strcmp(path, "/null") == 0 ) { return new DevNull; }
+		if ( strcmp(path, "/tty") == 0 ) { tty->Refer(); return tty; }
+		if ( strcmp(path, "/vga") == 0 ) { return new DevVGA; }
+		if ( strcmp(path, "/video") == 0 ||
              String::StartsWith(path, "/video/") )
 		{
 			return DeviceFS::videofs->Open(path + strlen("/video"), flags, mode);
@@ -387,7 +387,7 @@ namespace Sortix
 
 	bool DevDevFS::Unlink(const char* path)
 	{
-		if ( String::Compare(path, "/video") == 0 ||
+		if ( strcmp(path, "/video") == 0 ||
              String::StartsWith(path, "/video/") )
 		{
 			return DeviceFS::videofs->Unlink(path);

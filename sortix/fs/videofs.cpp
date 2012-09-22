@@ -295,7 +295,7 @@ DevVideoFS::~DevVideoFS()
 
 Device* DevVideoFS::Open(const char* path, int flags, mode_t mode)
 {
-	if ( !String::Compare(path, "") || !String::Compare(path, "/") )
+	if ( !strcmp(path, "") || !strcmp(path, "/") )
 	{
 		if ( (flags & O_LOWERFLAGS) == O_SEARCH ) { return new DevVideoFSDir; }
 		errno = EISDIR;
@@ -306,7 +306,7 @@ Device* DevVideoFS::Open(const char* path, int flags, mode_t mode)
 
 	for ( size_t i = 0; i < NumNodes(); i++ )
 	{
-		if ( String::Compare(path, nodes[i].name) ) { continue; }
+		if ( strcmp(path, nodes[i].name) ) { continue; }
 		return nodes[i].factory(flags, mode);
 	}
 	errno = ENOENT;

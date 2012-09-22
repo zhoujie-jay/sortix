@@ -25,6 +25,7 @@
 #include <libmaxsi/platform.h>
 #include <libmaxsi/string.h>
 #include <errno.h>
+#include <string.h>
 #include <readparamstring.h>
 
 using namespace Maxsi;
@@ -51,7 +52,7 @@ extern "C" bool ReadParamString(const char* str, ...)
 		while ( (keyname = va_arg(args, const char*)) )
 		{
 			char** nameptr = va_arg(args, char**);
-			if ( String::Compare(keyname, name) ) { continue; }
+			if ( strcmp(keyname, name) ) { continue; }
 			*nameptr = value;
 			break;
 		}

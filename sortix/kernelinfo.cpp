@@ -39,10 +39,10 @@ namespace Info {
 
 const char* KernelInfo(const char* req)
 {
-	if ( String::Compare(req, "name") == 0 ) { return "Sortix"; }
-	if ( String::Compare(req, "version") == 0 ) { return VERSIONSTR; }
-	if ( String::Compare(req, "builddate") == 0 ) { return __DATE__; }
-	if ( String::Compare(req, "buildtime") == 0 ) { return __TIME__; }
+	if ( strcmp(req, "name") == 0 ) { return "Sortix"; }
+	if ( strcmp(req, "version") == 0 ) { return VERSIONSTR; }
+	if ( strcmp(req, "builddate") == 0 ) { return __DATE__; }
+	if ( strcmp(req, "buildtime") == 0 ) { return __TIME__; }
 	return NULL;
 }
 

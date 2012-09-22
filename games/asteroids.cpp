@@ -1103,7 +1103,7 @@ extern "C" bool ReadParamString(const char* str, ...)
 		while ( (keyname = va_arg(args, const char*)) )
 		{
 			char** nameptr = va_arg(args, char**);
-			if ( String::Compare(keyname, name) ) { continue; }
+			if ( strcmp(keyname, name) ) { continue; }
 			*nameptr = value;
 			break;
 		}

@@ -235,12 +235,12 @@ namespace Sortix
 
 	int CompareFiles(DevRAMFSFile* file1, DevRAMFSFile* file2)
 	{
-		return String::Compare(file1->name, file2->name);
+		return strcmp(file1->name, file2->name);
 	}
 
 	int LookupFile(DevRAMFSFile* file, const char* name)
 	{
-		return String::Compare(file->name, name);
+		return strcmp(file->name, name);
 	}
 
 	Device* DevRAMFS::Open(const char* path, int flags, mode_t mode)

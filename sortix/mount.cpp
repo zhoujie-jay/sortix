@@ -105,7 +105,7 @@ namespace Sortix
 
 			if ( !root ) { root = mp; return true; }
 
-			if ( String::Compare(path, root->path) < 0 )
+			if ( strcmp(path, root->path) < 0 )
 			{
 				mp->next = root;
 				root->prev = mp;
@@ -115,7 +115,7 @@ namespace Sortix
 
 			for ( MountPoint* tmp = root; tmp; tmp = tmp->next )
 			{
-				if ( tmp->next == NULL || String::Compare(path, tmp->next->path) < 0 )
+				if ( tmp->next == NULL || strcmp(path, tmp->next->path) < 0 )
 				{
 					mp->next = tmp->next;
 					tmp->next = mp;

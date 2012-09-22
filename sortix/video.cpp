@@ -56,10 +56,10 @@ bool ReadParamString(const char* str, ...)
 		va_start(args, str);
 		while ( (keyname = va_arg(args, const char*)) )
 		{
-			if ( String::Compare(keyname, "STOP") == 0 )
+			if ( strcmp(keyname, "STOP") == 0 )
 				break;
 			char** nameptr = va_arg(args, char**);
-			if ( String::Compare(keyname, name) ) { continue; }
+			if ( strcmp(keyname, name) ) { continue; }
 			*nameptr = value;
 			break;
 		}
@@ -208,7 +208,7 @@ static DriverEntry* GetDriverEntry(const char* drivername)
 {
 	for ( size_t i = 0; i < numdrivers; i++ )
 	{
-		if ( !String::Compare(drivername, drivers[i].name) )
+		if ( !strcmp(drivername, drivers[i].name) )
 		{
 			return drivers + i;
 		}
