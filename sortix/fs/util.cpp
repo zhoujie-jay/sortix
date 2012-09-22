@@ -124,7 +124,7 @@ ssize_t DevLineCommand::Write(const uint8_t* src, size_t count)
 	if ( available < count ) { count = available; }
 	memcpy(cmd + sofar, src, count);
 	cmd[sofar += count] = 0;
-	size_t newlinepos = String::Reject(cmd, "\n");
+	size_t newlinepos = strcspn(cmd, "\n");
 	if ( !cmd[newlinepos] ) { return count; }
 	cmd[newlinepos] = 0;
 	if ( !handler(user, cmd) ) { return -1; }

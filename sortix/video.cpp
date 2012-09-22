@@ -42,9 +42,9 @@ bool ReadParamString(const char* str, ...)
 	va_list args;
 	while ( *str )
 	{
-		size_t varlen = String::Reject(str, ",");
+		size_t varlen = strcspn(str, ",");
 		if ( !varlen ) { str++; continue; }
-		size_t namelen = String::Reject(str, "=");
+		size_t namelen = strcspn(str, "=");
 		if ( !namelen ) { errno = EINVAL; goto cleanup; }
 		if ( !str[namelen] ) { errno = EINVAL; goto cleanup; }
 		if ( varlen < namelen ) { errno = EINVAL; goto cleanup; }
