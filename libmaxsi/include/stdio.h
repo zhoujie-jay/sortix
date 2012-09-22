@@ -180,6 +180,13 @@ extern char* gets(void) asm ("sortix_gets");
 /* traditional gets(3) is no longer POSIX, hence removed. */
 #endif
 
+#if defined(_SORTIX_SOURCE) || defined(_WANT_SORTIX_VPRINTF_CALLBACK)
+extern size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
+                               void* user,
+                               const char* restrict format,
+                               __gnuc_va_list ap);
+#endif
+
 __END_DECLS
 
 #endif

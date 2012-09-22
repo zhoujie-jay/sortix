@@ -30,8 +30,6 @@
 #include "thread.h"
 #include "scheduler.h"
 
-using namespace Maxsi;
-
 namespace Sortix
 {
 	namespace Syscall

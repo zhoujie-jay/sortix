@@ -22,14 +22,10 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/format.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
-
-namespace Maxsi {
 
 static size_t FileWriteCallback(void* user, const char* string, size_t stringlen)
 {
@@ -39,7 +35,7 @@ static size_t FileWriteCallback(void* user, const char* string, size_t stringlen
 
 extern "C" int vfprintf(FILE* fp, const char* /*restrict*/ format, va_list list)
 {
-	size_t result = Maxsi::Format::Virtual(FileWriteCallback, fp, format, list);
+	size_t result = vprintf_callback(FileWriteCallback, fp, format, list);
 	return (int) result;
 }
 
@@ -96,7 +92,7 @@ extern "C" int vsnprintf(char* restrict str, size_t size, const char* restrict f
 	info.size = (size) ? size-1 : 0;
 	info.produced = 0;
 	info.written = 0;
-	Maxsi::Format::Virtual(StringPrintCallback, &info, format, list);
+	vprintf_callback(StringPrintCallback, &info, format, list);
 	if ( size ) { info.str[info.written] = '\0'; }
 	return (int) info.produced;
 }
@@ -123,5 +119,3 @@ extern "C" int sprintf(char* restrict str, const char* restrict format, ...)
 	va_end(list);
 	return result;
 }
-
-} // namespace Maxsi

@@ -34,8 +34,6 @@
 #include "terminal.h"
 #include "logterminal.h"
 
-using namespace Maxsi;
-
 namespace Sortix
 {
 	const unsigned SUPPORTED_MODES = TERMMODE_KBKEY

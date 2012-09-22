@@ -33,8 +33,6 @@
 #include "syscall.h"
 #include "io.h"
 
-using namespace Maxsi;
-
 namespace Sortix
 {
 	namespace IO

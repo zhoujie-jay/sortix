@@ -35,8 +35,6 @@
 #include "syscall.h"
 #include "msr.h"
 
-using namespace Maxsi;
-
 namespace Sortix
 {
 	extern size_t end;

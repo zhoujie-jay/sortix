@@ -25,19 +25,19 @@
 #ifndef SORTIX_LOG_H
 #define SORTIX_LOG_H
 
-#include <libmaxsi/string.h>
-#include <libmaxsi/format.h>
+#include <stdio.h>
+#include <string.h>
 
 namespace Sortix
 {
 	namespace Log
 	{
-		extern Maxsi::Format::Callback deviceCallback;
+		extern size_t (*deviceCallback)(void*, const char*, size_t);
 		extern size_t (*deviceWidth)(void*);
 		extern size_t (*deviceHeight)(void*);
 		extern void* devicePointer;
 
-		void Init(Maxsi::Format::Callback callback,
+		void Init(size_t (*callback)(void*, const char*, size_t),
 		          size_t (*widthfunc)(void*),
 		          size_t (*heightfunc)(void*),
 		          void* user);
@@ -59,9 +59,8 @@ namespace Sortix
 
 		inline size_t Print(const char* str)
 		{
-			using namespace Maxsi;
 			if ( !deviceCallback ) { return 0; }
-			return deviceCallback(devicePointer, str, String::Length(str));
+			return deviceCallback(devicePointer, str, strlen(str));
 		}
 
 		inline size_t PrintData(const void* ptr, size_t size)
@@ -72,18 +71,16 @@ namespace Sortix
 
 		inline size_t PrintF(const char* format, ...)
 		{
-			using namespace Maxsi;
 			va_list list;
 			va_start(list, format);
-			size_t result = Format::Virtual(deviceCallback, devicePointer, format, list);
+			size_t result = vprintf_callback(deviceCallback, devicePointer, format, list);
 			va_end(list);
 			return result;
 		}
 
 		inline size_t PrintFV(const char* format, va_list list)
 		{
-			using namespace Maxsi;
-			return Format::Virtual(deviceCallback, devicePointer, format, list);
+			return vprintf_callback(deviceCallback, devicePointer, format, list);
 		}
 	}
 }

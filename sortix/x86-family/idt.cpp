@@ -26,8 +26,6 @@
 #include <string.h>
 #include "idt.h"
 
-using namespace Maxsi;
-
 namespace Sortix
 {
 	namespace IDT

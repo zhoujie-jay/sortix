@@ -32,8 +32,6 @@
 #include <sortix/kernel/panic.h>
 #include "process.h"
 
-using namespace Maxsi;
-
 namespace Sortix
 {
 	namespace ELF

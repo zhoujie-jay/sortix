@@ -26,8 +26,6 @@
 #include <errno.h>
 #include "utf8.h"
 
-using namespace Maxsi;
-
 namespace Sortix
 {
 	namespace UTF8

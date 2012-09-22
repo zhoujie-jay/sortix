@@ -24,7 +24,7 @@
 
 #include <libmaxsi/platform.h>
 #include <libmaxsi/string.h>
-#include <libmaxsi/format.h>
+#include <stdio.h>
 
 namespace Maxsi
 {
@@ -168,7 +168,10 @@ namespace Maxsi
 			if ( 0 < readylen && callback && callback(user, ready, readylen) != readylen ) { return SIZE_MAX; } \
 			written += readylen; readylen = 0;
 
-		size_t Virtual(Callback callback, void* user, const char* format, va_list parameters)
+		extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
+				                           void* user,
+				                           const char* restrict format,
+				                           va_list parameters)
 		{
 			size_t written = 0;
 			size_t readylen = 0;

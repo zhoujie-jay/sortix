@@ -26,8 +26,6 @@
 #include <string.h>
 #include "gdt.h"
 
-using namespace Maxsi;
-
 namespace Sortix
 {
 	namespace GDT

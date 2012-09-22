@@ -29,8 +29,6 @@
 #include "process.h"
 #include "terminal.h"
 
-using namespace Maxsi;
-
 namespace Sortix
 {
 	int SysSetTermMode(int fd, unsigned mode)
