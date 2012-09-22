@@ -1,3 +1,4 @@
 #ifndef NULL
-#define NULL __NULL
+#define __need_NULL
+#include <stddef.h>
 #endif
