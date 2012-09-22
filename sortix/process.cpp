@@ -529,7 +529,7 @@ namespace Sortix
 		size_t argvsize = 0;
 		for ( int i = 0; i < argc; i++ )
 		{
-			size_t len = String::Length(argv[i]) + 1;
+			size_t len = strlen(argv[i]) + 1;
 			argvsize += len;
 			char* dest = ((char*) argvpos) - argvsize;
 			stackargv[i] = dest;
@@ -547,7 +547,7 @@ namespace Sortix
 		size_t envpsize = 0;
 		for ( int i = 0; i < envc; i++ )
 		{
-			size_t len = String::Length(envp[i]) + 1;
+			size_t len = strlen(envp[i]) + 1;
 			envpsize += len;
 			char* dest = ((char*) envppos) - envpsize;
 			stackenvp[i] = dest;

@@ -50,7 +50,7 @@ ssize_t SysKernelInfo(const char* req, char* resp, size_t resplen)
 {
 	const char* str = KernelInfo(req);
 	if ( !str ) { errno = EINVAL; return -1; }
-	size_t stringlen = String::Length(str);
+	size_t stringlen = strlen(str);
 	if ( resplen < stringlen + 1 )
 	{
 		errno = ERANGE;

@@ -217,7 +217,7 @@ namespace Sortix
 
 		const char* name = fs->GetFilename(position);
 		if ( !name ) { return -1; }
-		size_t namelen = String::Length(name);
+		size_t namelen = strlen(name);
 		size_t needed = sizeof(sortix_dirent) + namelen + 1;
 
 		if ( available < needed )
@@ -260,7 +260,7 @@ namespace Sortix
 
 		if ( *path++ != '/' ) { errno = ENOENT; return NULL; }
 
-		size_t pathlen = String::Length(path);
+		size_t pathlen = strlen(path);
 		for ( size_t i = 0; i < pathlen; i++ )
 		{
 			if ( path[i] == '/' ) { errno = ENOENT; return NULL; }

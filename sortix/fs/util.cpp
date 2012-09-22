@@ -35,7 +35,7 @@ namespace Sortix {
 DevStringBuffer::DevStringBuffer(char* str)
 {
 	this->str = str;
-	strlength = String::Length(str);
+	strlength = strlen(str);
 	off = 0;
 }
 

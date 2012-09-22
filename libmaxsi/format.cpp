@@ -25,6 +25,7 @@
 #include <libmaxsi/platform.h>
 #include <libmaxsi/string.h>
 #include <stdio.h>
+#include <string.h>
 
 namespace Maxsi
 {
@@ -309,7 +310,7 @@ namespace Maxsi
 					{
 						READY_FLUSH();
 						const char* str = va_arg(parameters, const char*);
-						size_t len = String::Length(str);
+						size_t len = strlen(str);
 						if ( callback && callback(user, str, len) != len ) { return SIZE_MAX; }
 						written += len;
 						break;

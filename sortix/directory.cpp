@@ -95,7 +95,7 @@ namespace Sortix
 			const char* wd = process->workingdir;
 			char* abs = MakeAbsolute(wd, path);
 			if ( !abs ) { errno = ENOMEM; return -1; }
-			size_t abslen = String::Length(abs);
+			size_t abslen = strlen(abs);
 			if ( 1 < abslen && abs[abslen-1] == '/' )
 			{
 				abs[abslen-1] = '\0';
@@ -122,7 +122,7 @@ namespace Sortix
 			Process* process = CurrentProcess();
 			const char* wd = process->workingdir;
 			if ( !wd ) { wd = "/"; }
-			size_t wdsize = String::Length(wd) + 1;
+			size_t wdsize = strlen(wd) + 1;
 			if ( size < wdsize ) { errno = ERANGE; return NULL; }
 			String::Copy(buf, wd);
 			return buf;
@@ -142,8 +142,8 @@ namespace Sortix
 			if ( !wd ) { wd = "/"; }
 
 			// The resulting size won't ever be larger than this.
-			size_t wdlen = String::Length(wd);
-			size_t resultsize = wdlen + String::Length(rel) + 2;
+			size_t wdlen = strlen(wd);
+			size_t resultsize = wdlen + strlen(rel) + 2;
 			char* result = new char[resultsize + 1];
 			if ( !result ) { return NULL; }
 

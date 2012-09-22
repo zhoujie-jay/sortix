@@ -188,7 +188,7 @@ namespace Sortix
 		}
 
 		const char* name = InitRD::GetFilename(dir, position);
-		size_t namelen = String::Length(name);
+		size_t namelen = strlen(name);
 		size_t needed = sizeof(sortix_dirent) + namelen + 1;
 
 		if ( available < needed )

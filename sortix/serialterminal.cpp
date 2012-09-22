@@ -41,7 +41,7 @@ namespace Sortix
 		{
 			// Set the cursor to (0,0) and clear the screen.
 			const char InitMessage[] = "\e[37m\e[40m\e[2J\e[H";
-			UART::Write(InitMessage, String::Length(InitMessage));
+			UART::Write(InitMessage, strlen(InitMessage));
 		}
 
 		bool isEsc;
@@ -135,7 +135,7 @@ namespace Sortix
 			if ( !cursordisabled )
 			{
 				const char* msg = "\e[l";
-				UART::Write(msg, String::Length(msg));
+				UART::Write(msg, strlen(msg));
 				cursordisabled = true;
 			}
 			UART::RenderVGA((const uint16_t*) 0xB8000);
@@ -150,7 +150,7 @@ namespace Sortix
 			if ( cursordisabled )
 			{
 				const char* msg = "\e[h";
-				UART::Write(msg, String::Length(msg));
+				UART::Write(msg, strlen(msg));
 				cursordisabled = false;
 			}
 			UART::Write(string, stringlen);

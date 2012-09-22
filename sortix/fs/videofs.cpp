@@ -166,7 +166,7 @@ Device* MakeModes(int flags, mode_t /*mode*/)
 	size_t combinedlen = 0;
 	for ( size_t i = 0; i < nummodes; i++ )
 	{
-		combinedlen += String::Length(modes[i]) + 1 /*newline*/;
+		combinedlen += strlen(modes[i]) + 1 /*newline*/;
 	}
 	size_t sofar = 0;
 	char* modesstr = new char[combinedlen + 1];
@@ -174,7 +174,7 @@ Device* MakeModes(int flags, mode_t /*mode*/)
 	for ( size_t i = 0; i < nummodes; i++ )
 	{
 		String::Copy(modesstr + sofar, modes[i]);
-		sofar += String::Length(modes[i]);
+		sofar += strlen(modes[i]);
 		modesstr[sofar++] = '\n';
 	}
 	modesstr[sofar] = 0;
@@ -269,7 +269,7 @@ int DevVideoFSDir::Read(sortix_dirent* dirent, size_t available)
 	}
 
 	const char* name = nodes[position].name;
-	size_t namelen = String::Length(name);
+	size_t namelen = strlen(name);
 	size_t needed = sizeof(sortix_dirent) + namelen + 1;
 
 	if ( available < needed )

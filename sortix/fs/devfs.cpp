@@ -324,7 +324,7 @@ namespace Sortix
 
 		if ( available <= sizeof(sortix_dirent) ) { return -1; }
 
-		size_t namelen = String::Length(name);
+		size_t namelen = strlen(name);
 		size_t needed = sizeof(sortix_dirent) + namelen + 1;
 
 		if ( available < needed )
@@ -366,7 +366,7 @@ namespace Sortix
 		if ( String::Compare(path, "/video") == 0 ||
              String::StartsWith(path, "/video/") )
 		{
-			return DeviceFS::videofs->Open(path + String::Length("/video"), flags, mode);
+			return DeviceFS::videofs->Open(path + strlen("/video"), flags, mode);
 		}
 
 		Device* dev = DeviceFS::LookUp(path + 1);

@@ -72,7 +72,7 @@ namespace Sortix
 
 		bool MatchesMountPath(const char* path, const char* mount)
 		{
-			size_t mountlen = String::Length(mount);
+			size_t mountlen = strlen(mount);
 			if ( !String::StartsWith(path, mount) ) { return false; }
 			int c = path[mountlen];
 			return c == '/' || c == '\0';
@@ -88,7 +88,7 @@ namespace Sortix
 				if ( MatchesMountPath(path, tmp->path) )
 				{
 					result = tmp->fs;
-					*pathoffset = String::Length(tmp->path);
+					*pathoffset = strlen(tmp->path);
 				}
 			}
 
