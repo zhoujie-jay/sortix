@@ -32,7 +32,7 @@
 #include <sortix/mman.h>
 #include <sortix/wait.h>
 #include <libmaxsi/string.h>
-#include <libmaxsi/sortedlist.h>
+#include <sortix/kernel/sortedlist.h>
 #include <assert.h>
 #include <errno.h>
 #include <string.h>

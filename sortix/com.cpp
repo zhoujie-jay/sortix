@@ -33,8 +33,6 @@
 #include "fs/devfs.h"
 #include "com.h"
 
-using namespace Maxsi;
-
 namespace Sortix {
 namespace COM {
 

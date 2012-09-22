@@ -25,7 +25,7 @@
 #ifndef SORTIX_FS_INITFS_H
 #define SORTIX_FS_INITFS_H
 
-#include <libmaxsi/sortedlist.h>
+#include <sortix/kernel/sortedlist.h>
 #include "../filesystem.h"
 
 namespace Sortix

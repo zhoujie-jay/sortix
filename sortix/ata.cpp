@@ -33,8 +33,6 @@
 // TODO: Use the PCI to detect ATA devices instead of relying on them being on
 // standard locations.
 
-using namespace Maxsi;
-
 namespace Sortix
 {
 	const uint16_t PRIMARY_BUS_OFFSET = 0x1F0;

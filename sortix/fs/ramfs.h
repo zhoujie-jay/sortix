@@ -25,7 +25,7 @@
 #ifndef SORTIX_FS_RAMFS_H
 #define SORTIX_FS_RAMFS_H
 
-#include <libmaxsi/sortedlist.h>
+#include <sortix/kernel/sortedlist.h>
 #include "../filesystem.h"
 
 namespace Sortix
@@ -43,7 +43,7 @@ namespace Sortix
 		virtual bool Unlink(const char* path);
 
 	private:
-		Maxsi::SortedList<DevRAMFSFile*>* files;
+		SortedList<DevRAMFSFile*>* files;
 
 	public:
 		size_t GetNumFiles();
