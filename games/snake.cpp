@@ -20,8 +20,7 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/sortix-vga.h>
+#include <sortix/vga.h>
 #include <sys/keycodes.h>
 #include <sys/termmode.h>
 #include <assert.h>
