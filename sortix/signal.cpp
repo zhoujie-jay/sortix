@@ -25,13 +25,11 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/panic.h>
 #include <sortix/signal.h>
-#include <libmaxsi/memory.h>
 #include <assert.h>
+#include <string.h>
 #include "interrupt.h"
 #include "thread.h"
 #include "signal.h"
-
-using namespace Maxsi;
 
 namespace Sortix {
 

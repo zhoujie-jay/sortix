@@ -23,7 +23,7 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/memory.h>
+#include <string.h>
 #include "gdt.h"
 
 using namespace Maxsi;
@@ -122,7 +122,7 @@ namespace Sortix
 #endif
 
 			// Ensure the descriptor is initially zero.
-			Memory::Set(&tss_entry, 0, sizeof(tss_entry));
+			memset(&tss_entry, 0, sizeof(tss_entry));
 
 #ifdef PLATFORM_X86
 			tss_entry.ss0  = ss0;  // Set the kernel stack segment.

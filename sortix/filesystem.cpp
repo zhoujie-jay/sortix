@@ -23,9 +23,9 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <errno.h>
+#include <string.h>
 #include "syscall.h"
 #include "process.h"
 #include "filesystem.h"
@@ -140,7 +140,7 @@ namespace Sortix
 
 		void HackStat(Device* dev, struct stat* st)
 		{
-			Memory::Set(st, 0, sizeof(*st));
+			memset(st, 0, sizeof(*st));
 			st->st_mode = 0777;
 			st->st_nlink = 1;
 			if ( dev->IsType(Device::BUFFER) )

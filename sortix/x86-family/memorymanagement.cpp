@@ -27,9 +27,9 @@
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/mman.h>
-#include <libmaxsi/memory.h>
 #include <assert.h>
 #include <errno.h>
+#include <string.h>
 #include "multiboot.h"
 #include "memorymanagement.h"
 #include "syscall.h"
@@ -230,7 +230,7 @@ namespace Sortix
 				// Invalidate the new PML and reset it to zeroes.
 				addr_t pmladdr = (addr_t) (PMLS[TOPPMLLEVEL-1] + i);
 				InvalidatePage(pmladdr);
-				Maxsi::Memory::Set((void*) pmladdr, 0, sizeof(PML));
+				memset((void*) pmladdr, 0, sizeof(PML));
 			}
 		}
 	}
@@ -556,7 +556,7 @@ namespace Sortix
 					// Invalidate the new PML and reset it to zeroes.
 					addr_t pmladdr = (addr_t) (PMLS[i-1] + childoffset);
 					InvalidatePage(pmladdr);
-					Maxsi::Memory::Set((void*) pmladdr, 0, sizeof(PML));
+					memset((void*) pmladdr, 0, sizeof(PML));
 				}
 
 				offset = childoffset;
@@ -713,7 +713,7 @@ namespace Sortix
 				// Determine the destination page's address.
 				void* dest = (void*) (FORKPML + level - 1);
 
-				Maxsi::Memory::Copy(dest, src, 4096UL);
+				memcpy(dest, src, 4096UL);
 			}
 
 			return true;

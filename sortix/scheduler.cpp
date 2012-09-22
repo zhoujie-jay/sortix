@@ -24,8 +24,8 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/memorymanagement.h>
-#include <libmaxsi/memory.h>
 #include <assert.h>
+#include <string.h>
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"
 #include "syscall.h"
@@ -35,8 +35,6 @@
 #include "process.h"
 #include "signal.h"
 #include "scheduler.h"
-
-using namespace Maxsi;
 
 namespace Sortix {
 namespace Scheduler {
@@ -274,7 +272,7 @@ void Init()
 	// current thread is accessed. This lets us avoid checking whether it is
 	// NULL (which it only will be once), which gives simpler code.
 	dummythread = (Thread*) &dummythreaddata;
-	Maxsi::Memory::Set(dummythread, 0, sizeof(*dummythread));
+	memset(dummythread, 0, sizeof(*dummythread));
 	dummythread->schedulerlistprev = dummythread;
 	dummythread->schedulerlistnext = dummythread;
 	currentthread = dummythread;

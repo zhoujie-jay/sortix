@@ -24,7 +24,6 @@
 
 #include <sys/mman.h>
 #include <libmaxsi/platform.h>
-#include <libmaxsi/memory.h>
 
 #ifdef SORTIX_KERNEL
 #define HEAP_GROWS_DOWNWARDS
@@ -39,6 +38,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <malloc.h>
+#include <string.h>
 
 #define PARANOIA 1
 
@@ -703,7 +703,7 @@ namespace Maxsi
 			size_t total = nmemb * size;
 			void* result = Allocate(total);
 			if ( !result ) { return NULL; }
-			Memory::Set(result, 0, total);
+			memset(result, 0, total);
 			return result;
 		}
 
@@ -718,7 +718,7 @@ namespace Maxsi
 			if ( size < allocsize ) { return ptr; }
 			void* newptr = Allocate(size);
 			if ( !newptr ) { return NULL; }
-			Memory::Copy(newptr, ptr, allocsize);
+			memcpy(newptr, ptr, allocsize);
 			Free(ptr);
 			return newptr;
 		}

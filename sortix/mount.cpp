@@ -23,9 +23,9 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/memory.h>
-#include <libmaxsi/string.h>
 #include <sortix/kernel/panic.h>
+#include <libmaxsi/string.h>
+#include <string.h>
 #include "mount.h"
 #include "fs/ramfs.h"
 #include "fs/initfs.h"

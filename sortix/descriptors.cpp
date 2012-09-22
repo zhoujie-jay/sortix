@@ -23,13 +23,11 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/memory.h>
 #include <assert.h>
+#include <string.h>
 #include "descriptors.h"
 #include "device.h"
 #include <sortix/fcntl.h>
-
-using namespace Maxsi;
 
 namespace Sortix
 {
@@ -84,11 +82,11 @@ namespace Sortix
 
 		if ( devices != NULL )
 		{
-			Memory::Copy(newlist, devices, sizeof(*devices) * numdevices);
+			memcpy(newlist, devices, sizeof(*devices) * numdevices);
 		}
 
 		size_t numpadded = newlistlength-numdevices;
-		Memory::Set(newlist + numdevices, 0, sizeof(*devices) * numpadded);
+		memset(newlist + numdevices, 0, sizeof(*devices) * numpadded);
 
 		delete[] devices;
 

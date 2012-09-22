@@ -27,17 +27,15 @@
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/mman.h>
 #include <sortix/signal.h>
-#include <libmaxsi/memory.h>
 #include <assert.h>
 #include <errno.h>
+#include <string.h>
 #include "process.h"
 #include "thread.h"
 #include "scheduler.h"
 #include "interrupt.h"
 #include "time.h"
 #include "syscall.h"
-
-using namespace Maxsi;
 
 namespace Sortix
 {
@@ -50,7 +48,7 @@ namespace Sortix
 		schedulerlistprev = NULL;
 		schedulerlistnext = NULL;
 		state = NONE;
-		Maxsi::Memory::Set(&registers, 0, sizeof(registers));
+		memset(&registers, 0, sizeof(registers));
 		stackpos = 0;
 		stacksize = 0;
 		kernelstackpos = 0;
@@ -211,7 +209,7 @@ namespace Sortix
 
 		int level = siglevel++;
 		signums[level] = currentsignal = signum;
-		Maxsi::Memory::Copy(sigregs + level, regs, sizeof(*regs));
+		memcpy(sigregs + level, regs, sizeof(*regs));
 
 		HandleSignalCPU(regs);
 	}
@@ -224,7 +222,7 @@ namespace Sortix
 		siglevel--;
 
 		currentsignal = siglevel ? signums[siglevel-1] : 0;
-		Maxsi::Memory::Copy(regs, sigregs + siglevel, sizeof(*regs));
+		memcpy(regs, sigregs + siglevel, sizeof(*regs));
 		regs->signal_pending = 0;
 
 		// Check if a more important signal is pending.

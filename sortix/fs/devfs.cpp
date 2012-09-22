@@ -24,9 +24,9 @@
 
 #include <sortix/kernel/platform.h>
 #include <libmaxsi/string.h>
-#include <libmaxsi/memory.h>
 #include <assert.h>
 #include <errno.h>
+#include <string.h>
 #include "../filesystem.h"
 #include "../directory.h"
 #include "../stream.h"
@@ -212,7 +212,7 @@ namespace Sortix
 			DevEntry* newdeventries = new DevEntry[newentrieslength];
 			if ( !newdeventries ) { return false; }
 			size_t bytes = sizeof(DevEntry) * entriesused;
-			Memory::Copy(newdeventries, deventries, bytes);
+			memcpy(newdeventries, deventries, bytes);
 			delete[] deventries;
 			entrieslength = newentrieslength;
 			deventries = newdeventries;
@@ -334,7 +334,7 @@ namespace Sortix
 			return -1;
 		}
 
-		Memory::Copy(dirent->d_name, name, namelen + 1);
+		memcpy(dirent->d_name, name, namelen + 1);
 		dirent->d_namelen = namelen;
 		position++;
 		return 0;

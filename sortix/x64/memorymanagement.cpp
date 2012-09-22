@@ -24,7 +24,7 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/memorymanagement.h>
-#include <libmaxsi/memory.h>
+#include <string.h>
 #include "multiboot.h"
 #include "x86-family/memorymanagement.h"
 #include "interrupt.h"

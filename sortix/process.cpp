@@ -31,11 +31,11 @@
 #include <sortix/fork.h>
 #include <sortix/mman.h>
 #include <sortix/wait.h>
-#include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <libmaxsi/sortedlist.h>
 #include <assert.h>
 #include <errno.h>
+#include <string.h>
 #include "thread.h"
 #include "process.h"
 #include "device.h"
@@ -533,7 +533,7 @@ namespace Sortix
 			argvsize += len;
 			char* dest = ((char*) argvpos) - argvsize;
 			stackargv[i] = dest;
-			Maxsi::Memory::Copy(dest, argv[i], len);
+			memcpy(dest, argv[i], len);
 		}
 
 		stackargv[argc] = NULL;
@@ -551,7 +551,7 @@ namespace Sortix
 			envpsize += len;
 			char* dest = ((char*) envppos) - envpsize;
 			stackenvp[i] = dest;
-			Maxsi::Memory::Copy(dest, envp[i], len);
+			memcpy(dest, envp[i], len);
 		}
 
 		stackenvp[envc] = NULL;
@@ -596,7 +596,7 @@ namespace Sortix
 		int result = -1;
 		Process* process = CurrentProcess();
 		CPU::InterruptRegisters regs;
-		Maxsi::Memory::Set(&regs, 0, sizeof(regs));
+		memset(&regs, 0, sizeof(regs));
 
 		filename = String::Clone(_filename);
 		if ( !filename ) { goto cleanup_done; }
@@ -606,7 +606,7 @@ namespace Sortix
 
 		argv = new char*[argc+1];
 		if ( !argv ) { goto cleanup_filename; }
-		Maxsi::Memory::Set(argv, 0, sizeof(char*) * (argc+1));
+		memset(argv, 0, sizeof(char*) * (argc+1));
 
 		for ( int i = 0; i < argc; i++ )
 		{
@@ -617,7 +617,7 @@ namespace Sortix
 		envp = new char*[envc+1];
 		if ( !envp ) { goto cleanup_argv; }
 		envc = envc;
-		Maxsi::Memory::Set(envp, 0, sizeof(char*) * (envc+1));
+		memset(envp, 0, sizeof(char*) * (envc+1));
 
 		for ( int i = 0; i < envc; i++ )
 		{

@@ -27,11 +27,9 @@
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/textbuffer.h>
 #include <sortix/vga.h>
-#include <libmaxsi/memory.h>
+#include <string.h>
 #include "vga.h"
 #include "lfbtextbuffer.h"
-
-using namespace Maxsi;
 
 namespace Sortix {
 
@@ -65,7 +63,7 @@ LFBTextBuffer* CreateLFBTextBuffer(uint8_t* lfb, uint32_t lfbformat,
 	if ( !(ret = new LFBTextBuffer) )
 		goto cleanup_attrs;
 
-	Memory::Copy(font, VGA::GetFont(), fontsize);
+	memcpy(font, VGA::GetFont(), fontsize);
 	ret->lfb = lfb;
 	ret->lfbformat = lfbformat;
 	ret->pixelsx = xres;
@@ -74,9 +72,9 @@ LFBTextBuffer* CreateLFBTextBuffer(uint8_t* lfb, uint32_t lfbformat,
 	ret->columns = columns;
 	ret->rows = rows;
 	ret->font = font;
-	Memory::Set(chars, 0, sizeof(uint16_t) * columns * rows);
+	memset(chars, 0, sizeof(uint16_t) * columns * rows);
 	ret->chars = chars;
-	Memory::Set(attrs, 0, sizeof(uint16_t) * columns * rows);
+	memset(attrs, 0, sizeof(uint16_t) * columns * rows);
 	ret->attrs = attrs;
 	for ( size_t i = 0; i < 16UL; i++ )
 	{
@@ -88,7 +86,7 @@ LFBTextBuffer* CreateLFBTextBuffer(uint8_t* lfb, uint32_t lfbformat,
 	ret->cursorenabled = true;
 	ret->cursorpos = TextPos(0, 0);
 	for ( size_t y = 0; y < yres; y++ )
-		Memory::Set(lfb + scansize * y, 0, lfbformat/8UL * xres);
+		memset(lfb + scansize * y, 0, lfbformat/8UL * xres);
 	return ret;
 
 cleanup_attrs:

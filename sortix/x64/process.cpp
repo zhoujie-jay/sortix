@@ -24,7 +24,7 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/fork.h>
-#include <libmaxsi/memory.h>
+#include <string.h>
 #include "process.h"
 
 namespace Sortix
@@ -53,7 +53,7 @@ namespace Sortix
 	void InitializeThreadRegisters(CPU::InterruptRegisters* regs,
                                    const tforkregs_t* requested)
 	{
-		Maxsi::Memory::Set(regs, 0, sizeof(*regs));
+		memset(regs, 0, sizeof(*regs));
 		regs->rip = requested->rip;
 		regs->userrsp = requested->rsp;
 		regs->rax = requested->rax;

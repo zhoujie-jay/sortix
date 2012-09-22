@@ -24,7 +24,7 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
-#include <libmaxsi/memory.h>
+#include <string.h>
 #include "device.h"
 
 namespace Sortix

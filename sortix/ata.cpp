@@ -25,8 +25,8 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
 #include "cpu.h"
-#include <libmaxsi/memory.h>
 #include <errno.h>
+#include <string.h>
 #include "ata.h"
 #include "fs/devfs.h"
 
@@ -311,7 +311,7 @@ namespace Sortix
 			if ( numbytes < wanted ) { wanted = numbytes; }
 			uint8_t temp[512 /*sectorsize*/];
 			if ( !ReadSector(byteoffset/sectorsize, temp) ) { return sofar; }
-			Memory::Copy(dest + sofar, temp + leadingbytes, wanted);
+			memcpy(dest + sofar, temp + leadingbytes, wanted);
 			sofar += wanted;
 			numbytes -= wanted;
 			byteoffset += wanted;
@@ -339,7 +339,7 @@ namespace Sortix
 			if ( numbytes < wanted ) { wanted = numbytes; }
 			uint8_t temp[512 /*sectorsize*/];
 			if ( !ReadSector(byteoffset/sectorsize, temp) ) { return sofar; }
-			Memory::Copy(temp + leadingbytes, src + sofar, wanted);
+			memcpy(temp + leadingbytes, src + sofar, wanted);
 			if ( !WriteSector(byteoffset/sectorsize, temp) ) { return sofar; }
 			sofar += wanted;
 			numbytes -= wanted;

@@ -23,7 +23,7 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/memory.h>
+#include <string.h>
 #include "idt.h"
 
 using namespace Maxsi;
@@ -42,7 +42,7 @@ namespace Sortix
 			idt_ptr.limit = sizeof(idt_entry_t) * 256 - 1;
 			idt_ptr.base  = (addr_t) &idt_entries;
 
-			Memory::Set(&idt_entries, 0, sizeof(idt_entry_t)*256);
+			memset(&idt_entries, 0, sizeof(idt_entry_t)*256);
 		}
 
 		void Flush()

@@ -29,9 +29,9 @@
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/pci.h>
 #include <sortix/mman.h>
-#include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <errno.h>
+#include <string.h>
 #include "x86-family/memorymanagement.h"
 #include "lfbtextbuffer.h"
 #include "cpu.h"
@@ -85,14 +85,14 @@ addr_t DetectBGAFramebuffer()
 	pcifind_t pcifind;
 
 	// Search for the bochs BGA device and compatible.
-	Maxsi::Memory::Set(&pcifind, 255, sizeof(pcifind));
+	memset(&pcifind, 255, sizeof(pcifind));
 	pcifind.vendorid = 0x1234;
 	pcifind.deviceid = 0x1111;
 	if ( (devaddr = PCI::SearchForDevice(pcifind)) )
 		return PCI::ParseDevBar0(devaddr);
 
 	// Search for a generic VGA compatible device.
-	Maxsi::Memory::Set(&pcifind, 255, sizeof(pcifind));
+	memset(&pcifind, 255, sizeof(pcifind));
 	pcifind.classid = 0x03;
 	pcifind.subclassid = 0x00;
 	pcifind.progif = 0x00;
@@ -381,7 +381,7 @@ ssize_t BGADriver::WriteAt(off_t off, const void* buf, size_t count)
 		return 0;
 	if ( framesize < off + count )
 		count = framesize - off;
-	Maxsi::Memory::Copy(frame + off, buf, count);
+	memcpy(frame + off, buf, count);
 	return count;
 }
 
@@ -392,7 +392,7 @@ ssize_t BGADriver::ReadAt(off_t off, void* buf, size_t count)
 		return 0;
 	if ( framesize < off + count )
 		count = framesize - off;
-	Maxsi::Memory::Copy(buf, frame + off, count);
+	memcpy(buf, frame + off, count);
 	return count;
 }
 
@@ -411,7 +411,7 @@ bool BGADriver::DetectModes() const
 	}
 	modes = new char*[nummodes];
 	if ( !modes ) { return false; }
-	Maxsi::Memory::Set(modes, 0, sizeof(char*) * nummodes);
+	memset(modes, 0, sizeof(char*) * nummodes);
 	size_t curmodeid = 0;
 	for ( unsigned w = 0; w < maxxres; w += 4U )
 	{

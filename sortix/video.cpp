@@ -28,8 +28,8 @@
 #include <sortix/kernel/video.h>
 #include <stdarg.h>
 #include <errno.h>
-#include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
+#include <string.h>
 
 using namespace Maxsi;
 
@@ -136,7 +136,7 @@ bool RegisterDriver(const char* name, VideoDriver* driver)
 		size_t newdriverslen = driverslen ? 2 * driverslen : 8UL;
 		DriverEntry* newdrivers = new DriverEntry[newdriverslen];
 		if ( !newdrivers ) { return false; }
-		Memory::Copy(newdrivers, drivers, sizeof(*drivers) * numdrivers);
+		memcpy(newdrivers, drivers, sizeof(*drivers) * numdrivers);
 		delete[] drivers; drivers = newdrivers;
 		driverslen = driverslen;
 	}
@@ -161,7 +161,7 @@ static bool ExpandModesArray(size_t needed)
 	if ( newmodeslen < modesneeded ) { newmodeslen = modesneeded; }
 	char** newmodes = new char*[newmodeslen];
 	if ( !newmodes ) { return false; }
-	Memory::Copy(newmodes, modes, sizeof(char*) * nummodes);
+	memcpy(newmodes, modes, sizeof(char*) * nummodes);
 	delete[] modes; modes = newmodes;
 	modeslen = newmodeslen;
 	return true;

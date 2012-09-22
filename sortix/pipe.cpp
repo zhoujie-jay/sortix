@@ -25,9 +25,9 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/signal.h>
-#include <libmaxsi/memory.h>
 #include <assert.h>
 #include <errno.h>
+#include <string.h>
 #ifdef GOT_FAKE_KTHREAD
 #include "event.h"
 #endif
@@ -36,8 +36,6 @@
 #include "process.h"
 #include "syscall.h"
 #include "pipe.h"
-
-using namespace Maxsi;
 
 namespace Sortix
 {
@@ -118,7 +116,7 @@ namespace Sortix
 		size_t linear = buffersize - bufferoffset;
 		if ( linear < amount ) { amount = linear; }
 		assert(amount);
-		Memory::Copy(dest, buffer + bufferoffset, amount);
+		memcpy(dest, buffer + bufferoffset, amount);
 		bufferoffset = (bufferoffset + amount) % buffersize;
 		bufferused -= amount;
 		kthread_cond_broadcast(&writecond);
@@ -131,7 +129,7 @@ namespace Sortix
 			size_t linear = buffersize - bufferoffset;
 			if ( linear < amount ) { amount = linear; }
 			assert(amount);
-			Memory::Copy(dest, buffer + bufferoffset, amount);
+			memcpy(dest, buffer + bufferoffset, amount);
 			bufferoffset = (bufferoffset + amount) % buffersize;
 			bufferused -= amount;
 			writeevent.Signal();
@@ -172,7 +170,7 @@ namespace Sortix
 		size_t linear = buffersize - writeoffset;
 		if ( linear < amount ) { amount = linear; }
 		assert(amount);
-		Memory::Copy(buffer + writeoffset, src, amount);
+		memcpy(buffer + writeoffset, src, amount);
 		bufferused += amount;
 		kthread_cond_broadcast(&readcond);
 		return amount;
@@ -185,7 +183,7 @@ namespace Sortix
 			size_t linear = buffersize - writeoffset;
 			if ( linear < amount ) { amount = linear; }
 			assert(amount);
-			Memory::Copy(buffer + writeoffset, src, amount);
+			memcpy(buffer + writeoffset, src, amount);
 			bufferused += amount;
 			readevent.Signal();
 			return amount;

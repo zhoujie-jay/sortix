@@ -24,9 +24,9 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/video.h>
-#include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <errno.h>
+#include <string.h>
 #include "../directory.h"
 #include "util.h"
 #include "videofs.h"
@@ -279,7 +279,7 @@ int DevVideoFSDir::Read(sortix_dirent* dirent, size_t available)
 		return -1;
 	}
 
-	Memory::Copy(dirent->d_name, name, namelen + 1);
+	memcpy(dirent->d_name, name, namelen + 1);
 	dirent->d_namelen = namelen;
 	position++;
 	return 0;

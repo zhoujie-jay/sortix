@@ -23,7 +23,6 @@
 *******************************************************************************/
 
 #include <libmaxsi/platform.h>
-#include <libmaxsi/memory.h>
 #include <sys/syscall.h>
 #include <errno.h>
 #include <sys/time.h>

@@ -25,8 +25,8 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/keycodes.h>
 #include <sortix/signal.h>
-#include <libmaxsi/memory.h>
 #include <errno.h>
+#include <string.h>
 #include "utf8.h"
 #include "keyboard.h"
 #include "process.h"
@@ -288,7 +288,7 @@ namespace Sortix
 			bufsize -= partiallywritten;
 			if ( sofar && left < bufsize ) { return sofar; }
 			size_t amount = left < bufsize ? left : bufsize;
-			Memory::Copy(dest + sofar, buf, amount);
+			memcpy(dest + sofar, buf, amount);
 			partiallywritten = (amount < bufsize) ? partiallywritten + amount : 0;
 			left -= amount;
 			sofar += amount;

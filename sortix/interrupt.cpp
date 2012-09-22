@@ -23,9 +23,9 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/memory.h>
 #include <assert.h>
 #include <errno.h>
+#include <string.h>
 #include "x86-family/idt.h"
 #include "interrupt.h"
 #include "scheduler.h"
@@ -34,8 +34,6 @@
 #include "process.h"
 
 #include "sound.h" // Hack for SIGSEGV
-
-using namespace Maxsi;
 
 namespace Sortix {
 
@@ -348,7 +346,7 @@ static void WriteToQueue(const void* src, size_t size)
 	size_t writeat = (queueoffset + queueused) % queuesize;
 	size_t available = queuesize - writeat;
 	size_t count = available < size ? available : size;
-	Memory::Copy(queue + writeat, buf, count);
+	memcpy(queue + writeat, buf, count);
 	queueused += count;
 	if ( count < size ) { WriteToQueue(buf + count, size - count); }
 }
@@ -358,7 +356,7 @@ static void ReadFromQueue(void* dest, size_t size)
 	uint8_t* buf = (uint8_t*) dest;
 	size_t available = queuesize - queueoffset;
 	size_t count = available < size ? available : size;
-	Memory::Copy(buf, queue + queueoffset, count);
+	memcpy(buf, queue + queueoffset, count);
 	queueused -= count;
 	queueoffset = (queueoffset + count) % queuesize;
 	if ( count < size ) { ReadFromQueue(buf + count, size - count); }

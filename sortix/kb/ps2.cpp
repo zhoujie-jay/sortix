@@ -23,14 +23,12 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/memory.h>
 #include <assert.h>
+#include <string.h>
 #include "../interrupt.h"
 #include "../keyboard.h"
 #include <sortix/keycodes.h>
 #include "ps2.h"
-
-using namespace Maxsi;
 
 namespace Sortix
 {
@@ -187,8 +185,8 @@ namespace Sortix
 			size_t leadingavai = queuelength-queueoffset;
 			size_t leading = (leadingavai < queueused) ? leadingavai : queueused;
 			size_t trailing = queueused - leading;
-			Memory::Copy(newqueue, queue + queueoffset, leading * elemsize);
-			Memory::Copy(newqueue + leading, queue, trailing * elemsize);
+			memcpy(newqueue, queue + queueoffset, leading * elemsize);
+			memcpy(newqueue + leading, queue, trailing * elemsize);
 			delete[] queue;
 			queue = newqueue;
 			queuelength = newqueuelength;

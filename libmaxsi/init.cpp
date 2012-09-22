@@ -24,7 +24,7 @@
 *******************************************************************************/
 
 #include <libmaxsi/platform.h>
-#include <libmaxsi/memory.h>
+#include <malloc.h>
 #include <string.h>
 
 namespace Maxsi
@@ -48,7 +48,7 @@ namespace Maxsi
 		init_signal();
 
 		// Initialize the dynamic heap.
-		Memory::Init();
+		_init_heap();
 
 		// Initialize stdio.
 		init_stdio();

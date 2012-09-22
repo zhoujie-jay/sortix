@@ -24,7 +24,6 @@
 
 #include <libmaxsi/platform.h>
 #include <libmaxsi/string.h>
-#include <libmaxsi/memory.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -196,7 +195,7 @@ namespace Maxsi
 			size_t InputSize = Length(Input);
 			char* Result = new char[InputSize + 1];
 			if ( Result == NULL ) { return NULL; }
-			Memory::Copy(Result, Input, InputSize + 1);
+			memcpy(Result, Input, InputSize + 1);
 			return Result;
 		}
 
@@ -205,7 +204,7 @@ namespace Maxsi
 			size_t srclen = Length(src);
 			char* dest = new char[length + 1];
 			if ( !dest ) { return NULL; }
-			Memory::Copy(dest, src + offset, length * sizeof(char));
+			memcpy(dest, src + offset, length * sizeof(char));
 			dest[length] = 0;
 			return dest;
 		}

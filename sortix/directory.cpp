@@ -23,10 +23,10 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <assert.h>
 #include <errno.h>
+#include <string.h>
 #include "syscall.h"
 #include "process.h"
 #include "device.h"

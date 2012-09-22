@@ -23,8 +23,8 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/memory.h>
 #include <errno.h>
+#include <string.h>
 #include "fs/util.h"
 #include "fs/devfs.h"
 #include "vga.h"
@@ -34,8 +34,6 @@
 #include "serialterminal.h"
 
 #define TEST_VGAFONT 0
-
-using namespace Maxsi;
 
 namespace Sortix {
 namespace VGA {
@@ -86,7 +84,7 @@ static void FetchVGAFont(uint8_t* font)
 	{
 		const uint8_t* src = data + (32*8)/8 * i;
 		uint8_t* dest = font + VGA_FONT_CHARSIZE * i;
-		Memory::Copy(dest, src, VGA_FONT_CHARSIZE);
+		memcpy(dest, src, VGA_FONT_CHARSIZE);
 	}
 	// Restore the VGA state.
 	WriteIndex(0x03C4, 0x02, old_03c4_02);
@@ -176,7 +174,7 @@ DevVGA::~DevVGA()
 ssize_t DevVGA::Read(uint8_t* dest, size_t count)
 {
 	if ( VGA::VGA_SIZE - offset < count ) { count = VGA::VGA_SIZE - offset; }
-	Maxsi::Memory::Copy(dest, VGA::VGA + offset, count);
+	memcpy(dest, VGA::VGA + offset, count);
 	offset += count;
 	return count;
 }
@@ -185,7 +183,7 @@ ssize_t DevVGA::Write(const uint8_t* src, size_t count)
 {
 	if ( offset == VGA::VGA_SIZE && count ) { errno = ENOSPC; return -1; }
 	if ( VGA::VGA_SIZE - offset < count ) { count = VGA::VGA_SIZE - offset; }
-	Maxsi::Memory::Copy(VGA::VGA + offset, src, count);
+	memcpy(VGA::VGA + offset, src, count);
 	offset = (offset + count) % VGA::VGA_SIZE;
 	VGA::SetCursor(VGA::WIDTH, VGA::HEIGHT-1);
 #ifdef PLATFORM_SERIAL

@@ -25,7 +25,7 @@
 #include <sortix/kernel/platform.h>
 #include "cpu.h"
 #include <libmaxsi/string.h>
-#include <libmaxsi/memory.h>
+#include <string.h>
 #include "vga.h"
 #include "uart.h"
 

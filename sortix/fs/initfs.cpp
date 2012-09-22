@@ -25,8 +25,8 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
 #include <libmaxsi/string.h>
-#include <libmaxsi/memory.h>
 #include <errno.h>
+#include <string.h>
 #include "../filesystem.h"
 #include "../directory.h"
 #include "../stream.h"
@@ -120,7 +120,7 @@ namespace Sortix
 		size_t available = count;
 		if ( buffersize < offset + count ) { available = buffersize - offset; }
 		if ( available == 0 ) { return 0; }
-		Memory::Copy(dest, buffer + offset, available);
+		memcpy(dest, buffer + offset, available);
 		offset += available;
 		return available;
 	}
@@ -198,7 +198,7 @@ namespace Sortix
 			return -1;
 		}
 
-		Memory::Copy(dirent->d_name, name, namelen + 1);
+		memcpy(dirent->d_name, name, namelen + 1);
 		dirent->d_namelen = namelen;
 		position++;
 		return 0;

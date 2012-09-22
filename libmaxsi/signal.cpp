@@ -23,12 +23,12 @@
 *******************************************************************************/
 
 #include <libmaxsi/platform.h>
-#include <libmaxsi/memory.h>
 #include <libmaxsi/process.h>
 #include <sys/syscall.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 
 namespace Maxsi
 {

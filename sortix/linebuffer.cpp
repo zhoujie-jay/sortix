@@ -23,10 +23,8 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/memory.h>
+#include <string.h>
 #include "linebuffer.h"
-
-using namespace Maxsi;
 
 namespace Sortix
 {
@@ -63,8 +61,8 @@ namespace Sortix
 			size_t leadingavai = bufferlength-bufferoffset;
 			size_t leading = (leadingavai < bufferused) ? leadingavai : bufferused;
 			size_t trailing = bufferused - leading;
-			Memory::Copy(newbuffer, buffer + bufferoffset, leading * elemsize);
-			Memory::Copy(newbuffer + leading, buffer, trailing * elemsize);
+			memcpy(newbuffer, buffer + bufferoffset, leading * elemsize);
+			memcpy(newbuffer + leading, buffer, trailing * elemsize);
 			delete[] buffer;
 			buffer = newbuffer;
 			bufferlength = newbufferlength;

@@ -24,9 +24,9 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/mman.h>
-#include <libmaxsi/memory.h>
 #include <assert.h>
 #include <errno.h>
+#include <string.h>
 #include "elf.h"
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/panic.h>
@@ -132,8 +132,8 @@ namespace Sortix
 				// Copy as much data as possible and memset the rest to 0.
 				uint8_t* memdest = (uint8_t*) virtualaddr;
 				uint8_t* memsource = (uint8_t*) ( ((addr_t)file) + pht->offset);
-				Maxsi::Memory::Copy(memdest, memsource, pht->filesize);
-				Maxsi::Memory::Set(memdest + pht->filesize, 0, pht->memorysize - pht->filesize);
+				memcpy(memdest, memsource, pht->filesize);
+				memset(memdest + pht->filesize, 0, pht->memorysize - pht->filesize);
 			}
 
 			return entry;
@@ -218,8 +218,8 @@ namespace Sortix
 				// Copy as much data as possible and memset the rest to 0.
 				uint8_t* memdest = (uint8_t*) virtualaddr;
 				uint8_t* memsource = (uint8_t*) ( ((addr_t)file) + pht->offset);
-				Maxsi::Memory::Copy(memdest, memsource, pht->filesize);
-				Maxsi::Memory::Set(memdest + pht->filesize, 0, pht->memorysize - pht->filesize);
+				memcpy(memdest, memsource, pht->filesize);
+				memset(memdest + pht->filesize, 0, pht->memorysize - pht->filesize);
 			}
 
 			return entry;

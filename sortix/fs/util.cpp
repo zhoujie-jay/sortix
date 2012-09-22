@@ -23,9 +23,9 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/memory.h>
 #include <libmaxsi/string.h>
 #include <errno.h>
+#include <string.h>
 #include "util.h"
 
 using namespace Maxsi;
@@ -76,7 +76,7 @@ ssize_t DevStringBuffer::Read(uint8_t* dest, size_t count)
 {
 	size_t available = strlength - off;
 	if ( available < count ) { count = available; }
-	Memory::Copy(dest, str + off, count);
+	memcpy(dest, str + off, count);
 	off += count;
 	return count;
 }
@@ -122,7 +122,7 @@ ssize_t DevLineCommand::Write(const uint8_t* src, size_t count)
 	size_t available = CMDMAX - sofar;
 	if ( !available && count ) { errno = ENOSPC; return -1; }
 	if ( available < count ) { count = available; }
-	Memory::Copy(cmd + sofar, src, count);
+	memcpy(cmd + sofar, src, count);
 	cmd[sofar += count] = 0;
 	size_t newlinepos = String::Reject(cmd, "\n");
 	if ( !cmd[newlinepos] ) { return count; }
@@ -189,7 +189,7 @@ ssize_t DevMemoryBuffer::Read(uint8_t* dest, size_t count)
 	if ( bufsize <= off ) { return 0; }
 	size_t available = bufsize - off;
 	if ( available < count ) { count = available; }
-	Memory::Copy(dest, buf + off, count);
+	memcpy(dest, buf + off, count);
 	off += count;
 	return count;
 }
@@ -200,7 +200,7 @@ ssize_t DevMemoryBuffer::Write(const uint8_t* src, size_t count)
 	if ( bufsize <= off ) { errno = EPERM; return -1; }
 	size_t available = bufsize - off;
 	if ( available < count ) { count = available; }
-	Memory::Copy(buf + off, src, count);
+	memcpy(buf + off, src, count);
 	off += count;
 	return count;
 }

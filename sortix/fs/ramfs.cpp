@@ -24,9 +24,9 @@
 
 #include <sortix/kernel/platform.h>
 #include <libmaxsi/string.h>
-#include <libmaxsi/memory.h>
 #include <assert.h>
 #include <errno.h>
+#include <string.h>
 #include "../filesystem.h"
 #include "../directory.h"
 #include "../stream.h"
@@ -110,7 +110,7 @@ namespace Sortix
 		uint8_t* newbuffer = new uint8_t[size];
 		if ( !newbuffer ) { errno = ENOSPC; return false; }
 		size_t sharedmemsize = ( size < bufferused ) ? size : bufferused;
-		Memory::Copy(newbuffer, buffer, sharedmemsize);
+		memcpy(newbuffer, buffer, sharedmemsize);
 		delete[] buffer;
 		buffer = newbuffer;
 		bufferused = sharedmemsize;
@@ -124,7 +124,7 @@ namespace Sortix
 		size_t available = count;
 		if ( bufferused < offset + count ) { available = bufferused - offset; }
 		if ( available == 0 ) { return 0; }
-		Memory::Copy(dest, buffer + offset, available);
+		memcpy(dest, buffer + offset, available);
 		offset += available;
 		return available;
 	}
@@ -139,7 +139,7 @@ namespace Sortix
 			if ( !Resize(newsize) ) { return -1; }
 		}
 
-		Memory::Copy(buffer + offset, src, count);
+		memcpy(buffer + offset, src, count);
 		offset += count;
 		if ( bufferused < offset ) { bufferused = offset; }
 		return count;
@@ -227,7 +227,7 @@ namespace Sortix
 			return -1;
 		}
 
-		Memory::Copy(dirent->d_name, name, namelen + 1);
+		memcpy(dirent->d_name, name, namelen + 1);
 		dirent->d_namelen = namelen;
 		position++;
 		return 0;

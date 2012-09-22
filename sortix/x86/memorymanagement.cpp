@@ -23,7 +23,7 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/memory.h>
+#include <string.h>
 #include "multiboot.h"
 #include <sortix/kernel/panic.h>
 #include <sortix/kernel/memorymanagement.h>
@@ -50,7 +50,7 @@ namespace Sortix
 			PML* const IDENPML1 = (PML* const) 0x14000UL;
 
 			// Initialize the memory structures with zeroes.
-			Maxsi::Memory::Set((PML* const) 0x11000UL, 0, 0x6000UL);
+			memset((PML* const) 0x11000UL, 0, 0x6000UL);
 
 			// Identity map the first 4 MiB.
 			addr_t flags = PML_PRESENT | PML_WRITABLE;
