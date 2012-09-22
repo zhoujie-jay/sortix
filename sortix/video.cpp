@@ -67,7 +67,7 @@ bool ReadParamString(const char* str, ...)
 		if ( !keyname ) { delete[] value; }
 		delete[] name;
 		str += varlen;
-		str += String::Accept(str, ",");
+		str += strspn(str, ",");
 	}
 	return true;
 
