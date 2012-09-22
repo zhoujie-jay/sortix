@@ -56,7 +56,7 @@ ssize_t SysKernelInfo(const char* req, char* resp, size_t resplen)
 		errno = ERANGE;
 		return (ssize_t) stringlen;
 	}
-	String::Copy(resp, str);
+	strcpy(resp, str);
 	return 0;
 }
 

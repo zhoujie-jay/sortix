@@ -173,7 +173,7 @@ Device* MakeModes(int flags, mode_t /*mode*/)
 	if ( !modesstr ) { goto out; }
 	for ( size_t i = 0; i < nummodes; i++ )
 	{
-		String::Copy(modesstr + sofar, modes[i]);
+		strcpy(modesstr + sofar, modes[i]);
 		sofar += strlen(modes[i]);
 		modesstr[sofar++] = '\n';
 	}

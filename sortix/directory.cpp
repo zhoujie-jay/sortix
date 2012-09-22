@@ -124,7 +124,7 @@ namespace Sortix
 			if ( !wd ) { wd = "/"; }
 			size_t wdsize = strlen(wd) + 1;
 			if ( size < wdsize ) { errno = ERANGE; return NULL; }
-			String::Copy(buf, wd);
+			strcpy(buf, wd);
 			return buf;
 		}
 
@@ -151,7 +151,7 @@ namespace Sortix
 			// interpretation from that point.
 			size_t offset;
 			if ( *rel == '/' ) { result[0] = '/'; offset = 1; rel++; }
-			else { String::Copy(result, wd); offset = wdlen; }
+			else { strcpy(result, wd); offset = wdlen; }
 
 			// Make sure the working directory ends with a slash.
 			if ( result[offset-1] != '/' ) { result[offset++] = '/'; }
