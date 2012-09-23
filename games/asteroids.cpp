@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <error.h>
+#include <readparamstring.h>
 
 // This define runs the game without actually setting the video mode and
 // checking whether the frame was actually copied to the screen. useful for
@@ -1075,55 +1076,6 @@ char* GetCurrentVideoMode()
 	getline(&mode, &n, fp);
 	fclose(fp);
 	return mode;
-}
-
-// TODO: This should be in libc and not use libmaxsi.
-#include <libmaxsi/platform.h>
-#include <libmaxsi/string.h>
-using namespace Maxsi;
-extern "C" bool ReadParamString(const char* str, ...)
-{
-	if ( strchr(str, '\n') ) { errno = EINVAL; }
-	const char* keyname;
-	va_list args;
-	while ( *str )
-	{
-		size_t varlen = strcspn(str, ",");
-		if ( !varlen ) { str++; continue; }
-		size_t namelen = strcspn(str, "=");
-		if ( !namelen ) { errno = EINVAL; goto cleanup; }
-		if ( !str[namelen] ) { errno = EINVAL; goto cleanup; }
-		if ( varlen < namelen ) { errno = EINVAL; goto cleanup; }
-		size_t valuelen = varlen - 1 /*=*/ - namelen;
-		char* name = String::Substring(str, 0, namelen);
-		if ( !name ) { goto cleanup; }
-		char* value = String::Substring(str, namelen+1, valuelen);
-		if ( !value ) { delete[] name; goto cleanup; }
-		va_start(args, str);
-		while ( (keyname = va_arg(args, const char*)) )
-		{
-			char** nameptr = va_arg(args, char**);
-			if ( strcmp(keyname, name) ) { continue; }
-			*nameptr = value;
-			break;
-		}
-		va_end(args);
-		if ( !keyname ) { delete[] value; }
-		delete[] name;
-		str += varlen;
-		str += strspn(str, ",");
-	}
-	return true;
-
-cleanup:
-	va_start(args, str);
-	while ( (keyname = va_arg(args, const char*)) )
-	{
-		char** nameptr = va_arg(args, char**);
-		delete[] *nameptr; *nameptr = NULL;
-	}
-	va_end(args);
-	return false;
 }
 
 int atoi_safe(const char* str)
