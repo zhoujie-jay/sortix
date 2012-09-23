@@ -31,6 +31,7 @@
 #include <sortix/mman.h>
 #include <libmaxsi/string.h>
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "x86-family/memorymanagement.h"
@@ -423,9 +424,9 @@ bool BGADriver::DetectModes() const
 			char bppstr[64];
 			char xresstr[64];
 			char yresstr[64];
-			bppstr[String::ConvertUInt32(bpp, bppstr)] = 0;
-			xresstr[String::ConvertUInt32(w, xresstr)] = 0;
-			yresstr[String::ConvertUInt32(h, yresstr)] = 0;
+			snprintf(bppstr, 64, "%u", bpp);
+			snprintf(xresstr, 64, "%u", w);
+			snprintf(yresstr, 64, "%u", h);
 			char* modestr = String::Combine(6, "width=", xresstr, ",height=",
 			                                yresstr, ",bpp=", bppstr);
 			if ( !modestr ) { return false; }

@@ -76,6 +76,7 @@ memory.o \
 readparamstring.o \
 rewind.o \
 sort.o \
+sprint.o \
 sscanf.o \
 stpcpy.o \
 strcasecmp.o \
