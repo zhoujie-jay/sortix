@@ -22,7 +22,6 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
 #include <sys/syscall.h>
 #include <stdlib.h>
 #include <unistd.h>

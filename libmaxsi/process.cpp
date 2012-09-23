@@ -23,7 +23,6 @@
 *******************************************************************************/
 
 #define _WANT_ENVIRON
-#include <libmaxsi/platform.h>
 #include <sys/syscall.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -171,17 +170,17 @@ namespace Maxsi
 			return __call_tfork_with_regs(flags);
 		}
 
-		DUAL_FUNCTION(pid_t, fork, Fork, ())
+		extern "C" pid_t fork()
 		{
 			return sfork(SFFORK);
 		}
 
-		DUAL_FUNCTION(pid_t, getpid, GetPID, ())
+		extern "C" pid_t getpid()
 		{
 			return SysGetPID();
 		}
 
-		DUAL_FUNCTION(pid_t, getppid, GetParentPID, ())
+		extern "C" pid_t getppid()
 		{
 			return SysGetParentPID();
 		}

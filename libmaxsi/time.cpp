@@ -22,11 +22,12 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
 #include <sys/syscall.h>
 #include <errno.h>
 #include <sys/time.h>
 #include <time.h>
+#include <stddef.h>
+#include <stdint.h>
 
 namespace Maxsi
 {

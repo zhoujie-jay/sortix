@@ -22,7 +22,7 @@
 
 ******************************************************************************/
 
-#include <libmaxsi/platform.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -190,21 +190,21 @@ namespace Maxsi
 
 				if ( *format == '%' ) { continue; }
 
-				const nat UNSIGNED = 0;
-				const nat INTEGER = (1<<0);
-				const nat BIT64 = (1<<1);
-				const nat HEX = (1<<2);
-				const nat STRING = 8;
-				const nat CHARACTER = 9;
-			#ifdef PLATFORM_X64
-				const nat WORDWIDTH = BIT64;
+				const unsigned UNSIGNED = 0;
+				const unsigned INTEGER = (1<<0);
+				const unsigned BIT64 = (1<<1);
+				const unsigned HEX = (1<<2);
+				const unsigned STRING = 8;
+				const unsigned CHARACTER = 9;
+			#if defined(__x86_64__)
+				const unsigned WORDWIDTH = BIT64;
 			#else
-				const nat WORDWIDTH = 0;
+				const unsigned WORDWIDTH = 0;
 			#endif
 
 				// TODO: Support signed datatypes!
 
-				nat type = 0;
+				unsigned type = 0;
 
 				bool scanning = true;
 				while ( scanning )

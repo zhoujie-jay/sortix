@@ -22,8 +22,6 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-
 namespace Maxsi
 {
 	namespace Random

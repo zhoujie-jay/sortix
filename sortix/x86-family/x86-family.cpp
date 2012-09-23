@@ -22,7 +22,7 @@
 
 ******************************************************************************/
 
-#include <libmaxsi/platform.h>
+#include <sortix/kernel/platform.h>
 
 namespace Sortix
 {

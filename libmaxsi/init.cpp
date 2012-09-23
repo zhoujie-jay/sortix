@@ -23,7 +23,6 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
 #include <malloc.h>
 #include <string.h>
 

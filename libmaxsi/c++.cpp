@@ -22,14 +22,14 @@
 
 ******************************************************************************/
 
-#include <libmaxsi/platform.h>
+#include <stdint.h>
 
 extern "C" void __attribute__ ((weak)) __cxa_pure_virtual()
 {
 	// This shouldn't happen. TODO: Possibly crash the kernel here.
 }
 
-#ifdef PLATFORM_X86
+#if defined(__i386__)
 
 extern "C" uint64_t __attribute__ ((weak)) __udivdi3(uint64_t a, uint64_t b)
 {

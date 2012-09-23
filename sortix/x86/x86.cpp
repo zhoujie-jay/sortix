@@ -22,7 +22,7 @@
 
 ******************************************************************************/
 
-#include <libmaxsi/platform.h>
+#include <sortix/kernel/platform.h>
 #include "x86.h"
 #include <sortix/kernel/log.h>
 

@@ -23,7 +23,6 @@
 *******************************************************************************/
 
 #include <sys/mman.h>
-#include <libmaxsi/platform.h>
 
 #ifdef SORTIX_KERNEL
 #define HEAP_GROWS_DOWNWARDS
@@ -31,13 +30,13 @@
 
 #ifndef SORTIX_KERNEL
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #endif
 
 #include <assert.h>
 #include <errno.h>
 #include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define PARANOIA 1
@@ -50,6 +49,11 @@
 #include <sortix/kernel/panic.h>
 #endif
 
+#ifndef _ADDR_T_DECLARED
+#define _ADDR_T_DECLARED
+typedef uintptr_t addr_t;
+#endif
+
 namespace Maxsi
 {
 	namespace Memory
@@ -59,7 +63,7 @@ namespace Maxsi
 		// skip ahead to the actual algorithm.
 		//
 
-#ifdef PLATFORM_X64
+#if defined(__x86_64__)
 		const size_t MAGIC = 0xDEADDEADDEADDEADUL;
 		const size_t ALIGNMENT = 16UL;
 #else
@@ -473,7 +477,7 @@ namespace Maxsi
 			return true;
 		}
 
-		DUAL_FUNCTION(void*, malloc, Allocate, (size_t size))
+		extern "C" void* malloc(size_t size)
 		{
 			#ifdef SORTIX_KERNEL
 			Sortix::ScopedLock scopedlock(&heaplock);
@@ -660,7 +664,7 @@ namespace Maxsi
 			}
 		}
 
-		DUAL_FUNCTION(void, free, Free, (void* addr))
+		extern "C" void free(void* addr)
 		{
 			#ifdef SORTIX_KERNEL
 			Sortix::ScopedLock scopedlock(&heaplock);
@@ -701,7 +705,7 @@ namespace Maxsi
 		extern "C" void* calloc(size_t nmemb, size_t size)
 		{
 			size_t total = nmemb * size;
-			void* result = Allocate(total);
+			void* result = malloc(total);
 			if ( !result ) { return NULL; }
 			memset(result, 0, total);
 			return result;
@@ -710,23 +714,23 @@ namespace Maxsi
 		// TODO: Implement this function properly.
 		extern "C" void* realloc(void* ptr, size_t size)
 		{
-			if ( !ptr ) { return Allocate(size); }
+			if ( !ptr ) { return malloc(size); }
 			Chunk* chunk = (Chunk*) ((addr_t) ptr - sizeof(Chunk));
 			assert(chunk->IsUsed());
 			assert(chunk->IsSane());
 			size_t allocsize = chunk->size - OVERHEAD;
 			if ( size < allocsize ) { return ptr; }
-			void* newptr = Allocate(size);
+			void* newptr = malloc(size);
 			if ( !newptr ) { return NULL; }
 			memcpy(newptr, ptr, allocsize);
-			Free(ptr);
+			free(ptr);
 			return newptr;
 		}
 	}
 }
 
-void* operator new(size_t Size)     { return Maxsi::Memory::Allocate(Size); }
-void* operator new[](size_t Size)   { return Maxsi::Memory::Allocate(Size); }
-void  operator delete  (void* Addr) { return Maxsi::Memory::Free(Addr); };
-void  operator delete[](void* Addr) { return Maxsi::Memory::Free(Addr); };
+void* operator new(size_t Size)     { return malloc(Size); }
+void* operator new[](size_t Size)   { return malloc(Size); }
+void  operator delete  (void* Addr) { return free(Addr); };
+void  operator delete[](void* Addr) { return free(Addr); };
 

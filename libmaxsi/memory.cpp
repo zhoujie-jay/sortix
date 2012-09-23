@@ -22,10 +22,10 @@
 
 ******************************************************************************/
 
-#include <libmaxsi/platform.h>
 #ifndef SORTIX_KERNEL
 #include <sys/syscall.h>
 #endif
+#include <stdint.h>
 #include <string.h>
 
 namespace Maxsi
@@ -83,7 +83,7 @@ namespace Maxsi
 			return (addr / WORDSIZE * WORDSIZE) == addr;
 		}
 
-		DUAL_FUNCTION(void*, memcpy, Copy, (void* destptr, const void* srcptr, size_t length))
+		extern "C" void* memcpy(void* destptr, const void* srcptr, size_t length)
 		{
 			if ( IsWordAligned((uintptr_t) destptr) &&
 			     IsWordAligned((uintptr_t) srcptr) &&
@@ -102,9 +102,9 @@ namespace Maxsi
 			return dest;
 		}
 
-		DUAL_FUNCTION(void*, memset, Set, (void* Dest, int Value, size_t Length))
+		extern "C" void* memset(void* Dest, int Value, size_t Length)
 		{
-			byte* D = (byte*) Dest;
+			uint8_t* D = (uint8_t*) Dest;
 
 			for ( size_t I = 0; I < Length; I++ )
 			{
@@ -114,10 +114,10 @@ namespace Maxsi
 			return Dest;
 		}
 
-		DUAL_FUNCTION(int, memcmp, Compare, (const void* a, const void* b, size_t size))
+		extern "C" int memcmp(const void* a, const void* b, size_t size)
 		{
-			const byte* buf1 = (const byte*) a;
-			const byte* buf2 = (const byte*) b;
+			const uint8_t* buf1 = (const uint8_t*) a;
+			const uint8_t* buf2 = (const uint8_t*) b;
 			for ( size_t i = 0; i < size; i++ )
 			{
 				if ( buf1[i] != buf2[i] ) { return (int)(buf1[i]) - (int)(buf2[i]); }
@@ -125,9 +125,9 @@ namespace Maxsi
 			return 0;
 		}
 
-		DUAL_FUNCTION(void*, memchr, Seek, (const void* s, int c, size_t size))
+		extern "C" void* memchr(const void* s, int c, size_t size)
 		{
-			const byte* buf = (const byte*) s;
+			const uint8_t* buf = (const uint8_t*) s;
 			for ( size_t i = 0; i < size; i++ )
 			{
 				if ( buf[i] == c ) { return (void*) (buf + i); }

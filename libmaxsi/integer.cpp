@@ -23,7 +23,7 @@
 
 ******************************************************************************/
 
-#include <libmaxsi/platform.h>
+#include <stddef.h>
 
 namespace Maxsi
 {
