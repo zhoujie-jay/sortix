@@ -88,7 +88,6 @@ strcoll.o \
 strcpy.o \
 strcspn.o \
 strdup.o \
-string.o \
 strlen.o \
 strncasecmp.o \
 strncat.o \

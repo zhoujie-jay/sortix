@@ -23,7 +23,6 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/string.h>
 #include <errno.h>
 #include <string.h>
 #include "syscall.h"
@@ -34,8 +33,6 @@
 #include <sortix/stat.h>
 #include <sortix/fcntl.h>
 #include <sortix/unistd.h>
-
-using namespace Maxsi;
 
 namespace Sortix
 {

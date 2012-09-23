@@ -23,12 +23,9 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/string.h>
 #include <errno.h>
 #include <string.h>
 #include "util.h"
-
-using namespace Maxsi;
 
 namespace Sortix {
 

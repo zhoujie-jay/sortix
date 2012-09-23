@@ -28,8 +28,8 @@
 #include <sortix/kernel/video.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/pci.h>
+#include <sortix/kernel/string.h>
 #include <sortix/mman.h>
-#include <libmaxsi/string.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,8 +38,6 @@
 #include "lfbtextbuffer.h"
 #include "cpu.h"
 #include "bga.h"
-
-using namespace Maxsi;
 
 namespace Sortix {
 namespace BGA {

@@ -26,12 +26,10 @@
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/textbuffer.h>
 #include <sortix/kernel/video.h>
+#include <sortix/kernel/string.h>
 #include <stdarg.h>
 #include <errno.h>
-#include <libmaxsi/string.h>
 #include <string.h>
-
-using namespace Maxsi;
 
 namespace Sortix {
 

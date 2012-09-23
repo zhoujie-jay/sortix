@@ -23,12 +23,9 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/string.h>
 #include <string.h>
 #include <sortix/kernel/log.h>
 #include "syscall.h"
-
-using namespace Maxsi;
 
 namespace Sortix
 {

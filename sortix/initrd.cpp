@@ -25,16 +25,14 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/crc32.h>
+#include <sortix/kernel/string.h>
 #include <sortix/stat.h>
 #include <sortix/mman.h>
 #include <sortix/initrd.h>
-#include <libmaxsi/string.h>
 #include <errno.h>
 #include <string.h>
 #include "initrd.h"
 #include "syscall.h"
-
-using namespace Maxsi;
 
 namespace Sortix {
 namespace InitRD {

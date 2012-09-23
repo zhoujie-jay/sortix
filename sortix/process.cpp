@@ -26,12 +26,12 @@
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/worker.h>
 #include <sortix/kernel/memorymanagement.h>
+#include <sortix/kernel/string.h>
 #include <sortix/signal.h>
 #include <sortix/unistd.h>
 #include <sortix/fork.h>
 #include <sortix/mman.h>
 #include <sortix/wait.h>
-#include <libmaxsi/string.h>
 #include <sortix/kernel/sortedlist.h>
 #include <assert.h>
 #include <errno.h>
@@ -46,8 +46,6 @@
 #include "initrd.h"
 #include "elf.h"
 #include "syscall.h"
-
-using namespace Maxsi;
 
 namespace Sortix
 {

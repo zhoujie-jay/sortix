@@ -23,7 +23,6 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/string.h>
 #include <errno.h>
 #include "syscall.h"
 #include "kernelinfo.h"
@@ -31,8 +30,6 @@
 #ifndef VERSIONSTR
 #define VERSIONSTR "unknown"
 #endif
-
-using namespace Maxsi;
 
 namespace Sortix {
 namespace Info {

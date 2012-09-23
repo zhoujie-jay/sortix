@@ -23,7 +23,7 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/string.h>
+#include <sortix/kernel/string.h>
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
@@ -31,8 +31,6 @@
 #include "../directory.h"
 #include "../stream.h"
 #include "ramfs.h"
-
-using namespace Maxsi;
 
 namespace Sortix
 {

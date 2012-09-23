@@ -24,12 +24,9 @@
 
 #include <sortix/kernel/platform.h>
 #include "cpu.h"
-#include <libmaxsi/string.h>
 #include <string.h>
 #include "vga.h"
 #include "uart.h"
-
-using namespace Maxsi;
 
 namespace Sortix
 {

@@ -24,14 +24,12 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/video.h>
-#include <libmaxsi/string.h>
+#include <sortix/kernel/string.h>
 #include <errno.h>
 #include <string.h>
 #include "../directory.h"
 #include "util.h"
 #include "videofs.h"
-
-using namespace Maxsi;
 
 namespace Sortix {
 

@@ -23,7 +23,6 @@
 ******************************************************************************/
 
 #include <libmaxsi/platform.h>
-#include <libmaxsi/string.h>
 #include <stdio.h>
 #include <string.h>
 

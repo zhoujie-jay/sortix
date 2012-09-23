@@ -23,15 +23,12 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <libmaxsi/string.h>
 #include <sortix/kernel/log.h>
 #include "vga.h"
 #include "keyboard.h"
 #include "uart.h"
 #include "serialterminal.h"
 #include "scheduler.h"
-
-using namespace Maxsi;
 
 namespace Sortix
 {

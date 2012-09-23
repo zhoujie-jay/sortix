@@ -24,7 +24,7 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
-#include <libmaxsi/string.h>
+#include <sortix/kernel/string.h>
 #include <errno.h>
 #include <string.h>
 #include "../filesystem.h"
@@ -32,8 +32,6 @@
 #include "../stream.h"
 #include "initfs.h"
 #include "../initrd.h"
-
-using namespace Maxsi;
 
 namespace Sortix
 {
