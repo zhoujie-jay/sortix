@@ -187,21 +187,18 @@ HEADERS:=$(patsubst include%,preproc%,$(UNPROCHEADERS))
 SORTIXOBJS:=$(addprefix sortix/,$(FREEOBJS))
 SORTIXCPPFLAGS:=-DSORTIX_KERNEL
 
-BINS=libc.a libg.a libm.a libstdc++.a libmaxsi.a libmaxsi-sortix.a $(CRTOBJ)
+BINS=libc.a libg.a libm.a libstdc++.a libc-sortix.a $(CRTOBJ)
 
 all: $(BINS)
 
 .PHONY: all headers clean install install-include-dirs install-headers \
         install-lib-dirs install-libs
 
-libmaxsi.a: $(OBJS)
-	$(HOSTAR) rcs libmaxsi.a $(OBJS)
+libc.a: $(OBJS)
+	$(HOSTAR) rcs $@ $(OBJS)
 
-libmaxsi-sortix.a: $(SORTIXOBJS)
-	$(HOSTAR) rcs libmaxsi-sortix.a $(SORTIXOBJS)
-
-libc.a: libmaxsi.a
-	ln -sf $< $@
+libc-sortix.a: $(SORTIXOBJS)
+	$(HOSTAR) rcs $@ $(SORTIXOBJS)
 
 libg.a: libc.a
 	ln -sf $< $@
@@ -243,7 +240,7 @@ headers: $(HEADERDIRS) $(HEADERS)
 %.o: %.s
 	$(HOSTAS) $(ASFLAGS) $< -o $@
 
-# libmaxsi-sortix
+# libc-sortix
 sortix:
 	mkdir -p sortix
 

@@ -78,7 +78,7 @@ ASFLAGS=
 NASMFLAGS=$(CPUNASMFLAGS)
 
 STATICLIBS=\
--lmaxsi-sortix \
+-lc-sortix \
 
 HEADERDIRS:=$(shell find include -type d)
 HEADERS:=$(shell find include -type f)
