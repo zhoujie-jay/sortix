@@ -22,13 +22,20 @@
 
 *******************************************************************************/
 
-#include <libmaxsi/platform.h>
-#include <libmaxsi/string.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <string.h>
 #include <readparamstring.h>
 
-using namespace Maxsi;
+static char* Substring(const char* src, size_t offset, size_t length)
+{
+	size_t srclen = strlen(src);
+	char* dest = new char[length + 1];
+	if ( !dest ) { return NULL; }
+	memcpy(dest, src + offset, length * sizeof(char));
+	dest[length] = 0;
+	return dest;
+}
 
 extern "C" bool ReadParamString(const char* str, ...)
 {
@@ -44,9 +51,9 @@ extern "C" bool ReadParamString(const char* str, ...)
 		if ( !str[namelen] ) { errno = EINVAL; goto cleanup; }
 		if ( varlen < namelen ) { errno = EINVAL; goto cleanup; }
 		size_t valuelen = varlen - 1 /*=*/ - namelen;
-		char* name = String::Substring(str, 0, namelen);
+		char* name = Substring(str, 0, namelen);
 		if ( !name ) { goto cleanup; }
-		char* value = String::Substring(str, namelen+1, valuelen);
+		char* value = Substring(str, namelen+1, valuelen);
 		if ( !value ) { delete[] name; goto cleanup; }
 		va_start(args, str);
 		while ( (keyname = va_arg(args, const char*)) )
