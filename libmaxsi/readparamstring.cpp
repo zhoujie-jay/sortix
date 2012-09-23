@@ -32,7 +32,7 @@ using namespace Maxsi;
 
 extern "C" bool ReadParamString(const char* str, ...)
 {
-	if ( String::Seek(str, '\n') ) { errno = EINVAL; }
+	if ( strchr(str, '\n') ) { errno = EINVAL; }
 	const char* keyname;
 	va_list args;
 	while ( *str )
