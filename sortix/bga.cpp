@@ -31,6 +31,7 @@
 #include <sortix/mman.h>
 #include <libmaxsi/string.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 #include "x86-family/memorymanagement.h"
 #include "lfbtextbuffer.h"
@@ -308,9 +309,9 @@ bool BGADriver::SwitchMode(const char* mode)
 	char* bppstr = NULL;
 	if ( !ReadParamString(mode, "width", &xstr, "height", &ystr,
 	                      "bpp", &bppstr, "STOP") ) { return false; }
-	uint16_t xres = xstr ? Maxsi::String::ToInt(xstr) : 0;
-	uint16_t yres = ystr ? Maxsi::String::ToInt(ystr) : 0;
-	uint16_t bpp = bppstr ? Maxsi::String::ToInt(bppstr) : 32;
+	uint16_t xres = xstr ? atoi(xstr) : 0;
+	uint16_t yres = ystr ? atoi(ystr) : 0;
+	uint16_t bpp = bppstr ? atoi(bppstr) : 32;
 	size_t newframesize = (size_t) xres * (size_t) yres * (size_t) bpp/8UL;
 
 	// If the current resolution uses more memory than the new one, keep it
@@ -340,9 +341,9 @@ bool BGADriver::Supports(const char* mode) const
 	char* bppstr = NULL;
 	if ( !ReadParamString(mode, "width", &xstr, "height", &ystr,
 	                      "bpp", &bppstr, NULL, NULL) ) { return false; }
-	uint16_t xres = xstr ? Maxsi::String::ToInt(xstr) : 0;
-	uint16_t yres = ystr ? Maxsi::String::ToInt(ystr) : 0;
-	uint16_t bpp = bppstr ? Maxsi::String::ToInt(bppstr) : 0;
+	uint16_t xres = xstr ? atoi(xstr) : 0;
+	uint16_t yres = ystr ? atoi(ystr) : 0;
+	uint16_t bpp = bppstr ? atoi(bppstr) : 0;
 	bool result = SupportsResolution(xres, yres, bpp);
 	delete[] xstr;
 	delete[] ystr;
