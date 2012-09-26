@@ -75,6 +75,7 @@ heap.o \
 integer.o \
 mbtowc.o \
 memory.o \
+op-new.o \
 readparamstring.o \
 rewind.o \
 sort.o \

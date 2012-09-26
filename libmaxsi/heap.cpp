@@ -728,9 +728,3 @@ namespace Maxsi
 		}
 	}
 }
-
-void* operator new(size_t Size)     { return malloc(Size); }
-void* operator new[](size_t Size)   { return malloc(Size); }
-void  operator delete  (void* Addr) { return free(Addr); };
-void  operator delete[](void* Addr) { return free(Addr); };
-
