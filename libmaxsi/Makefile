@@ -69,6 +69,8 @@ ftello.o \
 fwritable.o \
 fwrite.o \
 fwriting.o \
+getdelim.o \
+getline.o \
 heap.o \
 integer.o \
 mbtowc.o \

@@ -51,47 +51,6 @@ int putchar(int c)
 	return fputc(c, stdout);
 }
 
-ssize_t getdelim(char** lineptr, size_t* n, int delim, FILE* fp)
-{
-	if ( !lineptr || (*lineptr && !n) || !fp ) { errno = EINVAL; return -1; }
-	const size_t DEFAULT_BUFSIZE = 32UL;
-	int malloced = !*lineptr;
-	if ( malloced ) { *lineptr = (char*) malloc(DEFAULT_BUFSIZE); }
-	if ( !*lineptr ) { return -1; }
-	size_t bufsize = malloced ? DEFAULT_BUFSIZE : *n;
-	if ( n ) { *n = bufsize; }
-	ssize_t written = 0;
-	int c;
-	do
-	{
-		if ( (c = getc(fp)) == EOF )
-		{
-			if ( written ) { break; } else { goto cleanup; }
-		}
-		if ( bufsize <= (size_t) written + 1UL )
-		{
-			size_t newbufsize = 2UL * bufsize;
-			char* newbuf = (char*) realloc(*lineptr, newbufsize);
-			if ( !newbuf ) { goto cleanup; }
-			bufsize = newbufsize;
-			if ( n ) { *n = bufsize; }
-			*lineptr = newbuf;
-		}
-		(*lineptr)[written++] = c;
-	} while ( c != delim );
-	(*lineptr)[written] = 0;
-	return written;
-
-cleanup:
-	free(malloced ? *lineptr : NULL);
-	return -1;
-}
-
-ssize_t getline(char** lineptr, size_t* n, FILE* fp)
-{
-	return getdelim(lineptr, n, '\n', fp);
-}
-
 char* sortix_gets(void)
 {
 	char* buf = NULL;
@@ -106,4 +65,3 @@ int puts(const char* str)
 {
 	return printf("%s\n", str) < 0 ? EOF : 1;
 }
-
