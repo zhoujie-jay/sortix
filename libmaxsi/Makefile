@@ -75,7 +75,11 @@ getline.o \
 heap.o \
 integer.o \
 mbtowc.o \
-memory.o \
+memchr.o \
+memcmp.o \
+memcpy.o \
+memmove.o \
+memset.o \
 op-new.o \
 readparamstring.o \
 rewind.o \
@@ -143,6 +147,7 @@ ftruncate.o \
 getc.o \
 getcwd.o \
 getdtablesize.o \
+getpagesize.o \
 getpid.o \
 getppid.o \
 gettermmode.o \
@@ -152,6 +157,7 @@ isatty.o \
 kernelinfo.o \
 localeconv.o \
 lseek.o \
+memstat.o \
 mkdir.o \
 mktemp.o \
 on_exit.o \
@@ -163,6 +169,7 @@ random.o \
 readdirents.o \
 read.o \
 rmdir.o \
+sbrk.o \
 scanf.o \
 setjmp.o \
 setlocale.o \
