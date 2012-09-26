@@ -34,6 +34,7 @@ abort.o \
 abs.o \
 _assert.o \
 bsearch.o \
+calloc.o \
 clearerr.o \
 c++.o \
 ctype.o \

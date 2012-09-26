@@ -693,15 +693,6 @@ extern "C" void free(void* addr)
 	#endif
 }
 
-extern "C" void* calloc(size_t nmemb, size_t size)
-{
-	size_t total = nmemb * size;
-	void* result = malloc(total);
-	if ( !result ) { return NULL; }
-	memset(result, 0, total);
-	return result;
-}
-
 // TODO: Implement this function properly.
 extern "C" void* realloc(void* ptr, size_t size)
 {
