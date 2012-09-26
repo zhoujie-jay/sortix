@@ -38,7 +38,7 @@ clearerr.o \
 c++.o \
 ctype.o \
 dir.o \
-error.o \
+errno.o \
 fabs.o \
 fbufsize.o \
 fclose.o \
@@ -88,6 +88,7 @@ strcoll.o \
 strcpy.o \
 strcspn.o \
 strdup.o \
+strerror.o \
 strlen.o \
 strncasecmp.o \
 strncat.o \

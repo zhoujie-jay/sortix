@@ -17,38 +17,14 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	error.cpp
-	Error reporting functions and utilities.
+	strerror.cpp
+	Convert error code to a string.
 
 *******************************************************************************/
 
 #define __SORTIX_STDLIB_REDIRECTS 0
 #include <errno.h>
-#include <stddef.h>
-#ifndef SORTIX_KERNEL
-#include <stdio.h>
-#endif
-
-extern "C" { int global_errno = 0; }
-extern "C" { errno_location_func_t errno_location_func = NULL; }
-
-#ifndef SORTIX_KERNEL
-extern "C" void init_error_functions()
-{
-	global_errno = 0;
-}
-#endif
-
-extern "C" int* get_errno_location(void)
-{
-	if ( errno_location_func ) { return errno_location_func(); }
-	return &global_errno;
-}
-
-extern "C" void set_errno_location_func(errno_location_func_t func)
-{
-	errno_location_func = func;
-}
+#include <string.h>
 
 extern "C" const char* sortix_strerror(int errnum)
 {
