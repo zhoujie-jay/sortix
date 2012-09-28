@@ -17,19 +17,23 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	time.cpp
-	Get time in seconds.
+	localtime_r.cpp
+	Transform date and time.
 
 *******************************************************************************/
 
-#include <sys/time.h>
-#include <stddef.h>
 #include <time.h>
 
-extern "C" time_t time(time_t* t)
+extern "C" struct tm* localtime_r(const time_t* timer, struct tm* ret)
 {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	time_t result = tv.tv_sec;
-	return t ? *t = result : result;
+	time_t time = *timer;
+	ret->tm_sec = time % 60; // No leap seconds.
+	ret->tm_min = (time / 60) % 60;
+	ret->tm_hour = (time / 60 / 60) % 24;
+	ret->tm_mday = 0;
+	ret->tm_mon = 0;
+	ret->tm_year = 0;
+	ret->tm_wday = 0;
+	ret->tm_isdst = 0;
+	return ret;
 }

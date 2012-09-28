@@ -17,19 +17,17 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	time.cpp
-	Get time in seconds.
+	utime.cpp
+	Change file last access and modification times.
 
 *******************************************************************************/
 
-#include <sys/time.h>
-#include <stddef.h>
+#include <sys/types.h>
+//#include <utime.h>
 #include <time.h>
 
-extern "C" time_t time(time_t* t)
+extern "C" int utime(const char* filepath, const struct utimbuf* times)
 {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	time_t result = tv.tv_sec;
-	return t ? *t = result : result;
+	// TODO: Sure, I did that! There is no kernel support for this yet.
+	return 0;
 }

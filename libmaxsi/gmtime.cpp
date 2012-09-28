@@ -17,19 +17,15 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	time.cpp
-	Get time in seconds.
+	gmtime.cpp
+	Transform date and time.
 
 *******************************************************************************/
 
-#include <sys/time.h>
-#include <stddef.h>
 #include <time.h>
 
-extern "C" time_t time(time_t* t)
+extern "C" struct tm* gmtime(const time_t* timer)
 {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	time_t result = tv.tv_sec;
-	return t ? *t = result : result;
+	static struct tm hack_gmtime_ret;
+	return gmtime_r(timer, &hack_gmtime_ret);
 }

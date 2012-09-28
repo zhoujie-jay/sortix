@@ -17,19 +17,16 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	time.cpp
-	Get time in seconds.
+	clock.cpp
+	Determine processor time.
 
 *******************************************************************************/
 
-#include <sys/time.h>
-#include <stddef.h>
+#include <errno.h>
 #include <time.h>
 
-extern "C" time_t time(time_t* t)
+extern "C" clock_t clock(void)
 {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	time_t result = tv.tv_sec;
-	return t ? *t = result : result;
+	errno = ENOTSUP;
+	return -1;
 }

@@ -17,19 +17,18 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	time.cpp
-	Get time in seconds.
+	uptime.cpp
+	Returns current system uptime.
 
 *******************************************************************************/
 
-#include <sys/time.h>
-#include <stddef.h>
-#include <time.h>
+#include <sys/syscall.h>
+#include <stdint.h>
+#include <unistd.h>
 
-extern "C" time_t time(time_t* t)
+DEFN_SYSCALL1(int, sys_uptime, SYSCALL_UPTIME, uintmax_t*);
+
+extern "C" int uptime(uintmax_t* usecssinceboot)
 {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	time_t result = tv.tv_sec;
-	return t ? *t = result : result;
+	return sys_uptime(usecssinceboot);
 }

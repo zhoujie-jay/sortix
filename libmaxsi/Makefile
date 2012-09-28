@@ -37,6 +37,7 @@ bsearch.o \
 calloc.o \
 clearerr.o \
 c++.o \
+ctime.o \
 ctype.o \
 dir.o \
 errno.o \
@@ -72,8 +73,12 @@ fwrite.o \
 fwriting.o \
 getdelim.o \
 getline.o \
+gmtime.o \
+gmtime_r.o \
 heap.o \
 integer.o \
+localtime.o \
+localtime_r.o \
 mbtowc.o \
 memchr.o \
 memcmp.o \
@@ -117,6 +122,7 @@ HOSTEDOBJS=\
 access.o \
 chdir.o \
 chmod.o \
+clock.o \
 close.o \
 $(CPUDIR)/fork.o \
 $(CPUDIR)/signal.o \
@@ -151,6 +157,7 @@ getpagesize.o \
 getpid.o \
 getppid.o \
 gettermmode.o \
+gettimeofday.o \
 init.o \
 ioleast.o \
 isatty.o \
@@ -184,7 +191,9 @@ time.o \
 truncate.o \
 umask.o \
 unlink.o \
+uptime.o \
 usleep.o \
+utime.o \
 vexecle.o \
 vexecl.o \
 vexeclp.o \

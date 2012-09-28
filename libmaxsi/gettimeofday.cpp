@@ -17,19 +17,20 @@
 	You should have received a copy of the GNU Lesser General Public License
 	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
 
-	time.cpp
-	Get time in seconds.
+	gettimeofday.cpp
+	Get date and time.
 
 *******************************************************************************/
 
 #include <sys/time.h>
-#include <stddef.h>
-#include <time.h>
+#include <errno.h>
+#include <unistd.h>
 
-extern "C" time_t time(time_t* t)
+extern "C" int gettimeofday(struct timeval* tp, void* /*tzp*/)
 {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	time_t result = tv.tv_sec;
-	return t ? *t = result : result;
+	uintmax_t sinceboot;
+	uptime(&sinceboot);
+	tp->tv_sec = sinceboot / 1000000ULL;
+	tp->tv_usec = sinceboot % 1000000ULL;
+	return 0;
 }
