@@ -162,6 +162,7 @@ init.o \
 ioleast.o \
 isatty.o \
 kernelinfo.o \
+kill.o \
 localeconv.o \
 lseek.o \
 memstat.o \
@@ -172,6 +173,7 @@ open.o \
 pipe.o \
 print.o \
 putc.o \
+raise.o \
 rand.o \
 readdirents.o \
 read.o \
@@ -182,6 +184,9 @@ setjmp.o \
 setlocale.o \
 settermmode.o \
 sfork.o \
+SIG_DFL.o \
+SIG_ERR.o \
+SIG_IGN.o \
 signal.o \
 sleep.o \
 stat.o \
