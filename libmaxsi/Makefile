@@ -33,6 +33,9 @@ FREEOBJS=\
 abort.o \
 abs.o \
 _assert.o \
+atoi.o \
+atoll.o \
+atol.o \
 bsearch.o \
 calloc.o \
 clearerr.o \
