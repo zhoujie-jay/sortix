@@ -4,5 +4,6 @@
 /*.iso
 /*.so
 /*.a
+libmaxsi
 builds
 sysroot

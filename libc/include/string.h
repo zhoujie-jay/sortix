@@ -59,7 +59,7 @@ char* strstr(const char*, const char*);
 char* strtok(char* restrict, const char* restrict);
 char* strtok_r(char* restrict, const char* restrict, char** restrict);
 
-/* TODO: These are not implemented in libmaxsi/sortix yet. */
+/* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 void* memccpy(void* restrict, const void* restrict, int, size_t);
 char* stpncpy(char* restrict, const char* restrict, size_t);

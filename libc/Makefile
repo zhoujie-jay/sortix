@@ -23,7 +23,7 @@ ifeq ($(HOST),x86_64-sortix)
 endif
 
 CPPINCLUDES=-I preproc
-CPPFLAGS=-DLIBMAXSI_LIBRARY -U_GNU_SOURCE $(CPUDEFINES) $(CPPINCLUDES)
+CPPFLAGS=-DLIBC_LIBRARY -U_GNU_SOURCE $(CPUDEFINES) $(CPPINCLUDES)
 FLAGS=$(CPUFLAGS) -Wall -Wextra -fno-stack-protector $(FLAGSDEBUG)
 CFLAGS=$(FLAGS) -std=c99
 CXXFLAGS=$(FLAGS) -std=gnu++0x -fno-exceptions -fno-rtti

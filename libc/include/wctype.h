@@ -34,7 +34,7 @@ __BEGIN_DECLS
 @include(locale_t.h)
 @include(WEOF.h)
 
-/* TODO: These are not implemented in libmaxsi/sortix yet. */
+/* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 int iswalnum(wint_t);
 int iswalnum_l(wint_t, locale_t);

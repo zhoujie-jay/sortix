@@ -31,7 +31,7 @@
 
 __BEGIN_DECLS
 
-extern "C" void _init_heap();
+void _init_heap();
 
 __END_DECLS
 

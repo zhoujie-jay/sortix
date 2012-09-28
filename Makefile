@@ -2,9 +2,9 @@ include compiler.mak
 include version.mak
 
 ifneq ($(BUILD_LIBC),0)
-  MODULES:=$(MODULES) libmaxsi
+  MODULES:=$(MODULES) libc
 endif
-ALLMODULES:=$(ALLMODULES) libmaxsi
+ALLMODULES:=$(ALLMODULES) libc
 
 ifneq ($(BUILD_GAMES),0)
   MODULES:=$(MODULES) games
@@ -66,7 +66,7 @@ suball: sysroot-base-headers
 	(for D in $(MODULES); do ($(MAKE) all $(MFLAGS) --directory $$D && $(MAKE) install $(MFLAGS) --directory $$D) || exit $$?; done)
 
 sysroot-base-headers: sysroot-fsh
-	(for D in libmaxsi sortix; do ($(MAKE) install-headers $(MFLAGS) --directory $$D) || exit $$?; done)
+	(for D in libc sortix; do ($(MAKE) install-headers $(MFLAGS) --directory $$D) || exit $$?; done)
 
 sysroot-fsh:
 	mkdir -p "$(SYSROOT)"

@@ -203,6 +203,6 @@ kernel, the filesystem servers, the initrd tools, the utilities, the games, and
 the benchmark programs are licensed under the GNU General Public License, either
 version 3 or (at your option) any later version.
 
-Unless the license header in the source code states otherwise, the libmaxsi
-standard library is licensed under the GNU Lesser General Public License, either
-version 3 or (at your option) any later version.
+Unless the license header in the source code states otherwise, the libc library
+s licensed under the GNU Lesser General Public License, either version 3 or (at
+your option) any later version.

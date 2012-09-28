@@ -93,7 +93,7 @@ char* getenv(const char*);
 int clearenv(void);
 #endif
 
-/* TODO: These are not implemented in libmaxsi/sortix yet. */
+/* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 long a64l(const char* s);
 double atof(const char* value);

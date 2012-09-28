@@ -85,7 +85,7 @@ __BEGIN_DECLS
 extern char** environ;
 #endif
 
-/* TODO: These are not implemented in libmaxsi/sortix yet. */
+/* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 unsigned alarm(unsigned);
 int chown(const char*, uid_t, gid_t);

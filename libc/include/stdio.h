@@ -55,7 +55,7 @@ typedef struct _fpos_t fpos_t;
 
 #define EOF (-1)
 
-/* FILENAME_MAX, FOPEN_MAX, TMP_MAX are not defined because libmaxsi and Sortix
+/* FILENAME_MAX, FOPEN_MAX, TMP_MAX are not defined because libc and Sortix
    do not have these restrictions. */
 
 /* Default path prefix for `tempnam' and `tmpnam'. */
@@ -121,7 +121,7 @@ extern int vsnprintf(char* restrict, size_t, const char* restrict, __gnuc_va_lis
 extern int vsprintf(char* restrict s, const char* restrict format, __gnuc_va_list ap);
 extern int vsscanf(const char* restrict s, const char* restrict format, __gnuc_va_list arg);
 
-/* TODO: These are not implemented in libmaxsi/sortix yet. */
+/* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 extern char* ctermid(char* s);
 extern FILE *fmemopen(void* restrict buf, size_t size, const char* restrict mode);
@@ -168,7 +168,7 @@ FILE* fnewfile(void);
 int fcloseall(void);
 int fpipe(FILE* pipes[2]);
 /* Internally used by standard library. */
-#if defined(LIBMAXSI_LIBRARY)
+#if defined(LIBC_LIBRARY)
 extern FILE* _firstfile;
 #endif
 #endif
