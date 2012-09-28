@@ -165,7 +165,7 @@ open.o \
 pipe.o \
 print.o \
 putc.o \
-random.o \
+rand.o \
 readdirents.o \
 read.o \
 rmdir.o \
