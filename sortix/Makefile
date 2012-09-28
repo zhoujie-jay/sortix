@@ -19,7 +19,7 @@ ifeq ($(CPU),x64)
     BUILDID=x64
     X86FAMILY=1
     CPUFLAGS=-ffreestanding -mno-red-zone
-    CPULDFLAGS=-z max-page-size=0x1000
+    CPULDFLAGS=
     CPUNASMFLAGS=-felf64
     CPUOBJS:=$(CPU)/base.o $(CPU)/x64.o
 endif
@@ -79,6 +79,7 @@ NASMFLAGS=$(CPUNASMFLAGS)
 
 STATICLIBS=\
 -lc-sortix \
+-lgcc \
 
 HEADERDIRS:=$(shell find include -type d)
 HEADERS:=$(shell find include -type f)
@@ -156,13 +157,13 @@ x64/boot.o: x64/boot.s
 	$(HOSTAS) -64 $< -o $@
 
 sortix-x64.tmp: $(ALLOBJS) x64/boot.o
-	$(HOSTLD) -N -melf_x86_64_sortix -Ttext 100000 -o sortix-x64-internal.out x64/boot.o $(OBJS) $(STATICLIBS) end.o
+	$(HOSTCXX) -nodefaultlibs -nostartfiles -Wl,-N -Wl,-melf_x86_64_sortix -Wl,-Ttext -Wl,100000 -Wl,-z -Wl,max-page-size=0x1000 -o sortix-x64-internal.out x64/boot.o $(OBJS) $(STATICLIBS) end.o
 	$(HOSTOBJCOPY) sortix-x64-internal.out -O elf32-i386 sortix-x64.tmp
 
 # x86 compilation
 
 sortix-x86.tmp: $(ALLOBJS)
-	$(HOSTLD) -melf_i386_sortix -Ttext 100000 -o $@ $(OBJS) $(STATICLIBS) end.o
+	$(HOSTCXX) -nodefaultlibs -nostartfiles -Wl,-melf_i386_sortix -Wl,-Ttext -Wl,100000 -o $@ $(OBJS) $(STATICLIBS) end.o
 
 # general rules
 
