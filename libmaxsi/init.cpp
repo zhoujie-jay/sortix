@@ -26,30 +26,27 @@
 #include <malloc.h>
 #include <string.h>
 
-namespace Maxsi
+extern "C" { char program_invocation_name_data[256] = ""; }
+extern "C" { char* program_invocation_name = program_invocation_name_data; }
+
+extern "C" void init_error_functions();
+extern "C" void init_stdio();
+extern "C" void init_signal();
+
+extern "C" void initialize_standard_library(int argc, char* argv[])
 {
-	extern "C" { char program_invocation_name_data[256] = ""; }
-	extern "C" { char* program_invocation_name = program_invocation_name_data; }
+	if ( argc )
+		strcpy(program_invocation_name, argv[0]);
 
-	extern "C" void init_error_functions();
-	extern "C" void init_stdio();
-	extern "C" void init_signal();
+	// Initialize stuff such as errno.
+	init_error_functions();
 
-	extern "C" void initialize_standard_library(int argc, char* argv[])
-	{
-		if ( argc )
-			strcpy(program_invocation_name, argv[0]);
+	// It's probably best to initialize the Unix signals early on.
+	init_signal();
 
-		// Initialize stuff such as errno.
-		init_error_functions();
+	// Initialize the dynamic heap.
+	_init_heap();
 
-		// It's probably best to initialize the Unix signals early on.
-		init_signal();
-
-		// Initialize the dynamic heap.
-		_init_heap();
-
-		// Initialize stdio.
-		init_stdio();
-	}
+	// Initialize stdio.
+	init_stdio();
 }
