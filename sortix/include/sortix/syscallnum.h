@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -16,6 +16,7 @@
 
 	You should have received a copy of the GNU General Public License along with
 	Sortix. If not, see <http://www.gnu.org/licenses/>.
+
 	syscallnum.h
 	Stores numerical constants for each available system call on this kernel.
 
@@ -75,7 +76,7 @@
 #define SYSCALL_TFORK 51
 #define SYSCALL_TCGETWINSIZE 52
 #define SYSCALL_RAISE 53
-#define SYSCALL_MAX_NUM 54 /* index of highest constant + 1 */
+#define SYSCALL_OPENAT 54
+#define SYSCALL_MAX_NUM 55 /* index of highest constant + 1 */
 
 #endif
-

@@ -1,6 +1,6 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 
@@ -14,13 +14,13 @@
 	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 	details.
 
-	You should have received a copy of the GNU General Public License along
-	with Sortix. If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License along with
+	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
 	filesystem.cpp
 	Allows access to stored sequences of bytes in an orderly fashion.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/string.h>
@@ -84,6 +84,22 @@ namespace Sortix
 			if ( flags & O_CLOFORK ) { fdflags |= FD_CLOFORK; }
 			process->descriptors.SetFlags(fd, fdflags);
 			return fd;
+		}
+
+		int SysOpenAt(int dirfd, const char* pathname, int flags, mode_t mode)
+		{
+			if ( pathname[0] == '/' )
+				return SysOpen(pathname, flags, mode);
+			Process* process = CurrentProcess();
+			Device* dir = process->descriptors.Get(dirfd);
+			if ( !dir ) { errno = EBADF; return -1; }
+			const char* path = process->descriptors.GetPath(dirfd);
+			char* fullpath = String::Combine(3, path, "/", pathname);
+			if ( !fullpath )
+				return -1;
+			int ret = SysOpen(fullpath, flags, mode);
+			delete[] fullpath;
+			return ret;
 		}
 
 		int SysAccess(const char* pathname, int mode)
@@ -216,6 +232,7 @@ namespace Sortix
 		void Init()
 		{
 			Syscall::Register(SYSCALL_OPEN, (void*) SysOpen);
+			Syscall::Register(SYSCALL_OPENAT, (void*) SysOpenAt);
 			Syscall::Register(SYSCALL_UNLINK, (void*) SysUnlink);
 			Syscall::Register(SYSCALL_MKDIR, (void*) SysMkDir);
 			Syscall::Register(SYSCALL_RMDIR, (void*) SysRmDir);

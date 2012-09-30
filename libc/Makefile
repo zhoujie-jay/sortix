@@ -173,6 +173,7 @@ mkdir.o \
 mktemp.o \
 on_exit.o \
 open.o \
+openat.o \
 pipe.o \
 print.o \
 putc.o \
