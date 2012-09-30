@@ -33,6 +33,7 @@ namespace Sortix
 	{
 		Device* dev;
 		int flags;
+		char* path;
 	};
 
 	class DescriptorTable
@@ -46,15 +47,16 @@ namespace Sortix
 		DescriptorEntry* devices;
 
 	public:
-		int Allocate(Device* object);
+		int Allocate(Device* object, char* pathcopy);
 		int Reserve();
 		void Free(int index);
-		void UseReservation(int index, Device* object);
+		void UseReservation(int index, Device* object, char* pathcopy);
 		bool Fork(DescriptorTable* forkinto);
 		void OnExecute();
 		void Reset();
 		void SetFlags(int index, int flags);
 		int GetFlags(int index);
+		const char* GetPath(int index);
 
 	public:
 		inline Device* Get(int index)

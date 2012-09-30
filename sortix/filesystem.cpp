@@ -23,6 +23,7 @@
 ******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/string.h>
 #include <errno.h>
 #include <string.h>
 #include "syscall.h"
@@ -70,10 +71,13 @@ namespace Sortix
 
 		int SysOpen(const char* path, int flags, mode_t mode)
 		{
+			char* pathcopy = String::Clone(path);
+			if ( !pathcopy )
+				return -1;
 			Process* process = CurrentProcess();
 			Device* dev = Open(path, flags, mode);
-			if ( !dev ) { return -1; /* TODO: errno */ }
-			int fd = process->descriptors.Allocate(dev);
+			if ( !dev ) { delete[] pathcopy; return -1; }
+			int fd = process->descriptors.Allocate(dev, pathcopy);
 			if ( fd < 0 ) { dev->Unref(); }
 			int fdflags = 0;
 			if ( flags & O_CLOEXEC ) { fdflags |= FD_CLOEXEC; }

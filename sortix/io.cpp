@@ -23,6 +23,7 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/string.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/seek.h>
 #include <errno.h>
@@ -179,7 +180,9 @@ namespace Sortix
 			Process* process = CurrentProcess();
 			Device* dev = process->descriptors.Get(fd);
 			if ( !dev ) { errno = EBADF; return -1; }
-			return process->descriptors.Allocate(dev);
+			const char* path = process->descriptors.GetPath(fd);
+			char* pathcopy = path ? String::Clone(path) : NULL;
+			return process->descriptors.Allocate(dev, pathcopy);
 		}
 
 		void Init()

@@ -23,6 +23,7 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/string.h>
 #include <assert.h>
 #include <string.h>
 #include "descriptors.h"
@@ -54,6 +55,7 @@ namespace Sortix
 			if ( !dev || dev == RESERVED_DEVICE ) { continue; }
 
 			dev->Unref();
+			delete[] devices[i].path;
 		}
 
 		delete[] devices;
@@ -61,7 +63,7 @@ namespace Sortix
 		numdevices = 0;
 	}
 
-	int DescriptorTable::Allocate(Device* object)
+	int DescriptorTable::Allocate(Device* object, char* pathcopy)
 	{
 		for ( int i = 0; i < numdevices; i++ )
 		{
@@ -70,6 +72,7 @@ namespace Sortix
 				object->Refer();
 				devices[i].dev = object;
 				devices[i].flags = 0;
+				devices[i].path = pathcopy;
 				return i;
 			}
 		}
@@ -86,14 +89,17 @@ namespace Sortix
 		}
 
 		size_t numpadded = newlistlength-numdevices;
-		memset(newlist + numdevices, 0, sizeof(*devices) * numpadded);
+		for ( size_t i = numdevices; i < newlistlength; i++ )
+			newlist[i].dev = NULL,
+			newlist[i].path = NULL,
+			newlist[i].flags = 0;
 
 		delete[] devices;
 
 		devices = newlist;
 		numdevices = newlistlength;
 
-		return Allocate(object);
+		return Allocate(object, pathcopy);
 	}
 
 	void DescriptorTable::Free(int index)
@@ -104,26 +110,30 @@ namespace Sortix
 		if ( devices[index].dev != RESERVED_DEVICE )
 		{
 			devices[index].dev->Unref();
+			delete[] devices[index].path;
 		}
 
 		devices[index].dev = NULL;
+		devices[index].path = NULL;
 		devices[index].flags = 0;
 	}
 
 	int DescriptorTable::Reserve()
 	{
-		return Allocate(RESERVED_DEVICE);
+		return Allocate(RESERVED_DEVICE, NULL);
 	}
 
-	void DescriptorTable::UseReservation(int index, Device* object)
+	void DescriptorTable::UseReservation(int index, Device* object, char* pathcopy)
 	{
 		assert(index < index);
 		assert(devices[index].dev != NULL);
 		assert(devices[index].dev == RESERVED_DEVICE);
+		assert(devices[index].path == NULL);
 
 		object->Refer();
 		devices[index].dev = object;
 		devices[index].flags = 0;
+		devices[index].path = pathcopy;
 	}
 
 	bool DescriptorTable::Fork(DescriptorTable* forkinto)
@@ -135,11 +145,16 @@ namespace Sortix
 		{
 			Device* dev = devices[i].dev;
 			int flags = devices[i].flags;
+			char* path = devices[i].path;
+			if ( !dev || dev == RESERVED_DEVICE )
+				path = NULL;
+			path = path ? String::Clone(path) : NULL;
 			if ( flags & FD_CLOFORK ) { dev = NULL; flags = 0; }
 			newlist[i].dev = dev;
 			newlist[i].flags = flags;
 			if ( !dev || dev == RESERVED_DEVICE ) { continue; }
 			newlist[i].dev->Refer();
+			newlist[i].path = path;
 		}
 
 		assert(!forkinto->devices);
@@ -170,6 +185,13 @@ namespace Sortix
 		assert(0 <= index && index < numdevices);
 		assert(devices[index].dev);
 		return devices[index].flags;
+	}
+
+	const char* DescriptorTable::GetPath(int index)
+	{
+		assert(0 <= index && index < numdevices);
+		assert(devices[index].dev);
+		return devices[index].path;
 	}
 }
 

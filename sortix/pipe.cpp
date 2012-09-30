@@ -338,8 +338,8 @@ namespace Sortix
 			if ( !writing ) { delete reading; return -1; /* TODO: ENOMEM */ }
 
 			Process* process = CurrentProcess();
-			int readfd = process->descriptors.Allocate(reading);
-			int writefd = process->descriptors.Allocate(writing);
+			int readfd = process->descriptors.Allocate(reading, NULL);
+			int writefd = process->descriptors.Allocate(writing, NULL);
 
 			if ( readfd < 0 || writefd < 0 )
 			{

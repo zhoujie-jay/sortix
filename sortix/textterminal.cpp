@@ -40,6 +40,10 @@ TextTerminal::TextTerminal(TextBufferHandle* textbufhandle)
 	Reset();
 }
 
+TextTerminal::~TextTerminal()
+{
+}
+
 void TextTerminal::Reset()
 {
 	vgacolor = DEFAULT_COLOR;
