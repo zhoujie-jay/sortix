@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
 	This file is part of Sortix.
 

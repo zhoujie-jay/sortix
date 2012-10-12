@@ -11,7 +11,6 @@ ifeq ($(CPU),x86)
     X86FAMILY=1
     CPUFLAGS=
     CPULDFLAGS=
-    CPUNASMFLAGS=-felf32
     CPUOBJS:=$(CPU)/boot.o $(CPU)/base.o $(CPU)/x86.o
 endif
 
@@ -20,7 +19,6 @@ ifeq ($(CPU),x64)
     X86FAMILY=1
     CPUFLAGS=-ffreestanding -mno-red-zone
     CPULDFLAGS=
-    CPUNASMFLAGS=-felf64
     CPUOBJS:=$(CPU)/base.o $(CPU)/x64.o
 endif
 
@@ -75,7 +73,6 @@ FLAGS=$(CPUFLAGS) -Wall  -Wall -Wextra -nostdlib -nostartfiles \
 CFLAGS=$(FLAGS)
 CXXFLAGS=$(FLAGS) -std=gnu++0x -fno-exceptions -fno-rtti
 ASFLAGS=
-NASMFLAGS=$(CPUNASMFLAGS)
 
 STATICLIBS=\
 -lc-sortix \
@@ -175,9 +172,6 @@ sortix.bin: sortix-$(BUILDID).tmp
 
 %.o: %.s
 	$(HOSTAS) $< -o $@ $(ASFLAGS)
-
-%.o: %.asm
-	nasm $(NASMFLAGS) $< -o $@
 
 clean:
 	for D in $(DIRS); do rm -f $$D/*.o $$D/*.bin $$D/*.out $$D/*.tmp; done

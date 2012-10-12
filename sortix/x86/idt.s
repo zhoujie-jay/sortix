@@ -17,8 +17,8 @@
 	You should have received a copy of the GNU General Public License along with
 	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	x64/idt.s
-	Handles initialization of the 64-bit IDT.
+	x86/idt.s
+	Handles initialization of the 32-bit IDT.
 
 *******************************************************************************/
 
@@ -28,6 +28,6 @@
 .type idt_flush, @function
 idt_flush:
 	# Load the IDT pointer.
-	lidt (%rdi)
+	mov 4(%esp), %eax
+	lidt (%eax)
 	ret
-

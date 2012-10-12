@@ -154,14 +154,12 @@ Building
 To build the Sortix source code you need to install a few dependencies. First of
 all you need the GNU Compiler Collection (C and C++), GNU Make, and GNU
 Binutils. You then need to build and install the included macro preprocessor
-(mxmpp) somewhere in your PATH such as /usr/bin. If you wish to build the 32-bit
-version of Sortix, you need the Netwide Assembler (nasm) as parts of it hasn't
-been ported to the GNU assembler yet. You need a GNU/Linux build system to build
-Sortix, although, it wouldn't be difficult to port the build system to other
-platforms. You can then build the Sortix kernel and user-space utilities by
-running make in the Sortix root source directory. By default it will build to
-your CPU architecture (64-bit on 64-bit systems, 32-bit otherwise). Use
-CPU=x86 or CPU=x64 as arguments to make to control which target is built.
+(mxmpp) somewhere in your PATH such as /usr/bin. You need a GNU/Linux build
+system to build Sortix, although, it wouldn't be difficult to port the build
+system to other platforms. You can then build the Sortix kernel and user-space
+utilities by running make in the Sortix root source directory. By default it
+will build to your CPU architecture (64-bit on 64-bit systems, 32-bit otherwise).
+Use CPU=x86 or CPU=x64 as arguments to make to control which target is built.
 
 To build a bootable ISO you need GNU GRUB 2, as that is used by "make iso" to
 generate the iso. In turn, GNU GRUB relies on xorriso to create the iso file.
