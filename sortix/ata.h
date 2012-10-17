@@ -27,65 +27,67 @@
 
 #include <sortix/kernel/kthread.h>
 
-namespace Sortix
+namespace Sortix {
+
+class ATABus;
+class ATADrive;
+
+class ATABus
 {
-	class ATABus;
-	class ATADrive;
+public:
+	ATABus(uint16_t portoffset, uint16_t altport);
+	~ATABus();
 
-	class ATABus
-	{
-	public:
-		ATABus(uint16_t portoffset, uint16_t altport);
-		~ATABus();
+public:
+	ATADrive* Instatiate(unsigned driveid);
+	bool SelectDrive(unsigned driveid);
 
-	public:
-		ATADrive* Instatiate(unsigned driveid);
-		bool SelectDrive(unsigned driveid);
+private:
+	unsigned curdriveid;
+	uint16_t iobase;
+	uint16_t altport;
 
-	private:
-		unsigned curdriveid;
-		uint16_t iobase;
-		uint16_t altport;
+};
 
-	};
+class ATADrive
+{
+public:
+	off_t GetSectorSize();
+	off_t GetNumSectors();
+	off_t GetSize() { return GetSectorSize() * GetNumSectors(); }
+	bool ReadSector(off_t sector, uint8_t* dest);
+	bool WriteSector(off_t sector, const uint8_t* src);
+	size_t Read(off_t byteoffset, uint8_t* dest, size_t numbytes);
+	size_t Write(off_t byteoffset, const uint8_t* src, size_t numbytes);
 
-	class ATADrive
-	{
-	public:
-		off_t GetSectorSize();
-		off_t GetNumSectors();
-		off_t GetSize() { return GetSectorSize() * GetNumSectors(); }
-		bool ReadSector(off_t sector, uint8_t* dest);
-		bool WriteSector(off_t sector, const uint8_t* src);
-		size_t Read(off_t byteoffset, uint8_t* dest, size_t numbytes);
-		size_t Write(off_t byteoffset, const uint8_t* src, size_t numbytes);
+public:
+	ATADrive(ATABus* bus, unsigned driveid, uint16_t portoffset, uint16_t altport);
+	~ATADrive();
 
-	public:
-		ATADrive(ATABus* bus, unsigned driveid, uint16_t portoffset, uint16_t altport);
-		~ATADrive();
+private:
+	void Initialize();
+	bool PrepareIO(bool write, off_t sector);
 
-	private:
-		void Initialize();
-		bool PrepareIO(bool write, off_t sector);
+private:
+	kthread_mutex_t atalock;
+	unsigned driveid;
+	uint16_t meta[256];
+	uint16_t iobase;
+	uint16_t altport;
+	ATABus* bus;
+	bool lba48;
+	size_t sectorsize;
+	off_t numsectors;
 
-	private:
-		kthread_mutex_t atalock;
-		unsigned driveid;
-		uint16_t meta[256];
-		uint16_t iobase;
-		uint16_t altport;
-		ATABus* bus;
-		bool lba48;
-		size_t sectorsize;
-		off_t numsectors;
+};
 
-	};
+namespace ATA {
 
-	namespace ATA
-	{
-		void Init();
-		ATABus* CreateBus(uint16_t portoffset, uint16_t altport);
-	}
-}
+void Init();
+ATABus* CreateBus(uint16_t portoffset, uint16_t altport);
+
+} // namespace ATA
+
+} // namespace Sortix
 
 #endif
