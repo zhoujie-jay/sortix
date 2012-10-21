@@ -39,6 +39,7 @@ pager \
 head \
 tail \
 type \
+mkdir \
 
 INSTALLBINARIES:=$(addprefix $(DESTDIR)$(BINDIR)/,$(BINARIES))
 
