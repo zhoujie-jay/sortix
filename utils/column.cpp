@@ -21,6 +21,7 @@
 *******************************************************************************/
 
 #define _SORTIX_SOURCE
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -37,6 +38,28 @@ size_t lineslength = 0;
 char** lines = 0;
 size_t longestline = 0;
 
+size_t measurelength(const char* line)
+{
+	size_t len = 0;
+	bool escaped = false;
+	while ( char c = *line++ )
+	{
+		if ( escaped )
+		{
+			if ( isalpha(c) )
+				escaped = false;
+			continue;
+		}
+		if ( c == '\e' )
+		{
+			escaped = true;
+			continue;
+		}
+		len++;
+	}
+	return len;
+}
+
 bool processline(char* line)
 {
 	if ( linesused == lineslength )
@@ -50,7 +73,7 @@ bool processline(char* line)
 	}
 
 	lines[linesused++] = line;
-	size_t linelen = strlen(line);
+	size_t linelen = measurelength(line);
 	if ( longestline < linelen ) { longestline = linelen; }
 	return true;
 }
