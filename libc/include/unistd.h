@@ -88,7 +88,6 @@ extern char** environ;
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 unsigned alarm(unsigned);
-int chown(const char*, uid_t, gid_t);
 size_t confstr(int, char*, size_t);
 char* crypt(const char*, const char*);
 char* ctermid(char*);
@@ -153,6 +152,7 @@ extern int opterr, optind, optopt;
 
 int access(const char*, int);
 int chdir(const char*);
+int chown(const char*, uid_t, gid_t);
 int close(int);
 int dup(int);
 void _exit(int)  __attribute__ ((noreturn));

@@ -317,6 +317,22 @@ static int sys_chdir(const char* path)
 	return 0;
 }
 
+static int sys_chown(const char* path, uid_t owner, gid_t group)
+{
+	char* pathcopy = GetStringFromUser(path);
+	if ( !pathcopy )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	const char* relpath = pathcopy;
+	Ref<Descriptor> from = PrepareLookup(&relpath);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, O_WRONLY);
+	from.Reset();
+	delete[] pathcopy;
+	if ( !desc )
+		return -1;
+	return desc->chown(&ctx, owner, group);
+}
+
 static int sys_chmod(const char* path, mode_t mode)
 {
 	char* pathcopy = GetStringFromUser(path);
@@ -374,6 +390,7 @@ void Init()
 	Syscall::Register(SYSCALL_ACCESS, (void*) sys_access);
 	Syscall::Register(SYSCALL_CHDIR, (void*) sys_chdir);
 	Syscall::Register(SYSCALL_CHMOD, (void*) sys_chmod);
+	Syscall::Register(SYSCALL_CHOWN, (void*) sys_chown);
 	Syscall::Register(SYSCALL_CLOSE, (void*) sys_close);
 	Syscall::Register(SYSCALL_DUP, (void*) sys_dup);
 	Syscall::Register(SYSCALL_FCNTL, (void*) sys_fcntl);

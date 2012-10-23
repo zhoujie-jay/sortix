@@ -79,6 +79,7 @@
 #define SYSCALL_DISPMSG_ISSUE 55
 #define SYSCALL_FSTATAT 56
 #define SYSCALL_CHMOD 57
-#define SYSCALL_MAX_NUM 58 /* index of highest constant + 1 */
+#define SYSCALL_CHOWN 58
+#define SYSCALL_MAX_NUM 59 /* index of highest constant + 1 */
 
 #endif

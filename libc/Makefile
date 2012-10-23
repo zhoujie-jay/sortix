@@ -116,6 +116,7 @@ HOSTEDOBJS=\
 access.o \
 chdir.o \
 chmod.o \
+chown.o \
 clock.o \
 close.o \
 $(CPUDIR)/fork.o \
