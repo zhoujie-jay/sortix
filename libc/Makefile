@@ -167,6 +167,7 @@ link.o \
 localeconv.o \
 lseek.o \
 memstat.o \
+mkdirat.o \
 mkdir.o \
 mktemp.o \
 on_exit.o \

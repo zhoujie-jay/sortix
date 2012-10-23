@@ -202,20 +202,24 @@ static int sys_unlink(const char* path)
 	return sys_unlinkat(AT_FDCWD, path, 0);
 }
 
-static int sys_mkdir(const char* path, mode_t mode)
+static int sys_mkdirat(int dirfd, const char* path, mode_t mode)
 {
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
 	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath);
+	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	if ( !from ) { delete[] pathcopy; return -1; }
 	int ret = from->mkdir(&ctx, relpath, mode);
 	delete[] pathcopy;
 	return ret;
 }
 
-// TODO: mkdirat
+static int sys_mkdir(const char* path, mode_t mode)
+{
+	return sys_mkdirat(AT_FDCWD, path, mode);
+}
 
 static int sys_rmdir(const char* path)
 {
@@ -445,6 +449,7 @@ void Init()
 	Syscall::Register(SYSCALL_GETTERMMODE, (void*) sys_gettermmode);
 	Syscall::Register(SYSCALL_ISATTY, (void*) sys_isatty);
 	Syscall::Register(SYSCALL_LINK, (void*) sys_link);
+	Syscall::Register(SYSCALL_MKDIRAT, (void*) sys_mkdirat);
 	Syscall::Register(SYSCALL_MKDIR, (void*) sys_mkdir);
 	Syscall::Register(SYSCALL_OPENAT, (void*) sys_openat);
 	Syscall::Register(SYSCALL_OPEN, (void*) sys_open);
