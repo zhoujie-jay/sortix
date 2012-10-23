@@ -196,6 +196,7 @@ tfork.o \
 time.o \
 truncate.o \
 umask.o \
+unlinkat.o \
 unlink.o \
 uptime.o \
 usleep.o \

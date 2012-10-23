@@ -55,6 +55,7 @@ __BEGIN_DECLS
 #define F_GETFL 3
 
 #define AT_FDCWD (-100)
+#define AT_REMOVEDIR (1<<0)
 
 __END_DECLS
 

@@ -138,7 +138,6 @@ pid_t tcgetpgrp(int);
 int tcsetpgrp(int, pid_t);
 char* ttyname(int);
 int ttyname_r(int, char*, size_t);
-int unlinkat(int, const char*, int);
 
 #if __POSIX_OBSOLETE <= 200801
 pid_t setpgrp(void);
@@ -180,6 +179,7 @@ int truncate(const char*, off_t);
 #if __POSIX_OBSOLETE <= 200112 || defined(_SORTIX_SOURCE)
 int usleep(useconds_t useconds);
 #endif
+int unlinkat(int, const char*, int);
 int unlink(const char*);
 ssize_t write(int, const void*, size_t);
 
