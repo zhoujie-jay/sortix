@@ -273,7 +273,7 @@ void get_and_run_command()
 	                  | TERMMODE_ECHO;
 	settermmode(0, termmode);
 
-	printf("root@sortix %s # ", getenv_safe("PWD"));
+	printf("\e[32mroot@sortix \e[36m%s #\e[37m ", getenv_safe("PWD"));
 	fflush(stdout);
 
 	const size_t commandsize = 1024;

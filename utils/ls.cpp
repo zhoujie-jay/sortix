@@ -42,6 +42,7 @@
 bool longformat = false;
 bool showdotdot = false;
 bool showdotfiles = false;
+bool colors = false;
 
 pid_t childpid;
 
@@ -97,17 +98,21 @@ int sort_dirents(const void* a_void, const void* b_void)
 	return strcmp(a->d_name, b->d_name);
 }
 
+void getentrycolor(const char** pre, const char** post, mode_t mode)
+{
+	*pre = "";
+	*post = "";
+	if ( colors && S_ISDIR(mode) )
+		*pre = "\e[36m",
+		*post = "\e[37m";
+}
+
 int handleentry(const char* path, const char* name)
 {
 	bool isdotdot = strcmp(name, ".") == 0 || strcmp(name, "..") == 0;
 	bool isdotfile = !isdotdot && name[0] == '.';
 	if ( isdotdot && !showdotdot ) { return 0; }
 	if ( isdotfile && !showdotfiles ) { return 0; }
-	if ( !longformat )
-	{
-		printf("%s\n", name);
-		return 0;
-	}
 	// TODO: Use openat and fstat.
 	char* fullpath = new char[strlen(path) + 1 + strlen(name) + 1];
 	strcpy(fullpath, path);
@@ -118,7 +123,17 @@ int handleentry(const char* path, const char* name)
 	{
 		finishoutput();
 		error(0, errno, "stat: %s", fullpath);
+		delete[] fullpath;
 		return 2;
+	}
+	delete[] fullpath;
+	const char* colorpre;
+	const char* colorpost;
+	getentrycolor(&colorpre, &colorpost, st.st_mode);
+	if ( !longformat )
+	{
+		printf("%s%s%s\n", colorpre, name, colorpost);
+		return 0;
 	}
 	char perms[11];
 	perms[0] = '?';
@@ -138,8 +153,8 @@ int handleentry(const char* path, const char* name)
 	if ( 1023 < size ) { size /= 1024UL; sizeunit = "T"; }
 	if ( 1023 < size ) { size /= 1024UL; sizeunit = "P"; }
 	perms[10] = 0;
-	printf("%s %ju root root %ju%s\t%s\n", perms, (uintmax_t) st.st_nlink,
-	       (uintmax_t) size, sizeunit, name);
+	printf("%s %ju root root %ju%s\t%s%s%s\n", perms, (uintmax_t) st.st_nlink,
+	       (uintmax_t) size, sizeunit, colorpre, name, colorpost);
 	return 0;
 }
 
@@ -271,6 +286,9 @@ int main(int argc, char* argv[])
 			exit(2);
 		}
 	}
+
+	if ( isatty(1) )
+		colors = true;
 
 	childpid = 0;
 	bool columnable = !longformat;
