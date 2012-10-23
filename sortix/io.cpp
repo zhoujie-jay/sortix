@@ -349,6 +349,37 @@ static int sys_chmod(const char* path, mode_t mode)
 	return desc->chmod(&ctx, mode);
 }
 
+static int sys_link(const char* oldpath, const char* newpath)
+{
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+
+	char* newpathcopy = GetStringFromUser(newpath);
+	if ( !newpathcopy )
+		return -1;
+	const char* newrelpath = newpathcopy;
+	Ref<Descriptor> newfrom(PrepareLookup(&newrelpath));
+
+	char* final_elem;
+	Ref<Descriptor> dir = OpenDirContainingPath(&ctx, newfrom, newpathcopy,
+	                                            &final_elem);
+	delete[] newpathcopy;
+	if ( !dir )
+		return -1;
+
+	char* oldpathcopy = GetStringFromUser(oldpath);
+	if ( !oldpathcopy ) { delete[] final_elem; return -1; }
+	const char* oldrelpath = oldpathcopy;
+	Ref<Descriptor> oldfrom(PrepareLookup(&oldrelpath));
+
+	Ref<Descriptor> file = oldfrom->open(&ctx, oldrelpath, O_RDONLY);
+	delete[] oldpathcopy;
+	if ( !file ) { delete[] final_elem; return -1; }
+
+	int ret = dir->link(&ctx, final_elem, file);
+	delete[] final_elem;
+	return ret;
+}
+
 static int sys_settermmode(int fd, unsigned mode)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
@@ -399,6 +430,7 @@ void Init()
 	Syscall::Register(SYSCALL_FTRUNCATE, (void*) sys_ftruncate);
 	Syscall::Register(SYSCALL_GETTERMMODE, (void*) sys_gettermmode);
 	Syscall::Register(SYSCALL_ISATTY, (void*) sys_isatty);
+	Syscall::Register(SYSCALL_LINK, (void*) sys_link);
 	Syscall::Register(SYSCALL_MKDIR, (void*) sys_mkdir);
 	Syscall::Register(SYSCALL_OPENAT, (void*) sys_openat);
 	Syscall::Register(SYSCALL_OPEN, (void*) sys_open);
