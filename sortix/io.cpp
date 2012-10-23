@@ -158,17 +158,25 @@ static int sys_open(const char* path, int flags, mode_t mode)
 }
 
 // TODO: This is a hack! Stat the file in some manner and check permissions.
-static int sys_access(const char* path, int /*mode*/)
+static int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
 {
+	if ( flags )
+		return errno = ENOSYS, -1;
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
 	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath);
+	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	if ( !from ) { delete[] pathcopy; return -1; }
 	Ref<Descriptor> desc = from->open(&ctx, relpath, O_RDONLY);
 	delete[] pathcopy;
 	return desc ? 0 : -1;
+}
+
+static int sys_access(const char* path, int mode)
+{
+	return sys_faccessat(AT_FDCWD, path, mode, 0);
 }
 
 static int sys_unlinkat(int dirfd, const char* path, int flags)
@@ -429,6 +437,7 @@ void Init()
 	Syscall::Register(SYSCALL_CLOSE, (void*) sys_close);
 	Syscall::Register(SYSCALL_DUP, (void*) sys_dup);
 	Syscall::Register(SYSCALL_DUP2, (void*) sys_dup2);
+	Syscall::Register(SYSCALL_FACCESSAT, (void*) sys_faccessat);
 	Syscall::Register(SYSCALL_FCNTL, (void*) sys_fcntl);
 	Syscall::Register(SYSCALL_FSTATAT, (void*) sys_fstatat);
 	Syscall::Register(SYSCALL_FSTAT, (void*) sys_fstat);

@@ -138,6 +138,7 @@ execvp.o \
 _exit.o \
 _Exit.o \
 exit.o \
+faccessat.o \
 fchmod.o \
 fcloseall.o \
 fcntl.o \

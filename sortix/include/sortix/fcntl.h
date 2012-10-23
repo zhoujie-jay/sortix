@@ -56,6 +56,8 @@ __BEGIN_DECLS
 
 #define AT_FDCWD (-100)
 #define AT_REMOVEDIR (1<<0)
+#define AT_EACCESS (1<<1)
+#define AT_SYMLINK_NOFOLLOW (1<<2)
 
 __END_DECLS
 
