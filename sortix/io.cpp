@@ -384,6 +384,15 @@ static int sys_chown(const char* path, uid_t owner, gid_t group)
 	return sys_fchownat(AT_FDCWD, path, owner, group, 0);
 }
 
+static int sys_fchmod(int fd, mode_t mode)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->chmod(&ctx, mode);
+}
+
 static int sys_chmod(const char* path, mode_t mode)
 {
 	char* pathcopy = GetStringFromUser(path);
@@ -478,6 +487,7 @@ void Init()
 	Syscall::Register(SYSCALL_DUP2, (void*) sys_dup2);
 	Syscall::Register(SYSCALL_FACCESSAT, (void*) sys_faccessat);
 	Syscall::Register(SYSCALL_FCHDIR, (void*) sys_fchdir);
+	Syscall::Register(SYSCALL_FCHMOD, (void*) sys_fchmod);
 	Syscall::Register(SYSCALL_FCHOWNAT, (void*) sys_fchownat);
 	Syscall::Register(SYSCALL_FCHOWN, (void*) sys_fchown);
 	Syscall::Register(SYSCALL_FCNTL, (void*) sys_fcntl);

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012.
 
     This file is part of the Sortix C Library.
 
@@ -22,15 +22,13 @@
 
 *******************************************************************************/
 
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
-#include <errno.h>
 
-// TODO: Implement this in the kernel.
+DEFN_SYSCALL2(int, sys_fchmod, SYSCALL_FCHMOD, int, mode_t);
+
 extern "C" int fchmod(int fd, mode_t mode)
 {
-	(void) fd;
-	(void) mode;
-	errno = ENOSYS;
-	return -1;
+	return sys_fchmod(fd, mode);
 }
