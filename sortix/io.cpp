@@ -393,20 +393,28 @@ static int sys_fchmod(int fd, mode_t mode)
 	return desc->chmod(&ctx, mode);
 }
 
-static int sys_chmod(const char* path, mode_t mode)
+static int sys_fchmodat(int dirfd, const char* path, mode_t mode, int flags)
 {
+	if ( flags )
+		return errno = ENOTSUP, -1;
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
 	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath);
+	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	if ( !from ) { delete[] pathcopy; return -1; }
 	Ref<Descriptor> desc = from->open(&ctx, relpath, O_WRONLY);
 	from.Reset();
 	delete[] pathcopy;
 	if ( !desc )
 		return -1;
 	return desc->chmod(&ctx, mode);
+}
+
+static int sys_chmod(const char* path, mode_t mode)
+{
+	return sys_fchmodat(AT_FDCWD, path, mode, 0);
 }
 
 static int sys_link(const char* oldpath, const char* newpath)
@@ -487,6 +495,7 @@ void Init()
 	Syscall::Register(SYSCALL_DUP2, (void*) sys_dup2);
 	Syscall::Register(SYSCALL_FACCESSAT, (void*) sys_faccessat);
 	Syscall::Register(SYSCALL_FCHDIR, (void*) sys_fchdir);
+	Syscall::Register(SYSCALL_FCHMODAT, (void*) sys_fchmodat);
 	Syscall::Register(SYSCALL_FCHMOD, (void*) sys_fchmod);
 	Syscall::Register(SYSCALL_FCHOWNAT, (void*) sys_fchownat);
 	Syscall::Register(SYSCALL_FCHOWN, (void*) sys_fchown);

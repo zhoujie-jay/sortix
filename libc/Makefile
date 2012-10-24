@@ -140,6 +140,7 @@ _Exit.o \
 exit.o \
 faccessat.o \
 fchdir.o \
+fchmodat.o \
 fchmod.o \
 fchownat.o \
 fchown.o \
