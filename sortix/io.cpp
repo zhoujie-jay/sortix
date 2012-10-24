@@ -351,7 +351,14 @@ static int sys_chdir(const char* path)
 	return 0;
 }
 
-// TODO: fchown(2)
+static int sys_fchown(int fd, uid_t owner, gid_t group)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->chown(&ctx, owner, group);
+}
 
 static int sys_fchownat(int dirfd, const char* path, uid_t owner, gid_t group, int flags)
 {
@@ -472,6 +479,7 @@ void Init()
 	Syscall::Register(SYSCALL_FACCESSAT, (void*) sys_faccessat);
 	Syscall::Register(SYSCALL_FCHDIR, (void*) sys_fchdir);
 	Syscall::Register(SYSCALL_FCHOWNAT, (void*) sys_fchownat);
+	Syscall::Register(SYSCALL_FCHOWN, (void*) sys_fchown);
 	Syscall::Register(SYSCALL_FCNTL, (void*) sys_fcntl);
 	Syscall::Register(SYSCALL_FSTATAT, (void*) sys_fstatat);
 	Syscall::Register(SYSCALL_FSTAT, (void*) sys_fstat);

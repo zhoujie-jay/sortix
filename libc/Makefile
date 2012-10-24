@@ -142,6 +142,7 @@ faccessat.o \
 fchdir.o \
 fchmod.o \
 fchownat.o \
+fchown.o \
 fcloseall.o \
 fcntl.o \
 fddir-sortix.o \
