@@ -139,6 +139,7 @@ _exit.o \
 _Exit.o \
 exit.o \
 faccessat.o \
+fchdir.o \
 fchmod.o \
 fcloseall.o \
 fcntl.o \

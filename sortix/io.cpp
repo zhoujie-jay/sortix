@@ -316,6 +316,18 @@ static ssize_t sys_readdirents(int fd, kernel_dirent* dirent, size_t size/*,
 	return desc->readdirents(&ctx, dirent, size, 1 /*maxcount*/);
 }
 
+static int sys_fchdir(int fd)
+{
+	Process* process = CurrentProcess();
+	Ref<Descriptor> desc = process->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	if ( !S_ISDIR(desc->type) )
+		return errno = ENOTDIR, -1;
+	process->SetCWD(desc);
+	return 0;
+}
+
 static int sys_chdir(const char* path)
 {
 	char* pathcopy = GetStringFromUser(path);
@@ -442,6 +454,7 @@ void Init()
 	Syscall::Register(SYSCALL_DUP, (void*) sys_dup);
 	Syscall::Register(SYSCALL_DUP2, (void*) sys_dup2);
 	Syscall::Register(SYSCALL_FACCESSAT, (void*) sys_faccessat);
+	Syscall::Register(SYSCALL_FCHDIR, (void*) sys_fchdir);
 	Syscall::Register(SYSCALL_FCNTL, (void*) sys_fcntl);
 	Syscall::Register(SYSCALL_FSTATAT, (void*) sys_fstatat);
 	Syscall::Register(SYSCALL_FSTAT, (void*) sys_fstat);

@@ -85,6 +85,7 @@
 #define SYSCALL_UNLINKAT 61
 #define SYSCALL_FACCESSAT 62
 #define SYSCALL_MKDIRAT 63
-#define SYSCALL_MAX_NUM 64 /* index of highest constant + 1 */
+#define SYSCALL_FCHDIR 64
+#define SYSCALL_MAX_NUM 65 /* index of highest constant + 1 */
 
 #endif
