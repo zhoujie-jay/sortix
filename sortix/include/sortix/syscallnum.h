@@ -87,6 +87,7 @@
 #define SYSCALL_MKDIRAT 63
 #define SYSCALL_FCHDIR 64
 #define SYSCALL_TRUNCATEAT 65
-#define SYSCALL_MAX_NUM 66 /* index of highest constant + 1 */
+#define SYSCALL_FCHOWNAT 66
+#define SYSCALL_MAX_NUM 67 /* index of highest constant + 1 */
 
 #endif

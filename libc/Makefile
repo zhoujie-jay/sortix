@@ -141,6 +141,7 @@ exit.o \
 faccessat.o \
 fchdir.o \
 fchmod.o \
+fchownat.o \
 fcloseall.o \
 fcntl.o \
 fddir-sortix.o \
