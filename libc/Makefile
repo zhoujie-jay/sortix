@@ -197,6 +197,7 @@ stat.o \
 stdio.o \
 tfork.o \
 time.o \
+truncateat.o \
 truncate.o \
 umask.o \
 unlinkat.o \

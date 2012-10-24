@@ -226,19 +226,25 @@ static int sys_rmdir(const char* path)
 	return sys_unlinkat(AT_FDCWD, path, AT_REMOVEDIR);
 }
 
-static int sys_truncate(const char* path, off_t length)
+static int sys_truncateat(int dirfd, const char* path, off_t length)
 {
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
 	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath);
+	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	if ( !from ) { delete[] pathcopy; return -1; }
 	Ref<Descriptor> desc = from->open(&ctx, relpath, O_WRONLY);
 	delete[] pathcopy;
 	if ( !desc )
 		return -1;
 	return desc->truncate(&ctx, length);
+}
+
+static int sys_truncate(const char* path, off_t length)
+{
+	return sys_truncateat(AT_FDCWD, path, length);
 }
 
 static int sys_ftruncate(int fd, off_t length)
@@ -475,6 +481,7 @@ void Init()
 	Syscall::Register(SYSCALL_SETTERMMODE, (void*) sys_settermmode);
 	Syscall::Register(SYSCALL_STAT, (void*) sys_stat);
 	Syscall::Register(SYSCALL_TCGETWINSIZE, (void*) sys_tcgetwinsize);
+	Syscall::Register(SYSCALL_TRUNCATEAT, (void*) sys_truncateat);
 	Syscall::Register(SYSCALL_TRUNCATE, (void*) sys_truncate);
 	Syscall::Register(SYSCALL_UNLINKAT, (void*) sys_unlinkat);
 	Syscall::Register(SYSCALL_UNLINK, (void*) sys_unlink);
