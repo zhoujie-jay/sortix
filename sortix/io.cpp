@@ -417,15 +417,21 @@ static int sys_chmod(const char* path, mode_t mode)
 	return sys_fchmodat(AT_FDCWD, path, mode, 0);
 }
 
-static int sys_link(const char* oldpath, const char* newpath)
+static int sys_linkat(int olddirfd, const char* oldpath,
+                      int newdirfd, const char* newpath,
+                      int flags)
 {
+	if ( flags )
+		return errno = ENOTSUP, -1;
+
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
 
 	char* newpathcopy = GetStringFromUser(newpath);
 	if ( !newpathcopy )
 		return -1;
 	const char* newrelpath = newpathcopy;
-	Ref<Descriptor> newfrom(PrepareLookup(&newrelpath));
+	Ref<Descriptor> newfrom(PrepareLookup(&newrelpath, newdirfd));
+	if ( !newfrom ) { delete[] newpathcopy; return -1; }
 
 	char* final_elem;
 	Ref<Descriptor> dir = OpenDirContainingPath(&ctx, newfrom, newpathcopy,
@@ -437,7 +443,8 @@ static int sys_link(const char* oldpath, const char* newpath)
 	char* oldpathcopy = GetStringFromUser(oldpath);
 	if ( !oldpathcopy ) { delete[] final_elem; return -1; }
 	const char* oldrelpath = oldpathcopy;
-	Ref<Descriptor> oldfrom(PrepareLookup(&oldrelpath));
+	Ref<Descriptor> oldfrom = PrepareLookup(&oldrelpath, olddirfd);
+	if ( !oldfrom ) { delete[] oldpathcopy; delete[] final_elem; return -1; }
 
 	Ref<Descriptor> file = oldfrom->open(&ctx, oldrelpath, O_RDONLY);
 	delete[] oldpathcopy;
@@ -446,6 +453,11 @@ static int sys_link(const char* oldpath, const char* newpath)
 	int ret = dir->link(&ctx, final_elem, file);
 	delete[] final_elem;
 	return ret;
+}
+
+static int sys_link(const char* oldpath, const char* newpath)
+{
+	return sys_linkat(AT_FDCWD, oldpath, AT_FDCWD, newpath, 0);
 }
 
 static int sys_settermmode(int fd, unsigned mode)
@@ -505,6 +517,7 @@ void Init()
 	Syscall::Register(SYSCALL_FTRUNCATE, (void*) sys_ftruncate);
 	Syscall::Register(SYSCALL_GETTERMMODE, (void*) sys_gettermmode);
 	Syscall::Register(SYSCALL_ISATTY, (void*) sys_isatty);
+	Syscall::Register(SYSCALL_LINKAT, (void*) sys_linkat);
 	Syscall::Register(SYSCALL_LINK, (void*) sys_link);
 	Syscall::Register(SYSCALL_MKDIRAT, (void*) sys_mkdirat);
 	Syscall::Register(SYSCALL_MKDIR, (void*) sys_mkdir);
