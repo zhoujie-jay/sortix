@@ -22,12 +22,10 @@
 
 *******************************************************************************/
 
-#include <sys/syscall.h>
+#include <fcntl.h>
 #include <unistd.h>
-
-DEFN_SYSCALL1(int, SysUnlink, SYSCALL_UNLINK, const char*);
 
 extern "C" int unlink(const char* pathname)
 {
-	return SysUnlink(pathname);
+	return unlinkat(AT_FDCWD, pathname, 0);
 }

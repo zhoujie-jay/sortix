@@ -24,12 +24,10 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/syscall.h>
-#include <unistd.h>
 
-DEFN_SYSCALL2(int, sys_chmod, SYSCALL_CHMOD, const char*, mode_t);
+#include <fcntl.h>
 
 extern "C" int chmod(const char* path, mode_t mode)
 {
-	return sys_chmod(path, mode);
+	return fchmodat(AT_FDCWD, path, mode, 0);
 }

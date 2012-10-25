@@ -22,12 +22,12 @@
 
 *******************************************************************************/
 
-#include <sys/syscall.h>
-#include <unistd.h>
+#include <sys/types.h>
 
-DEFN_SYSCALL2(int, SysTruncate, SYSCALL_TRUNCATE, const char*, off_t);
+#include <fcntl.h>
+#include <unistd.h>
 
 extern "C" int truncate(const char* pathname, off_t length)
 {
-	return SysTruncate(pathname, length);
+	return truncateat(AT_FDCWD, pathname, length);
 }

@@ -22,12 +22,10 @@
 
 *******************************************************************************/
 
-#include <sys/syscall.h>
+#include <fcntl.h>
 #include <unistd.h>
-
-DEFN_SYSCALL2(int, SysAccess, SYSCALL_ACCESS, const char*, int);
 
 extern "C" int access(const char* pathname, int mode)
 {
-	return SysAccess(pathname, mode);
+	return faccessat(AT_FDCWD, pathname, mode, 0);
 }

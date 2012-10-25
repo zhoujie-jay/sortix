@@ -171,6 +171,7 @@ linkat.o \
 link.o \
 localeconv.o \
 lseek.o \
+lstat.o \
 memstat.o \
 mkdirat.o \
 mkdir.o \

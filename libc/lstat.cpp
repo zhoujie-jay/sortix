@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,15 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    link.cpp
-    Give a new name to a file.
+    lstat.cpp
+    Retrieves status of a file.
 
 *******************************************************************************/
 
-#include <fcntl.h>
-#include <unistd.h>
+#include <sys/stat.h>
 
-extern "C" int link(const char* oldpath, const char* newpath)
+#include <fcntl.h>
+
+extern "C" int lstat(const char* path, struct stat* st)
 {
-	return linkat(AT_FDCWD, oldpath, AT_FDCWD, newpath, 0);
+	return fstatat(AT_FDCWD, path, st, AT_SYMLINK_NOFOLLOW);
 }

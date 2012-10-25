@@ -22,11 +22,11 @@
 
 *******************************************************************************/
 
-#include <sys/syscall.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #include <fcntl.h>
 #include <stdarg.h>
-
-DEFN_SYSCALL3(int, sys_open, SYSCALL_OPEN, const char*, int, mode_t);
 
 extern "C" int open(const char* path, int flags, ...)
 {
@@ -38,5 +38,5 @@ extern "C" int open(const char* path, int flags, ...)
 		mode = va_arg(ap, mode_t);
 		va_end(ap);
 	}
-	return sys_open(path, flags, mode);
+	return openat(AT_FDCWD, path, flags, mode);
 }

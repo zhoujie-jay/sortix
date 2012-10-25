@@ -23,17 +23,10 @@
 *******************************************************************************/
 
 #include <sys/stat.h>
-#include <sys/syscall.h>
 
-DEFN_SYSCALL2(int, SysStat, SYSCALL_STAT, const char*, struct stat*);
+#include <fcntl.h>
 
 extern "C" int stat(const char* path, struct stat* st)
 {
-	return SysStat(path, st);
-}
-
-// TODO: Hack!
-extern "C" int lstat(const char* path, struct stat* st)
-{
-	return SysStat(path, st);
+	return fstatat(AT_FDCWD, path, st, 0);
 }

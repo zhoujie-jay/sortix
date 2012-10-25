@@ -22,12 +22,10 @@
 
 *******************************************************************************/
 
-#include <sys/syscall.h>
+#include <fcntl.h>
 #include <unistd.h>
-
-DEFN_SYSCALL1(int, SysRmDir, SYSCALL_RMDIR, const char*);
 
 extern "C" int rmdir(const char* pathname)
 {
-	return SysRmDir(pathname);
+	return unlinkat(AT_FDCWD, pathname, AT_REMOVEDIR);
 }

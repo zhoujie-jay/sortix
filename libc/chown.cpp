@@ -23,12 +23,11 @@
 *******************************************************************************/
 
 #include <sys/types.h>
-#include <sys/syscall.h>
-#include <unistd.h>
 
-DEFN_SYSCALL3(int, sys_chown, SYSCALL_CHOWN, const char*, uid_t, gid_t);
+#include <fcntl.h>
+#include <unistd.h>
 
 extern "C" int chown(const char* path, uid_t owner, gid_t group)
 {
-	return sys_chown(path, owner, group);
+	return fchownat(AT_FDCWD, path, owner, group, 0);
 }
