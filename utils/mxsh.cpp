@@ -22,15 +22,16 @@
 
 #include <sys/wait.h>
 #include <sys/termmode.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
+
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <termios.h>
+#include <unistd.h>
 
 int status = 0;
 
@@ -67,7 +68,7 @@ void updateenv()
 	}
 }
 
-int runcommandline(const char** tokens)
+int runcommandline(const char** tokens, bool* exitexec)
 {
 	int result = 127;
 	size_t cmdnext = 0;
@@ -147,7 +148,8 @@ readcmd:
 	if ( strcmp(argv[0], "exit") == 0 )
 	{
 		int exitcode = argv[1] ? atoi(argv[1]) : 0;
-		exit(exitcode);
+		*exitexec = true;
+		return exitcode;
 	}
 	if ( strcmp(argv[0], "unset") == 0 )
 	{
@@ -264,55 +266,99 @@ out:
 	return result;
 }
 
-void get_and_run_command()
+int get_and_run_command(FILE* fp, const char* fpname, bool interactive, bool* exitexec)
 {
-	unsigned termmode = TERMMODE_UNICODE
-	                  | TERMMODE_SIGNAL
-	                  | TERMMODE_UTF8
-	                  | TERMMODE_LINEBUFFER
-	                  | TERMMODE_ECHO;
-	settermmode(0, termmode);
+	int fd = fileno(fp);
 
-	printf("\e[32mroot@sortix \e[36m%s #\e[37m ", getenv_safe("PWD"));
-	fflush(stdout);
+	if ( interactive )
+	{
+		unsigned termmode = TERMMODE_UNICODE
+		                  | TERMMODE_SIGNAL
+		                  | TERMMODE_UTF8
+		                  | TERMMODE_LINEBUFFER
+		                  | TERMMODE_ECHO;
+		settermmode(0, termmode);
+		printf("\e[32mroot@sortix \e[36m%s #\e[37m ", getenv_safe("PWD"));
+		fflush(stdout);
+	}
 
-	const size_t commandsize = 1024;
-	char command[commandsize + 1];
+	static char* command = NULL;
+	static size_t commandlen = 1024;
+	if ( !command )
+		commandlen = 1024,
+		command = (char*) malloc((commandlen+1) * sizeof(char));
+	if ( !command )
+		error(64, errno, "malloc");
+
 	size_t commandused = 0;
-
+	bool commented = false;
+	bool escaped = false;
 	while (true)
 	{
 		char c;
-		ssize_t bytesread = read(1, &c, sizeof(c));
+		ssize_t bytesread = read(fd, &c, sizeof(c));
 		if ( bytesread < 0 && errno == EINTR )
-			return;
-		if ( bytesread < 0 ) { error(64, errno, "read stdin"); }
+			return status;
+		if ( bytesread < 0 )
+			error(64, errno, "read %s", fpname);
 		if ( !bytesread )
 		{
-			if ( getppid() == 1 )
-				printf("\nType exit to shutdown the system.\n");
-			else
+			if ( !interactive )
 			{
-				printf("exit\n");
-				exit(status);
+				*exitexec = true;
+				return status;
 			}
-			break;
+			if ( getppid() == 1 )
+			{
+				printf("\nType exit to shutdown the system.\n");
+				return status;
+			}
+			printf("exit\n");
+			*exitexec = true;
+			return status;
 		}
 		if ( !c ) { continue; }
-		if ( c == '\n' ) { break; }
-		if ( commandsize <= commandused ) { continue; }
+		if ( c == '\n' && !escaped )
+			break;
+		if ( commented )
+			continue;
+		if ( c == '\\' && !escaped )
+		{
+			escaped = true;
+			continue;
+		}
+		if ( !escaped )
+		{
+			if ( c == '#' )
+			{
+				commented = true;
+				continue;
+			}
+		}
+		escaped = false;
+		if ( commandused == commandlen )
+		{
+			size_t newlen = commandlen * 2;
+			size_t newsize = (newlen+1) * sizeof(char);
+			char* newcommand = (char*) realloc(command, newsize);
+			if ( !newcommand )
+				error(64, errno, "realloc");
+			command = newcommand;
+			commandlen = newsize;
+		}
 		command[commandused++] = c;
 	}
 
 	command[commandused] = '\0';
 
-	if ( command[0] == '\0' ) { return; }
+	if ( command[0] == '\0' )
+		return status;
 
 	if ( strchr(command, '=') && !strchr(command, ' ') && !strchr(command, '\t') )
 	{
-		if ( putenv(strdup(command)) ) { perror("putenv"); status = 1; return; }
-		status = 0;
-		return;
+		if ( putenv(strdup(command)) )
+			error(1, errno, "putenv");
+		return status = 0;
 	}
 
 	int argc = 0;
@@ -321,7 +367,7 @@ void get_and_run_command()
 	argv[0] = NULL;
 
 	bool lastwasspace = true;
-	bool escaped = false;
+	escaped = false;
 	for ( size_t i = 0; i <= commandused; i++ )
 	{
 		switch ( command[i] )
@@ -361,11 +407,12 @@ void get_and_run_command()
 		}
 	}
 
-	if ( !argv[0] ) { return; }
+	if ( !argv[0] )
+		return status;
 
 	argv[argc] = NULL;
-	status = runcommandline(argv);
-	return;
+	status = runcommandline(argv, exitexec);
+	return status;
 }
 
 int main(int /*argc*/, char* argv[])
@@ -380,5 +427,10 @@ int main(int /*argc*/, char* argv[])
 	setenv("PPID", ppidstr, 1);
 	setenv("?", "0", 1);
 	updatepwd();
-	while ( true ) { get_and_run_command(); }
+	bool interactive = isatty(0);
+	bool exitexec = false;
+	int exitstatus;
+	while ( !exitexec )
+		exitstatus = get_and_run_command(stdin, "<stdin>", interactive, &exitexec);
+	return exitstatus;
 }
