@@ -34,6 +34,12 @@
 
 int status = 0;
 
+const char* getenv_safe(const char* name)
+{
+	const char* ret = getenv(name);
+	return ret ? ret : "";
+}
+
 void on_sigint(int /*signum*/)
 {
 	printf("^C\n");
@@ -267,7 +273,7 @@ void get_and_run_command()
 	                  | TERMMODE_ECHO;
 	settermmode(0, termmode);
 
-	printf("root@sortix %s # ", getenv("PWD"));
+	printf("root@sortix %s # ", getenv_safe("PWD"));
 	fflush(stdout);
 
 	const size_t commandsize = 1024;
