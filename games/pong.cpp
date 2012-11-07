@@ -70,7 +70,9 @@ unsigned soundleft;
 
 bool FlushVGA()
 {
-	return writeall(vgafd, frame, sizeof(frame)) < sizeof(frame);
+	if ( lseek(vgafd, 0, SEEK_SET) < 0)
+		return false;
+	return writeall(vgafd, frame, sizeof(frame)) == sizeof(frame);
 }
 
 int Init()
