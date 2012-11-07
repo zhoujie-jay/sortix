@@ -277,7 +277,7 @@ int get_and_run_command(FILE* fp, const char* fpname, bool interactive, bool* ex
 		                  | TERMMODE_UTF8
 		                  | TERMMODE_LINEBUFFER
 		                  | TERMMODE_ECHO;
-		settermmode(0, termmode);
+		settermmode(fd, termmode);
 		printf("\e[32mroot@sortix \e[36m%s #\e[37m ", getenv_safe("PWD"));
 		fflush(stdout);
 	}
@@ -415,9 +415,47 @@ int get_and_run_command(FILE* fp, const char* fpname, bool interactive, bool* ex
 	return status;
 }
 
-int main(int /*argc*/, char* argv[])
+void load_argv_variables(int argc, char* argv[])
+{
+	char varname[sizeof(int) * 3];
+	for ( int i = 0; i < argc; i++ )
+		sprintf(varname, "%i", i),
+		setenv(varname, argv[i], 1);
+}
+
+int run(FILE* fp, int argc, char* argv[], const char* name, bool interactive)
+{
+	load_argv_variables(argc, argv);
+	bool exitexec = false;
+	int exitstatus;
+	do
+		exitstatus = get_and_run_command(fp, name, interactive, &exitexec);
+	while ( !exitexec );
+	return exitstatus;
+}
+
+int run_interactive(int argc, char* argv[])
 {
 	signal(SIGINT, on_sigint);
+	return run(stdin, argc, argv, "<stdin>", true);
+}
+
+int run_stdin(int argc, char* argv[])
+{
+	return run(stdin, argc, argv, "<stdin>", false);
+}
+
+int run_script(const char* path, int argc, char* argv[])
+{
+	FILE* fp = fopen(path, "r");
+	if ( !fp ) { error(0, errno, "%s", path); return 127; }
+	int ret = run(fp, argc, argv, path, false);
+	fclose(fp);
+	return ret;
+}
+
+int main(int argc, char* argv[])
+{
 	char pidstr[32];
 	char ppidstr[32];
 	sprintf(pidstr, "%i", getpid());
@@ -427,10 +465,9 @@ int main(int /*argc*/, char* argv[])
 	setenv("PPID", ppidstr, 1);
 	setenv("?", "0", 1);
 	updatepwd();
-	bool interactive = isatty(0);
-	bool exitexec = false;
-	int exitstatus;
-	while ( !exitexec )
-		exitstatus = get_and_run_command(stdin, "<stdin>", interactive, &exitexec);
-	return exitstatus;
+	if ( 1 < argc )
+		return run_script(argv[1], argc-1, argv+1);
+	if ( isatty(0) )
+		return run_interactive(argc, argv);
+	return run_stdin(argc, argv);
 }
