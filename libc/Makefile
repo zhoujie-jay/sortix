@@ -120,6 +120,7 @@ strspn.o \
 strstr.o \
 strtok.o \
 strtok_r.o \
+strxfrm.o \
 ungetc.o \
 vfscanf.o \
 vsscanf.o \

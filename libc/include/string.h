@@ -61,6 +61,7 @@ size_t strspn(const char*, const char*);
 char* strstr(const char*, const char*);
 char* strtok(char* restrict, const char* restrict);
 char* strtok_r(char* restrict, const char* restrict, char** restrict);
+size_t strxfrm(char* restrict, const char* restrict, size_t);
 
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
@@ -68,7 +69,6 @@ int strcoll_l(const char*, const char*, locale_t);
 char* strerror_l(int, locale_t);
 int strerror_r(int, char*, size_t);
 char* strsignal(int);
-size_t strxfrm(char* restrict, const char* restrict, size_t);
 size_t strxfrm_l(char* restrict, const char* restrict, size_t, locale_t);
 #endif
 
