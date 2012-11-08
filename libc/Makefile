@@ -116,6 +116,7 @@ strndup.o \
 strnlen.o \
 strpbrk.o \
 strrchr.o \
+strsignal.o \
 strspn.o \
 strstr.o \
 strtok.o \

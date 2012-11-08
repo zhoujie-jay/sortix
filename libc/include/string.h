@@ -68,7 +68,6 @@ size_t strxfrm(char* restrict, const char* restrict, size_t);
 int strcoll_l(const char*, const char*, locale_t);
 char* strerror_l(int, locale_t);
 int strerror_r(int, char*, size_t);
-char* strsignal(int);
 size_t strxfrm_l(char* restrict, const char* restrict, size_t, locale_t);
 #endif
 
@@ -78,11 +77,14 @@ char* strchrnul(const char* str, int c);
 
 #if defined(_SORTIX_SOURCE)
 const char* sortix_strerror(int errnum);
+const char* sortix_strsignal(int signum);
 #endif
 #if defined(_SOURCE_SOURCE) && __SORTIX_STDLIB_REDIRECTS
 const char* strerror(int errnum) asm ("sortix_strerror");
+const char* strsignal(int signum) asm ("sortix_strsignal");
 #else
 char* strerror(int errnum);
+char* strsignal(int signum);
 #endif
 
 __END_DECLS
