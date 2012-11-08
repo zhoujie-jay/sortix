@@ -80,7 +80,7 @@ char* strchrnul(const char* str, int c);
 const char* sortix_strerror(int errnum);
 #endif
 #if defined(_SOURCE_SOURCE) && __SORTIX_STDLIB_REDIRECTS
-const char* strerror(int errnum) asm ("sortix_getenv");
+const char* strerror(int errnum) asm ("sortix_strerror");
 #else
 char* strerror(int errnum);
 #endif
