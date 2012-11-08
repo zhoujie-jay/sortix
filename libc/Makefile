@@ -111,6 +111,7 @@ strncasecmp.o \
 strncat.o \
 strncmp.o \
 strncpy.o \
+strndup.o \
 strnlen.o \
 strpbrk.o \
 strrchr.o \
