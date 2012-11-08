@@ -95,6 +95,7 @@ sort.o \
 sprint.o \
 sscanf.o \
 stpcpy.o \
+stpncpy.o \
 strcasecmp.o \
 strcat.o \
 strchrnul.o \

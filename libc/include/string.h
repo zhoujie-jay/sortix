@@ -40,6 +40,7 @@ void* memcpy(void* restrict, const void* restrict, size_t);
 void* memmove(void*, const void*, size_t);
 void* memset(void*, int, size_t);
 char* stpcpy(char* restrict, const char* restrict);
+char* stpncpy(char* restrict, const char* restrict, size_t);
 char* strcat(char* restrict, const char* restrict);
 char* strchr(const char*, int);
 int strcmp(const char*, const char*);
@@ -62,7 +63,6 @@ char* strtok_r(char* restrict, const char* restrict, char** restrict);
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 void* memccpy(void* restrict, const void* restrict, int, size_t);
-char* stpncpy(char* restrict, const char* restrict, size_t);
 int strcoll_l(const char*, const char*, locale_t);
 char* strerror_l(int, locale_t);
 int strerror_r(int, char*, size_t);
