@@ -83,6 +83,7 @@ integer.o \
 localtime.o \
 localtime_r.o \
 mbtowc.o \
+memccpy.o \
 memchr.o \
 memcmp.o \
 memcpy.o \

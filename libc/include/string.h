@@ -34,6 +34,7 @@ __BEGIN_DECLS
 @include(size_t.h)
 @include(locale_t.h)
 
+void* memccpy(void* restrict, const void* restrict, int, size_t);
 void* memchr(const void*, int, size_t);
 int memcmp(const void*, const void*, size_t);
 void* memcpy(void* restrict, const void* restrict, size_t);
@@ -63,7 +64,6 @@ char* strtok_r(char* restrict, const char* restrict, char** restrict);
 
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
-void* memccpy(void* restrict, const void* restrict, int, size_t);
 int strcoll_l(const char*, const char*, locale_t);
 char* strerror_l(int, locale_t);
 int strerror_r(int, char*, size_t);
