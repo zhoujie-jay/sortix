@@ -167,7 +167,7 @@ namespace Sortix
 		const addr_t KERNEL_STACK_END = 0x80001000UL;
 		const addr_t KERNEL_STACK_START = KERNEL_STACK_END + KERNEL_STACK_SIZE;
 		const addr_t VIDEO_MEMORY = KERNEL_STACK_START;
-		const size_t VIDEO_MEMORY_MAX_SIZE = 256UL * 1024UL * 1024UL;
+		const size_t VIDEO_MEMORY_MAX_SIZE = 384UL * 1024UL * 1024UL;
 		const addr_t INITRD = VIDEO_MEMORY + VIDEO_MEMORY_MAX_SIZE;
 		size_t initrdsize = 0;
 		const addr_t HEAPUPPER = 0xFF400000UL;
