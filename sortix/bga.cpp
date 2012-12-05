@@ -303,11 +303,17 @@ bool BGADriver::SwitchMode(const char* mode)
 {
 	bool result = false;
 	char* modeclone = String::Clone(mode);
+	if ( !modeclone )
+		return NULL;
 	char* xstr = NULL;
 	char* ystr = NULL;
 	char* bppstr = NULL;
 	if ( !ReadParamString(mode, "width", &xstr, "height", &ystr,
-	                      "bpp", &bppstr, "STOP") ) { return false; }
+	                      "bpp", &bppstr, "STOP") )
+	{
+		delete[] modeclone;
+		return false;
+	}
 	uint16_t xres = xstr ? atoi(xstr) : 0;
 	uint16_t yres = ystr ? atoi(ystr) : 0;
 	uint16_t bpp = bppstr ? atoi(bppstr) : 32;
