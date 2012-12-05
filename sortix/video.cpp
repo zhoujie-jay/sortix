@@ -386,6 +386,15 @@ bool SwitchMode(const char* mode)
 	UpdateModes();
 	char* drivername = NULL;
 	if ( !ReadParamString(mode, "driver", &drivername, NULL) ) { return false; }
+	if ( !strcmp(drivername, "none") )
+	{
+		DriverEntry* driverentry = CurrentDriverEntry();
+		if ( !driverentry )
+			return true;
+		ShutDownDriver(driverentry->driver, driverentry->name);
+		currentdrvid = SIZE_MAX;
+		return true;
+	}
 	DriverEntry* drvent = GetDriverEntry(drivername);
 	delete[] drivername;
 	if ( !drvent ) { return false; }
