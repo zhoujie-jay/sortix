@@ -25,37 +25,106 @@
 #include <stdint.h>
 #include <string.h>
 
-static void* memcpy_aligned(unsigned long* dest,
-                            const unsigned long* src,
-                            size_t length)
-{
-	size_t numcopies = length / sizeof(unsigned long);
-	for ( size_t i = 0; i < numcopies; i++ )
-		dest[i] = src[i];
-	return dest;
-}
+#undef restrict
+#define restrict __restrict__
 
-static inline bool IsWordAligned(uintptr_t addr)
-{
-	const size_t WORDSIZE = sizeof(unsigned long);
-	return (addr / WORDSIZE * WORDSIZE) == addr;
-}
+#if 8 < __SIZEOF_LONG__
+#error unsigned long is bigger than expected, please add support to this file.
+#endif
 
-extern "C" void* memcpy(void* destptr, const void* srcptr, size_t length)
+inline static void* memcpy_slow(void* restrict dstptr,
+                                const void* restrict srcptr, size_t length)
 {
-	if ( IsWordAligned((uintptr_t) destptr) &&
-	     IsWordAligned((uintptr_t) srcptr) &&
-	     IsWordAligned(length) )
-	{
-		unsigned long* dest = (unsigned long*) destptr;
-		const unsigned long* src = (const unsigned long*) srcptr;
-		return memcpy_aligned(dest, src, length);
-	}
-	uint8_t* dest = (uint8_t*) destptr;
-	const uint8_t* src = (const uint8_t*) srcptr;
+	uint8_t* restrict dst = (uint8_t* restrict) dstptr;
+	const uint8_t* restrict src = (const uint8_t* restrict) srcptr;
 	for ( size_t i = 0; i < length; i += sizeof(uint8_t) )
+		dst[i] = src[i];
+	return dstptr;
+}
+
+extern "C" void* memcpy(void* restrict dstptr, const void* restrict srcptr,
+                        size_t length)
+{
+	const unsigned long unalignmask = sizeof(unsigned long) - 1;
+	const unsigned long srcunalign = (unsigned long) srcptr & unalignmask;
+	const unsigned long dstunalign = (unsigned long) dstptr & unalignmask;
+	if ( srcunalign != dstunalign )
+		return memcpy_slow(dstptr, srcptr, length);
+
+	union
 	{
-		dest[i] = src[i];
+		unsigned long srcval;
+		const uint8_t* restrict src8;
+		const uint16_t* restrict src16;
+		const uint32_t* restrict src32;
+		const uint64_t* restrict src64;
+		const unsigned long* restrict srcul;
+	};
+	srcval = (unsigned long) srcptr;
+
+	union
+	{
+		unsigned long dstval;
+		uint8_t* restrict dst8;
+		uint16_t* restrict dst16;
+		uint32_t* restrict dst32;
+		uint64_t* restrict dst64;
+		unsigned long* restrict dstul;
+	};
+	dstval = (unsigned long) dstptr;
+
+	if ( dstunalign )
+	{
+		if ( 1 <= length && !(dstval & (1-1)) && (dstval & (2-1)) )
+			*dst8++ = *src8++,
+			length -= 1;
+
+		if ( 2 <= length && !(dstval & (2-1)) && (dstval & (4-1)) )
+			*dst16++ = *src16++,
+			length -= 2;
+
+	#if 8 <= __SIZEOF_LONG__
+		if ( 4 <= length && !(dstval & (4-1)) && (dstval & (8-1)) )
+			*dst32++ = *src32++,
+			length -= 4;
+	#endif
 	}
-	return dest;
+
+	size_t numcopies = length / sizeof(unsigned long);
+#if defined(__x86_64__) || defined(__i386__)
+	unsigned long zeroed_numcopies;
+#if defined(__x86_64__)
+	asm volatile ("rep movsq" : "=c"(zeroed_numcopies), "=S"(srcul), "=D"(dstul)
+	                          : "c"(numcopies), "S"(srcul), "D"(dstul)
+	                          : "memory");
+#elif defined(__i386__)
+	asm volatile ("rep movsd" : "=c"(zeroed_numcopies), "=S"(srcul), "=D"(dstul)
+	                          : "c"(numcopies), "S"(srcul), "D"(dstul)
+	                          : "memory");
+#endif
+#else
+	for ( size_t i = 0; i < numcopies; i++ )
+		*dstul++ = *srcul++;
+#endif
+
+	length -= numcopies * sizeof(unsigned long);
+
+	if ( length )
+	{
+	#if 8 <= __SIZEOF_LONG__
+		if ( 4 <= length  )
+			*dst32++ = *src32++,
+			length -= 4;
+	#endif
+
+		if ( 2 <= length  )
+			*dst16++ = *src16++,
+			length -= 2;
+
+		if ( 1 <= length  )
+			*dst8++ = *src8++,
+			length -= 1;
+	}
+
+	return dstptr;
 }
