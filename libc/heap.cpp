@@ -29,6 +29,7 @@
 #endif
 
 #ifndef SORTIX_KERNEL
+#include <error.h>
 #include <stdio.h>
 #include <unistd.h>
 #endif
@@ -536,7 +537,7 @@ extern "C" void* malloc(size_t size)
 		chunk->magic = MAGIC;
 		chunk->GetTrailer()->magic = MAGIC;
 
-		#if 2 <= PARANOIA
+		#if 3 <= PARANOIA
 		assert(ValidateHeap());
 		#endif
 
@@ -570,7 +571,7 @@ extern "C" void* malloc(size_t size)
 	chunk->magic = MAGIC;
 	trailer->magic = MAGIC;
 
-	#if 2 <= PARANOIA
+	#if 3 <= PARANOIA
 	assert(ValidateHeap());
 	#endif
 
@@ -667,6 +668,20 @@ extern "C" void free(void* addr)
 
 	if ( !addr) { return; }
 	Chunk* chunk = (Chunk*) ((addr_t) addr - sizeof(Chunk));
+#ifndef SORTIX_KERNEL
+	if ( !IsGoodHeapPointer(addr, 1) ||
+	     !IsGoodHeapPointer(chunk, sizeof(*chunk)) )
+	{
+		error(0, 0, "attempted to free(3) non-heap pointer: 0x%zx", addr);
+		abort();
+	}
+	if ( !chunk->IsUsed() )
+	{
+		error(0, 0, "attempted to free(3) area that doesn't appear to be "
+		      "allocated: 0x%zx + 0x%zx", addr);
+		abort();
+	}
+#endif
 	assert(chunk->IsUsed());
 	assert(chunk->IsSane());
 
@@ -688,7 +703,7 @@ extern "C" void free(void* addr)
 
 	InsertChunk(chunk);
 
-	#if 2 <= PARANOIA
+	#if 3 <= PARANOIA
 	assert(ValidateHeap());
 	#endif
 }
