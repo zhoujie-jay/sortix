@@ -44,6 +44,7 @@
 #define S_IWOTH (0)
 #endif
 
+#define writeall mxmpp_writeall
 bool writeall(int fd, const void* p, size_t size)
 {
 	const uint8_t* buffer = (const uint8_t*) p;
