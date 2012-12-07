@@ -22,12 +22,14 @@
 
 *******************************************************************************/
 
+#include <assert.h>
 #include <stdio.h>
 #include <errno.h>
 
 extern "C" size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* fp)
 {
-	if ( !fp->write_func ) { errno = EBADF; return 0; }
+	if ( !fp->write_func )
+		return errno = EBADF, 0;
 	fp->flags &= ~_FILE_LAST_READ; fp->flags |= _FILE_LAST_WRITE;
 	char* str = (char*) ptr;
 	size_t total = size * nmemb;
@@ -35,29 +37,27 @@ extern "C" size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* fp)
 	while ( sofar < total )
 	{
 		size_t left = total - sofar;
-		if ( (!fp->bufferused && fp->buffersize <= left) ||
-		     (fp->flags & _FILE_NO_BUFFER) )
+		if ( fp->flags & _FILE_NO_BUFFER || !fp->buffersize )
 		{
-			return sofar + fp->write_func(str + sofar, 1, left, fp->user);
+			size_t ret = sofar + fp->write_func(str + sofar, 1, left, fp->user);
+			return ret;
 		}
 
 		size_t available = fp->buffersize - fp->bufferused;
-		size_t count = ( left < available ) ? left : available;
-		count = left;
+		if ( !available )
+		{
+			if ( fflush(fp) == 0 ) continue;
+			else return sofar;
+		}
+
+		size_t count = available < left ? available : left;
 		for ( size_t i = 0; i < count; i++ )
 		{
 			char c = str[sofar++];
 			fp->buffer[fp->bufferused++] = c;
-			if ( c == '\n' )
-			{
-				if ( fflush(fp) ) { return sofar; }
+			assert(fp->bufferused <= fp->buffersize);
+			if ( c == '\n' || fp->buffersize == fp->bufferused )
 				break;
-			}
-		}
-
-		if ( fp->buffersize <= fp->bufferused )
-		{
-			if ( fflush(fp) ) { return sofar; }
 		}
 	}
 	return sofar;
