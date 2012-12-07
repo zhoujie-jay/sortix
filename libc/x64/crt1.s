@@ -34,6 +34,12 @@
 .global _start
 .type _start, @function
 _start:
+	# Set up end of the stack frame linked list.
+	xorl %ebp, %ebp
+	pushq %rbp # rip=0
+	pushq %rbp # rbp=0
+	movq %rsp, %rbp
+
 	movq %rcx, environ # envp
 
 	# Prepare signals, memory allocation, stdio and such.

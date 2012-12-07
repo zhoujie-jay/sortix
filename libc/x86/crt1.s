@@ -34,6 +34,12 @@
 .global _start
 .type _start, @function
 _start:
+	# Set up end of the stack frame linked list.
+	xorl %ebp, %ebp
+	pushl %ebp # rip=0
+	pushl %ebp # rbp=0
+	movl %esp, %ebp
+
 	movl %ecx, environ # envp
 
 	# Arguments for main
