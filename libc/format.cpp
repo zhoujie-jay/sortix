@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
     This file is part of the Sortix C Library.
 
@@ -22,6 +22,7 @@
 
 *******************************************************************************/
 
+#include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -122,6 +123,36 @@ static int ConvertUInt64(uint64_t num, char* dest)
 	return result + 1;
 }
 
+static int ConvertUInt32Octal(uint32_t num, char* dest)
+{
+	int result = 0;
+	uint32_t copy = num;
+	int offset = 0;
+	while ( copy > 7 ) { copy /= 8; offset++; }
+	result += offset;
+	while ( offset >= 0 )
+	{
+		dest[offset] = '0' + num % 8; num /= 8; offset--;
+	}
+
+	return result + 1;
+}
+
+static int ConvertUInt64Octal(uint64_t num, char* dest)
+{
+	int result = 0;
+	uint64_t copy = num;
+	int offset = 0;
+	while ( copy > 7 ) { copy /= 8; offset++; }
+	result += offset;
+	while ( offset >= 0 )
+	{
+		dest[offset] = '0' + num % 8; num /= 8; offset--;
+	}
+
+	return result + 1;
+}
+
 static int ConvertUInt32Hex(uint32_t num, char* dest)
 {
 	char chars[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
@@ -165,6 +196,13 @@ static int ConvertUInt64Hex(uint64_t num, char* dest)
 	if ( 0 < readylen && callback && callback(user, ready, readylen) != readylen ) { return SIZE_MAX; } \
 	written += readylen; readylen = 0;
 
+#define REPEAT_BLANKS(num) \
+	for ( unsigned int i = 0; i < (num); i++ ) \
+	{ \
+		if ( readylen == READY_SIZE ) { READY_FLUSH(); } \
+		ready[readylen++ + i - i] = blank_char; \
+	}
+
 extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 		                           void* user,
 		                           const char* restrict format,
@@ -176,23 +214,38 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 
 	while ( *format != '\0' )
 	{
-		char c = *(format++);
+		char c = *format++;
 
 		if ( c != '%' )
 		{
+		print_c:
 			if ( READY_SIZE <= readylen ) { READY_FLUSH(); }
 			ready[readylen++] = c;
 			continue;
 		}
 
-		if ( *format == '%' ) { continue; }
+		if ( *format == '%' )
+		{
+			c = *format++;
+			goto print_c;
+		}
+
+		const char* format_begun_at = format;
+		if ( false )
+		{
+		unsupported_conversion:
+			format = format_begun_at;
+			c = '%';
+			goto print_c;
+		}
 
 		const unsigned UNSIGNED = 0;
 		const unsigned INTEGER = (1<<0);
 		const unsigned BIT64 = (1<<1);
 		const unsigned HEX = (1<<2);
-		const unsigned STRING = 8;
-		const unsigned CHARACTER = 9;
+		const unsigned OCTAL = (1<<3);
+		const unsigned STRING = 16;
+		const unsigned CHARACTER = 17;
 	#if defined(__x86_64__)
 		const unsigned WORDWIDTH = BIT64;
 	#else
@@ -203,17 +256,45 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 
 		unsigned type = 0;
 
+		bool prepend_chars = false;
+		bool append_chars = false;
+		bool space_pad = false;
+		bool zero_pad = false;
+		char blank_char = ' ';
+		unsigned int field_width = 0;
+
 		bool scanning = true;
 		while ( scanning )
 		{
-			switch( *(format++) )
+			switch ( char c = *(format++) )
 			{
-				case '3':
-				case '2':
+				case '-':
+					if ( prepend_chars || append_chars )
+						goto unsupported_conversion;
+					append_chars = space_pad = true;
+					prepend_chars = zero_pad = false;
+					blank_char = ' ';
 					break;
-				case '6':
+				case '0':
+					if ( !(prepend_chars || append_chars) || (!field_width && space_pad) )
+					{
+						prepend_chars = zero_pad = true;
+						append_chars = space_pad = false;
+						blank_char = '0';
+						break;
+					}
+				case '1':
+				case '2':
+				case '3':
 				case '4':
-					type |= BIT64;
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+					if ( !(prepend_chars || append_chars) )
+						goto unsupported_conversion;
+					field_width = field_width * 10 + c - '0';
 					break;
 				case 'p':
 					type = WORDWIDTH | HEX;
@@ -238,6 +319,10 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 					type |= INTEGER;
 					scanning = false;
 					break;
+				case 'o':
+					type |= OCTAL;
+					scanning = false;
+					break;
 				case 'x':
 				case 'X':
 					type |= HEX;
@@ -252,7 +337,7 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 					scanning = false;
 					break;
 				default:
-					return SIZE_MAX;
+					goto unsupported_conversion;
 			}
 		}
 
@@ -262,28 +347,48 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 			{
 				if ( READY_SIZE - readylen < 10 ) { READY_FLUSH(); }
 				int32_t num = va_arg(parameters, int32_t);
-				readylen += String::ConvertInt32(num, ready + readylen);
+				size_t chars = String::ConvertInt32(num, ready + readylen);
+				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
+				if ( READY_SIZE - readylen < 10 ) { READY_FLUSH(); }
+				String::ConvertInt32(num, ready + readylen);
+				readylen += chars;
+				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				break;
 			}
 			case UNSIGNED:
 			{
 				if ( READY_SIZE - readylen < 10 ) { READY_FLUSH(); }
 				uint32_t num = va_arg(parameters, uint32_t);
-				readylen += String::ConvertUInt32(num, ready + readylen);
+				size_t chars = String::ConvertUInt32(num, ready + readylen);
+				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
+				if ( READY_SIZE - readylen < 10 ) { READY_FLUSH(); }
+				String::ConvertUInt32(num, ready + readylen);
+				readylen += chars;
+				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				break;
 			}
 			case INTEGER | BIT64:
 			{
-				if ( READY_SIZE - readylen < 10 ) { READY_FLUSH(); }
+				if ( READY_SIZE - readylen < 20 ) { READY_FLUSH(); }
 				int64_t num = va_arg(parameters, int64_t);
-				readylen += String::ConvertInt64(num, ready + readylen);
+				size_t chars = String::ConvertInt64(num, ready + readylen);
+				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
+				if ( READY_SIZE - readylen < 20 ) { READY_FLUSH(); }
+				String::ConvertInt64(num, ready + readylen);
+				readylen += chars;
+				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				break;
 			}
 			case UNSIGNED | BIT64:
 			{
 				if ( READY_SIZE - readylen < 20 ) { READY_FLUSH(); }
 				uint64_t num = va_arg(parameters, uint64_t);
-				readylen += String::ConvertUInt64(num, ready + readylen);
+				size_t chars = String::ConvertUInt64(num, ready + readylen);
+				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
+				if ( READY_SIZE - readylen < 20 ) { READY_FLUSH(); }
+				String::ConvertUInt64(num, ready + readylen);
+				readylen += chars;
+				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				break;
 			}
 			case INTEGER | HEX:
@@ -291,7 +396,12 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 			{
 				if ( READY_SIZE - readylen < 8 ) { READY_FLUSH(); }
 				uint32_t num = va_arg(parameters, uint32_t);
-				readylen += String::ConvertUInt32Hex(num, ready + readylen);
+				size_t chars = String::ConvertUInt32Hex(num, ready + readylen);
+				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
+				if ( READY_SIZE - readylen < 8 ) { READY_FLUSH(); }
+				String::ConvertUInt32Hex(num, ready + readylen);
+				readylen += chars;
+				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				break;
 			}
 			case INTEGER | BIT64 | HEX:
@@ -299,7 +409,38 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 			{
 				if ( READY_SIZE - readylen < 16 ) { READY_FLUSH(); }
 				uint64_t num = va_arg(parameters, uint64_t);
-				readylen += String::ConvertUInt64Hex(num, ready + readylen);
+				size_t chars = String::ConvertUInt64Hex(num, ready + readylen);
+				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
+				if ( READY_SIZE - readylen < 16 ) { READY_FLUSH(); }
+				String::ConvertUInt64Hex(num, ready + readylen);
+				readylen += chars;
+				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
+				break;
+			}
+			case INTEGER | OCTAL:
+			case UNSIGNED | OCTAL:
+			{
+				if ( READY_SIZE - readylen < 20 ) { READY_FLUSH(); }
+				uint32_t num = va_arg(parameters, uint32_t);
+				size_t chars = String::ConvertUInt32Octal(num, ready + readylen);
+				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
+				if ( READY_SIZE - readylen < 20 ) { READY_FLUSH(); }
+				String::ConvertUInt32Octal(num, ready + readylen);
+				readylen += chars;
+				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
+				break;
+			}
+			case INTEGER | BIT64 | OCTAL:
+			case UNSIGNED | BIT64 | OCTAL:
+			{
+				if ( READY_SIZE - readylen < 40 ) { READY_FLUSH(); }
+				uint64_t num = va_arg(parameters, uint64_t);
+				size_t chars = String::ConvertUInt64Octal(num, ready + readylen);
+				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
+				if ( READY_SIZE - readylen < 40 ) { READY_FLUSH(); }
+				String::ConvertUInt64Octal(num, ready + readylen);
+				readylen += chars;
+				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				break;
 			}
 			case STRING:
