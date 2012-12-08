@@ -36,9 +36,12 @@ extern "C" FILE* fnewfile(void)
 	FILE* fp = (FILE*) calloc(sizeof(FILE), 1);
 	if ( !fp ) { return NULL; }
 	fp->buffersize = BUFSIZ;
-	fp->buffer = (char*) malloc(fp->buffersize);
+	fp->buffer = (unsigned char*) malloc(fp->buffersize);
 	if ( !fp->buffer ) { free(fp); return NULL; }
 	fp->flags = _FILE_AUTO_LOCK;
+	fp->offset_input_buffer = 0;
+	fp->amount_input_buffered = 0;
+	fp->amount_output_buffered = 0;
 	fp->free_func = ffreefile;
 	fregister(fp);
 	return fp;

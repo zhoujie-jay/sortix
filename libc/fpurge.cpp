@@ -26,5 +26,7 @@
 
 extern "C" void fpurge(FILE* fp)
 {
-	fp->bufferused = 0;
+	fp->offset_input_buffer = 0;
+	fp->amount_input_buffered = 0;
+	fp->amount_output_buffered = 0;
 }

@@ -6,6 +6,7 @@
 #define _FILE_LAST_WRITE (1<<2)
 #define _FILE_LAST_READ (1<<3)
 #define _FILE_AUTO_LOCK (1<<4)
+#define _FILE_STREAM (1<<5)
 #define _FILE_MAX_PUSHBACK 8
 typedef struct _FILE
 {
@@ -14,7 +15,7 @@ typedef struct _FILE
 	   to customize how it works. Don't call the functions directly, though, as
 	   the standard library does various kinds of buffering and conversion. */
 	size_t buffersize;
-	char* buffer;
+	unsigned char* buffer;
 	void* user;
 	size_t (*read_func)(void* ptr, size_t size, size_t nmemb, void* user);
 	size_t (*write_func)(const void* ptr, size_t size, size_t nmemb, void* user);
@@ -31,8 +32,8 @@ typedef struct _FILE
 	struct _FILE* prev;
 	struct _FILE* next;
 	int flags;
-	size_t bufferused;
-	size_t numpushedback;
-	unsigned char pushedback[_FILE_MAX_PUSHBACK];
+	size_t offset_input_buffer;
+	size_t amount_input_buffered;
+	size_t amount_output_buffered;
 } FILE;
 #endif

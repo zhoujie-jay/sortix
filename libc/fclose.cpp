@@ -29,6 +29,7 @@ extern "C" int fclose(FILE* fp)
 	int result = fflush(fp);
 	result |= fp->close_func ? fp->close_func(fp->user) : 0;
 	funregister(fp);
-	if ( fp->free_func ) { fp->free_func(fp); }
+	if ( fp->free_func )
+		fp->free_func(fp);
 	return result;
 }

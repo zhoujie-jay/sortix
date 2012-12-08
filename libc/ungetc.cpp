@@ -25,11 +25,28 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
 
 extern "C" int ungetc(int c, FILE* fp)
 {
-	if ( fp->numpushedback == _FILE_MAX_PUSHBACK ) { errno = ERANGE; return EOF; }
-	unsigned char uc = c;
-	fp->pushedback[fp->numpushedback++] = uc;
-	return uc;
+	if ( !fp->read_func || (fp->flags & _FILE_NO_BUFFER) )
+		return EOF;
+
+	if ( fp->flags & _FILE_LAST_WRITE )
+		fflush_stop_writing(fp);
+	fp->flags |= _FILE_LAST_READ;
+
+	if ( fp->offset_input_buffer == 0 )
+	{
+		size_t amount = fp->amount_input_buffered - fp->offset_input_buffer;
+		size_t offset = fp->buffersize - amount;
+		if ( !offset )
+			return EOF;
+		memmove(fp->buffer + offset, fp->buffer, sizeof(fp->buffer[0]) * amount);
+		fp->offset_input_buffer = offset;
+		fp->amount_input_buffered = offset + amount;
+	}
+
+	fp->buffer[--fp->offset_input_buffer] = c;
+	return c;
 }

@@ -22,43 +22,31 @@
 
 *******************************************************************************/
 
-#include <assert.h>
 #include <stdio.h>
-#include <errno.h>
 
 extern "C" size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* fp)
 {
-	if ( !fp->write_func )
-		return errno = EBADF, 0;
-	fp->flags &= ~_FILE_LAST_READ; fp->flags |= _FILE_LAST_WRITE;
-	char* str = (char*) ptr;
-	size_t total = size * nmemb;
-	size_t sofar = 0;
-	while ( sofar < total )
+	if ( fp->flags & _FILE_NO_BUFFER )
 	{
-		size_t left = total - sofar;
-		if ( fp->flags & _FILE_NO_BUFFER || !fp->buffersize )
-		{
-			size_t ret = sofar + fp->write_func(str + sofar, 1, left, fp->user);
-			return ret;
-		}
+		if ( !fp->write_func )
+			return 0; // TODO: ferror doesn't report error!
+		if ( fp->flags & _FILE_LAST_READ )
+			fflush_stop_reading(fp);
+		fp->flags |= _FILE_LAST_WRITE;
+		return fp->write_func(ptr, size, nmemb, fp->user);
+	}
 
-		size_t available = fp->buffersize - fp->bufferused;
-		if ( !available )
+	const unsigned char* buf = (const unsigned char*) ptr;
+	for ( size_t n = 0; n < nmemb; n++ )
+	{
+		size_t offset = n * size;
+		for ( size_t i = 0; i < size; i++ )
 		{
-			if ( fflush(fp) == 0 ) continue;
-			else return sofar;
-		}
-
-		size_t count = available < left ? available : left;
-		for ( size_t i = 0; i < count; i++ )
-		{
-			char c = str[sofar++];
-			fp->buffer[fp->bufferused++] = c;
-			assert(fp->bufferused <= fp->buffersize);
-			if ( c == '\n' || fp->buffersize == fp->bufferused )
-				break;
+			size_t index = offset + i;
+			if ( fputc(buf[index], fp) == EOF )
+				return n;
 		}
 	}
-	return sofar;
+
+	return nmemb;
 }

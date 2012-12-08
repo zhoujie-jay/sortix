@@ -162,6 +162,8 @@ extern char* tempnam(const char* dir, const char* pfx);
 #define fpending __fpending
 #define flushlbf _flushlbf
 #define fsetlocking __fsetlocking
+int fflush_stop_reading(FILE* fp);
+int fflush_stop_writing(FILE* fp);
 void fseterr(FILE* fp);
 void fregister(FILE* fp);
 void funregister(FILE* fp);

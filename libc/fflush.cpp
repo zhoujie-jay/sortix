@@ -33,10 +33,12 @@ extern "C" int fflush(FILE* fp)
 		for ( fp = _firstfile; fp; fp = fp->next ) { result |= fflush(fp); }
 		return result;
 	}
-	if ( !fp->write_func ) { errno = EBADF; return EOF; }
-	if ( !fp->bufferused ) { return 0; }
-	size_t written = fp->write_func(fp->buffer, 1, fp->bufferused, fp->user);
-	if ( written < fp->bufferused ) { return EOF; }
-	fp->bufferused = 0;
+
+	int mode = fp->flags & (_FILE_LAST_READ | _FILE_LAST_WRITE);
+	if ( (mode & _FILE_LAST_READ) && fflush_stop_reading(fp) == EOF )
+		return EOF;
+	if ( (mode & _FILE_LAST_WRITE) && fflush_stop_writing(fp) == EOF )
+		return EOF;
+	fp->flags |= mode;
 	return 0;
 }

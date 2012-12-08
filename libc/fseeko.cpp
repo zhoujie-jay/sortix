@@ -22,11 +22,15 @@
 
 *******************************************************************************/
 
+#include <errno.h>
 #include <stdio.h>
 
 extern "C" int fseeko(FILE* fp, off_t offset, int whence)
 {
-	fp->numpushedback = 0;
-	fflush(fp);
-	return (fp->seek_func) ? fp->seek_func(fp->user, offset, whence) : 0;
+	if ( fflush(fp) != 0 )
+		return -1;
+	if ( !fp->seek_func )
+		return errno = EBADF, -1;
+	int ret = fp->seek_func(fp->user, offset, whence);
+	return ret;
 }

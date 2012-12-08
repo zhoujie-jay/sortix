@@ -24,9 +24,29 @@
 
 #include <stdio.h>
 
-extern "C" int fputc(int cint, FILE* fp)
+extern "C" int fputc(int c, FILE* fp)
 {
-	unsigned char c = (unsigned char) cint;
-	if ( fwrite(&c, 1, sizeof(c), fp) < sizeof(c) ) { return EOF; }
+	if ( fp->flags & _FILE_NO_BUFFER )
+	{
+		unsigned char c_char = c;
+		if ( fwrite(&c_char, sizeof(c_char), 1, fp) != 1 )
+			return EOF;
+		return c;
+	}
+
+	if ( !fp->write_func )
+		return EOF; // TODO: ferror doesn't report error!
+
+	if ( fp->flags & _FILE_LAST_READ )
+		fflush_stop_reading(fp);
+	fp->flags |= _FILE_LAST_WRITE;
+
+	if ( fp->amount_output_buffered == fp->buffersize && fflush(fp) != 0 )
+		return EOF;
+
+	fp->buffer[fp->amount_output_buffered++] = c;
+	if ( c == '\n' && fflush(fp) != 0 )
+		return EOF;
+
 	return c;
 }

@@ -57,6 +57,7 @@ static size_t fdio_read(void* ptr, size_t size, size_t nmemb, void* user)
 		ssize_t numbytes = read(fdio->fd, buf + sofar, total - sofar);
 		if ( numbytes < 0 ) { fdio->flags |= FDIO_ERROR; break; }
 		if ( numbytes == 0 ) { fdio->flags |= FDIO_EOF; break; }
+		return numbytes / size;
 		sofar += numbytes;
 	}
 	return sofar / size;
@@ -163,6 +164,8 @@ int fdio_install(FILE* fp, const char* mode, int fd)
 	fp->error_func = fdio_error;
 	fp->fileno_func = fdio_fileno;
 	fp->close_func = fdio_close;
+	if ( lseek(fd, 0, SEEK_CUR) < 0 && errno == ESPIPE )
+		fp->flags |= _FILE_STREAM;
 	return 1;
 }
 

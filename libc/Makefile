@@ -37,6 +37,8 @@ fclose.o \
 feof.o \
 ferror.o \
 fflush.o \
+fflush_stop_reading.o \
+fflush_stop_writing.o \
 fgetc.o \
 fgets.o \
 flbf.o \

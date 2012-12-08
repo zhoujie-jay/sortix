@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012.
 
     This file is part of the Sortix C Library.
 
@@ -17,38 +17,26 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fread.cpp
-    Reads data from a FILE.
+    fflush_stop_writing.cpp
+    Resets the FILE to a consistent state so it is ready for reading.
 
 *******************************************************************************/
 
+#include <errno.h>
 #include <stdio.h>
 
-extern "C" size_t fread(void* ptr, size_t size, size_t nmemb, FILE* fp)
+extern "C" int fflush_stop_writing(FILE* fp)
 {
-	if ( fp->flags & _FILE_NO_BUFFER )
-	{
-		if ( !fp->read_func )
-			return 0; // TODO: ferror doesn't report error!
-		if ( fp->flags & _FILE_LAST_WRITE )
-			fflush_stop_writing(fp);
-		fp->flags |= _FILE_LAST_READ;
-		return fp->read_func(ptr, size, nmemb, fp->user);
-	}
-
-	unsigned char* buf = (unsigned char*) ptr;
-	for ( size_t n = 0; n < nmemb; n++ )
-	{
-		size_t offset = n * size;
-		for ( size_t i = 0; i < size; i++ )
-		{
-			int c = fgetc(fp);
-			if ( c == EOF )
-				return n;
-			size_t index = i + offset;
-			buf[index] = c;
-		}
-	}
-
-	return nmemb;
+	if ( !(fp->flags & _FILE_LAST_WRITE) )
+		return 0;
+	if ( !fp->write_func )
+		return errno = EBADF, EOF;
+	size_t size = sizeof(unsigned char);
+	size_t count = fp->amount_output_buffered;
+	int ret = 0;
+	if ( fp->write_func(fp->buffer, size, count, fp->user) != count )
+		ret = EOF; // TODO: Set errno!
+	fp->amount_output_buffered = 0;
+	fp->flags &= ~_FILE_LAST_WRITE;
+	return ret;
 }

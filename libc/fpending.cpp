@@ -26,5 +26,5 @@
 
 extern "C" size_t fpending(FILE* fp)
 {
-	return fp->bufferused;
+	return fp->amount_output_buffered;
 }
