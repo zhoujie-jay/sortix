@@ -266,7 +266,8 @@ out:
 	return result;
 }
 
-int get_and_run_command(FILE* fp, const char* fpname, bool interactive, bool* exitexec)
+int get_and_run_command(FILE* fp, const char* fpname, bool interactive,
+                        bool exit_on_error, bool* exitexec)
 {
 	int fd = fileno(fp);
 
@@ -412,6 +413,8 @@ int get_and_run_command(FILE* fp, const char* fpname, bool interactive, bool* ex
 
 	argv[argc] = NULL;
 	status = runcommandline(argv, exitexec);
+	if ( status && exit_on_error )
+		*exitexec = true;
 	return status;
 }
 
@@ -423,39 +426,50 @@ void load_argv_variables(int argc, char* argv[])
 		setenv(varname, argv[i], 1);
 }
 
-int run(FILE* fp, int argc, char* argv[], const char* name, bool interactive)
+int run(FILE* fp, int argc, char* argv[], const char* name, bool interactive,
+        bool exit_on_error)
 {
 	load_argv_variables(argc, argv);
 	bool exitexec = false;
 	int exitstatus;
 	do
-		exitstatus = get_and_run_command(fp, name, interactive, &exitexec);
+		exitstatus = get_and_run_command(fp, name, interactive, exit_on_error,
+		                                 &exitexec);
 	while ( !exitexec );
 	return exitstatus;
 }
 
-int run_interactive(int argc, char* argv[])
+int run_interactive(int argc, char* argv[], bool exit_on_error)
 {
 	signal(SIGINT, on_sigint);
-	return run(stdin, argc, argv, "<stdin>", true);
+	return run(stdin, argc, argv, "<stdin>", true, exit_on_error);
 }
 
-int run_stdin(int argc, char* argv[])
+int run_stdin(int argc, char* argv[], bool exit_on_error)
 {
-	return run(stdin, argc, argv, "<stdin>", false);
+	return run(stdin, argc, argv, "<stdin>", false, exit_on_error);
 }
 
-int run_script(const char* path, int argc, char* argv[])
+int run_script(const char* path, int argc, char* argv[], bool exit_on_error)
 {
 	FILE* fp = fopen(path, "r");
 	if ( !fp ) { error(0, errno, "%s", path); return 127; }
-	int ret = run(fp, argc, argv, path, false);
+	int ret = run(fp, argc, argv, path, false, exit_on_error);
 	fclose(fp);
 	return ret;
 }
 
 int main(int argc, char* argv[])
 {
+	bool exit_on_error = false;
+	if ( 2 <= argc && !strcmp(argv[1], "-e") )
+	{
+		exit_on_error = true;
+		argc--;
+		for ( int i = 1; i < argc; i++ )
+			argv[i] = argv[i+1];
+		argv[argc] = NULL;
+	}
 	char pidstr[32];
 	char ppidstr[32];
 	sprintf(pidstr, "%i", getpid());
@@ -466,8 +480,8 @@ int main(int argc, char* argv[])
 	setenv("?", "0", 1);
 	updatepwd();
 	if ( 1 < argc )
-		return run_script(argv[1], argc-1, argv+1);
+		return run_script(argv[1], argc-1, argv+1, exit_on_error);
 	if ( isatty(0) )
-		return run_interactive(argc, argv);
-	return run_stdin(argc, argv);
+		return run_interactive(argc, argv, exit_on_error);
+	return run_stdin(argc, argv, exit_on_error);
 }
