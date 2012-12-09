@@ -98,6 +98,8 @@ struct Node
 	mode_t mode;
 	time_t ctime;
 	time_t mtime;
+	bool written;
+	size_t refcount;
 };
 
 void FreeNode(Node* node)
@@ -108,7 +110,8 @@ void FreeNode(Node* node)
 		DirEntry* entry = node->dirents + i;
 		if ( strcmp(entry->name, ".") != 0 && strcmp(entry->name, "..") != 0 )
 		{
-			FreeNode(entry->node);
+			if ( --entry->node->refcount == 0 )
+				FreeNode(entry->node);
 		}
 		free(entry->name);
 	}
@@ -117,14 +120,56 @@ void FreeNode(Node* node)
 	free(node);
 }
 
+struct CacheEntry
+{
+	ino_t ino;
+	dev_t dev;
+	Node* node;
+};
+
+size_t cacheused = 0;
+size_t cachelen = 0;
+CacheEntry* cache = NULL;
+
+Node* LookupCache(dev_t dev, ino_t ino)
+{
+	for ( size_t i = 0; i < cacheused; i++ )
+		if ( cache[i].dev == dev && cache[i].ino == ino )
+			return cache[i].node;
+	return NULL;
+}
+
+bool AddToCache(Node* node, dev_t dev, ino_t ino)
+{
+	if ( cacheused == cachelen )
+	{
+		size_t newcachelen = cachelen ? 2 * cachelen : 256;
+		size_t newcachesize = newcachelen * sizeof(CacheEntry);
+		CacheEntry* newcache = (CacheEntry*) realloc(cache, newcachesize);
+		if ( !newcache )
+			return false;
+		cache = newcache;
+		cachelen = newcachelen;
+	}
+	size_t index = cacheused++;
+	cache[index].ino = ino;
+	cache[index].dev = dev;
+	cache[index].node = node;
+	return true;
+}
+
 Node* RecursiveSearch(const char* rootpath, uint32_t* ino, Node* parent = NULL)
 {
 	struct stat st;
 	if ( lstat(rootpath, &st) ) { perror(rootpath); return NULL; }
 
+	Node* cached = LookupCache(st.st_dev, st.st_ino);
+	if ( cached ) { cached->refcount++; return cached; }
+
 	Node* node = (Node*) calloc(1, sizeof(Node));
 	if ( !node ) { return NULL; }
 
+	node->refcount = 1;
 	node->mode = st.st_mode;
 	node->ino = (*ino)++;
 	node->ctime = st.st_ctime;
@@ -135,7 +180,16 @@ Node* RecursiveSearch(const char* rootpath, uint32_t* ino, Node* parent = NULL)
 
 	node->path = pathclone;
 
-	if ( !S_ISDIR(st.st_mode) ) { return node; }
+	if ( !S_ISDIR(st.st_mode) )
+	{
+		if ( !AddToCache(node, st.st_dev, st.st_ino) )
+		{
+			free(pathclone);
+			free(node);
+			return NULL;
+		}
+		return node;
+	}
 
 	DIR* dir = opendir(rootpath);
 	if ( !dir ) { perror(rootpath); FreeNode(node); return NULL; }
@@ -180,13 +234,20 @@ Node* RecursiveSearch(const char* rootpath, uint32_t* ino, Node* parent = NULL)
 	}
 
 	closedir(dir);
-	if ( !successful ) { FreeNode(node); return NULL; }
+	if ( !successful || !AddToCache(node, st.st_dev, st.st_ino) )
+	{
+		FreeNode(node);
+		return NULL;
+	}
 	return node;
 }
 
 bool WriteNode(struct initrd_superblock* sb, int fd, const char* outputname,
                Node* node)
 { {
+	if ( node->written )
+		return true;
+
 	uint32_t filesize = 0;
 	uint32_t origfssize = sb->fssize;
 	uint32_t dataoff = origfssize;
@@ -233,12 +294,19 @@ bool WriteNode(struct initrd_superblock* sb, int fd, const char* outputname,
 			dirent.inode = entry->node->ino;
 			dirent.namelen = (uint16_t) namelen;
 			dirent.reclen = sizeof(dirent) + dirent.namelen + 1;
-			dirent.reclen += dirent.reclen % 4; // Align entries.
+			dirent.reclen = (dirent.reclen+3)/4*4; // Align entries.
 			size_t entsize = sizeof(dirent);
 			ssize_t hdramt = pwriteall(fd, &dirent, entsize, dataoff);
 			ssize_t nameamt = pwriteall(fd, name, namelen+1, dataoff + entsize);
 			if ( hdramt < (ssize_t) entsize || nameamt < (ssize_t) (namelen+1) )
 				goto iowrite;
+			size_t padding = dirent.reclen - (entsize + (namelen+1));
+			for ( size_t i = 0; i < padding; i++ )
+			{
+				uint8_t nul = 0;
+				if ( pwrite(fd, &nul, 1, dataoff+entsize+namelen+1+i) != 1 )
+					goto iowrite;
+			}
 			filesize += dirent.reclen;
 			dataoff += dirent.reclen;
 		}
@@ -261,7 +329,7 @@ bool WriteNode(struct initrd_superblock* sb, int fd, const char* outputname,
 	uint32_t increment = dataoff - origfssize;
 	sb->fssize += increment;
 
-	return true;
+	return node->written = true;
 }
   ioreadlink:
 	error(0, errno, "readlink: %s", node->path);
@@ -354,7 +422,7 @@ void Help(FILE* fp, const char* argv0)
 void Version(FILE* fp, const char* argv0)
 {
 	(void) argv0;
-	fprintf(fp, "mkinitrd 0.2\n");
+	fprintf(fp, "mkinitrd 0.3\n");
 	fprintf(fp, "Copyright (C) 2012 Jonas 'Sortie' Termansen\n");
 	fprintf(fp, "This is free software; see the source for copying conditions.  There is NO\n");
 	fprintf(fp, "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n");
