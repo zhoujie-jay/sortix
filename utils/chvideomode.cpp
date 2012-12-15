@@ -377,7 +377,7 @@ Try make sure the desired driver is loaded and is configured correctly.\n");
 			exit(WEXITSTATUS(status));
 		}
 		execvp(argv[1], argv + 1);
-		perror(argv[1]);
+		error(127, errno, "`%s'", argv[1]);
 	}
 
 	return 0;
