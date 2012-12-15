@@ -31,6 +31,8 @@
 #include <error.h>
 #include <string.h>
 
+#include <dispd.h>
+
 int Init();
 void Reset();
 void ClearScreen();
@@ -48,7 +50,6 @@ const int padsize = 5;
 const unsigned goalfreq = 800;
 const unsigned collisionfreq = 1200;
 
-int vgafd;
 uint16_t frame[width*height];
 
 int ballx;
@@ -68,41 +69,9 @@ unsigned p2score;
 unsigned time;
 unsigned soundleft;
 
-bool FlushVGA()
-{
-	if ( lseek(vgafd, 0, SEEK_SET) < 0)
-		return false;
-	return writeall(vgafd, frame, sizeof(frame)) == sizeof(frame);
-}
-
 int Init()
 {
-	bool has_vga_mode_set = true;
-	FILE* modefp = fopen("/dev/video/mode", "r");
-	if ( modefp )
-	{
-		char* mode = NULL;
-		size_t modesize;
-		if ( 0 <= getline(&mode, &modesize, modefp) )
-		{
-			if ( strcmp(mode, "driver=none\n") != 0 )
-				has_vga_mode_set = false;
-			free(mode);
-		}
-		fclose(modefp);
-	}
-
-	if ( !has_vga_mode_set )
-	{
-		fprintf(stderr, "Sorry, this game only works in VGA mode.\n");
-		return 1;
-	}
-
-	vgafd = open("/dev/vga", O_RDWR);
-	if ( vgafd < 0 ) { error(0, errno, "unable to open vga device /dev/vga"); return 1; }
-
 	Reset();
-
 	return 0;
 }
 
@@ -139,8 +108,6 @@ void ClearScreen()
 			frame[x + y*width] = ' ' | color;
 		}
 	}
-
-	FlushVGA();
 }
 
 void Collision()
@@ -267,6 +234,9 @@ int usage(int /*argc*/, char* argv[])
 
 int main(int argc, char* argv[])
 {
+	if ( !dispd_initialize(&argc, &argv) )
+		error(1, 0, "couldn't initialize dispd library");
+
 	int sleepms = 50;
 	for ( int i = 1; i < argc; i++ )
 	{
@@ -281,13 +251,27 @@ int main(int argc, char* argv[])
 	int result = Init();
 	if ( result != 0 ) { return result; }
 
+	struct dispd_session* session = dispd_attach_default_session();
+	if ( !session )
+		error(1, 0, "couldn't attach to dispd default session");
+	if ( !dispd_session_setup_game_vga(session) )
+		error(1, 0, "couldn't setup dispd vga session");
+	struct dispd_window* window = dispd_create_window_game_vga(session);
+	if ( !window )
+		error(1, 0, "couldn't create dispd vga window");
+
 	while (true)
 	{
 		usleep(sleepms * 1000);
 		ReadInput();
 		Update();
 		UpdateUI();
-		FlushVGA();
+		struct dispd_framebuffer* fb = dispd_begin_render(window);
+		if ( !fb )
+			error(1, 0, "unable to begin rendering dispd window");
+		memcpy(dispd_get_framebuffer_data(fb), frame, sizeof(frame));
+		dispd_finish_render(fb);
+
 		if ( /*soundleft < 0*/ false ) { continue; }
 		if ( soundleft <= 50 )
 		{
