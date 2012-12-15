@@ -91,6 +91,7 @@ extern "C" void* memcpy(void* restrict dstptr, const void* restrict srcptr,
 	}
 
 	size_t numcopies = length / sizeof(unsigned long);
+#if 0
 #if defined(__x86_64__) || defined(__i386__)
 	unsigned long zeroed_numcopies;
 #if defined(__x86_64__)
@@ -101,6 +102,7 @@ extern "C" void* memcpy(void* restrict dstptr, const void* restrict srcptr,
 	asm volatile ("rep movsd" : "=c"(zeroed_numcopies), "=S"(srcul), "=D"(dstul)
 	                          : "c"(numcopies), "S"(srcul), "D"(dstul)
 	                          : "memory");
+#endif
 #endif
 #else
 	for ( size_t i = 0; i < numcopies; i++ )
