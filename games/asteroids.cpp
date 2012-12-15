@@ -1,5 +1,6 @@
 #include <sys/keycodes.h>
 #include <sys/termmode.h>
+
 #include <stdint.h>
 #include <unistd.h>
 #include <string.h>
@@ -9,12 +10,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <error.h>
-#include <readparamstring.h>
 
-// This define runs the game without actually setting the video mode and
-// checking whether the frame was actually copied to the screen. useful for
-// debugging the game since you can't see console output.
-//#define HACK_DONT_CHECK_FB
+#include <dispd.h>
 
 // TODO: Hacks that should belong in libm or something.
 extern "C" float sqrtf(float x)
@@ -1047,24 +1044,25 @@ void Render()
 		obj->Render();
 	}
 }
-
-void FlushBuffer()
+void RunFrame(struct dispd_window* window)
 {
-	lseek(fb, 0, SEEK_SET);
-	if ( writeall(fb, buf, framesize) < framesize )
+	struct dispd_framebuffer* fb = dispd_begin_render(window);
+	if ( !fb )
 	{
-#ifndef HACK_DONT_CHECK_FB
-		error(1, errno, "writing to framebuffer");
-#endif
+		error(0, 0, "unable to begin rendering dispd window");
+		gamerunning = false;
+		return;
 	}
-}
-
-void RunFrame()
-{
+	xres = dispd_get_framebuffer_width(fb);
+	yres = dispd_get_framebuffer_height(fb);
+	bpp = dispd_get_framebuffer_format(fb);
+	linesize = dispd_get_framebuffer_pitch(fb) / (bpp / 8);
+	framesize = dispd_get_framebuffer_pitch(fb) * yres;
+	buf = (uint32_t*) dispd_get_framebuffer_data(fb);
 	FetchKeyboardInput();
 	GameLogic();
 	Render();
-	FlushBuffer();
+	dispd_finish_render(fb);
 }
 
 char* GetCurrentVideoMode()
@@ -1092,45 +1090,26 @@ void InitGame()
 	new AsteroidField;
 }
 
-int main(int /*argc*/, char* argv[])
+int main(int argc, char* argv[])
 {
-#ifndef HACK_DONT_CHECK_FB
-	char* vidmode = GetCurrentVideoMode();
-	if ( !vidmode ) { perror("Cannot detect current video mode"); exit(1); }
-	char* widthstr = NULL;
-	char* heightstr = NULL;
-	if ( !ReadParamString(vidmode, "width", &widthstr, "height", &heightstr, NULL) )
-	{
-		error(1, errno, "Can't parse video mode: %s", vidmode);
-	}
-	xres = atoi_safe(widthstr); delete[] widthstr; widthstr = NULL;
-	yres = atoi_safe(heightstr); delete[] heightstr; heightstr = NULL;
-	if ( !xres || !yres )
-	{
-		const char* chvideomode = "chvideomode";
-		execlp(chvideomode, chvideomode, argv[0], NULL);
-		perror(chvideomode);
-		exit(127);
-	}
-#else
-	xres = 1280;
-	yres = 720;
-#endif
+	if ( !dispd_initialize(&argc, &argv) )
+		error(1, 0, "couldn't initialize dispd library");
+	struct dispd_session* session = dispd_attach_default_session();
+	if ( !session )
+		error(1, 0, "couldn't attach to dispd default session");
+	if ( !dispd_session_setup_game_rgba(session) )
+		error(1, 0, "couldn't setup dispd rgba session");
+	struct dispd_window* window = dispd_create_window_game_rgba(session);
+	if ( !window )
+		error(1, 0, "couldn't create dispd rgba window");
 
-	fb = open("/dev/video/fb", O_WRONLY);
-#ifndef HACK_DONT_CHECK_FB
-	if ( fb < 0 ) { error(1, errno, "open: /dev/video/fb"); }
-#endif
-	bpp = sizeof(uint32_t);
-	linesize = xres;
-	framesize = yres * linesize * bpp;
-	buf = new uint32_t[framesize / sizeof(uint32_t)];
 	InitGame();
 	gamerunning = true;
 	for ( framenum = 0; gamerunning; framenum++ )
-	{
-		RunFrame();
-	}
-	close(fb);
+		RunFrame(window);
+
+	dispd_destroy_window(window);
+	dispd_detach_session(session);
+
 	return 0;
 }

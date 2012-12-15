@@ -18,6 +18,8 @@ conway \
 snake \
 asteroids \
 
+LIBS:=-ldispd
+
 all: $(BINARIES)
 
 .PHONY: all install uninstall clean
@@ -32,7 +34,7 @@ uninstall:
 	done
 
 %: %.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $< -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $< -o $@ $(LIBS)
 
 sh: mxsh
 	cp $< $@
