@@ -1,11 +1,13 @@
 #define __STDC_CONSTANT_MACROS
 #define __STDC_LIMIT_MACROS
 
+#include <sys/display.h>
 #include <sys/keycodes.h>
 #include <sys/termmode.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -14,58 +16,149 @@
 #include <termios.h>
 #include <readparamstring.h>
 
-bool SetCurrentMode(const char* mode)
+// TODO: Provide this using asprintf or somewhere sane in user-space.
+char* Combine(size_t NumParameters, ...)
 {
-	FILE* fp = fopen("/dev/video/mode", "w");
-	if ( !fp ) { return false; }
-	if ( fprintf(fp, "%s\n", mode) < 0 ) { fclose(fp); return false; }
-	if ( fclose(fp) ) { return false; }
-	return true;
+	va_list param_pt;
+
+	va_start(param_pt, NumParameters);
+
+	// First calculate the string length.
+	size_t ResultLength = 0;
+	const char* TMP = 0;
+
+	for ( size_t I = 0; I < NumParameters; I++ )
+	{
+		TMP = va_arg(param_pt, const char*);
+
+		if ( TMP != NULL ) { ResultLength += strlen(TMP); }
+	}
+
+	// Allocate a string with the desired length.
+	char* Result = new char[ResultLength+1];
+	if ( !Result ) { return NULL; }
+
+	Result[0] = 0;
+
+	va_end(param_pt);
+	va_start(param_pt, NumParameters);
+
+	size_t ResultOffset = 0;
+
+	for ( size_t I = 0; I < NumParameters; I++ )
+	{
+		TMP = va_arg(param_pt, const char*);
+
+		if ( TMP )
+		{
+			size_t TMPLength = strlen(TMP);
+			strcpy(Result + ResultOffset, TMP);
+			ResultOffset += TMPLength;
+		}
+	}
+
+	return Result;
 }
 
-char* GetCurrentMode()
+char* ActualGetDriverName(uint64_t driver_index)
 {
-	FILE* fp = fopen("/dev/video/mode", "r");
-	if ( !fp ) { return NULL; }
-	char* mode = NULL;
-	size_t n = 0;
-	getline(&mode, &n, fp);
-	fclose(fp);
-	return mode;
-}
-
-char** GetAvailableModes(size_t* nummodesptr)
-{
-	size_t modeslen = 0;
-	char** modes = new char*[modeslen];
-	if ( !modes ) { return NULL; }
-	size_t nummodes = 0;
-	FILE* fp = fopen("/dev/video/modes", "r");
-	if ( !fp ) { delete[] modes; return NULL; }
+	struct dispmsg_get_driver_name msg;
+	msg.msgid = DISPMSG_GET_DRIVER_NAME;
+	msg.device = 0;
+	msg.driver_index = driver_index;
+	size_t guess = 32;
 	while ( true )
 	{
-		char* mode = NULL;
-		size_t modesize = 0;
-		ssize_t modelen = getline(&mode, &modesize, fp);
-		if ( modelen <= 0 ) { break; }
-		if ( mode[modelen-1] == '\n' ) { mode[modelen-1] = 0; }
-		if ( nummodes == modeslen )
+		char* ret = new char[guess];
+		if ( !ret )
+			return NULL;
+		msg.name.byte_size = guess;
+		msg.name.str = ret;
+		if ( dispmsg_issue(&msg, sizeof(msg)) == 0 )
+			return ret;
+		delete[] ret;
+		if ( errno == ERANGE && guess < msg.name.byte_size )
 		{
-			size_t newmodeslen = modeslen ? 2 * modeslen : 16UL;
-			char** newmodes = new char*[newmodeslen];
-			if ( !newmodes ) { free(mode); break; }
-			memcpy(newmodes, modes, nummodes * sizeof(char*));
-			delete[] modes; modes = newmodes;
-			modeslen = newmodeslen;
+			guess = msg.name.byte_size;
+			continue;
 		}
-		modes[nummodes++] = mode;
+		return NULL;
 	}
-	fclose(fp);
-	*nummodesptr = nummodes;
-	return modes;
 }
 
-void DrawMenu(size_t selection, char** modes, size_t nummodes)
+static char* StringOfCrtcMode(struct dispmsg_crtc_mode mode)
+{
+	char bppstr[sizeof(mode.fb_format) * 3];
+	char xresstr[sizeof(mode.view_xres) * 3];
+	char yresstr[sizeof(mode.view_yres) * 3];
+	char magicstr[sizeof(mode.magic) * 3];
+	snprintf(bppstr, sizeof(bppstr), "%ju", (uintmax_t) mode.fb_format);
+	snprintf(xresstr, sizeof(xresstr), "%ju", (uintmax_t) mode.view_xres);
+	snprintf(yresstr, sizeof(yresstr), "%ju", (uintmax_t) mode.view_yres);
+	snprintf(magicstr, sizeof(magicstr), "%ju", (uintmax_t) mode.magic);
+	char* drivername = ActualGetDriverName(mode.driver_index);
+	if ( !drivername )
+		return NULL;
+	char* ret = Combine(10,
+	                    "driver=", drivername, ","
+	                    "bpp=", bppstr, ","
+	                    "width=", xresstr, ","
+	                    "height=", yresstr, ","
+	                    "modeid=", magicstr);
+	delete[] drivername;
+	return ret;
+}
+
+bool SetCurrentMode(struct dispmsg_crtc_mode mode)
+{
+	struct dispmsg_set_crtc_mode msg;
+	msg.msgid = DISPMSG_SET_CRTC_MODE;
+	msg.device = 0;
+	msg.connector = 0;
+	msg.mode = mode;
+	return dispmsg_issue(&msg, sizeof(msg)) == 0;
+}
+
+struct dispmsg_crtc_mode GetCurrentMode()
+{
+	struct dispmsg_set_crtc_mode msg;
+	msg.msgid = DISPMSG_GET_CRTC_MODE;
+	msg.device = 0;
+	msg.connector = 0;
+	dispmsg_issue(&msg, sizeof(msg));
+	return msg.mode;
+}
+
+struct dispmsg_crtc_mode* GetAvailableModes(size_t* nummodesptr)
+{
+	struct dispmsg_get_crtc_modes msg;
+	msg.msgid = DISPMSG_GET_CRTC_MODES;
+	msg.device = 0;
+	msg.connector = 0;
+	size_t guess = 0;
+	while ( true )
+	{
+		struct dispmsg_crtc_mode* ret = new struct dispmsg_crtc_mode[guess];
+		if ( !ret )
+			return NULL;
+		msg.modes_length = guess;
+		msg.modes = ret;
+		if ( dispmsg_issue(&msg, sizeof(msg)) == 0 )
+		{
+			*nummodesptr = guess;
+			return ret;
+		}
+		delete[] ret;
+		if ( errno == ERANGE && guess < msg.modes_length )
+		{
+			guess = msg.modes_length;
+			continue;
+		}
+		return NULL;
+	}
+}
+
+void DrawMenu(size_t selection, struct dispmsg_crtc_mode* modes, size_t nummodes)
 {
 	printf("\e[m\e[H\e[2K"); // Move to (0,0), clear screen.
 	printf("Please select one of these video modes or press ESC to abort.\n");
@@ -82,7 +175,10 @@ void DrawMenu(size_t selection, char** modes, size_t nummodes)
 	{
 		size_t screenline = 1 + off + i - from;
 		const char* color = i == selection ? "\e[31m" : "\e[m";
-		printf("\e[%zuH%s\e[2K%zu\t%s", screenline, color, i, modes[i]);
+		char* desc = StringOfCrtcMode(modes[i]);
+		const char* print_desc = desc ? desc : "<unknown - error>";
+		printf("\e[%zuH%s\e[2K%zu\t%s", screenline, color, i, print_desc);
+		delete[] desc;
 	}
 	printf("\e[m\e[J");
 	fflush(stdout);
@@ -149,28 +245,15 @@ bool ParseBool(const char* str, bool def = false)
 	return !isfalse;
 }
 
-bool PassesFilter(const char* modestr, Filter* filt)
+bool PassesFilter(struct dispmsg_crtc_mode mode, Filter* filt)
 {
 	if ( filt->includeall ) { return true; }
-	char* widthstr = NULL;
-	char* heightstr = NULL;
-	char* bppstr = NULL;
-	char* unsupportedstr = NULL;
-	char* textstr = NULL;
-	if ( !ReadParamString(modestr,
-	                      "width", &widthstr,
-	                      "height", &heightstr,
-	                      "bpp", &bppstr,
-	                      "unsupported", &unsupportedstr,
-	                      "text", &textstr,
-	                      NULL) )
-		error(1, errno, "Can't parse video mode: %s", modestr);
-	size_t width = ParseSizeT(widthstr, 0); delete[] widthstr;
-	size_t height = ParseSizeT(heightstr, 0); delete[] heightstr;
-	size_t bpp = ParseSizeT(bppstr, 0); delete[] bppstr;
-	bool unsupported = ParseBool(unsupportedstr); delete[] unsupportedstr;
+	size_t width = mode.view_xres;
+	size_t height = mode.view_yres;
+	size_t bpp = mode.fb_format;
+	bool unsupported = (mode.control & 1) == 0;
 	bool supported = !unsupported;
-	bool text = ParseBool(textstr); delete[] textstr;
+	bool text = false; // TODO: How does <sys/display.h> tell this?
 	bool graphics = !text;
 	if ( unsupported && !filt->includeunsupported )
 		return false;
@@ -190,7 +273,7 @@ bool PassesFilter(const char* modestr, Filter* filt)
 	return true;
 }
 
-void FilterModes(char** modes, size_t* nummodesptr, Filter* filt)
+void FilterModes(struct dispmsg_crtc_mode* modes, size_t* nummodesptr, Filter* filt)
 {
 	size_t innum = *nummodesptr;
 	size_t outnum = 0;
@@ -198,8 +281,6 @@ void FilterModes(char** modes, size_t* nummodesptr, Filter* filt)
 	{
 		if ( PassesFilter(modes[i], filt) )
 			modes[outnum++] = modes[i];
-		else
-			delete[] modes[i];
 	}
 	*nummodesptr = outnum;
 }
@@ -318,11 +399,10 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	char* prevmode = GetCurrentMode();
-	if ( !prevmode ) { perror("Unable to detect current mode"); exit(1); }
+	struct dispmsg_crtc_mode prevmode = GetCurrentMode();
 #if 1
 	size_t nummodes = 0;
-	char** modes = GetAvailableModes(&nummodes);
+	struct dispmsg_crtc_mode* modes = GetAvailableModes(&nummodes);
 	if ( !modes ) { perror("Unable to detect available video modes"); exit(1); }
 
 	if ( !nummodes )
@@ -356,7 +436,7 @@ Try make sure the desired driver is loaded and is configured correctly.\n");
 		}
 	}
 
-	const char* mode = modes[selection];
+	struct dispmsg_crtc_mode mode = modes[selection];
 	if ( !SetCurrentMode(mode) )
 	{
 		error(1, errno, "Unable to set video mode: %s", mode);
