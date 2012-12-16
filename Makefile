@@ -6,6 +6,11 @@ ifneq ($(BUILD_LIBC),0)
 endif
 ALLMODULES:=$(ALLMODULES) libc
 
+ifneq ($(BUILD_DISPD),0)
+  MODULES:=$(MODULES) dispd
+endif
+ALLMODULES:=$(ALLMODULES) dispd
+
 ifneq ($(BUILD_GAMES),0)
   MODULES:=$(MODULES) games
 endif
