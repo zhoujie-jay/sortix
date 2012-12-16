@@ -35,10 +35,10 @@
 
 int status = 0;
 
-const char* getenv_safe(const char* name)
+const char* getenv_safe(const char* name, const char* def = "")
 {
 	const char* ret = getenv(name);
-	return ret ? ret : "";
+	return ret ? ret : def;
 }
 
 void on_sigint(int /*signum*/)
@@ -279,7 +279,11 @@ int get_and_run_command(FILE* fp, const char* fpname, bool interactive,
 		                  | TERMMODE_LINEBUFFER
 		                  | TERMMODE_ECHO;
 		settermmode(fd, termmode);
-		printf("\e[32mroot@sortix \e[36m%s #\e[37m ", getenv_safe("PWD"));
+		const char* print_username = getenv_safe("USERNAME", "root");
+		const char* print_hostname = getenv_safe("HOSTNAME", "sortix");
+		const char* print_dir = getenv_safe("PWD", "?");
+		printf("\e[32m%s@%s \e[36m%s #\e[37m ", print_username, print_hostname,
+		       print_dir);
 		fflush(stdout);
 	}
 
