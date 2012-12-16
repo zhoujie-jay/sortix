@@ -54,6 +54,10 @@ namespace Video {
 void Init(TextBufferHandle* textbufhandle);
 bool RegisterDriver(const char* name, VideoDriver* driver);
 char* GetCurrentMode();
+char* GetDriverName(size_t index);
+size_t GetCurrentDriverIndex();
+size_t GetNumDrivers();
+size_t LookupDriverIndexOfMode(const char* mode);
 bool Supports(const char* mode);
 bool SwitchMode(const char* mode);
 char** GetModes(size_t* modesnum);

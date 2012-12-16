@@ -120,6 +120,26 @@ void Init(TextBufferHandle* thetextbufhandle)
 	currentmode = NULL;
 }
 
+size_t GetCurrentDriverIndex()
+{
+	ScopedLock lock(&videolock);
+	return currentdrvid;
+}
+
+size_t GetNumDrivers()
+{
+	ScopedLock lock(&videolock);
+	return numdrivers;
+}
+
+char* GetDriverName(size_t index)
+{
+	ScopedLock lock(&videolock);
+	if ( numdrivers <= index || !drivers[index].name )
+		return String::Clone("none");
+	return String::Clone(drivers[index].name);
+}
+
 static DriverEntry* CurrentDriverEntry()
 {
 	if ( currentdrvid == SIZE_MAX ) { return NULL; }
@@ -411,6 +431,27 @@ bool Supports(const char* mode)
 	delete[] drivername;
 	if ( !drvent ) { return false; }
 	return drvent->driver->Supports(mode);
+}
+
+size_t LookupDriverIndexOfMode(const char* mode)
+{
+	const char* needle = "driver=";
+	size_t needlelen = strlen(needle);
+	while ( *mode )
+	{
+		if ( !strncmp(mode, needle, needlelen) )
+		{
+			const char* name = mode + needlelen;
+			size_t namelen = strcspn(name, ",");
+			ScopedLock lock(&videolock);
+			for ( size_t i = 0; i < numdrivers; i++ )
+				if ( !strncmp(drivers[i].name, name, namelen) )
+					return i;
+			return SIZE_MAX;
+		}
+		mode += strcspn(mode, ",") + 1;
+	}
+	return SIZE_MAX;
 }
 
 off_t FrameSize()
