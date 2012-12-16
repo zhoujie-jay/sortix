@@ -77,6 +77,7 @@
 #define SYSCALL_TCGETWINSIZE 52
 #define SYSCALL_RAISE 53
 #define SYSCALL_OPENAT 54
-#define SYSCALL_MAX_NUM 55 /* index of highest constant + 1 */
+#define SYSCALL_DISPMSG_ISSUE 55
+#define SYSCALL_MAX_NUM 56 /* index of highest constant + 1 */
 
 #endif

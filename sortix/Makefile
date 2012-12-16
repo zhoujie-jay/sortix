@@ -92,6 +92,7 @@ crc32.o \
 descriptors.o \
 device.o \
 directory.o \
+dispmsg.o \
 elf.o \
 filesystem.o \
 fs/devfs.o \

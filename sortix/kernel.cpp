@@ -66,6 +66,7 @@
 #include "mount.h"
 #include "directory.h"
 #include "interrupt.h"
+#include "dispmsg.h"
 #include "fs/devfs.h"
 
 // Keep the stack size aligned with $CPU/base.s
@@ -276,6 +277,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	// Initialize the BGA driver.
 	BGA::Init();
+
+	// Initialize the Display Message framework.
+	DisplayMessage::Init();
 
 	// Now that the base system has been loaded, it's time to go threaded. First
 	// we create an object that represents this thread.
