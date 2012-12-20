@@ -72,6 +72,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ESPIPE: return "Cannot seek on stream";
 	case ENAMETOOLONG: return "Filename too long";
 	case ELOOP: return "Too many levels of symbolic links";
+	case EMLINK: return "Too many links";
 	default: return "Unknown error condition";
 	}
 }

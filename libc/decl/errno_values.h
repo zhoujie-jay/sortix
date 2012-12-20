@@ -43,6 +43,7 @@
 #define ESPIPE 51
 #define ENAMETOOLONG 52
 #define ELOOP 53
+#define EMLINK 54
 
 #define EOPNOTSUPP ENOTSUP
 
