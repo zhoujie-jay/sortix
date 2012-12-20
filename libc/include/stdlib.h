@@ -60,6 +60,7 @@ void free(void*);
 long labs(long);
 long long llabs(long long);
 void* malloc(size_t);
+int mbtowc(wchar_t *restrict, const char* restrict, size_t);
 #if !defined(_SORTIX_SOURCE)
 char* mktemp(char* templ);
 #endif
@@ -74,6 +75,7 @@ unsigned long strtoul(const char* restrict, char** restrict, int);
 unsigned long long strtoull(const char* restrict, char** restrict, int);
 long long strtoll(const char* restrict, char** restrict, int);
 int unsetenv(const char*);
+int wctomb(char*, wchar_t);
 
 #if defined(_SORTIX_SOURCE) || defined(_WANT_SORTIX_ENV)
 const char* const* getenviron(void);
@@ -110,7 +112,6 @@ lldiv_t lldiv(long long, long long);
 long lrand48(void);
 int mblen(const char*, size_t);
 size_t mbstowcs(wchar_t *restrict, const char* restrict, size_t);
-int mbtowc(wchar_t *restrict, const char* restrict, size_t);
 char* mkdtemp(char*);
 int mkstemp(char*);
 long mrand48(void);
@@ -132,7 +133,6 @@ long double strtold(const char* restrict, char** restrict);
 int system(const char*);
 int unlockpt(int);
 size_t wcstombs(char* restrict, const wchar_t *restrict, size_t);
-int wctomb(char*, wchar_t);
 
 #if __POSIX_OBSOLETE <= 200801
 int rand_r(unsigned *);

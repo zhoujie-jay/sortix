@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012.
 
     This file is part of the Sortix C Library.
 
@@ -17,17 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    mbtowc.cpp
-    Convert a multibyte sequence to a wide character.
+    wctomb.cpp
+    Convert a wide character to a multibyte sequence.
 
 *******************************************************************************/
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
 
 // TODO: This function is unpure and should be removed.
-extern "C" int mbtowc(wchar_t* pwd, const char* s, size_t n)
+extern "C" int wctomb(char* s, wchar_t wc)
 {
-	return mbrtowc(pwd, s, n, NULL);
+	return wcrtomb(s, wc, NULL);
 }

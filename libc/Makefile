@@ -71,6 +71,7 @@ heap.o \
 integer.o \
 localtime.o \
 localtime_r.o \
+mbrtowc.o \
 mbtowc.o \
 memccpy.o \
 memchr.o \
@@ -114,6 +115,8 @@ timespec.o \
 ungetc.o \
 vfscanf.o \
 vsscanf.o \
+wcrtomb.o \
+wctomb.o \
 
 HOSTEDOBJS=\
 access.o \
