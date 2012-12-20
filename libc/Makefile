@@ -117,6 +117,7 @@ vfscanf.o \
 vsscanf.o \
 wcrtomb.o \
 wctomb.o \
+wctype.o \
 
 HOSTEDOBJS=\
 access.o \
