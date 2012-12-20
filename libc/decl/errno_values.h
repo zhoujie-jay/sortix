@@ -44,6 +44,7 @@
 #define ENAMETOOLONG 52
 #define ELOOP 53
 #define EMLINK 54
+#define ENXIO 55
 
 #define EOPNOTSUPP ENOTSUP
 

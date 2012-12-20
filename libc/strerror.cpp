@@ -73,6 +73,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ENAMETOOLONG: return "Filename too long";
 	case ELOOP: return "Too many levels of symbolic links";
 	case EMLINK: return "Too many links";
+	case ENXIO: return "No such device or address";
 	default: return "Unknown error condition";
 	}
 }
