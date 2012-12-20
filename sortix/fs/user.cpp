@@ -214,6 +214,8 @@ public:
 	virtual int settermmode(ioctx_t* ctx, unsigned mode);
 	virtual int gettermmode(ioctx_t* ctx, unsigned* mode);
 	virtual int poll(ioctx_t* ctx, PollNode* node);
+	virtual int rename_here(ioctx_t* ctx, Ref<Inode> from, const char* oldname,
+	                        const char* newname);
 
 private:
 	bool SendMessage(Channel* channel, size_t type, void* ptr, size_t size,
@@ -1119,6 +1121,28 @@ int Unode::gettermmode(ioctx_t* ctx, unsigned* mode)
 int Unode::poll(ioctx_t* /*ctx*/, PollNode* /*node*/)
 {
 	return errno = ENOTSUP, -1;
+}
+
+int Unode::rename_here(ioctx_t* /*ctx*/, Ref<Inode> from, const char* oldname,
+                       const char* newname)
+{
+	Channel* channel = server->Connect();
+	if ( !channel )
+		return -1;
+	int ret = -1;
+	struct fsm_req_rename msg;
+	msg.olddirino = this->ino;
+	msg.newdirino = from->ino;
+	msg.oldnamelen = strlen(oldname);
+	msg.newnamelen = strlen(newname);
+	size_t extra = msg.oldnamelen + msg.newnamelen;
+	if ( SendMessage(channel, FSM_REQ_RENAME, &msg, sizeof(msg), extra) &&
+	     channel->KernelSend(&kctx, oldname, msg.oldnamelen) &&
+	     channel->KernelSend(&kctx, newname, msg.newnamelen) &&
+	     RecvMessage(channel, FSM_RESP_SUCCESS, NULL, 0) )
+		ret = 0;
+	channel->KernelClose();
+	return ret;
 }
 
 //

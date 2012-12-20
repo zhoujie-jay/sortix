@@ -393,5 +393,72 @@ int Dir::symlink(ioctx_t* /*ctx*/, const char* oldname, const char* filename)
 	return -1;
 }
 
+int Dir::rename_here(ioctx_t* ctx, Ref<Inode> from, const char* oldname,
+                     const char* newname)
+{
+	if ( IsDotOrDotDot(oldname) || IsDotOrDotDot(newname) )
+		return errno = EINVAL, -1;
+
+	// TODO: Check whether oldpath is an ancestor of newpath.
+
+	// Avoid deadlocks by locking directories in the right order.
+	Dir* from_dir = (Dir*) from.Get();
+	kthread_mutex_t* mutex_ptr1;
+	kthread_mutex_t* mutex_ptr2;
+	if ( from_dir->ino < this->ino )
+		mutex_ptr1 = &from_dir->dirlock,
+		mutex_ptr2 = &this->dirlock;
+	else if ( from_dir->ino == this->ino )
+	{
+		mutex_ptr1 = &this->dirlock,
+		mutex_ptr2 = NULL;
+		if ( !strcmp(oldname, newname) )
+			return 0;
+	}
+	else
+		mutex_ptr1 = &this->dirlock,
+		mutex_ptr2 = &from_dir->dirlock;
+	ScopedLock lock1(mutex_ptr1);
+	ScopedLock lock2(mutex_ptr2);
+
+	size_t from_index = from_dir->FindChild(oldname);
+	if ( from_index == SIZE_MAX )
+		return errno = ENOENT, -1;
+
+	Ref<Inode> the_inode = from_dir->children[from_index].inode;
+
+	size_t to_index = this->FindChild(newname);
+	if ( to_index != SIZE_MAX )
+	{
+		Ref<Inode> existing = this->children[to_index].inode;
+
+		if ( existing->dev == the_inode->dev &&
+		     existing->ino == the_inode->ino )
+			return 0;
+
+		if ( S_ISDIR(existing->type) )
+		{
+			Dir* existing_dir = (Dir*) existing.Get();
+			if ( !S_ISDIR(the_inode->type) )
+				return errno = EISDIR, -1;
+			assert(&existing_dir->dirlock != mutex_ptr1);
+			assert(&existing_dir->dirlock != mutex_ptr2);
+			if ( existing_dir->rmdir_me(ctx) != 0 )
+				return -1;
+		}
+		this->children[to_index].inode = the_inode;
+	}
+	else
+		if ( !this->AddChild(newname, the_inode) )
+			return -1;
+
+	from_dir->RemoveChild(from_index);
+
+	if ( S_ISDIR(the_inode->type) )
+		the_inode->link_raw(ctx, "..", Ref<Inode>(this));
+
+	return 0;
+}
+
 } // namespace KRAMFS
 } // namespace Sortix

@@ -396,6 +396,28 @@ int Descriptor::symlink(ioctx_t* ctx, const char* oldname, const char* filename)
 	return ret;
 }
 
+int Descriptor::rename_here(ioctx_t* ctx, Ref<Descriptor> from,
+                            const char* oldpath, const char* newpath)
+{
+	char* olddir_elem;
+	char* newdir_elem;
+	Ref<Descriptor> olddir = OpenDirContainingPath(ctx, from, oldpath,
+	                                               &olddir_elem);
+	if ( !olddir ) return -1;
+
+	Ref<Descriptor> newdir = OpenDirContainingPath(ctx, Ref<Descriptor>(this),
+	                                               newpath, &newdir_elem);
+	if ( !newdir ) { delete[] olddir_elem; return -1; }
+
+	int ret = newdir->vnode->rename_here(ctx, olddir->vnode, olddir_elem,
+	                                     newdir_elem);
+
+	delete[] newdir_elem;
+	delete[] olddir_elem;
+
+	return ret;
+}
+
 ssize_t Descriptor::readlink(ioctx_t* ctx, char* buf, size_t bufsize)
 {
 	return vnode->readlink(ctx, buf, bufsize);

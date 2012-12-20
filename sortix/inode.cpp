@@ -281,4 +281,12 @@ int AbstractInode::poll(ioctx_t* /*ctx*/, PollNode* /*node*/)
 	return errno = ENOTSUP, -1;
 }
 
+int AbstractInode::rename_here(ioctx_t* /*ctx*/, Ref<Inode> /*from*/,
+                               const char* /*oldname*/, const char* /*newname*/)
+{
+	if ( inode_type == INODE_TYPE_DIR )
+		return errno = EBADF, -1;
+	return errno = ENOTDIR, -1;
+}
+
 } // namespace Sortix

@@ -79,6 +79,8 @@ public:
 	int settermmode(ioctx_t* ctx, unsigned mode);
 	int gettermmode(ioctx_t* ctx, unsigned* mode);
 	int poll(ioctx_t* ctx, PollNode* node);
+	int rename_here(ioctx_t* ctx, Ref<Descriptor> from, const char* oldpath,
+	                const char* newpath);
 
 private:
 	Ref<Descriptor> open_elem(ioctx_t* ctx, const char* filename, int flags,

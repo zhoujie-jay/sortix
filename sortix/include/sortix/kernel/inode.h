@@ -89,6 +89,8 @@ public:
 	virtual int settermmode(ioctx_t* ctx, unsigned mode) = 0;
 	virtual int gettermmode(ioctx_t* ctx, unsigned* mode) = 0;
 	virtual int poll(ioctx_t* ctx, PollNode* node) = 0;
+	virtual int rename_here(ioctx_t* ctx, Ref<Inode> from, const char* oldname,
+	                        const char* newname) = 0;
 
 };
 
@@ -154,6 +156,8 @@ public:
 	virtual int settermmode(ioctx_t* ctx, unsigned mode);
 	virtual int gettermmode(ioctx_t* ctx, unsigned* mode);
 	virtual int poll(ioctx_t* ctx, PollNode* node);
+	virtual int rename_here(ioctx_t* ctx, Ref<Inode> from, const char* oldname,
+	                        const char* newname);
 
 };
 

@@ -301,7 +301,18 @@ struct fsm_req_rmdir
 	//char name[namelen];
 };
 
-#define FSM_MSG_NUM 37
+#define FSM_REQ_RENAME 37
+struct fsm_req_rename
+{
+	ino_t olddirino;
+	ino_t newdirino;
+	size_t oldnamelen;
+	size_t newnamelen;
+	//char oldname[oldnamelen];
+	//char newname[newnamelen];
+};
+
+#define FSM_MSG_NUM 38
 
 #if defined(__cplusplus)
 } /* extern "C" */

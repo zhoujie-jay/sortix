@@ -186,6 +186,15 @@ int Vnode::symlink(ioctx_t* ctx, const char* oldname, const char* filename)
 	return inode->symlink(ctx, oldname, filename);
 }
 
+int Vnode::rename_here(ioctx_t* ctx, Ref<Vnode> from, const char* oldname,
+                       const char* newname)
+{
+	if ( from->dev != dev )
+		return errno = EXDEV, -1;
+	// TODO: Force the same mount point here, like Linux does.
+	return inode->rename_here(ctx, from->inode, oldname, newname);
+}
+
 ssize_t Vnode::readlink(ioctx_t* ctx, char* buf, size_t bufsiz)
 {
 	return inode->readlink(ctx, buf, bufsiz);

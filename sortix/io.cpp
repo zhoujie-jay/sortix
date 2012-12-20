@@ -510,6 +510,36 @@ static int sys_tcgetwinsize(int fd, struct winsize* ws)
 	return desc->tcgetwinsize(&ctx, ws);
 }
 
+static int sys_renameat_inner(int olddirfd, const char* oldpath,
+                              int newdirfd, const char* newpath)
+{
+	const char* oldrelpath = oldpath;
+	Ref<Descriptor> olddir(PrepareLookup(&oldrelpath, olddirfd));
+	if ( !olddir )
+		return -1;
+
+	const char* newrelpath = newpath;
+	Ref<Descriptor> newdir(PrepareLookup(&newrelpath, newdirfd));
+	if ( !newdir )
+		return -1;
+
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return newdir->rename_here(&ctx, olddir, oldrelpath, newrelpath);
+}
+
+static int sys_renameat(int olddirfd, const char* oldpath,
+                        int newdirfd, const char* newpath)
+{
+	char* oldpathcopy = GetStringFromUser(oldpath);
+	if ( !oldpathcopy ) return -1;
+	char* newpathcopy = GetStringFromUser(newpath);
+	if ( !newpathcopy ) { delete[] oldpathcopy; return -1; }
+	int ret = sys_renameat_inner(olddirfd, oldpathcopy, newdirfd, newpathcopy);
+	delete[] newpathcopy;
+	delete[] oldpathcopy;
+	return ret;
+}
+
 void Init()
 {
 	Syscall::Register(SYSCALL_ACCESS, (void*) sys_access);
@@ -517,8 +547,8 @@ void Init()
 	Syscall::Register(SYSCALL_CHMOD, (void*) sys_chmod);
 	Syscall::Register(SYSCALL_CHOWN, (void*) sys_chown);
 	Syscall::Register(SYSCALL_CLOSE, (void*) sys_close);
-	Syscall::Register(SYSCALL_DUP, (void*) sys_dup);
 	Syscall::Register(SYSCALL_DUP2, (void*) sys_dup2);
+	Syscall::Register(SYSCALL_DUP, (void*) sys_dup);
 	Syscall::Register(SYSCALL_FACCESSAT, (void*) sys_faccessat);
 	Syscall::Register(SYSCALL_FCHDIR, (void*) sys_fchdir);
 	Syscall::Register(SYSCALL_FCHMODAT, (void*) sys_fchmodat);
@@ -541,6 +571,7 @@ void Init()
 	Syscall::Register(SYSCALL_PWRITE, (void*) sys_pwrite);
 	Syscall::Register(SYSCALL_READDIRENTS, (void*) sys_readdirents);
 	Syscall::Register(SYSCALL_READ, (void*) sys_read);
+	Syscall::Register(SYSCALL_RENAMEAT, (void*) sys_renameat);
 	Syscall::Register(SYSCALL_RMDIR, (void*) sys_rmdir);
 	Syscall::Register(SYSCALL_SEEK, (void*) sys_seek);
 	Syscall::Register(SYSCALL_SETTERMMODE, (void*) sys_settermmode);

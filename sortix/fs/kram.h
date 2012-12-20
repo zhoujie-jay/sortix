@@ -82,6 +82,8 @@ public:
 	virtual int rmdir_me(ioctx_t* ctx);
 	virtual int symlink(ioctx_t* ctx, const char* oldname,
 	                    const char* filename);
+	virtual int rename_here(ioctx_t* ctx, Ref<Inode> from, const char* oldname,
+	                        const char* newname);
 
 private:
 	size_t FindChild(const char* filename);
