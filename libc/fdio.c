@@ -146,6 +146,7 @@ int fdio_install(FILE* fp, const char* mode, int fd)
 			case 'w': fdio->flags |= FDIO_WRITING; break;
 			case '+': fdio->flags |= FDIO_READING | FDIO_WRITING; break;
 			case 'a': fdio->flags |= FDIO_WRITING | FDIO_APPEND; break;
+			case 't': break;
 			case 'b': break;
 			default: errno = EINVAL; free(fdio); return 0;
 		}
@@ -200,7 +201,11 @@ FILE* fopen(const char* path, const char* mode)
 				omode = O_RDWR;
 				break;
 			case 'b': break;
-			default: errno = EINVAL; return 0;
+			case 't': break;
+			default:
+				fprintf(stderr, "Unsupported fopen mode: '%s'\n", origmode);
+				errno = EINVAL;
+				return 0;
 		}
 	}
 	mode = origmode;
