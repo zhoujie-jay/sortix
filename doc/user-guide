@@ -1,0 +1,546 @@
+Sortix User Guide
+=================
+
+Thanks for your interest in Sortix! This document will describe how to use it
+and what features are available. Sortix is a small self-compiling Unix-like
+Operating System developed since 2011. The system is free software licensed
+under the GNU General Public License and other licenses.
+
+Introduction
+------------
+
+If you are using a Sortix live medium or a prebuilt harddisk image, you will
+likely be met with a bootloader. Normally, GNU GRUB is used as the Sortix
+bootloader. In that case, simply pick Sortix from the boot menu. If you have
+installed Sortix manually, you will have to configure your bootloader to boot
+Sortix.
+
+The bootloader will then load the Sortix kernel and start the system. The
+initialization process will spawn a shell shortly. The command line is similar
+to those of Unix systems and many common Unix commands are available.
+
+Keyboard Layout
+---------------
+
+Only the US Keyboard layout remains supported at this time. Adding new layouts
+to the kernel is simple, but the system only supports ASCII text, making support
+for international keyboard layouts pointless at this time. Eventually, a program
+in user-space will be able to decode the keyboard scancodes, making it no longer
+a kernel problem.
+
+Changing the Video Mode
+-----------------------
+
+After boot, the screen resolution will be default be in VGA text mode. This only
+allows 80 columns and 25 rows of 16 color ASCII text. Naturally, this is very
+limited but works on most systems.
+
+You can change the display resolution using the `chvideomode` program. However,
+you need a suitable kernel driver to do the mode setting. The current release
+only has a simple BGA driver, which works in virtual machines such as Qemu,
+VirtualBox or Bochs. A VBE driver also exists, however, it is not yet merged
+into the mainline version because it causes problems on x86_64 due to missing
+BIOS call support. Note that some programs does not work outside of VGA Text
+Mode because the dispd library doesn't yet have a VGA->framebuffer converter.
+
+The BGA driver can support virtually any resolution, but since the interface
+fails to report which resolutions are appropriate in the current context, I have
+simply hard-coded whatever resolutions I found reasonable when I wrote it.
+
+Powering Off
+------------
+
+Unless you are using a harddisk image or your initrd has been specially
+configured to mount a permanent root filesystem, then this environment is
+entirely temporary. You will loose all modifications when powering off the
+current system.
+
+The system automatically reboots when the initial shell exits. You can exit the
+current shell by entering `exit`, which if entered from the initial shell will
+reboot the entire system (loosing any changes if the root filesystem is not
+permanent). Additionally, you can press Control-D ('^D') to exit the current
+shell, but the initial shell will require you to enter a literal `exit` before
+it exits and the system reboots.
+
+The init process will restart the shell in the event that it crashes or dies
+from a signal. You can use the `kill $$` command to kill the current shell, and
+if it is the initial shell, you will get a new shell.
+
+More Documentation
+------------------
+
+The system documentation (at least what has been documented so far) is installed
+in the /share/doc directory. You can view these documents (well, the ones that
+are plain text, there is no `man` program yet) using the `editor` program, which
+you exit by pressing Control-Q ('^Q'). It is probably a good idea to change
+the resolution using the `chvideomode` program if drivers are available.
+
+If your release contains third party software, then this directory may also
+contain documentation for this software, which may or may not be easily
+viewable using the editor.
+
+Filesystem Structure
+--------------------
+
+This as an incomplete list of the common top level directories in Sortix.
+
+* /boot - Kernel images, initrd images.
+* /dev - Device filesystem.
+* /etc - System-wide configuration.
+* /home - User directories.
+* /include - Header files.
+* /root - Directory of the root user.
+* /share - Architecture independent files.
+* /share/doc - Documentation.
+* /src - System source code.
+* /tmp - Temporary files.
+* /$cputype - Files for $cputype.
+* /$cputype/bin - Programs for $cputype.
+* /$cputype/lib - Shared libaries for $cputype.
+
+Some of these directories not be present or empty on your installation.
+
+Using the Shell
+---------------
+
+Sortix features a homemade shell, which at best can be described as hacky.
+Despite that, it does have some key features. Here are the features that are
+supported:
+
+* Processes can be started in the usual Unix manner.
+* Background tasks ('&').
+* Standard output redirection ('>').
+* Piping stdin from a task to stdin of another ('|').
+* Stopping the currently running task (Control-C, '^C').
+* Waiting for a task to complete and executing the next (';').
+* Setting environmental variables ('FOO=bar').
+* Using $FOO to insert an environmental variable.
+* Listing all environmental variable ('env').
+* Setting the hostname ('HOSTNAME=sortix-pc').
+* Changing the current directory ('cd /home').
+* Removing an environmental variable ('unset FOO').
+* Clearing all enviromental variables ('clearenv').
+* Executing shell scripts ('sh script param1 param2').
+* Escaping some special characters ('\').
+* Comments ('#').
+* Exiting the shell ('exit') ('exit 42').
+* Basic wildcards ('foo*.bar').
+* Clearing the screen (Control-L, '^L').
+* Deleting the last typed word (Control-W, '^W').
+
+These features are missing from the shell:
+
+* Input redirection ('<') ('<<').
+* Quotes (''') ('"').
+* Proper shell wildcard support ('*/*.foo').
+* Escaping newline characters.
+* And much more; the shell remains hacky.
+
+Included Programs
+-----------------
+
+Sortix comes with a number of home-made programs. Here is an overview:
+
+* `asteroids` - remake of the classic asteroids game
+* `benchctxswitch` - useless benchmark
+* `benchsyscall` - slightly less useless benchmark
+* `calc` - reverse polish calculator
+* `cat` - display file on terminal
+* `chroot` - change the root directory
+* `chvideomode` - change display resolution
+* `clear` - clear terminal
+* `colormake` - colorful version of make (if make is available)
+* `column` - format lines nicely in columns
+* `conway` - game of life simulator
+* `cp` - copy file
+* `date` - display current time and date
+* `dispd` - non-existent display server
+* `du` - report file and directory disk usage
+* `echo` - print command line arguments
+* `editor` - text editor
+* `extfs` - ext2 filesystem server
+* `find` - recursively list files
+* `head` - display start of file
+* `help` - show list of available programs
+* `init` - system management deamon
+* `initrdfs` - tool for examining initrds
+* `install` - installs a program into a system directory
+* `kernelinfo` - display kernel information
+* `kill` - send signal to process
+* `ln` - create filesystem links
+* `ls` - list contents of directory
+* `mbrfs` - create partitions for master boot record block device
+* `memstat` - print memory information
+* `mkdir` - create directory
+* `mkinitrd` - create an initrd
+* `mv` - move a file
+* `mxmpp` - silly preprocessor
+* `mxsh` - the shell
+* `pager` - display file page by page
+* `pong` - remake of the classic pong game
+* `pwd` - print current directory path
+* `rm` - remove file
+* `rmdir` - remove empty directory
+* `sh` - alias for the shell
+* `snake` - remake of the classic snake game
+* `tail` - display end of file
+* `time` - measure program running time
+* `type` - type raw characters directly into the terminal
+* `uname` - system information
+* `uptime` - time since initialization
+* `wc` - count words and lines
+* `which` - find path to command
+
+Third Party Software
+--------------------
+
+In addition, a selection of third-party software has been ported and may be
+present on your installation. In particular, the following software packages are
+known to work at some level of stability:
+
+* binutils
+* bison
+* bochs
+* bzip2
+* cairo
+* dbus
+* diffutils
+* fontconfig
+* freetype
+* gcc
+* gettext
+* git
+* grep
+* groff
+* groff
+* gzip
+* hello (GNU)
+* libassuan
+* libatk
+* libav
+* libcairo
+* libdaala
+* libexpat
+* libffi
+* libgcrypt
+* libgdk-pixbuf
+* libglib
+* libGL (Mesa)
+* libGLU (Mesa)
+* libgmp
+* libgnutls
+* libgpg-error
+* libgtk
+* libharfbuzz
+* libiconv
+* libjpeg
+* libksba
+* libmpc
+* libmpfr
+* libogg
+* libpango
+* libpng
+* libtheora
+* libvorbis
+* libwayland
+* libxkbcommon
+* m4
+* make
+* nettle
+* openssl
+* patch (GNU)
+* pixman
+* python
+* quake
+* sdl
+* sed (GNU)
+* tar (GNU)
+* xz
+* zlib
+* (and more)
+
+More software will be ported in the future as the system matures. Your release
+may not contain all the ported software because of disk space constraints or
+the stability/usefulness of the package or the difficulty to build.
+
+Included Games
+--------------
+
+The system comes with a number of small casual games. Note that some games
+require running in the correct display mode before they will function.
+
+### Pong ###
+
+The program `pong` implements a simple pong clone that uses the VGA text mode
+buffer. Player one controls using `W` and `S`, while player two controls using
+the arrow keys. This program is only available in VGA mode.
+
+### Snake ###
+
+This is a simple snake clone that only works in VGA text mode. You control the
+snake using the `W`, `S`, `A`, and `D` keys. To run, start the program `snake`.
+This program is only available in VGA mode.
+
+### Conway's Game of Life ###
+
+You can do turing-complete calculations in the classic Game of Life in the VGA
+text mode buffer. Simply start the program `conway` and use `W`, `A`, `S`, and
+`D` to navigate the screen. `Space` toggles the current point between live and
+dead. `C` clears the entire screen, and `R` starts and stops the simulation.
+This program is only available in VGA mode.
+
+### Asteroids ###
+
+Mine for crystals in an asteroid field! Start the `asteroids` program and if you
+have the needed driver support, you can explore space in a gloriously rendered
+asteroid field of bitmap graphics. Use the arrow keys to navigate. Avoid the
+white asteroids as they will destroy your space ship. Use the `space` key to
+fire a laser beam that breaks the asteroid apart, but beware that the fragments
+will accelerate. Alternatively, use the `Left Control` key to shoot a fireworks
+of laser beams, but it doesn't reach as far and may split a big asteroid into
+many small dangerous asteroids. Your goal is to collect as many blue crystals as
+possible without dying. You can use the `B` key to spawn a bot that will
+cluelessly follow you and shoot whatever asteroids it deems dangerous. You can
+use the `A` key to spawn a black hole (or just a big attracting thing).
+
+System Source Code
+------------------
+
+The entire system source code (except third party components) is installed into
+the /src directory. You can use the `editor` program to view and edit the system
+source code. If your release contains the GNU compiler collection (gcc), you can
+even modify the system and compile custom programs.
+
+Editing Files
+-------------
+
+You can use the `editor` program to edit files. The editor itself is fairly
+simple to use. It currently supports these keyboard commands:
+
+* `Ctrl-Q` - Exit
+* `Ctrl-O` - Open a file
+* `Ctrl-S` - Save a file
+* `Ctrl-I` - Go to line
+* `ESC tabsize <desired-tab-size>` - change tab size
+* `ESC margin <column>` - add right margin at column
+* `ESC popen <command>` - open command output
+* `ESC language <c or c++>` - enable syntax highlighting
+
+It is not currently possible to port third party editors because the terminal
+implementation is not standards-compliant enough and is seriously lacking.
+
+Partitions
+----------
+
+If the initialization code didn't automatically create block devices for your
+partitions, but the harddisk block device itself is supported, you can use the
+`mbrfs` program to create block devices for the partitions.
+
+    mbrfs /dev/ata0
+
+The program will output the names of the new block devices.
+
+Mounting Filesystems
+--------------------
+
+The `extfs` filesystem server translates a block device formatted with the
+second extended filesystem and mounts it at an empty directory. The filesystem
+may need to be carefully configured as not all ext2 features are currently
+supported. In particular, only the `large_file` and `filetype` features are
+supported. There is no support for formatting or checking filesystems yet, this
+will have to be done from an external system. You must take care to send the
+filesystem server a SIGTERM signal to shut down when you are unfinished,
+otherwise the data may not have been synced to disk. This will be done
+automatically if the root filesystem was mounted by the initrd. If the device
+/dev/ata0p1 contasins an ext2 filesystem, then it can be mounted using:
+
+    mkdir /fs
+    extfs /dev/ata0 /fs
+
+You can then access the filesystem at /fs. There is no real unmount support and
+if the file system server shuts down, the system may hang trying to communicate
+with a server that isn't there.
+
+Graphical User Interface
+------------------------
+
+The `dispd` display server is still under development. Sortix does not feature
+any documented graphical user interface at the moment.
+
+Network
+-------
+
+Network support is still under development and is not documented at this point.
+Unix sockets are available.
+
+Building Sortix under Sortix
+----------------------------
+
+You can build Sortix under itself and made modifications to it. It is not yet
+possible to build all the the third party software used to build itself, but you
+can use the system to improve it until it is possible to build third party
+software under it.
+
+You need a version of Sortix that ships its own source code in /src and contains
+a copy of the GNU Compiler Collection (gcc). Additionally, you should be booting
+from a harddisk so that the new kernel is used after a reboot, otherwise you
+will have to be satisfied with only using a new user-land.
+
+You can use the `colormake` program instead of regular `make` if you want
+colored output, which eases spotting compile warnings and errors. This program
+simply invokes the real `make` and colors its output.
+
+The /src/system directory contains a makefile that eases rebuilding the entire
+system automatically. To rebuild the entire system simply run:
+
+    cd /src/system
+    make system
+
+This will recompile the entire operating system and install it into the root
+directory as it progresses. You will be running a new version of everything upon
+completion, except the kernel and programs were previously started will still
+be running the old version. If the root filesystem is permanent and the computer
+has been configured to boot from it, then you can reboot the system by exiting
+the initial shell. You will then be running an entirely new system.
+
+In general, the projects that are part of the core system can be easily built
+and installed with the provided makefiles. In general, they can be built with
+this simple sequence:
+
+    cd /src/package
+    make
+    make install
+
+If you wish to install the package somewhere than the default location, you can
+use the `PREFIX` (and, depending on your needs, `EXEC_PREFIX`, `BINDIR`,
+`LIBDIR`, ...) environmental variable to specify where the program will be
+installed:
+
+    make PREFIX=/local
+    make PREFIX=/local install
+
+Additionally, should you require that the package should be installed into a
+temporary location before it is fully installed, use the `DESTDIR` environmental
+variable:
+
+    make PREFIX=/local
+    make PREFIX=/local DESTDIR=/temporary-location
+
+This will effectively install the package into `/temporary-location/local`, but
+the package will expect that it is installed into `/local` when it is run. This
+is useful for package management purposes to capture a copy of all the installed
+files before they are installed for real.
+
+### Building the C library ###
+
+The C library (libc) implements the common functions, data types and constants
+required by the C programming language standard, POSIX, other standards, and
+various Sortix-specific extensions. Most programs for Sortix directly or
+indirectly rely on this core library for basic functionality and system calls.
+The build process builds a regular user-space C library as well as a
+freestanding C library designed for inclusion into the Sortix kernel. After
+rebuilding the C library, you may wish to rebuild the entire user-land since
+those programs have an older libc version statically linked into them.
+
+    cd /src/libc
+    make
+    make install
+
+### Building the Math Library ###
+
+The Math Library (libm) provides useful mathematical functions for manipulating
+floating-point numbers of various sizes. This implements the <math.h> header as
+known from standard C. Like the C library, you will likely want to recompile
+large parts of user-land if you update this library.
+
+    cd /src/libm
+    make
+    make install
+
+### Building the Display Daemon ###
+
+The dispd library allows processes to communicate with the dispd server that
+handles window management and graphical output. Currently, there is no such
+server and the library calls the kernel interface itself. This library allows
+games such as asteroids and pong to detect the current resolution and request
+whatever resolution they need to function.
+
+    cd /src/dispd
+    make
+    make install
+
+### Building the Utility Collection ###
+
+The utility collection contains common programs such as `ls`, `cp`, `mkdir` and
+more. These programs allow the basic operation from the command line.
+
+    cd /src/utils
+    make
+    make install
+
+### Building the Benchmarks ###
+
+The system comes with some small and outdated benchmark programs. They don't
+currently give any meaningful values, so you should not use them for anything.
+
+    cd /src/bench
+    make
+    make install
+
+### Building the Games ###
+
+The games directory contains the source code for the above mentioned games.
+These depend on libdispd.
+
+    cd /src/games
+    make
+    make install
+
+### Building mbrfs ###
+
+The `mbrfs` program creates block devices for every partition in the master boot
+record in a block device.
+
+    cd /src/mbrfs
+    make
+    make install
+
+### Building extfs ###
+
+The `extfs` program translates a block device formatted with the second extended
+filesystem and mounts it at an empty directory.
+
+    cd /src/extfs
+    make
+    make install
+
+### Building mxmpp ###
+
+The program mxmpp is a simple and hacky macro preprocessor. It supports a special
+@incude(foo_t.h) directive, which is used to pre-preprocess the headers in the C
+library to avoid the overhead of repeated declarations.
+
+    cd /src/mxmpp
+    make
+    make install
+
+### Building mkinitrd ###
+
+This program produces a Sortix compatible initrd, the file that contains the
+initial filesystem used to bootstrap the real root filesystem.
+
+    cd /src/mkinitrd
+    make
+    make install
+
+### Building the Sortix Kernel ###
+
+The Sortix kernel is the core of the Sortix operating system. It provides all
+the primitives libc needs to implement a Unix-like environment.
+
+    cd /src/sortix
+    make
+    make install
+
+Note that you need to reboot the system to use the new kernel and that you need
+a permanent root filesystem or your local changes will be lost.

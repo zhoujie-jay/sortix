@@ -3,7 +3,7 @@ MAKEFILE_NOT_MEANT_FOR_SORTIX=1
 include compiler.mak
 include version.mak
 
-MODULES=libc libm dispd games mkinitrd mxmpp utils bench ext mbr sortix
+MODULES=doc libc libm dispd games mkinitrd mxmpp utils bench ext mbr sortix
 
 ifndef SYSROOT
   SYSROOT:=$(shell pwd)/sysroot
@@ -86,6 +86,7 @@ sysroot-overlay: sysroot-fsh sysroot-system
 
 .PHONY: sysroot-user-skel
 sysroot-user-skel: sysroot-fsh sysroot-system sysroot-overlay
+	cp "$(SYSROOT)/share/doc/welcome" -t "$(SYSROOT)/etc/skel"
 
 .PHONY: sysroot-home-directory
 sysroot-home-directory: sysroot-fsh sysroot-system sysroot-overlay sysroot-user-skel
@@ -301,6 +302,14 @@ release-tar: $(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(BUILD_NAME).tar.xz
 .PHONY: release-builds
 release-builds: release-iso.xz release-deb release-tar
 
+$(SORTIX_RELEASE_DIR)/$(VERSION)/doc: $(SORTIX_RELEASE_DIR)/$(VERSION) doc doc/*
+	cp -R doc -T $(SORTIX_RELEASE_DIR)/$(VERSION)/doc
+	rm -f $(SORTIX_RELEASE_DIR)/$(VERSION)/doc/.gitignore
+	rm -f $(SORTIX_RELEASE_DIR)/$(VERSION)/doc/Makefile
+
+.PHONY: release-doc
+release-doc: $(SORTIX_RELEASE_DIR)/$(VERSION)/doc
+
 $(SORTIX_RELEASE_DIR)/$(VERSION)/README: README $(SORTIX_RELEASE_DIR)/$(VERSION)
 	cp $< $@
 
@@ -308,10 +317,10 @@ $(SORTIX_RELEASE_DIR)/$(VERSION)/README: README $(SORTIX_RELEASE_DIR)/$(VERSION)
 release-readme: $(SORTIX_RELEASE_DIR)/$(VERSION)/README
 
 .PHONY: release-arch
-release-arch: release-builds release-readme
+release-arch: release-builds release-doc release-readme
 
 .PHONY: release-shared
-release-shared: release-readme
+release-shared: release-doc release-readme
 
 .PHONY: release
 release: release-arch release-shared

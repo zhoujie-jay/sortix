@@ -1,0 +1,7 @@
+Welcome to Sortix!
+
+You can view the documentation for new users in the editor by typing:
+
+  editor /share/doc/user-guide
+
+Press Control-Q (^Q) to quit the editor.
