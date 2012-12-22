@@ -25,32 +25,38 @@
 #ifndef SORTIX_LFBTEXTBUFFER_H
 #define SORTIX_LFBTEXTBUFFER_H
 
+#include <sortix/kernel/kthread.h>
 #include <sortix/kernel/textbuffer.h>
 
 namespace Sortix {
 
-// Needed information:
-// Linear frame bufer
-// - Pointer
-// - Format (bit depth)
-// - X resolution, Y resolution, scanline size
-// Font
-// - Pointer to our copy of the font.
-// Color table for each VGA color in <sortix/vga.h>
-// Number of columns and rows.
-// Table of characters and attributes.
-
-struct LFBTextBufferInfo
+enum TextBufferCmdType
 {
-	uint8_t* lfb;
-	size_t lfbformat;
-	size_t xres;
-	size_t yres;
-	size_t columns;
-	size_t rows;
-	uint16_t* chars;
-	uint16_t* attrs;
-	uint8_t* vgafont;
+	TEXTBUFCMD_EXIT = 0,
+	TEXTBUFCMD_SYNC,
+	TEXTBUFCMD_PAUSE,
+	TEXTBUFCMD_CHAR,
+	TEXTBUFCMD_ATTR,
+	TEXTBUFCMD_CURSOR_SET_ENABLED,
+	TEXTBUFCMD_CURSOR_MOVE,
+	TEXTBUFCMD_MOVE,
+	TEXTBUFCMD_FILL,
+	TEXTBUFCMD_SCROLL,
+};
+
+struct TextBufferCmd
+{
+	union { TextBufferCmdType type; size_t align; };
+	union { size_t x; size_t from_x; ssize_t scroll_offset; };
+	union { size_t y; size_t from_y; };
+	union { size_t to_x; };
+	union { size_t to_y; };
+	union
+	{
+		bool b;
+		struct { uint16_t c; uint16_t attr; };
+		size_t val;
+	};
 };
 
 class LFBTextBuffer : public TextBuffer
@@ -78,6 +84,9 @@ public:
 	virtual TextPos GetCursorPos() const;
 	virtual void SetCursorPos(TextPos newcursorpos);
 
+public:
+	virtual void RenderThread();
+
 private:
 	void RenderChar(uint16_t vgachar, size_t posx, size_t posy);
 	void RenderCharAt(TextPos pos);
@@ -87,9 +96,29 @@ private:
 	size_t OffsetOfPos(TextPos pos) const;
 	TextPos CropPosition(TextPos pos) const;
 	TextPos AddToPosition(TextPos pos, size_t count);
+	void DoScroll(ssize_t off, uint16_t entry);
+	void DoMove(TextPos to, TextPos from, size_t numchars);
+	void DoFill(TextPos from, TextPos to, uint16_t fillwith, uint16_t fillattr);
+	void IssueCommand(TextBufferCmd* cmd);
+	void StopRendering();
+	void ResumeRendering();
 
 private:
+	kthread_mutex_t queue_lock;
+	kthread_cond_t queue_not_full;
+	kthread_cond_t queue_not_empty;
+	kthread_cond_t queue_exit;
+	kthread_cond_t queue_sync;
+	kthread_cond_t queue_paused;
+	kthread_cond_t queue_resume;
+	TextBufferCmd* queue;
+	size_t queue_length;
+	size_t queue_offset;
+	size_t queue_used;
+	bool queue_is_paused;
+	bool queue_thread;
 	uint8_t* lfb;
+	uint8_t* backbuf;
 	uint8_t* font;
 	uint16_t* chars;
 	uint16_t* attrs;
