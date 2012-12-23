@@ -225,6 +225,11 @@ Process* GetInitProcess()
 	return initprocess;
 }
 
+Process* GetKernelProcess()
+{
+	return idlethread->process;
+}
+
 void SetThreadState(Thread* thread, ThreadState state)
 {
 	bool wasenabled = Interrupt::SetEnabled(false);

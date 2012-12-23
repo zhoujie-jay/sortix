@@ -55,6 +55,7 @@ void SetIdleThread(Thread* thread);
 void SetDummyThreadOwner(Process* process);
 void SetInitProcess(Process* init);
 Process* GetInitProcess();
+Process* GetKernelProcess();
 
 } // namespace Scheduler
 
