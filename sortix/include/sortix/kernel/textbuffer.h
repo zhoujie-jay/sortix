@@ -46,6 +46,16 @@ struct TextChar
 	uint8_t vgacolor; // Format of <sortix/vga.h>
 };
 
+static inline bool IsTextPosBeforeTextPos(const TextPos& a, const TextPos& b)
+{
+	return a.y < b.y || (a.y == b.y && a.x < b.x);
+}
+
+static inline bool IsTextPosAfterTextPos(const TextPos& a, const TextPos& b)
+{
+	return a.y > b.y || (a.y == b.y && a.x > b.x);
+}
+
 class TextBuffer
 {
 public:
