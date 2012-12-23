@@ -35,11 +35,13 @@ namespace Sortix
 		extern size_t (*deviceCallback)(void*, const char*, size_t);
 		extern size_t (*deviceWidth)(void*);
 		extern size_t (*deviceHeight)(void*);
+		extern bool (*deviceSync)(void*);
 		extern void* devicePointer;
 
 		void Init(size_t (*callback)(void*, const char*, size_t),
 		          size_t (*widthfunc)(void*),
 		          size_t (*heightfunc)(void*),
+		          bool (*syncfunc)(void*),
 		          void* user);
 
 		inline void Flush()
@@ -55,6 +57,11 @@ namespace Sortix
 		inline size_t Height()
 		{
 			return deviceHeight(devicePointer);
+		}
+
+		inline bool Sync()
+		{
+			return deviceSync(devicePointer);
 		}
 
 		inline size_t Print(const char* str)

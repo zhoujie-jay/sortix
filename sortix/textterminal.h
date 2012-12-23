@@ -40,6 +40,7 @@ public:
 	size_t Print(const char* string, size_t stringlen);
 	size_t Width() const;
 	size_t Height() const;
+	bool Sync();
 
 private:
 	void PutChar(TextBuffer* textbuf, char c);

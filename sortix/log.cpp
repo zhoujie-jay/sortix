@@ -35,6 +35,7 @@ namespace Sortix
 		size_t (*deviceCallback)(void*, const char*, size_t) = NULL;
 		size_t (*deviceWidth)(void*) = NULL;
 		size_t (*deviceHeight)(void*) = NULL;
+		bool (*deviceSync)(void*) = NULL;
 		void* devicePointer = NULL;
 
 		size_t SysPrintString(const char* str)
@@ -47,11 +48,13 @@ namespace Sortix
 		void Init(size_t (*callback)(void*, const char*, size_t),
 		          size_t (*widthfunc)(void*),
 		          size_t (*heightfunc)(void*),
+		          bool (*syncfunc)(void*),
 		          void* user)
 		{
 			deviceCallback = callback;
 			deviceWidth = widthfunc;
 			deviceHeight = heightfunc;
+			deviceSync = syncfunc;
 			devicePointer = user;
 
 			Syscall::Register(SYSCALL_PRINT_STRING, (void*) SysPrintString);

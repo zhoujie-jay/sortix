@@ -125,7 +125,7 @@ int LogTerminal::tcgetwinsize(ioctx_t* ctx, struct winsize* ws)
 
 int LogTerminal::sync(ioctx_t* /*ctx*/)
 {
-	return 0; // Not needed.
+	return Log::Sync() ? 0 : -1;
 }
 
 void LogTerminal::OnKeystroke(Keyboard* kb, void* /*user*/)

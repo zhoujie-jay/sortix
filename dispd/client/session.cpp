@@ -26,6 +26,7 @@
 #include <sys/display.h>
 #include <sys/wait.h>
 
+#include <fcntl.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -121,5 +122,19 @@ bool dispd_session_setup_game_rgba(struct dispd_session* session)
 		perror(chvideomode);
 		exit(127);
 	}
+
+	// TODO: HACK: The console may be rendered asynchronously and it is still
+	// rendering to the framebuffer, but this process may be able to write to
+	// the framebuffer before it is done. We need to wait for the console to
+	// finish to fix this race condition.
+	int ttyfd = open("/dev/tty", O_WRONLY);
+	if ( 0 <= ttyfd )
+	{
+		// TODO: There is no fsync system call yet! Whoops! However, closing a
+		// file descriptor also happens to sync it, so this actually works.
+		//fsync(ttyfd);
+		close(ttyfd);
+	}
+
 	return session->is_rgba = true;
 }

@@ -89,6 +89,17 @@ size_t TextTerminal::Height() const
 	return height;
 }
 
+bool TextTerminal::Sync()
+{
+	// Reading something from the textbuffer may cause it to block while
+	// finishing rendering, effectively synchronizing with it.
+	ScopedLock lock(&termlock);
+	TextBuffer* textbuf = textbufhandle->Acquire();
+	textbuf->GetCursorPos();
+	textbufhandle->Release(textbuf);
+	return true;
+}
+
 void TextTerminal::PutChar(TextBuffer* textbuf, char c)
 {
 	if ( ansimode )

@@ -135,6 +135,11 @@ static size_t TextTermHeight(void* user)
 	return ((TextTerminal*) user)->Height();
 }
 
+static bool TextTermSync(void* user)
+{
+	return ((TextTerminal*) user)->Sync();
+}
+
 addr_t initrd;
 size_t initrdsize;
 Ref<TextBufferHandle> textbufhandle;
@@ -166,7 +171,8 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	TextTerminal textterm(textbufhandle);
 
 	// Register the text terminal as the kernel log and initialize it.
-	Log::Init(PrintToTextTerminal, TextTermWidth, TextTermHeight, &textterm);
+	Log::Init(PrintToTextTerminal, TextTermWidth, TextTermHeight, TextTermSync,
+	          &textterm);
 
 	// Display the boot welcome screen.
 	DoWelcome();
