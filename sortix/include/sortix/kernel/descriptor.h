@@ -41,6 +41,7 @@ struct kernel_dirent;
 
 namespace Sortix {
 
+class PollNode;
 class Inode;
 class Vnode;
 struct ioctx_struct;
@@ -77,6 +78,7 @@ public:
 	int tcgetwinsize(ioctx_t* ctx, struct winsize* ws);
 	int settermmode(ioctx_t* ctx, unsigned mode);
 	int gettermmode(ioctx_t* ctx, unsigned* mode);
+	int poll(ioctx_t* ctx, PollNode* node);
 
 private:
 	Ref<Descriptor> open_elem(ioctx_t* ctx, const char* filename, int flags,

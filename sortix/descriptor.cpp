@@ -416,4 +416,9 @@ int Descriptor::gettermmode(ioctx_t* ctx, unsigned* mode)
 	return vnode->gettermmode(ctx, mode);
 }
 
+int Descriptor::poll(ioctx_t* ctx, PollNode* node)
+{
+	return vnode->poll(ctx, node);
+}
+
 } // namespace Sortix

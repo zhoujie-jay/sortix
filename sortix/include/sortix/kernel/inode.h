@@ -41,6 +41,7 @@ struct kernel_dirent;
 
 namespace Sortix {
 
+class PollNode;
 struct ioctx_struct;
 typedef struct ioctx_struct ioctx_t;
 
@@ -87,6 +88,7 @@ public:
 	virtual int tcgetwinsize(ioctx_t* ctx, struct winsize* ws) = 0;
 	virtual int settermmode(ioctx_t* ctx, unsigned mode) = 0;
 	virtual int gettermmode(ioctx_t* ctx, unsigned* mode) = 0;
+	virtual int poll(ioctx_t* ctx, PollNode* node) = 0;
 
 };
 
@@ -151,6 +153,7 @@ public:
 	virtual int tcgetwinsize(ioctx_t* ctx, struct winsize* ws);
 	virtual int settermmode(ioctx_t* ctx, unsigned mode);
 	virtual int gettermmode(ioctx_t* ctx, unsigned* mode);
+	virtual int poll(ioctx_t* ctx, PollNode* node);
 
 };
 

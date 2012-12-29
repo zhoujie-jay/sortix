@@ -189,6 +189,8 @@ on_exit.o \
 openat.o \
 open.o \
 pipe.o \
+poll.o \
+ppoll.o \
 print.o \
 putc.o \
 raise.o \

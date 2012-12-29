@@ -213,4 +213,9 @@ int Vnode::gettermmode(ioctx_t* ctx, unsigned* mode)
 	return inode->gettermmode(ctx, mode);
 }
 
+int Vnode::poll(ioctx_t* ctx, PollNode* node)
+{
+	return inode->poll(ctx, node);
+}
+
 } // namespace Sortix

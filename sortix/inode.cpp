@@ -267,4 +267,18 @@ int AbstractInode::gettermmode(ioctx_t* /*ctx*/, unsigned* /*mode*/)
 	return errno = ENOTTY, -1;
 }
 
+int AbstractInode::poll(ioctx_t* /*ctx*/, PollNode* /*node*/)
+{
+#if 0 // TODO: Support poll on regular files as per POSIX.
+	if ( inode_type == INODE_TYPE_FILE )
+	{
+		// TODO: Correct bits?
+		node->revents |= (POLLIN | POLLOUT) & node->events;
+		// TODO: What if not listening on events (POLLIN | POLLOUT)?
+		return 0;
+	}
+#endif
+	return errno = ENOTSUP, -1;
+}
+
 } // namespace Sortix

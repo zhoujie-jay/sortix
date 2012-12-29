@@ -73,6 +73,7 @@
 #include "io.h"
 #include "pipe.h"
 #include "interrupt.h"
+#include "poll.h"
 #include "dispmsg.h"
 #include "fs/kram.h"
 #include "fs/user.h"
@@ -395,6 +396,9 @@ static void BootThread(void* /*user*/)
 
 	// Initialize the pipe system.
 	Pipe::Init();
+
+	// Initialize poll system call.
+	Poll::Init();
 
 	// Initialize the kernel information query syscall.
 	Info::Init();

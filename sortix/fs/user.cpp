@@ -213,6 +213,7 @@ public:
 	virtual int tcgetwinsize(ioctx_t* ctx, struct winsize* ws);
 	virtual int settermmode(ioctx_t* ctx, unsigned mode);
 	virtual int gettermmode(ioctx_t* ctx, unsigned* mode);
+	virtual int poll(ioctx_t* ctx, PollNode* node);
 
 private:
 	bool SendMessage(Channel* channel, size_t type, void* ptr, size_t size,
@@ -1113,6 +1114,11 @@ int Unode::gettermmode(ioctx_t* ctx, unsigned* mode)
 		ret = 0;
 	channel->KernelClose();
 	return ret;
+}
+
+int Unode::poll(ioctx_t* /*ctx*/, PollNode* /*node*/)
+{
+	return errno = ENOTSUP, -1;
 }
 
 //

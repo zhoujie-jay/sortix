@@ -106,6 +106,7 @@ mtable.o \
 panic.o \
 pci.o \
 pipe.o \
+poll.o \
 process.o \
 refcount.o \
 scheduler.o \

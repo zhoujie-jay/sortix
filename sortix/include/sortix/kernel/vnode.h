@@ -34,6 +34,7 @@ struct kernel_dirent;
 
 namespace Sortix {
 
+class PollNode;
 class Inode;
 struct ioctx_struct;
 typedef struct ioctx_struct ioctx_t;
@@ -74,6 +75,7 @@ public:
 	int tcgetwinsize(ioctx_t* ctx, struct winsize* ws);
 	int settermmode(ioctx_t* ctx, unsigned mode);
 	int gettermmode(ioctx_t* ctx, unsigned* mode);
+	int poll(ioctx_t* ctx, PollNode* node);
 
 public /*TODO: private*/:
 	Ref<Inode> inode;
