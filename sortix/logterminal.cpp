@@ -29,11 +29,15 @@
 #include <sortix/kernel/ioctx.h>
 #include <sortix/kernel/inode.h>
 #include <sortix/kernel/keyboard.h>
+#include <sortix/kernel/poll.h>
+
 #include <sortix/termmode.h>
 #include <sortix/termios.h>
 #include <sortix/keycodes.h>
 #include <sortix/signal.h>
 #include <sortix/stat.h>
+#include <sortix/poll.h>
+
 #include <errno.h>
 #include <string.h>
 #include "utf8.h"
@@ -155,6 +159,7 @@ void LogTerminal::ProcessKeystroke(int kbkey)
 			numeofs++;
 			if ( numwaiting )
 				kthread_cond_broadcast(&datacond);
+			poll_channel.Signal(POLLIN | POLLRDNORM);
 		}
 		return;
 	}
@@ -219,6 +224,7 @@ void LogTerminal::CommitLineBuffer()
 	linebuffer.Commit();
 	if ( numwaiting )
 		kthread_cond_broadcast(&datacond);
+	poll_channel.Signal(POLLIN | POLLRDNORM);
 }
 
 ssize_t LogTerminal::read(ioctx_t* ctx, uint8_t* userbuf, size_t count)
@@ -311,6 +317,29 @@ ssize_t LogTerminal::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 		return -1;
 	Log::PrintData(buf, count);
 	return count;
+}
+
+short LogTerminal::PollEventStatus()
+{
+	short status = 0;
+	if ( linebuffer.CanPop() || numeofs )
+		status |= POLLIN | POLLRDNORM;
+	if ( true /* can always write */ )
+		status |= POLLOUT | POLLWRNORM;
+	return status;
+}
+
+int LogTerminal::poll(ioctx_t* /*ctx*/, PollNode* node)
+{
+	ScopedLockSignal lock(&termlock);
+	short ret_status = PollEventStatus() & node->events;
+	if ( ret_status )
+	{
+		node->revents |= ret_status;
+		return 0;
+	}
+	poll_channel.Register(node);
+	return errno = EAGAIN, -1;
 }
 
 } // namespace Sortix

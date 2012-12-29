@@ -28,6 +28,7 @@
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/inode.h>
 #include <sortix/kernel/keyboard.h>
+#include <sortix/kernel/poll.h>
 #include "linebuffer.h"
 
 namespace Sortix {
@@ -46,6 +47,7 @@ public:
 	virtual int tcgetwinsize(ioctx_t* ctx, struct winsize* ws);
 	virtual int settermmode(ioctx_t* ctx, unsigned termmode);
 	virtual int gettermmode(ioctx_t* ctx, unsigned* termmode);
+	virtual int poll(ioctx_t* ctx, PollNode* node);
 
 public:
 	virtual void OnKeystroke(Keyboard* keyboard, void* user);
@@ -54,8 +56,10 @@ private:
 	void ProcessKeystroke(int kbkey);
 	void QueueUnicode(uint32_t unicode);
 	void CommitLineBuffer();
+	short PollEventStatus();
 
 private:
+	PollChannel poll_channel;
 	mutable kthread_mutex_t termlock;
 	kthread_cond_t datacond;
 	size_t numwaiting;
