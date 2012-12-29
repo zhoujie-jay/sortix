@@ -35,6 +35,10 @@ __BEGIN_DECLS
 @include(time_t.h)
 @include(NULL.h)
 
+__END_DECLS
+#include <sortix/timespec.h>
+__BEGIN_DECLS
+
 #define CLOCKS_PER_SEC 1000000
 
 struct tm
