@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -22,6 +22,14 @@
 
 *******************************************************************************/
 
+#include <assert.h>
+#include <errno.h>
+#include <string.h>
+
+#include <sortix/signal.h>
+#include <sortix/stat.h>
+#include <sortix/poll.h>
+
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/interlock.h>
@@ -32,6 +40,8 @@
 #include <sortix/kernel/vnode.h>
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/dtable.h>
+#include <sortix/kernel/poll.h>
+
 #include <sortix/signal.h>
 #include <sortix/stat.h>
 #include <assert.h>
@@ -57,8 +67,13 @@ public:
 	void PerhapsShutdown();
 	ssize_t read(ioctx_t* ctx, uint8_t* buf, size_t count);
 	ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
+	int poll(ioctx_t* ctx, PollNode* node);
 
 private:
+	short PollEventStatus();
+
+private:
+	PollChannel poll_channel;
 	kthread_mutex_t pipelock;
 	kthread_cond_t readcond;
 	kthread_cond_t writecond;
@@ -118,6 +133,7 @@ void PipeChannel::CloseWriting()
 void PipeChannel::PerhapsShutdown()
 {
 	kthread_mutex_lock(&pipelock);
+	poll_channel.Signal(PollEventStatus());
 	bool deleteme = !anyreading & !anywriting;
 	kthread_mutex_unlock(&pipelock);
 	if ( deleteme )
@@ -146,6 +162,7 @@ ssize_t PipeChannel::read(ioctx_t* ctx, uint8_t* buf, size_t count)
 	bufferoffset = (bufferoffset + amount) % buffersize;
 	bufferused -= amount;
 	kthread_cond_broadcast(&writecond);
+	poll_channel.Signal(PollEventStatus());
 	return amount;
 }
 
@@ -176,7 +193,35 @@ ssize_t PipeChannel::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 	ctx->copy_from_src(buffer + writeoffset, buf, amount);
 	bufferused += amount;
 	kthread_cond_broadcast(&readcond);
+	poll_channel.Signal(PollEventStatus());
 	return amount;
+}
+
+short PipeChannel::PollEventStatus()
+{
+	short status = 0;
+	if ( !anywriting )
+		status |= POLLHUP;
+	if ( !anyreading )
+		status |= POLLERR;
+	if ( bufferused )
+		status |= POLLIN | POLLRDNORM;
+	if ( bufferused != buffersize )
+		status |= POLLOUT | POLLWRNORM;
+	return status;
+}
+
+int PipeChannel::poll(ioctx_t* /*ctx*/, PollNode* node)
+{
+	ScopedLockSignal lock(&pipelock);
+	short ret_status = PollEventStatus() & node->events;
+	if ( ret_status )
+	{
+		node->revents |= ret_status;
+		return 0;
+	}
+	poll_channel.Register(node);
+	return errno = EAGAIN, -1;
 }
 
 class PipeEndpoint : public AbstractInode
@@ -187,6 +232,7 @@ public:
 	~PipeEndpoint();
 	virtual ssize_t read(ioctx_t* ctx, uint8_t* buf, size_t count);
 	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
+	virtual int poll(ioctx_t* ctx, PollNode* node);
 
 private:
 	kthread_mutex_t pipelock;
@@ -232,6 +278,11 @@ ssize_t PipeEndpoint::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 {
 	if ( reading ) { errno = EBADF; return -1; }
 	return channel->write(ctx, buf, count);
+}
+
+int PipeEndpoint::poll(ioctx_t* ctx, PollNode* node)
+{
+	return channel->poll(ctx, node);
 }
 
 namespace Pipe {
