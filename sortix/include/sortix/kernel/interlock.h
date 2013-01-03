@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	Copyright(C) Jonas 'Sortie' Termansen 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
 	This file is part of Sortix.
 
@@ -34,7 +34,7 @@ typedef struct
 	unsigned long n; // new value
 } ilret_t;
 
-// These atomicly modifies a value and return the previous value.
+// These atomically modifies a value and return the previous value.
 ilret_t InterlockedModify(unsigned long* ptr,
                           ilockfunc f,
                           unsigned long user = 0);

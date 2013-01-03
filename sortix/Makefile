@@ -87,7 +87,6 @@ bga.o \
 calltrace.o \
 com.o \
 $(CPU)/calltrace.o \
-$(CPU)/interlock.o \
 $(CPU)/kthread.o \
 crc32.o \
 descriptors.o \

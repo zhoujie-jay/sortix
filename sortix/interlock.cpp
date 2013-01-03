@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	Copyright(C) Jonas 'Sortie' Termansen 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
 	This file is part of Sortix.
 
@@ -29,15 +29,20 @@ namespace Sortix {
 
 // TODO: This is likely not the most optimal way to perform these operations.
 
-extern "C" ilret_t asm_interlocked_modify(unsigned long* val,
-                                          ilockfunc f,
-                                           unsigned long user);
-
 ilret_t InterlockedModify(unsigned long* ptr,
                           ilockfunc f,
                           unsigned long user)
 {
-	return asm_interlocked_modify(ptr, f, user);
+	unsigned long old_value, new_value;
+	do
+	{
+		old_value = *((volatile unsigned long*) ptr); /* TODO: Need volatile? */
+		new_value = f(old_value, user);
+	} while ( !__sync_bool_compare_and_swap(ptr, old_value, new_value) );
+	ilret_t ret;
+	ret.o = old_value;
+	ret.n = new_value;
+	return ret;
 }
 
 static unsigned long AddFunction(unsigned long val, unsigned long arg)
