@@ -70,6 +70,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case EFBIG: return "File too large";
 	case EXDEV: return "Improper link";
 	case ESPIPE: return "Cannot seek on stream";
+	case ENAMETOOLONG: return "Filename too long";
 	default: return "Unknown error condition";
 	}
 }
