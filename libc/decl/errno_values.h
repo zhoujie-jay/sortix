@@ -42,6 +42,7 @@
 #define EXDEV 50
 #define ESPIPE 51
 #define ENAMETOOLONG 52
+#define ELOOP 53
 
 #define EOPNOTSUPP ENOTSUP
 
