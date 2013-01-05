@@ -79,6 +79,15 @@ int main(int /*argc*/, char* /*argv*/[])
 	// we are running.
 	setenv("objtype", getenv("cputype"), 0);
 
+	// Set up the PATH variable.
+	const char* prefix = "/";
+	const char* cputype = getenv("cputype");
+	const char* suffix = "/bin";
+	char* path = new char[strlen(prefix) + strlen(cputype) + strlen(suffix) + 1];
+	stpcpy(stpcpy(stpcpy(path, prefix), cputype), suffix);
+	setenv("PATH", path, 0);
+	delete[] path;
+
 	// Make sure that we have a /tmp directory.
 	mkdir("/tmp", 01777);
 
