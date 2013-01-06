@@ -102,6 +102,7 @@ extern int printf(const char* restrict format, ...);
 extern int putc(int c, FILE* stream);
 extern int putchar(int c);
 extern int puts(const char* str);
+extern int removeat(int dirrfd, const char* path);
 extern int remove(const char* path);
 extern int rename(const char* oldname, const char* newname);
 extern void rewind(FILE* stream);

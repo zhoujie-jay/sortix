@@ -187,6 +187,8 @@ raise.o \
 rand.o \
 readdirents.o \
 read.o \
+removeat.o \
+remove.o \
 rmdir.o \
 sbrk.o \
 scanf.o \
