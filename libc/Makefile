@@ -121,11 +121,13 @@ wctype.o \
 
 HOSTEDOBJS=\
 access.o \
+calltrace.o \
 chdir.o \
 chmod.o \
 chown.o \
 clock.o \
 close.o \
+$(CPUDIR)/calltrace.o \
 $(CPUDIR)/fork.o \
 $(CPUDIR)/signal.o \
 $(CPUDIR)/syscall.o \
