@@ -183,6 +183,8 @@ static int sys_access(const char* path, int mode)
 
 static int sys_unlinkat(int dirfd, const char* path, int flags)
 {
+	if ( !(flags & (AT_REMOVEFILE | AT_REMOVEDIR)) )
+		flags |= AT_REMOVEFILE;
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
 		return -1;
@@ -190,11 +192,11 @@ static int sys_unlinkat(int dirfd, const char* path, int flags)
 	const char* relpath = pathcopy;
 	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	int ret;
-	if ( flags & AT_REMOVEDIR )
-		ret = from->rmdir(&ctx, relpath);
-	else
+	int ret = -1;
+	if ( ret < 0 && (flags & AT_REMOVEFILE) )
 		ret = from->unlink(&ctx, relpath);
+	if ( ret < 0 && (flags & AT_REMOVEDIR) )
+		ret = from->rmdir(&ctx, relpath);
 	delete[] pathcopy;
 	return ret;
 }

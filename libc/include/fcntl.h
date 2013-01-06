@@ -38,11 +38,7 @@ __BEGIN_DECLS
 
 /* TODO: F_RDLCK, F_UNLCK, F_WRLCK missing here */
 
-/* TODO: AT_FDCWD missing here */
-/* TODO: AT_EACCESS missing here */
-/* TODO: AT_SYMLINK_NOFOLLOW missing here */
 /* TODO: AT_SYMLINK_FOLLOW missing here */
-/* TODO: AT_REMOVEDIR missing here */
 
 /* TODO: POSIX_FADV_* missing here */
 
