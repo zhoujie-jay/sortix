@@ -22,6 +22,9 @@
 
 *******************************************************************************/
 
+#include <sys/stat.h>
+
+#include <calltrace.h>
 #include <stdlib.h>
 
 #if defined(SORTIX_KERNEL)
@@ -38,6 +41,11 @@ extern "C" void abort(void)
 
 extern "C" void abort(void)
 {
+	struct stat st;
+	if ( getenv("LIBC_DEBUG_CALLTRACE") || stat("/etc/calltrace", &st) == 0 )
+		calltrace();
+	if ( getenv("LIBC_DEBUG_LOOP") || stat("/etc/calltrace_loop", &st) == 0 )
+		while ( true );
 	// TODO: Send SIGABRT instead!
 	_Exit(128 + 6);
 }
