@@ -28,15 +28,26 @@
 
 extern "C" { char program_invocation_name_data[256] = ""; }
 extern "C" { char* program_invocation_name = program_invocation_name_data; }
+extern "C" { char* program_invocation_short_name; }
 
 extern "C" void init_error_functions();
 extern "C" void init_stdio();
 extern "C" void init_signal();
 
+static char* find_last_elem(char* str)
+{
+	size_t len = strlen(str);
+	for ( size_t i = len; i; i-- )
+		if ( str[i-1] == '/' )
+			return str + i;
+	return str;
+}
+
 extern "C" void initialize_standard_library(int argc, char* argv[])
 {
 	if ( argc )
 		strcpy(program_invocation_name, argv[0]);
+	program_invocation_short_name =  find_last_elem(program_invocation_name);
 
 	// Initialize stuff such as errno.
 	init_error_functions();

@@ -33,6 +33,7 @@ __BEGIN_DECLS
 @include(errno_values.h)
 
 extern char* program_invocation_name;
+extern char* program_invocation_short_name;
 
 __END_DECLS
 
