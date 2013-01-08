@@ -92,6 +92,11 @@ op-new.o \
 rewind.o \
 setbuf.o \
 setvbuf.o \
+sigaddset.o \
+sigdelset.o \
+sigfillset.o \
+sigemptyset.o \
+sigismember.o \
 sort.o \
 sprint.o \
 sscanf.o \
