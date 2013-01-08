@@ -25,17 +25,20 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/memorymanagement.h>
+#include <sortix/kernel/syscall.h>
+
 #include <sortix/mman.h>
 #include <sortix/signal.h>
+
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+
 #include "process.h"
 #include "thread.h"
 #include "scheduler.h"
 #include "interrupt.h"
 #include "time.h"
-#include "syscall.h"
 
 namespace Sortix
 {

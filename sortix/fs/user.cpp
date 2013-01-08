@@ -48,8 +48,8 @@
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/vnode.h>
 #include <sortix/kernel/mtable.h>
+#include <sortix/kernel/syscall.h>
 
-#include "../syscall.h"
 #include "../process.h"
 
 namespace Sortix {

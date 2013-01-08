@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -17,27 +17,24 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    syscall.h
-    Handles system calls from userspace.
+    sortix/kernel/syscall.h
+    Handles system calls from user-space.
 
 *******************************************************************************/
 
-#ifndef SORTIX_SYSCALL_H
-#define SORTIX_SYSCALL_H
+#ifndef INCLUDE_SORTIX_KERNEL_SYSCALL_H
+#define INCLUDE_SORTIX_KERNEL_SYSCALL_H
 
 #include <sortix/syscallnum.h>
-#include "cpu.h"
 
-namespace Sortix
-{
-	class Thread;
+namespace Sortix {
+namespace Syscall {
 
-	namespace Syscall
-	{
-		void Init();
-		void Register(size_t index, void* funcptr);
-	}
-}
+void Init();
+void Register(size_t index, void* funcptr);
+
+} // namespace Syscall
+} // namespace Sortix
 
 extern "C" void syscall_handler();
 

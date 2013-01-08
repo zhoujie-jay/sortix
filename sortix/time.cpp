@@ -24,13 +24,13 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/syscall.h>
+
 #include "time.h"
 #include "interrupt.h"
 #include "process.h"
 #include "scheduler.h"
-#include <sortix/kernel/log.h>
 #include "sound.h"
-#include "syscall.h"
 
 #ifdef PLATFORM_SERIAL
 #include "serialterminal.h"

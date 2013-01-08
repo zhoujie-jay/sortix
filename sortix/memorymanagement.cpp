@@ -24,7 +24,7 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/memorymanagement.h>
-#include "syscall.h"
+#include <sortix/kernel/syscall.h>
 
 namespace Sortix {
 namespace Memory {

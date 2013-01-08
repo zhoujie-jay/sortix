@@ -33,6 +33,9 @@
 #include <sortix/kernel/worker.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/string.h>
+#include <sortix/kernel/syscall.h>
+#include <sortix/kernel/sortedlist.h>
+
 #include <sortix/signal.h>
 #include <sortix/unistd.h>
 #include <sortix/fcntl.h>
@@ -40,16 +43,16 @@
 #include <sortix/fork.h>
 #include <sortix/mman.h>
 #include <sortix/wait.h>
-#include <sortix/kernel/sortedlist.h>
+
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+
 #include "thread.h"
 #include "process.h"
 #include "scheduler.h"
 #include "initrd.h"
 #include "elf.h"
-#include "syscall.h"
 
 namespace Sortix
 {

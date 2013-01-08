@@ -26,13 +26,16 @@
 #include <sortix/kernel/panic.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/memorymanagement.h>
+#include <sortix/kernel/syscall.h>
+
 #include <sortix/mman.h>
+
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+
 #include "multiboot.h"
 #include "memorymanagement.h"
-#include "syscall.h"
 #include "msr.h"
 
 namespace Sortix

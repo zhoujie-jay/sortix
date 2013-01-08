@@ -30,16 +30,18 @@
 #include <sortix/kernel/dtable.h>
 #include <sortix/kernel/string.h>
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/syscall.h>
 
 #include <sortix/seek.h>
 #include <sortix/dirent.h>
 #include <sortix/fcntl.h>
 #include <sortix/stat.h>
+
 #include <assert.h>
 #include <errno.h>
+
 #include "thread.h"
 #include "process.h"
-#include "syscall.h"
 #include "io.h"
 
 namespace Sortix {

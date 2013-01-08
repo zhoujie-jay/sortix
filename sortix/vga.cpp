@@ -29,12 +29,14 @@
 #include <sortix/kernel/inode.h>
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/interlock.h>
+#include <sortix/kernel/syscall.h>
+
 #include <errno.h>
 #include <string.h>
+
 #include "fs/util.h"
 #include "vga.h"
 #include "scheduler.h"
-#include "syscall.h"
 #include "process.h"
 
 #define TEST_VGAFONT 0

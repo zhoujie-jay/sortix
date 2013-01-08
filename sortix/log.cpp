@@ -23,9 +23,10 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include <string.h>
+#include <sortix/kernel/syscall.h>
 #include <sortix/kernel/log.h>
-#include "syscall.h"
+
+#include <string.h>
 
 namespace Sortix
 {

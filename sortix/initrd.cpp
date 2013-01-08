@@ -30,15 +30,18 @@
 #include <sortix/kernel/string.h>
 #include <sortix/kernel/ioctx.h>
 #include <sortix/kernel/fsfunc.h>
+#include <sortix/kernel/syscall.h>
+
 #include <sortix/fcntl.h>
 #include <sortix/initrd.h>
 #include <sortix/stat.h>
 #include <sortix/mman.h>
+
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+
 #include "initrd.h"
-#include "syscall.h"
 
 namespace Sortix {
 namespace InitRD {

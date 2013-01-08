@@ -41,16 +41,18 @@
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/dtable.h>
 #include <sortix/kernel/poll.h>
+#include <sortix/kernel/syscall.h>
 
 #include <sortix/signal.h>
 #include <sortix/stat.h>
+
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+
 #include "signal.h"
 #include "thread.h"
 #include "process.h"
-#include "syscall.h"
 #include "pipe.h"
 
 namespace Sortix {

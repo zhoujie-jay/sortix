@@ -23,8 +23,10 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/syscall.h>
+
 #include <errno.h>
-#include "syscall.h"
+
 #include "kernelinfo.h"
 
 #ifndef VERSIONSTR

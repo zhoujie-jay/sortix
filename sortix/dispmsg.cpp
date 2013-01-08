@@ -34,8 +34,8 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/video.h>
 #include <sortix/kernel/string.h>
+#include <sortix/kernel/syscall.h>
 
-#include "syscall.h"
 #include "dispmsg.h"
 
 namespace Sortix {

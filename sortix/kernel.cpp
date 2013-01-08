@@ -41,13 +41,17 @@
 #include <sortix/kernel/dtable.h>
 #include <sortix/kernel/mtable.h>
 #include <sortix/kernel/keyboard.h>
+#include <sortix/kernel/syscall.h>
+
 #include <sortix/fcntl.h>
 #include <sortix/stat.h>
 #include <sortix/mman.h>
 #include <sortix/wait.h>
+
 #include <assert.h>
 #include <errno.h>
 #include <malloc.h>
+
 #include "kernelinfo.h"
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"
@@ -57,7 +61,6 @@
 #include "process.h"
 #include "scheduler.h"
 #include "signal.h"
-#include "syscall.h"
 #include "ata.h"
 #include "com.h"
 #include "uart.h"

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -22,49 +22,46 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include "syscall.h"
 #include <sortix/syscallnum.h>
-#include <sortix/kernel/panic.h>
+
+#include <sortix/kernel/platform.h>
+#include <sortix/kernel/syscall.h>
+
 #include "process.h"
 #include "thread.h"
 #include "scheduler.h"
 
-namespace Sortix
+namespace Sortix {
+namespace Syscall {
+
+extern "C"
 {
-	namespace Syscall
-	{
-		extern "C"
-		{
-			size_t SYSCALL_MAX;
-			volatile void* syscall_list[SYSCALL_MAX_NUM];
-		}
-
-		int BadSyscall()
-		{
-			Log::PrintF("I am the bad system call!\n");
-			// TODO: Send signal, set errnx	o, or crash/abort process?
-			return -1;
-		}
-
-		void Init()
-		{
-			SYSCALL_MAX = SYSCALL_MAX_NUM;
-			for ( size_t i = 0; i < SYSCALL_MAX_NUM; i++ )
-			{
-				syscall_list[i] = (void*) BadSyscall;
-			}
-		}
-
-		void Register(size_t index, void* funcptr)
-		{
-			if ( SYSCALL_MAX_NUM <= index )
-			{
-				PanicF("attempted to register syscall 0x%p to index %zu, but "
-				       "SYSCALL_MAX_NUM = %zu", funcptr, index, SYSCALL_MAX_NUM);
-			}
-
-			syscall_list[index] = funcptr;
-		}
-	}
+	size_t SYSCALL_MAX;
+	volatile void* syscall_list[SYSCALL_MAX_NUM];
 }
+
+int BadSyscall()
+{
+	Log::PrintF("I am the bad system call!\n");
+	// TODO: Send signal, set errno, or crash/abort process?
+	return -1;
+}
+
+void Init()
+{
+	SYSCALL_MAX = SYSCALL_MAX_NUM;
+	for ( size_t i = 0; i < SYSCALL_MAX_NUM; i++ )
+		syscall_list[i] = (void*) BadSyscall;
+}
+
+void Register(size_t index, void* funcptr)
+{
+
+	if ( SYSCALL_MAX_NUM <= index )
+		PanicF("attempted to register syscall 0x%p to index %zu, but "
+		       "SYSCALL_MAX_NUM = %zu", funcptr, index, SYSCALL_MAX_NUM);
+	syscall_list[index] = funcptr;
+}
+
+} // namespace Syscall
+} // namespace Sortix
