@@ -185,9 +185,8 @@ FILE* fopen(const char* path, const char* mode)
 		{
 			case 'r': omode = O_RDONLY;  break;
 			case 'a': oflags |= O_APPEND; /* fall-through */
-			case 'w': omode = O_WRONLY; break;
+			case 'w': omode = O_WRONLY; oflags |= O_CREAT | O_TRUNC; break;
 			case '+':
-				if ( omode == O_WRONLY ) { oflags |= O_CREAT | O_TRUNC; }
 				omode = O_RDWR;
 				break;
 			case 'b': break;
