@@ -29,6 +29,7 @@
 
 #include <features.h>
 #include <sortix/signal.h>
+#include <sortix/sigset.h>
 
 __BEGIN_DECLS
 
