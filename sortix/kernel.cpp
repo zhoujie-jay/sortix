@@ -526,7 +526,7 @@ static void InitThread(void* /*user*/)
 
 	init.Reset();
 
-	const size_t DEFAULT_STACK_SIZE = 64UL * 1024UL;
+	const size_t DEFAULT_STACK_SIZE = 512UL * 1024UL;
 
 	size_t stacksize = 0;
 	if ( !stacksize ) { stacksize = DEFAULT_STACK_SIZE; }
