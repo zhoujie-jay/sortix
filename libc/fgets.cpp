@@ -27,20 +27,19 @@
 
 extern "C" char* fgets(char* dest, int size, FILE* fp)
 {
-	if ( size <= 0 ) { errno = EINVAL; return NULL; }
+	if ( size <= 0 )
+		return errno = EINVAL, (char*) NULL;
 	int i;
 	for ( i = 0; i < size-1; i++ )
 	{
 		int c = getc(fp);
 		if ( c == EOF )
-		{
-			if ( ferror(fp) ) { return NULL; }
-			else { i++; break; } /* EOF */
-		}
+			break;
 		dest[i] = c;
 		if ( c == '\n' ) { i++; break; }
 	}
-
+	if ( !i && (ferror(fp) || feof(fp)) )
+		return NULL;
 	dest[i] = '\0';
 	return dest;
 }
