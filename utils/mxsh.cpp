@@ -454,6 +454,23 @@ int run_stdin(int argc, char* argv[], bool exit_on_error)
 	return run(stdin, argc, argv, "<stdin>", false, exit_on_error);
 }
 
+int run_string(int argc, char* argv[], const char* str, bool exit_on_error)
+{
+	// TODO: Implement fmemopen and open_memstream.
+	char unique_ish[64];
+	snprintf(unique_ish, sizeof(unique_ish), "/tmp/shinput.%i", getpid());
+	FILE* fp = fopen(unique_ish, "w");
+	if ( !fp ) { error(0, errno, "write-open: %s", unique_ish); return 1; }
+	if ( fputs(str, fp) == EOF ) { fclose(fp); error(0, errno, "write: %s", unique_ish); return 1; }
+	if ( fputs("\n", fp) == EOF ) { fclose(fp); error(0, errno, "write: %s", unique_ish); return 1; }
+	fclose(fp);
+	fp = fopen(unique_ish, "r");
+	if ( !fp ) { error(0, errno, "read-open: %s", unique_ish); return 1; }
+	int ret = run(fp, argc, argv, "<command-line>", false, exit_on_error);
+	fclose(fp);
+	return ret;
+}
+
 int run_script(const char* path, int argc, char* argv[], bool exit_on_error)
 {
 	FILE* fp = fopen(path, "r");
@@ -483,6 +500,8 @@ int main(int argc, char* argv[])
 	setenv("PPID", ppidstr, 1);
 	setenv("?", "0", 1);
 	updatepwd();
+	if ( 2 <= argc && !strcmp(argv[1], "-c") )
+		return run_string(argc, argv, argv[2], exit_on_error);
 	if ( 1 < argc )
 		return run_script(argv[1], argc-1, argv+1, exit_on_error);
 	if ( isatty(0) )
