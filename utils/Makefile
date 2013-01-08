@@ -42,6 +42,7 @@ type \
 mkdir \
 rmdir \
 which \
+ln \
 
 INSTALLBINARIES:=$(addprefix $(DESTDIR)$(BINDIR)/,$(BINARIES))
 
