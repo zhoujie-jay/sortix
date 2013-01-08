@@ -225,6 +225,7 @@ popen.o \
 ppoll.o \
 print.o \
 putc.o \
+pwent.o \
 raise.o \
 rand.o \
 readdirents.o \
