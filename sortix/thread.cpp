@@ -28,6 +28,7 @@
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/time.h>
+#include <sortix/kernel/scheduler.h>
 
 #include <sortix/mman.h>
 #include <sortix/signal.h>
@@ -38,7 +39,6 @@
 
 #include "process.h"
 #include "thread.h"
-#include "scheduler.h"
 
 namespace Sortix
 {
@@ -152,7 +152,7 @@ namespace Sortix
 
 	void StartKernelThread(Thread* thread)
 	{
-		Scheduler::SetThreadState(thread, Thread::State::RUNNABLE);
+		Scheduler::SetThreadState(thread, ThreadState::RUNNABLE);
 	}
 
 	Thread* RunKernelThread(Process* process, CPU::InterruptRegisters* regs)

@@ -25,10 +25,12 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/worker.h>
+#include <sortix/kernel/scheduler.h>
+
 #include <sortix/signal.h>
+
 #include "signal.h"
 #include "thread.h"
-#include "scheduler.h"
 
 namespace Sortix {
 
@@ -36,7 +38,7 @@ namespace Sortix {
 static void kthread_do_kill_thread(void* user)
 {
 	Thread* thread = (Thread*) user;
-	while ( thread->state != Thread::State::DEAD )
+	while ( thread->state != ThreadState::DEAD )
 		kthread_yield();
 	delete thread;
 }

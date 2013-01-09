@@ -35,6 +35,7 @@
 #include <sortix/kernel/string.h>
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/sortedlist.h>
+#include <sortix/kernel/scheduler.h>
 
 #include <sortix/signal.h>
 #include <sortix/unistd.h>
@@ -50,7 +51,6 @@
 
 #include "thread.h"
 #include "process.h"
-#include "scheduler.h"
 #include "initrd.h"
 #include "elf.h"
 

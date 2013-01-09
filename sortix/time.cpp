@@ -37,9 +37,9 @@
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/time.h>
+#include <sortix/kernel/scheduler.h>
 
 #include "process.h"
-#include "scheduler.h"
 #include "sound.h"
 
 #ifdef PLATFORM_SERIAL

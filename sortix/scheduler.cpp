@@ -37,13 +37,13 @@
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/time.h>
+#include <sortix/kernel/scheduler.h>
 
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"
 #include "thread.h"
 #include "process.h"
 #include "signal.h"
-#include "scheduler.h"
 
 namespace Sortix {
 namespace Scheduler {
@@ -196,7 +196,7 @@ static void ThreadExitCPU(CPU::InterruptRegisters* regs, void* /*user*/)
 {
 	// Can't use floating point instructions from now.
 	Float::NofityTaskExit(currentthread);
-	SetThreadState(currentthread, Thread::State::DEAD);
+	SetThreadState(currentthread, ThreadState::DEAD);
 	InterruptYieldCPU(regs, NULL);
 }
 
@@ -206,7 +206,7 @@ void SetIdleThread(Thread* thread)
 {
 	assert(!idlethread);
 	idlethread = thread;
-	SetThreadState(thread, Thread::State::NONE);
+	SetThreadState(thread, ThreadState::NONE);
 	SetCurrentThread(thread);
 }
 
@@ -225,13 +225,13 @@ Process* GetInitProcess()
 	return initprocess;
 }
 
-void SetThreadState(Thread* thread, Thread::State state)
+void SetThreadState(Thread* thread, ThreadState state)
 {
 	bool wasenabled = Interrupt::SetEnabled(false);
 
 	// Remove the thread from the list of runnable threads.
-	if ( thread->state == Thread::State::RUNNABLE &&
-	     state != Thread::State::RUNNABLE )
+	if ( thread->state == ThreadState::RUNNABLE &&
+	     state != ThreadState::RUNNABLE )
 	{
 		if ( thread == firstrunnablethread ) { firstrunnablethread = thread->schedulerlistnext; }
 		if ( thread == firstrunnablethread ) { firstrunnablethread = NULL; }
@@ -244,8 +244,8 @@ void SetThreadState(Thread* thread, Thread::State state)
 	}
 
 	// Insert the thread into the scheduler's carousel linked list.
-	if ( thread->state != Thread::State::RUNNABLE &&
-	     state == Thread::State::RUNNABLE )
+	if ( thread->state != ThreadState::RUNNABLE &&
+	     state == ThreadState::RUNNABLE )
 	{
 		if ( firstrunnablethread == NULL ) { firstrunnablethread = thread; }
 		thread->schedulerlistprev = firstrunnablethread->schedulerlistprev;
@@ -256,13 +256,13 @@ void SetThreadState(Thread* thread, Thread::State state)
 
 	thread->state = state;
 
-	assert(thread->state != Thread::State::RUNNABLE || thread->schedulerlistprev);
-	assert(thread->state != Thread::State::RUNNABLE || thread->schedulerlistnext);
+	assert(thread->state != ThreadState::RUNNABLE || thread->schedulerlistprev);
+	assert(thread->state != ThreadState::RUNNABLE || thread->schedulerlistnext);
 
 	Interrupt::SetEnabled(wasenabled);
 }
 
-Thread::State GetThreadState(Thread* thread)
+ThreadState GetThreadState(Thread* thread)
 {
 	return thread->state;
 }

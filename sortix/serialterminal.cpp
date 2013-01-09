@@ -24,11 +24,13 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/keyboard.h>
+#include <sortix/kernel/scheduler.h>
+
 #include <string.h>
+
 #include "vga.h"
 #include "uart.h"
 #include "serialterminal.h"
-#include "scheduler.h"
 
 namespace Sortix
 {

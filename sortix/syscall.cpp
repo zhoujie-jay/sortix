@@ -26,10 +26,10 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/scheduler.h>
 
 #include "process.h"
 #include "thread.h"
-#include "scheduler.h"
 
 namespace Sortix {
 namespace Syscall {

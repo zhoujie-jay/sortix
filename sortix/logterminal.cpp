@@ -30,6 +30,7 @@
 #include <sortix/kernel/inode.h>
 #include <sortix/kernel/keyboard.h>
 #include <sortix/kernel/poll.h>
+#include <sortix/kernel/scheduler.h>
 
 #include <sortix/termmode.h>
 #include <sortix/termios.h>
@@ -40,9 +41,9 @@
 
 #include <errno.h>
 #include <string.h>
+
 #include "utf8.h"
 #include "process.h"
-#include "scheduler.h"
 #include "logterminal.h"
 
 namespace Sortix {

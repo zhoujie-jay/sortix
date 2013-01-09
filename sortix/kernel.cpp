@@ -44,6 +44,7 @@
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/time.h>
+#include <sortix/kernel/scheduler.h>
 
 #include <sortix/fcntl.h>
 #include <sortix/stat.h>
@@ -60,7 +61,6 @@
 #include "multiboot.h"
 #include "thread.h"
 #include "process.h"
-#include "scheduler.h"
 #include "signal.h"
 #include "ata.h"
 #include "com.h"

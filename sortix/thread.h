@@ -26,6 +26,9 @@
 #define SORTIX_THREAD_H
 
 #include <sortix/signal.h>
+
+#include <sortix/kernel/scheduler.h>
+
 #include "signal.h"
 
 typedef struct multiboot_info multiboot_info_t;
@@ -76,9 +79,6 @@ namespace Sortix
 	friend void Thread__OnSigKill(Thread* thread);
 
 	public:
-		enum State { NONE, RUNNABLE, BLOCKING, DEAD };
-
-	public:
 		static void Init();
 
 	private:
@@ -99,7 +99,7 @@ namespace Sortix
 	public:
 		Thread* schedulerlistprev;
 		Thread* schedulerlistnext;
-		volatile State state;
+		volatile ThreadState state;
 		uint8_t fpuenv[512UL + 16UL];
 		uint8_t* fpuenvaligned;
 		bool fpuinitialized;

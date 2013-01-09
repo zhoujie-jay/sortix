@@ -25,6 +25,8 @@
 #ifndef SORTIX_SIGNAL_H
 #define SORTIX_SIGNAL_H
 
+#include <sortix/signal.h>
+
 #include "cpu.h"
 
 namespace Sortix {

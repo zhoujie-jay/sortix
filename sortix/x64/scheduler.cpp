@@ -24,7 +24,7 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/memorymanagement.h>
-#include "scheduler.h"
+#include <sortix/kernel/scheduler.h>
 
 namespace Sortix
 {
