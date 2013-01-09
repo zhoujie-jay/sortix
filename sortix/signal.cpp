@@ -24,10 +24,13 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/panic.h>
+#include <sortix/kernel/interrupt.h>
+
 #include <sortix/signal.h>
+
 #include <assert.h>
 #include <string.h>
-#include "interrupt.h"
+
 #include "thread.h"
 #include "signal.h"
 

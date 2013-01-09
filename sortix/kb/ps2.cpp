@@ -24,10 +24,14 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/keyboard.h>
+#include <sortix/kernel/interrupt.h>
+
 #include <sortix/keycodes.h>
+
 #include <assert.h>
 #include <string.h>
-#include "../interrupt.h"
+
+#include "../cpu.h"
 #include "ps2.h"
 
 namespace Sortix

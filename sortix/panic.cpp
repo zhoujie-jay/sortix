@@ -23,8 +23,8 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/interrupt.h>
 #include <string.h>
-#include "interrupt.h"
 #include <sortix/kernel/log.h>
 #include "calltrace.h"
 #include <sortix/kernel/panic.h>

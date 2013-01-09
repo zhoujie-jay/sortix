@@ -24,10 +24,12 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/memorymanagement.h>
+#include <sortix/kernel/interrupt.h>
+
 #include <string.h>
+
 #include "multiboot.h"
 #include "x86-family/memorymanagement.h"
-#include "interrupt.h"
 
 namespace Sortix
 {

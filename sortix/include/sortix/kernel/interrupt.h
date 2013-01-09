@@ -22,12 +22,17 @@
 
 *******************************************************************************/
 
-#ifndef SORTIX_INTERRUPT_H
-#define SORTIX_INTERRUPT_H
+#ifndef INCLUDE_SORTIX_KERNEL_INTERRUPT_H
+#define INCLUDE_SORTIX_KERNEL_INTERRUPT_H
 
-#include "cpu.h"
+#include <sortix/kernel/decl.h>
 
 namespace Sortix {
+
+namespace CPU {
+struct InterruptRegisters;
+} // namespace CPU
+
 namespace Interrupt {
 
 const unsigned IRQ0 = 32;

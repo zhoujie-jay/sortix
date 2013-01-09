@@ -26,6 +26,7 @@
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/interrupt.h>
 
 #include <sortix/mman.h>
 #include <sortix/signal.h>
@@ -37,7 +38,6 @@
 #include "process.h"
 #include "thread.h"
 #include "scheduler.h"
-#include "interrupt.h"
 #include "time.h"
 
 namespace Sortix

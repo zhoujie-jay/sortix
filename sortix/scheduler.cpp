@@ -25,13 +25,13 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/interrupt.h>
 
 #include <assert.h>
 #include <string.h>
 
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"
-#include "interrupt.h"
 #include "time.h"
 #include "thread.h"
 #include "process.h"

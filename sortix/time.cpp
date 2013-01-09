@@ -25,9 +25,9 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/interrupt.h>
 
 #include "time.h"
-#include "interrupt.h"
 #include "process.h"
 #include "scheduler.h"
 #include "sound.h"

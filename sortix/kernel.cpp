@@ -42,6 +42,7 @@
 #include <sortix/kernel/mtable.h>
 #include <sortix/kernel/keyboard.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/interrupt.h>
 
 #include <sortix/fcntl.h>
 #include <sortix/stat.h>
@@ -75,7 +76,6 @@
 #include "sound.h"
 #include "io.h"
 #include "pipe.h"
-#include "interrupt.h"
 #include "poll.h"
 #include "dispmsg.h"
 #include "fs/kram.h"
