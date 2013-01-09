@@ -22,17 +22,24 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/memorymanagement.h>
-#include <sortix/kernel/syscall.h>
-#include <sortix/kernel/interrupt.h>
+#include <sys/types.h>
 
 #include <assert.h>
 #include <string.h>
 
+#include <timespec.h>
+
+#include <sortix/clock.h>
+#include <sortix/timespec.h>
+
+#include <sortix/kernel/platform.h>
+#include <sortix/kernel/memorymanagement.h>
+#include <sortix/kernel/syscall.h>
+#include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/time.h>
+
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"
-#include "time.h"
 #include "thread.h"
 #include "process.h"
 #include "signal.h"
@@ -260,21 +267,27 @@ Thread::State GetThreadState(Thread* thread)
 	return thread->state;
 }
 
-int SysSleep(size_t secs)
+static void SleepUntil(struct timespec wakeat)
 {
-	uintmax_t timetosleep = ((uintmax_t) secs) * 1000ULL * 1000ULL;
-	uint32_t wakeat = Time::MicrosecondsSinceBoot() + timetosleep;
-	do { Yield(); }
-	while ( Time::MicrosecondsSinceBoot() < wakeat );
+	while ( timespec_lt(Time::Get(CLOCK_BOOT), wakeat) )
+		Yield();
+}
+
+int sys_sleep(size_t secs)
+{
+	struct timespec delay = timespec_make(secs, 0);
+	struct timespec now = Time::Get(CLOCK_BOOT);
+	SleepUntil(timespec_add(now, delay));
 	return 0;
 }
 
-int SysUSleep(size_t usecs)
+int sys_usleep(size_t usecs)
 {
-	uintmax_t timetosleep = (uintmax_t) usecs;
-	uint32_t wakeat = Time::MicrosecondsSinceBoot() + timetosleep;
-	do { Yield(); }
-	while ( Time::MicrosecondsSinceBoot() < wakeat );
+	size_t secs = usecs / 1000000;
+	size_t nsecs = (usecs % 1000000) * 1000;
+	struct timespec delay = timespec_make(secs, nsecs);
+	struct timespec now = Time::Get(CLOCK_BOOT);
+	SleepUntil(timespec_add(now, delay));
 	return 0;
 }
 
@@ -304,8 +317,8 @@ void Init()
 	Interrupt::RegisterRawHandler(132, thread_exit_handler, true);
 	Interrupt::RegisterHandler(132, ThreadExitCPU, NULL);
 
-	Syscall::Register(SYSCALL_SLEEP, (void*) SysSleep);
-	Syscall::Register(SYSCALL_USLEEP, (void*) SysUSleep);
+	Syscall::Register(SYSCALL_SLEEP, (void*) sys_sleep);
+	Syscall::Register(SYSCALL_USLEEP, (void*) sys_usleep);
 }
 
 } // namespace Scheduler

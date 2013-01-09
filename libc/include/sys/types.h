@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -34,7 +34,7 @@ __BEGIN_DECLS
 @include(blkcnt_t.h)
 @include(blksize_t.h)
 @include(clock_t.h)
-/* TODO: clockid_t */
+@include(clockid_t.h)
 @include(dev_t.h)
 /* TODO: fsblkcnt_t */
 /* TODO: fsfilcnt_t */

@@ -43,6 +43,7 @@
 #include <sortix/kernel/keyboard.h>
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/time.h>
 
 #include <sortix/fcntl.h>
 #include <sortix/stat.h>
@@ -56,7 +57,6 @@
 #include "kernelinfo.h"
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"
-#include "time.h"
 #include "multiboot.h"
 #include "thread.h"
 #include "process.h"

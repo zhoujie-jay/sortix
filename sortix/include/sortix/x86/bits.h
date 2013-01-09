@@ -149,6 +149,7 @@ typedef unsigned int __nlink_t;
 typedef __uintmax_t __ino_t;
 typedef __uintptr_t __dev_t;
 typedef __intmax_t __clock_t;
+typedef int __clockid_t;
 typedef long __time_t;
 typedef long __suseconds_t;
 

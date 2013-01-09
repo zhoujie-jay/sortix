@@ -30,12 +30,14 @@
 __BEGIN_DECLS
 
 @include(clock_t.h)
+@include(clockid_t.h)
 @include(size_t.h)
 @include(pid_t.h)
 @include(time_t.h)
 @include(NULL.h)
 
 __END_DECLS
+#include <sortix/clock.h>
 #include <sortix/timespec.h>
 __BEGIN_DECLS
 

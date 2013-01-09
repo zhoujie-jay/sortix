@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of Sortix.
 
@@ -17,25 +17,23 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    time.h
-    Handles interrupts whenever some time has passed and provides useful
+    sortix/clock.h
+    Supported logical clock devices.
 
 *******************************************************************************/
 
-#ifndef SORTIX_TIME_H
-#define SORTIX_TIME_H
+#ifndef INCLUDE_SORTIX_CLOCK_H
+#define INCLUDE_SORTIX_CLOCK_H
 
-#include "cpu.h"
+#include <features.h>
 
-namespace Sortix
-{
-	namespace Time
-	{
-		void Init();
-		void OnIRQ0(CPU::InterruptRegisters* Registers, void* user);
-		float GetTimeSinceBoot();
-		uintmax_t MicrosecondsSinceBoot();
-	}
-}
+__BEGIN_DECLS
+
+#define CLOCK_REALTIME 0 /* Current real time. */
+#define CLOCK_MONOTONIC 1 /* Always increasing time. */
+#define CLOCK_BOOT 2 /* Time since system boot (uptime). */
+#define CLOCK_INIT 3 /* Time since 'init' process began. */
+
+__END_DECLS
 
 #endif
