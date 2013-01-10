@@ -30,7 +30,12 @@
 __BEGIN_DECLS
 
 @include(clock_t.h)
+@include(size_t.h)
+@include(pid_t.h)
 @include(time_t.h)
+@include(NULL.h)
+
+#define CLOCKS_PER_SEC 1000000
 
 struct tm
 {
@@ -41,6 +46,7 @@ struct tm
 	int tm_mon;
 	int tm_year;
 	int tm_wday;
+	int tm_yday;
 	int tm_isdst;
 };
 
