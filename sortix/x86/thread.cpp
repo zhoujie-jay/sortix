@@ -96,7 +96,7 @@ namespace Sortix
 	{
 		if ( regs->InUserspace() )
 			return;
-		uint32_t* params = (uint32_t*) regs->ecx;
+		uint32_t* params = (uint32_t*) regs->ebx;
 		regs->eip = params[0];
 		regs->eflags = params[2];
 		regs->useresp = params[3];

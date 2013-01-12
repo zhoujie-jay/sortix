@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
 	This file is part of Sortix.
 
@@ -65,9 +65,9 @@ valid_syscall:
 	movl %ebp, %fs
 	movl %ebp, %gs
 
-	# Return to user-space, system call result in %rax, errno in %edx.
+	# Return to user-space, system call result in %rax:%rdx, errno in %ecx.
 	popq %rbp
-	movl global_errno, %edx
+	movl global_errno, %ecx
 
 	# If any signals are pending, fire them now.
 	movq asm_signal_is_pending, %rdi
@@ -88,7 +88,7 @@ call_signal_dispatcher:
 	# handle it for us when the signal is over.
 	movq 0(%rsp), %rdi # userspace rip
 	movq 16(%rsp), %rsi # userspace rflags
-	movq 24(%rsp), %rcx # userspace rsp, note %rdx is used for errno
+	movq 24(%rsp), %r8 # userspace rsp, note %rcx is used for errno
 	int $130 # Deliver pending signals.
 	# If we end up here, it means that the signal didn't override anything and
 	# that we should just go ahead and return to userspace ourselves.

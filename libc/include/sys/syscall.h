@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
 	This file is part of the Sortix C Library.
 
@@ -23,7 +23,7 @@
 *******************************************************************************/
 
 #if defined(SORTIX_KERNEL)
-#error This part of libc should not be built in kernel mode
+#error "This file is part of user-space and should not be built in kernel mode"
 #endif
 
 #ifndef	_SYS_SYSCALL_H
@@ -31,164 +31,72 @@
 
 #include <features.h>
 #include <sortix/syscallnum.h>
-#include <errno.h> /* Should not be exposed here; use an eventual __errno.h. */
 
-__BEGIN_DECLS
+/* Expand a macro and convert it to string. */
+#define SYSCALL_STRINGIFY_EXPAND(foo) #foo
 
-#define DECL_SYSCALL0(type,fn) type fn();
-#define DECL_SYSCALL1(type,fn,p1) type fn(p1);
-#define DECL_SYSCALL2(type,fn,p1,p2) type fn(p1,p2);
-#define DECL_SYSCALL3(type,fn,p1,p2,p3) type fn(p1,p2,p3);
-#define DECL_SYSCALL4(type,fn,p1,p2,p3,p4) type fn(p1,p2,p3,p4);
-#define DECL_SYSCALL5(type,fn,p1,p2,p3,p4,p5) type fn(p1,p2,p3,p4,p5);
-
-// System call functions for i386. (IA-32)
+/* Implement the body of a function that selects the right system call and
+   jumps into the generic implementation of system calls. */
 #if defined(__i386__)
 
-#define DEFN_SYSCALL0(type, fn, num) \
-inline type fn() \
-{ \
-	type a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-	return a; \
-}
+#define SYSCALL_FUNCTION_BODY(syscall_index) \
+"	mov $" SYSCALL_STRINGIFY_EXPAND(syscall_index) ", %eax\n" \
+"	jmp asm_syscall\n"
 
-#define DEFN_SYSCALL1(type, fn, num, P1) \
-inline type fn(P1 p1) \
-{ \
-	type a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((unsigned long)p1)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-	return a; \
-}
-
-#define DEFN_SYSCALL2(type, fn, num, P1, P2) \
-inline type fn(P1 p1, P2 p2) \
-{ \
-	type a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((unsigned long)p1), "c" ((unsigned long)p2)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-	return a; \
-}
-
-#define DEFN_SYSCALL3(type, fn, num, P1, P2, P3) \
-inline type fn(P1 p1, P2 p2, P3 p3) \
-{ \
-	type a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((unsigned long)p1), "c" ((unsigned long)p2), "d" ((unsigned long)p3)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-	return a; \
-}
-
-#define DEFN_SYSCALL4(type, fn, num, P1, P2, P3, P4) \
-inline type fn(P1 p1, P2 p2, P3 p3, P4 p4) \
-{ \
-	type a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((unsigned long)p1), "c" ((unsigned long)p2), "d" ((unsigned long)p3), "D" ((unsigned long)p4)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-	return a; \
-}
-
-#define DEFN_SYSCALL5(type, fn, num, P1, P2, P3, P4, P5) \
-inline type fn(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) \
-{ \
-	type a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((unsigned long)p1), "c" ((unsigned long)p2), "d" ((unsigned long)p3), "D" ((unsigned long)p4), "S" ((unsigned long)p5)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-	return a; \
-}
-
-// System call functions for x86_64. (amd64)
 #elif defined(__x86_64__)
 
-// TODO: Make these inline - though that requires a move advanced inline
-// assembly stub to force parameters into the right registers.
+#define SYSCALL_FUNCTION_BODY(syscall_index) \
+"	mov $" SYSCALL_STRINGIFY_EXPAND(syscall_index) ", %rax\n" \
+"	jmp asm_syscall\n"
 
-#define DEFN_SYSCALL0(type, fn, num) \
-type fn() \
-{ \
-	type a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-	return a; \
-}
-
-#define DEFN_SYSCALL1(type, fn, num, P1) \
-type fn(P1) \
-{ \
-	type a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-	return a; \
-}
-
-#define DEFN_SYSCALL2(type, fn, num, P1, P2) \
-type fn(P1, P2) \
-{ \
-	type a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-	return a; \
-}
-
-#define DEFN_SYSCALL3(type, fn, num, P1, P2, P3) \
-type fn(P1, P2, P3) \
-{ \
-	type a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-	return a; \
-}
-
-#define DEFN_SYSCALL4(type, fn, num, P1, P2, P3, P4) \
-type fn(P1, P2, P3, P4) \
-{ \
-	type a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-	return a; \
-}
-
-#define DEFN_SYSCALL5(type, fn, num, P1, P2, P3, P4, P5) \
-type fn(P1, P2, P3, P4, P5) \
-{ \
-	type a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-	return a; \
-}
-
-// Unknown platform with no implementation available.
 #else
-#error System call interface is not declared for host system.
+
+#error Provide an implementation for your platform.
 
 #endif
 
-__END_DECLS
+/* Create a function that selects the right system call and jumps into the
+   generic implementation of system calls. */
+#define SYSCALL_FUNCTION(syscall_name, syscall_index) \
+asm("\n" \
+".pushsection .text\n" \
+".type " #syscall_name ", @function\n" \
+#syscall_name ":\n" \
+SYSCALL_FUNCTION_BODY(syscall_index) \
+".popsection\n" \
+);
+
+/* Create a function that performs the system call by injecting the right
+   instructions into the compiler assembly output. Then provide a declaration of
+   the function that looks just like the caller wants it. */
+#define DEFINE_SYSCALL(syscall_type, syscall_name, syscall_index, syscall_formals) \
+SYSCALL_FUNCTION(syscall_name, syscall_index) \
+__BEGIN_DECLS \
+extern "C" { syscall_type syscall_name syscall_formals; } \
+__END_DECLS \
+
+/* System call accepting no parameters. */
+#define DEFN_SYSCALL0(type, fn, num) \
+DEFINE_SYSCALL(type, fn, num, ())
+
+/* System call accepting 1 parameter. */
+#define DEFN_SYSCALL1(type, fn, num, t1) \
+DEFINE_SYSCALL(type, fn, num, (t1 p1))
+
+/* System call accepting 2 parameters. */
+#define DEFN_SYSCALL2(type, fn, num, t1, t2) \
+DEFINE_SYSCALL(type, fn, num, (t1 p1, t2 p2))
+
+/* System call accepting 3 parameters. */
+#define DEFN_SYSCALL3(type, fn, num, t1, t2, t3) \
+DEFINE_SYSCALL(type, fn, num, (t1 p1, t2 p2, t3 p3))
+
+/* System call accepting 4 parameters. */
+#define DEFN_SYSCALL4(type, fn, num, t1, t2, t3, t4) \
+DEFINE_SYSCALL(type, fn, num, (t1 p1, t2 p2, t3 p3, t4 p4))
+
+/* System call accepting 5 parameters. */
+#define DEFN_SYSCALL5(type, fn, num, t1, t2, t3, t4, t5) \
+DEFINE_SYSCALL(type, fn, num, (t1 p1, t2 p2, t3 p3, t4 p4, t5 p5))
 
 #endif

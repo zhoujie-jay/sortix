@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
 	This file is part of Sortix.
 
@@ -17,7 +17,7 @@
 	You should have received a copy of the GNU General Public License along with
 	Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	syscall.s
+	x86/syscall.s
 	An assembly stub that acts as glue for system calls.
 
 *******************************************************************************/
@@ -69,13 +69,13 @@ valid_syscall:
 	movl %ebp, %fs
 	movl %ebp, %gs
 
-	# Return to user-space, system call result in %eax, errno in %edx.
+	# Return to user-space, system call result in %eax:%edx, errno in %ecx.
 	popl %ebp
-	movl global_errno, %edx
+	movl global_errno, %ecx
 
 	# If any signals are pending, fire them now.
-	movl asm_signal_is_pending, %ecx
-	testl %ecx, %ecx
+	movl asm_signal_is_pending, %ebx
+	testl %ebx, %ebx
 	jnz call_signal_dispatcher
 
 	iretl
@@ -90,7 +90,7 @@ call_signal_dispatcher:
 	# call is made this stack will get reused and all our nice temporaries wil
 	# be garbage. We therefore pass the kernel the state to return to and it'll
 	# handle it for us when the signal is over.
-	movl %esp, %ecx
+	movl %esp, %ebx
 	int $130 # Deliver pending signals.
 	# If we end up here, it means that the signal didn't override anything and
 	# that we should just go ahead and return to userspace ourselves.

@@ -119,7 +119,7 @@ namespace Sortix
 			return;
 		regs->rip = regs->rdi;
 		regs->rflags = regs->rsi;
-		regs->userrsp = regs->rcx;
+		regs->userrsp = regs->r8;
 		regs->cs = UCS | URPL;
 		regs->ds = UDS | URPL;
 		regs->ss = UDS | URPL;

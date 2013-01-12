@@ -134,6 +134,7 @@ clock.o \
 close.o \
 $(CPUDIR)/fork.o \
 $(CPUDIR)/signal.o \
+$(CPUDIR)/syscall.o \
 dlfcn.o \
 dup.o \
 env.o \
