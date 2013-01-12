@@ -144,13 +144,13 @@ namespace Sortix
 			return -1;
 		}
 
-		void SysSeek(int fd, off_t* offset, int whence)
+		int SysSeek(int fd, off_t* offset, int whence)
 		{
 			// TODO: Validate that offset is a legal user-space off_t!
 			Process* process = CurrentProcess();
 			Device* dev = process->descriptors.Get(fd);
-			if ( !dev ) { errno = EBADF; *offset = -1; return; }
-			if ( !dev->IsType(Device::BUFFER) ) { errno = EBADF; *offset = -1; return; }
+			if ( !dev ) { errno = EBADF; *offset = -1; return -1; }
+			if ( !dev->IsType(Device::BUFFER) ) { errno = EBADF; *offset = -1; return -1; }
 			DevBuffer* buffer = (DevBuffer*) dev;
 			off_t origin;
 			switch ( whence )
@@ -158,12 +158,13 @@ namespace Sortix
 				case SEEK_SET: origin = 0; break;
 				case SEEK_CUR: origin = buffer->Position(); break;
 				case SEEK_END: origin = buffer->Size(); break;
-				default: errno = EINVAL; *offset = -1; return;
+				default: errno = EINVAL; *offset = -1; return -1;
 			}
 			off_t newposition = origin + *offset;
-			if ( newposition < 0 ) { errno = EINVAL; *offset = -1; return; }
-			if ( !buffer->Seek(newposition) ) { *offset = -1; return; }
+			if ( newposition < 0 ) { errno = EINVAL; *offset = -1; return -1; }
+			if ( !buffer->Seek(newposition) ) { *offset = -1; return -1; }
 			*offset = buffer->Position();
+			return 0;
 		}
 
 		int SysClose(int fd)

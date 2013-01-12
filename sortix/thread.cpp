@@ -240,9 +240,10 @@ namespace Sortix
 		kthread_exit();
 	}
 
-	void SysRegisterSignalHandler(sighandler_t sighandler)
+	int SysRegisterSignalHandler(sighandler_t sighandler)
 	{
 		CurrentThread()->sighandler = sighandler;
+		return 0;
 	}
 
 	void Thread::SetHavePendingSignals()

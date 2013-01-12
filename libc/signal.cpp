@@ -36,7 +36,7 @@ extern "C" void SignalHandler(int signum)
 		handlers[signum](signum);
 }
 
-DEFN_SYSCALL1_VOID(sys_register_signal_handler, SYSCALL_REGISTER_SIGNAL_HANDLER, sighandler_t);
+DEFN_SYSCALL1(int, sys_register_signal_handler, SYSCALL_REGISTER_SIGNAL_HANDLER, sighandler_t);
 
 extern "C" void init_signal()
 {

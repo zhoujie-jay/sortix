@@ -25,7 +25,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-DEFN_SYSCALL1_VOID(SysSleep, SYSCALL_SLEEP, long);
+DEFN_SYSCALL1(int, SysSleep, SYSCALL_SLEEP, long);
 
 extern "C" unsigned sleep(unsigned secs)
 {

@@ -25,10 +25,10 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-DEFN_SYSCALL1_VOID(sys_exit, SYSCALL_EXIT, int);
+DEFN_SYSCALL1(int, sys_exit, SYSCALL_EXIT, int);
 
 extern "C" void _exit(int status)
 {
 	sys_exit(status);
-	while(true); // TODO: noreturn isn't set on sys_exit.
+	__builtin_unreachable();
 }

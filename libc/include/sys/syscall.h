@@ -111,65 +111,6 @@ inline type fn(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) \
 	return a; \
 }
 
-#define DEFN_SYSCALL0_VOID(fn, num) \
-inline void fn() \
-{ \
-	unsigned long a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-}
-
-#define DEFN_SYSCALL1_VOID(fn, num, P1) \
-inline void fn(P1 p1) \
-{ \
-	unsigned long a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((unsigned long)p1)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-}
-
-#define DEFN_SYSCALL2_VOID(fn, num, P1, P2) \
-inline void fn(P1 p1, P2 p2) \
-{ \
-	unsigned long a; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((unsigned long)p1), "c" ((unsigned long)p2)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-}
-
-#define DEFN_SYSCALL3_VOID(fn, num, P1, P2, P3) \
-inline void fn(P1 p1, P2 p2, P3 p3) \
-{ \
-	unsigned long a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((unsigned long)p1), "c" ((unsigned long)p2), "d" ((unsigned long)p3)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-}
-
-#define DEFN_SYSCALL4_VOID(fn, num, P1, P2, P3, P4) \
-inline void fn(P1 p1, P2 p2, P3 p3, P4 p4) \
-{ \
-	unsigned long a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((unsigned long)p1), "c" ((unsigned long)p2), "d" ((unsigned long)p3), "D" ((unsigned long)p4)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-}
-
-#define DEFN_SYSCALL5_VOID(fn, num, P1, P2, P3, P4, P5) \
-inline void fn(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5) \
-{ \
-	unsigned long a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num), "b" ((unsigned long)p1), "c" ((unsigned long)p2), "d" ((unsigned long)p3), "D" ((unsigned long)p4), "S" ((unsigned long)p5)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-}
-
 // System call functions for x86_64. (amd64)
 #elif defined(__x86_64__)
 
@@ -240,66 +181,6 @@ type fn(P1, P2, P3, P4, P5) \
 	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
 	if ( reterrno ) { errno = reterrno; } \
 	return a; \
-}
-
-#define DEFN_SYSCALL0_VOID(fn, num) \
-void fn() \
-{ \
-	unsigned long a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-}
-
-#define DEFN_SYSCALL1_VOID(fn, num, P1) \
-void fn(P1) \
-{ \
-	unsigned long a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-}
-
-#define DEFN_SYSCALL2_VOID(fn, num, P1, P2) \
-void fn(P1, P2) \
-{ \
-	unsigned long a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-}
-
-#define DEFN_SYSCALL3_VOID(fn, num, P1, P2, P3) \
-void fn(P1, P2, P3) \
-{ \
-	unsigned long a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-}
-
-#define DEFN_SYSCALL4_VOID(fn, num, P1, P2, P3, P4) \
-void fn(P1, P2, P3, P4) \
-{ \
-	unsigned long a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
-}
-
-#define DEFN_SYSCALL5_VOID(fn, num, P1, P2, P3, P4, P5) \
-void fn(P1, P2, P3, P4, P5) \
-{ \
-	unsigned long a; \
-	int reterrno; \
-	asm volatile("int $0x80" : "=a" (a) : "0" (num)); \
-	asm volatile("movl %%edx, %0" : "=r"(reterrno)); \
-	if ( reterrno ) { errno = reterrno; } \
 }
 
 // Unknown platform with no implementation available.

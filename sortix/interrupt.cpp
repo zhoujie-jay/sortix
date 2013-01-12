@@ -56,7 +56,7 @@ const uint8_t PIC_MODE_BUF_MASTER = 0x0C; // Buffered mode/master
 const uint8_t PIC_MODE_SFNM = 0x10; // Special fully nested (not)
 
 extern "C" { unsigned long asm_is_cpu_interrupted = 0; }
-const bool DEBUG_EXCEPTION = false;
+const bool DEBUG_EXCEPTION = true;
 const bool DEBUG_IRQ = false;
 const bool DEBUG_ISR = false;
 bool initialized;

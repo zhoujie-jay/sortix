@@ -406,9 +406,10 @@ namespace Sortix
 			t->DeliverSignal(SIGKILL);
 	}
 
-	void SysExit(int status)
+	int SysExit(int status)
 	{
 		CurrentProcess()->Exit(status);
+		return 0;
 	}
 
 	bool Process::DeliverSignal(int signum)

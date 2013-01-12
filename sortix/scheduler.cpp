@@ -248,20 +248,22 @@ Thread::State GetThreadState(Thread* thread)
 	return thread->state;
 }
 
-void SysSleep(size_t secs)
+int SysSleep(size_t secs)
 {
 	uintmax_t timetosleep = ((uintmax_t) secs) * 1000ULL * 1000ULL;
 	uint32_t wakeat = Time::MicrosecondsSinceBoot() + timetosleep;
 	do { Yield(); }
 	while ( Time::MicrosecondsSinceBoot() < wakeat );
+	return 0;
 }
 
-void SysUSleep(size_t usecs)
+int SysUSleep(size_t usecs)
 {
 	uintmax_t timetosleep = (uintmax_t) usecs;
 	uint32_t wakeat = Time::MicrosecondsSinceBoot() + timetosleep;
 	do { Yield(); }
 	while ( Time::MicrosecondsSinceBoot() < wakeat );
+	return 0;
 }
 
 extern "C" void yield_cpu_handler();

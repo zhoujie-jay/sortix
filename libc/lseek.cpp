@@ -25,7 +25,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-DEFN_SYSCALL3_VOID(SysSeek, SYSCALL_SEEK, int, off_t*, int);
+DEFN_SYSCALL3(int, SysSeek, SYSCALL_SEEK, int, off_t*, int);
 
 extern "C" off_t lseek(int fd, off_t offset, int whence)
 {
