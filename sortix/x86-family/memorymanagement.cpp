@@ -440,6 +440,8 @@ namespace Sortix
 			}
 
 			addr_t entry = (PMLS[1] + offset)->entry[pmlchildid[1]];
+			if ( !(entry & PML_PRESENT) ) { return false; }
+
 			int entryflags = entry & PML_ADDRESS;
 			int entryprot = PMLFlagsToProtection(entryflags);
 			prot &= entryprot;
