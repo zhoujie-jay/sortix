@@ -97,6 +97,14 @@
 #define SYSCALL_RENAMEAT 73
 #define SYSCALL_READLINKAT 74
 #define SYSCALL_FSYNC 75
-#define SYSCALL_MAX_NUM 76 /* index of highest constant + 1 */
+#define SYSCALL_GETUID 76
+#define SYSCALL_GETGID 77
+#define SYSCALL_SETUID 78
+#define SYSCALL_SETGID 79
+#define SYSCALL_GETEUID 80
+#define SYSCALL_GETEGID 81
+#define SYSCALL_SETEUID 82
+#define SYSCALL_SETEGID 83
+#define SYSCALL_MAX_NUM 84 /* index of highest constant + 1 */
 
 #endif

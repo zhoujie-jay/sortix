@@ -88,6 +88,7 @@ fsfunc.o \
 fs/kram.o \
 fs/user.o \
 fs/util.o \
+identity.o \
 initrd.o \
 inode.o \
 interlock.o \

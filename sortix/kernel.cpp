@@ -72,6 +72,7 @@
 #include "serialterminal.h"
 #include "textterminal.h"
 #include "elf.h"
+#include "identity.h"
 #include "initrd.h"
 #include "vga.h"
 #include "bga.h"
@@ -407,6 +408,9 @@ static void BootThread(void* /*user*/)
 
 	// Initialize the sound driver.
 	Sound::Init();
+
+	// Initialize the identity system calls.
+	Identity::Init();
 
 	// Initialize the IO system.
 	IO::Init();

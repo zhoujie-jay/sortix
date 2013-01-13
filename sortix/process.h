@@ -83,8 +83,11 @@ namespace Sortix
 		char* program_image_path;
 		addr_t addrspace;
 		pid_t pid;
-		uid_t uid;
-		gid_t gid;
+
+	public:
+		kthread_mutex_t idlock;
+		uid_t uid, euid;
+		gid_t gid, egid;
 
 	private:
 		kthread_mutex_t ptrlock;

@@ -122,9 +122,12 @@ namespace Sortix
 		firstthread = NULL;
 		threadlock = KTHREAD_MUTEX_INITIALIZER;
 		ptrlock = KTHREAD_MUTEX_INITIALIZER;
+		idlock = KTHREAD_MUTEX_INITIALIZER;
 		mmapfrom = 0x80000000UL;
 		exitstatus = -1;
 		pid = AllocatePID();
+		uid = euid = 0;
+		gid = egid = 0;
 		Put(this);
 	}
 
@@ -570,6 +573,13 @@ namespace Sortix
 		//	failure = true;
 		clone->mtable = mtable;
 		kthread_mutex_unlock(&ptrlock);
+
+		kthread_mutex_lock(&idlock);
+		clone->uid = uid;
+		clone->gid = gid;
+		clone->euid = euid;
+		clone->egid = egid;
+		kthread_mutex_unlock(&idlock);
 
 		if ( !(clone->program_image_path = String::Clone(program_image_path)) )
 			failure = false;
