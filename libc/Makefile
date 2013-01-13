@@ -125,6 +125,7 @@ close.o \
 $(CPUDIR)/fork.o \
 $(CPUDIR)/signal.o \
 $(CPUDIR)/syscall.o \
+creat.o \
 dispmsg_issue.o \
 dlfcn.o \
 dup2.o \

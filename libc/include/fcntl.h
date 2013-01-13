@@ -53,12 +53,10 @@ struct flock
 	pid_t l_pid; /* Process ID of the process holding the lock; returned with F_GETLK. */
 };
 
+int creat(const char* path, mode_t mode);
 int fcntl(int fd, int cmd, ...);
 int open(const char* path, int oflag, ...);
 int openat(int fd, const char* path, int oflag, ...);
-#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
-int creat(const char* path, mode_t mode);
-#endif
 
 __END_DECLS
 
