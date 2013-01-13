@@ -35,6 +35,10 @@ __BEGIN_DECLS
 extern char* program_invocation_name;
 extern char* program_invocation_short_name;
 
+/* Satisfy broken programs that expect these to be macros. */
+#define program_invocation_name program_invocation_name
+#define program_invocation_short_name program_invocation_short_name
+
 __END_DECLS
 
 #endif
