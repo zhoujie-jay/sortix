@@ -200,6 +200,7 @@ getppid.o \
 gettermmode.o \
 gettimeofday.o \
 getuid.o \
+grent.o \
 init.o \
 ioctl.o \
 ioleast.o \
