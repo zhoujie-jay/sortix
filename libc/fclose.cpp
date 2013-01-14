@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -26,8 +26,12 @@
 
 extern "C" int fclose(FILE* fp)
 {
-	int result = fflush(fp);
-	result |= fp->close_func ? fp->close_func(fp->user) : 0;
+	if ( fflush(fp) )
+	{
+		/* TODO: How to report errors here? fclose may need us to return its
+		         exact error value, for instance, as with popen/pclose. */;
+	}
+	int result = fp->close_func ? fp->close_func(fp->user) : 0;
 	funregister(fp);
 	if ( fp->free_func )
 		fp->free_func(fp);
