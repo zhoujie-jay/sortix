@@ -200,6 +200,7 @@ openat.o \
 open.o \
 pipe.o \
 poll.o \
+popen.o \
 ppoll.o \
 print.o \
 putc.o \

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -97,7 +97,9 @@ extern int getc(FILE* stream);
 extern int getchar(void);
 extern ssize_t getdelim(char** restrict lineptr, size_t* restrict n, int delimiter, FILE* restrict stream);
 extern ssize_t getline(char** restrict lineptr, size_t* restrict n, FILE* restrict stream);
+extern int pclose(FILE* steam);
 extern void perror(const char* s);
+extern FILE* popen(const char* command, const char* mode);
 extern int printf(const char* restrict format, ...);
 extern int putc(int c, FILE* stream);
 extern int putchar(int c);
@@ -128,7 +130,6 @@ extern int vsscanf(const char* restrict s, const char* restrict format, __gnuc_v
 extern char* ctermid(char* s);
 extern FILE *fmemopen(void* restrict buf, size_t size, const char* restrict mode);
 extern FILE* open_memstream(char** bufp, size_t* sizep);
-extern FILE* popen(const char* command, const char* mode);
 extern FILE* tmpfile(void);
 extern int dprintf(int fildes, const char* restrict format, ...);
 extern int fgetpos(FILE* restrict stream, fpos_t* restrict pos);
@@ -136,7 +137,6 @@ extern int fsetpos(FILE* stream, const fpos_t* pos);
 extern int ftrylockfile(FILE* file);
 extern int getchar_unlocked(void);
 extern int getc_unlocked(FILE* stream);
-extern int pclose(FILE* steam);
 extern int putchar_unlocked(int c);
 extern int putc_unlocked(int c, FILE* steam);
 extern int setvbuf(FILE* restrict stream, char* restrict buf, int type, size_t size);
