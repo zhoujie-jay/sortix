@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
 	This file is part of Sortix.
 
@@ -29,14 +29,16 @@
 namespace Sortix {
 namespace Memory {
 
-int SysMemStat(size_t* memused, size_t* memtotal)
+static int sys_memstat(size_t* memused, size_t* memtotal)
 {
 	size_t used;
 	size_t total;
 	Statistics(&used, &total);
 	// TODO: Check if legal user-space buffers!
-	*memused = used;
-	*memtotal = total;
+	if ( memused )
+		*memused = used;
+	if ( memtotal )
+		*memtotal = total;
 	return 0;
 }
 
@@ -46,7 +48,7 @@ void Init(multiboot_info_t* bootinfo)
 {
 	InitCPU(bootinfo);
 
-	Syscall::Register(SYSCALL_MEMSTAT, (void*) SysMemStat);
+	Syscall::Register(SYSCALL_MEMSTAT, (void*) sys_memstat);
 }
 
 } // namespace Memory
