@@ -75,9 +75,10 @@ void Init()
 	Interrupt::RegisterHandler(7, OnFPUAccess, NULL);
 }
 
-void NofityTaskExit()
+void NofityTaskExit(Thread* thread)
 {
-	fputhread = NULL;
+	if ( fputhread == thread )
+		fputhread = NULL;
 	DisableFPU();
 }
 

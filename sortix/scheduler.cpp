@@ -175,7 +175,8 @@ static void InterruptYieldCPU(CPU::InterruptRegisters* regs, void* /*user*/)
 
 static void ThreadExitCPU(CPU::InterruptRegisters* regs, void* /*user*/)
 {
-	Float::NofityTaskExit(); // Can't use floating point instructions from now.
+	// Can't use floating point instructions from now.
+	Float::NofityTaskExit(currentthread);
 	SetThreadState(currentthread, Thread::State::DEAD);
 	InterruptYieldCPU(regs, NULL);
 }

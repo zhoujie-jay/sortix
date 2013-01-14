@@ -26,10 +26,13 @@
 #define SORTIX_FLOAT_H
 
 namespace Sortix {
+
+class Thread;
+
 namespace Float {
 
 void Init();
-void NofityTaskExit();
+void NofityTaskExit(Thread* thread);
 
 static inline void EnableFPU()
 {
@@ -50,5 +53,6 @@ static inline void NotityTaskSwitch()
 }
 
 } // namespace Float
+
 } // namespace Sortix
 #endif
