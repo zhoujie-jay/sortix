@@ -34,6 +34,7 @@
 __BEGIN_DECLS
 
 @include(pid_t.h);
+typedef int sig_atomic_t;
 
 typedef void (*sighandler_t)(int);
 
