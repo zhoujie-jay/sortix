@@ -26,6 +26,7 @@
 #define	_STDLIB_H 1
 
 #include <features.h>
+#include <sortix/wait.h>
 
 __BEGIN_DECLS
 
@@ -44,8 +45,6 @@ typedef int div_t, ldiv_t, lldiv_t;
 @include(NULL.h)
 @include(size_t.h)
 @include(wchar_t.h)
-
-/* TODO: WEXITSTATUS, WIFEXITED, WIFSIGNALED, WIFSTOPPED, WNOHANG, WSTOPSIG, WTERMSIG, WUNTRACED is missing here */
 
 void abort(void) __attribute__ ((noreturn));
 int abs(int value);
