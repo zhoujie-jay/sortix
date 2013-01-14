@@ -275,6 +275,11 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 					prepend_chars = zero_pad = false;
 					blank_char = ' ';
 					break;
+				case '*':
+					if ( !(prepend_chars || append_chars) )
+						prepend_chars = true;
+					field_width = (unsigned int) va_arg(parameters, int);
+					break;
 				case '0':
 					if ( !(prepend_chars || append_chars) || (!field_width && space_pad) )
 					{
@@ -293,7 +298,7 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 				case '8':
 				case '9':
 					if ( !(prepend_chars || append_chars) )
-						goto unsupported_conversion;
+						prepend_chars = true;
 					field_width = field_width * 10 + c - '0';
 					break;
 				case 'p':
@@ -445,10 +450,13 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 			}
 			case STRING:
 			{
-				READY_FLUSH();
 				const char* str = va_arg(parameters, const char*);
 				size_t len = strlen(str);
+				size_t chars = len;
+				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
+				READY_FLUSH();
 				if ( callback && callback(user, str, len) != len ) { return SIZE_MAX; }
+				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				written += len;
 				break;
 			}
