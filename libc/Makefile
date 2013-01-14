@@ -167,6 +167,7 @@ ioleast.o \
 isatty.o \
 kernelinfo.o \
 kill.o \
+lchown.o \
 linkat.o \
 link.o \
 localeconv.o \
