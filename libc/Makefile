@@ -225,6 +225,7 @@ signal.o \
 sleep.o \
 stat.o \
 stdio.o \
+system.o \
 tfork.o \
 time.o \
 truncateat.o \

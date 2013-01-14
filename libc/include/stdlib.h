@@ -74,6 +74,7 @@ long strtol(const char* restrict, char** restrict, int);
 unsigned long strtoul(const char* restrict, char** restrict, int);
 unsigned long long strtoull(const char* restrict, char** restrict, int);
 long long strtoll(const char* restrict, char** restrict, int);
+int system(const char*);
 int unsetenv(const char*);
 int wctomb(char*, wchar_t);
 
@@ -130,7 +131,6 @@ void srandom(unsigned);
 double strtod(const char* restrict, char** restrict);
 float strtof(const char* restrict, char** restrict);
 long double strtold(const char* restrict, char** restrict);
-int system(const char*);
 int unlockpt(int);
 size_t wcstombs(char* restrict, const wchar_t *restrict, size_t);
 
