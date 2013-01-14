@@ -300,6 +300,7 @@ static int sys_fstat(int fd, struct stat* st)
 static int sys_fcntl(int fd, int cmd, unsigned long arg)
 {
 	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
+	Ref<Descriptor> desc;
 	int ret = -1;
 	switch ( cmd )
 	{
@@ -310,8 +311,12 @@ static int sys_fcntl(int fd, int cmd, unsigned long arg)
 		ret = dtable->GetFlags(fd);
 		break;
 	case F_SETFL:
+		if ( (desc = dtable->Get(fd)) )
+			ret = desc->SetFlags((int) arg) ? 0 : -1;
+		break;
 	case F_GETFL:
-		errno = ENOSYS;
+		if ( (desc = dtable->Get(fd)) )
+			ret = desc->GetFlags();
 		break;
 	default:
 		errno = EINVAL;

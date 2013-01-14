@@ -110,6 +110,23 @@ Descriptor::~Descriptor()
 {
 }
 
+bool Descriptor::SetFlags(int new_dflags)
+{
+	// TODO: Hmm, there is race condition between changing the flags here and
+	//       the code that uses the flags below. We could add a lock, but that
+	//       would kinda prevent concurrency on the same file descriptor. Since
+	//       the chances of this becoming a problem is rather slim (but could
+	//       happen!), we'll do the unsafe thing for now. (See below also)
+	dflags = (dflags & ~DESCRIPTOR_FLAGS) & (new_dflags & DESCRIPTOR_FLAGS);
+	return true;
+}
+
+int Descriptor::GetFlags()
+{
+	// TODO: The race condition also applies here if the variable can change.
+	return dflags;
+}
+
 Ref<Descriptor> Descriptor::Fork()
 {
 	Ref<Descriptor> ret(new Descriptor(vnode, dflags));

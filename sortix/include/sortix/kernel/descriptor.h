@@ -53,6 +53,8 @@ public:
 	Descriptor(Ref<Vnode> vnode, int dflags);
 	virtual ~Descriptor();
 	Ref<Descriptor> Fork();
+	bool SetFlags(int new_dflags);
+	int GetFlags();
 	int sync(ioctx_t* ctx);
 	int stat(ioctx_t* ctx, struct stat* st);
 	int chmod(ioctx_t* ctx, mode_t mode);
