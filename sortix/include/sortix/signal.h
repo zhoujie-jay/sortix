@@ -65,6 +65,7 @@ __BEGIN_DECLS
 #define SIGAIO		34 /* Asynchronous I/O */
 #define SIG__NUM_DECLARED 35
 #define SIG_MAX_NUM 128
+#define NSIG SIG_MAX_NUM
 
 #define SIG_PRIO_NORMAL 0
 #define SIG_PRIO_HIGH 1
