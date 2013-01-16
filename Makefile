@@ -3,7 +3,7 @@ MAKEFILE_NOT_MEANT_FOR_SORTIX=1
 include compiler.mak
 include version.mak
 
-MODULES=libc dispd games mkinitrd mxmpp utils bench sortix
+MODULES=libc libm dispd games mkinitrd mxmpp utils bench sortix
 
 ifndef SYSROOT
   SYSROOT:=$(shell pwd)/sysroot
@@ -60,7 +60,7 @@ sysroot-fsh:
 
 .PHONY: sysroot-base-headers
 sysroot-base-headers: sysroot-fsh
-	(for D in libc sortix; do ($(MAKE) -C $$D install-headers $(SUBMAKE_OPTIONS) DESTDIR="$(SYSROOT)") || exit $$?; done)
+	(for D in libc libm sortix; do ($(MAKE) -C $$D install-headers $(SUBMAKE_OPTIONS) DESTDIR="$(SYSROOT)") || exit $$?; done)
 
 .PHONY: sysroot-system
 sysroot-system: sysroot-fsh sysroot-base-headers

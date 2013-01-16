@@ -25,7 +25,6 @@ dirent/alphasort.o \
 dirent/dir.o \
 dirent/versionsort.o \
 errno/errno.o \
-fabs.o \
 signal/sigaddset.o \
 signal/sigdelset.o \
 signal/sigemptyset.o \
@@ -429,7 +428,7 @@ ifeq ($(HOST),x86_64-sortix)
     SORTIXFLAGS:=$(SORTIXFLAGS) -mno-red-zone
 endif
 
-BINS=libc.a libg.a libm.a libpthread.a libstdc++.a $(CRTOBJ)
+BINS=libc.a libg.a libpthread.a libstdc++.a $(CRTOBJ)
 BINSKERNEL=libc-sortix.a
 INSTALLLIBS:=$(addprefix $(DESTDIR)$(LIBDIR)/,$(BINS))
 INSTALLLIBSKERNEL:=$(addprefix $(DESTDIR)$(LIBDIR)/,$(BINSKERNEL))
@@ -452,9 +451,6 @@ libc-sortix.a: $(SORTIXOBJS)
 	$(HOSTAR) rcs $@ $(SORTIXOBJS)
 
 libg.a:
-	$(HOSTAR) rcs $@
-
-libm.a:
 	$(HOSTAR) rcs $@
 
 libpthread.a:
