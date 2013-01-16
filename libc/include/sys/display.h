@@ -26,6 +26,7 @@
 #define INCLUDE_SYS_DISPLAY_H
 
 #include <features.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <sortix/display.h>
 

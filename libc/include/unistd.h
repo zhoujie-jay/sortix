@@ -29,9 +29,10 @@
 #define _UNISTD_H 1
 
 #include <features.h>
+#include <__/stdint.h>
 #if defined(_SORTIX_SOURCE)
-#include <stdint.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <sortix/fork.h>
 #endif
 #include <sortix/seek.h>
@@ -77,9 +78,6 @@ __BEGIN_DECLS
 @include(off_t.h)
 @include(pid_t.h)
 @include(useconds_t.h)
-#if defined(_SORTIX_SOURCE) || defined(_SORTIX_ALWAYS_SBRK)
-@include(intn_t.h)
-#endif
 
 #if defined(_WANT_ENVIRON)
 extern char** environ;
@@ -195,12 +193,12 @@ size_t readall(int fd, void* buf, size_t count);
 size_t readleast(int fd, void* buf, size_t least, size_t max);
 pid_t sfork(int flags);
 pid_t tfork(int flags, tforkregs_t* regs);
-int uptime(uintmax_t* usecssinceboot);
+int uptime(__uintmax_t* usecssinceboot);
 size_t writeall(int fd, const void* buf, size_t count);
 size_t writeleast(int fd, const void* buf, size_t least, size_t max);
 #endif
 #if defined(_SORTIX_SOURCE) || defined(_SORTIX_ALWAYS_SBRK)
-void* sbrk(intptr_t increment);
+void* sbrk(__intptr_t increment);
 #endif
 
 __END_DECLS

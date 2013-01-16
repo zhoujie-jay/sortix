@@ -30,6 +30,7 @@
 #include <sortix/fcntl.h>
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
 #include <string.h>
 #include "process.h"
 

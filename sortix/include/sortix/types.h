@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of Sortix.
 
@@ -17,15 +17,14 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    sortix/bits.h
-    Declares the current platform macro.
+    sortix/types.h
+    Data types.
 
 *******************************************************************************/
 
-#if !defined(PLATFORM_X86) && !defined(PLATFORM_X64)
-	#if defined(__x86_64__)
-		#define PLATFORM_X64
-	#else
-		#define PLATFORM_X86
-	#endif
+#ifndef INCLUDE_SORTIX_TYPES_H
+#define INCLUDE_SORTIX_TYPES_H
+
+#include <sys/types.h>
+
 #endif

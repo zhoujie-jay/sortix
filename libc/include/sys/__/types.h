@@ -17,49 +17,15 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    sys/types.h
+    sys/__/types.h
     Data types.
 
 *******************************************************************************/
 
-// TODO: Make this header comply with POSIX-1.2008
-
-#ifndef INCLUDE_SYS_TYPES_H
-#define INCLUDE_SYS_TYPES_H
+#ifndef INCLUDE_SYS____TYPES_H
+#define INCLUDE_SYS____TYPES_H
 
 #include <features.h>
-#include <sys/__/types.h>
-
-__BEGIN_DECLS
-
-@include(blkcnt_t.h)
-@include(blksize_t.h)
-@include(clock_t.h)
-@include(clockid_t.h)
-@include(dev_t.h)
-/* TODO: fsblkcnt_t */
-/* TODO: fsfilcnt_t */
-@include(gid_t.h)
-/* TODO: id_t */
-@include(ino_t.h)
-/* TODO: key_t */
-@include(mode_t.h)
-@include(nlink_t.h)
-@include(off_t.h)
-@include(pid_t.h)
-@include(size_t.h)
-@include(ssize_t.h)
-@include(suseconds_t.h)
-@include(time_t.h)
-/* TODO: timer_t */
-/* TODO: trace*_t */
-@include(uid_t.h)
-@include(useconds_t.h)
-
-#if !defined(SORTIX_KERNEL)
-/* TODO: pthread*_t */
-#endif
-
-__END_DECLS
+#include <sortix/__/types.h>
 
 #endif

@@ -27,6 +27,7 @@
 #include <string.h>
 #include <errno.h>
 #include <error.h>
+#include <limits.h>
 
 #if !defined(VERSIONSTR)
 #define VERSIONSTR "unknown version"
