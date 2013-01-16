@@ -32,23 +32,11 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <error.h>
+#include <math.h>
 #include <time.h>
 #include <timespec.h>
 
 #include <dispd.h>
-
-// TODO: Hacks that should belong in libm or something.
-extern "C" float sqrtf(float x)
-{
-	float ret;
-	asm ("fsqrt" : "=t" (ret) : "0" (x));
-	return ret;
-}
-
-extern "C" void sincosf(float x, float* sinval, float* cosval)
-{
-	asm ("fsincos" : "=t" (*cosval), "=u" (*sinval) : "0" (x));
-}
 
 const float PI = 3.1415926532f;
 
@@ -250,9 +238,8 @@ public:
 
 	const Vector Rotate(float radians) const
 	{
-		float sinr;
-		float cosr;
-		sincosf(radians, &sinr, &cosr);
+		float sinr = sinf(radians);
+		float cosr = cosf(radians);
 		float newx = x * cosr - y * sinr;
 		float newy = x * sinr + y * cosr;
 		return Vector(newx, newy);
