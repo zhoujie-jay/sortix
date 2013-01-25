@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -28,16 +28,16 @@
 namespace Sortix {
 namespace Calltrace {
 
-extern "C" void calltrace();
+extern "C" void calltrace(unsigned long ptr);
 extern "C" void calltrace_print_function(size_t index, addr_t ip)
 {
 	Log::PrintF("%zu: 0x%zx\n", index, ip);
 }
 
-void Perform()
+void Perform(unsigned long ptr)
 {
 	Log::PrintF("Calltrace:\n");
-	calltrace();
+	calltrace(ptr);
 }
 
 } // namespace Calltrace

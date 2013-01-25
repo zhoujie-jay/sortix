@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -27,7 +27,9 @@
 
 namespace Sortix {
 namespace Calltrace {
-void Perform();
+
+void Perform(unsigned long ptr = 0);
+
 } // namespace Calltrace
 } // namespace Sortix
 

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -31,8 +31,13 @@ calltrace:
 	push %rbp
 	push %rbx
 	movq %rsp, %rbp
-	xorl %edi, %edi
+	push %rbx
+	movq %rdi, %rbx
+	testq %rbx, %rbx
+	jnz 1f
 	movq %rbp, %rbx
+1:
+	xorl %edi, %edi
 
 calltrace_unwind:
 	testq %rbx, %rbx
