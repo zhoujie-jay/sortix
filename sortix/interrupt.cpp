@@ -32,6 +32,7 @@
 #include <string.h>
 
 #include "x86-family/idt.h"
+#include "calltrace.h"
 #include "signal.h"
 #include "process.h"
 
@@ -61,6 +62,8 @@ extern "C" { unsigned long asm_is_cpu_interrupted = 0; }
 const bool DEBUG_EXCEPTION = true;
 const bool DEBUG_IRQ = false;
 const bool DEBUG_ISR = false;
+const bool CALLTRACE_KERNEL = false;
+const bool CALLTRACE_USER = false;
 bool initialized;
 
 const size_t NUM_KNOWN_EXCEPTIONS = 20;
@@ -230,7 +233,19 @@ void CrashHandler(CPU::InterruptRegisters* regs)
 
 	// Halt and catch fire if we are the kernel.
 	unsigned codemode = regs->cs & 0x3U;
-	if ( codemode == 0 )
+	bool is_in_kernel = !codemode;
+	bool is_in_user = !is_in_kernel;
+
+	if ( (is_in_kernel && CALLTRACE_KERNEL) || (is_in_user && CALLTRACE_USER) )
+	#if defined(__x86_64__)
+		Calltrace::Perform(regs->rbp);
+	#elif defined(__i386__)
+		Calltrace::Perform(regs->ebp);
+	#else
+		#error Please provide a calltrace implementation for your CPU.
+	#endif
+
+	if ( is_in_kernel )
 	{
 		PanicF("Unhandled CPU Exception id %zu '%s' at ip=0x%zx "
 		       "(cr2=0x%p, err_code=0x%p)", regs->int_no, message,
