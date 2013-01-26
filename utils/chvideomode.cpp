@@ -1,3 +1,6 @@
+#define __STDC_CONSTANT_MACROS
+#define __STDC_LIMIT_MACROS
+
 #include <sys/keycodes.h>
 #include <sys/termmode.h>
 #include <sys/wait.h>
