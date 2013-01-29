@@ -38,6 +38,7 @@
 #define EINIT 46
 #define ENODRV 47
 #define E2BIG 48
+#define EFBIG 49
 
 #define EOPNOTSUPP ENOTSUP
 

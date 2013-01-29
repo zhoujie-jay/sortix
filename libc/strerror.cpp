@@ -67,6 +67,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case EINIT: return "Not initialized";
 	case ENODRV: return "No such driver";
 	case E2BIG: return "Argument list too long";
+	case EFBIG: return "File too large";
 	default: return "Unknown error condition";
 	}
 }
