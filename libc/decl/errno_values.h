@@ -39,6 +39,7 @@
 #define ENODRV 47
 #define E2BIG 48
 #define EFBIG 49
+#define EXDEV 50
 
 #define EOPNOTSUPP ENOTSUP
 
