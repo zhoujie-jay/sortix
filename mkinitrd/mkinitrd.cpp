@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	Copyright(C) Jonas 'Sortie' Termansen 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
 	This file is part of Sortix.
 
@@ -36,6 +36,7 @@
 #include <sortix/initrd.h>
 
 #include "crc32.h"
+#include "rules.h"
 
 #if !defined(sortix)
 __BEGIN_DECLS
@@ -131,6 +132,8 @@ size_t cacheused = 0;
 size_t cachelen = 0;
 CacheEntry* cache = NULL;
 
+InclusionRules path_filter;
+
 Node* LookupCache(dev_t dev, ino_t ino)
 {
 	for ( size_t i = 0; i < cacheused; i++ )
@@ -158,10 +161,16 @@ bool AddToCache(Node* node, dev_t dev, ino_t ino)
 	return true;
 }
 
-Node* RecursiveSearch(const char* rootpath, uint32_t* ino, Node* parent = NULL)
+Node* RecursiveSearch(const char* real_path, const char* virt_path,
+                      uint32_t* ino, Node* parent = NULL)
 {
+	printf("%s\n", virt_path);
+
+	if ( virt_path[0] == '/' && !virt_path[1] )
+		virt_path = "";
+
 	struct stat st;
-	if ( lstat(rootpath, &st) ) { perror(rootpath); return NULL; }
+	if ( lstat(real_path, &st) ) { perror(real_path); return NULL; }
 
 	Node* cached = LookupCache(st.st_dev, st.st_ino);
 	if ( cached ) { cached->refcount++; return cached; }
@@ -175,42 +184,61 @@ Node* RecursiveSearch(const char* rootpath, uint32_t* ino, Node* parent = NULL)
 	node->ctime = st.st_ctime;
 	node->mtime = st.st_mtime;
 
-	char* pathclone = strdup(rootpath);
-	if ( !pathclone ) { perror("strdup"); free(node); return NULL; }
+	char* real_path_clone = strdup(real_path);
+	if ( !real_path_clone ) { perror("strdup"); free(node); return NULL; }
 
-	node->path = pathclone;
+	node->path = real_path_clone;
 
 	if ( !S_ISDIR(st.st_mode) )
 	{
 		if ( !AddToCache(node, st.st_dev, st.st_ino) )
 		{
-			free(pathclone);
+			free(real_path_clone);
 			free(node);
 			return NULL;
 		}
 		return node;
 	}
 
-	DIR* dir = opendir(rootpath);
-	if ( !dir ) { perror(rootpath); FreeNode(node); return NULL; }
+	DIR* dir = opendir(real_path);
+	if ( !dir ) { perror(real_path); FreeNode(node); return NULL; }
 
-	size_t rootpathlen = strlen(rootpath);
+	size_t real_path_len = strlen(real_path);
+	size_t virt_path_len = strlen(virt_path);
 
 	bool successful = true;
 	struct dirent* entry;
 	while ( (entry = readdir(dir)) )
 	{
 		size_t namelen = strlen(entry->d_name);
-		size_t subpathlen = namelen + 1 + rootpathlen;
-		char* subpath = (char*) malloc(subpathlen+1);
-		if ( !subpath ) { perror("malloc"); successful = false; break; }
-		stpcpy(stpcpy(stpcpy(subpath, rootpath), "/"), entry->d_name);
+
+		size_t virt_subpath_len = virt_path_len + 1 + namelen;
+		char* virt_subpath = (char*) malloc(virt_subpath_len+1);
+		if ( !virt_subpath ) { perror("malloc"); successful = false; break; }
+		stpcpy(stpcpy(stpcpy(virt_subpath, virt_path), "/"), entry->d_name);
+
+		if ( strcmp(entry->d_name, ".") != 0 &&
+		     strcmp(entry->d_name, "..") != 0 &&
+		     !path_filter.IncludesPath(virt_subpath) )
+		{
+			free(virt_subpath);
+			continue;
+		}
+
+		size_t real_subpath_len = real_path_len + 1 + namelen;
+		char* real_subpath = (char*) malloc(real_subpath_len+1);
+		if ( !real_subpath ) { free(virt_subpath);  perror("malloc"); successful = false; break; }
+		stpcpy(stpcpy(stpcpy(real_subpath, real_path), "/"), entry->d_name);
 
 		Node* child = NULL;
-		if ( !strcmp(entry->d_name, ".") ) { child = node; }
-		if ( !strcmp(entry->d_name, "..") ) { child = parent ? parent : node; }
-		if ( !child ) { child = RecursiveSearch(subpath, ino, node); }
-		free(subpath);
+		if ( !strcmp(entry->d_name, ".") )
+			child = node;
+		if ( !strcmp(entry->d_name, "..") )
+			child = parent ? parent : node;
+		if ( !child )
+			child = RecursiveSearch(real_subpath, virt_subpath, ino, node);
+		free(real_subpath);
+		free(virt_subpath);
 		if ( !child ) { successful = false; break; }
 
 		if ( node->direntsused == node->direntslength )
@@ -410,7 +438,7 @@ bool Format(const char* pathname, uint32_t inodecount, Node* root)
 
 void Usage(FILE* fp, const char* argv0)
 {
-	fprintf(fp, "usage: %s <ROOT> -o <DEST>\n", argv0);
+	fprintf(fp, "Usage: %s <ROOT> -o <DEST> [-f <PATH-FILTER>]\n", argv0);
 	fprintf(fp, "Creates a init ramdisk for the Sortix kernel.\n");
 }
 
@@ -422,8 +450,8 @@ void Help(FILE* fp, const char* argv0)
 void Version(FILE* fp, const char* argv0)
 {
 	(void) argv0;
-	fprintf(fp, "mkinitrd 0.3\n");
-	fprintf(fp, "Copyright (C) 2012 Jonas 'Sortie' Termansen\n");
+	fprintf(fp, "mkinitrd 0.4\n");
+	fprintf(fp, "Copyright (C) 2012, 2013 Jonas 'Sortie' Termansen\n");
 	fprintf(fp, "This is free software; see the source for copying conditions.  There is NO\n");
 	fprintf(fp, "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n");
 	fprintf(fp, "website: http://www.maxsi.org/software/sortix/\n");
@@ -455,6 +483,23 @@ int main(int argc, char* argv[])
 			dest = argv[++i]; argv[i] = NULL;
 			continue;
 		}
+		if ( !strcmp(arg, "-f") || !strcmp(arg, "--filter") )
+		{
+			if ( argsleft < 1 )
+			{
+				fprintf(stderr, "No filter rule file specified\n");
+				Usage(stderr, argv0);
+				exit(1);
+			}
+			const char* path = argv[++i]; argv[i] = NULL;
+			FILE* fp = fopen(path, "r");
+			if ( !fp )
+				error(1, errno, "%s", path);
+			if ( !path_filter.AddRulesFromFile(fp, stderr, path) )
+				exit(1);
+			fclose(fp);
+			continue;
+		}
 		fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
 		Usage(stderr, argv0);
 		exit(1);
@@ -482,7 +527,7 @@ int main(int argc, char* argv[])
 	}
 
 	uint32_t inodecount = 1;
-	Node* root = RecursiveSearch(rootstr, &inodecount);
+	Node* root = RecursiveSearch(rootstr, "/", &inodecount);
 	if ( !root ) { exit(1); }
 
 	if ( !Format(dest, inodecount, root) ) { exit(1); }

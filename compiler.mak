@@ -13,9 +13,11 @@ endif
 
 ifeq ($(HOST),i486-sortix)
     CPU:=x86
+    OTHER_PLATFORMS=x86-64-sortix
 endif
 ifeq ($(HOST),x86_64-sortix)
     CPU:=x64
+    OTHER_PLATFORMS=i486-sortix
 endif
 
 ifndef BUILDCC

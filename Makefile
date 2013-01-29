@@ -112,7 +112,8 @@ all-archs:
 
 # Initializing RamDisk
 $(INITRD): suball
-	mkinitrd/mkinitrd $(SYSROOT)/bin/$(HOST) -o $(INITRD)
+	echo > "$(INITRD).filter"
+	mkinitrd/mkinitrd --filter "$(INITRD).filter" "$(SYSROOT)/bin/$(HOST)" -o "$(INITRD)"
 
 # Statistics
 linecount:
