@@ -69,6 +69,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case E2BIG: return "Argument list too long";
 	case EFBIG: return "File too large";
 	case EXDEV: return "Improper link";
+	case ESPIPE: return "Cannot seek on stream";
 	default: return "Unknown error condition";
 	}
 }

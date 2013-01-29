@@ -40,6 +40,7 @@
 #define E2BIG 48
 #define EFBIG 49
 #define EXDEV 50
+#define ESPIPE 51
 
 #define EOPNOTSUPP ENOTSUP
 
