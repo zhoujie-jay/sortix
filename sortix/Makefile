@@ -84,6 +84,7 @@ dtable.o \
 elf.o \
 fsfunc.o \
 fs/kram.o \
+fs/user.o \
 fs/util.o \
 initrd.o \
 inode.o \

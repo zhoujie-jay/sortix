@@ -92,6 +92,7 @@
 #define SYSCALL_FCHMOD 68
 #define SYSCALL_FCHMODAT 69
 #define SYSCALL_LINKAT 70
-#define SYSCALL_MAX_NUM 71 /* index of highest constant + 1 */
+#define SYSCALL_FSM_FSBIND 71
+#define SYSCALL_MAX_NUM 72 /* index of highest constant + 1 */
 
 #endif

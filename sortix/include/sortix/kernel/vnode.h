@@ -75,7 +75,7 @@ public:
 	int settermmode(ioctx_t* ctx, unsigned mode);
 	int gettermmode(ioctx_t* ctx, unsigned* mode);
 
-private:
+public /*TODO: private*/:
 	Ref<Inode> inode;
 	Ref<Vnode> mountedat;
 	ino_t rootino;

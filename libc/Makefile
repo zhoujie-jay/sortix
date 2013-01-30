@@ -151,6 +151,14 @@ fdio.o \
 fileno.o \
 fork.o \
 fpipe.o \
+fsm_bootstraprootfd.o \
+fsm_closechannel.o \
+fsm_closeserver.o \
+fsm_fsbind.o \
+fsm_listen.o \
+fsm_mkserver.o \
+fsm_recv.o \
+fsm_send.o \
 fstatat.o \
 fstat.o \
 ftruncate.o \

@@ -75,6 +75,7 @@
 #include "interrupt.h"
 #include "dispmsg.h"
 #include "fs/kram.h"
+#include "fs/user.h"
 #include "kb/ps2.h"
 #include "kb/layout/us.h"
 
@@ -409,6 +410,9 @@ static void BootThread(void* /*user*/)
 
 	// Initialize the BGA driver.
 	BGA::Init();
+
+	// Initialize the user-space filesystem framework.
+	UserFS::Init("/dev", slashdev);
 
 	//
 	// Stage 6. Executing Hosted Environment ("User-Space")
