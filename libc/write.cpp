@@ -36,8 +36,9 @@ retry:
 	return result;
 }
 
-extern "C" ssize_t pwrite(int, const void*, size_t, off_t)
+DEFN_SYSCALL4(ssize_t, sys_pwrite, SYSCALL_PWRITE, int, const void*, size_t, off_t);
+
+extern "C" ssize_t pwrite(int fd, const void* buf, size_t count, off_t offset)
 {
-	errno = ENOSYS;
-	return -1;
+	return sys_pwrite(fd, buf, count, offset);
 }

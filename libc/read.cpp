@@ -36,8 +36,9 @@ retry:
 	return result;
 }
 
-extern "C" ssize_t pread(int, void*, size_t, off_t)
+DEFN_SYSCALL4(ssize_t, sys_pread, SYSCALL_PREAD, int, void*, size_t, off_t);
+
+extern "C" ssize_t pread(int fd, void* buf, size_t count, off_t offset)
 {
-	errno = ENOSYS;
-	return -1;
+	return sys_pread(fd, buf, count, offset);
 }
