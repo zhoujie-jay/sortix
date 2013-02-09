@@ -22,18 +22,23 @@
 
 *******************************************************************************/
 
+#include <assert.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/addralloc.h>
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/textbuffer.h>
 #include <sortix/kernel/video.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/pci.h>
 #include <sortix/kernel/string.h>
+
 #include <sortix/mman.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+
 #include "x86-family/memorymanagement.h"
 #include "lfbtextbuffer.h"
 #include "cpu.h"
@@ -202,6 +207,8 @@ public:
 
 private:
 	bool MapVideoMemory(size_t size);
+	bool MapVideoMemoryRange(addr_t mapat, size_t from, size_t to);
+	bool IncreaseVirtual(size_t new_size);
 	bool DetectModes() const;
 
 private:
@@ -210,6 +217,7 @@ private:
 	char* curmode;
 	size_t lfbmapped;
 	size_t framesize;
+	addralloc_t addr_allocation;
 
 };
 
@@ -220,11 +228,13 @@ BGADriver::BGADriver()
 	curmode = NULL;
 	lfbmapped = 0;
 	framesize = 0;
+	memset(&addr_allocation, 0, sizeof(addr_allocation));
 }
 
 BGADriver::~BGADriver()
 {
 	MapVideoMemory(0);
+	FreeKernelAddress(&addr_allocation);
 	for ( size_t i = 0; i < nummodes; i++ )
 	{
 		delete[] modes[i];
@@ -233,45 +243,78 @@ BGADriver::~BGADriver()
 	delete[] curmode;
 }
 
-bool BGADriver::MapVideoMemory(size_t size)
+bool BGADriver::MapVideoMemoryRange(addr_t mapat, size_t from, size_t to)
 {
-	size = Page::AlignUp(size);
 	addr_t phys = bgaframebuffer;
-	addr_t mapat = Memory::GetVideoMemory();
-
-	if ( size == lfbmapped )
-		return true;
-
-	if ( size < lfbmapped )
-	{
-		for ( size_t i = size; i < size; i += Page::Size() )
-			Memory::Unmap(phys + i);
-		Memory::Flush();
-		lfbmapped = size;
-		return true;
-	}
-
-	size_t maxsize = Memory::GetMaxVideoMemorySize();
-	if ( maxsize < size )
-	{
-		Log::PrintF("Error: Insufficient virtual address space for BGA frame "
-		            "of size 0x%zx bytes, only 0x%zx was available.\n", size,
-		            maxsize);
-		return false;
-	}
-
 	const addr_t mtype = Memory::PAT_WC;
-	for ( size_t i = lfbmapped; i < size; i += Page::Size() )
+	for ( size_t i = from; i < to; i += Page::Size() )
 		if ( !Memory::MapPAT(phys+i, mapat+i, PROT_KWRITE | PROT_KREAD, mtype) )
 		{
 			Log::PrintF("Error: Insufficient memory to map BGA framebuffer "
 			            "onto kernel address space: needed 0x%zx bytes but "
-			            "only 0x%zx was available at this point.\n", size, i);
-			MapVideoMemory(lfbmapped); // Unmap what we added.
+			            "only 0x%zx was available at this point.\n", to, i);
+			for ( size_t n = from; n < i; n += Page::Size() )
+				Memory::Unmap(mapat + n);
 			return false;
 		}
+	return true;
+}
+
+bool BGADriver::IncreaseVirtual(size_t new_size)
+{
+	new_size = Page::AlignUp(new_size);
+	assert(addr_allocation.size < new_size);
+
+	addralloc_t new_addralloc;
+	if ( !AllocateKernelAddress(&new_addralloc, new_size) )
+	{
+		Log::PrintF("Error: Insufficient virtual address space for BGA "
+		            "frame of size 0x%zx bytes, only 0x%zx was available.\n",
+		            new_size, addr_allocation.size);
+		return false;
+	}
+
+	addr_t old_mapat = addr_allocation.from;
+	addr_t new_mapat = new_addralloc.from;
+
+	if ( !MapVideoMemoryRange(new_mapat, 0, new_size) )
+	{
+		FreeKernelAddress(&addr_allocation);
+		return false;
+	}
+
+	for ( size_t i = 0; i < lfbmapped; i += Page::Size() )
+		Memory::Unmap(old_mapat + i);
+
+	FreeKernelAddress(&addr_allocation);
+
+	lfbmapped = new_size;
+	addr_allocation = new_addralloc;
+
 	Memory::Flush();
+	return true;
+}
+
+bool BGADriver::MapVideoMemory(size_t size)
+{
+	size = Page::AlignUp(size);
+
+	if ( size == lfbmapped )
+		return true;
+
+	if ( addr_allocation.size < size )
+		return IncreaseVirtual(size);
+
+	addr_t mapat = addr_allocation.from;
+	for ( size_t i = size; i < lfbmapped; i+= Page::Size() )
+		Memory::Unmap(mapat + i);
+
 	lfbmapped = size;
+	Memory::Flush();
+
+	if ( !size )
+		FreeKernelAddress(&addr_allocation);
+
 	return true;
 }
 
@@ -382,7 +425,7 @@ off_t BGADriver::FrameSize() const
 
 ssize_t BGADriver::WriteAt(off_t off, const void* buf, size_t count)
 {
-	uint8_t* frame = (uint8_t*) Memory::GetVideoMemory();
+	uint8_t* frame = (uint8_t*) addr_allocation.from;
 	if ( (off_t) framesize <= off )
 		return 0;
 	if ( framesize < off + count )
@@ -393,7 +436,7 @@ ssize_t BGADriver::WriteAt(off_t off, const void* buf, size_t count)
 
 ssize_t BGADriver::ReadAt(off_t off, void* buf, size_t count)
 {
-	const uint8_t* frame = (const uint8_t*) Memory::GetVideoMemory();
+	const uint8_t* frame = (const uint8_t*) addr_allocation.from;
 	if ( (off_t) framesize <= off )
 		return 0;
 	if ( framesize < off + count )
@@ -442,7 +485,7 @@ bool BGADriver::DetectModes() const
 
 TextBuffer* BGADriver::CreateTextBuffer()
 {
-	uint8_t* lfb = (uint8_t*) Memory::GetVideoMemory();
+	uint8_t* lfb = (uint8_t*) addr_allocation.from;
 	uint32_t lfbformat = curbpp;
 	size_t scansize = curxres * curbpp / 8UL;
 	return CreateLFBTextBuffer(lfb, lfbformat, curxres, curyres, scansize);

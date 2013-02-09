@@ -70,6 +70,7 @@ LIBS=\
 
 OBJS=\
 $(CPUOBJS) \
+addralloc.o \
 ata.o \
 bga.o \
 calltrace.o \

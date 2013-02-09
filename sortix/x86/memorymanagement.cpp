@@ -166,35 +166,14 @@ namespace Sortix
 		const size_t KERNEL_STACK_SIZE = 256UL * 1024UL;
 		const addr_t KERNEL_STACK_END = 0x80001000UL;
 		const addr_t KERNEL_STACK_START = KERNEL_STACK_END + KERNEL_STACK_SIZE;
-		const addr_t VIDEO_MEMORY = KERNEL_STACK_START;
-		const size_t VIDEO_MEMORY_MAX_SIZE = 384UL * 1024UL * 1024UL;
-		const addr_t INITRD = VIDEO_MEMORY + VIDEO_MEMORY_MAX_SIZE;
-		size_t initrdsize = 0;
-		const addr_t HEAPUPPER = 0xFF400000UL;
 
-		addr_t GetInitRD()
-		{
-			return INITRD;
-		}
+		const addr_t VIRTUAL_AREA_LOWER = KERNEL_STACK_START;
+		const addr_t VIRTUAL_AREA_UPPER = 0xFF400000UL;
 
-		size_t GetInitRDSize()
+		void GetKernelVirtualArea(addr_t* from, size_t* size)
 		{
-			return initrdsize;
-		}
-
-		void RegisterInitRDSize(size_t size)
-		{
-			initrdsize = size;
-		}
-
-		addr_t GetHeapLower()
-		{
-			return Page::AlignUp(INITRD + initrdsize);
-		}
-
-		addr_t GetHeapUpper()
-		{
-			return HEAPUPPER;
+			*from = KERNEL_STACK_END;
+			*size = VIRTUAL_AREA_UPPER - VIRTUAL_AREA_LOWER;
 		}
 
 		addr_t GetKernelStack()
@@ -205,16 +184,6 @@ namespace Sortix
 		size_t GetKernelStackSize()
 		{
 			return KERNEL_STACK_SIZE;
-		}
-
-		addr_t GetVideoMemory()
-		{
-			return VIDEO_MEMORY;
-		}
-
-		size_t GetMaxVideoMemorySize()
-		{
-			return VIDEO_MEMORY_MAX_SIZE;
 		}
 	}
 }

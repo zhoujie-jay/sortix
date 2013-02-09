@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -48,6 +48,7 @@
 #include <sortix/kernel/log.h> // DEBUG
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/panic.h>
+#include <sortix/kernel/addralloc.h>
 #endif
 
 #ifndef _ADDR_T_DECLARED
@@ -76,12 +77,7 @@ extern addr_t wilderness;
 #ifdef SORTIX_KERNEL
 static addr_t GetHeapStart()
 {
-	return Sortix::Memory::GetHeapUpper();
-}
-
-static size_t GetHeapMaxSize()
-{
-	return Sortix::Memory::GetHeapUpper() - Sortix::Memory::GetHeapLower();
+	return Sortix::GetHeapUpper();
 }
 
 static void FreeMemory(addr_t where, size_t bytes)
@@ -129,13 +125,24 @@ static bool AllocateMemory(addr_t where, size_t bytes)
 
 static bool ExtendHeap(size_t bytesneeded)
 {
+	size_t got_bytes = Sortix::ExpandHeap(bytesneeded);
+	if ( !got_bytes )
+		return false;
+	assert(bytesneeded <= got_bytes);
+
 	#ifdef HEAP_GROWS_DOWNWARDS
-	addr_t newwilderness = wilderness - bytesneeded;
+	addr_t newwilderness = wilderness - got_bytes;
 	#else
-	addr_t newwilderness = wilderness + bytesneeded;
+	addr_t newwilderness = wilderness + got_bytes;
 	#endif
 
-	return AllocateMemory(newwilderness, bytesneeded);
+	if ( !AllocateMemory(newwilderness, got_bytes) )
+	{
+		Sortix::ShrinkHeap(got_bytes);
+		return false;
+	}
+
+	return true;
 }
 #else
 static addr_t GetHeapStart()
@@ -148,12 +155,6 @@ static addr_t GetHeapStart()
 	}
 	addr_t result = (addr_t) sbrk(0);
 	return result;
-}
-
-static size_t GetHeapMaxSize()
-{
-	// TODO: A bit of a hack!
-	return SIZE_MAX;
 }
 
 static bool ExtendHeap(size_t bytesneeded)
@@ -422,7 +423,7 @@ static bool ValidateHeap()
 extern "C" void _init_heap()
 {
 	heapstart = GetHeapStart();
-	heapmaxsize = GetHeapMaxSize();
+	heapmaxsize = SIZE_MAX;
 	heapsize = 0;
 	wilderness = heapstart;
 	wildernesssize = 0;
@@ -450,10 +451,7 @@ static bool ExpandWilderness(size_t bytesneeded)
 
 	// TODO: Overflow MAY happen here!
 	if ( heapmaxsize <= heapsize + wildernesssize + bytesneeded )
-	{
-		errno = ENOMEM;
-		return true;
-	}
+		return errno = ENOMEM, true;
 
 	#ifdef HEAP_GROWS_DOWNWARDS
 	addr_t newwilderness = wilderness - bytesneeded;
@@ -462,7 +460,8 @@ static bool ExpandWilderness(size_t bytesneeded)
 	#endif
 
 	// Attempt to map pages so our wilderness grows.
-	if ( !ExtendHeap(bytesneeded) ) { return false; }
+	if ( !ExtendHeap(bytesneeded) )
+		return false;
 
 	wildernesssize += bytesneeded;
 	wilderness = newwilderness;

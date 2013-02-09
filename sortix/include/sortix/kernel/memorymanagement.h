@@ -82,13 +82,7 @@ namespace Sortix
 		void Statistics(size_t* amountused, size_t* totalmem);
 		addr_t GetKernelStack();
 		size_t GetKernelStackSize();
-		addr_t GetInitRD();
-		size_t GetInitRDSize();
-		void RegisterInitRDSize(size_t size);
-		addr_t GetHeapLower();
-		addr_t GetHeapUpper();
-		addr_t GetVideoMemory();
-		size_t GetMaxVideoMemorySize();
+		void GetKernelVirtualArea(addr_t* from, size_t* size);
 	}
 }
 

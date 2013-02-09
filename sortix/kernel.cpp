@@ -224,8 +224,6 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	if ( !initrd ) { PanicF("No init ramdisk provided"); }
 
-	Memory::RegisterInitRDSize(initrdsize);
-
 	// Initialize paging and virtual memory.
 	Memory::Init(bootinfo);
 

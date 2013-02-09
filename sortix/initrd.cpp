@@ -23,6 +23,7 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/addralloc.h>
 #include <sortix/kernel/vnode.h>
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/memorymanagement.h>
@@ -46,6 +47,7 @@
 namespace Sortix {
 namespace InitRD {
 
+addralloc_t initrd_addr_alloc;
 uint8_t* initrd = NULL;
 size_t initrdsize;
 const initrd_superblock_t* sb;
@@ -204,21 +206,20 @@ void CheckSum()
 void Init(addr_t phys, size_t size)
 {
 	assert(!initrd);
-	// First up, map the initrd onto the kernel's address space.
-	addr_t virt = Memory::GetInitRD();
-	size_t amount = 0;
-	while ( amount < size )
-	{
-		if ( !Memory::Map(phys + amount, virt + amount, PROT_KREAD) )
-		{
-			Panic("Unable to map the init ramdisk into virtual memory");
-		}
-		amount += 0x1000UL;
-	}
 
+	// Allocate the needed kernel virtual address space.
+	if ( !AllocateKernelAddress(&initrd_addr_alloc, size) )
+		PanicF("Can't allocate 0x%zx bytes of kernel address space for the "
+		        "init ramdisk", size );
+
+	// Map the physical frames onto our address space.
+	addr_t mapat = initrd_addr_alloc.from;
+	for ( size_t i = 0; i < size; i += Page::Size() )
+		if ( !Memory::Map(phys + i, mapat + i, PROT_KREAD) )
+			Panic("Unable to map the init ramdisk into virtual memory");
 	Memory::Flush();
 
-	initrd = (uint8_t*) virt;
+	initrd = (uint8_t*) mapat;
 	initrdsize = size;
 
 	if ( size < sizeof(*sb) ) { PanicF("initrd is too small"); }
