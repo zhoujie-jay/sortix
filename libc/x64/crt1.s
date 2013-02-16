@@ -39,12 +39,14 @@ _start:
 	# Prepare signals, memory allocation, stdio and such.
 	pushq %rsi
 	pushq %rdi
+	pushq %rcx
 	call initialize_standard_library
 
 	# Run the global constructors.
 	call _init
 
 	# Run main
+	popq %rdx # Note! envp is now %rdx (previously %rcx)
 	popq %rdi
 	popq %rsi
 	call main

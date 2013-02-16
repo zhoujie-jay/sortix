@@ -37,6 +37,7 @@ _start:
 	movl %ecx, environ # envp
 
 	# Arguments for main
+	push %ecx # envp
 	push %ebx # argv
 	push %eax # argc
 
