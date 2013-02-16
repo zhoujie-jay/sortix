@@ -27,3 +27,4 @@ mkdir
 rmdir
 which
 ln
+mv

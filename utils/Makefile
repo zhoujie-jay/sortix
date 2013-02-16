@@ -32,6 +32,7 @@ ln \
 ls \
 memstat \
 mkdir \
+mv \
 mxsh \
 pager \
 pwd \
