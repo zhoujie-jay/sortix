@@ -61,12 +61,14 @@ public:
 	ScopedLock(kthread_mutex_t* mutex)
 	{
 		this->mutex = mutex;
-		kthread_mutex_lock(mutex);
+		if ( mutex )
+			kthread_mutex_lock(mutex);
 	}
 
 	~ScopedLock()
 	{
-		kthread_mutex_unlock(mutex);
+		if ( mutex )
+			kthread_mutex_unlock(mutex);
 	}
 
 private:
@@ -80,12 +82,12 @@ public:
 	ScopedLockSignal(kthread_mutex_t* mutex)
 	{
 		this->mutex = mutex;
-		this->acquired = kthread_mutex_lock_signal(mutex);
+		this->acquired = !mutex || kthread_mutex_lock_signal(mutex);
 	}
 
 	~ScopedLockSignal()
 	{
-		if ( acquired )
+		if ( mutex && acquired )
 			kthread_mutex_unlock(mutex);
 	}
 
