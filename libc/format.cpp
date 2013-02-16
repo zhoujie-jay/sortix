@@ -260,6 +260,7 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 		bool append_chars = false;
 		bool space_pad = false;
 		bool zero_pad = false;
+		bool alternate = false;
 		char blank_char = ' ';
 		unsigned int field_width = 0;
 
@@ -268,6 +269,9 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 		{
 			switch ( char c = *(format++) )
 			{
+				case '#':
+					alternate = true;
+					break;
 				case '-':
 					if ( prepend_chars || append_chars )
 						goto unsupported_conversion;
@@ -402,10 +406,15 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 				if ( READY_SIZE - readylen < 8 ) { READY_FLUSH(); }
 				uint32_t num = va_arg(parameters, uint32_t);
 				size_t chars = String::ConvertUInt32Hex(num, ready + readylen);
+				size_t real_chars = chars;
+				if ( num && alternate ) chars += 2;
 				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
-				if ( READY_SIZE - readylen < 8 ) { READY_FLUSH(); }
+				if ( READY_SIZE - readylen < 8 + 2 ) { READY_FLUSH(); }
+				if ( alternate && num )
+					ready[readylen++] = '0',
+					ready[readylen++] = 'x';
 				String::ConvertUInt32Hex(num, ready + readylen);
-				readylen += chars;
+				readylen += real_chars;
 				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				break;
 			}
@@ -415,10 +424,15 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 				if ( READY_SIZE - readylen < 16 ) { READY_FLUSH(); }
 				uint64_t num = va_arg(parameters, uint64_t);
 				size_t chars = String::ConvertUInt64Hex(num, ready + readylen);
+				size_t real_chars = chars;
+				if ( num && alternate ) chars += 2;
 				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
-				if ( READY_SIZE - readylen < 16 ) { READY_FLUSH(); }
+				if ( READY_SIZE - readylen < 16 + 2 ) { READY_FLUSH(); }
+				if ( alternate && num )
+					ready[readylen++] = '0',
+					ready[readylen++] = 'x';
 				String::ConvertUInt64Hex(num, ready + readylen);
-				readylen += chars;
+				readylen += real_chars;
 				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				break;
 			}
@@ -428,10 +442,14 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 				if ( READY_SIZE - readylen < 20 ) { READY_FLUSH(); }
 				uint32_t num = va_arg(parameters, uint32_t);
 				size_t chars = String::ConvertUInt32Octal(num, ready + readylen);
+				size_t real_chars = chars;
+				if ( num && alternate ) chars += 1;
 				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
-				if ( READY_SIZE - readylen < 20 ) { READY_FLUSH(); }
+				if ( READY_SIZE - readylen < 20 + 1 ) { READY_FLUSH(); }
+				if ( alternate && num )
+					ready[readylen++] = '0';
 				String::ConvertUInt32Octal(num, ready + readylen);
-				readylen += chars;
+				readylen += real_chars;
 				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				break;
 			}
@@ -441,10 +459,14 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 				if ( READY_SIZE - readylen < 40 ) { READY_FLUSH(); }
 				uint64_t num = va_arg(parameters, uint64_t);
 				size_t chars = String::ConvertUInt64Octal(num, ready + readylen);
+				size_t real_chars = chars;
+				if ( num && alternate ) chars += 1;
 				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
-				if ( READY_SIZE - readylen < 40 ) { READY_FLUSH(); }
+				if ( READY_SIZE - readylen < 40 + 1 ) { READY_FLUSH(); }
+				if ( alternate && num )
+					ready[readylen++] = '0';
 				String::ConvertUInt64Octal(num, ready + readylen);
-				readylen += chars;
+				readylen += real_chars;
 				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				break;
 			}
