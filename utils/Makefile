@@ -23,6 +23,7 @@ column \
 cp \
 echo \
 editor \
+find \
 head \
 help \
 init \
