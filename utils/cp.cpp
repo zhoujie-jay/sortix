@@ -338,7 +338,11 @@ void Usage(FILE* fp, const char* argv0)
 	fprintf(fp, "Usage: %s [OPTION]... [-T] SOURCE DEST\n", argv0);
 	fprintf(fp, "  or:  %s [OPTION]... SOURCE... DIRECTORY\n", argv0);
 	fprintf(fp, "  or:  %s [OPTION]... -t DIRECTORY SOURCE...\n", argv0);
+#ifdef CP_PRETEND_TO_BE_INSTALL
+	fprintf(fp, "Copy files and set attributes.\n");
+#else
 	fprintf(fp, "Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY.\n");
+#endif
 }
 
 void Help(FILE* fp, const char* argv0)
@@ -378,6 +382,10 @@ int main(int argc, char* argv[])
 			case 'u': flags |= FLAG_UPDATE; break;
 			case 'P': flags |= FLAG_NO_DEREFERENCE; break;
 			default:
+#ifdef CP_PRETEND_TO_BE_INSTALL
+				fprintf(stderr, "%s (fake): unknown option, ignoring -- '%c'\n", argv0, c);
+				continue;
+#endif
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
 				Usage(stderr, argv0);
 				exit(1);
@@ -400,6 +408,10 @@ int main(int argc, char* argv[])
 			flags |= FLAG_NO_DEREFERENCE;
 		else
 		{
+#ifdef CP_PRETEND_TO_BE_INSTALL
+			fprintf(stderr, "%s (fake): unknown option, ignoring: %s\n", argv0, arg);
+			continue;
+#endif
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
 			Usage(stderr, argv0);
 			exit(1);

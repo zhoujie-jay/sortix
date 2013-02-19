@@ -27,6 +27,7 @@ find \
 head \
 help \
 init \
+install-file \
 kernelinfo \
 kill \
 ln \
@@ -55,6 +56,7 @@ all: $(BINARIES)
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)
 	install $(BINARIES) $(DESTDIR)$(BINDIR)
+	install install-file $(DESTDIR)$(BINDIR)/install
 
 uninstall:
 	rm -f $(INSTALLBINARIES) $(DESTDIR)$(BINDIR)/install
