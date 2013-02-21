@@ -59,7 +59,9 @@
 	#endif
 #endif
 
+#ifndef restrict
 #define restrict
+#endif
 
 /* TODO: Improve these declarations, perhaps like they are in glibc. */
 #define __POSIX_NO_OBSOLETE
