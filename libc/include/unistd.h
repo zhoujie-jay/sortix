@@ -177,9 +177,7 @@ int rmdir(const char*);
 unsigned sleep(unsigned);
 int truncate(const char*, off_t);
 int truncateat(int dirfd, const char*, off_t);
-#if __POSIX_OBSOLETE <= 200112 || defined(_SORTIX_SOURCE)
 int usleep(useconds_t useconds);
-#endif
 int unlinkat(int, const char*, int);
 int unlink(const char*);
 ssize_t write(int, const void*, size_t);
