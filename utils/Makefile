@@ -15,34 +15,34 @@ CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\"
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 BINARIES:=\
-init \
 calc \
 cat \
+chvideomode \
+clear \
+column \
 cp \
 echo \
-rm \
-sh \
-mxsh \
-clear \
-ls \
-pwd \
-help \
-uptime \
-memstat \
-chvideomode \
-uname \
-kernelinfo \
 editor \
-kill \
-column \
-pager \
 head \
+help \
+init \
+kernelinfo \
+kill \
+ln \
+ls \
+memstat \
+mkdir \
+mxsh \
+pager \
+pwd \
+rm \
+rmdir \
+sh \
 tail \
 type \
-mkdir \
-rmdir \
+uname \
+uptime \
 which \
-ln \
 
 INSTALLBINARIES:=$(addprefix $(DESTDIR)$(BINDIR)/,$(BINARIES))
 
