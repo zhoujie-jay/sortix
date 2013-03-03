@@ -223,6 +223,7 @@ rename.o \
 rmdir.o \
 sbrk.o \
 scanf.o \
+select.o \
 setjmp.o \
 setlocale.o \
 settermmode.o \
