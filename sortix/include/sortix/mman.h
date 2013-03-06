@@ -44,4 +44,7 @@
 
 #define PROT_FORK (1<<6)
 
+#define MAP_SHARED (1<<0)
+#define MAP_PRIVATE (1<<1)
+
 #endif
