@@ -79,6 +79,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ENOTSOCK: return "Not a socket";
 	case EADDRINUSE: return "Address already in use";
 	case ETIMEDOUT: return "Connection timed out";
+	case ECONNREFUSED: return "Connection refused";
 	default: return "Unknown error condition";
 	}
 }

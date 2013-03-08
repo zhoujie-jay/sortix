@@ -50,6 +50,7 @@
 #define ENOTSOCK 58
 #define EADDRINUSE 59
 #define ETIMEDOUT 60
+#define ECONNREFUSED 61
 
 #define EOPNOTSUPP ENOTSUP
 
