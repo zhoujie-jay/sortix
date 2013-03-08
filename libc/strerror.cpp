@@ -78,6 +78,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case EAFNOSUPPORT: return "Address family not supported";
 	case ENOTSOCK: return "Not a socket";
 	case EADDRINUSE: return "Address already in use";
+	case ETIMEDOUT: return "Connection timed out";
 	default: return "Unknown error condition";
 	}
 }

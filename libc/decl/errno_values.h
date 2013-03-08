@@ -49,6 +49,7 @@
 #define EAFNOSUPPORT 57
 #define ENOTSOCK 58
 #define EADDRINUSE 59
+#define ETIMEDOUT 60
 
 #define EOPNOTSUPP ENOTSUP
 
