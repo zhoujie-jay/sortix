@@ -87,6 +87,8 @@
 	#define __POSIX_OBSOLETE 200112L
 #endif
 
+#define __pure2 __attribute__((__const__))
+
 /* Don't provide things from standard headers that is not implemented. */
 /*#define __SORTIX_SHOW_UNIMPLEMENTED*/
 
