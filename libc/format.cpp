@@ -22,6 +22,9 @@
 
 *******************************************************************************/
 
+// Number of bugs seemingly unrelated bugs that have been traced to here:
+// Countless + 1
+
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -29,7 +32,7 @@
 
 namespace String {
 
-static int ConvertInt32(int32_t num, char* dest)
+static int ConvertInt32(int32_t num, char* dest, char possign)
 {
 	int result = 0;
 	int32_t copy = num;
@@ -49,6 +52,10 @@ static int ConvertInt32(int32_t num, char* dest)
 	}
 	else
 	{
+		if ( possign )
+			*dest++ = possign,
+			result++;
+
 		int offset = 0;
 		while ( copy > 9 ) { copy /= 10; offset++; }
 		result += offset;
@@ -61,7 +68,7 @@ static int ConvertInt32(int32_t num, char* dest)
 	return result + 1;
 }
 
-static int ConvertInt64(int64_t num, char* dest)
+static int ConvertInt64(int64_t num, char* dest, char possign)
 {
 	int result = 0;
 	int64_t copy = num;
@@ -81,6 +88,10 @@ static int ConvertInt64(int64_t num, char* dest)
 	}
 	else
 	{
+		if ( possign )
+			*dest++ = possign,
+			result++;
+
 		int offset = 0;
 		while ( copy > 9 ) { copy /= 10; offset++; }
 		result += offset;
@@ -261,6 +272,8 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 		bool space_pad = false;
 		bool zero_pad = false;
 		bool alternate = false;
+		bool possign_space = false;
+		bool possign_plus = false;
 		char blank_char = ' ';
 		unsigned int field_width = 0;
 
@@ -269,6 +282,12 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 		{
 			switch ( char c = *(format++) )
 			{
+				case ' ':
+					possign_space = true;
+					break;
+				case '+':
+					possign_plus = true;
+					break;
 				case '#':
 					alternate = true;
 					break;
@@ -350,16 +369,22 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 			}
 		}
 
+		char possign = '\0';
+		if ( possign_plus )
+			possign = '+';
+		else if ( possign_space )
+			possign = ' ';
+
 		switch ( type )
 		{
 			case INTEGER:
 			{
 				if ( READY_SIZE - readylen < 10 ) { READY_FLUSH(); }
 				int32_t num = va_arg(parameters, int32_t);
-				size_t chars = String::ConvertInt32(num, ready + readylen);
+				size_t chars = String::ConvertInt32(num, ready + readylen, possign);
 				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				if ( READY_SIZE - readylen < 10 ) { READY_FLUSH(); }
-				String::ConvertInt32(num, ready + readylen);
+				String::ConvertInt32(num, ready + readylen, possign);
 				readylen += chars;
 				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				break;
@@ -380,10 +405,10 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 			{
 				if ( READY_SIZE - readylen < 20 ) { READY_FLUSH(); }
 				int64_t num = va_arg(parameters, int64_t);
-				size_t chars = String::ConvertInt64(num, ready + readylen);
+				size_t chars = String::ConvertInt64(num, ready + readylen, possign);
 				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				if ( READY_SIZE - readylen < 20 ) { READY_FLUSH(); }
-				String::ConvertInt64(num, ready + readylen);
+				String::ConvertInt64(num, ready + readylen, possign);
 				readylen += chars;
 				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				break;
