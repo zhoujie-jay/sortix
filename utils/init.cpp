@@ -52,6 +52,7 @@ int runsystem()
 	{
 		int status;
 		waitpid(childpid, &status, 0);
+		while ( 0 < waitpid(-1, NULL, WNOHANG) );
 		// TODO: Use the proper macro!
 		if ( 128 <= WEXITSTATUS(status) || WIFSIGNALED(status) )
 		{
@@ -61,9 +62,7 @@ int runsystem()
 		return WEXITSTATUS(status);
 	}
 
-	int ret = child();
-	while ( 0 < waitpid(-1, NULL, WNOHANG) );
-	return ret;
+	exit(child());
 }
 
 int main(int /*argc*/, char* /*argv*/[])
