@@ -45,6 +45,7 @@
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/time.h>
 #include <sortix/kernel/scheduler.h>
+#include <sortix/kernel/fcache.h>
 
 #include <sortix/fcntl.h>
 #include <sortix/stat.h>
@@ -329,6 +330,9 @@ static void BootThread(void* /*user*/)
 	//
 	// Stage 4. Initialize the Filesystem
 	//
+
+	// Bring up the filesystem cache.
+	FileCache::Init();
 
 	Ref<DescriptorTable> dtable(new DescriptorTable());
 	if ( !dtable )

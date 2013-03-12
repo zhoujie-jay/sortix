@@ -83,6 +83,7 @@ descriptor.o \
 dispmsg.o \
 dtable.o \
 elf.o \
+fcache.o \
 fsfunc.o \
 fs/kram.o \
 fs/user.o \

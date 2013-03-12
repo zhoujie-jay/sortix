@@ -49,7 +49,6 @@ File::File(dev_t dev, ino_t ino, uid_t owner, gid_t group, mode_t mode)
 		dev = (dev_t) this;
 	if ( !ino )
 		ino = (ino_t) this;
-	filelock = KTHREAD_MUTEX_INITIALIZER;
 	this->type = S_IFREG;
 	this->stat_uid = owner;
 	this->stat_gid = group;
@@ -58,82 +57,42 @@ File::File(dev_t dev, ino_t ino, uid_t owner, gid_t group, mode_t mode)
 	this->stat_blksize = 1;
 	this->dev = dev;
 	this->ino = ino;
-	size = 0;
-	bufsize = 0;
-	buf = NULL;
 }
 
 File::~File()
 {
-	delete[] buf;
 }
 
 int File::truncate(ioctx_t* ctx, off_t length)
 {
-	ScopedLock lock(&filelock);
-	return truncate_unlocked(ctx, length);
-}
-
-int File::truncate_unlocked(ioctx_t* /*ctx*/, off_t length)
-{
-	if ( SIZE_MAX < (uintmax_t) length ) { errno = EFBIG; return -1; }
-	if ( (uintmax_t) length < size )
-		memset(buf + length, 0, size - length);
-	if ( bufsize < (size_t) length )
+	int ret = fcache.truncate(ctx, length);
+	if ( ret == 0 )
 	{
-		// TODO: Don't go above OFF_MAX (or what it is called)!
-		size_t newbufsize = bufsize ? 2UL * bufsize : 128UL;
-		if ( newbufsize < (size_t) length )
-			newbufsize = (size_t) length;
-		uint8_t* newbuf = new uint8_t[newbufsize];
-		if ( !newbuf )
-			return -1;
-		memcpy(newbuf, buf, size);
-		delete[] buf; buf = newbuf; bufsize = newbufsize;
+		ScopedLock lock(&metalock);
+		stat_size = fcache.GetFileSize();
 	}
-	kthread_mutex_lock(&metalock);
-	size = stat_size = length;
-	kthread_mutex_unlock(&metalock);
-	return 0;
+	return ret;
 }
 
-off_t File::lseek(ioctx_t* /*ctx*/, off_t offset, int whence)
+off_t File::lseek(ioctx_t* ctx, off_t offset, int whence)
 {
-	ScopedLock lock(&filelock);
-	if ( whence == SEEK_SET )
-		return offset;
-	if ( whence == SEEK_END )
-		return (off_t) size + offset;
-	errno = EINVAL;
-	return -1;
+	return fcache.lseek(ctx, offset, whence);
 }
 
 ssize_t File::pread(ioctx_t* ctx, uint8_t* dest, size_t count, off_t off)
 {
-	ScopedLock lock(&filelock);
-	if ( size < (uintmax_t) off )
-		return 0;
-	size_t available = size - off;
-	if ( available < count )
-		count = available;
-	if ( !ctx->copy_to_dest(dest, buf + off, count) )
-		return -1;
-	return count;
+	return fcache.pread(ctx, dest, count, off);
 }
 
 ssize_t File::pwrite(ioctx_t* ctx, const uint8_t* src, size_t count, off_t off)
 {
-	ScopedLock lock(&filelock);
-	// TODO: Avoid having off + count overflow!
-	if ( size < off + count )
-		truncate_unlocked(ctx, off+count);
-	if ( size <= (uintmax_t) off )
-		return -1;
-	size_t available = size - off;
-	if ( available < count )
-		count = available;
-	ctx->copy_from_src(buf + off, src, count);
-	return count;
+	ssize_t ret = fcache.pwrite(ctx, src, count, off);
+	if ( 0 < ret )
+	{
+		ScopedLock lock(&metalock);
+		stat_size = fcache.GetFileSize();
+	}
+	return ret;
 }
 
 Dir::Dir(dev_t dev, ino_t ino, uid_t owner, gid_t group, mode_t mode)

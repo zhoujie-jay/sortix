@@ -27,6 +27,7 @@
 
 #include <sortix/kernel/inode.h>
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/fcache.h>
 
 namespace Sortix {
 namespace KRAMFS {
@@ -50,17 +51,7 @@ public:
 	                       off_t off);
 
 private:
-	virtual int truncate_unlocked(ioctx_t* ctx, off_t length);
-
-private:
-	kthread_mutex_t filelock;
-	uid_t owner;
-	uid_t group;
-	mode_t mode;
-	size_t size;
-	size_t bufsize;
-	uint8_t* buf;
-	size_t numlinks;
+	FileCache fcache;
 
 };
 
