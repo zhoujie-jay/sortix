@@ -344,5 +344,25 @@ bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc)
 	return ExtractInto(desc);
 }
 
+void Delete()
+{
+	size_t size = initrdsize;
+
+	initrd = NULL;
+	initrdsize = 0;
+
+	// Unmap the pages and return the physical frames for reallocation.
+	addr_t mapat = initrd_addr_alloc.from;
+	for ( size_t i = 0; i < size; i += Page::Size() )
+	{
+		addr_t addr = Memory::Unmap(mapat + i);
+		Page::Put(addr);
+	}
+	Memory::Flush();
+
+	// Free the used virtual address space.
+	FreeKernelAddress(&initrd_addr_alloc);
+}
+
 } // namespace InitRD
 } // namespace Sortix

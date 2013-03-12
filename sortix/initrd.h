@@ -35,6 +35,7 @@ namespace InitRD {
 
 bool ExtractInto(Ref<Descriptor> desc);
 bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc);
+void Delete();
 
 } // namespace InitRD
 

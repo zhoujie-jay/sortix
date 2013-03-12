@@ -361,7 +361,9 @@ static void BootThread(void* /*user*/)
 	// Install the initrd into our fresh RAM filesystem.
 	if ( !InitRD::ExtractFromPhysicalInto(initrd, initrdsize, droot) )
 		Panic("Unable to extract initrd into RAM root filesystem.");
-	// TODO: It's safe to free the original initrd now.
+
+	// We no longer need the initrd, so free its resources.
+	InitRD::Delete();
 
 	// Get a descriptor for the /dev directory so we can populate it.
 	if ( droot->mkdir(&ctx, "dev", 0775) != 0 && errno != EEXIST )
