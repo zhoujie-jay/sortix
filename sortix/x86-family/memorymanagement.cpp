@@ -239,7 +239,7 @@ namespace Sortix
 		{
 			// This call will always succeed, if it didn't, then the stack
 			// wouldn't be full, and thus this function won't be called.
-			addr_t page = Get();
+			addr_t page = GetUnlocked();
 
 			// This call will also succeed, since there are plenty of physical
 			// pages available and it might need some.
@@ -350,7 +350,15 @@ namespace Sortix
 		void PutUnlocked(addr_t page)
 		{
 			assert(page == AlignDown(page));
-			assert(stackused < MAXSTACKLENGTH);
+			if ( unlikely(stackused == stacklength) )
+			{
+				if ( stackused == MAXSTACKLENGTH )
+				{
+					pagesnotonstack++;
+					return;
+				}
+				ExtendStack();
+			}
 			STACK[stackused++] = page;
 		}
 
