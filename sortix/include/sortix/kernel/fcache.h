@@ -59,12 +59,14 @@ public:
 	bool AddArea();
 	void UnlinkBlock(BlockCacheBlock* block);
 	void LinkBlock(BlockCacheBlock* block);
+	uint8_t* BlockDataUnlocked(BlockCacheBlock* block);
 
 private:
 	BlockCacheArea* areas;
 	size_t areas_used;
 	size_t areas_length;
 	size_t blocks_per_area;
+	size_t unused_block_count;
 	BlockCacheBlock* mru_block;
 	BlockCacheBlock* lru_block;
 	BlockCacheBlock* unused_block;

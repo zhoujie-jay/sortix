@@ -84,6 +84,7 @@ BlockCache::BlockCache()
 	areas_used = 0;
 	areas_length = 0;
 	blocks_per_area = 1024UL;
+	unused_block_count = 0;
 	mru_block = NULL;
 	lru_block = NULL;
 	unused_block = NULL;
@@ -102,6 +103,7 @@ BlockCacheBlock* BlockCache::AcquireBlock()
 		return NULL;
 	BlockCacheBlock* ret = unused_block;
 	assert(ret);
+	unused_block_count--;
 	unused_block = unused_block->next_block;
 	ret->prev_block = ret->next_block = NULL;
 	if ( unused_block )
@@ -114,7 +116,22 @@ BlockCacheBlock* BlockCache::AcquireBlock()
 void BlockCache::ReleaseBlock(BlockCacheBlock* block)
 {
 	ScopedLock lock(&bcache_mutex);
+	assert(block->information & BCACHE_PRESENT);
+	assert(block->information & BCACHE_USED);
+	if ( blocks_per_area < unused_block_count )
+	{
+		uint8_t* block_data = BlockDataUnlocked(block);
+		addr_t block_data_addr = Memory::Unmap((addr_t) block_data);
+		Page::Put(block_data_addr);
+		// TODO: We leak this block's meta information here. Rather, we should
+		// put this block into a list of non-present blocks so we can reuse it
+		// later and reallocate a physical frame for it - then we will just
+		// reuse the block's meta information.
+		block->information &= ~(BCACHE_USED | BCACHE_PRESENT);
+		return;
+	}
 	UnlinkBlock(block);
+	unused_block_count++;
 	if ( unused_block )
 		unused_block->prev_block = block;
 	block->next_block = unused_block;
@@ -126,6 +143,11 @@ void BlockCache::ReleaseBlock(BlockCacheBlock* block)
 uint8_t* BlockCache::BlockData(BlockCacheBlock* block)
 {
 	ScopedLock lock(&bcache_mutex);
+	return BlockDataUnlocked(block);
+}
+
+uint8_t* BlockCache::BlockDataUnlocked(BlockCacheBlock* block)
+{
 	uintptr_t block_id = BlockIdOfBlockInformation(block->information);
 	uintptr_t area_num = AreaOfBlockId(block_id, blocks_per_area);
 	uintptr_t area_off = BlockOfBlockId(block_id, blocks_per_area);
@@ -206,6 +228,7 @@ bool BlockCache::AddArea()
 		if ( unused_block )
 			unused_block->prev_block = block;
 		unused_block = block;
+		unused_block_count++;
 	}
 
 	area->data = (uint8_t*) area->addralloc.from;
