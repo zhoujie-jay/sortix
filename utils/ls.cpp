@@ -153,7 +153,7 @@ int handleentry(const char* path, const char* name)
 	if ( 1023 < size ) { size /= 1024UL; sizeunit = "T"; }
 	if ( 1023 < size ) { size /= 1024UL; sizeunit = "P"; }
 	perms[10] = 0;
-	printf("%s %ju root root %ju%s\t%s%s%s\n", perms, (uintmax_t) st.st_nlink,
+	printf("%s %3ju root root %4ju%s\t%s%s%s\n", perms, (uintmax_t) st.st_nlink,
 	       (uintmax_t) size, sizeunit, colorpre, name, colorpost);
 	return 0;
 }
