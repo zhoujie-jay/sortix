@@ -20,6 +20,7 @@ mkinitrd \
 regress \
 sh \
 tix \
+trianglix \
 utils \
 kernel
 
