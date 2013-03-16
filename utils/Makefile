@@ -19,6 +19,7 @@ calc \
 cat \
 chvideomode \
 clear \
+colormake \
 column \
 cp \
 echo \
