@@ -522,7 +522,7 @@ ifeq ($(HOST),x86_64-sortix)
     SORTIXFLAGS:=$(SORTIXFLAGS) -mno-red-zone
 endif
 
-BINS=libc.a libg.a libpthread.a libstdc++.a $(CRTOBJ)
+BINS=libc.a libg.a libpthread.a $(CRTOBJ)
 BINSKERNEL=libc-sortix.a
 INSTALLLIBS:=$(addprefix $(DESTDIR)$(LIBDIR)/,$(BINS))
 INSTALLLIBSKERNEL:=$(addprefix $(DESTDIR)$(LIBDIR)/,$(BINSKERNEL))
@@ -548,9 +548,6 @@ libg.a:
 	$(HOSTAR) rcs $@
 
 libpthread.a:
-	$(HOSTAR) rcs $@
-
-libstdc++.a:
 	$(HOSTAR) rcs $@
 
 crt1.o: $(CPUDIR)/crt1.o

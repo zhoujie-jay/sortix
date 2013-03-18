@@ -114,6 +114,7 @@ logterminal.o \
 memorymanagement.o \
 mtable.o \
 net/fs.o \
+op-new.o \
 panic.o \
 partition.o \
 pci.o \
