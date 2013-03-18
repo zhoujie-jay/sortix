@@ -23,7 +23,7 @@
 *******************************************************************************/
 
 // Number of bugs seemingly unrelated bugs that have been traced to here:
-// Countless + 1
+// Countless + 2
 
 #include <errno.h>
 #include <stdint.h>
@@ -510,8 +510,12 @@ extern "C" size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t
 			case CHARACTER:
 			{
 				int c = va_arg(parameters, int);
+				size_t len = 1;
+				size_t chars = len;
+				if ( prepend_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				if ( READY_SIZE <= readylen ) { READY_FLUSH(); }
 				ready[readylen++] = c;
+				if ( append_chars && chars < field_width ) { REPEAT_BLANKS(field_width - chars); }
 				break;
 			}
 		}
