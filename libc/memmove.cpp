@@ -23,6 +23,7 @@
 *******************************************************************************/
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 // TODO: This is a hacky implementation!
@@ -30,9 +31,9 @@ extern "C" void* memmove(void* _dest, const void* _src, size_t n)
 {
 	uint8_t* dest = (uint8_t*) _dest;
 	const uint8_t* src = (const uint8_t*) _src;
-	uint8_t* tmp = new uint8_t[n];
+	uint8_t* tmp = (uint8_t*) malloc(n);
 	memcpy(tmp, src, n);
 	memcpy(dest, tmp, n);
-	delete[] tmp;
+	free(tmp);
 	return _dest;
 }
