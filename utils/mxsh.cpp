@@ -316,7 +316,8 @@ void get_and_run_command()
 	}
 
 	int argc = 0;
-	const char* argv[256];
+	const size_t ARGV_MAX_LENGTH = 2048;
+	const char* argv[ARGV_MAX_LENGTH];
 	argv[0] = NULL;
 
 	bool lastwasspace = true;
@@ -346,7 +347,16 @@ void get_and_run_command()
 				}
 			default:
 				escaped = false;
-				if ( lastwasspace ) { argv[argc++] = command + i; }
+				if ( lastwasspace )
+				{
+					if ( argc == ARGV_MAX_LENGTH  )
+					{
+						fprintf(stderr, "argv max length of %zu entries hit!\n",
+						        ARGV_MAX_LENGTH);
+						abort();
+					}
+					argv[argc++] = command + i;
+				}
 				lastwasspace = false;
 		}
 	}
