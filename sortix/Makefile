@@ -1,25 +1,44 @@
+SOFTWARE_MEANT_FOR_SORTIX=1
 include ../compiler.mak
 include ../version.mak
 include ../dirs.mak
 
-ifndef OPTLEVEL
-    OPTLEVEL:=-O2
+# Default values in case the user doesn't override these variables.
+OPTLEVEL?=-g -O2
+CALLTRACE?=0
+DISKWRITE?=0
+ASLFAGS?=
+CPPFLAGS?=
+CXXFLAGS?=$(OPTLEVEL)
+
+# Base compiler options and definitions.
+
+CPPFLAGS:=$(CPPFLAGS) -I. -Iinclude -DSORTIX_KERNEL
+CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -ffreestanding -fbuiltin -std=gnu++11 \
+                      -fno-exceptions -fno-rtti
+
+ifeq ($(PANIC_SHORT),1)
+    CPPFLAGS:=$(CPPFLAGS) -DPANIC_SHORT
+endif
+CPPFLAGS:=$(CPPFLAGS) -DENABLE_DISKWRITE=$(DISKWRITE)
+CPPFLAGS:=$(CPPFLAGS) -DENABLE_CALLTRACE=$(CALLTRACE)
+ifdef VERSION
+    CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\"
 endif
 
+# Architecture-dependent options and definitions.
+
+BOOTOBJS:=
+
 ifeq ($(CPU),x86)
-    BUILDID=x86
-    X86FAMILY=1
-    CPUFLAGS=
-    CPULDFLAGS=
+    X86FAMILY:=1
     CPUOBJS:=$(CPU)/boot.o $(CPU)/base.o $(CPU)/x86.o
 endif
 
 ifeq ($(CPU),x64)
-    BUILDID=x64
-    X86FAMILY=1
-    CPUFLAGS=-ffreestanding -mno-red-zone
-    CPULDFLAGS=
-    CPUOBJS:=$(CPU)/base.o $(CPU)/x64.o
+    X86FAMILY:=1
+    CXXFLAGS:=$(CXXFLAGS) -mno-red-zone
+    CPUOBJS:=$(CPU)/boot.o $(CPU)/base.o $(CPU)/x64.o
 endif
 
 ifdef X86FAMILY
@@ -38,50 +57,19 @@ ifdef X86FAMILY
              x86-family/msr.o \
              x86-family/float.o \
              x86-family/x86-family.o
-    CPUFLAGS:=$(CPUFLAGS) -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow
+    # TODO: Are these -m flags even needed in the first place?
+    CXXFLAGS:=$(CXXFLAGS) -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow
 endif
 
-DIRS=. x64 x86 x86-family fs kb kb/layout
+# Object files that constitute the kernel.
 
-DEFINES:=-DSORTIX_KERNEL -U_GNU_SOURCE
-ifeq ($(PANIC_SHORT),1)
-    DEFINES:=$(DEFINES) -DPANIC_SHORT
-endif
-ifeq ($(DISKWRITE),1)
-    DEFINES:=$(DEFINES) -DENABLE_DISKWRITE=1
-else
-    DEFINES:=$(DEFINES) -DENABLE_DISKWRITE=0
-endif
-ifeq ($(CALLTRACE),1)
-    DEFINES:=$(DEFINES) -DENABLE_CALLTRACE=1
-else
-    DEFINES:=$(DEFINES) -DENABLE_CALLTRACE=0
-endif
-ifdef VERSION
-    DEFINES:=$(DEFINES) -DVERSIONSTR=\"$(VERSION)\"
-endif
-
-INCLUDES=-I. -Iinclude
-CPPFLAGS=$(INCLUDES) $(DEFINES)
-ifeq ($(DEBUG_KERNEL),1)
-    FLAGSDEBUG=-g3
-else
-    FLAGSDEBUG=$(OPTLEVEL)
-endif
-FLAGS=$(CPUFLAGS) -Wall  -Wall -Wextra -nostdlib -nostartfiles \
-      -nodefaultlibs -fno-stack-protector $(FLAGSDEBUG)
-CFLAGS=$(FLAGS)
-CXXFLAGS=$(FLAGS) -std=gnu++0x -fno-exceptions -fno-rtti
-ASFLAGS=
-
-STATICLIBS=\
+LIBS=\
+-nostdlib \
 -lc-sortix \
 -lgcc \
 
-HEADERDIRS:=$(shell find include -type d)
-HEADERS:=$(shell find include -type f)
-
-OBJS=$(CPUOBJS) \
+OBJS=\
+$(CPUOBJS) \
 ata.o \
 bga.o \
 calltrace.o \
@@ -143,29 +131,35 @@ ALLOBJS=\
 $(OBJS) \
 end.o
 
-all: sortix.bin
+# Rules and recipes for building the kernel.
 
-.PHONY: all headers clean install install-include-dirs install-headers
+all: kernel
+
+kernel: sortix.bin
+
+.PHONY: all kernel headers clean install install-include-dirs install-headers \
+        install-kernel install-kernel-binary
 
 headers:
 
 # x64 compilation
-x64/boot.o: x64/boot.s
-	$(HOSTAS) -64 $< -o $@
+ifeq ($(CPU),x64)
 
-sortix-x64.tmp: $(ALLOBJS) x64/boot.o
-	$(HOSTCXX) -nodefaultlibs -nostartfiles -Wl,-N -Wl,-melf_x86_64_sortix -Wl,-Ttext -Wl,100000 -Wl,-z -Wl,max-page-size=0x1000 -o sortix-x64-internal.out x64/boot.o $(OBJS) $(STATICLIBS) end.o
-	$(HOSTOBJCOPY) sortix-x64-internal.out -O elf32-i386 sortix-x64.tmp
+sortix-x86_64.bin: $(ALLOBJS)
+	$(HOSTCXX) $(CXXFLAGS) -Wl,-Ttext -Wl,100000 -Wl,-z -Wl,max-page-size=0x1000 $(OBJS) $(LIBS) end.o -o $@
+
+sortix.bin: sortix-x86_64.bin
+	$(HOSTOBJCOPY) $< -O elf32-i386-sortix $@
+
+endif
 
 # x86 compilation
+ifeq ($(CPU),x86)
 
-sortix-x86.tmp: $(ALLOBJS)
-	$(HOSTCXX) -nodefaultlibs -nostartfiles -Wl,-melf_i386_sortix -Wl,-Ttext -Wl,100000 -o $@ $(OBJS) $(STATICLIBS) end.o
+sortix.bin: $(ALLOBJS)
+	$(HOSTCXX) $(CXXFLAGS) -Wl,-Ttext -Wl,100000 $(OBJS) $(LIBS) end.o -o $@
 
-# general rules
-
-sortix.bin: sortix-$(BUILDID).tmp
-	cp -vu $< $@
+endif
 
 %.o: %.cpp
 	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
@@ -174,29 +168,22 @@ sortix.bin: sortix-$(BUILDID).tmp
 	$(HOSTAS) $< -o $@ $(ASFLAGS)
 
 clean:
-	for D in $(DIRS); do rm -f $$D/*.o $$D/*.bin $$D/*.out $$D/*.tmp; done
+	rm -f $(ALLOBJS) sortix.bin
+	rm -f $(wildcard *.bin) $(wildcard *.out) $(wildcard *.tmp)
+	rm -f $(wildcard *.o) $(wildcard */*.o) $(wildcard */*/*.o)
 
 # Installation into sysroot
 install: install-headers install-kernel
 
 install-include-dirs: headers
-	mkdir -p $(INSTALLINCLUDEDIR)
-	DIRS=$$(echo $(HEADERDIRS) | \
-	        tr ' ' '\n' | \
-	        sed 's/include\/*//'); \
-	for D in $$DIRS; do \
-	  mkdir -p $(INSTALLINCLUDEDIR)/$$D || exit $?; \
-	done
+	mkdir -p $(DESTDIR)$(INCLUDEDIR)
 
 install-headers: install-include-dirs headers
-	for SRC in $(HEADERS); do \
-	  DEST=`echo $$SRC | sed 's/include\///'`; \
-	  cp -P $$SRC $(INSTALLINCLUDEDIR)/$$DEST || exit $?; \
-	done
+	cp -RTv include $(DESTDIR)$(INCLUDEDIR)
 
 install-kernel: install-kernel-binary
 
-install-kernel-binary:
-	mkdir -p $(INSTALLBOOTDIR)/$(HOST)
-	cp -P sortix.bin $(INSTALLBOOTDIR)/$(HOST)
+install-kernel-binary: sortix.bin
+	mkdir -p $(DESTDIR)$(BOOTDIR)/$(HOST)
+	cp sortix.bin $(DESTDIR)$(BOOTDIR)/$(HOST)
 

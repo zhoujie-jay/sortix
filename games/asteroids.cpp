@@ -397,7 +397,7 @@ public:
 private:
 	static const size_t MIN_POLYS = 5;
 	static const size_t MAX_POLYS = 12;
-	static const float MAX_TURN_SPEED = 50.0f;
+	static constexpr float MAX_TURN_SPEED = 50.0f;
 	size_t numpolygons;
 	float slice;
 	float polydists[MAX_POLYS+1];

@@ -1,15 +1,17 @@
+SOFTWARE_MEANT_FOR_SORTIX=1
 include ../compiler.mak
 include ../version.mak
 include ../dirs.mak
 
 ifndef OPTLEVEL
-  OPTLEVEL=-O2
+  OPTLEVEL=-g -O2
 endif
 
 ifndef CXXFLAGS
   CXXFLAGS:=$(OPTLEVEL)
 endif
 
+CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\"
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 BINARIES:=\
@@ -38,21 +40,21 @@ head \
 tail \
 type \
 
+INSTALLBINARIES:=$(addprefix $(DESTDIR)$(BINDIR)/,$(BINARIES))
+
 all: $(BINARIES)
 
 .PHONY: all install uninstall clean
 
 install: all
-	mkdir -p $(INSTALLBINDIR)/$(HOST)
-	install $(BINARIES) $(INSTALLBINDIR)/$(HOST)
+	mkdir -p $(DESTDIR)$(BINDIR)
+	install $(BINARIES) $(DESTDIR)$(BINDIR)
 
 uninstall:
-	for FILE in $(INSTALLBINDIR); do \
-		rm -f $(INSTALLBINDIR)/$(HOST)/$$FILE; \
-	done
+	rm -f $(INSTALLBINARIES) $(DESTDIR)$(BINDIR)/install
 
 %: %.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $< -o $@
+	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@
 
 sh: mxsh
 	cp $< $@

@@ -34,6 +34,11 @@
 	#define __END_DECLS
 #endif
 
+/* Sortix system components implicitly use the native API. */
+#if defined(LIBC_LIBRARY) || defined(SORTIX_KERNEL)
+#define _SORTIX_SOURCE 1
+#endif
+
 /* By default, assume the source is compiled using the native API. */
 #if !defined(_SORTIX_SOURCE) && \
     !defined(_POSIX_SOURCE) && !defined(_POSIX_C_SOURCE) && \

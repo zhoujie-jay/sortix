@@ -23,12 +23,6 @@
 
 *******************************************************************************/
 
-/* NOTE: This is almost identical to what is in start.s. crt1.s is used when
-         compiling with the real cross compiler, while start.s is used when
-         using the older hacky way of building Sortix. Please try to keep these
-         files alike by doing changes both places until we only build Sortix
-         with real cross compilers. */
-
 .section .text
 
 .global _start

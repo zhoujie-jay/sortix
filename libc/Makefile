@@ -1,33 +1,20 @@
+SOFTWARE_MEANT_FOR_SORTIX=1
 include ../compiler.mak
 include ../version.mak
 include ../dirs.mak
 
 ifndef OPTLEVEL
-    OPTLEVEL:=-O2
-endif
-
-ifeq ($(DEBUG_LIBC),1)
-    FLAGSDEBUG=-g3
-else
-    FLAGSDEBUG=$(OPTLEVEL)
+    OPTLEVEL:=-g -O2 -fno-omit-frame-pointer
 endif
 
 CPUDIR:=$(CPU)
 
-ifeq ($(HOST),i486-sortix)
-    CPUFLAGS=
-endif
-
-ifeq ($(HOST),x86_64-sortix)
-    CPUFLAGS=-fPIC -mno-red-zone
-endif
-
 CPPINCLUDES=-I preproc
-CPPFLAGS=-DLIBC_LIBRARY -U_GNU_SOURCE $(CPUDEFINES) $(CPPINCLUDES)
-FLAGS=$(CPUFLAGS) -Wall -Wextra -fno-stack-protector $(FLAGSDEBUG)
-CFLAGS=$(FLAGS) -std=c99
-CXXFLAGS=$(FLAGS) -std=gnu++0x -fno-exceptions -fno-rtti
-ASFLAGS=$(CPUASFLAGS)
+CPPFLAGS=-DLIBC_LIBRARY $(CPPINCLUDES)
+FLAGS=-Wall -Wextra $(OPTLEVEL)
+CFLAGS=-std=gnu99
+CXXFLAGS=-std=gnu++11 -fno-exceptions -fno-rtti
+ASFLAGS=
 
 FREEOBJS=\
 abort.o \
@@ -224,7 +211,6 @@ $(FREEOBJS) \
 $(HOSTEDOBJS) \
 
 CRTOBJ=\
-start.o \
 crt1.o \
 crti.o \
 crtn.o \
@@ -236,16 +222,33 @@ UNPROCHEADERDIRS:=$(shell find include -type d)
 UNPROCHEADERS:=$(shell find include -type f)
 HEADERDIRS:=$(patsubst include%,preproc%,$(UNPROCHEADERDIRS))
 HEADERS:=$(patsubst include%,preproc%,$(UNPROCHEADERS))
+INSTALLHEADERDIRS:=$(addprefix $(DESTDIR)$(INCLUDEDIR),$(patsubst preproc%,%,$(HEADERDIRS)))
+INSTALLHEADERS:=$(addprefix $(DESTDIR)$(INCLUDEDIR),$(patsubst preproc%,%,$(HEADERS)))
 
 SORTIXOBJS:=$(addprefix sortix/,$(FREEOBJS))
-SORTIXCPPFLAGS:=-DSORTIX_KERNEL
+SORTIXCPPFLAGS:=$(CPPFLAGS) -DSORTIX_KERNEL
+SORTIXFLAGS:=$(FLAGS) -ffreestanding
+SORTIXCFLAGS:=$(CFLAGS)
+SORTIXCXXFLAGS:=$(CXXFLAGS)
+ifeq ($(HOST),x86_64-sortix)
+    SORTIXFLAGS:=$(SORTIXFLAGS) -mno-red-zone
+endif
 
-BINS=libc.a libg.a libm.a libstdc++.a libc-sortix.a $(CRTOBJ)
+BINS=libc.a libg.a libm.a libpthread.a libstdc++.a $(CRTOBJ)
+BINSKERNEL=libc-sortix.a
+INSTALLLIBS:=$(addprefix $(DESTDIR)$(LIBDIR)/,$(BINS))
+INSTALLLIBSKERNEL:=$(addprefix $(DESTDIR)$(LIBDIR)/,$(BINSKERNEL))
 
-all: $(BINS)
+all: libs libs-kernel
 
-.PHONY: all headers clean install install-include-dirs install-headers \
-        install-lib-dirs install-libs
+libs: $(BINS)
+
+libs-kernel: $(BINSKERNEL)
+
+.PHONY: all libs headers clean install install-include-dirs install-headers \
+        install-lib-dirs install-libs libs-kernel
+
+FORCE:
 
 libc.a: $(OBJS)
 	$(HOSTAR) rcs $@ $(OBJS)
@@ -253,17 +256,17 @@ libc.a: $(OBJS)
 libc-sortix.a: $(SORTIXOBJS)
 	$(HOSTAR) rcs $@ $(SORTIXOBJS)
 
-libg.a: libc.a
-	ln -sf $< $@
+libg.a:
+	$(HOSTAR) rcs $@
 
 libm.a:
 	$(HOSTAR) rcs $@
 
-libstdc++.a:
+libpthread.a:
 	$(HOSTAR) rcs $@
 
-start.o: $(CPUDIR)/start.o
-	ln -f $< $@
+libstdc++.a:
+	$(HOSTAR) rcs $@
 
 crt1.o: $(CPUDIR)/crt1.o
 	ln -f $< $@
@@ -275,63 +278,66 @@ crtn.o: $(CPUDIR)/crtn.o
 	ln -f $< $@
 
 # header preprocessing
+$(OBJS) $(SORTIXOBJS): $(HEADERS)
+
 $(HEADERDIRS):
 	mkdir -p $@
 
-preproc/%: include/% $(HEADERDIRS)
+preproc/%: include/%
 	mxmpp -I decl $< -o $@
+
+$(HEADERS): | $(HEADERDIRS)
 
 headers: $(HEADERDIRS) $(HEADERS)
 
 # standard library
-%.o: %.c headers
-	$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
+%.o: %.c
+	$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CFLAGS)
 
-%.o: %.cpp headers
-	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
+%.o: %.cpp
+	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CXXFLAGS)
 
 %.o: %.s
 	$(HOSTAS) $(ASFLAGS) $< -o $@
 
 # libc-sortix
-sortix:
-	mkdir -p sortix
+sortix/%.o: %.c
+	$(HOSTCC) -c $< -o $@ $(SORTIXCPPFLAGS) $(SORTIXFLAGS) $(SORTIXCFLAGS)
 
-sortix/%.o: %.c $(HEADERS) sortix
-	$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(SORTIXCPPFLAGS) $(CFLAGS)
-
-sortix/%.o: %.cpp $(HEADERS) sortix
-	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(SORTIXCPPFLAGS) $(CXXFLAGS)
+sortix/%.o: %.cpp
+	$(HOSTCXX) -c $< -o $@ $(SORTIXCPPFLAGS) $(SORTIXFLAGS) $(SORTIXCXXFLAGS)
 
 clean:
-	rm -f *.o sortix/*.o c/*.o x86/*.o x64/*.o *.a *.so
-	rm -f $(OBJS)
-	rm -rf sortix $(HEADERDIRS)
+	rm -f $(wildcard *.o) $(wildcard */*.o) $(wildcard */*/*.o) $(wildcard *.a)
+	rm -rf $(HEADERDIRS)
 
 # Installation into sysroot
-install: install-headers install-libs
+install: install-headers install-libs install-libs-kernel
 
-install-include-dirs: headers
-	mkdir -p $(INSTALLINCLUDEDIR)
-	DIRS=$$(echo $(UNPROCHEADERDIRS) | \
-	        tr ' ' '\n' | \
-	        sed 's/include\/*//'); \
-	for D in $$DIRS; do \
-	  mkdir -p $(INSTALLINCLUDEDIR)/$$D || exit $?; \
-	done
+$(INSTALLHEADERDIRS) $(DESTDIR)$(LIBDIR):
+	mkdir -p $@
 
-install-headers: install-include-dirs headers
-	for SRC in $(HEADERS); do \
-	  DEST=`echo $$SRC | sed 's/preproc\///'`; \
-	  cp -P $$SRC $(INSTALLINCLUDEDIR)/$$DEST || exit $?; \
-	done
+$(DESTDIR)$(INCLUDEDIR)/%: preproc/%
+	cp $< $@
 
-install-lib-dirs:
-	mkdir -p $(INSTALLLIBDIR)
-	mkdir -p $(INSTALLLIBDIR)/$(HOST)
+$(INSTALLHEADERS): | $(INSTALLHEADERDIRS)
 
-install-libs: install-lib-dirs
-	for F in $(BINS); do \
-	  cp -P $$F $(INSTALLLIBDIR)/$(HOST) || exit $?; \
-	done
+$(DESTDIR)$(LIBDIR)/%: %
+	cp -P $< $@
+
+$(INSTALLLIBS): | $(DESTDIR)$(LIBDIR)
+
+$(INSTALLLIBSKERNEL): | $(DESTDIR)$(LIBDIR)
+
+$(DESTDIR)$(INCLUDEDIR) $(DESTDIR)$(LIBDIR) $(INSTALLHEADERS): FORCE
+
+install-include-dirs: $(INSTALLHEADERDIRS)
+
+install-headers: $(INSTALLHEADERDIRS) $(INSTALLHEADERS)
+
+install-lib-dirs: $(DESTDIR)$(LIBDIR)
+
+install-libs: $(INSTALLLIBS)
+
+install-libs-kernel: $(INSTALLLIBSKERNEL)
 

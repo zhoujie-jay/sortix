@@ -1,66 +1,113 @@
-ifndef BITS
-  BITS:=$(shell getconf LONG_BIT)
-endif
+COMPILER_MAK_DIR:=$(dir $(lastword $(MAKEFILE_LIST)))
+include $(COMPILER_MAK_DIR)/platform.mak
 
-ifndef HOST
-  ifeq ($(BITS),64)
-    HOST:=x86_64-sortix
-  else
-    HOST:=i486-sortix
+# Warn if default target is used and the software shouldn't be built under Sortix.
+ifeq ($(BUILD_IS_SORTIX),1)
+  ifeq ($(MAKEFILE_NOT_MEANT_FOR_SORTIX), 1)
+makefile_not_meant_for_sortix:
+	@echo This makefile isn\'t meant to work under Sortix
+	@exit 1
   endif
-  MFLAGS:=$(MFLAGS) HOST=$(HOST)
 endif
 
+# Warn if default target is used and the software should be built under Sortix.
+ifeq ($(BUILD_IS_SORTIX),0)
+  ifeq ($(MAKEFILE_MEANT_FOR_SORTIX), 1)
+makefile_meant_for_sortix:
+	@echo This makefile is meant to work under Sortix, not $(BUILD)
+	@exit 1
+  endif
+endif
+
+# Warn if default target is used and the software shouldn't be built for Sortix.
+ifeq ($(HOST_IS_SORTIX),1)
+  ifeq ($(SOFTWARE_NOT_MEANT_FOR_SORTIX), 1)
+software_not_meant_for_sortix:
+	@echo This software isn\'t meant to work under Sortix
+	@exit 1
+  endif
+endif
+
+# Warn if default target is used and the software should be built for Sortix.
+ifeq ($(HOST_IS_SORTIX),0)
+  ifeq ($(SOFTWARE_MEANT_FOR_SORTIX), 1)
+software_meant_for_sortix:
+	@echo This software is meant to work under Sortix, not $(HOST)
+	@echo Attempt was $(MAKE) $(MAKEFLAGS)
+	@echo Try: $(MAKE) $(MAKEFLAGS) HOST=$(UNAME_PLATFORM)-sortix
+	@exit 1
+  endif
+endif
+
+# Provide deprecated CPU variable so makefiles can select CPU-specific dirs.
 ifeq ($(HOST),i486-sortix)
+    MACHINE:=i486
     CPU:=x86
     OTHER_PLATFORMS=x86-64-sortix
 endif
 ifeq ($(HOST),x86_64-sortix)
+    MACHINE:=x86_64
     CPU:=x64
     OTHER_PLATFORMS=i486-sortix
 endif
 
-ifndef BUILDCC
-  BUILDCC:=gcc
-endif
-ifndef BUILDCXX
-  BUILDCXX:=g++
-endif
-ifndef BUILDAR
-  BUILDAR:=ar
-endif
-ifndef BUILDAS
-  BUILDAS:=as
-endif
-ifndef BUILDLD
-  BUILDAS:=ld
-endif
-ifndef BUILDOBJCOPY
-  BUILDOBJCOPY:=objcopy
+# Determine the prefix for build tools.
+ifndef BUILD_TOOL_PREFIX
+  BUILD_TOOL_PREFIX:=
 endif
 
+# Determine the prefix for host tools.
+ifndef HOST_TOOL_PREFIX
+  ifeq ($(BUILD),$(HOST))
+    HOST_TOOL_PREFIX:=$(BUILD_TOOL_PREFIX)
+  else
+    HOST_TOOL_PREFIX:=$(HOST)-
+  endif
+endif
+
+# Determine the names of the tools that target the build platform.
+ifndef BUILDCC
+  BUILDCC:=$(BUILD_TOOL_PREFIX)gcc
+endif
+ifndef BUILDCXX
+  BUILDCXX:=$(BUILD_TOOL_PREFIX)g++
+endif
+ifndef BUILDAR
+  BUILDAR:=$(BUILD_TOOL_PREFIX)ar
+endif
+ifndef BUILDAS
+  BUILDAS:=$(BUILD_TOOL_PREFIX)as
+endif
+ifndef BUILDLD
+  BUILDAS:=$(BUILD_TOOL_PREFIX)ld
+endif
+ifndef BUILDOBJCOPY
+  BUILDOBJCOPY:=$(BUILD_TOOL_PREFIX)objcopy
+endif
+
+# Determine the names of the tools that target the host platform.
 ifndef HOSTCC
-  HOSTCC:=$(HOST)-gcc
+  HOSTCC:=$(HOST_TOOL_PREFIX)gcc
 endif
 ifndef HOSTCXX
-  HOSTCXX:=$(HOST)-g++
+  HOSTCXX:=$(HOST_TOOL_PREFIX)g++
 endif
 ifndef HOSTAR
-  HOSTAR:=$(HOST)-ar
+  HOSTAR:=$(HOST_TOOL_PREFIX)ar
 endif
 ifndef HOSTAS
-  HOSTAS:=$(HOST)-as
+  HOSTAS:=$(HOST_TOOL_PREFIX)as
 endif
 ifndef HOSTLD
-  HOSTLD:=$(HOST)-ld
+  HOSTLD:=$(HOST_TOOL_PREFIX)ld
 endif
 ifndef HOSTOBJCOPY
-  HOSTOBJCOPY:=$(HOST)-objcopy
+  HOSTOBJCOPY:=$(HOST_TOOL_PREFIX)objcopy
 endif
 
 CC:=$(HOSTCC)
 CXX:=$(HOSTCXX)
-AR=:$(HOSTAR)
+AR:=$(HOSTAR)
 AS:=$(HOSTAS)
 LD:=$(HOSTLD)
 OBJCOPY:=$(HOSTOBJCOPY)

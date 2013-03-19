@@ -7,4 +7,6 @@
 libmaxsi
 builds
 sysroot
+sysroot-overlay
 initrd
+release
