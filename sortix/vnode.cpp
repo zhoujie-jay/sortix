@@ -227,4 +227,37 @@ int Vnode::poll(ioctx_t* ctx, PollNode* node)
 	return inode->poll(ctx, node);
 }
 
+Ref<Vnode> Vnode::accept(ioctx_t* ctx, uint8_t* addr, size_t* addrlen, int flags)
+{
+	Ref<Inode> retinode = inode->accept(ctx, addr, addrlen, flags);
+	if ( !retinode )
+		return Ref<Vnode>();
+	return Ref<Vnode>(new Vnode(retinode, Ref<Vnode>(), retinode->ino, retinode->dev));
+}
+
+int Vnode::bind(ioctx_t* ctx, const uint8_t* addr, size_t addrlen)
+{
+	return inode->bind(ctx, addr, addrlen);
+}
+
+int Vnode::connect(ioctx_t* ctx, const uint8_t* addr, size_t addrlen)
+{
+	return inode->connect(ctx, addr, addrlen);
+}
+
+int Vnode::listen(ioctx_t* ctx, int backlog)
+{
+	return inode->listen(ctx, backlog);
+}
+
+ssize_t Vnode::recv(ioctx_t* ctx, uint8_t* buf, size_t count, int flags)
+{
+	return inode->recv(ctx, buf, count, flags);
+}
+
+ssize_t Vnode::send(ioctx_t* ctx, const uint8_t* buf, size_t count, int flags)
+{
+	return inode->send(ctx, buf, count, flags);
+}
+
 } // namespace Sortix

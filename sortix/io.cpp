@@ -36,6 +36,7 @@
 #include <sortix/dirent.h>
 #include <sortix/fcntl.h>
 #include <sortix/stat.h>
+#include <sortix/socket.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -623,13 +624,78 @@ static int sys_fsync(int fd)
 	return desc->sync(&ctx);
 }
 
+static int sys_accept4(int fd, void* addr, size_t* addrlen, int flags)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	int fdflags = 0;
+	// TODO: Support SOCK_NONBLOCK
+	if ( flags & SOCK_CLOEXEC ) fdflags |= FD_CLOEXEC;
+	if ( flags & SOCK_CLOFORK ) fdflags |= FD_CLOFORK;
+	flags &= ~(SOCK_CLOEXEC | SOCK_CLOFORK);
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	Ref<Descriptor> conn = desc->accept(&ctx, (uint8_t*) addr, addrlen, flags);
+	if ( !conn )
+		return -1;
+	return CurrentProcess()->GetDTable()->Allocate(conn, fdflags);
+}
+
+static int sys_bind(int fd, const void* addr, size_t addrlen)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->bind(&ctx, (const uint8_t*) addr, addrlen);
+}
+
+static int sys_connect(int fd, const void* addr, size_t addrlen)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->connect(&ctx, (const uint8_t*) addr, addrlen);
+}
+
+static int sys_listen(int fd, int backlog)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->listen(&ctx, backlog);
+}
+
+static ssize_t sys_recv(int fd, void* buffer, size_t count, int flags)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->recv(&ctx, (uint8_t*) buffer, count, flags);
+}
+
+static ssize_t sys_send(int fd, const void* buffer, size_t count, int flags)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->send(&ctx, (const uint8_t*) buffer, count, flags);
+}
+
 void Init()
 {
+	Syscall::Register(SYSCALL_ACCEPT4, (void*) sys_accept4);
 	Syscall::Register(SYSCALL_ACCESS, (void*) sys_access);
+	Syscall::Register(SYSCALL_BIND, (void*) sys_bind);
 	Syscall::Register(SYSCALL_CHDIR, (void*) sys_chdir);
 	Syscall::Register(SYSCALL_CHMOD, (void*) sys_chmod);
 	Syscall::Register(SYSCALL_CHOWN, (void*) sys_chown);
 	Syscall::Register(SYSCALL_CLOSE, (void*) sys_close);
+	Syscall::Register(SYSCALL_CONNECT, (void*) sys_connect);
 	Syscall::Register(SYSCALL_DUP2, (void*) sys_dup2);
 	Syscall::Register(SYSCALL_DUP, (void*) sys_dup);
 	Syscall::Register(SYSCALL_FACCESSAT, (void*) sys_faccessat);
@@ -649,6 +715,7 @@ void Init()
 	Syscall::Register(SYSCALL_ISATTY, (void*) sys_isatty);
 	Syscall::Register(SYSCALL_LINKAT, (void*) sys_linkat);
 	Syscall::Register(SYSCALL_LINK, (void*) sys_link);
+	Syscall::Register(SYSCALL_LISTEN, (void*) sys_listen);
 	Syscall::Register(SYSCALL_MKDIRAT, (void*) sys_mkdirat);
 	Syscall::Register(SYSCALL_MKDIR, (void*) sys_mkdir);
 	Syscall::Register(SYSCALL_OPENAT, (void*) sys_openat);
@@ -658,9 +725,11 @@ void Init()
 	Syscall::Register(SYSCALL_READDIRENTS, (void*) sys_readdirents);
 	Syscall::Register(SYSCALL_READLINKAT, (void*) sys_readlinkat);
 	Syscall::Register(SYSCALL_READ, (void*) sys_read);
+	Syscall::Register(SYSCALL_RECV, (void*) sys_recv);
 	Syscall::Register(SYSCALL_RENAMEAT, (void*) sys_renameat);
 	Syscall::Register(SYSCALL_RMDIR, (void*) sys_rmdir);
 	Syscall::Register(SYSCALL_SEEK, (void*) sys_seek);
+	Syscall::Register(SYSCALL_SEND, (void*) sys_send);
 	Syscall::Register(SYSCALL_SETTERMMODE, (void*) sys_settermmode);
 	Syscall::Register(SYSCALL_STAT, (void*) sys_stat);
 	Syscall::Register(SYSCALL_TCGETWINSIZE, (void*) sys_tcgetwinsize);

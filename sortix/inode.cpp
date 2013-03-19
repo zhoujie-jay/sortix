@@ -293,4 +293,39 @@ int AbstractInode::rename_here(ioctx_t* /*ctx*/, Ref<Inode> /*from*/,
 	return errno = ENOTDIR, -1;
 }
 
+Ref<Inode> AbstractInode::accept(ioctx_t* /*ctx*/, uint8_t* /*addr*/,
+                                 size_t* /*addrlen*/, int /*flags*/)
+{
+	return errno = ENOTSOCK, Ref<Inode>();
+}
+
+int AbstractInode::bind(ioctx_t* /*ctx*/, const uint8_t* /*addr*/,
+                        size_t /*addrlen*/)
+{
+	return errno = ENOTSOCK, -1;
+}
+
+int AbstractInode::connect(ioctx_t* /*ctx*/, const uint8_t* /*addr*/,
+                           size_t /*addrlen*/)
+{
+	return errno = ENOTSOCK, -1;
+}
+
+int AbstractInode::listen(ioctx_t* /*ctx*/, int /*backlog*/)
+{
+	return errno = ENOTSOCK, -1;
+}
+
+ssize_t AbstractInode::recv(ioctx_t* /*ctx*/, uint8_t* /*buf*/,
+                            size_t /*count*/, int /*flags*/)
+{
+	return errno = ENOTSOCK, -1;
+}
+
+ssize_t AbstractInode::send(ioctx_t* /*ctx*/, const uint8_t* /*buf*/,
+                            size_t /*count*/, int /*flags*/)
+{
+	return errno = ENOTSOCK, -1;
+}
+
 } // namespace Sortix

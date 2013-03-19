@@ -216,6 +216,14 @@ public:
 	virtual int poll(ioctx_t* ctx, PollNode* node);
 	virtual int rename_here(ioctx_t* ctx, Ref<Inode> from, const char* oldname,
 	                        const char* newname);
+	virtual Ref<Inode> accept(ioctx_t* ctx, uint8_t* addr, size_t* addrlen,
+	                          int flags);
+	virtual int bind(ioctx_t* ctx, const uint8_t* addr, size_t addrlen);
+	virtual int connect(ioctx_t* ctx, const uint8_t* addr, size_t addrlen);
+	virtual int listen(ioctx_t* ctx, int backlog);
+	virtual ssize_t recv(ioctx_t* ctx, uint8_t* buf, size_t count, int flags);
+	virtual ssize_t send(ioctx_t* ctx, const uint8_t* buf, size_t count,
+	                     int flags);
 
 private:
 	bool SendMessage(Channel* channel, size_t type, void* ptr, size_t size,
@@ -1143,6 +1151,39 @@ int Unode::rename_here(ioctx_t* /*ctx*/, Ref<Inode> from, const char* oldname,
 		ret = 0;
 	channel->KernelClose();
 	return ret;
+}
+
+Ref<Inode> Unode::accept(ioctx_t* /*ctx*/, uint8_t* /*addr*/,
+                         size_t* /*addrlen*/, int /*flags*/)
+{
+	return errno = ENOTSOCK, Ref<Inode>();
+}
+
+int Unode::bind(ioctx_t* /*ctx*/, const uint8_t* /*addr*/, size_t /*addrlen*/)
+{
+	return errno = ENOTSOCK, -1;
+}
+
+int Unode::connect(ioctx_t* /*ctx*/, const uint8_t* /*addr*/, size_t /*addrlen*/)
+{
+	return errno = ENOTSOCK, -1;
+}
+
+int Unode::listen(ioctx_t* /*ctx*/, int /*backlog*/)
+{
+	return errno = ENOTSOCK, -1;
+}
+
+ssize_t Unode::recv(ioctx_t* /*ctx*/, uint8_t* /*buf*/, size_t /*count*/,
+                    int /*flags*/)
+{
+	return errno = ENOTSOCK, -1;
+}
+
+ssize_t Unode::send(ioctx_t* /*ctx*/, const uint8_t* /*buf*/, size_t /*count*/,
+                    int /*flags*/)
+{
+	return errno = ENOTSOCK, -1;
 }
 
 //

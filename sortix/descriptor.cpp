@@ -550,4 +550,37 @@ int Descriptor::poll(ioctx_t* ctx, PollNode* node)
 	return vnode->poll(ctx, node);
 }
 
+Ref<Descriptor> Descriptor::accept(ioctx_t* ctx, uint8_t* addr, size_t* addrlen, int flags)
+{
+	Ref<Vnode> retvnode = vnode->accept(ctx, addr, addrlen, flags);
+	if ( !retvnode )
+		return Ref<Descriptor>();
+	return Ref<Descriptor>(new Descriptor(retvnode, O_READ | O_WRITE));
+}
+
+int Descriptor::bind(ioctx_t* ctx, const uint8_t* addr, size_t addrlen)
+{
+	return vnode->bind(ctx, addr, addrlen);
+}
+
+int Descriptor::connect(ioctx_t* ctx, const uint8_t* addr, size_t addrlen)
+{
+	return vnode->connect(ctx, addr, addrlen);
+}
+
+int Descriptor::listen(ioctx_t* ctx, int backlog)
+{
+	return vnode->listen(ctx, backlog);
+}
+
+ssize_t Descriptor::recv(ioctx_t* ctx, uint8_t* buf, size_t count, int flags)
+{
+	return vnode->recv(ctx, buf, count, flags);
+}
+
+ssize_t Descriptor::send(ioctx_t* ctx, const uint8_t* buf, size_t count, int flags)
+{
+	return vnode->send(ctx, buf, count, flags);
+}
+
 } // namespace Sortix

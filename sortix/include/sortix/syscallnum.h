@@ -108,6 +108,12 @@
 #define SYSCALL_IOCTL 84
 #define SYSCALL_UTIMENSAT 85
 #define SYSCALL_FUTIMENS 86
-#define SYSCALL_MAX_NUM 87 /* index of highest constant + 1 */
+#define SYSCALL_RECV 87
+#define SYSCALL_SEND 88
+#define SYSCALL_ACCEPT4 89
+#define SYSCALL_BIND 90
+#define SYSCALL_CONNECT 91
+#define SYSCALL_LISTEN 92
+#define SYSCALL_MAX_NUM 93 /* index of highest constant + 1 */
 
 #endif

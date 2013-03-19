@@ -79,6 +79,12 @@ public:
 	int poll(ioctx_t* ctx, PollNode* node);
 	int rename_here(ioctx_t* ctx, Ref<Vnode> from, const char* oldname,
 	                const char* newname);
+	Ref<Vnode> accept(ioctx_t* ctx, uint8_t* addr, size_t* addrlen, int flags);
+	int bind(ioctx_t* ctx, const uint8_t* addr, size_t addrlen);
+	int connect(ioctx_t* ctx, const uint8_t* addr, size_t addrlen);
+	int listen(ioctx_t* ctx, int backlog);
+	ssize_t recv(ioctx_t* ctx, uint8_t* buf, size_t count, int flags);
+	ssize_t send(ioctx_t* ctx, const uint8_t* buf, size_t count, int flags);
 
 public /*TODO: private*/:
 	Ref<Inode> inode;

@@ -90,6 +90,14 @@ public:
 	virtual int poll(ioctx_t* ctx, PollNode* node) = 0;
 	virtual int rename_here(ioctx_t* ctx, Ref<Inode> from, const char* oldname,
 	                        const char* newname) = 0;
+	virtual Ref<Inode> accept(ioctx_t* ctx, uint8_t* addr, size_t* addrlen,
+	                          int flags) = 0;
+	virtual int bind(ioctx_t* ctx, const uint8_t* addr, size_t addrlen) = 0;
+	virtual int connect(ioctx_t* ctx, const uint8_t* addr, size_t addrlen) = 0;
+	virtual int listen(ioctx_t* ctx, int backlog) = 0;
+	virtual ssize_t recv(ioctx_t* ctx, uint8_t* buf, size_t count, int flags) = 0;
+	virtual ssize_t send(ioctx_t* ctx, const uint8_t* buf, size_t count,
+	                     int flags) = 0;
 
 };
 
@@ -156,6 +164,14 @@ public:
 	virtual int poll(ioctx_t* ctx, PollNode* node);
 	virtual int rename_here(ioctx_t* ctx, Ref<Inode> from, const char* oldname,
 	                        const char* newname);
+	virtual Ref<Inode> accept(ioctx_t* ctx, uint8_t* addr, size_t* addrlen,
+	                          int flags);
+	virtual int bind(ioctx_t* ctx, const uint8_t* addr, size_t addrlen);
+	virtual int connect(ioctx_t* ctx, const uint8_t* addr, size_t addrlen);
+	virtual int listen(ioctx_t* ctx, int backlog);
+	virtual ssize_t recv(ioctx_t* ctx, uint8_t* buf, size_t count, int flags);
+	virtual ssize_t send(ioctx_t* ctx, const uint8_t* buf, size_t count,
+	                     int flags);
 
 };
 

@@ -152,5 +152,6 @@ typedef int __clockid_t;
 typedef long __time_t;
 typedef long __suseconds_t;
 typedef void* __timer_t;
+typedef __SIZE_TYPE__ __socklen_t;
 
 #endif
