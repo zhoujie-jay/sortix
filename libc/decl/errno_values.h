@@ -46,6 +46,7 @@
 #define EMLINK 54
 #define ENXIO 55
 #define EPROTONOSUPPORT 56
+#define EAFNOSUPPORT 57
 
 #define EOPNOTSUPP ENOTSUP
 
