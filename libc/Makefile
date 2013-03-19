@@ -212,6 +212,8 @@ putc.o \
 raise.o \
 rand.o \
 readdirents.o \
+readlinkat.o \
+readlink.o \
 read.o \
 realpath.o \
 removeat.o \

@@ -540,6 +540,25 @@ static int sys_renameat(int olddirfd, const char* oldpath,
 	return ret;
 }
 
+// TODO: This should probably be moved into user-space. It'd be nice if
+// user-space could just open the symlink and read/write it like a regular file.
+static ssize_t sys_readlinkat(int dirfd, const char* path, char* buf, size_t size)
+{
+	char* pathcopy = GetStringFromUser(path);
+	if ( !pathcopy )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	const char* relpath = pathcopy;
+	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	if ( !from ) { delete[] pathcopy; return -1; }
+	// TODO: Open the symbolic link, instead of what it points to!
+	Ref<Descriptor> desc = from->open(&ctx, relpath, O_RDONLY);
+	delete[] pathcopy;
+	if ( !desc )
+		return -1;
+	return (int) desc->readlink(&ctx, buf, size);
+}
+
 void Init()
 {
 	Syscall::Register(SYSCALL_ACCESS, (void*) sys_access);
@@ -570,6 +589,7 @@ void Init()
 	Syscall::Register(SYSCALL_PREAD, (void*) sys_pread);
 	Syscall::Register(SYSCALL_PWRITE, (void*) sys_pwrite);
 	Syscall::Register(SYSCALL_READDIRENTS, (void*) sys_readdirents);
+	Syscall::Register(SYSCALL_READLINKAT, (void*) sys_readlinkat);
 	Syscall::Register(SYSCALL_READ, (void*) sys_read);
 	Syscall::Register(SYSCALL_RENAMEAT, (void*) sys_renameat);
 	Syscall::Register(SYSCALL_RMDIR, (void*) sys_rmdir);

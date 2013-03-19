@@ -420,6 +420,8 @@ int Descriptor::rename_here(ioctx_t* ctx, Ref<Descriptor> from,
 
 ssize_t Descriptor::readlink(ioctx_t* ctx, char* buf, size_t bufsize)
 {
+	if ( (size_t) SSIZE_MAX < bufsize )
+		bufsize = (size_t) SSIZE_MAX;
 	return vnode->readlink(ctx, buf, bufsize);
 }
 
