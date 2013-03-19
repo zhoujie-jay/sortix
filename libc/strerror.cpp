@@ -76,6 +76,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ENXIO: return "No such device or address";
 	case EPROTONOSUPPORT: return "Protocol not supported";
 	case EAFNOSUPPORT: return "Address family not supported";
+	case ENOTSOCK: return "Not a socket";
 	default: return "Unknown error condition";
 	}
 }

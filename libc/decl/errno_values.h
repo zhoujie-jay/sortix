@@ -47,6 +47,7 @@
 #define ENXIO 55
 #define EPROTONOSUPPORT 56
 #define EAFNOSUPPORT 57
+#define ENOTSOCK 58
 
 #define EOPNOTSUPP ENOTSUP
 
