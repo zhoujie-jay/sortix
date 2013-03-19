@@ -45,6 +45,7 @@
 #define ELOOP 53
 #define EMLINK 54
 #define ENXIO 55
+#define EPROTONOSUPPORT 56
 
 #define EOPNOTSUPP ENOTSUP
 

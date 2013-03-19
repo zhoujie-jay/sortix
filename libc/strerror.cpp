@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -74,6 +74,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ELOOP: return "Too many levels of symbolic links";
 	case EMLINK: return "Too many links";
 	case ENXIO: return "No such device or address";
+	case EPROTONOSUPPORT: return "Protocol not supported";
 	default: return "Unknown error condition";
 	}
 }
