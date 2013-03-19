@@ -30,6 +30,7 @@ c++.o \
 ctime.o \
 ctype.o \
 dir.o \
+div.o \
 errno.o \
 fabs.o \
 fbufsize.o \
@@ -69,6 +70,8 @@ gmtime.o \
 gmtime_r.o \
 heap.o \
 integer.o \
+ldiv.o \
+lldiv.o \
 localtime.o \
 localtime_r.o \
 mbrtowc.o \

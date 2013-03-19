@@ -39,8 +39,23 @@ __BEGIN_DECLS
 /* TODO: This is just a value. It's not a compile time constant! */
 #define MB_CUR_MAX 16
 
-/* TODO: div_t, ldiv_t, and lldiv_t is missing here */
-typedef int div_t, ldiv_t, lldiv_t;
+typedef struct
+{
+	int quot;
+	int rem;
+} div_t;
+
+typedef struct
+{
+	long quot;
+	long rem;
+} ldiv_t;
+
+typedef struct
+{
+	long long quot;
+	long long rem;
+} lldiv_t;
 
 @include(NULL.h)
 @include(size_t.h)
@@ -54,11 +69,14 @@ long atol(const char*);
 long long atoll(const char*);
 void* bsearch(const void*, const void*, size_t, size_t, int (*)(const void*, const void*));
 void* calloc(size_t, size_t);
+div_t div(int, int);
 void exit(int)  __attribute__ ((noreturn));
 void _Exit(int status)  __attribute__ ((noreturn));
 void free(void*);
 long labs(long);
+ldiv_t ldiv(long, long);
 long long llabs(long long);
+lldiv_t lldiv(long long, long long);
 void* malloc(size_t);
 int mbtowc(wchar_t *restrict, const char* restrict, size_t);
 #if !defined(_SORTIX_SOURCE)
@@ -99,7 +117,6 @@ int clearenv(void);
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 long a64l(const char* s);
 double atof(const char* value);
-div_t div(int, int);
 double drand48(void);
 double erand48(unsigned short [3]);
 int getsubopt(char**, char* const *, char**);
@@ -108,8 +125,6 @@ char* initstate(unsigned, char*, size_t);
 long jrand48(unsigned short [3]);
 char* l64a(long);
 void lcong48(unsigned short [7]);
-ldiv_t ldiv(long, long);
-lldiv_t lldiv(long long, long long);
 long lrand48(void);
 int mblen(const char*, size_t);
 size_t mbstowcs(wchar_t *restrict, const char* restrict, size_t);
