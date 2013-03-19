@@ -46,6 +46,7 @@
 #include <sortix/kernel/time.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/fcache.h>
+#include <sortix/kernel/string.h>
 
 #include <sortix/fcntl.h>
 #include <sortix/stat.h>
@@ -265,6 +266,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	if ( !system ) { Panic("Could not allocate the system process"); }
 	addr_t systemaddrspace = Memory::GetAddressSpace();
 	system->addrspace = systemaddrspace;
+
+	if ( !(system->program_image_path = String::Clone("<kernel process>")) )
+		Panic("Unable to clone string for system process name");
 
 	// We construct this thread manually for bootstrap reasons. We wish to
 	// create a kernel thread that is the current thread and isn't put into the

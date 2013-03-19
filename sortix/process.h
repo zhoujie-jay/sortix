@@ -80,6 +80,7 @@ namespace Sortix
 		static pid_t AllocatePID();
 
 	public:
+		char* program_image_path;
 		addr_t addrspace;
 		pid_t pid;
 		uid_t uid;

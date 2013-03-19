@@ -112,6 +112,7 @@ namespace Sortix
 		nextsibling = NULL;
 		firstchild = NULL;
 		zombiechild = NULL;
+		program_image_path = NULL;
 		parentlock = KTHREAD_MUTEX_INITIALIZER;
 		childlock = KTHREAD_MUTEX_INITIALIZER;
 		zombiecond = KTHREAD_COND_INITIALIZER;
@@ -129,6 +130,8 @@ namespace Sortix
 
 	Process::~Process()
 	{
+		if ( program_image_path )
+			delete[] program_image_path;
 		assert(!zombiechild);
 		assert(!firstchild);
 		assert(!addrspace);
@@ -568,6 +571,9 @@ namespace Sortix
 		clone->mtable = mtable;
 		kthread_mutex_unlock(&ptrlock);
 
+		if ( !(clone->program_image_path = String::Clone(program_image_path)) )
+			failure = false;
+
 		if ( pid == 1)
 			assert(dtable->Get(1));
 
@@ -601,8 +607,15 @@ namespace Sortix
 		(void) programname;
 		assert(CurrentProcess() == this);
 
+		char* programname_clone = String::Clone(programname);
+		if ( !programname_clone )
+			return -1;
+
 		addr_t entry = ELF::Construct(CurrentProcess(), program, programsize);
-		if ( !entry ) { return -1; }
+		if ( !entry ) { delete[] programname_clone; return -1; }
+
+		delete[] program_image_path;
+		program_image_path = programname_clone; programname_clone = NULL;
 
 		// TODO: This may be an ugly hack!
 		// TODO: Move this to x86/process.cpp.
