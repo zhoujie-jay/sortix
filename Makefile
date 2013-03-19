@@ -78,6 +78,7 @@ sysroot-source: sysroot-fsh
 	cp COPYING-LGPL -t "$(SYSROOT)/src"
 	cp README -t "$(SYSROOT)/src"
 	(for D in $(MODULES); do (cp -LR $$D -t "$(SYSROOT)/src" && $(MAKE) -C "$(SYSROOT)/src/$$D" clean) || exit $$?; done)
+	cp -LR system -t "$(SYSROOT)/src"
 
 .PHONY: sysroot-overlay
 sysroot-overlay: sysroot-fsh sysroot-system
