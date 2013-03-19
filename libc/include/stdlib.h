@@ -61,7 +61,7 @@ typedef struct
 @include(size_t.h)
 @include(wchar_t.h)
 
-void abort(void) __attribute__ ((noreturn));
+void abort(void) __attribute__ ((__noreturn__));
 int abs(int value);
 int atexit(void (*function)(void));
 int atoi(const char*);
@@ -70,8 +70,8 @@ long long atoll(const char*);
 void* bsearch(const void*, const void*, size_t, size_t, int (*)(const void*, const void*));
 void* calloc(size_t, size_t);
 div_t div(int, int);
-void exit(int)  __attribute__ ((noreturn));
-void _Exit(int status)  __attribute__ ((noreturn));
+void exit(int)  __attribute__ ((__noreturn__));
+void _Exit(int status)  __attribute__ ((__noreturn__));
 void free(void*);
 long labs(long);
 ldiv_t ldiv(long, long);
