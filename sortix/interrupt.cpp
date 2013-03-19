@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -254,8 +254,8 @@ void CrashHandler(CPU::InterruptRegisters* regs)
 
 	Interrupt::Enable();
 
-	Log::PrintF("The current program (pid %i) has crashed and was terminated:\n",
-	            CurrentProcess()->pid);
+	Log::PrintF("The current program (pid %i %s) has crashed and was terminated:\n",
+	            CurrentProcess()->pid, CurrentProcess()->program_image_path);
 	Log::PrintF("%s exception at ip=0x%zx (cr2=0x%p, err_code=0x%p)\n",
 	            message, ip, regs->cr2, regs->err_code);
 
