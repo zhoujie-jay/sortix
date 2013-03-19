@@ -213,6 +213,7 @@ raise.o \
 rand.o \
 readdirents.o \
 read.o \
+realpath.o \
 removeat.o \
 remove.o \
 renameat.o \
