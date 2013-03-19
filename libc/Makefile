@@ -190,6 +190,7 @@ fstatat.o \
 fstat.o \
 fsync.o \
 ftruncate.o \
+futimens.o \
 getc.o \
 getcwd.o \
 getdtablesize.o \
@@ -270,6 +271,8 @@ unlinkat.o \
 unlink.o \
 uptime.o \
 usleep.o \
+utimensat.o \
+utimens.o \
 utime.o \
 vscanf.o \
 wait.o \

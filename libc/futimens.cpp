@@ -17,25 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    utime.cpp
+    futimens.cpp
     Change file last access and modification times.
 
 *******************************************************************************/
 
 #include <sys/stat.h>
-#include <sys/types.h>
+#include <sys/syscall.h>
 
-#include <utime.h>
-#include <time.h>
-#include <timespec.h>
+// TODO: You cannot currently pass array types to the DEFN_SYSCALL* family.
+DEFN_SYSCALL2(int, sys_futimens, SYSCALL_FUTIMENS, int, const struct timespec*);
 
-// TODO: This interface has been deprecated by utimens (although that's a
-//       non-standard Sortix extension, in which case by utimensat) - it'd be
-//       nice to remove this at some point.
-extern "C" int utime(const char* filepath, const struct utimbuf* times)
+extern "C" int futimens(int fd, const struct timespec times[2])
 {
-	struct timespec ts_times[2];
-	ts_times[0] = timespec_make(times->actime, 0);
-	ts_times[1] = timespec_make(times->modtime, 0);
-	return utimens(filepath, ts_times);
+	return sys_futimens(fd, times);
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -22,10 +22,8 @@
 
 *******************************************************************************/
 
-/* TODO: Make this header comply with POSIX-1.2008, if it makes sense. */
-
-#ifndef _SYS_STAT_H
-#define _SYS_STAT_H 1
+#ifndef INCLUDE_SYS_STAT_H
+#define INCLUDE_SYS_STAT_H
 
 #include <features.h>
 
@@ -42,6 +40,7 @@ __BEGIN_DECLS
 @include(time_t.h)
 __END_DECLS
 
+#include <sortix/timespec.h>
 #include <sortix/stat.h>
 
 __BEGIN_DECLS
@@ -61,11 +60,19 @@ int fchmod(int fd, mode_t mode);
 int fchmodat(int dirfd, const char* path, mode_t mode, int flags);
 int fstat(int fd, struct stat* st);
 int fstatat(int dirfd, const char* path, struct stat* buf, int flags);
+int futimens(int fd, const struct timespec times[2]);
 int lstat(const char* restrict path, struct stat* restrict st);
 int mkdir(const char* path, mode_t mode);
 int mkdirat(int dirfd, const char* path, mode_t mode);
+/* TODO: mkfifo */
+/* TODO: mkfifoat */
+/* TODO: mknod? */
+/* TODO: mknodat? */
 int stat(const char* restrict path, struct stat* restrict st);
 mode_t umask(mode_t mask);
+int utimens(const char* path, const struct timespec times[2]);
+int utimensat(int dirfd, const char* path, const struct timespec times[2],
+              int flags);
 
 __END_DECLS
 

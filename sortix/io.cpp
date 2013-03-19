@@ -450,6 +450,41 @@ static int sys_chmod(const char* path, mode_t mode)
 	return sys_fchmodat(AT_FDCWD, path, mode, 0);
 }
 
+static int sys_futimens(int fd, const struct timespec user_times[2])
+{
+	struct timespec times[2];
+	if ( !CopyFromUser(times, user_times, sizeof(times)) )
+		return -1;
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->utimens(&ctx, times);
+}
+
+static int sys_utimensat(int dirfd, const char* path,
+                         const struct timespec user_times[2], int flags)
+{
+	if ( flags )
+		return errno = ENOTSUP, -1;
+	struct timespec times[2];
+	if ( !CopyFromUser(times, user_times, sizeof(times)) )
+		return -1;
+	char* pathcopy = GetStringFromUser(path);
+	if ( !pathcopy )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	const char* relpath = pathcopy;
+	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	if ( !from ) { delete[] pathcopy; return -1; }
+	Ref<Descriptor> desc = from->open(&ctx, relpath, O_WRITE);
+	from.Reset();
+	delete[] pathcopy;
+	if ( !desc )
+		return -1;
+	return desc->utimens(&ctx, times);
+}
+
 static int sys_linkat(int olddirfd, const char* oldpath,
                       int newdirfd, const char* newpath,
                       int flags)
@@ -608,6 +643,7 @@ void Init()
 	Syscall::Register(SYSCALL_FSTAT, (void*) sys_fstat);
 	Syscall::Register(SYSCALL_FSYNC, (void*) sys_fsync);
 	Syscall::Register(SYSCALL_FTRUNCATE, (void*) sys_ftruncate);
+	Syscall::Register(SYSCALL_FUTIMENS, (void*) sys_futimens);
 	Syscall::Register(SYSCALL_GETTERMMODE, (void*) sys_gettermmode);
 	Syscall::Register(SYSCALL_IOCTL, (void*) sys_ioctl);
 	Syscall::Register(SYSCALL_ISATTY, (void*) sys_isatty);
@@ -632,6 +668,7 @@ void Init()
 	Syscall::Register(SYSCALL_TRUNCATE, (void*) sys_truncate);
 	Syscall::Register(SYSCALL_UNLINKAT, (void*) sys_unlinkat);
 	Syscall::Register(SYSCALL_UNLINK, (void*) sys_unlink);
+	Syscall::Register(SYSCALL_UTIMENSAT, (void*) sys_utimensat);
 	Syscall::Register(SYSCALL_WRITE, (void*) sys_write);
 }
 

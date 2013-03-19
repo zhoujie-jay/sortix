@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013
 
     This file is part of the Sortix C Library.
 
@@ -17,25 +17,28 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    utime.cpp
-    Change file last access and modification times.
+    utime.h
+    Deprecated interface to change the file access and moficiation times.
 
 *******************************************************************************/
 
-#include <sys/stat.h>
-#include <sys/types.h>
+#ifndef INCLUDE_UTIME_H
+#define INCLUDE_UTIME_H
 
-#include <utime.h>
-#include <time.h>
-#include <timespec.h>
+#include <features.h>
 
-// TODO: This interface has been deprecated by utimens (although that's a
-//       non-standard Sortix extension, in which case by utimensat) - it'd be
-//       nice to remove this at some point.
-extern "C" int utime(const char* filepath, const struct utimbuf* times)
+__BEGIN_DECLS
+
+@include(time_t.h)
+
+struct utimbuf
 {
-	struct timespec ts_times[2];
-	ts_times[0] = timespec_make(times->actime, 0);
-	ts_times[1] = timespec_make(times->modtime, 0);
-	return utimens(filepath, ts_times);
-}
+	time_t actime;
+	time_t modtime;
+};
+
+int utime(const char* filename, const struct utimbuf* times);
+
+__END_DECLS
+
+#endif

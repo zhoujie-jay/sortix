@@ -106,6 +106,8 @@
 #define SYSCALL_SETEUID 82
 #define SYSCALL_SETEGID 83
 #define SYSCALL_IOCTL 84
-#define SYSCALL_MAX_NUM 85 /* index of highest constant + 1 */
+#define SYSCALL_UTIMENSAT 85
+#define SYSCALL_FUTIMENS 86
+#define SYSCALL_MAX_NUM 87 /* index of highest constant + 1 */
 
 #endif
