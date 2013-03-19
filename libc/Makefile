@@ -125,6 +125,8 @@ wctype.o \
 HOSTEDOBJS=\
 access.o \
 calltrace.o \
+canonicalize_file_name_at.o \
+canonicalize_file_name.o \
 chdir.o \
 chmod.o \
 chown.o \

@@ -69,6 +69,8 @@ long atol(const char*);
 long long atoll(const char*);
 void* bsearch(const void*, const void*, size_t, size_t, int (*)(const void*, const void*));
 void* calloc(size_t, size_t);
+char* canonicalize_file_name(const char* path);
+char* canonicalize_file_name_at(int dirfd, const char* path);
 div_t div(int, int);
 void exit(int)  __attribute__ ((__noreturn__));
 void _Exit(int status)  __attribute__ ((__noreturn__));

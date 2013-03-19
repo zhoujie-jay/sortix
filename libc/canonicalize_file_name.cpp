@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,35 +17,15 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    getcwd.cpp
-    Returns the current working directory.
+    canonicalize_file_name.cpp
+    Return the canonicalized filename.
 
 *******************************************************************************/
 
-#include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
-extern "C" char* get_current_dir_name(void)
+extern "C" char* canonicalize_file_name(const char* path)
 {
-	return canonicalize_file_name(".");
-}
-
-extern "C" char* getcwd(char* buf, size_t size)
-{
-	char* cwd = get_current_dir_name();
-	if ( !buf )
-		return cwd;
-	if ( !cwd )
-		return NULL;
-	if ( size < strlen(cwd) + 1 )
-	{
-		free(cwd);
-		errno = ERANGE;
-		return NULL;
-	}
-	strcpy(buf, cwd);
-	free(cwd);
-	return buf;
+	return canonicalize_file_name_at(AT_FDCWD, path);
 }
