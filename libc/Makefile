@@ -20,6 +20,7 @@ FREEOBJS=\
 abort.o \
 abs.o \
 _assert.o \
+atof.o \
 atoi.o \
 atoll.o \
 atol.o \

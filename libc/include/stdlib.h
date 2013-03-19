@@ -64,6 +64,7 @@ typedef struct
 void abort(void) __attribute__ ((__noreturn__));
 int abs(int value);
 int atexit(void (*function)(void));
+double atof(const char* value);
 int atoi(const char*);
 long atol(const char*);
 long long atoll(const char*);
@@ -120,7 +121,6 @@ int clearenv(void);
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 long a64l(const char* s);
-double atof(const char* value);
 double drand48(void);
 double erand48(unsigned short [3]);
 int getsubopt(char**, char* const *, char**);
