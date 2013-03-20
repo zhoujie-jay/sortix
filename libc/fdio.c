@@ -45,6 +45,17 @@ typedef struct fdio_struct
 	int fd;
 } fdio_t;
 
+static int fdio_reopen(void* user, const char* mode)
+{
+	(void) user;
+	(void) mode;
+	// TODO: Unfortunately, we don't support this yet. Note that we don't really
+	// have to support this according to POSIX - but it'd be nicer to push this
+	// restriction into the kernel and argue it's a security problem "What? No
+	// you can't make this read-only descriptor readable!".
+	return errno = ENOTSUP, -1;
+}
+
 static size_t fdio_read(void* ptr, size_t size, size_t nmemb, void* user)
 {
 	uint8_t* buf = (uint8_t*) ptr;
@@ -57,6 +68,8 @@ static size_t fdio_read(void* ptr, size_t size, size_t nmemb, void* user)
 		ssize_t numbytes = read(fdio->fd, buf + sofar, total - sofar);
 		if ( numbytes < 0 ) { fdio->flags |= FDIO_ERROR; break; }
 		if ( numbytes == 0 ) { fdio->flags |= FDIO_EOF; break; }
+		// TODO: Is this a bug? Looks like one, but perhaps this is needed when
+		//       reading from line-buffered terminals.
 		return numbytes / size;
 		sofar += numbytes;
 	}
@@ -130,7 +143,33 @@ static int fdio_close(void* user)
 	return result;
 }
 
-int fdio_install(FILE* fp, const char* mode, int fd)
+int fdio_open_descriptor(const char* path, const char* mode)
+{
+	int omode = 0;
+	int oflags = 0;
+	char c;
+	// TODO: This is too hacky and a little buggy.
+	const char* origmode = mode;
+	while ( (c = *mode++) )
+		switch ( c )
+		{
+			case 'r': omode = O_RDONLY;  break;
+			case 'a': oflags |= O_APPEND; /* fall-through */
+			case 'w': omode = O_WRONLY; oflags |= O_CREAT | O_TRUNC; break;
+			case '+':
+				omode = O_RDWR;
+				break;
+			case 'b': break;
+			case 't': break;
+			default:
+				fprintf(stderr, "Unsupported fopen mode: '%s'\n", origmode);
+				errno = EINVAL;
+				return -1;
+		}
+	return open(path, omode | oflags, 0666);
+}
+
+int fdio_install_fd(FILE* fp, int fd, const char* mode)
 {
 	fdio_t* fdio = (fdio_t*) calloc(1, sizeof(fdio_t));
 	if ( !fdio )
@@ -155,6 +194,7 @@ int fdio_install(FILE* fp, const char* mode, int fd)
 	if ( !fstat(fd, &st) && fdio->flags & FDIO_WRITING && S_ISDIR(st.st_mode) )
 		return free(fdio), errno = EISDIR, 0;
 	fp->user = fdio;
+	fp->reopen_func = fdio_reopen;
 	fp->read_func = fdio_read;
 	fp->write_func = fdio_write;
 	fp->seek_func = fdio_seek;
@@ -170,48 +210,42 @@ int fdio_install(FILE* fp, const char* mode, int fd)
 	return 1;
 }
 
-FILE* fdio_newfile(int fd, const char* mode)
+int fdio_install_path(FILE* fp, const char* path, const char* mode)
+{
+	int fd = fdio_open_descriptor(path, mode);
+	if ( fd < 0 )
+		return 0;
+	if ( !fdio_install_fd(fp, fd, mode) )
+		return close(fd), 0;
+	return 1;
+}
+
+FILE* fdio_new_fd(int fd, const char* mode)
 {
 	FILE* fp = fnewfile();
-	if ( !fp ) { return NULL; }
-	if ( !fdio_install(fp, mode, fd) ) { fclose(fp); return NULL; }
+	if ( !fp )
+		return NULL;
+	if ( !fdio_install_fd(fp, fd, mode) )
+		return fclose(fp), (FILE*) NULL;
+	return fp;
+}
+
+FILE* fdio_new_path(const char* path, const char* mode)
+{
+	FILE* fp = fnewfile();
+	if ( !fp )
+		return NULL;
+	if ( !fdio_install_path(fp, path, mode) )
+		return fclose(fp), (FILE*) NULL;
 	return fp;
 }
 
 FILE* fdopen(int fd, const char* mode)
 {
-	return fdio_newfile(fd, mode);
+	return fdio_new_fd(fd, mode);
 }
 
 FILE* fopen(const char* path, const char* mode)
 {
-	int omode = 0;
-	int oflags = 0;
-	char c;
-	// TODO: This is too hacky and a little buggy.
-	const char* origmode = mode;
-	while ( ( c = *mode++ ) )
-	{
-		switch ( c )
-		{
-			case 'r': omode = O_RDONLY;  break;
-			case 'a': oflags |= O_APPEND; /* fall-through */
-			case 'w': omode = O_WRONLY; oflags |= O_CREAT | O_TRUNC; break;
-			case '+':
-				omode = O_RDWR;
-				break;
-			case 'b': break;
-			case 't': break;
-			default:
-				fprintf(stderr, "Unsupported fopen mode: '%s'\n", origmode);
-				errno = EINVAL;
-				return 0;
-		}
-	}
-	mode = origmode;
-	int fd = open(path, omode | oflags, 0666);
-	if ( fd < 0 ) { return NULL; }
-	FILE* fp = fdopen(fd, mode);
-	if ( !fp ) { close(fd); return NULL; }
-	return fp;
+	return fdio_new_path(path, mode);
 }

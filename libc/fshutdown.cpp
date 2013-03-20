@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,27 +17,29 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fnewfile.cpp
-    Allocates and initializes a simple FILE object ready for construction.
+    fshutdown.cpp
+    Uninstalls the backend from a FILE so another can be reinstalled.
 
 *******************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
 
-static void fnewfile_destroyer(void* /*user*/, FILE* fp)
+extern "C" int fshutdown(FILE* fp)
 {
-	free(fp);
-}
-
-extern "C" FILE* fnewfile(void)
-{
-	FILE* fp = (FILE*) calloc(sizeof(FILE), 1);
-	if ( !fp )
-		return NULL;
-	fp->free_user = NULL;
-	fp->free_func = fnewfile_destroyer;
+	int ret = fflush(fp);
+	if ( ret )
+	{
+		/* TODO: How to report errors here? fclose may need us to return its
+		         exact error value, for instance, as with popen/pclose. */;
+	}
+	ret = fp->close_func ? fp->close_func(fp->user) : ret;
+	if ( fp->flags & _FILE_BUFFER_OWNED )
+		free(fp->buffer);
+	// Resetting the FILE here isn't needed in the case where fclose calls us,
+	// but it's nice to zero it out anyway (avoiding state) data, and it's a
+	// feature when called by freopen that wishes to reuse the FILE. It also
+	// means that the file is always in a consistent state.
 	fresetfile(fp);
-	fregister(fp);
-	return fp;
+	return ret;
 }

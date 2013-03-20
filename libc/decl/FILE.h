@@ -18,6 +18,8 @@ typedef struct _FILE
 	size_t buffersize;
 	unsigned char* buffer;
 	void* user;
+	void* free_user;
+	int (*reopen_func)(void* user, const char* mode);
 	size_t (*read_func)(void* ptr, size_t size, size_t nmemb, void* user);
 	size_t (*write_func)(const void* ptr, size_t size, size_t nmemb, void* user);
 	int (*seek_func)(void* user, off_t offset, int whence);
@@ -28,7 +30,7 @@ typedef struct _FILE
 	int (*error_func)(void* user);
 	int (*fileno_func)(void* user);
 	int (*close_func)(void* user);
-	void (*free_func)(struct _FILE* fp);
+	void (*free_func)(void* free_user, struct _FILE* fp);
 	/* Application writers shouldn't use anything beyond this point. */
 	struct _FILE* prev;
 	struct _FILE* next;

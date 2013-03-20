@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,27 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fnewfile.cpp
-    Allocates and initializes a simple FILE object ready for construction.
+    fdeletefile.cpp
+    Deallocator for things returned by fnewfile after being shut down.
 
 *******************************************************************************/
 
 #include <stdio.h>
-#include <stdlib.h>
 
-static void fnewfile_destroyer(void* /*user*/, FILE* fp)
+extern "C" void fdeletefile(FILE* fp)
 {
-	free(fp);
-}
-
-extern "C" FILE* fnewfile(void)
-{
-	FILE* fp = (FILE*) calloc(sizeof(FILE), 1);
-	if ( !fp )
-		return NULL;
-	fp->free_user = NULL;
-	fp->free_func = fnewfile_destroyer;
-	fresetfile(fp);
-	fregister(fp);
-	return fp;
+	funregister(fp);
+	if ( fp->free_func )
+		fp->free_func(fp->free_user, fp);
 }

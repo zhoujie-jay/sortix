@@ -35,6 +35,7 @@ errno.o \
 fabs.o \
 fbufsize.o \
 fclose.o \
+fdeletefile.o \
 feof.o \
 ferror.o \
 fflush.o \
@@ -54,12 +55,14 @@ freadable.o \
 freading.o \
 fread.o \
 fregister.o \
+fresetfile.o \
 fscanf.o \
 fseek.o \
 fseeko.o \
 fsetdefaultbuf.o \
 fseterr.o \
 fsetlocking.o \
+fshutdown.o \
 ftell.o \
 ftello.o \
 fwritable.o \

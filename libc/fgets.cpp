@@ -40,6 +40,8 @@ extern "C" char* fgets(char* dest, int size, FILE* fp)
 	}
 	if ( !i && (ferror(fp) || feof(fp)) )
 		return NULL;
+	// TODO: The end-of-file state is lost here if feof(fp) and we are reading
+	//       from a terminal that encountered a soft EOF.
 	dest[i] = '\0';
 	return dest;
 }

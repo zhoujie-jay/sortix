@@ -164,12 +164,15 @@ extern char* tempnam(const char* dir, const char* pfx);
 #define fsetlocking __fsetlocking
 int fflush_stop_reading(FILE* fp);
 int fflush_stop_writing(FILE* fp);
+void fdeletefile(FILE* fp);
 void fseterr(FILE* fp);
 void fregister(FILE* fp);
+void fresetfile(FILE* fp);
 void funregister(FILE* fp);
 FILE* fnewfile(void);
 int fsetdefaultbuf(FILE* fp);
 int fcloseall(void);
+int fshutdown(FILE* fp);
 int fpipe(FILE* pipes[2]);
 /* Internally used by standard library. */
 #if defined(LIBC_LIBRARY)

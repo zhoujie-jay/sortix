@@ -17,27 +17,30 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fnewfile.cpp
-    Allocates and initializes a simple FILE object ready for construction.
+    fresetfile.cpp
+    After a FILE has been shut down, returns all fields to their default state.
 
 *******************************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-static void fnewfile_destroyer(void* /*user*/, FILE* fp)
+// Note: This function preserves a few parts of the fields - this means that if
+//       you are using this to reset a fresh FILE object, you should memset it
+//       to zeroes first to avoid problems.
+extern "C" void fresetfile(FILE* fp)
 {
-	free(fp);
-}
-
-extern "C" FILE* fnewfile(void)
-{
-	FILE* fp = (FILE*) calloc(sizeof(FILE), 1);
-	if ( !fp )
-		return NULL;
-	fp->free_user = NULL;
-	fp->free_func = fnewfile_destroyer;
-	fresetfile(fp);
-	fregister(fp);
-	return fp;
+	FILE* prev = fp->prev;
+	FILE* next = fp->next;
+	void* free_user = fp->free_user;
+	void (*free_func)(void*, FILE*) = fp->free_func;
+	int kept_flags = fp->flags & (_FILE_REGISTERED | 0);
+	memset(fp, 0, sizeof(*fp));
+	fp->flags = kept_flags | _FILE_AUTO_LOCK;
+	fp->buffer_mode = -1;
+	fp->free_user = free_user;
+	fp->free_func = free_func;
+	fp->prev = prev;
+	fp->next = next;
 }

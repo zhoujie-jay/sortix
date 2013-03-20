@@ -35,9 +35,12 @@ FILE* stderr;
 
 int init_stdio()
 {
-	stdin = fdio_newfile(0, "r");
-	stdout = fdio_newfile(1, "w");
-	stderr = fdio_newfile(2, "w");
+	// TODO: These calls require memory allocation and can fail - which we don't
+	//       currently handle. How about declaring these as global objects and
+	//       using fdio_install_fd instead?
+	stdin = fdio_new_fd(0, "r");
+	stdout = fdio_new_fd(1, "w");
+	stderr = fdio_new_fd(2, "w");
 	setvbuf(stderr, NULL, _IONBF, 0);
 	return 0;
 }

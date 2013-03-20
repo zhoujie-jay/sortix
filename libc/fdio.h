@@ -29,8 +29,11 @@
 
 __BEGIN_DECLS
 
-int fdio_install(FILE* fp, const char* mode, int fd);
-FILE* fdio_newfile(int fd, const char* mode);
+int fdio_install_fd(FILE* fp, int fd, const char* mode);
+int fdio_install_path(FILE* fp, const char* path, const char* mode);
+FILE* fdio_new_fd(int fd, const char* mode);
+FILE* fdio_new_path(const char* path, const char* mode);
+int fdio_open_descriptor(const char* path, const char* mode);
 
 __END_DECLS
 
