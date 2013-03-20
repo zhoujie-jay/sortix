@@ -176,6 +176,7 @@ fsm_recv.o \
 fsm_send.o \
 fstatat.o \
 fstat.o \
+fsync.o \
 ftruncate.o \
 getc.o \
 getcwd.o \

@@ -96,6 +96,7 @@
 #define SYSCALL_PPOLL 72
 #define SYSCALL_RENAMEAT 73
 #define SYSCALL_READLINKAT 74
-#define SYSCALL_MAX_NUM 75 /* index of highest constant + 1 */
+#define SYSCALL_FSYNC 75
+#define SYSCALL_MAX_NUM 76 /* index of highest constant + 1 */
 
 #endif

@@ -559,6 +559,15 @@ static ssize_t sys_readlinkat(int dirfd, const char* path, char* buf, size_t siz
 	return (int) desc->readlink(&ctx, buf, size);
 }
 
+static int sys_fsync(int fd)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->sync(&ctx);
+}
+
 void Init()
 {
 	Syscall::Register(SYSCALL_ACCESS, (void*) sys_access);
@@ -577,6 +586,7 @@ void Init()
 	Syscall::Register(SYSCALL_FCNTL, (void*) sys_fcntl);
 	Syscall::Register(SYSCALL_FSTATAT, (void*) sys_fstatat);
 	Syscall::Register(SYSCALL_FSTAT, (void*) sys_fstat);
+	Syscall::Register(SYSCALL_FSYNC, (void*) sys_fsync);
 	Syscall::Register(SYSCALL_FTRUNCATE, (void*) sys_ftruncate);
 	Syscall::Register(SYSCALL_GETTERMMODE, (void*) sys_gettermmode);
 	Syscall::Register(SYSCALL_ISATTY, (void*) sys_isatty);
