@@ -172,6 +172,7 @@ fdio.o \
 fileno.o \
 fork.o \
 fpipe.o \
+freopen.o \
 fsm_bootstraprootfd.o \
 fsm_closechannel.o \
 fsm_closeserver.o \
