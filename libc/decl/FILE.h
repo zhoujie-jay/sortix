@@ -2,11 +2,12 @@
 #define _FILE_DECL
 #define BUFSIZ 8192UL
 #define _FILE_REGISTERED (1<<0)
-#define _FILE_NO_BUFFER (1<<1)
+#define _FILE_BUFFER_MODE_SET (1<<1)
 #define _FILE_LAST_WRITE (1<<2)
 #define _FILE_LAST_READ (1<<3)
 #define _FILE_AUTO_LOCK (1<<4)
 #define _FILE_STREAM (1<<5)
+#define _FILE_BUFFER_OWNED (1<<6)
 #define _FILE_MAX_PUSHBACK 8
 typedef struct _FILE
 {
@@ -32,6 +33,7 @@ typedef struct _FILE
 	struct _FILE* prev;
 	struct _FILE* next;
 	int flags;
+	int buffer_mode;
 	size_t offset_input_buffer;
 	size_t amount_input_buffered;
 	size_t amount_output_buffered;

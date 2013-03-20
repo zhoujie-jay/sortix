@@ -38,6 +38,7 @@ int init_stdio()
 	stdin = fdio_newfile(0, "r");
 	stdout = fdio_newfile(1, "w");
 	stderr = fdio_newfile(2, "w");
+	setvbuf(stderr, NULL, _IONBF, 0);
 	return 0;
 }
 

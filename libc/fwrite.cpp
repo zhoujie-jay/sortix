@@ -26,8 +26,12 @@
 
 extern "C" size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* fp)
 {
-	if ( fp->flags & _FILE_NO_BUFFER )
+	if ( fp->buffer_mode == _IONBF )
 	{
+		if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
+			if ( fsetdefaultbuf(fp) != 0 )
+				return EOF; // TODO: ferror doesn't report error!
+
 		if ( !fp->write_func )
 			return 0; // TODO: ferror doesn't report error!
 		if ( fp->flags & _FILE_LAST_READ )

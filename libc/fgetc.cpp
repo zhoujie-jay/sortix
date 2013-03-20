@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -32,7 +32,11 @@
 
 extern "C" int fgetc(FILE* fp)
 {
-	if ( fp->flags & _FILE_NO_BUFFER )
+	if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
+		if ( fsetdefaultbuf(fp) != 0 )
+			return EOF; // TODO: ferror doesn't report error!
+
+	if ( fp->buffer_mode == _IONBF )
 	{
 		unsigned char c;
 		if ( fread(&c, sizeof(c), 1, fp) != 1 )

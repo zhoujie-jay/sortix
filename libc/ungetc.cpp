@@ -29,7 +29,11 @@
 
 extern "C" int ungetc(int c, FILE* fp)
 {
-	if ( !fp->read_func || (fp->flags & _FILE_NO_BUFFER) )
+	if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
+		if ( fsetdefaultbuf(fp) != 0 )
+			return EOF; // TODO: ferror doesn't report error!
+
+	if ( !fp->read_func || fp->buffer_mode == _IONBF )
 		return EOF;
 
 	if ( fp->flags & _FILE_LAST_WRITE )

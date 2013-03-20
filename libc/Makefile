@@ -57,6 +57,7 @@ fregister.o \
 fscanf.o \
 fseek.o \
 fseeko.o \
+fsetdefaultbuf.o \
 fseterr.o \
 fsetlocking.o \
 ftell.o \
@@ -84,6 +85,8 @@ memmove.o \
 memset.o \
 op-new.o \
 rewind.o \
+setbuf.o \
+setvbuf.o \
 sort.o \
 sprint.o \
 sscanf.o \

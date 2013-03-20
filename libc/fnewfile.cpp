@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -27,7 +27,8 @@
 
 static void ffreefile(FILE* fp)
 {
-	free(fp->buffer);
+	if ( fp->flags & _FILE_BUFFER_OWNED )
+		free(fp->buffer);
 	free(fp);
 }
 
@@ -35,10 +36,10 @@ extern "C" FILE* fnewfile(void)
 {
 	FILE* fp = (FILE*) calloc(sizeof(FILE), 1);
 	if ( !fp ) { return NULL; }
-	fp->buffersize = BUFSIZ;
-	fp->buffer = (unsigned char*) malloc(fp->buffersize);
-	if ( !fp->buffer ) { free(fp); return NULL; }
+	fp->buffersize = 0;
+	fp->buffer = NULL;
 	fp->flags = _FILE_AUTO_LOCK;
+	fp->buffer_mode = 0;
 	fp->offset_input_buffer = 0;
 	fp->amount_input_buffered = 0;
 	fp->amount_output_buffered = 0;

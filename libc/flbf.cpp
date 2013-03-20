@@ -26,5 +26,5 @@
 
 extern "C" int flbf(FILE* fp)
 {
-	return !(fp->flags & _FILE_NO_BUFFER);
+	return fp->buffer_mode == _IOLBF;
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,40 +17,24 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fputc.cpp
-    Writes a character to a FILE.
+    setvbuf.cpp
+    Sets up buffering semantics for a FILE.
 
 *******************************************************************************/
 
+#include <errno.h>
 #include <stdio.h>
 
-extern "C" int fputc(int c, FILE* fp)
+extern "C" int setvbuf(FILE* fp, char* buf, int mode, size_t size)
 {
-	if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
-		if ( fsetdefaultbuf(fp) != 0 )
-			return EOF; // TODO: ferror doesn't report error!
-
-	if ( fp->buffer_mode == _IONBF )
+	if ( fp->flags & _FILE_BUFFER_MODE_SET )
+		return errno = EINVAL, -1;
+	fp->buffer_mode = mode;
+	if ( buf )
 	{
-		unsigned char c_char = c;
-		if ( fwrite(&c_char, sizeof(c_char), 1, fp) != 1 )
-			return EOF;
-		return c;
+		fp->buffer = (unsigned char*) buf;
+		fp->buffersize = size;
+		fp->flags |= _FILE_BUFFER_MODE_SET;
 	}
-
-	if ( !fp->write_func )
-		return EOF; // TODO: ferror doesn't report error!
-
-	if ( fp->flags & _FILE_LAST_READ )
-		fflush_stop_reading(fp);
-	fp->flags |= _FILE_LAST_WRITE;
-
-	if ( fp->amount_output_buffered == fp->buffersize && fflush(fp) != 0 )
-		return EOF;
-
-	fp->buffer[fp->amount_output_buffered++] = c;
-	if ( fp->buffer_mode == _IOLBF && c == '\n' && fflush(fp) != 0 )
-		return EOF;
-
-	return c;
+	return 0;
 }
