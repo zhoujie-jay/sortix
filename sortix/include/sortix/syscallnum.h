@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -105,6 +105,7 @@
 #define SYSCALL_GETEGID 81
 #define SYSCALL_SETEUID 82
 #define SYSCALL_SETEGID 83
-#define SYSCALL_MAX_NUM 84 /* index of highest constant + 1 */
+#define SYSCALL_IOCTL 84
+#define SYSCALL_MAX_NUM 85 /* index of highest constant + 1 */
 
 #endif

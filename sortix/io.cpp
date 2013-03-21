@@ -325,6 +325,21 @@ static int sys_fcntl(int fd, int cmd, unsigned long arg)
 	return ret;
 }
 
+static int sys_ioctl(int fd, int cmd, void* /*ptr*/)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	int ret = -1;
+	switch ( cmd )
+	{
+	default:
+		errno = EINVAL;
+		break;
+	}
+	return ret;
+}
+
 static ssize_t sys_readdirents(int fd, kernel_dirent* dirent, size_t size/*,
                                size_t maxcount*/)
 {
@@ -594,6 +609,7 @@ void Init()
 	Syscall::Register(SYSCALL_FSYNC, (void*) sys_fsync);
 	Syscall::Register(SYSCALL_FTRUNCATE, (void*) sys_ftruncate);
 	Syscall::Register(SYSCALL_GETTERMMODE, (void*) sys_gettermmode);
+	Syscall::Register(SYSCALL_IOCTL, (void*) sys_ioctl);
 	Syscall::Register(SYSCALL_ISATTY, (void*) sys_isatty);
 	Syscall::Register(SYSCALL_LINKAT, (void*) sys_linkat);
 	Syscall::Register(SYSCALL_LINK, (void*) sys_link);

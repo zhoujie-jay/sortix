@@ -198,6 +198,7 @@ gettermmode.o \
 gettimeofday.o \
 getuid.o \
 init.o \
+ioctl.o \
 ioleast.o \
 isatty.o \
 kernelinfo.o \
