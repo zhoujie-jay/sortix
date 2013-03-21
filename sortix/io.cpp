@@ -172,7 +172,7 @@ static int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
 	const char* relpath = pathcopy;
 	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_RDONLY);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, O_READ);
 	delete[] pathcopy;
 	return desc ? 0 : -1;
 }
@@ -244,7 +244,7 @@ static int sys_truncateat(int dirfd, const char* path, off_t length)
 	const char* relpath = pathcopy;
 	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_WRONLY);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, O_WRITE);
 	delete[] pathcopy;
 	if ( !desc )
 		return -1;
@@ -275,7 +275,7 @@ static int sys_fstatat(int dirfd, const char* path, struct stat* st, int /*flags
 	const char* relpath = pathcopy;
 	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_RDONLY);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, O_READ);
 	delete[] pathcopy;
 	if ( !desc )
 		return -1;
@@ -353,7 +353,7 @@ static int sys_chdir(const char* path)
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
 	const char* relpath = pathcopy;
 	Ref<Descriptor> from = PrepareLookup(&relpath);
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_RDONLY | O_DIRECTORY);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, O_READ | O_DIRECTORY);
 	from.Reset();
 	delete[] pathcopy;
 	if ( !desc )
@@ -382,7 +382,7 @@ static int sys_fchownat(int dirfd, const char* path, uid_t owner, gid_t group, i
 	const char* relpath = pathcopy;
 	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_WRONLY);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, O_WRITE);
 	from.Reset();
 	delete[] pathcopy;
 	if ( !desc )
@@ -416,7 +416,7 @@ static int sys_fchmodat(int dirfd, const char* path, mode_t mode, int flags)
 	const char* relpath = pathcopy;
 	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_WRONLY);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, O_WRITE);
 	from.Reset();
 	delete[] pathcopy;
 	if ( !desc )
@@ -459,7 +459,7 @@ static int sys_linkat(int olddirfd, const char* oldpath,
 	Ref<Descriptor> oldfrom = PrepareLookup(&oldrelpath, olddirfd);
 	if ( !oldfrom ) { delete[] oldpathcopy; delete[] final_elem; return -1; }
 
-	Ref<Descriptor> file = oldfrom->open(&ctx, oldrelpath, O_RDONLY);
+	Ref<Descriptor> file = oldfrom->open(&ctx, oldrelpath, O_READ);
 	delete[] oldpathcopy;
 	if ( !file ) { delete[] final_elem; return -1; }
 
@@ -552,7 +552,7 @@ static ssize_t sys_readlinkat(int dirfd, const char* path, char* buf, size_t siz
 	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
 	// TODO: Open the symbolic link, instead of what it points to!
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_RDONLY);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, O_READ);
 	delete[] pathcopy;
 	if ( !desc )
 		return -1;

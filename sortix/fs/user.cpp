@@ -1207,7 +1207,7 @@ void Init(const char* devpath, Ref<Descriptor> slashdev)
 	// created, possibly with a O_MKDIR flag to open.
 	if ( slashdev->mkdir(&ctx, "fs", 0755) < 0 && errno != EEXIST )
 		PanicF("Could not create a %s/fs directory", devpath);
-	Ref<Descriptor> mpoint = slashdev->open(&ctx, "fs", O_RDWR, 0);
+	Ref<Descriptor> mpoint = slashdev->open(&ctx, "fs", O_READ | O_WRITE, 0);
 	if ( !mpoint )
 		PanicF("Could not open the %s/fs directory", devpath);
 	Ref<MountTable> mtable = CurrentProcess()->GetMTable();

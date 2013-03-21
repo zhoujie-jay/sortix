@@ -355,7 +355,7 @@ static void BootThread(void* /*user*/)
 	Ref<Vnode> vroot(new Vnode(iroot, Ref<Vnode>(NULL), 0, 0));
 	if ( !vroot )
 		Panic("Unable to allocate root vnode.");
-	Ref<Descriptor> droot(new Descriptor(vroot, 0));
+	Ref<Descriptor> droot(new Descriptor(vroot, O_SEARCH));
 	if ( !droot )
 		Panic("Unable to allocate root descriptor.");
 	CurrentProcess()->BootstrapDirectories(droot);
@@ -376,7 +376,7 @@ static void BootThread(void* /*user*/)
 	// Get a descriptor for the /dev directory so we can populate it.
 	if ( droot->mkdir(&ctx, "dev", 0775) != 0 && errno != EEXIST )
 		Panic("Unable to create RAM filesystem /dev directory.");
-	Ref<Descriptor> slashdev = droot->open(&ctx, "dev", O_RDONLY | O_DIRECTORY);
+	Ref<Descriptor> slashdev = droot->open(&ctx, "dev", O_READ | O_DIRECTORY);
 	if ( !slashdev )
 		Panic("Unable to create descriptor for RAM filesystem /dev directory.");
 
@@ -499,7 +499,7 @@ static void InitThread(void* /*user*/)
 
 	ioctx_t ctx; SetupKernelIOCtx(&ctx);
 	Ref<Descriptor> root = CurrentProcess()->GetRoot();
-	Ref<Descriptor> init = root->open(&ctx, initpath, O_EXEC);
+	Ref<Descriptor> init = root->open(&ctx, initpath, O_EXEC | O_READ);
 	if ( !init )
 		PanicF("Could not open %s in early kernel RAM filesystem:\n%s",
 		       initpath, strerror(errno));

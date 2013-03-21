@@ -725,7 +725,7 @@ namespace Sortix
 		SetupKernelIOCtx(&ctx);
 
 		// TODO: Somehow mark the executable as busy and don't permit writes?
-		desc = process->Open(&ctx, filename, O_RDONLY, 0);
+		desc = process->Open(&ctx, filename, O_READ | O_WRITE, 0);
 		if ( !desc ) { goto cleanup_envp; }
 
 		if ( desc->stat(&ctx, &st) ) { goto cleanup_desc; }

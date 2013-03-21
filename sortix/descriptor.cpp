@@ -43,6 +43,15 @@
 
 namespace Sortix {
 
+// Flags for the various base modes to open a file in.
+const int ACCESS_FLAGS = O_READ | O_WRITE | O_EXEC | O_SEARCH;
+
+// Flags that only make sense at open time.
+const int OPEN_FLAGS = O_CREAT | O_DIRECTORY | O_EXCL | O_TRUNC;
+
+// Flags that only make sense for descriptors.
+const int DESCRIPTOR_FLAGS = O_APPEND;
+
 bool LinkInodeInDir(ioctx_t* ctx, Ref<Descriptor> dir, const char* name,
                     Ref<Inode> inode)
 {
@@ -76,7 +85,7 @@ Ref<Descriptor> OpenDirContainingPath(ioctx_t* ctx, Ref<Descriptor> from,
 		*finalp = final;
 		return from;
 	}
-	Ref<Descriptor> ret = from->open(ctx, dirpath, O_RDONLY | O_DIRECTORY, 0);
+	Ref<Descriptor> ret = from->open(ctx, dirpath, O_READ | O_DIRECTORY, 0);
 	delete[] dirpath;
 	if ( !ret ) { delete[] final; return Ref<Descriptor>(); }
 	*finalp = final;
@@ -126,11 +135,16 @@ bool Descriptor::IsSeekable()
 
 int Descriptor::sync(ioctx_t* ctx)
 {
+	// TODO: Possible denial-of-service attack if someone opens the file without
+	//       that much rights and just syncs it a whole lot and slows down the
+	//       system as a whole.
 	return vnode->sync(ctx);
 }
 
 int Descriptor::stat(ioctx_t* ctx, struct stat* st)
 {
+	// TODO: Possible information leak if not O_READ | O_WRITE and the caller
+	//       is told about the file size.
 	return vnode->stat(ctx, st);
 }
 
@@ -148,11 +162,15 @@ int Descriptor::chown(ioctx_t* ctx, uid_t owner, gid_t group)
 int Descriptor::truncate(ioctx_t* ctx, off_t length)
 {
 	if ( length < 0 ) { errno = EINVAL; return -1; }
+	if ( !(dflags & O_WRITE) )
+		return errno = EPERM, -1;
 	return vnode->truncate(ctx, length);
 }
 
 off_t Descriptor::lseek(ioctx_t* ctx, off_t offset, int whence)
 {
+	// TODO: Possible information leak to let someone without O_READ | O_WRITE
+	//       seek the file and get information about data holes.
 	if ( !IsSeekable() )
 		return vnode->lseek(ctx, offset, whence);
 	ScopedLock lock(&curofflock);
@@ -179,6 +197,8 @@ off_t Descriptor::lseek(ioctx_t* ctx, off_t offset, int whence)
 
 ssize_t Descriptor::read(ioctx_t* ctx, uint8_t* buf, size_t count)
 {
+	if ( !(dflags & O_READ) )
+		return errno = EPERM, -1;
 	if ( !count ) { return 0; }
 	if ( (size_t) SSIZE_MAX < count ) { count = SSIZE_MAX; }
 	if ( !IsSeekable() )
@@ -193,6 +213,8 @@ ssize_t Descriptor::read(ioctx_t* ctx, uint8_t* buf, size_t count)
 
 ssize_t Descriptor::pread(ioctx_t* ctx, uint8_t* buf, size_t count, off_t off)
 {
+	if ( !(dflags & O_READ) )
+		return errno = EPERM, -1;
 	if ( off < 0 ) { errno = EINVAL; return -1; }
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
@@ -201,6 +223,8 @@ ssize_t Descriptor::pread(ioctx_t* ctx, uint8_t* buf, size_t count, off_t off)
 
 ssize_t Descriptor::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 {
+	if ( !(dflags & O_WRITE) )
+		return errno = EPERM, -1;
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
 	if ( !IsSeekable() )
@@ -219,6 +243,8 @@ ssize_t Descriptor::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 
 ssize_t Descriptor::pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count, off_t off)
 {
+	if ( !(dflags & O_WRITE) )
+		return errno = EPERM, -1;
 	if ( off < 0 ) { errno = EINVAL; return -1; }
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
@@ -238,6 +264,22 @@ int Descriptor::isatty(ioctx_t* ctx)
 ssize_t Descriptor::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
                                 size_t size, size_t maxcount)
 {
+	// TODO: COMPATIBILITY HACK: Traditionally, you can open a directory with
+	//       O_RDONLY and pass it to fdopendir and then use it, which doesn't
+	//       set the needed O_SEARCH flag! I think some software even do it with
+	//       write permissions! Currently, we just let you search the directory
+	//       if you opened with any of the O_SEARCH, O_READ or O_WRITE flags.
+	//       A better solution would be to make fdopendir try to add the
+	//       O_SEARCH flag to the file descriptor. Or perhaps just recheck the
+	//       permissions to search (execute) the directory manually every time,
+	//       though that is less pure. Unfortunately, POSIX is pretty vague on
+	//       how O_SEARCH should be interpreted and most existing Unix systems
+	//       such as Linux doesn't even have that flag! And how about combining
+	//       it with the O_EXEC flag - POSIX allows that and it makes sense
+	//       because the execute bit on directories control search permission.
+	if ( !(dflags & (O_SEARCH | O_READ | O_WRITE)) )
+		return errno = EPERM, -1;
+
 	if ( !maxcount ) { return 0; }
 	if ( SSIZE_MAX < size ) { size = SSIZE_MAX; }
 	if ( size < sizeof(*dirent) ) { errno = EINVAL; return -1; }
@@ -268,20 +310,44 @@ ssize_t Descriptor::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 	return ret;
 }
 
+static bool IsSaneFlagModeCombination(int flags, mode_t /*mode*/)
+{
+	// It doesn't make sense to pass O_CREAT or O_TRUNC when attempting to open
+	// a directory. We also reject O_TRUNC | O_DIRECTORY early to prevent
+	// opening a directory, attempting to truncate it, and then aborting with an
+	// error because a directory was opened.
+	if ( (flags & (O_CREAT | O_TRUNC)) && (flags & (O_DIRECTORY)) )
+		return errno = EINVAL, false;
+
+	return true;
+}
+
+static bool IsLastPathElement(const char* elem)
+{
+	while ( !(*elem == '/' || *elem == '\0') )
+		elem++;
+	while ( *elem == '/' )
+		elem++;
+	return *elem == '\0';
+}
+
 Ref<Descriptor> Descriptor::open(ioctx_t* ctx, const char* filename, int flags,
                                  mode_t mode)
 {
+	// Unlike early Unix systems, the empty path does not mean the current
+	// directory on Sortix, so reject it.
 	if ( !filename[0] )
 		return errno = ENOENT, Ref<Descriptor>();
-	// O_DIRECTORY makes us only open directories. It is therefore a logical
-	// error to provide flags that only makes sense for non-directory. We also
-	// filter reject them early to prevent O_TRUNC | O_DIRECTORY from opening a
-	// file, truncating it, and then aborting the open with an error.
-	if ( (flags & (O_CREAT | O_TRUNC)) && (flags & (O_DIRECTORY)) )
+
+	// Reject some non-sensical flag combinations early.
+	if ( !IsSaneFlagModeCombination(flags, mode) )
 		return errno = EINVAL, Ref<Descriptor>();
+
 	Ref<Descriptor> desc(this);
 	while ( filename[0] )
 	{
+		// Reaching a slash in the path means that the caller intended what came
+		// before to be a directory, stop the open call if it isn't.
 		if ( filename[0] == '/' )
 		{
 			if ( !S_ISDIR(desc->type) )
@@ -289,25 +355,30 @@ Ref<Descriptor> Descriptor::open(ioctx_t* ctx, const char* filename, int flags,
 			filename++;
 			continue;
 		}
+
+		// Cut out the next path element from the input string.
 		size_t slashpos = strcspn(filename, "/");
-		bool lastelem = filename[slashpos] == '\0';
 		char* elem = String::Substring(filename, 0, slashpos);
 		if ( !elem )
 			return Ref<Descriptor>();
-		int open_flags = lastelem ? flags : O_RDONLY;
-		// Forward O_DIRECTORY so the operation can fail earlier. If it doesn't
-		// fail and we get a non-directory in return, we'll handle it on exit
-		// with no consequences (since opening an existing file is harmless).
-		open_flags &= ~(0 /*| O_DIRECTORY*/);
+
+		// Decide how to open the next element in the path.
+		bool lastelem = IsLastPathElement(filename);
+		int open_flags = lastelem ? flags : O_READ | O_DIRECTORY;
 		mode_t open_mode = lastelem ? mode : 0;
-		// TODO: O_NOFOLLOW.
+
+		// Open the next element in the path.
 		Ref<Descriptor> next = desc->open_elem(ctx, elem, open_flags, open_mode);
 		delete[] elem;
+
 		if ( !next )
 			return Ref<Descriptor>();
+
 		desc = next;
 		filename += slashpos;
 	}
+
+	// Abort the open if the user wanted a directory but this wasn't.
 	if ( flags & O_DIRECTORY && !S_ISDIR(desc->type) )
 		return errno = ENOTDIR, Ref<Descriptor>();
 
@@ -322,17 +393,30 @@ Ref<Descriptor> Descriptor::open_elem(ioctx_t* ctx, const char* filename,
                                       int flags, mode_t mode)
 {
 	assert(!strchr(filename, '/'));
-	int next_flags = flags & ~(O_APPEND | O_CLOEXEC);
-	Ref<Vnode> retvnode = vnode->open(ctx, filename, next_flags, mode);
+
+	// Verify that at least one of the base access modes are being used.
+	if ( !(flags & ACCESS_FLAGS) )
+		return errno = EINVAL, Ref<Descriptor>();
+
+	// Filter away flags that only make sense for descriptors.
+	int retvnode_flags = flags & ~DESCRIPTOR_FLAGS;
+	Ref<Vnode> retvnode = vnode->open(ctx, filename, retvnode_flags, mode);
 	if ( !retvnode )
 		return Ref<Descriptor>();
-	Ref<Descriptor> ret(new Descriptor(retvnode, flags & O_APPEND));
+
+	// Filter away flags that only made sense at during the open call.
+	int ret_flags = flags & ~OPEN_FLAGS;
+	Ref<Descriptor> ret(new Descriptor(retvnode, ret_flags));
 	if ( !ret )
 		return Ref<Descriptor>();
+
+	// Truncate the file if requested.
+	// TODO: This is a bit dodgy, should this be moved to the inode open method
+	//       or something? And how should error handling be done here?
 	if ( (flags & O_TRUNC) && S_ISREG(ret->type) )
-		if ( (flags & O_ACCMODE) == O_WRONLY ||
-		     (flags & O_ACCMODE) == O_RDWR )
+		if ( flags & O_WRITE )
 			ret->truncate(ctx, 0);
+
 	return ret;
 }
 
@@ -420,6 +504,8 @@ int Descriptor::rename_here(ioctx_t* ctx, Ref<Descriptor> from,
 
 ssize_t Descriptor::readlink(ioctx_t* ctx, char* buf, size_t bufsize)
 {
+	if ( !(dflags & O_READ) )
+		return errno = EPERM, -1;
 	if ( (size_t) SSIZE_MAX < bufsize )
 		bufsize = (size_t) SSIZE_MAX;
 	return vnode->readlink(ctx, buf, bufsize);
@@ -442,6 +528,8 @@ int Descriptor::gettermmode(ioctx_t* ctx, unsigned* mode)
 
 int Descriptor::poll(ioctx_t* ctx, PollNode* node)
 {
+	// TODO: Perhaps deny polling against some kind of events if this
+	//       descriptor's dflags would reject doing these operations?
 	return vnode->poll(ctx, node);
 }
 

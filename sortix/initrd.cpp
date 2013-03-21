@@ -276,7 +276,7 @@ static bool ExtractDir(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> dir)
 		{
 			if ( dir->mkdir(ctx, name, mode) && errno != EEXIST )
 				return false;
-			Ref<Descriptor> desc = dir->open(ctx, name, O_RDWR | O_DIRECTORY, 0);
+			Ref<Descriptor> desc = dir->open(ctx, name, O_SEARCH | O_DIRECTORY, 0);
 			if ( !desc )
 				return false;
 			if ( !ExtractNode(ctx, childino, desc) )
@@ -284,7 +284,7 @@ static bool ExtractDir(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> dir)
 		}
 		if ( INITRD_S_ISREG(child->mode) )
 		{
-			Ref<Descriptor> desc = dir->open(ctx, name, O_WRONLY | O_CREAT, mode);
+			Ref<Descriptor> desc = dir->open(ctx, name, O_WRITE | O_CREAT, mode);
 			if ( !desc )
 				return false;
 			if ( !ExtractNode(ctx, childino, desc) )

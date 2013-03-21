@@ -29,13 +29,11 @@
 
 __BEGIN_DECLS
 
-#define O_RDONLY 1
-#define O_WRONLY 2
-#define O_RDWR 3
-#define O_ACCMODE (O_RDONLY | O_WRONLY | O_RDWR)
-#define O_EXEC 4
-#define O_SEARCH 5
-#define O_LOWERFLAGS 0x7
+// Remember to update the flag classifications at the top of descriptor.cpp if
+// you add new flags here.
+#define O_READ (1<<0)
+#define O_WRITE (1<<1)
+#define O_EXEC (1<<2)
 #define O_APPEND (1<<3)
 #define O_CLOEXEC (1<<4)
 #define O_CREAT (1<<5)
@@ -43,6 +41,8 @@ __BEGIN_DECLS
 #define O_EXCL (1<<7)
 #define O_TRUNC (1<<8)
 #define O_CLOFORK (1<<9)
+#define O_SEARCH (1<<10)
+// TODO: O_NOFOLLOW.
 
 #define FD_CLOEXEC (1<<0)
 #define FD_CLOFORK (1<<1)

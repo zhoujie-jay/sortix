@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <string.h>
 
+#include <sortix/fcntl.h>
 #include <sortix/signal.h>
 #include <sortix/stat.h>
 #include <sortix/poll.h>
@@ -314,8 +315,8 @@ static int sys_pipe(int pipefd[2])
 	Ref<Vnode> send_vnode(new Vnode(send_inode, Ref<Vnode>(NULL), 0, 0));
 	if ( !recv_vnode || !send_vnode ) return -1;
 
-	Ref<Descriptor> recv_desc(new Descriptor(recv_vnode, 0));
-	Ref<Descriptor> send_desc(new Descriptor(send_vnode, 0));
+	Ref<Descriptor> recv_desc(new Descriptor(recv_vnode, O_READ));
+	Ref<Descriptor> send_desc(new Descriptor(send_vnode, O_WRITE));
 	if ( !recv_desc || !send_desc ) return -1;
 
 	Ref<DescriptorTable> dtable = process->GetDTable();
