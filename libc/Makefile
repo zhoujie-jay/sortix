@@ -121,6 +121,7 @@ strtok.o \
 strtok_r.o \
 strxfrm.o \
 timespec.o \
+time/strftime.o \
 ungetc.o \
 vfscanf.o \
 vsscanf.o \
