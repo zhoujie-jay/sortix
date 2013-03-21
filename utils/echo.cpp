@@ -38,9 +38,7 @@ int main(int argc, char* argv[])
 	const char* prefix = "";
 	for ( int i = startfrom; i < argc; i++ )
 	{
-		errno = 0;
-		printf("%s%s", prefix, argv[i]);
-		if ( errno != 0 )
+		if ( printf("%s%s", prefix, argv[i]) < 0 )
 		{
 			perror("<stdout>");
 			exit(1);
