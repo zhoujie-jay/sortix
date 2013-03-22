@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -24,6 +24,21 @@
 
 #ifndef _FEATURES_H
 #define _FEATURES_H	1
+
+/* Support macro to ease testing the compiler version. */
+#define __GCC_PREREQ(gcc_major, gcc_minor) \
+	(((gcc_major) == __GNUC__ && (gcc_minor) >= __GNUC_MINOR__) || \
+	 ((gcc_major) < __GNUC__))
+
+/* Preprocessor trick to turn anything into a string. */
+#define __STRINGIFY(x) #x
+
+/* Issue warning when this is used, except in defines, where the warning is
+   inserted whenever the macro is expanded. This can be used to deprecated
+   macros - and it happens on preprocessor level - so it shouldn't change any
+   semantics of any code that uses such a macro. The argument msg should be a
+   string that contains the warning. */
+#define __PRAGMA_WARNING(msg) _Pragma(__STRINGIFY(GCC warning msg))
 
 /* C++ needs to know that types and declarations are C, not C++. */
 #ifdef	__cplusplus
