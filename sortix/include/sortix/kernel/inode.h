@@ -35,7 +35,6 @@
 #include <sortix/kernel/refcount.h>
 
 struct stat;
-struct timeval;
 struct winsize;
 struct kernel_dirent;
 
@@ -69,7 +68,7 @@ public:
 	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count) = 0;
 	virtual ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	                       off_t off) = 0;
-	virtual int utimes(ioctx_t* ctx, const struct timeval times[2]) = 0;
+	virtual int utimens(ioctx_t* ctx, const struct timespec timespec[2]) = 0;
 	virtual int isatty(ioctx_t* ctx) = 0;
 	virtual ssize_t readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 	                            size_t size, off_t start, size_t maxcount) = 0;
@@ -113,10 +112,9 @@ protected:
 	uid_t stat_uid;
 	gid_t stat_gid;
 	off_t stat_size;
-	time_t stat_atime;
-	time_t stat_mtime;
-	time_t stat_ctime;
-	/* TODO: stat_atim, stat_mtim, stat_ctim */
+	struct timespec stat_atim;
+	struct timespec stat_mtim;
+	struct timespec stat_ctim;
 	blksize_t stat_blksize;
 	blkcnt_t stat_blocks;
 
@@ -136,7 +134,7 @@ public:
 	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
 	virtual ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	                       off_t off);
-	virtual int utimes(ioctx_t* ctx, const struct timeval times[2]);
+	virtual int utimens(ioctx_t* ctx, const struct timespec timespec[2]);
 	virtual int isatty(ioctx_t* ctx);
 	virtual ssize_t readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 	                            size_t size, off_t start, size_t maxcount);

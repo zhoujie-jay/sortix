@@ -161,11 +161,11 @@ struct fsm_resp_write
 	size_t count;
 };
 
-#define FSM_REQ_UTIMES 18
-struct fsm_req_utimes
+#define FSM_REQ_UTIMENS 18
+struct fsm_req_utimens
 {
 	ino_t ino;
-	struct timeval times[2];
+	struct timespec times[2];
 };
 
 #define FSM_REQ_ISATTY 19

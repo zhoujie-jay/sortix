@@ -144,9 +144,9 @@ ssize_t Vnode::pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count, off_t off)
 	return inode->pwrite(ctx, buf, count, off);
 }
 
-int Vnode::utimes(ioctx_t* ctx, const struct timeval times[2])
+int Vnode::utimens(ioctx_t* ctx, const struct timespec times[2])
 {
-	return inode->utimes(ctx, times);
+	return inode->utimens(ctx, times);
 }
 
 int Vnode::isatty(ioctx_t* ctx)

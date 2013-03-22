@@ -41,6 +41,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+#include <timespec.h>
 
 #include "initrd.h"
 
@@ -104,9 +105,9 @@ bool Stat(uint32_t ino, struct stat* st)
 	st->st_uid = inode->uid;
 	st->st_gid = inode->gid;
 	st->st_size = inode->size;
-	st->st_atime = inode->mtime;
-	st->st_ctime = inode->ctime;
-	st->st_mtime = inode->mtime;
+	st->st_atim = timespec_make(inode->mtime, 0);
+	st->st_ctim = timespec_make(inode->ctime, 0);
+	st->st_mtim = timespec_make(inode->mtime, 0);
 	st->st_blksize = 1;
 	st->st_blocks = inode->size;
 	return true;
@@ -322,7 +323,7 @@ static bool ExtractNode(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> node)
 		return false;
 	if ( node->chown(ctx, inode->uid, inode->gid) < 0 )
 		return false;
-	// TODO: utimes.
+	// TODO: utimens.
 	if ( INITRD_S_ISDIR(inode->mode) )
 		if ( !ExtractDir(ctx, ino, node) )
 			return false;

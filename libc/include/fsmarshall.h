@@ -29,7 +29,7 @@
 
 #include <sortix/stat.h>
 #include <sortix/termios.h>
-#include <sortix/timeval.h>
+#include <sortix/timespec.h>
 
 #include <fsmarshall-msg.h>
 

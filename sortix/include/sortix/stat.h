@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -23,27 +23,28 @@
 
 *******************************************************************************/
 
-#ifndef SORTIX_STAT_H
-#define SORTIX_STAT_H
+#ifndef INCLUDE_SORTIX_STAT_H
+#define INCLUDE_SORTIX_STAT_H
 
 #include <features.h>
 #include <sys/types.h>
+#include <sortix/timespec.h>
 
 __BEGIN_DECLS
 
 struct stat
 {
 	dev_t st_dev;
+	dev_t st_rdev;
 	ino_t st_ino;
 	mode_t st_mode;
 	nlink_t st_nlink;
 	uid_t st_uid;
 	gid_t st_gid;
 	off_t st_size;
-	time_t st_atime;
-	time_t st_mtime;
-	time_t st_ctime;
-	/* TODO: st_atim, st_mtim, st_ctim */
+	struct timespec st_atim;
+	struct timespec st_mtim;
+	struct timespec st_ctim;
 	blksize_t st_blksize;
 	blkcnt_t st_blocks;
 };

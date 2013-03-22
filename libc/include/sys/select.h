@@ -33,11 +33,11 @@ __BEGIN_DECLS
 
 @include(time_t.h)
 @include(suseconds_t.h)
+@include(timeval.h)
 
 __BEGIN_DECLS
 #include <sortix/sigset.h>
 #include <sortix/timespec.h>
-#include <sortix/timeval.h>
 __END_DECLS
 
 #define FD_SETSIZE 1024

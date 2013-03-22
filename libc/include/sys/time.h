@@ -31,12 +31,7 @@ __BEGIN_DECLS
 
 @include(time_t.h)
 @include(suseconds_t.h)
-
-__END_DECLS
-
-#include <sortix/timeval.h>
-
-__BEGIN_DECLS
+@include(timeval.h)
 
 int gettimeofday(struct timeval* restrict tp, void* restrict tzp);
 

@@ -181,8 +181,8 @@ Node* RecursiveSearch(const char* real_path, const char* virt_path,
 	node->refcount = 1;
 	node->mode = st.st_mode;
 	node->ino = (*ino)++;
-	node->ctime = st.st_ctime;
-	node->mtime = st.st_mtime;
+	node->ctime = st.st_ctim.tv_sec;
+	node->mtime = st.st_mtim.tv_sec;
 
 	char* real_path_clone = strdup(real_path);
 	if ( !real_path_clone ) { perror("strdup"); free(node); return NULL; }

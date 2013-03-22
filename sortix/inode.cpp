@@ -24,6 +24,7 @@
 
 #include <errno.h>
 #include <string.h>
+#include <timespec.h>
 
 #include <sortix/stat.h>
 
@@ -45,10 +46,9 @@ AbstractInode::AbstractInode()
 	stat_uid = 0;
 	stat_gid = 0;
 	stat_size = 0;
-	stat_atime = 0;
-	stat_mtime = 0;
-	stat_ctime = 0;
-	/* TODO: stat_atim, stat_mtim, stat_ctim */
+	stat_atim = timespec_nul();
+	stat_ctim = timespec_nul();
+	stat_mtim = timespec_nul();
 	stat_blksize = 0;
 	stat_blocks = 0;
 }
@@ -78,13 +78,16 @@ int AbstractInode::stat(ioctx_t* ctx, struct stat* st)
 	ScopedLock lock(&metalock);
 	memset(&retst, 0, sizeof(retst));
 	retst.st_dev = dev;
+	retst.st_rdev = dev;
 	retst.st_ino = ino;
 	retst.st_mode = stat_mode;
 	retst.st_nlink = (nlink_t) stat_nlink;
 	retst.st_uid = stat_uid;
 	retst.st_gid = stat_gid;
 	retst.st_size = stat_size;
-	// TODO: Keep track of time.
+	retst.st_atim = stat_atim;
+	retst.st_ctim = stat_ctim;
+	retst.st_mtim = stat_mtim;
 	retst.st_blksize = stat_blksize;
 	retst.st_blocks = stat_size / 512;
 	if ( !ctx->copy_to_dest(st, &retst, sizeof(retst)) )
@@ -149,7 +152,8 @@ ssize_t AbstractInode::pwrite(ioctx_t* /*ctx*/, const uint8_t* /*buf*/,
 	return errno = EBADF, -1;
 }
 
-int AbstractInode::utimes(ioctx_t* /*ctx*/, const struct timeval /*times*/[2])
+
+int AbstractInode::utimens(ioctx_t* /*ctx*/, const struct timespec /*times*/[2])
 {
 	// TODO: Implement this!
 	return 0;
