@@ -27,7 +27,6 @@ bsearch.o \
 calloc.o \
 clearerr.o \
 c++.o \
-ctime.o \
 ctype.o \
 dir.o \
 div.o \
@@ -122,6 +121,8 @@ strtok_r.o \
 strxfrm.o \
 time/asctime.o \
 time/asctime_r.o \
+time/ctime.o \
+time/ctime_r.o \
 timespec.o \
 time/strftime.o \
 ungetc.o \
