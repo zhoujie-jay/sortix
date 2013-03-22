@@ -120,6 +120,8 @@ strstr.o \
 strtok.o \
 strtok_r.o \
 strxfrm.o \
+time/asctime.o \
+time/asctime_r.o \
 timespec.o \
 time/strftime.o \
 ungetc.o \
