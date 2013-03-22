@@ -61,7 +61,27 @@ __BEGIN_DECLS
 
 /* TODO: F_* is missing here. */
 
-/* TODO: _PC_* is missing here. */
+#define _PC_2_SYMLINKS 1
+#define _PC_ALLOC_SIZE_MIN 2
+#define _PC_ASYNC_IO 3
+#define _PC_CHOWN_RESTRICTED 4
+#define _PC_FILESIZEBITS 5
+#define _PC_LINK_MAX 6
+#define _PC_MAX_CANON 7
+#define _PC_MAX_INPUT 8
+#define _PC_NAME_MAX 9
+#define _PC_NO_TRUNC 10
+#define _PC_PATH_MAX 11
+#define _PC_PIPE_BUF 12
+#define _PC_PRIO_IO 13
+#define _PC_REC_INCR_XFER_SIZE 14
+#define _PC_REC_MAX_XFER_SIZE 15
+#define _PC_REC_MIN_XFER_SIZE 16
+#define _PC_REC_XFER_ALIGN 17
+#define _PC_SYMLINK_MAX 18
+#define _PC_SYNC_IO 19
+#define _PC_TIMESTAMP_RESOLUTION 20
+#define _PC_VDISABLE 21
 
 /* TODO: _SC_* is missing here. */
 
@@ -104,7 +124,6 @@ pid_t getpgrp(void);
 pid_t getsid(pid_t);
 int lockf(int, int, off_t);
 int nice(int);
-long pathconf(const char*, int);
 int pause(void);
 int setpgid(pid_t, pid_t);
 int setregid(gid_t, gid_t);
@@ -161,6 +180,7 @@ int lchown(const char*, uid_t, gid_t);
 int link(const char*, const char*);
 int linkat(int, const char*, int, const char*, int);
 off_t lseek(int, off_t, int);
+long pathconf(const char*, int);
 int pipe(int [2]);
 ssize_t pread(int, void*, size_t, off_t);
 ssize_t pwrite(int, const void*, size_t, off_t);

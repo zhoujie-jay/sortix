@@ -220,6 +220,7 @@ mktemp.o \
 on_exit.o \
 openat.o \
 open.o \
+pathconf.o \
 pipe.o \
 poll.o \
 popen.o \
