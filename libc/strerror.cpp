@@ -85,6 +85,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case EALREADY: return "Connection already in progress";
 	case ESHUTDOWN: return "Cannot send after transport endpoint shutdown";
 	case ECONNABORTED: return "Connection aborted";
+	case ECONNRESET: return "Connection reset";
 	default: return "Unknown error condition";
 	}
 }

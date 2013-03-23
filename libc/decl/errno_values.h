@@ -56,6 +56,7 @@
 #define EALREADY 64
 #define ESHUTDOWN 65
 #define ECONNABORTED 66
+#define ECONNRESET 67
 
 #define EOPNOTSUPP ENOTSUP
 
