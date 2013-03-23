@@ -83,6 +83,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case EDOM: return "Mathematics argument out of domain of function";
 	case EINPROGRESS: return "Operation in progress";
 	case EALREADY: return "Connection already in progress";
+	case ESHUTDOWN: return "Cannot send after transport endpoint shutdown";
 	default: return "Unknown error condition";
 	}
 }
