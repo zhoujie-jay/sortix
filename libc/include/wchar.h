@@ -64,6 +64,7 @@ struct tm;
 size_t wcrtomb(char* restrict, wchar_t, mbstate_t* restrict);
 size_t mbrtowc(wchar_t* restrict, const char* restrict, size_t, mbstate_t* restrict);
 wchar_t* wcscpy(wchar_t* restrict, const wchar_t* restrict);
+size_t wcslen(const wchar_t*);
 
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
@@ -99,7 +100,6 @@ size_t mbrlen(const char* restrict, size_t, mbstate_t* restrict);
 size_t mbsrtowcs(wchar_t* restrict, const char** restrict, size_t, mbstate_t* restrict);
 size_t wcscspn(const wchar_t*, const wchar_t*);
 size_t wcsftime(wchar_t* restrict, size_t, const wchar_t* restrict, const struct tm* restrict);
-size_t wcslen(const wchar_t*);
 size_t wcsrtombs(char* restrict, const wchar_t** restrict, size_t, mbstate_t* restrict);
 size_t wcsspn(const wchar_t*, const wchar_t*);
 size_t wcsxfrm(wchar_t* restrict, const wchar_t* restrict, size_t);

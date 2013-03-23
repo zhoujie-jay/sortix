@@ -131,6 +131,7 @@ vfscanf.o \
 vsscanf.o \
 wcrtomb.o \
 wcscpy.o \
+wcslen.o \
 wctomb.o \
 wctype.o \
 
