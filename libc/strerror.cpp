@@ -80,6 +80,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case EADDRINUSE: return "Address already in use";
 	case ETIMEDOUT: return "Connection timed out";
 	case ECONNREFUSED: return "Connection refused";
+	case EDOM: return "Mathematics argument out of domain of function";
 	default: return "Unknown error condition";
 	}
 }

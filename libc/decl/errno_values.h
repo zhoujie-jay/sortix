@@ -51,6 +51,7 @@
 #define EADDRINUSE 59
 #define ETIMEDOUT 60
 #define ECONNREFUSED 61
+#define EDOM 62
 
 #define EOPNOTSUPP ENOTSUP
 
