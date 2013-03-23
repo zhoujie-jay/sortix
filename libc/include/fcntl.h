@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -24,8 +24,8 @@
 
 /* TODO: POSIX-1.2008 compliance is only partial */
 
-#ifndef _FCNTL_H
-#define _FCNTL_H 1
+#ifndef INCLUDE_FCNTL_H
+#define INCLUDE_FCNTL_H
 
 #include <features.h>
 #include <sortix/fcntl.h>
@@ -41,6 +41,9 @@ __BEGIN_DECLS
 #define O_RDONLY O_READ
 #define O_WRONLY O_WRITE
 #define O_RDWR (O_READ | O_WRITE)
+
+/* Compatibility with Linux and other systems that have this. */
+#define O_ACCMODE (O_READ | O_WRITE | O_EXEC | O_SEARCH)
 
 /* TODO: F_* missing here */
 
