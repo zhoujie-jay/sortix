@@ -71,6 +71,7 @@ wchar_t* wcscpy(wchar_t* restrict, const wchar_t* restrict);
 size_t wcslen(const wchar_t*);
 wchar_t* wcsncat(wchar_t* restrict, const wchar_t* restrict, size_t);
 wchar_t* wcsncpy(wchar_t* restrict, const wchar_t* restrict, size_t);
+wchar_t* wcsrchr(const wchar_t*, wchar_t);
 
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
@@ -112,7 +113,6 @@ unsigned long long wcstoull(const wchar_t* restrict, wchar_t** restrict, int);
 unsigned long wcstoul(const wchar_t* restrict, wchar_t** restrict, int);
 wchar_t* fgetws(wchar_t* restrict, int, FILE* restrict);
 wchar_t* wcspbrk(const wchar_t*, const wchar_t*);
-wchar_t* wcsrchr(const wchar_t*, wchar_t);
 wchar_t* wcsstr(const wchar_t* restrict, const wchar_t* restrict);
 wchar_t* wcstok(wchar_t* restrict, const wchar_t* restrict, wchar_t** restrict);
 wchar_t* wcswcs(const wchar_t*, const wchar_t*);
