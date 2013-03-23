@@ -135,6 +135,7 @@ wcschrnul.o \
 wcschr.o \
 wcscmp.o \
 wcscpy.o \
+wcscspn.o \
 wcslen.o \
 wcsncat.o \
 wcsncpy.o \
