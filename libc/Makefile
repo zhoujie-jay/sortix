@@ -130,6 +130,7 @@ ungetc.o \
 vfscanf.o \
 vsscanf.o \
 wcrtomb.o \
+wcscat.o \
 wcscpy.o \
 wcslen.o \
 wctomb.o \
