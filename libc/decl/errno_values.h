@@ -53,6 +53,7 @@
 #define ECONNREFUSED 61
 #define EDOM 62
 #define EINPROGRESS 63
+#define EALREADY 64
 
 #define EOPNOTSUPP ENOTSUP
 
