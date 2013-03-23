@@ -137,6 +137,7 @@ wcscmp.o \
 wcscpy.o \
 wcslen.o \
 wcsncat.o \
+wcsncpy.o \
 wctomb.o \
 wctype.o \
 
