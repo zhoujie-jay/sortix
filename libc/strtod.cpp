@@ -17,14 +17,12 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    atof.cpp
-    Converts floats represented as strings to binary representation.
+    strtod.cpp
+    Converts floating numbers represented as strings to binary representation.
 
 *******************************************************************************/
 
-#include <stdlib.h>
+#define FLOAT double
+#define STRTOF strtod
 
-extern "C" double atof(const char* str)
-{
-	return strtod(str, NULL);
-}
+#include "strtof.cpp"

@@ -126,8 +126,11 @@ strrchr.o \
 strsignal.o \
 strspn.o \
 strstr.o \
+strtod.o \
+strtof.o \
 strtok.o \
 strtok_r.o \
+strtold.o \
 strxfrm.o \
 time/asctime.o \
 time/asctime_r.o \

@@ -95,7 +95,10 @@ void* realloc(void*, size_t);
 char* realpath(const char* __restrict, char* __restrict);
 int setenv(const char*, const char*, int);
 void srand(unsigned);
+double strtod(const char* __restrict, char** __restrict);
+float strtof(const char* __restrict, char** __restrict);
 long strtol(const char* __restrict, char** __restrict, int);
+long double strtold(const char* __restrict, char** __restrict);
 unsigned long strtoul(const char* __restrict, char** __restrict, int);
 unsigned long long strtoull(const char* __restrict, char** __restrict, int);
 long long strtoll(const char* __restrict, char** __restrict, int);
@@ -146,9 +149,6 @@ void setkey(const char*);
 char* setstate(char*);
 void srand48(long);
 void srandom(unsigned);
-double strtod(const char* __restrict, char** __restrict);
-float strtof(const char* __restrict, char** __restrict);
-long double strtold(const char* __restrict, char** __restrict);
 int unlockpt(int);
 
 #if __POSIX_OBSOLETE <= 200801
