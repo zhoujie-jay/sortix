@@ -136,7 +136,6 @@ void sync(void);
 long sysconf(int);
 pid_t tcgetpgrp(int);
 int tcsetpgrp(int, pid_t);
-char* ttyname(int);
 int ttyname_r(int, char*, size_t);
 
 #if __POSIX_OBSOLETE <= 200801
@@ -195,6 +194,7 @@ int setuid(uid_t);
 unsigned sleep(unsigned);
 int truncate(const char*, off_t);
 int truncateat(int dirfd, const char*, off_t);
+char* ttyname(int);
 int usleep(useconds_t useconds);
 int unlinkat(int, const char*, int);
 int unlink(const char*);

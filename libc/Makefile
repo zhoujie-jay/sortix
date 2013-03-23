@@ -311,6 +311,7 @@ tfork.o \
 time.o \
 truncateat.o \
 truncate.o \
+ttyname.o \
 umask.o \
 unlinkat.o \
 unlink.o \
