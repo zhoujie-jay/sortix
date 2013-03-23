@@ -55,6 +55,7 @@
 #define EINPROGRESS 63
 #define EALREADY 64
 #define ESHUTDOWN 65
+#define ECONNABORTED 66
 
 #define EOPNOTSUPP ENOTSUP
 
