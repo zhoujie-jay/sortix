@@ -133,6 +133,7 @@ wcrtomb.o \
 wcscat.o \
 wcschrnul.o \
 wcschr.o \
+wcscmp.o \
 wcscpy.o \
 wcslen.o \
 wctomb.o \

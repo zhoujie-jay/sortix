@@ -66,6 +66,7 @@ size_t mbrtowc(wchar_t* restrict, const char* restrict, size_t, mbstate_t* restr
 wchar_t* wcscat(wchar_t* restrict, const wchar_t* restrict);
 wchar_t* wcschr(const wchar_t*, wchar_t);
 wchar_t* wcschrnul(const wchar_t*, wchar_t);
+int wcscmp(const wchar_t*, const wchar_t*);
 wchar_t* wcscpy(wchar_t* restrict, const wchar_t* restrict);
 size_t wcslen(const wchar_t*);
 
@@ -87,7 +88,6 @@ int vswprintf(wchar_t* restrict, size_t, const wchar_t* restrict, va_list);
 int vswscanf(const wchar_t* restrict, const wchar_t* restrict, va_list);
 int vwprintf(const wchar_t* restrict, va_list);
 int vwscanf(const wchar_t* restrict, va_list);
-int wcscmp(const wchar_t*, const wchar_t*);
 int wcscoll(const wchar_t*, const wchar_t*);
 int wcsncmp(const wchar_t*, const wchar_t*, size_t);
 int wcswidth(const wchar_t*, size_t);
