@@ -141,6 +141,7 @@ wcsncat.o \
 wcsncpy.o \
 wcsrchr.o \
 wcsspn.o \
+wcstok.o \
 wctomb.o \
 wctype.o \
 
