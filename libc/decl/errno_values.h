@@ -52,6 +52,7 @@
 #define ETIMEDOUT 60
 #define ECONNREFUSED 61
 #define EDOM 62
+#define EINPROGRESS 63
 
 #define EOPNOTSUPP ENOTSUP
 

@@ -81,6 +81,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ETIMEDOUT: return "Connection timed out";
 	case ECONNREFUSED: return "Connection refused";
 	case EDOM: return "Mathematics argument out of domain of function";
+	case EINPROGRESS: return "Operation in progress";
 	default: return "Unknown error condition";
 	}
 }
