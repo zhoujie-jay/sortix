@@ -64,6 +64,8 @@ struct tm;
 size_t wcrtomb(char* restrict, wchar_t, mbstate_t* restrict);
 size_t mbrtowc(wchar_t* restrict, const char* restrict, size_t, mbstate_t* restrict);
 wchar_t* wcscat(wchar_t* restrict, const wchar_t* restrict);
+wchar_t* wcschr(const wchar_t*, wchar_t);
+wchar_t* wcschrnul(const wchar_t*, wchar_t);
 wchar_t* wcscpy(wchar_t* restrict, const wchar_t* restrict);
 size_t wcslen(const wchar_t*);
 
@@ -107,7 +109,6 @@ size_t wcsxfrm(wchar_t* restrict, const wchar_t* restrict, size_t);
 unsigned long long wcstoull(const wchar_t* restrict, wchar_t** restrict, int);
 unsigned long wcstoul(const wchar_t* restrict, wchar_t** restrict, int);
 wchar_t* fgetws(wchar_t* restrict, int, FILE* restrict);
-wchar_t* wcschr(const wchar_t*, wchar_t);
 wchar_t* wcsncat(wchar_t* restrict, const wchar_t* restrict, size_t);
 wchar_t* wcsncpy(wchar_t* restrict, const wchar_t* restrict, size_t);
 wchar_t* wcspbrk(const wchar_t*, const wchar_t*);
