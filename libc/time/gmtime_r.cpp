@@ -240,3 +240,53 @@ extern "C" struct tm* gmtime_r(const time_t* time_ptr, struct tm* ret)
 
 	return ret;
 }
+
+extern "C" time_t timegm(struct tm* tm)
+{
+	time_t year = tm->tm_year + 1900;
+	time_t month = tm->tm_mon;
+	time_t day = tm->tm_mday - 1;
+	time_t hour = tm->tm_hour;
+	time_t minute = tm->tm_min;
+	time_t second = tm->tm_sec;
+
+	time_t ret = 0;
+	for ( time_t y = 1970; y < year; y++ )
+	{
+		time_t year_leaps = leap_seconds_in_year(y);
+		time_t year_days = days_in_year(y);
+		time_t year_seconds = year_days * 24 * 60 * 60 + year_leaps;
+		ret += year_seconds;
+	}
+
+	int month_days_list[12] =
+	{
+		DAYS_JANUARY,
+		DAYS_FEBRUARY + (is_leap_year(year) ? 1 : 0),
+		DAYS_MARCH,
+		DAYS_APRIL,
+		DAYS_MAY,
+		DAYS_JUNE,
+		DAYS_JULY,
+		DAYS_AUGUST,
+		DAYS_SEPTEMBER,
+		DAYS_OCTOBER,
+		DAYS_NOVEMBER,
+		DAYS_DECEMBER,
+	};
+
+	for ( uint8_t m = 0; m < month; m++ )
+	{
+		int month_leaps = get_leap_second(year, m);
+		int month_days = month_days_list[m];
+		int month_seconds = month_days * 24 * 60 * 60 + month_leaps;
+		ret += month_seconds;
+	}
+
+	ret += (time_t) day * 24 * 60 * 60;
+	ret += (time_t) hour * 60 * 60;
+	ret += (time_t) minute * 60;
+	ret += (time_t) second * 1;
+
+	return ret;
+}

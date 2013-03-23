@@ -105,6 +105,8 @@ int timer_settime(timer_t, int, const struct itimerspec* __restrict,
                   struct itimerspec* __restrict);
 void tzset(void);
 
+/* TODO: This is some _MISC_SOURCE thing according to GNU, but I like it. */
+time_t timegm(struct tm*);
 
 #if defined(_SORTIX_SOURCE)
 int clock_gettimeres(clockid_t, struct timespec*, struct timespec*);

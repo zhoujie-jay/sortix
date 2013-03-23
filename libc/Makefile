@@ -136,8 +136,10 @@ time/gmtime.o \
 time/gmtime_r.o \
 time/localtime.o \
 time/localtime_r.o \
+time/mktime.o \
 timespec.o \
 time/strftime.o \
+time/timegm.o \
 ungetc.o \
 vfscanf.o \
 vsscanf.o \
