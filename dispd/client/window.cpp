@@ -74,8 +74,34 @@ struct dispd_window* dispd_create_window_game_rgba(struct dispd_session* session
 
 extern "C" bool dispd_destroy_window(struct dispd_window* window)
 {
+	free(window->cached_buffer);
 	free(window);
 	return true;
+}
+
+static uint8_t* request_buffer(struct dispd_window* window, size_t size)
+{
+	if ( window->cached_buffer )
+	{
+		if ( window->cached_buffer_size == size )
+		{
+			uint8_t* ret = window->cached_buffer;
+			window->cached_buffer = NULL;
+			window->cached_buffer_size = 0;
+			return ret;
+		}
+		free(window->cached_buffer);
+		window->cached_buffer = NULL;
+		window->cached_buffer_size = 0;
+	}
+	return (uint8_t*) malloc(size);
+}
+
+static void return_buffer(struct dispd_window* window, uint8_t* b, size_t size)
+{
+	free(window->cached_buffer);
+	window->cached_buffer = b;
+	window->cached_buffer_size = size;
 }
 
 static
@@ -93,7 +119,7 @@ struct dispd_framebuffer* disp_begin_render_vga(struct dispd_window* window)
 	fb->bpp = 16;
 	fb->pitch = fb->width * fb->bpp / 8;
 	fb->datasize = fb->pitch * fb->height;
-	fb->data = (uint8_t*) malloc(fb->datasize);
+	fb->data = (uint8_t*) request_buffer(window, fb->datasize);
 	if ( !fb->data ) { free(fb); return NULL; }
 	return fb;
 }
@@ -119,7 +145,7 @@ struct dispd_framebuffer* disp_begin_render_rgba(struct dispd_window* window)
 	fb->bpp = 32;
 	fb->pitch = fb->width * fb->bpp / 8;
 	fb->datasize = fb->pitch * fb->height;
-	fb->data = (uint8_t*) malloc(fb->datasize);
+	fb->data = (uint8_t*) request_buffer(window, fb->datasize);
 	if ( !fb->data ) { free(fb); return NULL; }
 	return fb;
 }
@@ -159,7 +185,7 @@ bool dispd_finish_render(struct dispd_framebuffer* fb)
 		if ( dispmsg_issue(&msg, sizeof(msg)) == 0 )
 			ret = true;
 	}
-	free(fb->data);
+	return_buffer(window, fb->data, fb->datasize);
 	free(fb);
 	return ret;
 }
