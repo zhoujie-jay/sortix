@@ -74,6 +74,7 @@ size_t wcslen(const wchar_t*);
 wchar_t* wcsncat(wchar_t* restrict, const wchar_t* restrict, size_t);
 wchar_t* wcsncpy(wchar_t* restrict, const wchar_t* restrict, size_t);
 wchar_t* wcsrchr(const wchar_t*, wchar_t);
+size_t wcsrtombs(char* restrict, const wchar_t** restrict, size_t, mbstate_t* restrict);
 size_t wcsspn(const wchar_t*, const wchar_t*);
 wchar_t* wcstok(wchar_t* restrict, const wchar_t* restrict, wchar_t** restrict);
 
@@ -108,7 +109,6 @@ long long wcstoll(const wchar_t* restrict, wchar_t** restrict, int);
 long wcstol(const wchar_t* restrict, wchar_t** restrict, int);
 size_t mbrlen(const char* restrict, size_t, mbstate_t* restrict);
 size_t wcsftime(wchar_t* restrict, size_t, const wchar_t* restrict, const struct tm* restrict);
-size_t wcsrtombs(char* restrict, const wchar_t** restrict, size_t, mbstate_t* restrict);
 size_t wcsxfrm(wchar_t* restrict, const wchar_t* restrict, size_t);
 unsigned long long wcstoull(const wchar_t* restrict, wchar_t** restrict, int);
 unsigned long wcstoul(const wchar_t* restrict, wchar_t** restrict, int);

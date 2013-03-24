@@ -142,6 +142,7 @@ wcslen.o \
 wcsncat.o \
 wcsncpy.o \
 wcsrchr.o \
+wcsrtombs.o \
 wcsspn.o \
 wcstok.o \
 wctomb.o \
