@@ -36,7 +36,8 @@ extern "C" const char* sortix_setlocale(int category, const char* locale)
 	char* new_strings[LC_NUM_CATEGORIES];
 	int from = category;
 	int to = category;
-	if ( !locale ) { return current_locales[to]; }
+	if ( !locale )
+		return current_locales[to] ? current_locales[to] : "C";
 	if ( category == LC_ALL ) { from = 0; to = LC_NUM_CATEGORIES-1; }
 	for ( int i = from; i <= to; i++ )
 	{
