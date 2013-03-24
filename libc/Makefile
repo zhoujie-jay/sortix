@@ -80,6 +80,7 @@ localtime.o \
 localtime_r.o \
 mbrtowc.o \
 mbsrtowcs.o \
+mbstowcs.o \
 mbtowc.o \
 memccpy.o \
 memchr.o \
