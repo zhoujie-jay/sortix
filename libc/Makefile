@@ -79,6 +79,7 @@ lldiv.o \
 localtime.o \
 localtime_r.o \
 mbrtowc.o \
+mbsrtowcs.o \
 mbtowc.o \
 memccpy.o \
 memchr.o \
