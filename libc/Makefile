@@ -145,6 +145,7 @@ wcsrchr.o \
 wcsrtombs.o \
 wcsspn.o \
 wcstok.o \
+wcstombs.o \
 wctomb.o \
 wctype.o \
 

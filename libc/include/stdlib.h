@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -100,6 +100,7 @@ unsigned long long strtoull(const char* restrict, char** restrict, int);
 long long strtoll(const char* restrict, char** restrict, int);
 int system(const char*);
 int unsetenv(const char*);
+size_t wcstombs(char* restrict, const wchar_t *restrict, size_t);
 int wctomb(char*, wchar_t);
 
 #if defined(_SORTIX_SOURCE) || defined(_WANT_SORTIX_ENV)
@@ -149,7 +150,6 @@ double strtod(const char* restrict, char** restrict);
 float strtof(const char* restrict, char** restrict);
 long double strtold(const char* restrict, char** restrict);
 int unlockpt(int);
-size_t wcstombs(char* restrict, const wchar_t *restrict, size_t);
 
 #if __POSIX_OBSOLETE <= 200801
 int rand_r(unsigned *);
