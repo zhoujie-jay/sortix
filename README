@@ -91,9 +91,10 @@ The build scripts might not contain a copyright license in which case they are
 covered by the standard license for the software component they relate to.
 
 Unless the license header in the source code states otherwise, the Sortix
-kernel, the filesystem servers, the initrd tools, the utilities, the games, and
-the benchmark programs are licensed under the GNU General Public License, either
-version 3 or (at your option) any later version.
+kernel, the filesystem servers, the initrd tools, the utilities, the games, the
+benchmark programs, and the tix package management programs are licensed under
+the GNU General Public License, either version 3 or (at your option) any later
+version.
 
 Unless the license header in the source code states otherwise, the libc library
 and the libdispd library are licensed under the GNU Lesser General Public

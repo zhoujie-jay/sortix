@@ -34,11 +34,13 @@ all: sysroot
 build-tools:
 	$(MAKE) -C mkinitrd
 	$(MAKE) -C mxmpp
+	$(MAKE) -C tix
 
 .PHONY: install-build-tools
 install-build-tools:
 	$(MAKE) -C mkinitrd install
 	$(MAKE) -C mxmpp install
+	$(MAKE) -C tix install
 
 .PHONY: sysroot-fsh
 sysroot-fsh:
@@ -99,7 +101,7 @@ sysroot: sysroot-system sysroot-source sysroot-overlay sysroot-home-directory
 
 .PHONY: clean-core
 clean-core:
-	(for D in $(MODULES); do $(MAKE) clean $(SUBMAKE_OPTIONS) --directory $$D || exit $$?; done)
+	(for D in $(MODULES) tix; do $(MAKE) clean $(SUBMAKE_OPTIONS) --directory $$D || exit $$?; done)
 
 .PHONY: clean-builds
 clean-builds:
