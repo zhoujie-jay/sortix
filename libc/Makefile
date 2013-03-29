@@ -155,6 +155,7 @@ arpa/inet/inet_addr.o \
 arpa/inet/inet_ntoa.o \
 arpa/inet/inet_ntop.o \
 arpa/inet/inet_pton.o \
+basename.o \
 calltrace.o \
 canonicalize_file_name_at.o \
 canonicalize_file_name.o \
@@ -168,6 +169,7 @@ $(CPUDIR)/fork.o \
 $(CPUDIR)/signal.o \
 $(CPUDIR)/syscall.o \
 creat.o \
+dirname.o \
 dispmsg_issue.o \
 dlfcn.o \
 dup2.o \
