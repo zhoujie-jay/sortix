@@ -325,6 +325,7 @@ sys/socket/socketpair.o \
 system.o \
 tfork.o \
 time.o \
+tmpfile.o \
 truncateat.o \
 truncate.o \
 ttyname.o \

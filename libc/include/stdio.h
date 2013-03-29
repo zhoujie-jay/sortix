@@ -117,6 +117,7 @@ extern int sortix_puts(const char* str);
 extern int sprintf(char* restrict s, const char* restrict format, ...);
 extern int scanf(const char* restrict format, ...);
 extern int sscanf(const char* restrict s, const char* restrict format, ...);
+extern FILE* tmpfile(void);
 extern int ungetc(int c, FILE* stream);
 extern int vfprintf(FILE* restrict stream, const char* restrict format, __gnuc_va_list ap);
 extern int vfscanf(FILE* restrict stream, const char* restrict format, __gnuc_va_list arg);
@@ -131,7 +132,6 @@ extern int vsscanf(const char* restrict s, const char* restrict format, __gnuc_v
 extern char* ctermid(char* s);
 extern FILE *fmemopen(void* restrict buf, size_t size, const char* restrict mode);
 extern FILE* open_memstream(char** bufp, size_t* sizep);
-extern FILE* tmpfile(void);
 extern int dprintf(int fildes, const char* restrict format, ...);
 extern int fgetpos(FILE* restrict stream, fpos_t* restrict pos);
 extern int fsetpos(FILE* stream, const fpos_t* pos);
