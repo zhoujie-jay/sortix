@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,25 +17,46 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    setjmp.c
-    Stack environment declarations.
+    x64/setjmp.s
+    Implement the assembly part of setjmp.
 
 *******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <setjmp.h>
+.global setjmp
+.type setjmp, @function
+setjmp:
+	# TODO: Floating point stuff!
+	mov %rbx, 0x00(%rdi)
+	mov %rsp, 0x08(%rdi)
+	mov %rbp, 0x10(%rdi)
+	mov %r12, 0x18(%rdi)
+	mov %r13, 0x20(%rdi)
+	mov %r14, 0x28(%rdi)
+	mov %r15, 0x30(%rdi)
+	mov 0(%rsp), %rax
+	mov %rax, 0x38(%rdi)
+	xorl %eax, %eax
+.Lsetjmp_return:
+	ret
+.size setjmp, . - setjmp
 
-void longjmp(jmp_buf env, int val)
-{
-	(void) env;
-	(void) val;
-	fprintf(stderr, "setjmp(3) and longjmp(3) are unimplemented, abort!\n");
-	abort();
-}
-
-int setjmp(jmp_buf env)
-{
-	(void) env;
-	return 0;
-}
+.global longjmp
+.type longjmp, @function
+longjmp:
+	testl %esi, %esi
+	jnz 1f
+	mov $1, %esi
+1:
+	# TODO: Floating point stuff!
+	mov 0x00(%rdi), %rbx
+	mov 0x08(%rdi), %rsp
+	mov 0x10(%rdi), %rbp
+	mov 0x18(%rdi), %r12
+	mov 0x20(%rdi), %r13
+	mov 0x28(%rdi), %r14
+	mov 0x30(%rdi), %r15
+	mov 0x38(%rdi), %rax
+	mov %rax, 0(%rsp)
+	mov %esi, %eax
+	jmp .Lsetjmp_return
+.size longjmp, . - longjmp

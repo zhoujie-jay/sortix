@@ -166,6 +166,7 @@ clock.o \
 close.o \
 $(CPUDIR)/calltrace.o \
 $(CPUDIR)/fork.o \
+$(CPUDIR)/setjmp.o \
 $(CPUDIR)/signal.o \
 $(CPUDIR)/syscall.o \
 creat.o \
@@ -293,7 +294,6 @@ select.o \
 setegid.o \
 seteuid.o \
 setgid.o \
-setjmp.o \
 setlocale.o \
 settermmode.o \
 setuid.o \
