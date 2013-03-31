@@ -37,6 +37,7 @@ struct ioctx_struct
 	gid_t gid, auth_gid;
 	bool (*copy_to_dest)(void* dest, const void* src, size_t n);
 	bool (*copy_from_src)(void* dest, const void* src, size_t n);
+	int dflags;
 };
 
 typedef struct ioctx_struct ioctx_t;

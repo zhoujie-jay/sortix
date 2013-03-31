@@ -31,7 +31,6 @@
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/fsfunc.h>
 #include <sortix/kernel/string.h>
-#include <sortix/kernel/copy.h> // DEBUG
 #include <sortix/dirent.h>
 #include <sortix/fcntl.h>
 #include <sortix/seek.h>
@@ -50,7 +49,7 @@ const int ACCESS_FLAGS = O_READ | O_WRITE | O_EXEC | O_SEARCH;
 const int OPEN_FLAGS = O_CREAT | O_DIRECTORY | O_EXCL | O_TRUNC;
 
 // Flags that only make sense for descriptors.
-const int DESCRIPTOR_FLAGS = O_APPEND;
+const int DESCRIPTOR_FLAGS = O_APPEND | O_NONBLOCK;
 
 bool LinkInodeInDir(ioctx_t* ctx, Ref<Descriptor> dir, const char* name,
                     Ref<Inode> inode)
@@ -218,6 +217,7 @@ ssize_t Descriptor::read(ioctx_t* ctx, uint8_t* buf, size_t count)
 		return errno = EPERM, -1;
 	if ( !count ) { return 0; }
 	if ( (size_t) SSIZE_MAX < count ) { count = SSIZE_MAX; }
+	ctx->dflags = dflags;
 	if ( !IsSeekable() )
 		return vnode->read(ctx, buf, count);
 	// TODO: Locking here only allows one task to read/write at once.
@@ -235,6 +235,7 @@ ssize_t Descriptor::pread(ioctx_t* ctx, uint8_t* buf, size_t count, off_t off)
 	if ( off < 0 ) { errno = EINVAL; return -1; }
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
+	ctx->dflags = dflags;
 	return vnode->pread(ctx, buf, count, off);
 }
 
@@ -244,6 +245,7 @@ ssize_t Descriptor::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 		return errno = EPERM, -1;
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
+	ctx->dflags = dflags;
 	if ( !IsSeekable() )
 		return vnode->write(ctx, buf, count);
 	// TODO: Locking here only allows one task to read/write at once.
@@ -265,6 +267,7 @@ ssize_t Descriptor::pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count, off_t
 	if ( off < 0 ) { errno = EINVAL; return -1; }
 	if ( !count ) { return 0; }
 	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
+	ctx->dflags = dflags;
 	return vnode->pwrite(ctx, buf, count, off);
 }
 

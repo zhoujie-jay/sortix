@@ -38,6 +38,7 @@ void SetupUserIOCtx(ioctx_t* ctx)
 	ctx->gid = ctx->auth_gid = process->gid;
 	ctx->copy_to_dest = CopyToUser;
 	ctx->copy_from_src = CopyFromUser;
+	ctx->dflags = 0;
 }
 
 void SetupKernelIOCtx(ioctx_t* ctx)
@@ -48,6 +49,7 @@ void SetupKernelIOCtx(ioctx_t* ctx)
 	ctx->gid = ctx->auth_gid = process->gid;
 	ctx->copy_to_dest = CopyToKernel;
 	ctx->copy_from_src = CopyFromKernel;
+	ctx->dflags = 0;
 }
 
 } // namespace Sortix

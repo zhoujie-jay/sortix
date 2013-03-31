@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef SORTIX_FCNTL_H
-#define SORTIX_FCNTL_H
+#ifndef INCLUDE_SORTIX_FCNTL_H
+#define INCLUDE_SORTIX_FCNTL_H
 
 #include <features.h>
 
@@ -42,6 +42,7 @@ __BEGIN_DECLS
 #define O_TRUNC (1<<8)
 #define O_CLOFORK (1<<9)
 #define O_SEARCH (1<<10)
+#define O_NONBLOCK (1<<11)
 // TODO: O_NOFOLLOW.
 
 #define FD_CLOEXEC (1<<0)
