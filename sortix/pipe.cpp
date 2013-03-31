@@ -149,6 +149,8 @@ ssize_t PipeChannel::read(ioctx_t* ctx, uint8_t* buf, size_t count)
 	if ( !lock.IsAcquired() ) { errno = EINTR; return -1; }
 	while ( anywriting && !bufferused )
 	{
+		if ( ctx->dflags & O_NONBLOCK )
+			return errno = EWOULDBLOCK, -1;
 		if ( !kthread_cond_wait_signal(&readcond, &pipelock) )
 		{
 			errno = EINTR;
@@ -175,6 +177,8 @@ ssize_t PipeChannel::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 	if ( !lock.IsAcquired() ) { errno = EINTR; return -1; }
 	while ( anyreading && bufferused == buffersize )
 	{
+		if ( ctx->dflags & O_NONBLOCK )
+			return errno = EWOULDBLOCK, -1;
 		if ( !kthread_cond_wait_signal(&writecond, &pipelock) )
 		{
 			errno = EINTR;
