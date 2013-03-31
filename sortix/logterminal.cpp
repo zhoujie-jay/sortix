@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -32,6 +32,7 @@
 #include <sortix/kernel/poll.h>
 #include <sortix/kernel/scheduler.h>
 
+#include <sortix/fcntl.h>
 #include <sortix/termmode.h>
 #include <sortix/termios.h>
 #include <sortix/keycodes.h>
@@ -237,6 +238,8 @@ ssize_t LogTerminal::read(ioctx_t* ctx, uint8_t* userbuf, size_t count)
 	bool blocking = !(termmode & TERMMODE_NONBLOCK);
 	while ( left && !linebuffer.CanPop() && blocking && !numeofs )
 	{
+		if ( ctx->dflags & O_NONBLOCK )
+			return errno = EWOULDBLOCK, -1;
 		numwaiting++;
 		bool abort = !kthread_cond_wait_signal(&datacond, &termlock);
 		numwaiting--;
