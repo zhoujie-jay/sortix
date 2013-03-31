@@ -59,6 +59,7 @@ __BEGIN_DECLS
 #define AT_EACCESS (1<<1)
 #define AT_SYMLINK_NOFOLLOW (1<<2)
 #define AT_REMOVEFILE (1<<3)
+#define AT_SYMLINK_FOLLOW (1<<4)
 
 __END_DECLS
 
