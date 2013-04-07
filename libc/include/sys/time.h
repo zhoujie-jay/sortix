@@ -33,7 +33,7 @@ __BEGIN_DECLS
 @include(suseconds_t.h)
 @include(timeval.h)
 
-int gettimeofday(struct timeval* restrict tp, void* restrict tzp);
+int gettimeofday(struct timeval* __restrict tp, void* __restrict tzp);
 
 __END_DECLS
 

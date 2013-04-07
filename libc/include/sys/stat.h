@@ -61,14 +61,14 @@ int fchmodat(int dirfd, const char* path, mode_t mode, int flags);
 int fstat(int fd, struct stat* st);
 int fstatat(int dirfd, const char* path, struct stat* buf, int flags);
 int futimens(int fd, const struct timespec times[2]);
-int lstat(const char* restrict path, struct stat* restrict st);
+int lstat(const char* __restrict path, struct stat* __restrict st);
 int mkdir(const char* path, mode_t mode);
 int mkdirat(int dirfd, const char* path, mode_t mode);
 /* TODO: mkfifo */
 /* TODO: mkfifoat */
 /* TODO: mknod? */
 /* TODO: mknodat? */
-int stat(const char* restrict path, struct stat* restrict st);
+int stat(const char* __restrict path, struct stat* __restrict st);
 mode_t umask(mode_t mask);
 int utimens(const char* path, const struct timespec times[2]);
 int utimensat(int dirfd, const char* path, const struct timespec times[2],

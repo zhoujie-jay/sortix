@@ -25,9 +25,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#undef restrict
-#define restrict __restrict__
-
 #if 8 < __SIZEOF_LONG__
 #error unsigned long is bigger than expected, please add support to this file.
 #endif

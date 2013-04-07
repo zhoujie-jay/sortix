@@ -76,7 +76,7 @@ __BEGIN_DECLS
 /* getdate_err is omitted, use strptime */
 
 char* asctime(const struct tm*);
-char* asctime_r(const struct tm* restrict, char* restrict);
+char* asctime_r(const struct tm* __restrict, char* __restrict);
 clock_t clock(void);
 /* TODO: clock_getcpuclockid */
 int clock_getres(clockid_t, struct timespec*);
@@ -89,24 +89,24 @@ char* ctime_r(const time_t* clock, char* buf);
 double difftime(time_t, time_t);
 /* getdate is omitted, use strptime */
 struct tm* gmtime(const time_t*);
-struct tm* gmtime_r(const time_t* restrict, struct tm* restrict);
+struct tm* gmtime_r(const time_t* __restrict, struct tm* __restrict);
 struct tm* localtime(const time_t*);
-struct tm* localtime_r(const time_t* restrict, struct tm* restrict);
+struct tm* localtime_r(const time_t* __restrict, struct tm* __restrict);
 time_t mktime(struct tm*);
 int nanosleep(const struct timespec*, struct timespec*);
-size_t strftime(char* restrict, size_t, const char* restrict,
-                const struct tm* restrict);
-size_t strftime_l(char* restrict, size_t, const char* restrict,
-                const struct tm* restrict, locale_t);
-char* strptime(const char* restrict, const char* restrict,
-               struct tm* restrict);
+size_t strftime(char* __restrict, size_t, const char* __restrict,
+                const struct tm* __restrict);
+size_t strftime_l(char* __restrict, size_t, const char* __restrict,
+                const struct tm* __restrict, locale_t);
+char* strptime(const char* __restrict, const char* __restrict,
+               struct tm* __restrict);
 time_t time(time_t*);
-int timer_create(clockid_t, struct sigevent* restrict, time_t* restrict);
+int timer_create(clockid_t, struct sigevent* __restrict, time_t* __restrict);
 int timer_delete(timer_t);
 int timer_getoverrun(timer_t);
 int timer_gettime(timer_t, struct itimerspec*);
-int timer_settime(timer_t, int, const struct itimerspec* restrict,
-                  struct itimerspec* restrict);
+int timer_settime(timer_t, int, const struct itimerspec* __restrict,
+                  struct itimerspec* __restrict);
 void tzset(void);
 
 extern int daylight;

@@ -60,8 +60,8 @@ typedef struct
 #define FD_ZERO(fdsetp) memset(fdsetp, 0, sizeof(fd_set))
 
 /* TODO: pselect */
-int select(int, fd_set* restrict, fd_set* restrict, fd_set* restrict,
-           struct timeval* restrict);
+int select(int, fd_set* __restrict, fd_set* __restrict, fd_set* __restrict,
+           struct timeval* __restrict);
 
 __END_DECLS
 

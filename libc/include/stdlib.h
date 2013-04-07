@@ -81,8 +81,8 @@ ldiv_t ldiv(long, long);
 long long llabs(long long);
 lldiv_t lldiv(long long, long long);
 void* malloc(size_t);
-size_t mbstowcs(wchar_t* restrict, const char* restrict, size_t);
-int mbtowc(wchar_t *restrict, const char* restrict, size_t);
+size_t mbstowcs(wchar_t* __restrict, const char* __restrict, size_t);
+int mbtowc(wchar_t *__restrict, const char* __restrict, size_t);
 #if !defined(_SORTIX_SOURCE)
 char* mktemp(char* templ);
 #endif
@@ -91,16 +91,16 @@ int putenv(char*);
 void qsort(void*, size_t, size_t, int (*)(const void*, const void*));
 int rand(void);
 void* realloc(void*, size_t);
-char* realpath(const char* restrict, char* restrict);
+char* realpath(const char* __restrict, char* __restrict);
 int setenv(const char*, const char*, int);
 void srand(unsigned);
-long strtol(const char* restrict, char** restrict, int);
-unsigned long strtoul(const char* restrict, char** restrict, int);
-unsigned long long strtoull(const char* restrict, char** restrict, int);
-long long strtoll(const char* restrict, char** restrict, int);
+long strtol(const char* __restrict, char** __restrict, int);
+unsigned long strtoul(const char* __restrict, char** __restrict, int);
+unsigned long long strtoull(const char* __restrict, char** __restrict, int);
+long long strtoll(const char* __restrict, char** __restrict, int);
 int system(const char*);
 int unsetenv(const char*);
-size_t wcstombs(char* restrict, const wchar_t *restrict, size_t);
+size_t wcstombs(char* __restrict, const wchar_t *__restrict, size_t);
 int wctomb(char*, wchar_t);
 
 #if defined(_SORTIX_SOURCE) || defined(_WANT_SORTIX_ENV)
@@ -146,9 +146,9 @@ void setkey(const char*);
 char* setstate(char*);
 void srand48(long);
 void srandom(unsigned);
-double strtod(const char* restrict, char** restrict);
-float strtof(const char* restrict, char** restrict);
-long double strtold(const char* restrict, char** restrict);
+double strtod(const char* __restrict, char** __restrict);
+float strtof(const char* __restrict, char** __restrict);
+long double strtold(const char* __restrict, char** __restrict);
 int unlockpt(int);
 
 #if __POSIX_OBSOLETE <= 200801

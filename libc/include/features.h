@@ -74,8 +74,24 @@
 	#endif
 #endif
 
-#ifndef restrict
-#define restrict
+/* Detect whether the restrict keyword is available. */
+#if __STDC_VERSION__ >= 199901L
+#define __HAS_RESTRICT 1
+#endif
+
+/* Use the real restrict keyword if it is available. Not that this really
+   matters as gcc uses __restrict and __restrict__ as aliases for restrict, but
+   it will look nicer after preprocessing. */
+#if __HAS_RESTRICT
+#undef __restrict
+#define __restrict restrict
+#endif
+
+/* Provide the restrict keyword when building the C library. */
+#if !__HAS_RESTRICT && defined(LIBC_LIBRARY)
+#define restrict __restrict
+#undef __HAS_RESTRICT
+#define __HAS_RESTRICT 2
 #endif
 
 /* TODO: Improve these declarations, perhaps like they are in glibc. */
