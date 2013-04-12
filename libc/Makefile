@@ -220,6 +220,7 @@ getdtablesize.o \
 getegid.o \
 geteuid.o \
 getgid.o \
+gethostname.o \
 getpagesize.o \
 getpid.o \
 getppid.o \
