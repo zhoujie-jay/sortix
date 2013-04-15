@@ -113,11 +113,3 @@ extern "C" int getpwuid_r(uid_t uid, struct passwd* pw, char* buf,
 	*ret = pw;
 	return 0;
 }
-
-extern "C" char* getlogin()
-{
-	static char username[64];
-	// TODO: Potential buffer overflow.
-	strcpy(username, getenv("USERNAME") ? getenv("USERNAME") : ROOT_NAME);
-	return username;
-}

@@ -221,6 +221,8 @@ getegid.o \
 geteuid.o \
 getgid.o \
 gethostname.o \
+getlogin.o \
+getlogin_r.o \
 getpagesize.o \
 getpid.o \
 getppid.o \

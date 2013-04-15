@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -115,8 +115,6 @@ int fexecve(int, char* const [], char* const []);
 long fpathconf(int, int);
 int getgroups(int, gid_t []);
 long gethostid(void);
-char* getlogin(void);
-int getlogin_r(char*, size_t);
 int getopt(int, char* const [], const char*);
 pid_t getpgid(pid_t);
 pid_t getpgrp(void);
@@ -170,6 +168,8 @@ char* get_current_dir_name(void);
 gid_t getegid(void);
 uid_t geteuid(void);
 int gethostname(char*, size_t);
+char* getlogin(void);
+int getlogin_r(char*, size_t);
 pid_t getpid(void);
 pid_t getppid(void);
 uid_t getuid(void);
