@@ -164,6 +164,7 @@ chmod.o \
 chown.o \
 clock.o \
 close.o \
+confstr.o \
 $(CPUDIR)/calltrace.o \
 $(CPUDIR)/fork.o \
 $(CPUDIR)/setjmp.o \

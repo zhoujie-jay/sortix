@@ -57,7 +57,37 @@ __BEGIN_DECLS
 
 @include(NULL.h)
 
-/* TODO: _CS_* is missing here. */
+#define _CS_PATH 0
+#define _CS_POSIX_V7_ILP32_OFF32_CFLAGS 1
+#define _CS_POSIX_V7_ILP32_OFF32_LDFLAGS 2
+#define _CS_POSIX_V7_ILP32_OFF32_LIBS 3
+#define _CS_POSIX_V7_ILP32_OFFBIG_CFLAGS 4
+#define _CS_POSIX_V7_ILP32_OFFBIG_LDFLAGS 5
+#define _CS_POSIX_V7_ILP32_OFFBIG_LIBS 6
+#define _CS_POSIX_V7_LP64_OFF64_CFLAGS 7
+#define _CS_POSIX_V7_LP64_OFF64_LDFLAGS 8
+#define _CS_POSIX_V7_LP64_OFF64_LIBS 9
+#define _CS_POSIX_V7_LPBIG_OFFBIG_CFLAGS 10
+#define _CS_POSIX_V7_LPBIG_OFFBIG_LDFLAGS 11
+#define _CS_POSIX_V7_LPBIG_OFFBIG_LIBS 12
+#define _CS_POSIX_V7_THREADS_CFLAGS 13
+#define _CS_POSIX_V7_THREADS_LDFLAGS 14
+#define _CS_POSIX_V7_WIDTH_RESTRICTED_ENVS 15
+#define _CS_V7_ENV 16
+#define _CS_POSIX_V6_ILP32_OFF32_CFLAGS 17 /* obsolescent */
+#define _CS_POSIX_V6_ILP32_OFF32_LDFLAGS 18 /* obsolescent */
+#define _CS_POSIX_V6_ILP32_OFF32_LIBS 19 /* obsolescent */
+#define _CS_POSIX_V6_ILP32_OFFBIG_CFLAGS 20 /* obsolescent */
+#define _CS_POSIX_V6_ILP32_OFFBIG_LDFLAGS 21 /* obsolescent */
+#define _CS_POSIX_V6_ILP32_OFFBIG_LIBS 22 /* obsolescent */
+#define _CS_POSIX_V6_LP64_OFF64_CFLAGS 23 /* obsolescent */
+#define _CS_POSIX_V6_LP64_OFF64_LDFLAGS 24 /* obsolescent */
+#define _CS_POSIX_V6_LP64_OFF64_LIBS 25 /* obsolescent */
+#define _CS_POSIX_V6_LPBIG_OFFBIG_CFLAGS 26 /* obsolescent */
+#define _CS_POSIX_V6_LPBIG_OFFBIG_LDFLAGS 27 /* obsolescent */
+#define _CS_POSIX_V6_LPBIG_OFFBIG_LIBS 28 /* obsolescent */
+#define _CS_POSIX_V6_WIDTH_RESTRICTED_ENVS 29 /* obsolescent */
+#define _CS_V6_ENV 30 /* obsolescent */
 
 /* TODO: F_* is missing here. */
 
@@ -230,7 +260,6 @@ extern char** environ;
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 unsigned alarm(unsigned);
-size_t confstr(int, char*, size_t);
 char* crypt(const char*, const char*);
 char* ctermid(char*);
 void encrypt(char [64], int);
@@ -270,6 +299,7 @@ int access(const char*, int);
 int chdir(const char*);
 int chown(const char*, uid_t, gid_t);
 int close(int);
+size_t confstr(int, char*, size_t);
 int dup2(int, int);
 int dup(int);
 void _exit(int)  __attribute__ ((noreturn));
