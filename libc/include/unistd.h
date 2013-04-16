@@ -83,7 +83,131 @@ __BEGIN_DECLS
 #define _PC_TIMESTAMP_RESOLUTION 20
 #define _PC_VDISABLE 21
 
-/* TODO: _SC_* is missing here. */
+#define _SC_AIO_LISTIO_MAX 0
+#define _SC_AIO_MAX 1
+#define _SC_AIO_PRIO_DELTA_MAX 2
+#define _SC_ARG_MAX 3
+#define _SC_ATEXIT_MAX 4
+#define _SC_BC_BASE_MAX 5
+#define _SC_BC_DIM_MAX 6
+#define _SC_BC_SCALE_MAX 7
+#define _SC_BC_STRING_MAX 8
+#define _SC_CHILD_MAX 9
+#define _SC_CLK_TCK 10
+#define _SC_COLL_WEIGHTS_MAX 11
+#define _SC_DELAYTIMER_MAX 12
+#define _SC_EXPR_NEST_MAX 13
+#define _SC_HOST_NAME_MAX 14
+#define _SC_IOV_MAX 15
+#define _SC_LINE_MAX 16
+#define _SC_LOGIN_NAME_MAX 17
+#define _SC_NGROUPS_MAX 18
+#define _SC_GETGR_R_SIZE_MAX 19
+#define _SC_GETPW_R_SIZE_MAX 20
+#define _SC_MQ_OPEN_MAX 21
+#define _SC_MQ_PRIO_MAX 22
+#define _SC_OPEN_MAX 23
+#define _SC_ADVISORY_INFO 24
+#define _SC_BARRIERS 25
+#define _SC_ASYNCHRONOUS_IO 26
+#define _SC_CLOCK_SELECTION 27
+#define _SC_CPUTIME 28
+#define _SC_FSYNC 29
+#define _SC_IPV6 30
+#define _SC_JOB_CONTROL 31
+#define _SC_MAPPED_FILES 32
+#define _SC_MEMLOCK 33
+#define _SC_MEMLOCK_RANGE 34
+#define _SC_MEMORY_PROTECTION 35
+#define _SC_MESSAGE_PASSING 36
+#define _SC_MONOTONIC_CLOCK 37
+#define _SC_PRIORITIZED_IO 38
+#define _SC_PRIORITY_SCHEDULING 39
+#define _SC_RAW_SOCKETS 40
+#define _SC_READER_WRITER_LOCKS 41
+#define _SC_REALTIME_SIGNALS 42
+#define _SC_REGEXP 43
+#define _SC_SAVED_IDS 44
+#define _SC_SEMAPHORES 45
+#define _SC_SHARED_MEMORY_OBJECTS 46
+#define _SC_SHELL 47
+#define _SC_SPAWN 48
+#define _SC_SPIN_LOCKS 49
+#define _SC_SPORADIC_SERVER 50
+#define _SC_SS_REPL_MAX 51
+#define _SC_SYNCHRONIZED_IO 52
+#define _SC_THREAD_ATTR_STACKADDR 53
+#define _SC_THREAD_ATTR_STACKSIZE 54
+#define _SC_THREAD_CPUTIME 55
+#define _SC_THREAD_PRIO_INHERIT 56
+#define _SC_THREAD_PRIO_PROTECT 57
+#define _SC_THREAD_PRIORITY_SCHEDULING 58
+#define _SC_THREAD_PROCESS_SHARED 59
+#define _SC_THREAD_ROBUST_PRIO_INHERIT 60
+#define _SC_THREAD_ROBUST_PRIO_PROTECT 61
+#define _SC_THREAD_SAFE_FUNCTIONS 62
+#define _SC_THREAD_SPORADIC_SERVER 63
+#define _SC_THREADS 64
+#define _SC_TIMEOUTS 65
+#define _SC_TIMERS 66
+#define _SC_TRACE 67
+#define _SC_TRACE_EVENT_FILTER 68
+#define _SC_TRACE_EVENT_NAME_MAX 69
+#define _SC_TRACE_INHERIT 70
+#define _SC_TRACE_LOG 71
+#define _SC_TRACE_NAME_MAX 72
+#define _SC_TRACE_SYS_MAX 73
+#define _SC_TRACE_USER_EVENT_MAX 74
+#define _SC_TYPED_MEMORY_OBJECTS 75
+#define _SC_VERSION 76
+#define _SC_V7_ILP32_OFF32 77
+#define _SC_V7_ILP32_OFFBIG 78
+#define _SC_V7_LP64_OFF64 79
+#define _SC_V7_LPBIG_OFFBIG 80
+#define _SC_V6_ILP32_OFF32 81 /* obsolescent */
+#define _SC_V6_ILP32_OFFBIG 82 /* obsolescent */
+#define _SC_V6_LP64_OFF64 83 /* obsolescent */
+#define _SC_V6_LPBIG_OFFBIG 84 /* obsolescent */
+#define _SC_2_C_BIND 85
+#define _SC_2_C_DEV 86
+#define _SC_2_CHAR_TERM 87
+#define _SC_2_FORT_DEV 88
+#define _SC_2_FORT_RUN 89
+#define _SC_2_LOCALEDEF 90
+#define _SC_2_PBS 91
+#define _SC_2_PBS_ACCOUNTING 92
+#define _SC_2_PBS_CHECKPOINT 93
+#define _SC_2_PBS_LOCATE 94
+#define _SC_2_PBS_MESSAGE 95
+#define _SC_2_PBS_TRACK 96
+#define _SC_2_SW_DEV 97
+#define _SC_2_UPE 98
+#define _SC_2_VERSION 99
+#define _SC_PAGE_SIZE 100
+#define _SC_PAGESIZE 111
+#define _SC_THREAD_DESTRUCTOR_ITERATIONS 112
+#define _SC_THREAD_KEYS_MAX 113
+#define _SC_THREAD_STACK_MIN 114
+#define _SC_THREAD_THREADS_MAX 115
+#define _SC_RE_DUP_MAX 116
+#define _SC_RTSIG_MAX 117
+#define _SC_SEM_NSEMS_MAX 118
+#define _SC_SEM_VALUE_MAX 119
+#define _SC_SIGQUEUE_MAX 120
+#define _SC_STREAM_MAX 121
+#define _SC_SYMLOOP_MAX 122
+#define _SC_TIMER_MAX 123
+#define _SC_TTY_NAME_MAX 124
+#define _SC_TZNAME_MAX 125
+#define _SC_XOPEN_CRYPT 126
+#define _SC_XOPEN_ENH_I18N 127
+#define _SC_XOPEN_REALTIME 128
+#define _SC_XOPEN_REALTIME_THREADS 129
+#define _SC_XOPEN_SHM 130
+#define _SC_XOPEN_STREAMS 131
+#define _SC_XOPEN_UNIX 132
+#define _SC_XOPEN_UUCP 133
+#define _SC_XOPEN_VERSION 134
 
 #define STDIN_FILENO (0)
 #define STDOUT_FILENO (1)
@@ -130,7 +254,6 @@ void swab(const void* __restrict, void* __restrict, ssize_t);
 int symlink(const char*, const char*);
 int symlinkat(const char*, int, const char*);
 void sync(void);
-long sysconf(int);
 pid_t tcgetpgrp(int);
 int tcsetpgrp(int, pid_t);
 int ttyname_r(int, char*, size_t);
@@ -192,6 +315,7 @@ int seteuid(uid_t);
 int setgid(gid_t);
 int setuid(uid_t);
 unsigned sleep(unsigned);
+long sysconf(int);
 int truncate(const char*, off_t);
 int truncateat(int dirfd, const char*, off_t);
 char* ttyname(int);

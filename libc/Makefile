@@ -308,6 +308,7 @@ signal.o \
 sleep.o \
 stat.o \
 stdio.o \
+sysconf.o \
 sys/socket/accept4.o \
 sys/socket/accept.o \
 sys/socket/bind.o \
