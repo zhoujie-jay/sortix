@@ -209,9 +209,9 @@ __BEGIN_DECLS
 #define _SC_XOPEN_UUCP 133
 #define _SC_XOPEN_VERSION 134
 
-#define STDIN_FILENO (0)
-#define STDOUT_FILENO (1)
-#define STDERR_FILENO (2)
+#define STDIN_FILENO 0
+#define STDOUT_FILENO 1
+#define STDERR_FILENO 2
 
 /* TODO: _POSIX_VDISABLE is missing here. */
 
