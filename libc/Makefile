@@ -302,6 +302,7 @@ setlocale.o \
 settermmode.o \
 setuid.o \
 sfork.o \
+sigaction.o \
 SIG_DFL.o \
 SIG_ERR.o \
 SIG_IGN.o \
