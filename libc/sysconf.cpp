@@ -30,6 +30,8 @@ extern "C" long sysconf(int name)
 {
 	switch ( name )
 	{
+	case _SC_PAGESIZE: case _SC_PAGE_SIZE:
+		return getpagesize();
 	default:
 		fprintf(stderr, "%s:%u warning: %s(%i) is unsupported\n",
 		        __FILE__, __LINE__, __func__, name);
