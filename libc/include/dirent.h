@@ -29,11 +29,13 @@
 
 __BEGIN_DECLS
 
+@include(ino_t.h)
 @include(size_t.h)
 @include(DIR.h)
 
 struct dirent
 {
+	ino_t d_ino;
 	size_t d_reclen;
 	char d_name[0];
 };
