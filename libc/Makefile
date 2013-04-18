@@ -312,6 +312,7 @@ SIG_DFL.o \
 SIG_ERR.o \
 SIG_IGN.o \
 signal.o \
+sigprocmask.o \
 sleep.o \
 stat.o \
 stdio.o \
