@@ -94,6 +94,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case EMSGSIZE: return "Message too long";
 	case ENETDOWN: return "Network is down";
 	case ENETRESET: return "Connection aborted by network";
+	case ENETUNREACH: return "Network is unreachable";
 	default: return "Unknown error condition";
 	}
 }

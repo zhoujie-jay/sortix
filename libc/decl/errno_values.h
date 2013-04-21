@@ -65,6 +65,7 @@
 #define EMSGSIZE 73
 #define ENETDOWN 74
 #define ENETRESET 75
+#define ENETUNREACH 76
 
 #define EOPNOTSUPP ENOTSUP
 
