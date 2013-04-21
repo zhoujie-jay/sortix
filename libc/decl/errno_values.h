@@ -73,6 +73,7 @@
 #define EDEADLK 81
 #define ENFILE 82
 #define EPROTOTYPE 83
+#define ENOLCK 84
 
 #define EOPNOTSUPP ENOTSUP
 
