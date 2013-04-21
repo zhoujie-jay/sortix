@@ -93,6 +93,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case EHOSTUNREACH: return "Host is unreachable";
 	case EMSGSIZE: return "Message too long";
 	case ENETDOWN: return "Network is down";
+	case ENETRESET: return "Connection aborted by network";
 	default: return "Unknown error condition";
 	}
 }
