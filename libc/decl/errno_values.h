@@ -62,6 +62,7 @@
 #define EFAULT 70
 #define EDESTADDRREQ 71
 #define EHOSTUNREACH 72
+#define EMSGSIZE 73
 
 #define EOPNOTSUPP ENOTSUP
 
