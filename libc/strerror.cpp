@@ -87,6 +87,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ECONNABORTED: return "Connection aborted";
 	case ECONNRESET: return "Connection reset";
 	case EADDRNOTAVAIL: return "Address not available";
+	case EISCONN: return "Socket is connected";
 	default: return "Unknown error condition";
 	}
 }
