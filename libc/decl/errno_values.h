@@ -60,6 +60,7 @@
 #define EADDRNOTAVAIL 68
 #define EISCONN 69
 #define EFAULT 70
+#define EDESTADDRREQ 71
 
 #define EOPNOTSUPP ENOTSUP
 
