@@ -59,6 +59,7 @@
 #define ECONNRESET 67
 #define EADDRNOTAVAIL 68
 #define EISCONN 69
+#define EFAULT 70
 
 #define EOPNOTSUPP ENOTSUP
 
