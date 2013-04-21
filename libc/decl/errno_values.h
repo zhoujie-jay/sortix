@@ -70,6 +70,7 @@
 #define ENOMSG 78
 #define ENOPROTOOPT 79
 #define ENOTCONN 80
+#define EDEADLK 81
 
 #define EOPNOTSUPP ENOTSUP
 

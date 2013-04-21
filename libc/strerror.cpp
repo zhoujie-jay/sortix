@@ -99,6 +99,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ENOMSG: return "No message of the desired type";
 	case ENOPROTOOPT: return "Protocol not available";
 	case ENOTCONN: return "Socket is not connected";
+	case EDEADLK: return "Resource deadlock avoided";
 	default: return "Unknown error condition";
 	}
 }
