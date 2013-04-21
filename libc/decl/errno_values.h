@@ -66,6 +66,7 @@
 #define ENETDOWN 74
 #define ENETRESET 75
 #define ENETUNREACH 76
+#define ENOBUFS 77
 
 #define EOPNOTSUPP ENOTSUP
 
