@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_SYS_READDIRENTS_H
-#define	_SYS_READDIRENTS_H 1
+#ifndef _SYS_READDIRENTS_H
+#define _SYS_READDIRENTS_H 1
 
 #include <features.h>
 

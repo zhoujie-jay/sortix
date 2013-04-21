@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_DIRENT_H
-#define	_DIRENT_H 1
+#ifndef _DIRENT_H
+#define _DIRENT_H 1
 
 #include <features.h>
 

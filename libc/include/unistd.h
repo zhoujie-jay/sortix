@@ -25,8 +25,8 @@
 
 /* TODO: POSIX-1.2008 compliance is only partial */
 
-#ifndef	_UNISTD_H
-#define	_UNISTD_H 1
+#ifndef _UNISTD_H
+#define _UNISTD_H 1
 
 #include <features.h>
 #if defined(_SORTIX_SOURCE)

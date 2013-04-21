@@ -24,8 +24,8 @@
 
 /* TODO: POSIX-1.2008 compliance is only partial */
 
-#ifndef	_STDINT_H
-#define	_STDINT_H 1
+#ifndef _STDINT_H
+#define _STDINT_H 1
 
 #include <features.h>
 

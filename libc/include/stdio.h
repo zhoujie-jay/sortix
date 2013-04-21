@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_STDIO_H
-#define	_STDIO_H 1
+#ifndef _STDIO_H
+#define _STDIO_H 1
 
 #include <features.h>
 #include <sortix/seek.h>

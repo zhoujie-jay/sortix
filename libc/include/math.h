@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_MATH_H
-#define	_MATH_H 1
+#ifndef _MATH_H
+#define _MATH_H 1
 
 #include <features.h>
 

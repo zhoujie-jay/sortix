@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_SYS_TIME_H
-#define	_SYS_TIME_H 1
+#ifndef _SYS_TIME_H
+#define _SYS_TIME_H 1
 
 #include <features.h>
 

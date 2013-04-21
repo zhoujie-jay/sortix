@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_SYS_KEYCODES_H
-#define	_SYS_KEYCODES_H 1
+#ifndef _SYS_KEYCODES_H
+#define _SYS_KEYCODES_H 1
 
 #include <features.h>
 #include <sortix/keycodes.h>

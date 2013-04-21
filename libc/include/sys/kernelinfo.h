@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_SYS_KERNELINFO_H
-#define	_SYS_KERNELINFO_H 1
+#ifndef _SYS_KERNELINFO_H
+#define _SYS_KERNELINFO_H 1
 
 #include <features.h>
 

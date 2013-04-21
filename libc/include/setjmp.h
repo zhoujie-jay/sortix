@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_SETJMP_H
-#define	_SETJMP_H 1
+#ifndef _SETJMP_H
+#define _SETJMP_H 1
 
 #include <features.h>
 

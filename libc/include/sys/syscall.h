@@ -26,8 +26,8 @@
 #error "This file is part of user-space and should not be built in kernel mode"
 #endif
 
-#ifndef	_SYS_SYSCALL_H
-#define	_SYS_SYSCALL_H 1
+#ifndef _SYS_SYSCALL_H
+#define _SYS_SYSCALL_H 1
 
 #include <features.h>
 #include <sortix/syscallnum.h>

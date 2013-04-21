@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_DLFCN_H
-#define	_DLFCN_H 1
+#ifndef _DLFCN_H
+#define _DLFCN_H 1
 
 #include <features.h>
 

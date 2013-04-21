@@ -24,8 +24,8 @@
 
 /* TODO: This does not fully implement POSIX 2008-1 yet! */
 
-#ifndef	_SIGNAL_H
-#define	_SIGNAL_H 1
+#ifndef _SIGNAL_H
+#define _SIGNAL_H 1
 
 #include <features.h>
 #include <sortix/signal.h>

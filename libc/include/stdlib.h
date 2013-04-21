@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_STDLIB_H
-#define	_STDLIB_H 1
+#ifndef _STDLIB_H
+#define _STDLIB_H 1
 
 #include <features.h>
 #include <sortix/wait.h>

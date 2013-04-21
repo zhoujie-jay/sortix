@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_INTTYPES_H
-#define	_INTTYPES_H 1
+#ifndef _INTTYPES_H
+#define _INTTYPES_H 1
 
 #include <features.h>
 #include <stdint.h>

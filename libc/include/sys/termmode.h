@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_SYS_TERMMODE_H
-#define	_SYS_TERMMODE_H 1
+#ifndef _SYS_TERMMODE_H
+#define _SYS_TERMMODE_H 1
 
 #include <features.h>
 #include <sortix/termmode.h>

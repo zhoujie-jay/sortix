@@ -24,8 +24,8 @@
 
 /* TODO: POSIX-1.2008 compliance is only partial */
 
-#ifndef	_FCNTL_H
-#define	_FCNTL_H 1
+#ifndef _FCNTL_H
+#define _FCNTL_H 1
 
 #include <features.h>
 #include <sortix/fcntl.h>

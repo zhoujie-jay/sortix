@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_WCTYPE_H
-#define	_WCTYPE_H 1
+#ifndef _WCTYPE_H
+#define _WCTYPE_H 1
 
 #include <features.h>
 

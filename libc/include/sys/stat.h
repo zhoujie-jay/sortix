@@ -24,8 +24,8 @@
 
 /* TODO: Make this header comply with POSIX-1.2008, if it makes sense. */
 
-#ifndef	_SYS_STAT_H
-#define	_SYS_STAT_H 1
+#ifndef _SYS_STAT_H
+#define _SYS_STAT_H 1
 
 #include <features.h>
 

@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_FEATURES_H
-#define	_FEATURES_H	1
+#ifndef _FEATURES_H
+#define _FEATURES_H	1
 
 /* C++ needs to know that types and declarations are C, not C++. */
 #ifdef	__cplusplus

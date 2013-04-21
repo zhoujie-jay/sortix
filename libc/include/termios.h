@@ -24,8 +24,8 @@
 
 /* TODO: POSIX-1.2008 compliance is only partial */
 
-#ifndef	_TERMIOS_H
-#define	_TERMIOS_H 1
+#ifndef _TERMIOS_H
+#define _TERMIOS_H 1
 
 #include <features.h>
 #include <stddef.h>

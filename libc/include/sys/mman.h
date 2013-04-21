@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_SYS_MMAN_H
-#define	_SYS_MMAN_H 1
+#ifndef _SYS_MMAN_H
+#define _SYS_MMAN_H 1
 
 #include <features.h>
 #include <sortix/mman.h>

@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef	_ERROR_H
-#define	_ERROR_H 1
+#ifndef _ERROR_H
+#define _ERROR_H 1
 
 #include <features.h>
 
