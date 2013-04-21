@@ -63,6 +63,7 @@
 #define EDESTADDRREQ 71
 #define EHOSTUNREACH 72
 #define EMSGSIZE 73
+#define ENETDOWN 74
 
 #define EOPNOTSUPP ENOTSUP
 

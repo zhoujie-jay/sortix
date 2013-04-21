@@ -92,6 +92,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case EDESTADDRREQ: return "Destinatiohn address required";
 	case EHOSTUNREACH: return "Host is unreachable";
 	case EMSGSIZE: return "Message too long";
+	case ENETDOWN: return "Network is down";
 	default: return "Unknown error condition";
 	}
 }
