@@ -68,6 +68,7 @@
 #define ENETUNREACH 76
 #define ENOBUFS 77
 #define ENOMSG 78
+#define ENOPROTOOPT 79
 
 #define EOPNOTSUPP ENOTSUP
 

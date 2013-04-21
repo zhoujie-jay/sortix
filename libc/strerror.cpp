@@ -97,6 +97,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ENETUNREACH: return "Network is unreachable";
 	case ENOBUFS: return "No buffer space available";
 	case ENOMSG: return "No message of the desired type";
+	case ENOPROTOOPT: return "Protocol not available";
 	default: return "Unknown error condition";
 	}
 }
