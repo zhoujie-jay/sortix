@@ -98,6 +98,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ENOBUFS: return "No buffer space available";
 	case ENOMSG: return "No message of the desired type";
 	case ENOPROTOOPT: return "Protocol not available";
+	case ENOTCONN: return "Socket is not connected";
 	default: return "Unknown error condition";
 	}
 }
