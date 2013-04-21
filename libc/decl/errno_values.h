@@ -61,6 +61,7 @@
 #define EISCONN 69
 #define EFAULT 70
 #define EDESTADDRREQ 71
+#define EHOSTUNREACH 72
 
 #define EOPNOTSUPP ENOTSUP
 
