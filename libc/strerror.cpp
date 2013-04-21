@@ -86,6 +86,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ESHUTDOWN: return "Cannot send after transport endpoint shutdown";
 	case ECONNABORTED: return "Connection aborted";
 	case ECONNRESET: return "Connection reset";
+	case EADDRNOTAVAIL: return "Address not available";
 	default: return "Unknown error condition";
 	}
 }
