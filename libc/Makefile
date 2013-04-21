@@ -203,10 +203,12 @@ fcloseall.o \
 fcntl.o \
 fddir-sortix.o \
 fdio.o \
+fgetpos.o \
 fileno.o \
 fork.o \
 fpipe.o \
 freopen.o \
+fsetpos.o \
 fsm_bootstraprootfd.o \
 fsm_closechannel.o \
 fsm_closeserver.o \

@@ -40,8 +40,7 @@ __BEGIN_DECLS
 @include(NULL.h)
 @include(FILE.h)
 
-struct _fpos_t;
-typedef struct _fpos_t fpos_t;
+typedef off_t fpos_t;
 
 /* TODO: Implement L_ctermid */
 #if __POSIX_OBSOLETE <= 200801
@@ -80,6 +79,7 @@ extern int ferror(FILE* stream);
 extern int fflush(FILE* stream);
 extern int fileno(FILE* stream);
 extern int fgetc(FILE* stream);
+extern int fgetpos(FILE* __restrict stream, fpos_t* __restrict pos);
 extern char* fgets(char* __restrict s, int n, FILE* __restrict stream);
 extern FILE* fopen(const char* __restrict filename, const char* __restrict mode);
 extern int fprintf(FILE* __restrict stream, const char* __restrict format, ...);
@@ -90,6 +90,7 @@ extern FILE* freopen(const char* __restrict filename, const char *__restrict mod
 extern int fscanf(FILE* __restrict stream, const char* __restrict format, ... );
 extern int fseek(FILE* stream, long offset, int whence);
 extern int fseeko(FILE* stream, off_t offset, int whence);
+extern int fsetpos(FILE* stream, const fpos_t* pos);
 extern long ftell(FILE* stream);
 extern off_t ftello(FILE* stream);
 extern size_t fwrite(const void* __restrict ptr, size_t size, size_t nitems, FILE* __restrict stream);
@@ -133,8 +134,6 @@ extern char* ctermid(char* s);
 extern FILE *fmemopen(void* __restrict buf, size_t size, const char* __restrict mode);
 extern FILE* open_memstream(char** bufp, size_t* sizep);
 extern int dprintf(int fildes, const char* __restrict format, ...);
-extern int fgetpos(FILE* __restrict stream, fpos_t* __restrict pos);
-extern int fsetpos(FILE* stream, const fpos_t* pos);
 extern int ftrylockfile(FILE* file);
 extern int getchar_unlocked(void);
 extern int getc_unlocked(FILE* stream);
