@@ -72,6 +72,7 @@
 #define ENOTCONN 80
 #define EDEADLK 81
 #define ENFILE 82
+#define EPROTOTYPE 83
 
 #define EOPNOTSUPP ENOTSUP
 

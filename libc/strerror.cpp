@@ -101,6 +101,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ENOTCONN: return "Socket is not connected";
 	case EDEADLK: return "Resource deadlock avoided";
 	case ENFILE: return "Too many open files in system";
+	case EPROTOTYPE: return "Wrong protocol type for socket";
 	default: return "Unknown error condition";
 	}
 }
