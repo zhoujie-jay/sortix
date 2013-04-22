@@ -81,6 +81,7 @@ ldiv_t ldiv(long, long);
 long long llabs(long long);
 lldiv_t lldiv(long long, long long);
 void* malloc(size_t);
+int mblen(const char*, size_t);
 size_t mbstowcs(wchar_t* __restrict, const char* __restrict, size_t);
 int mbtowc(wchar_t *__restrict, const char* __restrict, size_t);
 #if !defined(_SORTIX_SOURCE)
@@ -132,7 +133,6 @@ long jrand48(unsigned short [3]);
 char* l64a(long);
 void lcong48(unsigned short [7]);
 long lrand48(void);
-int mblen(const char*, size_t);
 char* mkdtemp(char*);
 int mkstemp(char*);
 long mrand48(void);

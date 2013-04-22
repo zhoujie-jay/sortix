@@ -78,6 +78,7 @@ ldiv.o \
 lldiv.o \
 localtime.o \
 localtime_r.o \
+mblen.o \
 mbrlen.o \
 mbrtowc.o \
 mbsrtowcs.o \
