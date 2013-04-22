@@ -95,7 +95,7 @@
 #endif
 
 /* TODO: Improve these declarations, perhaps like they are in glibc. */
-#define __POSIX_NO_OBSOLETE
+/*#define __POSIX_NO_OBSOLETE*/
 
 #ifdef __POSIX_NO_OBSOLETE
 	#define __POSIX_OBSOLETE 999999L
