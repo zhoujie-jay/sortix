@@ -344,6 +344,7 @@ system.o \
 tfork.o \
 time.o \
 tmpfile.o \
+tmpnam.o \
 truncateat.o \
 truncate.o \
 ttyname.o \
