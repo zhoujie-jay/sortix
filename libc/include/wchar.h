@@ -63,6 +63,7 @@ struct tm;
 
 size_t mbsrtowcs(wchar_t* __restrict, const char** __restrict, size_t, mbstate_t* __restrict);
 size_t wcrtomb(char* __restrict, wchar_t, mbstate_t* __restrict);
+size_t mbrlen(const char* __restrict, size_t, mbstate_t* __restrict);
 size_t mbrtowc(wchar_t* __restrict, const char* __restrict, size_t, mbstate_t* __restrict);
 wchar_t* wcscat(wchar_t* __restrict, const wchar_t* __restrict);
 wchar_t* wcschr(const wchar_t*, wchar_t);
@@ -107,7 +108,6 @@ int wscanf(const wchar_t* __restrict, ...);
 long double wcstold(const wchar_t* __restrict, wchar_t** __restrict);
 long long wcstoll(const wchar_t* __restrict, wchar_t** __restrict, int);
 long wcstol(const wchar_t* __restrict, wchar_t** __restrict, int);
-size_t mbrlen(const char* __restrict, size_t, mbstate_t* __restrict);
 size_t wcsftime(wchar_t* __restrict, size_t, const wchar_t* __restrict, const struct tm* __restrict);
 size_t wcsxfrm(wchar_t* __restrict, const wchar_t* __restrict, size_t);
 unsigned long long wcstoull(const wchar_t* __restrict, wchar_t** __restrict, int);

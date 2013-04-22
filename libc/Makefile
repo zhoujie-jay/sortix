@@ -78,6 +78,7 @@ ldiv.o \
 lldiv.o \
 localtime.o \
 localtime_r.o \
+mbrlen.o \
 mbrtowc.o \
 mbsrtowcs.o \
 mbstowcs.o \
@@ -94,8 +95,8 @@ setbuf.o \
 setvbuf.o \
 sigaddset.o \
 sigdelset.o \
-sigfillset.o \
 sigemptyset.o \
+sigfillset.o \
 sigismember.o \
 sort.o \
 sprint.o \
