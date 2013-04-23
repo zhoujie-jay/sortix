@@ -85,6 +85,7 @@
 #include "fs/user.h"
 #include "kb/ps2.h"
 #include "kb/layout/us.h"
+#include "net/fs.h"
 
 // Keep the stack size aligned with $CPU/base.s
 const size_t STACK_SIZE = 64*1024;
@@ -435,6 +436,9 @@ static void BootThread(void* /*user*/)
 
 	// Initialize the BGA driver.
 	BGA::Init();
+
+	// Initialize the filesystem network-
+	NetFS::Init("/dev", slashdev);
 
 	// Initialize the user-space filesystem framework.
 	UserFS::Init("/dev", slashdev);

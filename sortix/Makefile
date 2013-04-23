@@ -106,6 +106,7 @@ log.o \
 logterminal.o \
 memorymanagement.o \
 mtable.o \
+net/fs.o \
 panic.o \
 pci.o \
 pipe.o \
