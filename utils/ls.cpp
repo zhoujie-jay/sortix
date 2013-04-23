@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
 	This program is free software: you can redistribute it and/or modify it
 	under the terms of the GNU General Public License as published by the Free
@@ -183,6 +183,8 @@ int ls(const char* path)
 		if ( handleentry(path, entries[i]->d_name) != 0 )
 			goto cleanup_dir;
 	}
+
+	ret = 0;
 
 cleanup_dir:
 	closedir(dir);
