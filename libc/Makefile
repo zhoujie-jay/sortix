@@ -290,6 +290,7 @@ poll.o \
 popen.o \
 ppoll.o \
 print.o \
+psignal.o \
 putc.o \
 pwent.o \
 raise.o \
