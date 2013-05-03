@@ -36,6 +36,7 @@ const char* const ROOT_GID = "0";
 const char* const ROOT_NAME = "root";
 const char* const ROOT_HOME = "/root";
 const char* const ROOT_SHELL = "sh";
+const char* const ROOT_FULLNAME = "root";
 
 static struct passwd global_passwd;
 
@@ -62,6 +63,7 @@ static struct passwd* fill_passwd(struct passwd* pw)
 	strcpy(pw->pw_name, getenv_def("USERNAME", ROOT_NAME));
 	strcpy(pw->pw_dir, getenv_def("HOME", ROOT_HOME));
 	strcpy(pw->pw_shell, getenv_def("SHELL", ROOT_SHELL));
+	strcpy(pw->pw_gecos, getenv_def("USERFULLNAME", ROOT_FULLNAME));
 	pw->pw_uid = atoi(getenv_def("USERID", ROOT_UID));
 	pw->pw_gid = atoi(getenv_def("GROUPID", ROOT_GID));
 	return pw;

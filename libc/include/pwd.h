@@ -40,6 +40,7 @@ struct passwd
 	char pw_name[_PASSWD_BUFFER_SIZE];
 	char pw_dir[_PASSWD_BUFFER_SIZE];
 	char pw_shell[_PASSWD_BUFFER_SIZE];
+	char pw_gecos[_PASSWD_BUFFER_SIZE];
 	uid_t pw_uid;
 	gid_t pw_gid;
 };
