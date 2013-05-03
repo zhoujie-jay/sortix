@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef SORTIX_SYSCALLNUM_H
-#define SORTIX_SYSCALLNUM_H
+#ifndef INCLUDE_SORTIX_SYSCALLNUM_H
+#define INCLUDE_SORTIX_SYSCALLNUM_H
 
 #define SYSCALL_BAD_SYSCALL 0
 #define SYSCALL_EXIT 1
@@ -114,6 +114,10 @@
 #define SYSCALL_BIND 90
 #define SYSCALL_CONNECT 91
 #define SYSCALL_LISTEN 92
-#define SYSCALL_MAX_NUM 93 /* index of highest constant + 1 */
+#define SYSCALL_READV 93
+#define SYSCALL_WRITEV 94
+#define SYSCALL_PREADV 95
+#define SYSCALL_PWRITEV 96
+#define SYSCALL_MAX_NUM 97 /* index of highest constant + 1 */
 
 #endif

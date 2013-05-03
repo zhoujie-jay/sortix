@@ -289,16 +289,19 @@ pipe.o \
 poll.o \
 popen.o \
 ppoll.o \
+preadv.o \
 print.o \
 psignal.o \
 putc.o \
 pwent.o \
+pwritev.o \
 raise.o \
 rand.o \
 readdirents.o \
 readlinkat.o \
 readlink.o \
 read.o \
+readv.o \
 realpath.o \
 removeat.o \
 remove.o \
@@ -365,6 +368,7 @@ wait.o \
 waitpid.o \
 winsize.o \
 write.o \
+writev.o \
 
 OBJS=\
 $(FREEOBJS) \
