@@ -61,7 +61,7 @@ namespace Sortix
 			if ( SYSCALL_MAX_NUM <= index )
 			{
 				PanicF("attempted to register syscall 0x%p to index %zu, but "
-				       "SYSCALL_MAX_NYN = %zu", funcptr, index, SYSCALL_MAX_NUM);
+				       "SYSCALL_MAX_NUM = %zu", funcptr, index, SYSCALL_MAX_NUM);
 			}
 
 			syscall_list[index] = funcptr;
