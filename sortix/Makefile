@@ -72,6 +72,7 @@ LIBS=\
 OBJS=\
 $(CPUOBJS) \
 addralloc.o \
+alarm.o \
 ata.o \
 bga.o \
 calltrace.o \

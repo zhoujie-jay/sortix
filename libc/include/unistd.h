@@ -34,6 +34,10 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <sortix/fork.h>
+__BEGIN_DECLS
+@include(time_t.h)
+__END_DECLS
+#include <sortix/timespec.h>
 #endif
 #include <sortix/seek.h>
 #include <sortix/unistd.h>
@@ -259,7 +263,6 @@ extern char** environ;
 
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
-unsigned alarm(unsigned);
 char* crypt(const char*, const char*);
 char* ctermid(char*);
 void encrypt(char [64], int);
@@ -296,6 +299,7 @@ extern int opterr, optind, optopt;
 #endif
 
 int access(const char*, int);
+unsigned alarm(unsigned);
 int chdir(const char*);
 int chown(const char*, uid_t, gid_t);
 int close(int);
@@ -355,6 +359,7 @@ int unlink(const char*);
 ssize_t write(int, const void*, size_t);
 
 #if defined(_SORTIX_SOURCE)
+int alarmns(const struct timespec* delay, struct timespec* odelay);
 int execvpe(const char*, char* const [], char* const []);
 int getdtablesize(void);
 size_t getpagesize(void);

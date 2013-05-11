@@ -65,6 +65,7 @@
 #include "thread.h"
 #include "process.h"
 #include "signal.h"
+#include "alarm.h"
 #include "ata.h"
 #include "com.h"
 #include "uart.h"
@@ -428,6 +429,9 @@ static void BootThread(void* /*user*/)
 
 	// Initialize per-process timers.
 	UserTimer::Init();
+
+	// Initialize per-process alarm timer.
+	Alarm::Init();
 
 	// Initialize the kernel information query syscall.
 	Info::Init();

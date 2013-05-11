@@ -37,6 +37,7 @@
 #include <sortix/kernel/sortedlist.h>
 #include <sortix/kernel/scheduler.h>
 
+#include <sortix/clock.h>
 #include <sortix/signal.h>
 #include <sortix/unistd.h>
 #include <sortix/fcntl.h>
@@ -129,11 +130,14 @@ namespace Sortix
 		pid = AllocatePID();
 		uid = euid = 0;
 		gid = egid = 0;
+		alarm_timer.Attach(Time::GetClock(CLOCK_MONOTONIC));
 		Put(this);
 	}
 
 	Process::~Process()
 	{
+		if ( alarm_timer.IsAttached() )
+			alarm_timer.Detach();
 		if ( program_image_path )
 			delete[] program_image_path;
 		assert(!zombiechild);
@@ -221,6 +225,18 @@ namespace Sortix
 		((Thread*) user)->SwitchAddressSpace(addrspace);
 	}
 
+	void Process::DeleteTimers()
+	{
+		for ( timer_t i = 0; i < PROCESS_TIMER_NUM_MAX; i++ )
+		{
+			if ( user_timers[i].timer.IsAttached() )
+			{
+				user_timers[i].timer.Cancel();
+				user_timers[i].timer.Detach();
+			}
+		}
+	}
+
 	void Process::LastPrayer()
 	{
 		assert(this);
@@ -236,13 +252,11 @@ namespace Sortix
 		assert(!firstthread);
 
 		// Disarm and detach all the timers in the process.
-		for ( timer_t i = 0; i < PROCESS_TIMER_NUM_MAX; i++ )
+		DeleteTimers();
+		if ( alarm_timer.IsAttached() )
 		{
-			if ( user_timers[i].timer.IsAttached() )
-			{
-				user_timers[i].timer.Cancel();
-				user_timers[i].timer.Detach();
-			}
+			alarm_timer.Cancel();
+			alarm_timer.Detach();
 		}
 
 		// We need to temporarily reload the correct addrese space of the dying
@@ -616,6 +630,8 @@ namespace Sortix
 	void Process::ResetForExecute()
 	{
 		// TODO: Delete all threads and their stacks.
+
+		DeleteTimers();
 
 		ResetAddressSpace();
 	}

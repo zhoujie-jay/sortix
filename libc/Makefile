@@ -161,6 +161,8 @@ wctype.o \
 
 HOSTEDOBJS=\
 access.o \
+alarmns.o \
+alarm.o \
 arpa/inet/inet_addr.o \
 arpa/inet/inet_ntoa.o \
 arpa/inet/inet_ntop.o \

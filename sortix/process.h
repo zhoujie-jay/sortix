@@ -145,6 +145,7 @@ namespace Sortix
 	public:
 		kthread_mutex_t user_timers_lock;
 		UserTimer user_timers[PROCESS_TIMER_NUM_MAX];
+		Timer alarm_timer;
 
 	public:
 		int Execute(const char* programname, const uint8_t* program,
@@ -172,6 +173,7 @@ namespace Sortix
 		void LastPrayer();
 		void NotifyChildExit(Process* child, bool zombify);
 		void NotifyNewZombies();
+		void DeleteTimers();
 
 	public:
 		void ResetForExecute();

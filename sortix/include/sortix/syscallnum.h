@@ -123,6 +123,7 @@
 #define SYSCALL_TIMER_GETOVERRUN 99
 #define SYSCALL_TIMER_GETTIME 100
 #define SYSCALL_TIMER_SETTIME 101
-#define SYSCALL_MAX_NUM 102 /* index of highest constant + 1 */
+#define SYSCALL_ALARMNS 102
+#define SYSCALL_MAX_NUM 103 /* index of highest constant + 1 */
 
 #endif
