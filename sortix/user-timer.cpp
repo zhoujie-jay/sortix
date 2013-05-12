@@ -211,6 +211,38 @@ static int sys_timer_settime(timer_t timerid, int flags,
 	return 0;
 }
 
+static int sys_clock_gettimeres(clockid_t clockid, struct timespec* time,
+                                                   struct timespec* res)
+{
+	Clock* clock = Time::GetClock(clockid);
+	if ( !clock )
+		return -1;
+
+	struct timespec ktime, kres;
+	clock->Get(&ktime, &kres);
+
+	return (!time || CopyToUser(time, &ktime, sizeof(ktime))) &&
+	       (!res || CopyToUser(res, &kres, sizeof(kres))) ? 0 : -1;
+}
+
+static int sys_clock_settimeres(clockid_t clockid, const struct timespec* time,
+                                                   const struct timespec* res)
+{
+	Clock* clock = Time::GetClock(clockid);
+	if ( !clock )
+		return -1;
+
+	struct timespec ktime, kres;
+	if ( (time && !CopyFromUser(&ktime, time, sizeof(ktime))) ||
+	     (res && !CopyFromUser(&kres, res, sizeof(kres))) )
+		return -1;
+
+	clock->Set(time ? &ktime : NULL, res ? &kres : NULL);
+
+	return 0;
+}
+
+// TODO: Made obsolete by cloc_gettimeres.
 static int sys_uptime(uintmax_t* usecssinceboot)
 {
 	struct timespec now;
@@ -226,6 +258,8 @@ static int sys_uptime(uintmax_t* usecssinceboot)
 
 void UserTimer::Init()
 {
+	Syscall::Register(SYSCALL_CLOCK_GETTIMERES, (void*) sys_clock_gettimeres);
+	Syscall::Register(SYSCALL_CLOCK_SETTIMERES, (void*) sys_clock_settimeres);
 	Syscall::Register(SYSCALL_TIMER_CREATE, (void*) sys_timer_create);
 	Syscall::Register(SYSCALL_TIMER_DELETE, (void*) sys_timer_delete);
 	Syscall::Register(SYSCALL_TIMER_GETOVERRUN, (void*) sys_timer_getoverrun);

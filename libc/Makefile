@@ -242,7 +242,6 @@ getpagesize.o \
 getpid.o \
 getppid.o \
 gettermmode.o \
-gettimeofday.o \
 getuid.o \
 grent.o \
 init.o \
@@ -350,8 +349,14 @@ sys/socket/sockatmark.o \
 sys/socket/socket.o \
 sys/socket/socketpair.o \
 system.o \
+sys/time/gettimeofday.o \
 tfork.o \
-time.o \
+time/clock_getres.o \
+time/clock_gettime.o \
+time/clock_gettimeres.o \
+time/clock_settime.o \
+time/clock_settimeres.o \
+time/time.o \
 time/timer_create.o \
 time/timer_delete.o \
 time/timer_getoverrun.o \

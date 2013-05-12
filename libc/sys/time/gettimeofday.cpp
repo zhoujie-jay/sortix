@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,19 +17,22 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    time.cpp
-    Get time in seconds.
+    sys/time/gettimeofday.cpp
+    Get date and time.
 
 *******************************************************************************/
 
 #include <sys/time.h>
-#include <stddef.h>
+
 #include <time.h>
 
-extern "C" time_t time(time_t* t)
+extern "C" int gettimeofday(struct timeval* tp, void* /*tzp*/)
 {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	time_t result = tv.tv_sec;
-	return t ? *t = result : result;
+	struct timespec now;
+	// TODO: We should be using CLOCK_REALTIME.
+	if ( clock_gettime(CLOCK_MONOTONIC, &now) < 0 )
+		return -1;
+	tp->tv_sec = now.tv_sec;
+	tp->tv_usec = now.tv_nsec / 1000;
+	return 0;
 }

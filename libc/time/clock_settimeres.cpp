@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,20 +17,20 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    gettimeofday.cpp
-    Get date and time.
+    time/clock_settimeres.cpp
+    Set clock time and resolution.
 
 *******************************************************************************/
 
-#include <sys/time.h>
-#include <errno.h>
-#include <unistd.h>
+#include <sys/syscall.h>
 
-extern "C" int gettimeofday(struct timeval* tp, void* /*tzp*/)
+#include <time.h>
+
+DEFN_SYSCALL3(int, sys_clock_settimeres, SYSCALL_CLOCK_SETTIMERES, clockid_t,
+              const struct timespec*, const struct timespec*);
+
+extern "C" int clock_settimeres(clockid_t clockid, const struct timespec* time,
+                                                   const struct timespec* res)
 {
-	uintmax_t sinceboot;
-	uptime(&sinceboot);
-	tp->tv_sec = sinceboot / 1000000ULL;
-	tp->tv_usec = sinceboot % 1000000ULL;
-	return 0;
+	return sys_clock_settimeres(clockid, time, res);
 }

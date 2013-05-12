@@ -102,6 +102,12 @@ int timer_settime(timer_t, int, const struct itimerspec* __restrict,
                   struct itimerspec* __restrict);
 void tzset(void);
 
+
+#if defined(_SORTIX_SOURCE)
+int clock_gettimeres(clockid_t, struct timespec*, struct timespec*);
+int clock_settimeres(clockid_t, const struct timespec*, const struct timespec*);
+#endif
+
 extern int daylight;
 extern long timezone;
 extern char* tzname[];
