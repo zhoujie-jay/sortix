@@ -38,12 +38,12 @@
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/time.h>
 #include <sortix/kernel/scheduler.h>
+#include <sortix/kernel/signal.h>
 
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"
 #include "thread.h"
 #include "process.h"
-#include "signal.h"
 
 namespace Sortix {
 namespace Scheduler {

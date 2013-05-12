@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -17,13 +17,13 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    signal.h
+    sortix/kernel/signal.h
     Classes and functions making it easier to handle Unix signals.
 
 *******************************************************************************/
 
-#ifndef SORTIX_SIGNAL_H
-#define SORTIX_SIGNAL_H
+#ifndef INCLUDE_SORTIX_KERNEL_SIGNAL_H
+#define INCLUDE_SORTIX_KERNEL_SIGNAL_H
 
 #include <sortix/signal.h>
 
@@ -59,6 +59,7 @@ void Return(CPU::InterruptRegisters* regs, void* user = NULL);
 inline bool IsPending() { return asm_signal_is_pending != 0; }
 
 } // namespace Signal
+
 } // namespace Sortix
 
 #endif

@@ -29,10 +29,9 @@
 #include <sortix/kernel/clock.h>
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/signal.h>
 #include <sortix/kernel/timer.h>
 #include <sortix/kernel/worker.h>
-
-#include "signal.h"
 
 namespace Sortix {
 

@@ -48,6 +48,7 @@
 #include <sortix/kernel/fcache.h>
 #include <sortix/kernel/string.h>
 #include <sortix/kernel/user-timer.h>
+#include <sortix/kernel/signal.h>
 
 #include <sortix/fcntl.h>
 #include <sortix/stat.h>
@@ -64,7 +65,6 @@
 #include "multiboot.h"
 #include "thread.h"
 #include "process.h"
-#include "signal.h"
 #include "alarm.h"
 #include "ata.h"
 #include "com.h"

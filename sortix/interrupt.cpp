@@ -26,6 +26,7 @@
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/scheduler.h>
+#include <sortix/kernel/signal.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -33,7 +34,6 @@
 
 #include "x86-family/idt.h"
 #include "calltrace.h"
-#include "signal.h"
 #include "process.h"
 
 #include "sound.h" // Hack for SIGSEGV

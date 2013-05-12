@@ -44,6 +44,7 @@
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/pipe.h>
 #include <sortix/kernel/poll.h>
+#include <sortix/kernel/signal.h>
 
 #include <sortix/signal.h>
 #include <sortix/stat.h>
@@ -52,7 +53,6 @@
 #include <errno.h>
 #include <string.h>
 
-#include "signal.h"
 #include "thread.h"
 #include "process.h"
 #include "pipe.h"

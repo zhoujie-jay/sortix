@@ -28,8 +28,7 @@
 #include <sortix/signal.h>
 
 #include <sortix/kernel/scheduler.h>
-
-#include "signal.h"
+#include <sortix/kernel/signal.h>
 
 typedef struct multiboot_info multiboot_info_t;
 
