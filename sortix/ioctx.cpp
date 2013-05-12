@@ -25,8 +25,7 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/ioctx.h>
 #include <sortix/kernel/copy.h>
-
-#include "process.h"
+#include <sortix/kernel/process.h>
 
 namespace Sortix {
 

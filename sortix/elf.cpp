@@ -24,13 +24,13 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/mman.h>
+#include <sortix/kernel/process.h>
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include "elf.h"
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/panic.h>
-#include "process.h"
 
 namespace Sortix
 {

@@ -28,10 +28,10 @@
 #include <sortix/kernel/inode.h>
 #include <sortix/kernel/vnode.h>
 #include <sortix/kernel/mtable.h>
+#include <sortix/kernel/process.h>
 #include <sortix/mount.h>
 #include <assert.h>
 #include <errno.h>
-#include "process.h"
 
 namespace Sortix {
 

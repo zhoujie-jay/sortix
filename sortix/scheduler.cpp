@@ -39,11 +39,11 @@
 #include <sortix/kernel/time.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
+#include <sortix/kernel/process.h>
+#include <sortix/kernel/thread.h>
 
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"
-#include "thread.h"
-#include "process.h"
 
 namespace Sortix {
 namespace Scheduler {

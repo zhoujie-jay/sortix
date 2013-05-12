@@ -23,9 +23,9 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/process.h>
 #include <sortix/fork.h>
 #include <string.h>
-#include "process.h"
 
 namespace Sortix
 {

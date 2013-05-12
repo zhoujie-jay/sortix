@@ -49,6 +49,8 @@
 #include <sortix/kernel/string.h>
 #include <sortix/kernel/user-timer.h>
 #include <sortix/kernel/signal.h>
+#include <sortix/kernel/process.h>
+#include <sortix/kernel/thread.h>
 
 #include <sortix/fcntl.h>
 #include <sortix/stat.h>
@@ -63,8 +65,6 @@
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"
 #include "multiboot.h"
-#include "thread.h"
-#include "process.h"
 #include "alarm.h"
 #include "ata.h"
 #include "com.h"

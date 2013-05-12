@@ -31,13 +31,13 @@
 #include <sortix/kernel/interlock.h>
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/scheduler.h>
+#include <sortix/kernel/process.h>
 
 #include <errno.h>
 #include <string.h>
 
 #include "fs/util.h"
 #include "vga.h"
-#include "process.h"
 
 #define TEST_VGAFONT 0
 

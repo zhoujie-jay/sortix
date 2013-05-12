@@ -30,13 +30,13 @@
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/interlock.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/process.h>
+#include <sortix/kernel/thread.h>
 
 #include <sortix/stat.h>
 
 #include <errno.h>
 
-#include "thread.h"
-#include "signal.h"
 #include "com.h"
 
 namespace Sortix {

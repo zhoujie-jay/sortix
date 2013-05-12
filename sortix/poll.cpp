@@ -41,8 +41,8 @@
 #include <sortix/kernel/ioctx.h>
 #include <sortix/kernel/poll.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/process.h>
 
-#include "process.h"
 #include "poll.h"
 
 namespace Sortix {

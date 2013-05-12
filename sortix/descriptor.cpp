@@ -31,6 +31,7 @@
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/fsfunc.h>
 #include <sortix/kernel/string.h>
+#include <sortix/kernel/process.h>
 #include <sortix/dirent.h>
 #include <sortix/fcntl.h>
 #include <sortix/seek.h>
@@ -38,7 +39,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
-#include "process.h"
 
 namespace Sortix {
 

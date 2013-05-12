@@ -33,8 +33,7 @@
 #include <sortix/kernel/copy.h>
 #include <sortix/kernel/timer.h>
 #include <sortix/kernel/syscall.h>
-
-#include "process.h"
+#include <sortix/kernel/process.h>
 
 namespace Sortix {
 namespace Alarm {

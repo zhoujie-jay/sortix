@@ -29,6 +29,8 @@
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/time.h>
 #include <sortix/kernel/scheduler.h>
+#include <sortix/kernel/process.h>
+#include <sortix/kernel/thread.h>
 
 #include <sortix/mman.h>
 #include <sortix/signal.h>
@@ -36,9 +38,6 @@
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
-
-#include "process.h"
-#include "thread.h"
 
 namespace Sortix
 {

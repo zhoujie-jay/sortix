@@ -29,8 +29,7 @@
 #include <sortix/kernel/worker.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
-
-#include "thread.h"
+#include <sortix/kernel/thread.h>
 
 namespace Sortix {
 

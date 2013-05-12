@@ -27,8 +27,8 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/process.h>
 
-#include "process.h"
 #include "identity.h"
 
 namespace Sortix {

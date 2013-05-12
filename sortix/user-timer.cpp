@@ -38,8 +38,7 @@
 #include <sortix/kernel/time.h>
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/user-timer.h>
-
-#include "process.h"
+#include <sortix/kernel/process.h>
 
 // TODO: Memset all user timers in process constructor.
 

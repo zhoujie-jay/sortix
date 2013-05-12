@@ -28,11 +28,10 @@
 #include <sortix/kernel/panic.h>
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/signal.h>
+#include <sortix/kernel/thread.h>
 
 #include <assert.h>
 #include <string.h>
-
-#include "thread.h"
 
 namespace Sortix {
 

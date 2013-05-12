@@ -46,8 +46,7 @@
 #include <sortix/kernel/mtable.h>
 #include <sortix/kernel/pipe.h>
 #include <sortix/kernel/poll.h>
-
-#include "../process.h"
+#include <sortix/kernel/process.h>
 
 #include "fs.h"
 

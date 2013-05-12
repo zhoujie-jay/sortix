@@ -24,10 +24,10 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/thread.h>
 
 #include <assert.h>
 
-#include "../thread.h"
 #include "float.h"
 
 namespace Sortix {

@@ -31,6 +31,8 @@
 #include <sortix/kernel/string.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/process.h>
+#include <sortix/kernel/thread.h>
 
 #include <sortix/seek.h>
 #include <sortix/dirent.h>
@@ -42,8 +44,6 @@
 #include <assert.h>
 #include <errno.h>
 
-#include "thread.h"
-#include "process.h"
 #include "io.h"
 
 namespace Sortix {

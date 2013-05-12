@@ -38,7 +38,6 @@
 #include <sortix/kernel/time.h>
 #include <sortix/kernel/scheduler.h>
 
-#include "process.h"
 #include "sound.h"
 
 #ifdef PLATFORM_SERIAL

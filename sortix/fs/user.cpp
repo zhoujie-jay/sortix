@@ -49,8 +49,7 @@
 #include <sortix/kernel/vnode.h>
 #include <sortix/kernel/mtable.h>
 #include <sortix/kernel/syscall.h>
-
-#include "../process.h"
+#include <sortix/kernel/process.h>
 
 namespace Sortix {
 
