@@ -25,8 +25,8 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/cpu.h>
 
-#include "cpu.h"
 #include "sound.h"
 
 namespace Sortix

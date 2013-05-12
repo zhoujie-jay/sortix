@@ -33,8 +33,7 @@
 #include <sortix/kernel/time.h>
 #include <sortix/kernel/timer.h>
 #include <sortix/kernel/user-timer.h>
-
-#include "cpu.h"
+#include <sortix/kernel/cpu.h>
 
 #define PROCESS_TIMER_NUM_MAX 32
 

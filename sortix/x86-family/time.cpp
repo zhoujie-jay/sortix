@@ -33,8 +33,7 @@
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/time.h>
-
-#include "../cpu.h"
+#include <sortix/kernel/cpu.h>
 
 namespace Sortix {
 namespace Time {

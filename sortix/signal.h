@@ -27,7 +27,7 @@
 
 #include <sortix/signal.h>
 
-#include "cpu.h"
+#include <sortix/kernel/cpu.h>
 
 namespace Sortix {
 

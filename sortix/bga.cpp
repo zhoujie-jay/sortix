@@ -36,12 +36,12 @@
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/pci.h>
 #include <sortix/kernel/string.h>
+#include <sortix/kernel/cpu.h>
 
 #include <sortix/mman.h>
 
 #include "x86-family/memorymanagement.h"
 #include "lfbtextbuffer.h"
-#include "cpu.h"
 #include "bga.h"
 
 namespace Sortix {

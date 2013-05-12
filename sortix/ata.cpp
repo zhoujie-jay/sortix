@@ -29,12 +29,12 @@
 #include <sortix/kernel/inode.h>
 #include <sortix/kernel/ioctx.h>
 #include <sortix/kernel/descriptor.h>
+#include <sortix/kernel/cpu.h>
 #include <sortix/stat.h>
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include "ata.h"
-#include "cpu.h"
 
 // TODO: Use the PCI to detect ATA devices instead of relying on them being on
 // standard locations.

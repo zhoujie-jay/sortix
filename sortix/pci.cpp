@@ -25,8 +25,8 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/endian.h>
 #include <sortix/kernel/pci.h>
+#include <sortix/kernel/cpu.h>
 #include <assert.h>
-#include "cpu.h" // TODO: Put this in some <sortix/kernel/cpu.h>
 
 // TODO: Verify that the endian conversions in this file actually works. I have
 // a sneaking suspicion that they won't work on non-little endian platforms.

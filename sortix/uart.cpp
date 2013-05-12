@@ -23,7 +23,8 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include "cpu.h"
+#include <sortix/kernel/cpu.h>
+
 #include <string.h>
 #include "vga.h"
 #include "uart.h"
