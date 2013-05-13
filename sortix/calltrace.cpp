@@ -23,7 +23,7 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
-#include "calltrace.h"
+#include <sortix/kernel/calltrace.h>
 
 namespace Sortix {
 namespace Calltrace {

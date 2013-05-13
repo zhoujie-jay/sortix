@@ -17,13 +17,13 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    calltrace.h
+    sortix/kernel/calltrace.h
     Traverses the stack and prints the callstack, which aids debugging.
 
 *******************************************************************************/
 
-#ifndef SORTIX_CALLTRACE_H
-#define SORTIX_CALLTRACE_H
+#ifndef INCLUDE_SORTIX_KERNEL_CALLTRACE_H
+#define INCLUDE_SORTIX_KERNEL_CALLTRACE_H
 
 namespace Sortix {
 namespace Calltrace {

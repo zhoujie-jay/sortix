@@ -28,13 +28,13 @@
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
 #include <sortix/kernel/process.h>
+#include <sortix/kernel/calltrace.h>
 
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
 
 #include "x86-family/idt.h"
-#include "calltrace.h"
 
 #include "sound.h" // Hack for SIGSEGV
 
