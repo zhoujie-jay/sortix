@@ -147,6 +147,8 @@ public:
 	Timer alarm_timer;
 	Clock execute_clock;
 	Clock system_clock;
+	Clock child_execute_clock;
+	Clock child_system_clock;
 
 public:
 	int Execute(const char* programname, const uint8_t* program,

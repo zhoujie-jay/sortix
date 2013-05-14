@@ -116,6 +116,10 @@ void InitializeProcessClocks(Process* process)
 	process->execute_clock.Set(&nul_time, &tick_period);
 	process->system_clock.SetCallableFromInterrupts(true);
 	process->system_clock.Set(&nul_time, &tick_period);
+	process->child_execute_clock.Set(&nul_time, &tick_period);
+	process->child_execute_clock.SetCallableFromInterrupts(true);
+	process->child_system_clock.Set(&nul_time, &tick_period);
+	process->child_system_clock.SetCallableFromInterrupts(true);
 }
 
 void Start()

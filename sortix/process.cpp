@@ -437,6 +437,11 @@ namespace Sortix
 
 		thepid = zombie->pid;
 
+		// It is safe to access these clocks directly as the child process is no
+		// longer running at this point and the values are nicely frozen.
+		child_execute_clock.Advance(zombie->child_execute_clock.current_time);
+		child_system_clock.Advance(zombie->child_system_clock.current_time);
+
 		int exitstatus = zombie->exitstatus;
 		if ( exitstatus < 0 )
 			exitstatus = W_EXITCODE(128 + SIGKILL, SIGKILL);
