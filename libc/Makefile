@@ -372,7 +372,6 @@ ttyname.o \
 umask.o \
 unlinkat.o \
 unlink.o \
-uptime.o \
 usleep.o \
 utimensat.o \
 utimens.o \

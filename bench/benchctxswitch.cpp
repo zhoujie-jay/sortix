@@ -24,6 +24,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <unistd.h>
+#include <time.h>
+
+static int uptime(uintmax_t* usecs)
+{
+	struct timespec uptime;
+	if ( clock_gettime(CLOCK_BOOT, &uptime) < 0 )
+		return -1;
+	*usecs = uptime.tv_sec * 1000000ULL + uptime.tv_nsec / 1000ULL;
+	return 0;
+}
 
 int main(int /*argc*/, char* /*argv*/[])
 {

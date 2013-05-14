@@ -372,7 +372,6 @@ size_t readall(int fd, void* buf, size_t count);
 size_t readleast(int fd, void* buf, size_t least, size_t max);
 pid_t sfork(int flags);
 pid_t tfork(int flags, tforkregs_t* regs);
-int uptime(__uintmax_t* usecssinceboot);
 size_t writeall(int fd, const void* buf, size_t count);
 size_t writeleast(int fd, const void* buf, size_t least, size_t max);
 #endif

@@ -29,8 +29,7 @@
 extern "C" int gettimeofday(struct timeval* tp, void* /*tzp*/)
 {
 	struct timespec now;
-	// TODO: We should be using CLOCK_REALTIME.
-	if ( clock_gettime(CLOCK_MONOTONIC, &now) < 0 )
+	if ( clock_gettime(CLOCK_REALTIME, &now) < 0 )
 		return -1;
 	tp->tv_sec = now.tv_sec;
 	tp->tv_usec = now.tv_nsec / 1000;

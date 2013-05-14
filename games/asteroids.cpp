@@ -32,6 +32,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <error.h>
+#include <time.h>
+#include <timespec.h>
 
 #include <dispd.h>
 
@@ -995,16 +997,16 @@ void Firework::Think(float deltatime)
 	}
 }
 
-uintmax_t lastframeat;
+struct timespec lastframeat;
 
 void GameLogic()
 {
-	uintmax_t now;
-	do uptime(&now);
-	while ( now == lastframeat);
-	unsigned long deltausecs = now - lastframeat;
+	struct timespec now;
+	do clock_gettime(CLOCK_MONOTONIC, &now);
+	while ( timespec_eq(now, lastframeat) );
+	struct timespec delta = timespec_sub(now, lastframeat);
+	float deltatime = delta.tv_sec + delta.tv_nsec / 1E9f;
 	lastframeat = now;
-	float deltatime = deltausecs / 1000000.0f;
 	float timescale = 3.0;
 	deltatime *= timescale;
 	Object* first = firstobject;
@@ -1106,7 +1108,7 @@ int atoi_safe(const char* str)
 
 void InitGame()
 {
-	uptime(&lastframeat);
+	clock_gettime(CLOCK_MONOTONIC, &lastframeat);
 	GenerateStarfield(starfield, STARFIELD_WIDTH, STARFIELD_HEIGHT);
 	playership = new Spaceship(0.0, Vector(0, 0), Vector(4.0f, 0));
 	new AsteroidField;

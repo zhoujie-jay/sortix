@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -20,8 +20,12 @@
 
 *******************************************************************************/
 
+#include <errno.h>
+#include <error.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
+#include <time.h>
 
 size_t Seconds(uintmax_t usecs)
 {
@@ -54,9 +58,12 @@ void PrintElement(size_t num, const char* single, const char* multiple)
 
 int main(int /*argc*/, char* /*argv*/[])
 {
-	uintmax_t usecssinceboot;
-	if ( uptime(&usecssinceboot) ) { perror("uptime"); return 1; }
+	struct timespec uptime;
+	if ( clock_gettime(CLOCK_BOOT, &uptime) < 0 )
+		error(1, errno, "clock_gettime(CLOCK_BOOT)");
 
+	uintmax_t usecssinceboot = uptime.tv_sec * 1000000ULL +
+	                           uptime.tv_nsec / 1000ULL;
 	PrintElement(Days(usecssinceboot), "day", "days");
 	PrintElement(Hours(usecssinceboot), "hour", "hours");
 	PrintElement(Minutes(usecssinceboot), "min", "mins");
