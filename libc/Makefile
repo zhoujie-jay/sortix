@@ -354,8 +354,10 @@ tfork.o \
 time/clock_getres.o \
 time/clock_gettime.o \
 time/clock_gettimeres.o \
+time/clock_nanosleep.o \
 time/clock_settime.o \
 time/clock_settimeres.o \
+time/nanosleep.o \
 time/time.o \
 time/timer_create.o \
 time/timer_delete.o \

@@ -242,6 +242,28 @@ static int sys_clock_settimeres(clockid_t clockid, const struct timespec* time,
 	return 0;
 }
 
+static int sys_clock_nanosleep(clockid_t clockid, int flags,
+                               const struct timespec* user_duration,
+                               struct timespec* user_remainder)
+{
+	struct timespec time;
+
+	Clock* clock = Time::GetClock(clockid);
+	if ( !clock )
+		return -1;
+
+	if ( !CopyFromUser(&time, user_duration, sizeof(time)) )
+		return -1;
+
+	time = flags & TIMER_ABSTIME ? clock->SleepUntil(time) :
+	                               clock->SleepDelay(time);
+
+	if ( user_remainder && !CopyToUser(user_remainder, &time, sizeof(time)) )
+		return -1;
+
+	return timespec_eq(time, timespec_nul()) ? 0 : (errno = EINTR, -1);
+}
+
 // TODO: Made obsolete by cloc_gettimeres.
 static int sys_uptime(uintmax_t* usecssinceboot)
 {
@@ -260,6 +282,7 @@ void UserTimer::Init()
 {
 	Syscall::Register(SYSCALL_CLOCK_GETTIMERES, (void*) sys_clock_gettimeres);
 	Syscall::Register(SYSCALL_CLOCK_SETTIMERES, (void*) sys_clock_settimeres);
+	Syscall::Register(SYSCALL_CLOCK_NANOSLEEP, (void*) sys_clock_nanosleep);
 	Syscall::Register(SYSCALL_TIMER_CREATE, (void*) sys_timer_create);
 	Syscall::Register(SYSCALL_TIMER_DELETE, (void*) sys_timer_delete);
 	Syscall::Register(SYSCALL_TIMER_GETOVERRUN, (void*) sys_timer_getoverrun);

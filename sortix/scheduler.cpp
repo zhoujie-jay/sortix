@@ -278,6 +278,7 @@ static void SleepUntil(struct timespec wakeat)
 		Yield();
 }
 
+// TODO: This function has been obsoleted by the clock_nanosleep system call.
 int sys_sleep(size_t secs)
 {
 	struct timespec delay = timespec_make(secs, 0);
@@ -286,6 +287,7 @@ int sys_sleep(size_t secs)
 	return 0;
 }
 
+// TODO: This function has been obsoleted by the clock_nanosleep system call.
 int sys_usleep(size_t usecs)
 {
 	size_t secs = usecs / 1000000;

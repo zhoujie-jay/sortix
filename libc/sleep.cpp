@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -22,13 +22,15 @@
 
 *******************************************************************************/
 
-#include <sys/syscall.h>
+#include <time.h>
+#include <timespec.h>
 #include <unistd.h>
-
-DEFN_SYSCALL1(int, SysSleep, SYSCALL_SLEEP, long);
 
 extern "C" unsigned sleep(unsigned secs)
 {
-	SysSleep(secs);
+	struct timespec delay = timespec_make(secs, 0);
+	struct timespec left;
+	if ( nanosleep(&delay, &left) < 0 )
+		return left.tv_sec + (left.tv_nsec ? 1 : 0);
 	return 0;
 }

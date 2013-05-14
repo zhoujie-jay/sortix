@@ -126,6 +126,7 @@
 #define SYSCALL_ALARMNS 102
 #define SYSCALL_CLOCK_GETTIMERES 103
 #define SYSCALL_CLOCK_SETTIMERES 104
-#define SYSCALL_MAX_NUM 105 /* index of highest constant + 1 */
+#define SYSCALL_CLOCK_NANOSLEEP 105
+#define SYSCALL_MAX_NUM 106 /* index of highest constant + 1 */
 
 #endif

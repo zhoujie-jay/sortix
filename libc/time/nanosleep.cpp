@@ -17,17 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    usleep.cpp
-    Blocks the current thread for for at least N microseconds.
+    time/nanosleep.cpp
+    Sleep for a duration.
 
 *******************************************************************************/
 
 #include <time.h>
-#include <timespec.h>
-#include <unistd.h>
 
-extern "C" int usleep(useconds_t usecs)
+extern "C" int nanosleep(const struct timespec* delay, struct timespec* left)
 {
-	struct timespec delay = timespec_canonalize(timespec_make(0, usecs * 1000));
-	return nanosleep(&delay, NULL);
+	// NOTE: POSIX specifies that we should nanosleep on CLOCK_REALTIME, but it
+	//       makes more sense to sleep on the monotonic system clock. Futhermore
+	//       Linux does this as well and users probably won't notice.
+	return clock_nanosleep(CLOCK_MONOTONIC, 0, delay, left);
 }

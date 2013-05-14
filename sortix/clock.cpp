@@ -32,6 +32,8 @@
 #include <sortix/kernel/timer.h>
 #include <sortix/kernel/worker.h>
 
+#include "signal.h"
+
 namespace Sortix {
 
 Clock::Clock()
@@ -39,6 +41,7 @@ Clock::Clock()
 	delay_timer = NULL;
 	absolute_timer = NULL;
 	current_time = timespec_nul();
+	current_advancement = timespec_nul();
 	resolution = timespec_nul();
 	clock_mutex = KTHREAD_MUTEX_INITIALIZER;
 	clock_callable_from_interrupt = false;
@@ -233,11 +236,66 @@ void Clock::Cancel(Timer* timer)
 	UnlockClock();
 }
 
+// TODO: We need some method for threads to sleep for real but still be
+//       interrupted by signals.
+struct timespec Clock::SleepDelay(struct timespec duration)
+{
+	struct timespec start_advancement;
+	struct timespec elapsed = timespec_nul();
+	bool start_advancement_set = false;
+
+	while ( timespec_lt(elapsed, duration) )
+	{
+		if ( start_advancement_set )
+		{
+			if ( Signal::IsPending() )
+				return duration;
+
+			kthread_yield();
+		}
+
+		LockClock();
+
+		if ( !start_advancement_set )
+			start_advancement = current_advancement,
+			start_advancement_set = true;
+
+		elapsed = timespec_sub(current_advancement, start_advancement);
+
+		UnlockClock();
+	}
+
+	return timespec_nul();
+}
+
+// TODO: We need some method for threads to sleep for real but still be
+//       interrupted by signals.
+struct timespec Clock::SleepUntil(struct timespec expiration)
+{
+	while ( true )
+	{
+		LockClock();
+		struct timespec now = current_time;
+		UnlockClock();
+
+		if ( timespec_le(now, expiration) )
+			break;
+
+		if ( Signal::IsPending() )
+			return timespec_sub(expiration, now);
+
+		kthread_yield();
+	}
+
+	return timespec_nul();
+}
+
 void Clock::Advance(struct timespec duration)
 {
 	LockClock();
 
 	current_time = timespec_add(current_time, duration);
+	current_advancement = timespec_add(current_advancement, duration);
 	TriggerDelay(duration);
 	TriggerAbsolute();
 

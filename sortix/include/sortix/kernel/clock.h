@@ -46,6 +46,7 @@ public:
 	Timer* delay_timer;
 	Timer* absolute_timer;
 	struct timespec current_time;
+	struct timespec current_advancement;
 	struct timespec resolution;
 	kthread_mutex_t clock_mutex;
 	bool clock_callable_from_interrupt;
@@ -61,6 +62,8 @@ public:
 	void Cancel(Timer* timer);
 	void LockClock();
 	void UnlockClock();
+	struct timespec SleepDelay(struct timespec duration);
+	struct timespec SleepUntil(struct timespec expiration);
 
 public: // These should only be called if the clock is locked.
 	void RegisterAbsolute(Timer* timer);
