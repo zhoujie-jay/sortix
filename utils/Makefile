@@ -44,6 +44,7 @@ rmdir \
 sh \
 tail \
 type \
+time \
 uname \
 uptime \
 which \

@@ -27,6 +27,7 @@ rm
 rmdir
 sh
 tail
+time
 type
 uname
 uptime
