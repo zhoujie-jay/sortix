@@ -30,10 +30,11 @@
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/clock.h>
+#include <sortix/kernel/cpu.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/process.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/time.h>
-#include <sortix/kernel/cpu.h>
 
 namespace Sortix {
 namespace Time {
@@ -78,7 +79,7 @@ static uint16_t tick_divisor;
 
 static void OnIRQ0(CPU::InterruptRegisters* regs, void* /*user*/)
 {
-	OnTick(tick_period);
+	OnTick(tick_period, !regs->InUserspace());
 	Scheduler::Switch(regs);
 
 	// TODO: There is a horrible bug that causes Sortix to only receive
@@ -106,6 +107,15 @@ void CPUInit()
 	struct timespec nul_time = timespec_nul();
 	realtime_clock->Set(&nul_time, &tick_period);
 	uptime_clock->Set(&nul_time, &tick_period);
+}
+
+void InitializeProcessClocks(Process* process)
+{
+	struct timespec nul_time = timespec_nul();
+	process->execute_clock.SetCallableFromInterrupts(true);
+	process->execute_clock.Set(&nul_time, &tick_period);
+	process->system_clock.SetCallableFromInterrupts(true);
+	process->system_clock.Set(&nul_time, &tick_period);
 }
 
 void Start()

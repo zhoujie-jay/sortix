@@ -35,6 +35,7 @@
 
 namespace Sortix {
 class Clock;
+class Process;
 } // namespace Sortix
 
 namespace Sortix {
@@ -42,7 +43,8 @@ namespace Time {
 
 void Init();
 void Start();
-void OnTick(struct timespec tick_period);
+void OnTick(struct timespec tick_period, bool system_mode);
+void InitializeProcessClocks(Process* process);
 struct timespec Get(clockid_t clock);
 Clock* GetClock(clockid_t clock);
 

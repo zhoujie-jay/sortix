@@ -145,6 +145,8 @@ public:
 	kthread_mutex_t user_timers_lock;
 	UserTimer user_timers[PROCESS_TIMER_NUM_MAX];
 	Timer alarm_timer;
+	Clock execute_clock;
+	Clock system_clock;
 
 public:
 	int Execute(const char* programname, const uint8_t* program,

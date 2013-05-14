@@ -35,6 +35,7 @@
 #include <sortix/kernel/copy.h>
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/clock.h>
+#include <sortix/kernel/process.h>
 #include <sortix/kernel/time.h>
 #include <sortix/kernel/scheduler.h>
 
@@ -76,10 +77,14 @@ struct timespec Get(clockid_t clockid)
 	return timespec_nul();
 }
 
-void OnTick(struct timespec tick_period)
+void OnTick(struct timespec tick_period, bool system_mode)
 {
 	realtime_clock->Advance(tick_period);
 	uptime_clock->Advance(tick_period);
+	Process* process = CurrentProcess();
+	process->execute_clock.Advance(tick_period);
+	if ( system_mode )
+		process->system_clock.Advance(tick_period);
 }
 
 void Init()

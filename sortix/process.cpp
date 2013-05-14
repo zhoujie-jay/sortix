@@ -38,6 +38,7 @@
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/thread.h>
+#include <sortix/kernel/time.h>
 
 #include <sortix/clock.h>
 #include <sortix/signal.h>
@@ -130,6 +131,7 @@ namespace Sortix
 		pid = AllocatePID();
 		uid = euid = 0;
 		gid = egid = 0;
+		Time::InitializeProcessClocks(this);
 		alarm_timer.Attach(Time::GetClock(CLOCK_MONOTONIC));
 		Put(this);
 	}
