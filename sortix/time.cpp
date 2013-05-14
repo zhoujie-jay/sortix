@@ -61,6 +61,10 @@ Clock* GetClock(clockid_t clock)
 	case CLOCK_BOOT: return uptime_clock;
 	case CLOCK_INIT: return uptime_clock;
 	case CLOCK_MONOTONIC: return uptime_clock;
+	case CLOCK_PROCESS_CPUTIME_ID: return &CurrentProcess()->execute_clock;
+	case CLOCK_PROCESS_SYSTIME_ID: return &CurrentProcess()->system_clock;
+	case CLOCK_CHILD_CPUTIME_ID: return &CurrentProcess()->child_execute_clock;
+	case CLOCK_CHILD_SYSTIME_ID: return &CurrentProcess()->child_system_clock;
 	default: return errno = ENOTSUP, (Clock*) NULL;
 	}
 }

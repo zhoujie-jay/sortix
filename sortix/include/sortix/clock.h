@@ -34,7 +34,11 @@ __BEGIN_DECLS
 #define CLOCK_BOOT 2 /* Time since system boot (uptime). */
 #define CLOCK_INIT 3 /* Time since 'init' process began. */
 #define CLOCK_PROCESS_CPUTIME_ID 4
-#define CLOCK_THREAD_CPUTIME_ID 5
+#define CLOCK_PROCESS_SYSTIME_ID 5
+#define CLOCK_CHILD_CPUTIME_ID 6
+#define CLOCK_CHILD_SYSTIME_ID 7
+#define CLOCK_THREAD_CPUTIME_ID 8
+#define CLOCK_THREAD_SYSTIME_ID 9
 
 __END_DECLS
 
