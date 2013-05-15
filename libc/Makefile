@@ -70,14 +70,10 @@ fwrite.o \
 fwriting.o \
 getdelim.o \
 getline.o \
-gmtime.o \
-gmtime_r.o \
 heap.o \
 integer.o \
 ldiv.o \
 lldiv.o \
-localtime.o \
-localtime_r.o \
 mblen.o \
 mbrlen.o \
 mbrtowc.o \
@@ -136,6 +132,10 @@ time/asctime.o \
 time/asctime_r.o \
 time/ctime.o \
 time/ctime_r.o \
+time/gmtime.o \
+time/gmtime_r.o \
+time/localtime.o \
+time/localtime_r.o \
 timespec.o \
 time/strftime.o \
 ungetc.o \

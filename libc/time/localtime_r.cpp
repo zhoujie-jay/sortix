@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,14 +17,14 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    gmtime_r.cpp
-    Transform date and time.
+    time/localtime_r.cpp
+    Convert a timestamp into a date and time according to the local timezone.
 
 *******************************************************************************/
 
 #include <time.h>
 
-extern "C" struct tm* gmtime_r(const time_t* timer, struct tm* ret)
+extern "C" struct tm* localtime_r(const time_t* time_ptr, struct tm* ret)
 {
-	return localtime_r(timer, ret);
+	return gmtime_r(time_ptr, ret);
 }

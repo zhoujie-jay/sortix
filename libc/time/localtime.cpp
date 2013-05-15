@@ -17,15 +17,15 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    gmtime.cpp
-    Transform date and time.
+    time/localtime.cpp
+    Convert a timestamp into a date and time according to the local timezone.
 
 *******************************************************************************/
 
 #include <time.h>
 
-extern "C" struct tm* gmtime(const time_t* timer)
+extern "C" struct tm* localtime(const time_t* timer)
 {
-	static struct tm hack_gmtime_ret;
-	return gmtime_r(timer, &hack_gmtime_ret);
+	static struct tm hack_localtime_ret;
+	return localtime_r(timer, &hack_localtime_ret);
 }
