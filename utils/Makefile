@@ -22,6 +22,7 @@ clear \
 colormake \
 column \
 cp \
+date \
 echo \
 editor \
 find \
