@@ -365,6 +365,7 @@ time/timer_delete.o \
 time/timer_getoverrun.o \
 time/timer_gettime.o \
 time/timer_settime.o \
+time/times.o \
 tmpfile.o \
 tmpnam.o \
 truncateat.o \

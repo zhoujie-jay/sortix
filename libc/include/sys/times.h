@@ -17,25 +17,30 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    sysconf.cpp
-    Get configuration information at runtime.
+    sys/times.h
+    Declaration for the times function.
 
 *******************************************************************************/
 
-#include <errno.h>
-#include <stdio.h>
-#include <unistd.h>
+#ifndef INCLUDE_SYS_TIMES_H
+#define INCLUDE_SYS_TIMES_H
 
-extern "C" long sysconf(int name)
+#include <features.h>
+
+__BEGIN_DECLS
+
+@include(clock_t.h);
+
+struct tms
 {
-	switch ( name )
-	{
-	case _SC_CLK_TCK: return 1000;
-	case _SC_PAGESIZE: case _SC_PAGE_SIZE:
-		return getpagesize();
-	default:
-		fprintf(stderr, "%s:%u warning: %s(%i) is unsupported\n",
-		        __FILE__, __LINE__, __func__, name);
-		return errno = EINVAL, -1;
-	}
-}
+	clock_t tms_utime;
+	clock_t tms_stime;
+	clock_t tms_cutime;
+	clock_t tms_cstime;
+};
+
+clock_t times(struct tms*);
+
+__END_DECLS
+
+#endif
