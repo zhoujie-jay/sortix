@@ -54,6 +54,7 @@ ifdef X86FAMILY
              $(CPU)/thread.o \
              $(CPU)/scheduler.o \
              $(CPU)/process.o \
+             x86-family/cmos.o \
              x86-family/time.o \
              x86-family/msr.o \
              x86-family/float.o \

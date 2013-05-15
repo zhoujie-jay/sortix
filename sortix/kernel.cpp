@@ -62,6 +62,7 @@
 #include <malloc.h>
 
 #include "kernelinfo.h"
+#include "x86-family/cmos.h"
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"
 #include "multiboot.h"
@@ -380,16 +381,19 @@ static void BootThread(void* /*user*/)
 	// We no longer need the initrd, so free its resources.
 	InitRD::Delete();
 
+	//
+	// Stage 5. Loading and Initializing Core Drivers.
+	//
+
+	// Initialize the real-time clock.
+	CMOS::Init();
+
 	// Get a descriptor for the /dev directory so we can populate it.
 	if ( droot->mkdir(&ctx, "dev", 0775) != 0 && errno != EEXIST )
 		Panic("Unable to create RAM filesystem /dev directory.");
 	Ref<Descriptor> slashdev = droot->open(&ctx, "dev", O_READ | O_DIRECTORY);
 	if ( !slashdev )
 		Panic("Unable to create descriptor for RAM filesystem /dev directory.");
-
-	//
-	// Stage 5. Loading and Initializing Core Drivers.
-	//
 
 	// Initialize the keyboard.
 	Keyboard* keyboard = new PS2Keyboard(0x60, Interrupt::IRQ1);
