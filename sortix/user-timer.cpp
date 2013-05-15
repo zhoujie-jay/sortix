@@ -31,12 +31,14 @@
 #include <sortix/signal.h>
 #include <sortix/sigevent.h>
 #include <sortix/time.h>
+#include <sortix/tmns.h>
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/copy.h>
+#include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/kthread.h>
-#include <sortix/kernel/time.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/time.h>
 #include <sortix/kernel/user-timer.h>
 #include <sortix/kernel/process.h>
 
@@ -277,11 +279,33 @@ static int sys_uptime(uintmax_t* usecssinceboot)
 	return CopyToUser(usecssinceboot, &ret, sizeof(ret)) ? 0 : -1;
 }
 
+static int sys_timens(struct tmns* user_tmns)
+{
+	Clock* execute_clock = Time::GetClock(CLOCK_PROCESS_CPUTIME_ID);
+	Clock* system_clock = Time::GetClock(CLOCK_PROCESS_SYSTIME_ID);
+	Clock* child_execute_clock = Time::GetClock(CLOCK_CHILD_CPUTIME_ID);
+	Clock* child_system_clock = Time::GetClock(CLOCK_CHILD_SYSTIME_ID);
+
+	// Note: It is safe to access the clocks in this manner as each of them are
+	//       locked by disabling interrupts. This is perhaps not SMP-ready, but
+	//       it will do for now.
+	struct tmns tmns;
+	Interrupt::Disable();
+	tmns.tmns_utime = execute_clock->current_time;
+	tmns.tmns_stime = system_clock->current_time;
+	tmns.tmns_cutime = child_execute_clock->current_time;
+	tmns.tmns_cstime = child_system_clock->current_time;
+	Interrupt::Enable();
+
+	return CopyToUser(user_tmns, &tmns, sizeof(tmns)) ? 0 : -1;
+}
+
 void UserTimer::Init()
 {
 	Syscall::Register(SYSCALL_CLOCK_GETTIMERES, (void*) sys_clock_gettimeres);
-	Syscall::Register(SYSCALL_CLOCK_SETTIMERES, (void*) sys_clock_settimeres);
 	Syscall::Register(SYSCALL_CLOCK_NANOSLEEP, (void*) sys_clock_nanosleep);
+	Syscall::Register(SYSCALL_CLOCK_SETTIMERES, (void*) sys_clock_settimeres);
+	Syscall::Register(SYSCALL_TIMENS, (void*) sys_timens);
 	Syscall::Register(SYSCALL_TIMER_CREATE, (void*) sys_timer_create);
 	Syscall::Register(SYSCALL_TIMER_DELETE, (void*) sys_timer_delete);
 	Syscall::Register(SYSCALL_TIMER_GETOVERRUN, (void*) sys_timer_getoverrun);

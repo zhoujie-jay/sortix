@@ -55,6 +55,9 @@ struct tm
 __END_DECLS
 #include <sortix/timespec.h>
 #include <sortix/itimerspec.h>
+#if defined(_SORTIX_SOURCE)
+#include <sortix/tmns.h>
+#endif
 __BEGIN_DECLS
 
 @include(NULL.h)
@@ -106,6 +109,7 @@ void tzset(void);
 #if defined(_SORTIX_SOURCE)
 int clock_gettimeres(clockid_t, struct timespec*, struct timespec*);
 int clock_settimeres(clockid_t, const struct timespec*, const struct timespec*);
+int timens(struct tmns* tmns);
 #endif
 
 extern int daylight;

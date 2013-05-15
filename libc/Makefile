@@ -358,6 +358,7 @@ time/clock_nanosleep.o \
 time/clock_settime.o \
 time/clock_settimeres.o \
 time/nanosleep.o \
+time/timens.o \
 time/time.o \
 time/timer_create.o \
 time/timer_delete.o \
