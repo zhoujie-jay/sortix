@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013
 
     This file is part of the Sortix C Library.
 
@@ -17,16 +17,19 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    clock.cpp
-    Determine processor time.
+    time/clock.cpp
+    Get process execution time.
 
 *******************************************************************************/
 
-#include <errno.h>
 #include <time.h>
 
-extern "C" clock_t clock(void)
+// TODO: This function is crap and has been replaced by clock_gettime.
+extern "C" clock_t clock()
 {
-	errno = ENOTSUP;
-	return -1;
+	struct timespec now;
+	if ( clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &now) < 0 )
+		return -1;
+	static_assert(CLOCKS_PER_SEC == 1000000, "CLOCKS_PER_SEC == 1000000");
+	return (clock_t) now.tv_sec * 1000000 + (clock_t) now.tv_sec / 1000;
 }

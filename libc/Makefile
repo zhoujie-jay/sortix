@@ -174,7 +174,6 @@ canonicalize_file_name.o \
 chdir.o \
 chmod.o \
 chown.o \
-clock.o \
 close.o \
 confstr.o \
 $(CPUDIR)/calltrace.o \
@@ -355,6 +354,7 @@ time/clock_getres.o \
 time/clock_gettime.o \
 time/clock_gettimeres.o \
 time/clock_nanosleep.o \
+time/clock.o \
 time/clock_settime.o \
 time/clock_settimeres.o \
 time/nanosleep.o \
