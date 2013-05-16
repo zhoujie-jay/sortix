@@ -23,17 +23,21 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include <stdarg.h>
-#include <stddef.h>
+
 #include <dirent.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
+
+int current_year;
 
 #if !defined(VERSIONSTR)
 #define VERSIONSTR "unknown version"
@@ -153,13 +157,30 @@ int handleentry(const char* path, const char* name)
 	if ( 1023 < size ) { size /= 1024UL; sizeunit = "T"; }
 	if ( 1023 < size ) { size /= 1024UL; sizeunit = "P"; }
 	perms[10] = 0;
-	printf("%s %3ju root root %4ju%s\t%s%s%s\n", perms, (uintmax_t) st.st_nlink,
-	       (uintmax_t) size, sizeunit, colorpre, name, colorpost);
+	struct tm mod_tm;
+	localtime_r(&st.st_mtim.tv_sec, &mod_tm);
+	char time_str[64];
+	if ( current_year == mod_tm.tm_year )
+		strftime(time_str, 64, "%b %e %H:%M", &mod_tm);
+	else
+		strftime(time_str, 64, "%b %e  %Y", &mod_tm);
+	printf("%s %3ju root root %4ju%s %s %s%s%s\n",
+		perms,
+		(uintmax_t) st.st_nlink,
+		(uintmax_t) size, sizeunit,
+		time_str,
+		colorpre, name, colorpost);
 	return 0;
 }
 
 int ls(const char* path)
 {
+	time_t current_time;
+	struct tm current_year_tm;
+	time(&current_time);
+	localtime_r(&current_time, &current_year_tm);
+	current_year = current_year_tm.tm_year;
+
 	int ret = 1;
 	DIR* dir;
 	const size_t DEFAULT_ENTRIES_LEN = 4UL;
