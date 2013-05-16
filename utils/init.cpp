@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -74,6 +74,9 @@ int main(int /*argc*/, char* /*argv*/[])
 	// Reset the terminal's color and the rest of it.
 	printf("\r\e[m\e[J");
 	fflush(stdout);
+
+	// Set the default file creation mask.
+	umask(022);
 
 	// By default, compile to the same architecture that the kernel told us that
 	// we are running.

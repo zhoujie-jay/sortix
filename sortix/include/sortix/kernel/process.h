@@ -96,6 +96,7 @@ public:
 	kthread_mutex_t idlock;
 	uid_t uid, euid;
 	gid_t gid, egid;
+	mode_t umask;
 
 private:
 	kthread_mutex_t ptrlock;

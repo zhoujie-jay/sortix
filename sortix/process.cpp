@@ -131,6 +131,7 @@ namespace Sortix
 		pid = AllocatePID();
 		uid = euid = 0;
 		gid = egid = 0;
+		umask = 0022;
 		Time::InitializeProcessClocks(this);
 		alarm_timer.Attach(Time::GetClock(CLOCK_MONOTONIC));
 		Put(this);
@@ -611,6 +612,7 @@ namespace Sortix
 		clone->gid = gid;
 		clone->euid = euid;
 		clone->egid = egid;
+		clone->umask = umask;
 		kthread_mutex_unlock(&idlock);
 
 		if ( !(clone->program_image_path = String::Clone(program_image_path)) )
@@ -978,6 +980,15 @@ namespace Sortix
 		return Page::Size();
 	}
 
+	mode_t sys_umask(mode_t newmask)
+	{
+		Process* process = CurrentProcess();
+		ScopedLock lock(&process->idlock);
+		mode_t oldmask = process->umask;
+		process->umask = newmask & 0666;
+		return oldmask;
+	}
+
 	void Process::Init()
 	{
 		Syscall::Register(SYSCALL_EXEC, (void*) SysExecVE);
@@ -985,6 +996,7 @@ namespace Sortix
 		Syscall::Register(SYSCALL_GETPID, (void*) SysGetPID);
 		Syscall::Register(SYSCALL_GETPPID, (void*) SysGetParentPID);
 		Syscall::Register(SYSCALL_EXIT, (void*) SysExit);
+		Syscall::Register(SYSCALL_UMASK, (void*) sys_umask);
 		Syscall::Register(SYSCALL_WAIT, (void*) SysWait);
 		Syscall::Register(SYSCALL_SBRK, (void*) SysSbrk);
 		Syscall::Register(SYSCALL_GET_PAGE_SIZE, (void*) SysGetPageSize);

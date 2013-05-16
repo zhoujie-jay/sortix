@@ -356,6 +356,11 @@ static bool IsLastPathElement(const char* elem)
 Ref<Descriptor> Descriptor::open(ioctx_t* ctx, const char* filename, int flags,
                                  mode_t mode)
 {
+	Process* process = CurrentProcess();
+	kthread_mutex_lock(&process->idlock);
+	mode &= ~process->umask;
+	kthread_mutex_unlock(&process->idlock);
+
 	// Unlike early Unix systems, the empty path does not mean the current
 	// directory on Sortix, so reject it.
 	if ( !filename[0] )
@@ -444,6 +449,11 @@ Ref<Descriptor> Descriptor::open_elem(ioctx_t* ctx, const char* filename,
 
 int Descriptor::mkdir(ioctx_t* ctx, const char* filename, mode_t mode)
 {
+	Process* process = CurrentProcess();
+	kthread_mutex_lock(&process->idlock);
+	mode &= ~process->umask;
+	kthread_mutex_unlock(&process->idlock);
+
 	char* final;
 	Ref<Descriptor> dir = OpenDirContainingPath(ctx, Ref<Descriptor>(this),
 	                                            filename, &final);

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -24,12 +24,10 @@
 
 #include <sys/stat.h>
 #include <sys/syscall.h>
-#include <sys/types.h>
-#include <errno.h>
 
-// TODO: Implement this in the kernel.
+DEFN_SYSCALL1(mode_t, sys_umask, SYSCALL_UMASK, mode_t);
+
 extern "C" mode_t umask(mode_t mask)
 {
-	(void) mask;
-	return 0;
+	return sys_umask(mask);
 }
