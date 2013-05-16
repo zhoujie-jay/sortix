@@ -26,5 +26,9 @@
 
 extern "C" struct tm* localtime_r(const time_t* time_ptr, struct tm* ret)
 {
-	return gmtime_r(time_ptr, ret);
+	struct tm utc_tm;
+	if ( !gmtime_r(time_ptr, &utc_tm) )
+		return NULL;
+	*ret = utc_tm;
+	return ret;
 }

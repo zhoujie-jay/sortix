@@ -130,12 +130,8 @@ strtold.o \
 strxfrm.o \
 time/asctime.o \
 time/asctime_r.o \
-time/ctime.o \
-time/ctime_r.o \
 time/gmtime.o \
 time/gmtime_r.o \
-time/localtime.o \
-time/localtime_r.o \
 time/mktime.o \
 timespec.o \
 time/strftime.o \
@@ -359,7 +355,11 @@ time/clock_nanosleep.o \
 time/clock.o \
 time/clock_settime.o \
 time/clock_settimeres.o \
+time/ctime.o \
+time/ctime_r.o \
 time/difftime.o \
+time/localtime.o \
+time/localtime_r.o \
 time/nanosleep.o \
 time/timens.o \
 time/time.o \
