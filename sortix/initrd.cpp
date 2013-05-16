@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -22,6 +22,20 @@
 
 *******************************************************************************/
 
+#include <sys/types.h>
+
+#include <assert.h>
+#include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <timespec.h>
+
+#include <sortix/fcntl.h>
+#include <sortix/initrd.h>
+#include <sortix/mman.h>
+#include <sortix/stat.h>
+
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/addralloc.h>
 #include <sortix/kernel/vnode.h>
@@ -32,16 +46,6 @@
 #include <sortix/kernel/ioctx.h>
 #include <sortix/kernel/fsfunc.h>
 #include <sortix/kernel/syscall.h>
-
-#include <sortix/fcntl.h>
-#include <sortix/initrd.h>
-#include <sortix/stat.h>
-#include <sortix/mman.h>
-
-#include <assert.h>
-#include <errno.h>
-#include <string.h>
-#include <timespec.h>
 
 #include "initrd.h"
 
@@ -323,13 +327,16 @@ static bool ExtractNode(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> node)
 		return false;
 	if ( node->chown(ctx, inode->uid, inode->gid) < 0 )
 		return false;
-	// TODO: utimens.
 	if ( INITRD_S_ISDIR(inode->mode) )
 		if ( !ExtractDir(ctx, ino, node) )
 			return false;
 	if ( INITRD_S_ISREG(inode->mode) )
 		if ( !ExtractFile(ctx, ino, node) )
 			return false;
+	struct timespec ctime = timespec_make((time_t) inode->ctime, 0);
+	struct timespec mtime = timespec_make((time_t) inode->mtime, 0);
+	if ( node->utimens(ctx, &mtime, &ctime, &mtime) < 0 )
+		return false;
 	return true;
 }
 
