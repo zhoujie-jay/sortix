@@ -68,7 +68,9 @@ public:
 	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count) = 0;
 	virtual ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	                       off_t off) = 0;
-	virtual int utimens(ioctx_t* ctx, const struct timespec timespec[2]) = 0;
+	virtual int utimens(ioctx_t* ctx, const struct timespec* atime,
+	                    const struct timespec* ctime,
+	                    const struct timespec* mtime) = 0;
 	virtual int isatty(ioctx_t* ctx) = 0;
 	virtual ssize_t readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 	                            size_t size, off_t start, size_t maxcount) = 0;
@@ -142,7 +144,9 @@ public:
 	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
 	virtual ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	                       off_t off);
-	virtual int utimens(ioctx_t* ctx, const struct timespec timespec[2]);
+	virtual int utimens(ioctx_t* ctx, const struct timespec* atime,
+	                    const struct timespec* ctime,
+	                    const struct timespec* mtime);
 	virtual int isatty(ioctx_t* ctx);
 	virtual ssize_t readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 	                            size_t size, off_t start, size_t maxcount);

@@ -64,7 +64,8 @@ public:
 	ssize_t pread(ioctx_t* ctx, uint8_t* buf, size_t count, off_t off);
 	ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
 	ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count, off_t off);
-	int utimens(ioctx_t* ctx, const struct timespec timespec[2]);
+	int utimens(ioctx_t* ctx, const struct timespec* atime,
+	            const struct timespec* ctime, const struct timespec* mtime);
 	int isatty(ioctx_t* ctx);
 	ssize_t readdirents(ioctx_t* ctx, struct kernel_dirent* dirent, size_t size,
 	                    size_t maxcount);

@@ -24,8 +24,8 @@
 
 #include <errno.h>
 #include <string.h>
-#include <timespec.h>
 
+#include <sortix/clock.h>
 #include <sortix/stat.h>
 
 #include <sortix/kernel/platform.h>
@@ -34,6 +34,7 @@
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/inode.h>
 #include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/time.h>
 
 namespace Sortix {
 
@@ -46,9 +47,9 @@ AbstractInode::AbstractInode()
 	stat_uid = 0;
 	stat_gid = 0;
 	stat_size = 0;
-	stat_atim = timespec_nul();
-	stat_ctim = timespec_nul();
-	stat_mtim = timespec_nul();
+	stat_atim = Time::Get(CLOCK_REALTIME);
+	stat_ctim = Time::Get(CLOCK_REALTIME);
+	stat_mtim = Time::Get(CLOCK_REALTIME);
 	stat_blksize = 0;
 	stat_blocks = 0;
 }
@@ -152,10 +153,17 @@ ssize_t AbstractInode::pwrite(ioctx_t* /*ctx*/, const uint8_t* /*buf*/,
 	return errno = EBADF, -1;
 }
 
-
-int AbstractInode::utimens(ioctx_t* /*ctx*/, const struct timespec /*times*/[2])
+int AbstractInode::utimens(ioctx_t* /*ctx*/, const struct timespec* atime,
+                           const struct timespec* ctime,
+                           const struct timespec* mtime)
 {
-	// TODO: Implement this!
+	ScopedLock lock(&metalock);
+	if ( atime )
+		stat_atim = *atime;
+	if ( ctime )
+		stat_ctim = *ctime;
+	if ( mtime )
+		stat_mtim = *mtime;
 	return 0;
 }
 

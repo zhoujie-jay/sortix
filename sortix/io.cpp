@@ -461,7 +461,7 @@ static int sys_futimens(int fd, const struct timespec user_times[2])
 	if ( !desc )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	return desc->utimens(&ctx, times);
+	return desc->utimens(&ctx, &times[0], NULL, &times[1]);
 }
 
 static int sys_utimensat(int dirfd, const char* path,
@@ -484,7 +484,7 @@ static int sys_utimensat(int dirfd, const char* path,
 	delete[] pathcopy;
 	if ( !desc )
 		return -1;
-	return desc->utimens(&ctx, times);
+	return desc->utimens(&ctx, &times[0], NULL, &times[1]);
 }
 
 static int sys_linkat(int olddirfd, const char* oldpath,

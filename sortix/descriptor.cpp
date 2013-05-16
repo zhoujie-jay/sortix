@@ -271,9 +271,11 @@ ssize_t Descriptor::pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count, off_t
 	return vnode->pwrite(ctx, buf, count, off);
 }
 
-int Descriptor::utimens(ioctx_t* ctx, const struct timespec times[2])
+int Descriptor::utimens(ioctx_t* ctx, const struct timespec* atime,
+                        const struct timespec* ctime,
+                        const struct timespec* mtime)
 {
-	return vnode->utimens(ctx, times);
+	return vnode->utimens(ctx, atime, ctime, mtime);
 }
 
 int Descriptor::isatty(ioctx_t* ctx)

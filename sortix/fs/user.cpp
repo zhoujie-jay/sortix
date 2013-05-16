@@ -31,6 +31,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <timespec.h>
 
 #include <sortix/dirent.h>
 #include <sortix/fcntl.h>
@@ -193,7 +194,9 @@ public:
 	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
 	virtual ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	                       off_t off);
-	virtual int utimens(ioctx_t* ctx, const struct timespec times[2]);
+	virtual int utimens(ioctx_t* ctx, const struct timespec* atime,
+	                    const struct timespec* ctime,
+	                    const struct timespec* mtime);
 	virtual int isatty(ioctx_t* ctx);
 	virtual ssize_t readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 	                            size_t size, off_t start, size_t maxcount);
@@ -840,7 +843,10 @@ ssize_t Unode::pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count, off_t off)
 	return ret;
 }
 
-int Unode::utimens(ioctx_t* /*ctx*/, const struct timespec times[2])
+int Unode::utimens(ioctx_t* /*ctx*/,
+                   const struct timespec* atime,
+                   const struct timespec* /*ctime*/,
+                   const struct timespec* mtime)
 {
 	Channel* channel = server->Connect();
 	if ( !channel )
@@ -848,8 +854,8 @@ int Unode::utimens(ioctx_t* /*ctx*/, const struct timespec times[2])
 	int ret = -1;
 	struct fsm_req_utimens msg;
 	msg.ino = ino;
-	msg.times[0] = times[0];
-	msg.times[1] = times[1];
+	msg.times[0] = atime ? *atime : timespec_nul();
+	msg.times[1] = mtime ? *mtime : timespec_nul();
 	if ( SendMessage(channel, FSM_REQ_UTIMENS, &msg, sizeof(msg)) &&
 	     RecvMessage(channel, FSM_RESP_SUCCESS, NULL, 0) )
 		ret = 0;
