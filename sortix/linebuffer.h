@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -38,6 +38,7 @@ namespace Sortix
 		uint32_t Pop();
 		uint32_t Peek() const;
 		uint32_t Backspace();
+		uint32_t WouldBackspace() const;
 		void Commit();
 		void Freeze();
 		bool CanPop() const;

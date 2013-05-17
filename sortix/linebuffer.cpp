@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -96,6 +96,13 @@ namespace Sortix
 	{
 		if ( !CanBackspace() ) { return 0; }
 		size_t index = OffsetIndex(bufferoffset, --bufferused, bufferlength);
+		return buffer[index];
+	}
+
+	uint32_t LineBuffer::WouldBackspace() const
+	{
+		if ( !CanBackspace() ) { return 0; }
+		size_t index = OffsetIndex(bufferoffset, bufferused-1, bufferlength);
 		return buffer[index];
 	}
 

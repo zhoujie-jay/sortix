@@ -22,27 +22,31 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/refcount.h>
-#include <sortix/kernel/kthread.h>
-#include <sortix/kernel/interlock.h>
-#include <sortix/kernel/ioctx.h>
-#include <sortix/kernel/inode.h>
-#include <sortix/kernel/keyboard.h>
-#include <sortix/kernel/poll.h>
-#include <sortix/kernel/scheduler.h>
-#include <sortix/kernel/process.h>
-
-#include <sortix/fcntl.h>
-#include <sortix/termmode.h>
-#include <sortix/termios.h>
-#include <sortix/keycodes.h>
-#include <sortix/signal.h>
-#include <sortix/stat.h>
-#include <sortix/poll.h>
+#include <sys/types.h>
 
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
+#include <stdint.h>
+
+#include <sortix/fcntl.h>
+#include <sortix/keycodes.h>
+#include <sortix/poll.h>
+#include <sortix/signal.h>
+#include <sortix/stat.h>
+#include <sortix/termios.h>
+#include <sortix/termmode.h>
+
+#include <sortix/kernel/platform.h>
+#include <sortix/kernel/inode.h>
+#include <sortix/kernel/interlock.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/keyboard.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/poll.h>
+#include <sortix/kernel/process.h>
+#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/scheduler.h>
 
 #include "utf8.h"
 #include "logterminal.h"
@@ -162,6 +166,50 @@ void LogTerminal::ProcessKeystroke(int kbkey)
 			if ( numwaiting )
 				kthread_cond_broadcast(&datacond);
 			poll_channel.Signal(POLLIN | POLLRDNORM);
+		}
+		return;
+	}
+
+	if ( termmode & TERMMODE_LINEBUFFER && control && kbkey == KBKEY_W )
+	{
+		bool had_non_whitespace = false;
+	c_w_delete_more:
+		if ( !linebuffer.CanBackspace() ) { return; }
+		uint32_t delchar = linebuffer.WouldBackspace();
+		bool waskbkey = KBKEY_DECODE(delchar);
+		bool wasuni = !waskbkey;
+		bool whitespace =
+			(wasuni && (delchar == ' ' ||
+			            delchar == '\t' ||
+			            delchar == '\n')) ||
+			(waskbkey && (abs(KBKEY_DECODE(delchar)) == -KBKEY_SPACE ||
+			              abs(KBKEY_DECODE(delchar)) == -KBKEY_TAB ||
+			              abs(KBKEY_DECODE(delchar)) == -KBKEY_ENTER));
+		if ( wasuni && whitespace && had_non_whitespace )
+			return;
+		if ( wasuni && !whitespace )
+			had_non_whitespace = true;
+		linebuffer.Backspace();
+		if ( (!waskbkey || termmode & TERMMODE_KBKEY) &&
+		     (!wasuni || termmode & TERMMODE_UNICODE) &&
+		     termmode & TERMMODE_ECHO &&
+		     wasuni )
+				Log::Print("\b");
+		goto c_w_delete_more;
+	}
+
+	if ( termmode & TERMMODE_LINEBUFFER && control && kbkey == KBKEY_U )
+	{
+		while ( linebuffer.CanBackspace() )
+		{
+			uint32_t delchar = linebuffer.Backspace();
+			bool waskbkey = KBKEY_DECODE(delchar);
+			bool wasuni = !waskbkey;
+			if ( (!waskbkey || termmode & TERMMODE_KBKEY) &&
+				 (!wasuni || termmode & TERMMODE_UNICODE) &&
+				 termmode & TERMMODE_ECHO &&
+				 wasuni )
+				Log::Print("\b");
 		}
 		return;
 	}
