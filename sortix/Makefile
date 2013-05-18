@@ -83,6 +83,7 @@ copy.o \
 $(CPU)/calltrace.o \
 $(CPU)/kthread.o \
 crc32.o \
+debugger.o \
 descriptor.o \
 dispmsg.o \
 dtable.o \

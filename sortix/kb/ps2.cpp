@@ -23,8 +23,10 @@
 *******************************************************************************/
 
 #include <sortix/kernel/platform.h>
+#include <sortix/kernel/debugger.h>
 #include <sortix/kernel/keyboard.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/thread.h>
 #include <sortix/kernel/cpu.h>
 
 #include <sortix/keycodes.h>
@@ -88,9 +90,14 @@ namespace Sortix
 		work->kb->InterruptWork(work->scancode);
 	}
 
-	void PS2Keyboard::OnInterrupt(CPU::InterruptRegisters* /*regs*/)
+	void PS2Keyboard::OnInterrupt(CPU::InterruptRegisters* regs)
 	{
 		uint8_t scancode = PopScancode();
+		if ( scancode == KBKEY_F10 )
+		{
+			CurrentThread()->SaveRegisters(regs);
+			Debugger::Run();
+		}
 		PS2KeyboardWork work;
 		work.kb = this;
 		work.scancode = scancode;
