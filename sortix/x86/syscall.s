@@ -33,6 +33,7 @@ syscall_handler:
 	sti
 
 	movl $0, global_errno # Reset errno
+
 	pushl %ebp
 
 	# Grant ourselves kernel permissions to the data segment.
@@ -52,6 +53,10 @@ valid_syscall:
 	# Read a system call function pointer.
 	xorl %ebp, %ebp
 	movl syscall_list(%ebp,%eax,4), %eax
+
+	# Point the %ebp register to the pushed user-space %ebp above.
+	movl %esp, %ebp
+	addl $4, %ebp
 
 	# Call the system call.
 	pushl %esi

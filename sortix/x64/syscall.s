@@ -33,7 +33,9 @@ syscall_handler:
 	sti
 
 	movl $0, global_errno # Reset errno
+
 	pushq %rbp
+	movq %rsp, %rbp
 
 	# Make sure the requested system call is valid, if not, then fix it.
 	cmp SYSCALL_MAX, %rax
@@ -41,8 +43,8 @@ syscall_handler:
 
 valid_syscall:
 	# Read a system call function pointer.
-	xorq %rbp, %rbp
-	movq syscall_list(%rbp,%rax,8), %rax
+	xorq %r11, %r11
+	movq syscall_list(%r11,%rax,8), %rax
 
 	# Oh how nice, user-space put the parameters in: rdi, rsi, rdx, rcx, r8, r9
 
