@@ -35,15 +35,6 @@ syscall_handler:
 	movl $0, global_errno # Reset errno
 	pushq %rbp
 
-	# Grant ourselves kernel permissions to the data segment.
-	movl %ds, %ebp
-	pushq %rbp
-	movw $0x10, %bp
-	movl %ebp, %ds
-	movl %ebp, %es
-	movl %ebp, %fs
-	movl %ebp, %gs
-
 	# Make sure the requested system call is valid, if not, then fix it.
 	cmp SYSCALL_MAX, %rax
 	jae fix_syscall
@@ -57,13 +48,6 @@ valid_syscall:
 
 	# Call the system call.
 	callq *%rax
-
-	# Restore the previous permissions to data segment.
-	popq %rbp
-	movl %ebp, %ds
-	movl %ebp, %es
-	movl %ebp, %fs
-	movl %ebp, %gs
 
 	# Return to user-space, system call result in %rax:%rdx, errno in %ecx.
 	popq %rbp
