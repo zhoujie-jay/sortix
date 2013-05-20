@@ -76,7 +76,8 @@ namespace Sortix
 		// calling convention, we go through a proxy that uses %edi and %esi
 		// as parameters and pushes them to the stack and then does the call.
 		regs->eip = (addr_t) asm_call_BootstrapKernelThread;
-		regs->useresp = stack + stacksize;
+		regs->useresp = stack + stacksize - sizeof(size_t);
+		*((size_t*) regs->useresp) = 0; /* back tracing stops at NULL rip */
 		regs->eax = 0;
 		regs->ebx = 0;
 		regs->ecx = 0;

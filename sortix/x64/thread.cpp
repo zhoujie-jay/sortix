@@ -89,7 +89,8 @@ namespace Sortix
 		// the entry function returns. Note that since we use a register based
 		// calling convention, we call BootstrapKernelThread directly.
 		regs->rip = (addr_t) BootstrapKernelThread;
-		regs->userrsp = stack + stacksize;
+		regs->userrsp = stack + stacksize - sizeof(size_t);
+		*((size_t*) regs->userrsp) = 0; /* back tracing stops at NULL rip */
 		regs->rax = 0;
 		regs->rbx = 0;
 		regs->rcx = 0;
