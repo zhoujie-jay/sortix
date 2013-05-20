@@ -122,6 +122,7 @@ serialterminal.o \
 signal.o \
 sound.o \
 string.o \
+symbol.o \
 syscall.o \
 textbuffer.o \
 textterminal.o \

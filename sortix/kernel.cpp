@@ -49,6 +49,7 @@
 #include <sortix/kernel/string.h>
 #include <sortix/kernel/user-timer.h>
 #include <sortix/kernel/signal.h>
+#include <sortix/kernel/symbol.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/thread.h>
 
@@ -242,6 +243,114 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	// Initialize the kernel heap.
 	_init_heap();
+
+	// Load the kernel symbols if provided by the bootloader.
+	do if ( bootinfo->flags & MULTIBOOT_INFO_ELF_SHDR )
+	{
+		// On i386 and x86_64 we identity map the first 4 MiB memory, if the
+		// debugging sections are outside that region, we can't access them
+		// directly and we'll have to memory map some physical memory.
+		// TODO: Correctly handle the memory being outside 4 MiB. You need to
+		//       teach the memory management code to reserve these ranges for
+		//       a while until we have used them and add additional complexity
+		//       in this code.
+		#define BELOW_4MIB(addr, length) ((addr) + (length) <= 4*1024*1024)
+
+		// Find and the verify the section table.
+		multiboot_elf_section_header_table_t* elf_sec = &bootinfo->u.elf_sec;
+		if ( !BELOW_4MIB(elf_sec->addr, elf_sec->size) )
+		{
+			Log::PrintF("Warning: the section table was loaded inappropriately by the boot loader, kernel debugging symbols will not be available.\n");
+			break;
+		}
+
+		#define SECTION(num) ((ELF::SectionHeader32*) ((uintptr_t) elf_sec->addr + (uintptr_t) elf_sec->size * (uintptr_t) (num)))
+
+		// Verify the section name section.
+		ELF::SectionHeader32* section_string_section = SECTION(elf_sec->shndx);
+		if ( !BELOW_4MIB(section_string_section->addr, section_string_section->size) )
+		{
+			Log::PrintF("Warning: the section string table was loaded inappropriately by the boot loader, kernel debugging symbols will not be available.\n");
+			break;
+		}
+
+		if ( !section_string_section )
+			break;
+
+		const char* section_string_table = (const char*) (uintptr_t) section_string_section->addr;
+
+		// Find the symbol table.
+		ELF::SectionHeader32* symbol_table_section = NULL;
+		for ( unsigned i = 0; i < elf_sec->num && !symbol_table_section; i++ )
+		{
+			ELF::SectionHeader32* section = SECTION(i);
+			if ( !strcmp(section_string_table + section->name, ".symtab") )
+				symbol_table_section = section;
+		}
+
+		if ( !symbol_table_section )
+			break;
+
+		if ( !BELOW_4MIB(symbol_table_section->addr, symbol_table_section->size) )
+		{
+			Log::PrintF("Warning: the symbol table was loaded inappropriately by the boot loader, kernel debugging symbols will not be available.\n");
+			break;
+		}
+
+		// Find the symbol string table.
+		ELF::SectionHeader32* string_table_section = NULL;
+		for ( unsigned i = 0; i < elf_sec->num && !string_table_section; i++ )
+		{
+			ELF::SectionHeader32* section = SECTION(i);
+			if ( !strcmp(section_string_table + section->name, ".strtab") )
+				string_table_section = section;
+		}
+
+		if ( !string_table_section )
+			break;
+
+		if ( !BELOW_4MIB(string_table_section->addr, string_table_section->size) )
+		{
+			Log::PrintF("Warning: the symbol string table was loaded inappropriately by the boot loader, kernel debugging symbols will not be available.\n");
+			break;
+		}
+
+		// Duplicate the data structures and convert them to the kernel symbol
+		// table format and register it for later debugging.
+		const char* elf_string_table = (const char*) (uintptr_t) string_table_section->addr;
+		size_t elf_string_table_size = string_table_section->size;
+		ELF::Symbol32* elf_symbols = (ELF::Symbol32*) (uintptr_t) symbol_table_section->addr;
+		size_t elf_symbol_count = symbol_table_section->size / sizeof(ELF::Symbol32);
+
+		if ( !elf_symbol_count || elf_symbol_count == 1 /* null symbol */)
+			break;
+
+		char* string_table = new char[elf_string_table_size];
+		if ( !string_table )
+		{
+			Log::PrintF("Warning: unable to allocate the kernel symbol string table, kernel debugging symbols will not be available.\n");
+			break;
+		}
+		memcpy(string_table, elf_string_table, elf_string_table_size);
+
+		Symbol* symbols = new Symbol[elf_symbol_count-1];
+		if ( !symbols )
+		{
+			Log::PrintF("Warning: unable to allocate the kernel symbol table, kernel debugging symbols will not be available.\n");
+			delete[] string_table;
+			break;
+		}
+
+		// Copy all entires except the leading null entry.
+		for ( size_t i = 1; i < elf_symbol_count; i++ )
+		{
+			symbols[i-1].address = elf_symbols[i].st_value;
+			symbols[i-1].size = elf_symbols[i].st_size;
+			symbols[i-1].name = string_table + elf_symbols[i].st_name;
+		}
+
+		SetKernelSymbolTable(symbols, elf_symbol_count-1);
+	} while ( false );
 
 	// Initialize the interrupt worker (before scheduling is enabled).
 	Interrupt::InitWorker();

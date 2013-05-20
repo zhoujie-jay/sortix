@@ -166,6 +166,26 @@ namespace Sortix
 		const uint32_t PF_W = (1<<1);
 		const uint32_t PF_R = (1<<2);
 
+		struct Symbol32
+		{
+			uint32_t st_name;
+			uint32_t st_value;
+			uint32_t st_size;
+			uint8_t st_info;
+			uint8_t st_other;
+			uint16_t st_shndx;
+		};
+
+		struct Symbol64
+		{
+			   uint32_t st_name;
+			   uint8_t st_info;
+			   uint8_t st_other;
+			   uint16_t st_shndx;
+			   uint64_t st_value;
+			   uint64_t st_size;
+		};
+
 		// Reads the elf file into the current address space and returns the
 		// entry address of the program, or 0 upon failure.
 		addr_t Construct(Process* process, const void* file, size_t filelen);
