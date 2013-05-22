@@ -486,11 +486,13 @@ load_interrupted_registers:
 
 	# Return to where we came from.
 	iretq
+.size interrupt_handler_prepare, . - interrupt_handler_prepare
 
 .global interrupt_handler_null
 .type interrupt_handler_null, @function
 interrupt_handler_null:
 	iretq
+.size interrupt_handler_null, . - interrupt_handler_null
 
 .global asm_interrupts_are_enabled
 .type asm_interrupts_are_enabled, @function
@@ -499,6 +501,7 @@ asm_interrupts_are_enabled:
 	popq %rax
 	andq $0x000200, %rax # FLAGS_INTERRUPT
 	retq
+.size asm_interrupts_are_enabled, . - asm_interrupts_are_enabled
 
 .global load_registers
 .type load_registers, @function
@@ -506,4 +509,4 @@ load_registers:
 	# Let the register struct become our temporary stack
 	movq %rdi, %rsp
 	jmp load_interrupted_registers
-
+.size load_registers, . - load_registers

@@ -51,4 +51,4 @@ calltrace_done:
 	popl %ebx
 	popl %ebp
 	retl
-
+.size calltrace, . - calltrace

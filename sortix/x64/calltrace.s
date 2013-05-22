@@ -49,4 +49,4 @@ calltrace_done:
 	popq %rbx
 	popq %rbp
 	retq
-
+.size calltrace, . - calltrace

@@ -35,6 +35,7 @@ kthread_mutex_trylock:
 	not %eax
 	leavel
 	retl
+.size kthread_mutex_trylock, . - kthread_mutex_trylock
 
 .global kthread_mutex_lock
 .type kthread_mutex_lock, @function
@@ -52,6 +53,7 @@ kthread_mutex_lock_retry:
 kthread_mutex_lock_failed:
 	int $0x81 # Yield the CPU.
 	jmp kthread_mutex_lock_retry
+.size kthread_mutex_lock, . - kthread_mutex_lock
 
 .global kthread_mutex_lock_signal
 .type kthread_mutex_lock_signal, @function
@@ -87,6 +89,7 @@ kthread_mutex_unlock:
 	movl $0, (%edx)
 	leavel
 	retl
+.size kthread_mutex_lock_signal, . - kthread_mutex_lock_signal
 
 .global asm_call_BootstrapKernelThread
 .type asm_call_BootstrapKernelThread, @function
@@ -95,6 +98,7 @@ asm_call_BootstrapKernelThread:
 	pushl %edi
 	call BootstrapKernelThread
 	# BootstrapKernelThread is noreturn, no need for code here.
+.size asm_call_BootstrapKernelThread, . - asm_call_BootstrapKernelThread
 
 .global asm_call_Thread__OnSigKill
 .type asm_call_Thread__OnSigKill, @function
@@ -102,3 +106,4 @@ asm_call_Thread__OnSigKill:
 	pushl %edi
 	call Thread__OnSigKill
 	# Thread__OnSigKill is noreturn, no need for code here.
+.size asm_call_Thread__OnSigKill, . - asm_call_Thread__OnSigKill

@@ -62,3 +62,4 @@ asm_syscall: /* syscall num in %eax. */
 	pop %ebx
 	pop %ebp
 	ret
+.size asm_syscall, .-asm_syscall

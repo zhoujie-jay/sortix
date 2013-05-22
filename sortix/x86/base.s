@@ -23,11 +23,9 @@
 
 ******************************************************************************/
 
-.globl beginkernel, _beginkernel
-
 .section .text
 
-.text  0x100000
+.global beginkernel
 .type beginkernel, @function
 beginkernel:
 	# Initialize the stack pointer. The magic value is from kernel.cpp.
@@ -47,15 +45,18 @@ beginkernel:
 	cli
 
 	call KernelInit
+.size beginkernel, . - beginkernel
 
-.globl HaltKernel
+.global HaltKernel
 HaltKernel:
 	cli
 	hlt
 	jmp HaltKernel
+.size HaltKernel, . - HaltKernel
 
-.globl WaitForInterrupt
+.global WaitForInterrupt
 .type WaitForInterrupt, @function # void WaitForInterrupt();
 WaitForInterrupt:
 	hlt
 	ret
+.size WaitForInterrupt, . - WaitForInterrupt

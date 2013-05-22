@@ -23,13 +23,12 @@
 
 ******************************************************************************/
 
-.globl start, _start
-
 .section .text
-.text  0x100000
+.text 0x100000
+
+.global _start
 .type _start, @function
 .code32
-start:
 _start:
 	jmp prepare_kernel_execution
 
@@ -145,6 +144,7 @@ Realm64:
 	# Alright, that was the bootstrap code. Now begin preparing to run the
 	# actual 64-bit kernel.
 	jmp Main
+.size _start, . - _start
 
 .section .data
 GDT64:                           # Global Descriptor Table (64-bit).
@@ -194,4 +194,4 @@ Main:
 	mov 0x100004, %eax
 
 	jmp beginkernel
-
+.size Main, . - Main

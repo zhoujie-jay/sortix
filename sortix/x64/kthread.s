@@ -34,6 +34,7 @@ kthread_mutex_trylock:
 	not %eax
 	leaveq
 	retq
+.size kthread_mutex_trylock, . - kthread_mutex_trylock
 
 .global kthread_mutex_lock
 .type kthread_mutex_lock, @function
@@ -50,6 +51,7 @@ kthread_mutex_lock_retry:
 kthread_mutex_lock_failed:
 	int $0x81 # Yield the CPU.
 	jmp kthread_mutex_lock_retry
+.size kthread_mutex_lock, . - kthread_mutex_lock
 
 .global kthread_mutex_lock_signal
 .type kthread_mutex_lock_signal, @function
@@ -74,6 +76,7 @@ kthread_mutex_lock_signal_failed:
 kthread_mutex_lock_signal_pending:
 	xorl %eax, %eax
 	jmp kthread_mutex_lock_signal_out
+.size kthread_mutex_lock_signal, . - kthread_mutex_lock_signal
 
 .global kthread_mutex_unlock
 .type kthread_mutex_unlock, @function
@@ -83,3 +86,4 @@ kthread_mutex_unlock:
 	movl $0, (%rdi)
 	leaveq
 	retq
+.size kthread_mutex_unlock, . - kthread_mutex_unlock

@@ -22,10 +22,9 @@
 
 *******************************************************************************/
 
-.globl SignalHandlerAssembly
-
 .section .text
 
+.global SignalHandlerAssembly
 .type SignalHandlerAssembly, @function
 SignalHandlerAssembly:
 
@@ -34,3 +33,4 @@ SignalHandlerAssembly:
 
 	# Return control to the kernel, so normal execution can continue.
 	int $131
+.size SignalHandlerAssembly, . - SignalHandlerAssembly

@@ -93,3 +93,5 @@ call_signal_dispatcher:
 	# If we end up here, it means that the signal didn't override anything and
 	# that we should just go ahead and return to userspace ourselves.
 	iretq
+
+.size syscall_handler, .-syscall_handler

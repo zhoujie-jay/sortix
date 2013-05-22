@@ -23,14 +23,11 @@
 
 ******************************************************************************/
 
-.globl beginkernel, _beginkernel
-.globl start, _start
-
 .section .text
 
-.type _beginkernel, @function
+.global beginkernel
+.type beginkernel, @function
 beginkernel:
-_beginkernel:
 	movw $0x736, 0xB83E8
 	movw $0x734, 0xB83EA
 	movw $0x753, 0xB83EE
@@ -54,16 +51,17 @@ _beginkernel:
 	mov %rax, %rdi
 
 	call KernelInit
+.size beginkernel, . - beginkernel
 
-.globl HaltKernel
+.global HaltKernel
 HaltKernel:
 	cli
 	hlt
 	jmp HaltKernel
+.size HaltKernel, . - HaltKernel
 
-.globl WaitForInterrupt
+.global WaitForInterrupt
 .type WaitForInterrupt, @function # void WaitForInterrupt();
 WaitForInterrupt:
 	hlt
 	ret
-

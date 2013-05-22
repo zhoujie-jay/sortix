@@ -23,27 +23,25 @@
 
 ******************************************************************************/
 
-.globl start, _start
-
 .section .text
+.text 0x100000
 
-.text  0x100000
+.global _start
 .type _start, @function
-start:
 _start:
 	jmp prepare_kernel_execution
 
 	# Align 32 bits boundary.
-	.align	4
+	.align 4
 
 	# Multiboot header.
 multiboot_header:
 	# Magic.
-	.long	0x1BADB002
+	.long 0x1BADB002
 	# Flags.
-	.long	0x00000003
+	.long 0x00000003
 	# Checksum.
-	.long	-(0x1BADB002 + 0x00000003)
+	.long -(0x1BADB002 + 0x00000003)
 
 prepare_kernel_execution:
 	# Enable the floating point unit.

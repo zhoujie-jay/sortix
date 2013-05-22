@@ -52,3 +52,4 @@ _start:
 	# Terminate the process with main's exit code.
 	push %eax
 	call exit
+.size _start, .-_start

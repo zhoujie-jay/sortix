@@ -31,8 +31,6 @@
 # clobbered: %rdi, %rsi, %r8, %r9, %r10, %r11
 # preserved: %rbx, %rsp, %rbp, %r12, %r13, %r14, %r15
 
-.section .text
-
 .global asm_syscall
 asm_syscall: /* syscall num in %rax. */
 	push %rbp
@@ -58,3 +56,4 @@ asm_syscall: /* syscall num in %rax. */
 	pop %rbx
 	pop %rbp
 	ret
+.size asm_syscall, .-asm_syscall

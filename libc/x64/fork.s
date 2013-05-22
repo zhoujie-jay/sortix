@@ -64,4 +64,4 @@ after_fork:
 	# which does that for us.
 	leaveq
 	retq
-
+.size __call_tfork_with_regs, . - __call_tfork_with_regs

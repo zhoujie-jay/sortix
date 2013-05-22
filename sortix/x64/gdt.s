@@ -43,6 +43,7 @@ gdt_flush:
 	ljmp *(%rax)
 gdt_flush_postjmp:
 	ret
+.size gdt_flush, . - gdt_flush
 
 .global tss_flush
 .type tss_flush, @function
@@ -55,6 +56,7 @@ tss_flush:
 	# Load the task state register.
 	ltr %ax
 	ret
+.size tss_flush, . - tss_flush
 
 .section .data
 GDT_FLUSH_POSTJMP:

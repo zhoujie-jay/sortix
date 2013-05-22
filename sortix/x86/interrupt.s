@@ -572,11 +572,13 @@ fixup_switch_stack:
 	mov -20(%esp), %ecx # restore interrupted ecx value
 
 	jmp fixup_switch_stack_complete
+.size interrupt_handler_prepare, . - interrupt_handler_prepare
 
 .global interrupt_handler_null
 .type interrupt_handler_null, @function
 interrupt_handler_null:
 	iret
+.size interrupt_handler_null, . - interrupt_handler_null
 
 .global asm_interrupts_are_enabled
 .type asm_interrupts_are_enabled, @function
@@ -585,6 +587,7 @@ asm_interrupts_are_enabled:
 	popl %eax
 	andl $0x000200, %eax # FLAGS_INTERRUPT
 	retl
+.size asm_interrupts_are_enabled, . - asm_interrupts_are_enabled
 
 .global load_registers
 .type load_registers, @function
@@ -592,4 +595,4 @@ load_registers:
 	# Let the register struct become our temporary stack
 	movl 4(%esp), %esp
 	jmp load_interrupted_registers
-
+.size load_registers, . - load_registers
