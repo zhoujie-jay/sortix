@@ -36,6 +36,7 @@
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/sortedlist.h>
 #include <sortix/kernel/scheduler.h>
+#include <sortix/kernel/symbol.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/thread.h>
 #include <sortix/kernel/time.h>
@@ -107,6 +108,10 @@ namespace Sortix
 
 	Process::Process()
 	{
+		string_table = NULL;
+		string_table_length = 0;
+		symbol_table = NULL;
+		symbol_table_length = 0;
 		addrspace = 0;
 		segments = NULL;
 		parent = NULL;
@@ -139,6 +144,8 @@ namespace Sortix
 
 	Process::~Process()
 	{
+		delete[] string_table;
+		delete[] symbol_table;
 		if ( alarm_timer.IsAttached() )
 			alarm_timer.Detach();
 		if ( program_image_path )
@@ -279,6 +286,10 @@ namespace Sortix
                                     SwitchCurrentAddrspace,
                                     curthread);
 		addrspace = 0;
+
+		// Unload the process symbol and string tables.
+		delete[] symbol_table; symbol_table = NULL;
+		delete[] string_table; string_table = NULL;
 
 		// Init is nice and will gladly raise our orphaned children and zombies.
 		Process* init = Scheduler::GetInitProcess();
@@ -618,6 +629,28 @@ namespace Sortix
 		if ( !(clone->program_image_path = String::Clone(program_image_path)) )
 			failure = false;
 
+		if ( string_table && (clone->string_table = new char[string_table_length]) )
+		{
+			memcpy(clone->string_table, string_table, string_table_length);
+			clone->string_table_length = string_table_length;
+		}
+
+		if ( clone->string_table && symbol_table &&
+			 (clone->symbol_table = new Symbol[symbol_table_length]) )
+		{
+			for ( size_t i = 0; i < symbol_table_length; i++ )
+			{
+				clone->symbol_table[i].address = symbol_table[i].address;
+				clone->symbol_table[i].size = symbol_table[i].size;
+				clone->symbol_table[i].name =
+					(const char*)((uintptr_t) symbol_table[i].name -
+						          (uintptr_t) string_table +
+						          (uintptr_t) clone->string_table);
+			}
+			clone->symbol_table_length = symbol_table_length;
+		}
+
+
 		if ( pid == 1)
 			assert(dtable->Get(1));
 
@@ -639,6 +672,11 @@ namespace Sortix
 	void Process::ResetForExecute()
 	{
 		// TODO: Delete all threads and their stacks.
+
+		string_table_length = 0;
+		symbol_table_length = 0;
+		delete[] string_table; string_table = NULL;
+		delete[] symbol_table; symbol_table = NULL;
 
 		DeleteTimers();
 

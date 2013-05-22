@@ -35,6 +35,7 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/process.h>
+#include <sortix/kernel/symbol.h>
 
 #include "elf.h"
 
@@ -60,7 +61,11 @@ static int ToProgramSectionType(int flags)
 	}
 }
 
-addr_t Construct32(Process* process, const void* file, size_t filelen)
+// TODO: This code doesn't respect that the size of program headers and section
+//       headers may vary depending on the ELF header and that using a simple
+//       table indexation isn't enough.
+
+addr_t Construct32(Process* process, const uint8_t* file, size_t filelen)
 {
 	if ( filelen < sizeof(Header32) )
 		return 0;
@@ -145,10 +150,71 @@ addr_t Construct32(Process* process, const void* file, size_t filelen)
 		memset(memdest + pht->filesize, 0, pht->memorysize - pht->filesize);
 	}
 
+	// Find the location of the section headers.
+	addr_t shtblpos = (addr_t) file + header->sectionheaderoffset;
+	const SectionHeader32* shtbl = (const SectionHeader32*) shtblpos;
+
+	const SectionHeader32* section_names_section = shtbl + header->sectionheaderstringindex;
+	const char* section_names = (const char*) (file + section_names_section->offset);
+
+	// Find the string table.
+	const SectionHeader32* string_table_section = NULL;
+	for ( size_t i = 0; i < header->numsectionheaderentries; i++ )
+		if ( !strcmp(section_names + shtbl[i].name, ".strtab") )
+		{
+			string_table_section = shtbl + i;
+			break;
+		}
+
+	// Find the symbol table.
+	const SectionHeader32* symbol_table_section = NULL;
+	for ( size_t i = 0; i < header->numsectionheaderentries; i++ )
+		if ( !strcmp(section_names + shtbl[i].name, ".symtab") )
+		{
+			symbol_table_section = shtbl + i;
+			break;
+		}
+
+	if ( !string_table_section || !symbol_table_section )
+		return entry;
+
+	// Prepare copying debug information.
+	const char* elf_string_table = (const char*) (file + string_table_section->offset);
+	size_t elf_string_table_size = string_table_section->size;
+	const Symbol32* elf_symbols = (const Symbol32*) (file + symbol_table_section->offset);
+	size_t elf_symbol_count = symbol_table_section->size / sizeof(Symbol32);
+
+	// Duplicate the string table.
+	char* string_table = new char[elf_string_table_size];
+	if ( !string_table )
+		return entry;
+	memcpy(string_table, elf_string_table, elf_string_table_size);
+
+	// Duplicate the symbol table.
+	Symbol* symbol_table = new Symbol[elf_symbol_count-1];
+	if ( !symbol_table )
+	{
+		delete[] string_table;
+		return entry;
+	}
+
+	// Copy all entires except the leading null entry.
+	for ( size_t i = 1; i < elf_symbol_count; i++ )
+	{
+		symbol_table[i-1].address = elf_symbols[i].st_value;
+		symbol_table[i-1].size = elf_symbols[i].st_size;
+		symbol_table[i-1].name = string_table + elf_symbols[i].st_name;
+	}
+
+	process->string_table = string_table;
+	process->string_table_length = elf_string_table_size;
+	process->symbol_table = symbol_table;
+	process->symbol_table_length = elf_symbol_count-1;
+
 	return entry;
 }
 
-addr_t Construct64(Process* process, const void* file, size_t filelen)
+addr_t Construct64(Process* process, const uint8_t* file, size_t filelen)
 {
 #ifndef PLATFORM_X64
 	(void) process;
@@ -241,6 +307,67 @@ addr_t Construct64(Process* process, const void* file, size_t filelen)
 		memset(memdest + pht->filesize, 0, pht->memorysize - pht->filesize);
 	}
 
+	// Find the location of the section headers.
+	addr_t shtblpos = (addr_t) file + header->sectionheaderoffset;
+	const SectionHeader64* shtbl = (const SectionHeader64*) shtblpos;
+
+	const SectionHeader64* section_names_section = shtbl + header->sectionheaderstringindex;
+	const char* section_names = (const char*) (file + section_names_section->offset);
+
+	// Find the string table.
+	const SectionHeader64* string_table_section = NULL;
+	for ( size_t i = 0; i < header->numsectionheaderentries; i++ )
+		if ( !strcmp(section_names + shtbl[i].name, ".strtab") )
+		{
+			string_table_section = shtbl + i;
+			break;
+		}
+
+	// Find the symbol table.
+	const SectionHeader64* symbol_table_section = NULL;
+	for ( size_t i = 0; i < header->numsectionheaderentries; i++ )
+		if ( !strcmp(section_names + shtbl[i].name, ".symtab") )
+		{
+			symbol_table_section = shtbl + i;
+			break;
+		}
+
+	if ( !string_table_section || !symbol_table_section )
+		return entry;
+
+	// Prepare copying debug information.
+	const char* elf_string_table = (const char*) (file + string_table_section->offset);
+	size_t elf_string_table_size = string_table_section->size;
+	const Symbol64* elf_symbols = (const Symbol64*) (file + symbol_table_section->offset);
+	size_t elf_symbol_count = symbol_table_section->size / sizeof(Symbol64);
+
+	// Duplicate the string table.
+	char* string_table = new char[elf_string_table_size];
+	if ( !string_table )
+		return entry;
+	memcpy(string_table, elf_string_table, elf_string_table_size);
+
+	// Duplicate the symbol table.
+	Symbol* symbol_table = new Symbol[elf_symbol_count-1];
+	if ( !symbol_table )
+	{
+		delete[] string_table;
+		return entry;
+	}
+
+	// Copy all entires except the leading null entry.
+	for ( size_t i = 1; i < elf_symbol_count; i++ )
+	{
+		symbol_table[i-1].address = elf_symbols[i].st_value;
+		symbol_table[i-1].size = elf_symbols[i].st_size;
+		symbol_table[i-1].name = string_table + elf_symbols[i].st_name;
+	}
+
+	process->string_table = string_table;
+	process->string_table_length = elf_string_table_size;
+	process->symbol_table = symbol_table;
+	process->symbol_table_length = elf_symbol_count-1;
+
 	return entry;
 #endif
 }
@@ -258,8 +385,8 @@ addr_t Construct(Process* process, const void* file, size_t filelen)
 
 	switch ( header->fileclass )
 	{
-		case CLASS32: return Construct32(process, file, filelen);
-		case CLASS64: return Construct64(process, file, filelen);
+		case CLASS32: return Construct32(process, (const uint8_t*) file, filelen);
+		case CLASS64: return Construct64(process, (const uint8_t*) file, filelen);
 		default:
 			return 0;
 	}

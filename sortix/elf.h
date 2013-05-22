@@ -178,12 +178,12 @@ struct Symbol32
 
 struct Symbol64
 {
-	   uint32_t st_name;
-	   uint8_t st_info;
-	   uint8_t st_other;
-	   uint16_t st_shndx;
-	   uint64_t st_value;
-	   uint64_t st_size;
+	uint32_t st_name;
+	uint8_t st_info;
+	uint8_t st_other;
+	uint16_t st_shndx;
+	uint64_t st_value;
+	uint64_t st_size;
 };
 
 // Reads the elf file into the current address space and returns the entry
