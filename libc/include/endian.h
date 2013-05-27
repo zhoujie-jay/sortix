@@ -26,6 +26,7 @@
 #define _ENDIAN_H 1
 
 #include <features.h>
+
 #include <__/endian.h>
 
 __BEGIN_DECLS
@@ -58,5 +59,22 @@ __BEGIN_DECLS
 #define le64toh(x) __le64toh(x)
 
 __END_DECLS
+
+/* Sortix specific extensions only available in C++. */
+#if defined(__cplusplus)
+
+/* Create big-endian versions of the stdint.h exact size data types. */
+typedef __big_uint8_t big_uint8_t;
+typedef __big_uint16_t big_uint16_t;
+typedef __big_uint32_t big_uint32_t;
+typedef __big_uint64_t big_uint64_t;
+
+/* Create little-endian versions of the stdint.h exact size data types. */
+typedef __little_uint8_t little_uint8_t;
+typedef __little_uint16_t little_uint16_t;
+typedef __little_uint32_t little_uint32_t;
+typedef __little_uint64_t little_uint64_t;
+
+#endif
 
 #endif

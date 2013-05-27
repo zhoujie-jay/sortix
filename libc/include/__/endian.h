@@ -83,4 +83,124 @@ __BEGIN_DECLS
 
 __END_DECLS
 
+/* Sortix specific extensions only available in C++. */
+#if defined(__cplusplus)
+
+#include <__/stdint.h>
+
+/* This template allows creating data types that are stored with a specific
+   endianness, but can automatically be used as a normal variable. For instance,
+   it allows the creation of a big_uint32_t that is an unsigned 32-bit integer
+   stored in big endian format. Any assignments to it will automatically be
+   converted to big endian and any reads will automatically be converted to the
+   host endian. The template even supports volatile objects, so you can create a
+   struct with such data types and then use a volatile pointer to such a struct
+   and do memory mapped IO easily and correctly. */
+template <typename T, int endianness>
+class __endian_base
+{
+private:
+	T representation;
+
+	static T swap(const T& arg)
+	{
+		/* No need to swap if we already have the correct endianness. */
+		if ( __BYTE_ORDER == endianness )
+			return arg;
+		/* Use the optimized macros from byteswap.h for small objects. */
+		if ( sizeof(arg) == 1 )
+			return arg;
+		else if ( sizeof(arg) == 2 )
+			return (T) __bswap_16((__uint16_t) arg);
+		else if ( sizeof(arg) == 4 )
+			return (T) __bswap_32((__uint32_t) arg);
+		else if ( sizeof(arg) == 8 )
+			return (T) __bswap_64((__uint64_t) arg);
+		/* Convert the input as a byte buffer. */
+		union { T input; __uint8_t input_buf[sizeof(T)]; };
+		union { T output; __uint8_t output_buf[sizeof(T)]; };
+		input = arg;
+		for ( unsigned long i = 0; i < sizeof(T); i++ )
+			output_buf[i] = input_buf[sizeof(T)-(i+1)];
+		return output;
+	}
+
+public:
+	__endian_base() { }
+	__endian_base(const T& t) : representation(swap(t)) { }
+	operator T() const { return swap(representation); }
+	operator T() const volatile { return swap((const T) representation); }
+
+	__endian_base& operator=(const T& rhs)
+	{
+		representation = swap(rhs);
+		return *this;
+	}
+
+	__endian_base& operator=(const __endian_base& rhs)
+	{
+		/* Self-assignment doesn't do any harm here. */
+		representation = rhs.representation;
+		return *this;
+	}
+
+/* TODO: According to the G++ documentation:
+
+         "When using a reference to volatile, G++ does not treat equivalent
+          expressions as accesses to volatiles, but instead issues a warning
+          that no volatile is accessed."
+
+         This is problematic in our case as we do want to return a volatile
+         reference that isn't implicitly accessed, so that stuff such as
+         a = b = c works as intended and with volatile semantics.
+         The outcommented code does work, but we get a warning when doing a = b,
+         and this warning cannot be disabled. For that reason, we revert to the
+         unsafe semantics hoping that a = b = c isn't used. */
+#if defined(ACCEPTS_VOLATILE_IMPLICIT_ACCESS_WARNING)
+	volatile __endian_base& operator=(const T& rhs) volatile
+	{
+		representation = swap(rhs);
+		return *this;
+	}
+
+	volatile __endian_base& operator=(const __endian_base& rhs) volatile
+	{
+		/* Self-assignment does the right thing in this case. */
+		representation = rhs.representation;
+		return *this;
+	}
+#else
+	__endian_base& operator=(const T& rhs) volatile
+	{
+		representation = swap(rhs);
+		return *(__endian_base*) this;
+	}
+
+	__endian_base& operator=(const __endian_base& rhs) volatile
+	{
+		/* Self-assignment does the right thing in this case. */
+		representation = rhs.representation;
+		return *(__endian_base*) this;
+	}
+#endif
+
+	/* TODO: It could be useful to overload ++, --, and other assignment
+	         operators here. */
+
+} __attribute__((packed));
+
+/* Create big-endian versions of the stdint.h exact size data types. */
+typedef __endian_base<__uint8_t, __BIG_ENDIAN> __big_uint8_t;
+typedef __endian_base<__uint16_t, __BIG_ENDIAN> __big_uint16_t;
+typedef __endian_base<__uint32_t, __BIG_ENDIAN> __big_uint32_t;
+typedef __endian_base<__uint64_t, __BIG_ENDIAN> __big_uint64_t;
+
+/* Create little-endian versions of the stdint.h exact size data types. */
+typedef __endian_base<__uint8_t, __LITTLE_ENDIAN> __little_uint8_t;
+typedef __endian_base<__uint16_t, __LITTLE_ENDIAN> __little_uint16_t;
+typedef __endian_base<__uint32_t, __LITTLE_ENDIAN> __little_uint32_t;
+typedef __endian_base<__uint64_t, __LITTLE_ENDIAN> __little_uint64_t;
+
+#endif
+
 #endif
