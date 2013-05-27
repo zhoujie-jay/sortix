@@ -186,6 +186,28 @@ addr_t ParseDevBar0(uint32_t devaddr)
 	}
 }
 
+bool IsIOSpaceBar(uint32_t devaddr, uint8_t bar)
+{
+	uint32_t val = PCI::Read32(devaddr, 0x10 + 4 * bar);
+	return val & 0x1;
+}
+
+bool Is64BitBar(uint32_t devaddr, uint8_t bar)
+{
+	uint32_t val = PCI::Read32(devaddr, 0x10 + 4 * bar);
+	return (val & 0x3 << 1) == 0x2 << 1;
+}
+
+uint64_t GetPCIBAR(uint32_t devaddr, uint8_t bar)
+{
+	uint64_t low = PCI::Read32(devaddr, 0x10 + 4 * (bar+0));
+	if ( (low & (0x3 << 1)) != (0x2 << 1) )
+		return low & 0xFFFFFFF0ULL;
+	uint64_t high = PCI::Read32(devaddr, 0x10 + 4 * (bar+1));
+	return (low & 0xFFFFFFF0ULL) | high << 32ULL;
+}
+
+
 void Init()
 {
 }

@@ -67,6 +67,9 @@ pciid_t GetDeviceId(uint32_t devaddr);
 pcitype_t GetDeviceType(uint32_t devaddr);
 uint32_t SearchForDevice(pcifind_t pcifind);
 addr_t ParseDevBar0(uint32_t devaddr);
+bool IsIOSpaceBar(uint32_t devaddr, uint8_t bar);
+bool Is64BitBar(uint32_t devaddr, uint8_t bar);
+uint64_t GetPCIBAR(uint32_t devaddr, uint8_t bar);
 
 } // namespace PCI
 } // namespace Sortix
