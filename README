@@ -36,8 +36,7 @@ such as VirtualBox and Qemu:
   then you likely need at least twice the size of the cdrom image.
 * A harddisk or cdrom drive or support for booting from USB.
 * A multiboot compliant bootloader if booting from harddisk.
-* A Parallel ATA harddisk, if you wish to access it from Sortix. The AHCI driver
-  has not been merged yet.
+* ATA or AHCI harddisk.
 
 Documentation
 -------------

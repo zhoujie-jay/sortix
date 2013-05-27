@@ -73,6 +73,7 @@
 #include <sortix/kernel/worker.h>
 
 #include "com.h"
+#include "disk/ahci/ahci.h"
 #include "disk/ata/ata.h"
 #include "fs/full.h"
 #include "fs/kram.h"
@@ -529,6 +530,9 @@ static void BootThread(void* /*user*/)
 
 	// Search for PCI devices and load their drivers.
 	PCI::Init();
+
+	// Initialize AHCI devices.
+	AHCI::Init("/dev", slashdev);
 
 	// Initialize ATA devices.
 	ATA::Init("/dev", slashdev);

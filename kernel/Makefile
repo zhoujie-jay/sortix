@@ -86,6 +86,9 @@ $(CPUDIR)/kthread.o \
 crc32.o \
 debugger.o \
 descriptor.o \
+disk/ahci/ahci.o \
+disk/ahci/hba.o \
+disk/ahci/port.o \
 disk/ata/ata.o \
 disk/ata/hba.o \
 disk/ata/port.o \
