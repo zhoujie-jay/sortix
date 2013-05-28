@@ -214,6 +214,17 @@ void LogTerminal::ProcessKeystroke(int kbkey)
 		return;
 	}
 
+	if ( termmode & TERMMODE_LINEBUFFER && control && kbkey == KBKEY_L )
+	{
+		while ( linebuffer.CanBackspace() )
+			linebuffer.Backspace();
+		QueueUnicode(KBKEY_ENCODE(KBKEY_ENTER));
+		QueueUnicode('\n');
+		QueueUnicode(KBKEY_ENCODE(-KBKEY_ENTER));
+		Log::PrintF("\e[H\e[2J");
+		return;
+	}
+
 	uint32_t unikbkey = KBKEY_ENCODE(kbkey);
 	QueueUnicode(unikbkey);
 	uint32_t unicode = kblayout->Translate(kbkey);
