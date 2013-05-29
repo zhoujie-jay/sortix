@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013
+    Copyright(C) Jonas 'Sortie' Termansen 2013
 
     This file is part of the Sortix C Library.
 
@@ -17,15 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    chdir.cpp
+    fchdirat.cpp
     Changes the current working directory.
 
 *******************************************************************************/
 
-#include <fcntl.h>
+#include <sys/syscall.h>
+
 #include <unistd.h>
 
-extern "C" int chdir(const char* path)
+DEFN_SYSCALL2(int, sys_fchdirat, SYSCALL_FCHDIRAT, int, const char*);
+
+extern "C" int fchdirat(int dirfd, const char* path)
 {
-	return fchdirat(AT_FDCWD, path);
+	return sys_fchdirat(dirfd, path);
 }

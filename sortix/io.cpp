@@ -367,14 +367,14 @@ static int sys_fchdir(int fd)
 	return 0;
 }
 
-static int sys_chdir(const char* path)
+static int sys_fchdirat(int dirfd, const char* path)
 {
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
 	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath);
+	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	Ref<Descriptor> desc = from->open(&ctx, relpath, O_READ | O_DIRECTORY);
 	from.Reset();
 	delete[] pathcopy;
@@ -382,6 +382,12 @@ static int sys_chdir(const char* path)
 		return -1;
 	CurrentProcess()->SetCWD(desc);
 	return 0;
+}
+
+// TODO: This system call is replaced by sys_fchownat, will be removed soon.
+static int sys_chdir(const char* path)
+{
+	return sys_fchdirat(AT_FDCWD, path);
 }
 
 static int sys_fchown(int fd, uid_t owner, gid_t group)
@@ -864,6 +870,7 @@ void Init()
 	Syscall::Register(SYSCALL_DUP2, (void*) sys_dup2);
 	Syscall::Register(SYSCALL_DUP, (void*) sys_dup);
 	Syscall::Register(SYSCALL_FACCESSAT, (void*) sys_faccessat);
+	Syscall::Register(SYSCALL_FCHDIRAT, (void*) sys_fchdirat);
 	Syscall::Register(SYSCALL_FCHDIR, (void*) sys_fchdir);
 	Syscall::Register(SYSCALL_FCHMODAT, (void*) sys_fchmodat);
 	Syscall::Register(SYSCALL_FCHMOD, (void*) sys_fchmod);

@@ -316,6 +316,7 @@ int execvp(const char*, char* const []);
 pid_t fork(void);
 int faccessat(int, const char*, int, int);
 int fchdir(int);
+int fchdirat(int, const char*);
 int fchown(int, uid_t, gid_t);
 int fchownat(int, const char*, uid_t, gid_t, int);
 int fsync(int);

@@ -198,6 +198,7 @@ _exit.o \
 _Exit.o \
 exit.o \
 faccessat.o \
+fchdirat.o \
 fchdir.o \
 fchmodat.o \
 fchmod.o \
