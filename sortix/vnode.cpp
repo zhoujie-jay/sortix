@@ -25,6 +25,7 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/inode.h>
 #include <sortix/kernel/vnode.h>
 #include <sortix/kernel/mtable.h>
@@ -68,9 +69,18 @@ Vnode::~Vnode()
 
 Ref<Vnode> Vnode::open(ioctx_t* ctx, const char* filename, int flags, mode_t mode)
 {
+	bool dotdot = strcmp(filename, "..") == 0;
+
+	// Prevent escaping the root filesystem.
+	if ( dotdot )
+	{
+		Ref<Descriptor> root = CurrentProcess()->GetRoot();
+		if ( root->ino == ino && root->dev == dev )
+			return Ref<Vnode>(this);
+	}
+
 	// Handle transition across filesystem mount points.
 	bool isroot = inode->ino == rootino && inode->dev == rootdev;
-	bool dotdot = strcmp(filename, "..") == 0;
 	if ( isroot && dotdot && mountedat )
 		return mountedat;
 
