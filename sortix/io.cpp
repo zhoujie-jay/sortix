@@ -390,6 +390,35 @@ static int sys_chdir(const char* path)
 	return sys_fchdirat(AT_FDCWD, path);
 }
 
+static int sys_fchroot(int fd)
+{
+	Process* process = CurrentProcess();
+	Ref<Descriptor> desc = process->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	if ( !S_ISDIR(desc->type) )
+		return errno = ENOTDIR, -1;
+	process->SetRoot(desc);
+	return 0;
+}
+
+static int sys_fchrootat(int dirfd, const char* path)
+{
+	char* pathcopy = GetStringFromUser(path);
+	if ( !pathcopy )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	const char* relpath = pathcopy;
+	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, O_READ | O_DIRECTORY);
+	from.Reset();
+	delete[] pathcopy;
+	if ( !desc )
+		return -1;
+	CurrentProcess()->SetRoot(desc);
+	return 0;
+}
+
 static int sys_fchown(int fd, uid_t owner, gid_t group)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
@@ -876,6 +905,8 @@ void Init()
 	Syscall::Register(SYSCALL_FCHMOD, (void*) sys_fchmod);
 	Syscall::Register(SYSCALL_FCHOWNAT, (void*) sys_fchownat);
 	Syscall::Register(SYSCALL_FCHOWN, (void*) sys_fchown);
+	Syscall::Register(SYSCALL_FCHROOTAT, (void*) sys_fchrootat);
+	Syscall::Register(SYSCALL_FCHROOT, (void*) sys_fchroot);
 	Syscall::Register(SYSCALL_FCNTL, (void*) sys_fcntl);
 	Syscall::Register(SYSCALL_FSTATAT, (void*) sys_fstatat);
 	Syscall::Register(SYSCALL_FSTAT, (void*) sys_fstat);

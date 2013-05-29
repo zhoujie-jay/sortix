@@ -120,6 +120,7 @@ public:
 	Ref<Descriptor> GetDescriptor(int fd);
 	// TODO: This should be removed, don't call it.
 	Ref<Descriptor> Open(ioctx_t* ctx, const char* path, int flags, mode_t mode = 0);
+	void SetRoot(Ref<Descriptor> newroot);
 	void SetCWD(Ref<Descriptor> newcwd);
 
 private:

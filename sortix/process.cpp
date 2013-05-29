@@ -546,6 +546,13 @@ namespace Sortix
 		return cwd;
 	}
 
+	void Process::SetRoot(Ref<Descriptor> newroot)
+	{
+		ScopedLock lock(&ptrlock);
+		assert(newroot);
+		root = newroot;
+	}
+
 	void Process::SetCWD(Ref<Descriptor> newcwd)
 	{
 		ScopedLock lock(&ptrlock);

@@ -172,6 +172,7 @@ canonicalize_file_name.o \
 chdir.o \
 chmod.o \
 chown.o \
+chroot.o \
 close.o \
 confstr.o \
 $(CPUDIR)/calltrace.o \
@@ -204,6 +205,8 @@ fchmodat.o \
 fchmod.o \
 fchownat.o \
 fchown.o \
+fchrootat.o \
+fchroot.o \
 fcloseall.o \
 fcntl.o \
 fddir-sortix.o \
