@@ -17,6 +17,7 @@ CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 BINARIES:=\
 calc \
 cat \
+chroot \
 chvideomode \
 clear \
 colormake \

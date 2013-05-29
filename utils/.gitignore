@@ -1,6 +1,7 @@
 *.o
 calc
 cat
+chroot
 chvideomode
 clear
 colormake
