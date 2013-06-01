@@ -113,6 +113,7 @@ memorymanagement.o \
 mtable.o \
 net/fs.o \
 panic.o \
+partition.o \
 pci.o \
 pipe.o \
 poll.o \

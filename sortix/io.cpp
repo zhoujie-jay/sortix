@@ -33,6 +33,7 @@
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/thread.h>
+#include <sortix/kernel/vnode.h>
 
 #include <sortix/seek.h>
 #include <sortix/dirent.h>
@@ -45,6 +46,7 @@
 #include <errno.h>
 
 #include "io.h"
+#include "partition.h"
 
 namespace Sortix {
 namespace IO {
@@ -886,6 +888,38 @@ static ssize_t sys_pwritev(int fd, const struct iovec* user_iov, int iovcnt,
 	return so_far;
 }
 
+static int sys_mkpartition(int fd, off_t start, off_t length, int flags)
+{
+	int fdflags = 0;
+	if ( flags & O_CLOEXEC ) fdflags |= FD_CLOEXEC;
+	if ( flags & O_CLOFORK ) fdflags |= FD_CLOFORK;
+
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+
+	int dflags = desc->dflags;
+	Ref<Inode> inner_inode = desc->vnode->inode;
+	desc.Reset();
+
+	Ref<Inode> partition(new Partition(inner_inode, start, length));
+	if ( !partition )
+		return -1;
+	inner_inode.Reset();
+
+	Ref<Vnode> partition_vnode(new Vnode(partition, Ref<Vnode>(NULL), 0, 0));
+	if ( !partition_vnode )
+		return -1;
+	partition.Reset();
+
+	Ref<Descriptor> partition_desc(new Descriptor(partition_vnode, dflags));
+	if ( !partition_desc )
+		return -1;
+	partition_vnode.Reset();
+
+	return CurrentProcess()->GetDTable()->Allocate(partition_desc, fdflags);
+}
+
 void Init()
 {
 	Syscall::Register(SYSCALL_ACCEPT4, (void*) sys_accept4);
@@ -921,6 +955,7 @@ void Init()
 	Syscall::Register(SYSCALL_LISTEN, (void*) sys_listen);
 	Syscall::Register(SYSCALL_MKDIRAT, (void*) sys_mkdirat);
 	Syscall::Register(SYSCALL_MKDIR, (void*) sys_mkdir);
+	Syscall::Register(SYSCALL_MKPARTITION, (void*) sys_mkpartition);
 	Syscall::Register(SYSCALL_OPENAT, (void*) sys_openat);
 	Syscall::Register(SYSCALL_OPEN, (void*) sys_open);
 	Syscall::Register(SYSCALL_PREAD, (void*) sys_pread);

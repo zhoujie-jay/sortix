@@ -368,6 +368,7 @@ int execvpe(const char*, char* const [], char* const []);
 int getdtablesize(void);
 size_t getpagesize(void);
 int memstat(size_t* memused, size_t* memtotal);
+int mkpartition(int fd, off_t start, off_t length);
 size_t preadall(int fd, void* buf, size_t count, off_t off);
 size_t preadleast(int fd, void* buf, size_t least, size_t max, off_t off);
 size_t pwriteall(int fd, const void* buf, size_t count, off_t off);

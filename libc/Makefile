@@ -260,6 +260,7 @@ lstat.o \
 memstat.o \
 mkdirat.o \
 mkdir.o \
+mkpartition.o \
 mktemp.o \
 netdb/endhostent.o \
 netdb/endnetent.o \

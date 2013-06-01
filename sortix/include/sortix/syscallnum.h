@@ -132,6 +132,7 @@
 #define SYSCALL_FCHDIRAT 108
 #define SYSCALL_FCHROOT 109
 #define SYSCALL_FCHROOTAT 110
-#define SYSCALL_MAX_NUM 111 /* index of highest constant + 1 */
+#define SYSCALL_MKPARTITION 111
+#define SYSCALL_MAX_NUM 112 /* index of highest constant + 1 */
 
 #endif
