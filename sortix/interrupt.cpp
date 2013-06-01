@@ -27,8 +27,10 @@
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
+#include <sortix/kernel/thread.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/calltrace.h>
+#include <sortix/kernel/debugger.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -64,6 +66,7 @@ const bool DEBUG_IRQ = false;
 const bool DEBUG_ISR = false;
 const bool CALLTRACE_KERNEL = false;
 const bool CALLTRACE_USER = false;
+const bool RUN_DEBUGGER_ON_CRASH = false;
 bool initialized;
 
 const size_t NUM_KNOWN_EXCEPTIONS = 20;
@@ -220,6 +223,8 @@ void RegisterRawHandler(unsigned index, RawHandler handler, bool userspace)
 
 void CrashHandler(CPU::InterruptRegisters* regs)
 {
+	CurrentThread()->SaveRegisters(regs);
+
 	const char* message = ( regs->int_no < NUM_KNOWN_EXCEPTIONS )
 	                      ? exceptions[regs->int_no] : "Unknown";
 
@@ -244,6 +249,9 @@ void CrashHandler(CPU::InterruptRegisters* regs)
 	#else
 		#error Please provide a calltrace implementation for your CPU.
 	#endif
+
+	if ( RUN_DEBUGGER_ON_CRASH )
+		Debugger::Run();
 
 	if ( is_in_kernel )
 	{
