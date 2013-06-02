@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -223,7 +223,8 @@ ATABus::~ATABus()
 
 ATADrive* ATABus::Instatiate(unsigned driveid)
 {
-	if ( 1 < driveid ) { errno = EINVAL; return NULL; }
+	if ( 1 < driveid )
+		return errno = EINVAL, (ATADrive*) NULL;
 	curdriveid = 0;
 
 	uint8_t drivemagic = 0xA0 | (driveid << 4);
@@ -237,17 +238,16 @@ ATADrive* ATABus::Instatiate(unsigned driveid)
 	while ( true )
 	{
 		status = CPU::InPortB(iobase + STATUS);
-		if ( !status || status == 0xFF ) { errno = ENODEV; return NULL; }
-		if ( !(status & STATUS_BUSY) ) { break; }
+		if ( !status || status == 0xFF )
+			return errno = ENODEV, (ATADrive*) NULL;
+		if ( !(status & STATUS_BUSY) )
+			break;
 	}
+	// Check for ATAPI device not following spec.
 	if ( CPU::InPortB(iobase + LBA_MID) || CPU::InPortB(iobase + LBA_MID) )
-	{
-		errno = ENODEV; return NULL; // ATAPI device not following spec.
-	}
+		return errno = ENODEV, (ATADrive*) NULL;
 	while ( !(status & STATUS_DATAREADY) && !(status & STATUS_ERROR) )
-	{
 		status = CPU::InPortB(iobase + STATUS);
-	}
 	if ( status & STATUS_ERROR )
 	{
 		unsigned mid = CPU::InPortB(iobase + LBA_MID);
@@ -268,8 +268,7 @@ ATADrive* ATABus::Instatiate(unsigned driveid)
 		{
 			//Log::PrintF("Error status during identify\n");
 		}
-		errno = EIO;
-		return NULL;
+		return errno = EIO, (ATADrive*) NULL;
 	}
 	ATADrive* drive = new ATADrive(this, driveid, iobase, altport);
 	return drive;
@@ -307,20 +306,20 @@ ATADrive::ATADrive(ATABus* bus, unsigned driveid, uint16_t portoffset, uint16_t 
 	if ( lba48 )
 	{
 		numsectors = (uint64_t) meta[META_LBA48 + 0] <<  0
-				   | (uint64_t) meta[META_LBA48 + 1] <<  8
-				   | (uint64_t) meta[META_LBA48 + 2] << 16
-				   | (uint64_t) meta[META_LBA48 + 3] << 24
-				   | (uint64_t) meta[META_LBA48 + 4] << 32
-				   | (uint64_t) meta[META_LBA48 + 5] << 40
-				   | (uint64_t) meta[META_LBA48 + 6] << 48
-				   | (uint64_t) meta[META_LBA48 + 7] << 56;
+		           | (uint64_t) meta[META_LBA48 + 1] <<  8
+		           | (uint64_t) meta[META_LBA48 + 2] << 16
+		           | (uint64_t) meta[META_LBA48 + 3] << 24
+		           | (uint64_t) meta[META_LBA48 + 4] << 32
+		           | (uint64_t) meta[META_LBA48 + 5] << 40
+		           | (uint64_t) meta[META_LBA48 + 6] << 48
+		           | (uint64_t) meta[META_LBA48 + 7] << 56;
 	}
 	else
 	{
 		numsectors = meta[META_LBA28 + 0] <<  0
-				   | meta[META_LBA28 + 1] <<  8
-				   | meta[META_LBA28 + 2] << 16
-				   | meta[META_LBA28 + 3] << 24;
+		           | meta[META_LBA28 + 1] <<  8
+		           | meta[META_LBA28 + 2] << 16
+		           | meta[META_LBA28 + 3] << 24;
 	}
 	sectorsize = 512; // TODO: Detect this!
 	Initialize();
