@@ -29,8 +29,10 @@
 
 namespace Sortix
 {
-	const unsigned MOD_LSHIFT = (1U<<0U);
+	const unsigned MOD_SHIFT = (1U<<0U);
 	const unsigned MOD_CAPS = (1U<<1U);
+	const unsigned MOD_LSHIFT = (1U<<2U);
+	const unsigned MOD_RSHIFT = (1U<<3U);
 
 	const uint32_t LAYOUT_US[4UL*128UL] =
 	{
@@ -136,11 +138,18 @@ namespace Sortix
 	{
 		if ( kbkey == KBKEY_LSHIFT ) { modifiers |= MOD_LSHIFT; return 0; }
 		if ( kbkey == -KBKEY_LSHIFT ) { modifiers &= ~MOD_LSHIFT; return 0; }
+		if ( kbkey == KBKEY_RSHIFT ) { modifiers |= MOD_RSHIFT; return 0; }
+		if ( kbkey == -KBKEY_RSHIFT ) { modifiers &= ~MOD_RSHIFT; return 0; }
 		if ( kbkey == KBKEY_CAPSLOCK ) { modifiers ^= MOD_CAPS; return 0; }
 
 		int abskbkey = (kbkey < 0) ? -kbkey : kbkey;
 
-		unsigned usedmods = modifiers & (MOD_LSHIFT | MOD_CAPS);
+		if ( (modifiers & MOD_LSHIFT) || (modifiers & MOD_RSHIFT) )
+			modifiers |= MOD_SHIFT;
+		else
+			modifiers &= ~MOD_SHIFT;
+
+		unsigned usedmods = modifiers & (MOD_SHIFT | MOD_CAPS);
 		size_t index = (abskbkey<<2) | usedmods;
 
 		// Check if the kbkey is outside the layout structure (not printable).
