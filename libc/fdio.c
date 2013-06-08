@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -22,12 +22,15 @@
 
 *******************************************************************************/
 
-#include <unistd.h>
+#include <sys/stat.h>
+
+#include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <errno.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 #include "fdio.h"
 
 const int FDIO_WRITING = (1<<0);
@@ -129,7 +132,8 @@ static int fdio_close(void* user)
 int fdio_install(FILE* fp, const char* mode, int fd)
 {
 	fdio_t* fdio = (fdio_t*) calloc(1, sizeof(fdio_t));
-	if ( !fdio ) { return 0; }
+	if ( !fdio )
+		return 0;
 	fdio->fd = fd;
 	char c;
 	// TODO: This is too hacky and a little buggy.
@@ -145,6 +149,9 @@ int fdio_install(FILE* fp, const char* mode, int fd)
 			default: errno = EINVAL; free(fdio); return 0;
 		}
 	}
+	struct stat st;
+	if ( !fstat(fd, &st) && fdio->flags & FDIO_WRITING && S_ISDIR(st.st_mode) )
+		return free(fdio), errno = EISDIR, 0;
 	fp->user = fdio;
 	fp->read_func = fdio_read;
 	fp->write_func = fdio_write;
