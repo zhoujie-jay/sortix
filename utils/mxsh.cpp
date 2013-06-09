@@ -68,7 +68,7 @@ void updateenv()
 	}
 }
 
-int runcommandline(const char** tokens, bool* exitexec)
+int runcommandline(const char** tokens, bool* exitexec, bool interactive)
 {
 	int result = 127;
 	size_t cmdnext = 0;
@@ -273,6 +273,12 @@ readcmd:
 	}
 
 	execvp(argv[0], argv);
+	if ( interactive )
+	{
+		int errno_saved = errno;
+		execlp("command-not-found", "command-not-found", argv[0], NULL);
+		errno = errno_saved;
+	}
 	error(127, errno, "%s", argv[0]);
 	return 127;
 
@@ -454,7 +460,7 @@ int get_and_run_command(FILE* fp, const char* fpname, bool interactive,
 		return status;
 
 	argv[argc] = NULL;
-	status = runcommandline(argv, exitexec);
+	status = runcommandline(argv, exitexec, interactive);
 	if ( status && exit_on_error )
 		*exitexec = true;
 	return status;

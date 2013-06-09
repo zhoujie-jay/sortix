@@ -22,6 +22,7 @@ chvideomode \
 clear \
 colormake \
 column \
+command-not-found \
 cp \
 date \
 du \
