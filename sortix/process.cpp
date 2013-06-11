@@ -341,40 +341,13 @@ void Process::LastPrayer()
 
 	iszombie = true;
 
-	// If this is a process group leader of a group containing other processes,
-	// then we have to wait until we are the only member and then terminate.
-	kthread_mutex_lock(&groupchildlock);
-	bool group_leader = group == this;
-	kthread_mutex_unlock(&groupchildlock);
-	if ( group_leader )
-	{
-		grouplimbo = true;
-		NotifyLeftProcessGroup();
-		return;
-	}
-
-	LastPrayerFinalize();
-}
-
-void Process__LastPrayerFinalize(void* user)
-{
-	return ((Process*) user)->LastPrayerFinalize();
-}
-
-void Process::NotifyLeftProcessGroup()
-{
-	ScopedLock parentlock(&groupparentlock);
-	if ( !grouplimbo )
-		return;
-	if ( groupprev || groupnext )
-		return;
-	grouplimbo = false;
-	Worker::Schedule(Process__LastPrayerFinalize, this);
-}
-
-void Process::LastPrayerFinalize()
-{
 	bool zombify = !nozombify;
+
+	// Remove ourself from our process group.
+	kthread_mutex_lock(&groupchildlock);
+	if ( group )
+		group->NotifyMemberExit(this);
+	kthread_mutex_unlock(&groupchildlock);
 
 	// This class instance will be destroyed by our parent process when it
 	// has received and acknowledged our death.
@@ -385,7 +358,14 @@ void Process::LastPrayerFinalize()
 
 	// If nobody is waiting for us, then simply commit suicide.
 	if ( !zombify )
-		delete this;
+	{
+		kthread_mutex_lock(&groupparentlock);
+		bool in_limbo = groupfirst || (grouplimbo = true);
+		kthread_mutex_unlock(&groupparentlock);
+
+		if ( !in_limbo )
+			delete this;
+	}
 }
 
 void Process::ResetAddressSpace()
@@ -401,6 +381,33 @@ void Process::ResetAddressSpace()
 	}
 
 	segments = NULL;
+}
+
+void Process::NotifyMemberExit(Process* child)
+{
+	assert(child->group == this);
+	kthread_mutex_lock(&groupparentlock);
+	if ( child->groupprev )
+		child->groupprev->groupnext = child->groupnext;
+	else
+		groupfirst = child->groupnext;
+	if ( child->groupnext )
+		child->groupnext->groupprev = child->groupprev;
+	kthread_cond_signal(&groupchildleft);
+	kthread_mutex_unlock(&groupparentlock);
+
+	child->group = NULL;
+
+	NotifyLeftProcessGroup();
+}
+
+void Process::NotifyLeftProcessGroup()
+{
+	ScopedLock parentlock(&groupparentlock);
+	if ( !grouplimbo || groupfirst )
+		return;
+	grouplimbo = false;
+	delete this;
 }
 
 void Process::NotifyChildExit(Process* child, bool zombify)
@@ -493,22 +500,6 @@ pid_t Process::Wait(pid_t thepid, int* status, int options)
 	if ( zombiechild )
 		zombiechild->prevsibling = NULL;
 
-	// Remove zombie from its process group.
-	kthread_mutex_lock(&zombie->groupchildlock);
-	kthread_mutex_lock(&zombie->group->groupparentlock);
-	assert(zombie->group);
-	if ( zombie->groupprev )
-		zombie->groupprev->groupnext = zombie->groupnext;
-	else
-		zombie->group->groupfirst = zombie->groupnext;
-	if ( zombie->groupnext )
-		zombie->groupnext->groupprev = zombie->groupprev;
-	kthread_cond_signal(&zombie->group->groupchildleft);
-	kthread_mutex_unlock(&zombie->group->groupparentlock);
-	zombie->group->NotifyLeftProcessGroup();
-	zombie->group = NULL;
-	kthread_mutex_unlock(&zombie->groupchildlock);
-
 	thepid = zombie->pid;
 
 	// It is safe to access these clocks directly as the child process is no
@@ -524,8 +515,13 @@ pid_t Process::Wait(pid_t thepid, int* status, int options)
 	if ( status )
 		*status = exitstatus;
 
+	kthread_mutex_lock(&zombie->groupparentlock);
+	bool in_limbo = zombie->groupfirst || (zombie->grouplimbo = true);
+	kthread_mutex_unlock(&zombie->groupparentlock);
+
 	// And so, the process was fully deleted.
-	delete zombie;
+	if ( !in_limbo )
+		delete zombie;
 
 	return thepid;
 }
@@ -562,6 +558,16 @@ bool Process::DeliverSignal(int signum)
 	if ( firstthread )
 		return firstthread->DeliverSignal(signum);
 	return errno = EINIT, false;
+}
+
+bool Process::DeliverGroupSignal(int signum)
+{
+	ScopedLock lock(&groupparentlock);
+	if ( !groupfirst )
+		return errno = ESRCH, false;
+	for ( Process* iter = groupfirst; iter; iter = iter->groupnext )
+		iter->DeliverSignal(signum);
+	return true;
 }
 
 void Process::AddChildProcess(Process* child)

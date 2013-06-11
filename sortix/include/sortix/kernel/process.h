@@ -77,7 +77,6 @@ public:
 class Process
 {
 friend void Process__OnLastThreadExit(void*);
-friend void Process__LastPrayerFinalize(void*);
 
 public:
 	Process();
@@ -177,6 +176,7 @@ public:
 	void Exit(int status);
 	pid_t Wait(pid_t pid, int* status, int options);
 	bool DeliverSignal(int signum);
+	bool DeliverGroupSignal(int signum);
 	void OnThreadDestruction(Thread* thread);
 	int GetParentProcessId();
 	void AddChildProcess(Process* child);
@@ -192,7 +192,7 @@ private:
 	                CPU::InterruptRegisters* regs);
 	void OnLastThreadExit();
 	void LastPrayer();
-	void LastPrayerFinalize();
+	void NotifyMemberExit(Process* child);
 	void NotifyChildExit(Process* child, bool zombify);
 	void NotifyNewZombies();
 	void DeleteTimers();

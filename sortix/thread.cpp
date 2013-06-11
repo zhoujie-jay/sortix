@@ -274,6 +274,9 @@ namespace Sortix
 		// Protect the system idle process.
 		if ( !pid ) { errno = EPERM; return -1; }
 
+		// TODO: Implement that pid == -1 means all processes!
+		bool process_group = pid < 0 ? (pid = -pid, true) : false;
+
 		// If we kill our own process, deliver the signal to this thread.
 		Thread* currentthread = CurrentThread();
 		if ( currentthread->process->pid == pid )
@@ -287,7 +290,9 @@ namespace Sortix
 		// TODO: Check for permission.
 		// TODO: Check for zombies.
 
-		return process->DeliverSignal(signum) ? 0 : -1;
+		return process_group ?
+		       process->DeliverGroupSignal(signum) ? 0 : -1 :
+		       process->DeliverSignal(signum) ? 0 : -1;
 	}
 
 	int SysRaise(int signum)
