@@ -39,6 +39,8 @@ int child()
 	snprintf(init_pid_str, sizeof(pid_t)*3, "%ju", (uintmax_t) init_pid);
 	setenv("INIT_PID", init_pid_str, 1);
 
+	setpgid(0, 0);
+
 	const char* programname = "sh";
 	const char* newargv[] = { programname, NULL };
 

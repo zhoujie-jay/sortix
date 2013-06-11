@@ -83,6 +83,7 @@ int runcommandline(const char** tokens, bool* exitexec)
 	const char* execmode;
 	const char* outputfile;
 	pid_t childpid;
+	pid_t pgid = -1;
 	bool internal;
 	int internalresult;
 readcmd:
@@ -166,6 +167,13 @@ readcmd:
 	if ( childpid < 0 ) { perror("fork"); goto out; }
 	if ( childpid )
 	{
+		if ( !internal )
+		{
+			if ( pgid == -1 )
+				pgid = childpid;
+			setpgid(childpid, pgid);
+		}
+
 		if ( pipein != 0 ) { close(pipein); pipein = 0; }
 		if ( pipeout != 1 ) { close(pipeout); pipeout = 1; }
 		if ( pipeinnext != 0 ) { pipein = pipeinnext; pipeinnext = 0; }
@@ -174,6 +182,9 @@ readcmd:
 		{
 			result = 0; goto out;
 		}
+
+		if ( strcmp(execmode, "&") == 0 )
+			pgid = -1;
 
 		if ( strcmp(execmode, "&") == 0 || strcmp(execmode, "|") == 0 )
 		{
@@ -204,6 +215,8 @@ readcmd:
 		result = status;
 		goto out;
 	}
+
+	setpgid(0, pgid != -1 ? pgid : 0);
 
 	if ( pipeinnext != 0 ) { close(pipeinnext); }
 
