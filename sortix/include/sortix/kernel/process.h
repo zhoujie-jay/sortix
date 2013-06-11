@@ -77,6 +77,7 @@ public:
 class Process
 {
 friend void Process__OnLastThreadExit(void*);
+friend void Process__LastPrayerFinalize(void*);
 
 public:
 	Process();
@@ -142,6 +143,16 @@ private:
 	int exitstatus;
 
 public:
+	Process* group;
+	Process* groupprev;
+	Process* groupnext;
+	Process* groupfirst;
+	kthread_mutex_t groupchildlock;
+	kthread_mutex_t groupparentlock;
+	kthread_cond_t groupchildleft;
+	bool grouplimbo;
+
+public:
 	Thread* firstthread;
 	kthread_mutex_t threadlock;
 
@@ -181,9 +192,13 @@ private:
 	                CPU::InterruptRegisters* regs);
 	void OnLastThreadExit();
 	void LastPrayer();
+	void LastPrayerFinalize();
 	void NotifyChildExit(Process* child, bool zombify);
 	void NotifyNewZombies();
 	void DeleteTimers();
+
+public:
+	void NotifyLeftProcessGroup();
 
 public:
 	void ResetForExecute();

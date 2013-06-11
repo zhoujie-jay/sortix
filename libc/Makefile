@@ -240,6 +240,7 @@ gethostname.o \
 getlogin.o \
 getlogin_r.o \
 getpagesize.o \
+getpgid.o \
 getpid.o \
 getppid.o \
 gettermmode.o \
@@ -318,6 +319,7 @@ setegid.o \
 seteuid.o \
 setgid.o \
 setlocale.o \
+setpgid.o \
 settermmode.o \
 setuid.o \
 sfork.o \

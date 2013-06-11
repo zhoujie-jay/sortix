@@ -383,6 +383,10 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	if ( !system ) { Panic("Could not allocate the system process"); }
 	addr_t systemaddrspace = Memory::GetAddressSpace();
 	system->addrspace = systemaddrspace;
+	system->group = system;
+	system->groupprev = NULL;
+	system->groupnext = NULL;
+	system->groupfirst = system;
 
 	if ( !(system->program_image_path = String::Clone("<kernel process>")) )
 		Panic("Unable to clone string for system process name");
@@ -577,6 +581,10 @@ static void BootThread(void* /*user*/)
 
 	Process* init = new Process;
 	if ( !init ) { Panic("Could not allocate init process"); }
+	init->group = init;
+	init->groupprev = NULL;
+	init->groupnext = NULL;
+	init->groupfirst = init;
 
 	CurrentProcess()->AddChildProcess(init);
 
