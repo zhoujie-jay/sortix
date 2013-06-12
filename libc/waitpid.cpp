@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -25,9 +25,9 @@
 #include <sys/syscall.h>
 #include <sys/wait.h>
 
-DEFN_SYSCALL3(pid_t, sys_wait, SYSCALL_WAIT, pid_t, int*, int);
+DEFN_SYSCALL3(pid_t, sys_waitpid, SYSCALL_WAITPID, pid_t, int*, int);
 
 extern "C" pid_t waitpid(pid_t pid, int* status, int options)
 {
-	return sys_wait(pid, status, options);
+	return sys_waitpid(pid, status, options);
 }

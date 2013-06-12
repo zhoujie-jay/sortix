@@ -1215,7 +1215,7 @@ void Process::Init()
 	Syscall::Register(SYSCALL_SETPGID, (void*) sys_setpgid);
 	Syscall::Register(SYSCALL_TFORK, (void*) sys_tfork);
 	Syscall::Register(SYSCALL_UMASK, (void*) sys_umask);
-	Syscall::Register(SYSCALL_WAIT, (void*) sys_waitpid);
+	Syscall::Register(SYSCALL_WAITPID, (void*) sys_waitpid);
 
 	pidalloclock = KTHREAD_MUTEX_INITIALIZER;
 	nextpidtoallocate = 0;
