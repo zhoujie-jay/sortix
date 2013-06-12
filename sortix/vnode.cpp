@@ -224,6 +224,16 @@ int Vnode::tcgetwinsize(ioctx_t* ctx, struct winsize* ws)
 	return inode->tcgetwinsize(ctx, ws);
 }
 
+int Vnode::tcsetpgrp(ioctx_t* ctx, pid_t pgid)
+{
+	return inode->tcsetpgrp(ctx, pgid);
+}
+
+pid_t Vnode::tcgetpgrp(ioctx_t* ctx)
+{
+	return inode->tcgetpgrp(ctx);
+}
+
 int Vnode::settermmode(ioctx_t* ctx, unsigned mode)
 {
 	return inode->settermmode(ctx, mode);

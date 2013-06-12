@@ -284,8 +284,6 @@ void swab(const void* __restrict, void* __restrict, ssize_t);
 int symlink(const char*, const char*);
 int symlinkat(const char*, int, const char*);
 void sync(void);
-pid_t tcgetpgrp(int);
-int tcsetpgrp(int, pid_t);
 int ttyname_r(int, char*, size_t);
 
 #if __POSIX_OBSOLETE <= 200801
@@ -354,6 +352,8 @@ int setpgid(pid_t, pid_t);
 int setuid(uid_t);
 unsigned sleep(unsigned);
 long sysconf(int);
+pid_t tcgetpgrp(int);
+int tcsetpgrp(int, pid_t);
 int truncate(const char*, off_t);
 int truncateat(int dirfd, const char*, off_t);
 char* ttyname(int);

@@ -75,6 +75,8 @@ public:
 	ssize_t readlink(ioctx_t* ctx, char* buf, size_t bufsiz);
 	int fsbind(ioctx_t* ctx, Vnode* node, int flags);
 	int tcgetwinsize(ioctx_t* ctx, struct winsize* ws);
+	int tcsetpgrp(ioctx_t* ctx, pid_t pgid);
+	pid_t tcgetpgrp(ioctx_t* ctx);
 	int settermmode(ioctx_t* ctx, unsigned mode);
 	int gettermmode(ioctx_t* ctx, unsigned* mode);
 	int poll(ioctx_t* ctx, PollNode* node);

@@ -604,6 +604,24 @@ static int sys_tcgetwinsize(int fd, struct winsize* ws)
 	return desc->tcgetwinsize(&ctx, ws);
 }
 
+static int sys_tcsetpgrp(int fd, pid_t pgid)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->tcsetpgrp(&ctx, pgid);
+}
+
+static int sys_tcgetpgrp(int fd)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->tcgetpgrp(&ctx);
+}
+
 static int sys_renameat_inner(int olddirfd, const char* oldpath,
                               int newdirfd, const char* newpath)
 {
@@ -973,7 +991,9 @@ void Init()
 	Syscall::Register(SYSCALL_SEND, (void*) sys_send);
 	Syscall::Register(SYSCALL_SETTERMMODE, (void*) sys_settermmode);
 	Syscall::Register(SYSCALL_STAT, (void*) sys_stat);
+	Syscall::Register(SYSCALL_TCGETPGRP, (void*) sys_tcgetpgrp);
 	Syscall::Register(SYSCALL_TCGETWINSIZE, (void*) sys_tcgetwinsize);
+	Syscall::Register(SYSCALL_TCSETPGRP, (void*) sys_tcsetpgrp);
 	Syscall::Register(SYSCALL_TRUNCATEAT, (void*) sys_truncateat);
 	Syscall::Register(SYSCALL_TRUNCATE, (void*) sys_truncate);
 	Syscall::Register(SYSCALL_UNLINKAT, (void*) sys_unlinkat);

@@ -87,6 +87,8 @@ public:
 	                    const char* filename) = 0;
 	virtual ssize_t readlink(ioctx_t* ctx, char* buf, size_t bufsiz) = 0;
 	virtual int tcgetwinsize(ioctx_t* ctx, struct winsize* ws) = 0;
+	virtual int tcsetpgrp(ioctx_t* ctx, pid_t pgid) = 0;
+	virtual pid_t tcgetpgrp(ioctx_t* ctx) = 0;
 	virtual int settermmode(ioctx_t* ctx, unsigned mode) = 0;
 	virtual int gettermmode(ioctx_t* ctx, unsigned* mode) = 0;
 	virtual int poll(ioctx_t* ctx, PollNode* node) = 0;
@@ -163,6 +165,8 @@ public:
 	                    const char* filename);
 	virtual ssize_t readlink(ioctx_t* ctx, char* buf, size_t bufsiz);
 	virtual int tcgetwinsize(ioctx_t* ctx, struct winsize* ws);
+	virtual int tcsetpgrp(ioctx_t* ctx, pid_t pgid);
+	virtual pid_t tcgetpgrp(ioctx_t* ctx);
 	virtual int settermmode(ioctx_t* ctx, unsigned mode);
 	virtual int gettermmode(ioctx_t* ctx, unsigned* mode);
 	virtual int poll(ioctx_t* ctx, PollNode* node);

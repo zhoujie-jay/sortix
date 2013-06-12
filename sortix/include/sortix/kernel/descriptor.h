@@ -78,6 +78,8 @@ public:
 	int symlink(ioctx_t* ctx, const char* oldname, const char* filename);
 	ssize_t readlink(ioctx_t* ctx, char* buf, size_t bufsiz);
 	int tcgetwinsize(ioctx_t* ctx, struct winsize* ws);
+	int tcsetpgrp(ioctx_t* ctx, pid_t pgid);
+	pid_t tcgetpgrp(ioctx_t* ctx);
 	int settermmode(ioctx_t* ctx, unsigned mode);
 	int gettermmode(ioctx_t* ctx, unsigned* mode);
 	int poll(ioctx_t* ctx, PollNode* node);

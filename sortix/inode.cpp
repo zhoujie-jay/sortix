@@ -265,6 +265,20 @@ int AbstractInode::tcgetwinsize(ioctx_t* /*ctx*/, struct winsize* /*ws*/)
 	return errno = ENOTTY, -1;
 }
 
+int AbstractInode::tcsetpgrp(ioctx_t* /*ctx*/, pid_t /*pgid*/)
+{
+	if ( inode_type == INODE_TYPE_TTY )
+		return errno = EBADF, -1;
+	return errno = ENOTTY, -1;
+}
+
+pid_t AbstractInode::tcgetpgrp(ioctx_t* /*ctx*/)
+{
+	if ( inode_type == INODE_TYPE_TTY )
+		return errno = EBADF, -1;
+	return errno = ENOTTY, -1;
+}
+
 int AbstractInode::settermmode(ioctx_t* /*ctx*/, unsigned /*mode*/)
 {
 	if ( inode_type == INODE_TYPE_TTY )

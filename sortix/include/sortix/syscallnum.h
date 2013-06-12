@@ -135,6 +135,8 @@
 #define SYSCALL_MKPARTITION 111
 #define SYSCALL_GETPGID 112
 #define SYSCALL_SETPGID 113
-#define SYSCALL_MAX_NUM 114 /* index of highest constant + 1 */
+#define SYSCALL_TCGETPGRP 114
+#define SYSCALL_TCSETPGRP 115
+#define SYSCALL_MAX_NUM 116 /* index of highest constant + 1 */
 
 #endif

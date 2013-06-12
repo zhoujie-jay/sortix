@@ -548,6 +548,16 @@ int Descriptor::tcgetwinsize(ioctx_t* ctx, struct winsize* ws)
 	return vnode->tcgetwinsize(ctx, ws);
 }
 
+int Descriptor::tcsetpgrp(ioctx_t* ctx, pid_t pgid)
+{
+	return vnode->tcsetpgrp(ctx, pgid);
+}
+
+pid_t Descriptor::tcgetpgrp(ioctx_t* ctx)
+{
+	return vnode->tcgetpgrp(ctx);
+}
+
 int Descriptor::settermmode(ioctx_t* ctx, unsigned mode)
 {
 	return vnode->settermmode(ctx, mode);

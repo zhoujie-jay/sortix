@@ -84,6 +84,7 @@ LogTerminal::LogTerminal(dev_t dev, mode_t mode, uid_t owner, gid_t group,
 	this->datacond = KTHREAD_COND_INITIALIZER;
 	this->numwaiting = 0;
 	this->numeofs = 0;
+	this->foreground_pgid = 0;
 	keyboard->SetOwner(this, NULL);
 }
 
@@ -128,6 +129,27 @@ int LogTerminal::tcgetwinsize(ioctx_t* ctx, struct winsize* ws)
 	return 0;
 }
 
+int LogTerminal::tcsetpgrp(ioctx_t* /*ctx*/, pid_t pgid)
+{
+	ScopedLock lock(&termlock);
+	Process* process = Process::Get(pgid);
+	if ( !pgid || !process )
+		return errno = ESRCH, -1;
+	kthread_mutex_lock(&process->groupchildlock);
+	bool is_process_group = process->group == process;
+	kthread_mutex_unlock(&process->groupchildlock);
+	if ( !is_process_group )
+		return errno = EINVAL, -1;
+	foreground_pgid = pgid;
+	return 0;
+}
+
+pid_t LogTerminal::tcgetpgrp(ioctx_t* /*ctx*/)
+{
+	ScopedLock lock(&termlock);
+	return foreground_pgid = 0;
+}
+
 int LogTerminal::sync(ioctx_t* /*ctx*/)
 {
 	return Log::Sync() ? 0 : -1;
@@ -152,10 +174,17 @@ void LogTerminal::ProcessKeystroke(int kbkey)
 	{
 		while ( linebuffer.CanBackspace() )
 			linebuffer.Backspace();
-		pid_t pid = Process::HackGetForegroundProcess();
-		Process* process = Process::Get(pid);
-		if ( process )
-			process->DeliverSignal(SIGINT);
+		if ( foreground_pgid )
+		{
+			if ( Process* process = Process::Get(foreground_pgid) )
+				process->DeliverGroupSignal(SIGINT);
+		}
+		else // TODO: Backwards compatibility, delete this.
+		{
+			pid_t pid = Process::HackGetForegroundProcess();
+			if ( Process* process = Process::Get(pid) )
+				process->DeliverSignal(SIGINT);
+		}
 		return;
 	}
 	if ( termmode & TERMMODE_SIGNAL && control && kbkey == KBKEY_D )

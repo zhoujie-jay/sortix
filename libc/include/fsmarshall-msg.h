@@ -324,7 +324,26 @@ struct fsm_req_unref
 	ino_t ino;
 };
 
-#define FSM_MSG_NUM 40
+#define FSM_REQ_TCSETPGRP 40
+struct fsm_req_tcsetpgrp
+{
+	ino_t ino;
+	pid_t pgid;
+};
+
+#define FSM_REQ_TCGETPGRP 41
+struct fsm_req_tcgetpgrp
+{
+	ino_t ino;
+};
+
+#define FSM_RESP_TCGETPGRP 42
+struct fsm_resp_tcgetpgrp
+{
+	pid_t pgid;
+};
+
+#define FSM_MSG_NUM 43
 
 #if defined(__cplusplus)
 } /* extern "C" */

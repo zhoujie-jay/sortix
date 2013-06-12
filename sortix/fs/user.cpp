@@ -213,6 +213,8 @@ public:
 	                    const char* filename);
 	virtual ssize_t readlink(ioctx_t* ctx, char* buf, size_t bufsiz);
 	virtual int tcgetwinsize(ioctx_t* ctx, struct winsize* ws);
+	virtual int tcsetpgrp(ioctx_t* ctx, pid_t pgid);
+	virtual pid_t tcgetpgrp(ioctx_t* ctx);
 	virtual int settermmode(ioctx_t* ctx, unsigned mode);
 	virtual int gettermmode(ioctx_t* ctx, unsigned* mode);
 	virtual int poll(ioctx_t* ctx, PollNode* node);
@@ -1111,6 +1113,38 @@ int Unode::tcgetwinsize(ioctx_t* ctx, struct winsize* ws)
 	     RecvMessage(channel, FSM_RESP_TCGETWINSIZE, &resp, sizeof(resp)) &&
 	     ctx->copy_to_dest(ws, &resp.size, sizeof(*ws)) )
 		ret = 0;
+	channel->KernelClose();
+	return ret;
+}
+
+int Unode::tcsetpgrp(ioctx_t* /*ctx*/, pid_t pgid)
+{
+	Channel* channel = server->Connect();
+	if ( !channel )
+		return -1;
+	int ret = -1;
+	struct fsm_req_tcsetpgrp msg;
+	msg.ino = ino;
+	msg.pgid = pgid;
+	if ( SendMessage(channel, FSM_REQ_TCSETPGRP, &msg, sizeof(msg)) &&
+	     RecvMessage(channel, FSM_RESP_SUCCESS, NULL, 0) )
+		ret = 0;
+	channel->KernelClose();
+	return ret;
+}
+
+pid_t Unode::tcgetpgrp(ioctx_t* /*ctx*/)
+{
+	Channel* channel = server->Connect();
+	if ( !channel )
+		return -1;
+	pid_t ret = -1;
+	struct fsm_req_tcgetpgrp msg;
+	struct fsm_resp_tcgetpgrp resp;
+	msg.ino = ino;
+	if ( SendMessage(channel, FSM_REQ_TCGETPGRP, &msg, sizeof(msg)) &&
+	     RecvMessage(channel, FSM_RESP_TCGETPGRP, &resp, sizeof(resp)) )
+		ret = resp.pgid;
 	channel->KernelClose();
 	return ret;
 }

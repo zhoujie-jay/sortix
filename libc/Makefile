@@ -354,6 +354,8 @@ sys/socket/socket.o \
 sys/socket/socketpair.o \
 system.o \
 sys/time/gettimeofday.o \
+tcgetpgrp.o \
+tcsetpgrp.o \
 tfork.o \
 time/clock_getres.o \
 time/clock_gettime.o \
