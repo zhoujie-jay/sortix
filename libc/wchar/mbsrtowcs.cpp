@@ -17,8 +17,8 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    wcsrtombs.cpp
-    Convert a wide-character string to multibyte string.
+    wchar/mbsrtowcs.cpp
+    Convert a multibyte string to a wide-character string.
 
 *******************************************************************************/
 
@@ -28,12 +28,12 @@
 #include <string.h>
 #include <wchar.h>
 
-extern "C" size_t wcsrtombs(char* dst, const wchar_t** src_ptr, size_t dst_len,
+extern "C" size_t mbsrtowcs(wchar_t* dst, const char** src_ptr, size_t dst_len,
                             mbstate_t* ps)
 {
 	assert(src_ptr && *src_ptr);
 	// Avoid changing *src_ptr if dst is NULL.
-	const wchar_t* local_src_ptr = *src_ptr;
+	const char* local_src_ptr = *src_ptr;
 	if ( !dst )
 		src_ptr = &local_src_ptr;
 	// For some reason, the standards don't mandate that the secret ps variable
@@ -44,32 +44,28 @@ extern "C" size_t wcsrtombs(char* dst, const wchar_t** src_ptr, size_t dst_len,
 	if ( !ps )
 		ps = &static_ps;
 	size_t ret = 0;
-	size_t src_len = wcslen(*src_ptr);
-	char buf[MB_CUR_MAX];
+	size_t src_len = strlen(*src_ptr);
 	while ( !dst || dst_len )
 	{
 		mbstate_t saved_ps = *ps;
-		size_t produced = wcrtomb(buf, **src_ptr, ps);
-		if ( produced == (size_t) -1 )
-			return (size_t) -1;
-		if ( dst && dst_len < produced )
+		size_t consumed = mbrtowc(dst, *src_ptr, src_len, ps);
+		if ( consumed == (size_t) 0 )
 		{
-			*ps  = saved_ps;
-			break;
-		}
-		memcpy(dst, buf, produced);
-		if ( **src_ptr == L'\0' )
-		{
-			ret += produced - 1; // Don't count the '\0' byte.
 			*src_ptr = NULL;
 			break;
 		}
-		ret += produced;
-		(*src_ptr)++;
-		src_len--;
+		if ( consumed == (size_t) -1 )
+			return (size_t) -1;
+		if ( consumed == (size_t) -2 )
+		{
+			*ps = saved_ps;
+			break;
+		}
+		*src_ptr += consumed;
+		src_len -= consumed;
 		if ( dst )
-			dst += produced,
-			dst_len -= produced;
+			dst++,
+			dst_len--;
 		ret++;
 	}
 	return ret;

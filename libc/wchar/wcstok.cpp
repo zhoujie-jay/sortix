@@ -17,19 +17,27 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    wcsncpy.cpp
-    Copies a string into a fixed size buffer and returns dest.
+    wchar/wcstok.cpp
+    Extract tokens from strings.
 
 *******************************************************************************/
 
 #include <wchar.h>
 
-extern "C" wchar_t* wcsncpy(wchar_t* dest, const wchar_t* src, size_t n)
+extern "C" wchar_t* wcstok(wchar_t* str, const wchar_t* delim, wchar_t** saveptr)
 {
-	size_t i;
-	for ( i = 0; i < n && src[i] != L'\0'; i++ )
-		dest[i] = src[i];
-	for ( ; i < n; i++ )
-		dest[i] = L'\0';
-	return dest;
+	if ( !str && !*saveptr )
+		return NULL;
+	if ( !str )
+		str = *saveptr;
+	str += wcsspn(str, delim); // Skip leading
+	if ( !*str )
+		return *saveptr = NULL;
+	size_t amount = wcscspn(str, delim);
+	if ( str[amount] )
+		*saveptr = str + amount + 1;
+	else
+		*saveptr = NULL;
+	str[amount] = L'\0';
+	return str;
 }

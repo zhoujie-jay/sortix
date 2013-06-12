@@ -17,23 +17,14 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    wcscmp.cpp
-    Compares two strings.
+    wchar/wcscat.cpp
+    Appends a string onto another string.
 
 *******************************************************************************/
 
 #include <wchar.h>
 
-extern "C" int wcscmp(const wchar_t* a, const wchar_t* b)
+extern "C" wchar_t* wcscat(wchar_t* dest, const wchar_t* src)
 {
-	while ( true )
-	{
-		wchar_t ac = *a++, bc = *b++;
-		if ( ac == L'\0' && bc == L'\0' )
-			return 0;
-		if ( ac < bc )
-			return -1;
-		if ( ac > bc )
-			return 1;
-	}
+	return wcscpy(dest + wcslen(dest), src);
 }

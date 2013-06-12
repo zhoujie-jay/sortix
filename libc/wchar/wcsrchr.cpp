@@ -17,14 +17,21 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    wcscat.cpp
-    Appends a string onto another string.
+    wchar/wcsrchr.cpp
+    Searches a string for a specific character.
 
 *******************************************************************************/
 
 #include <wchar.h>
 
-extern "C" wchar_t* wcscat(wchar_t* dest, const wchar_t* src)
+extern "C" wchar_t* wcsrchr(const wchar_t* str, wchar_t c)
 {
-	return wcscpy(dest + wcslen(dest), src);
+	const wchar_t* last = NULL;
+	while ( *str )
+	{
+		if ( *str == c )
+			last = str;
+		str++;
+	}
+	return (wchar_t*) last;
 }

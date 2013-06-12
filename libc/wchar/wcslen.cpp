@@ -17,19 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    wcsncat.cpp
-    Appends parts of a string onto another string.
+    wchar/wcslen.cpp
+    Returns the length of a string.
 
 *******************************************************************************/
 
-#include <wchar.h>
+#include <string.h>
 
-extern "C" wchar_t* wcsncat(wchar_t* dest, const wchar_t* src, size_t n)
+extern "C" size_t wcslen(const wchar_t* str)
 {
-	size_t dest_len = wcslen(dest);
-	size_t i;
-	for ( i = 0; i < n && src[i] != L'\0'; i++ )
-		dest[dest_len + i] = src[i];
-	dest[dest_len + i] = L'\0';
-	return dest;
+	size_t ret = 0;
+	while ( str[ret] )
+		ret++;
+	return ret;
 }

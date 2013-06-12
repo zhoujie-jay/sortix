@@ -17,27 +17,19 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    wcstok.cpp
-    Extract tokens from strings.
+    wchar/wcsncat.cpp
+    Appends parts of a string onto another string.
 
 *******************************************************************************/
 
 #include <wchar.h>
 
-extern "C" wchar_t* wcstok(wchar_t* str, const wchar_t* delim, wchar_t** saveptr)
+extern "C" wchar_t* wcsncat(wchar_t* dest, const wchar_t* src, size_t n)
 {
-	if ( !str && !*saveptr )
-		return NULL;
-	if ( !str )
-		str = *saveptr;
-	str += wcsspn(str, delim); // Skip leading
-	if ( !*str )
-		return *saveptr = NULL;
-	size_t amount = wcscspn(str, delim);
-	if ( str[amount] )
-		*saveptr = str + amount + 1;
-	else
-		*saveptr = NULL;
-	str[amount] = L'\0';
-	return str;
+	size_t dest_len = wcslen(dest);
+	size_t i;
+	for ( i = 0; i < n && src[i] != L'\0'; i++ )
+		dest[dest_len + i] = src[i];
+	dest[dest_len + i] = L'\0';
+	return dest;
 }

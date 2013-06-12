@@ -17,18 +17,28 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    wcscpy.cpp
-    Copies a string and returns dest.
+    wchar/wcsspn.cpp
+    Search a string for a set of characters.
 
 *******************************************************************************/
 
-#include <string.h>
+#include <wchar.h>
 
-extern "C" wchar_t* wcscpy(wchar_t* dest, const wchar_t* src)
+extern "C" size_t wcsspn(const wchar_t* str, const wchar_t* accept)
 {
-	wchar_t* origdest = dest;
-	while ( *src )
-		*dest++ = *src++;
-	*dest = '\0';
-	return origdest;
+	size_t acceptlen = 0;
+	while ( accept[acceptlen] ) { acceptlen++; }
+	for ( size_t result = 0; true; result++ )
+	{
+		wchar_t c = str[result];
+		if ( !c ) { return result; }
+		bool matches = false;
+		for ( size_t i = 0; i < acceptlen; i++ )
+		{
+			if ( str[result] != accept[i] ) { continue; }
+			matches = true;
+			break;
+		}
+		if ( !matches ) { return result; }
+	}
 }

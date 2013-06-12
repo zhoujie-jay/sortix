@@ -17,17 +17,23 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    wcslen.cpp
-    Returns the length of a string.
+    wchar/wcscmp.cpp
+    Compares two strings.
 
 *******************************************************************************/
 
-#include <string.h>
+#include <wchar.h>
 
-extern "C" size_t wcslen(const wchar_t* str)
+extern "C" int wcscmp(const wchar_t* a, const wchar_t* b)
 {
-	size_t ret = 0;
-	while ( str[ret] )
-		ret++;
-	return ret;
+	while ( true )
+	{
+		wchar_t ac = *a++, bc = *b++;
+		if ( ac == L'\0' && bc == L'\0' )
+			return 0;
+		if ( ac < bc )
+			return -1;
+		if ( ac > bc )
+			return 1;
+	}
 }

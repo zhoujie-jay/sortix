@@ -17,21 +17,19 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    wcsrchr.cpp
-    Searches a string for a specific character.
+    wchar/wcsncpy.cpp
+    Copies a string into a fixed size buffer and returns dest.
 
 *******************************************************************************/
 
 #include <wchar.h>
 
-extern "C" wchar_t* wcsrchr(const wchar_t* str, wchar_t c)
+extern "C" wchar_t* wcsncpy(wchar_t* dest, const wchar_t* src, size_t n)
 {
-	const wchar_t* last = NULL;
-	while ( *str )
-	{
-		if ( *str == c )
-			last = str;
-		str++;
-	}
-	return (wchar_t*) last;
+	size_t i;
+	for ( i = 0; i < n && src[i] != L'\0'; i++ )
+		dest[i] = src[i];
+	for ( ; i < n; i++ )
+		dest[i] = L'\0';
+	return dest;
 }
