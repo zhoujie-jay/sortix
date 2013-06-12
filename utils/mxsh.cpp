@@ -193,11 +193,13 @@ readcmd:
 
 		status = internalresult;
 		int exitstatus;
+		tcsetpgrp(0, pgid);
 		if ( !internal && waitpid(childpid, &exitstatus, 0) < 0 )
 		{
 			perror("waitpid");
 			return 127;
 		}
+		tcsetpgrp(0, getpgid(0));
 
 		// TODO: HACK: Most signals can't kill processes yet.
 		if ( WEXITSTATUS(exitstatus) == 128 + SIGINT )

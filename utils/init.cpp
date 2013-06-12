@@ -40,6 +40,7 @@ int child()
 	setenv("INIT_PID", init_pid_str, 1);
 
 	setpgid(0, 0);
+	tcsetpgrp(0, getpid());
 
 	const char* programname = "sh";
 	const char* newargv[] = { programname, NULL };
