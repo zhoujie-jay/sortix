@@ -23,11 +23,12 @@
 *******************************************************************************/
 
 #include <sys/syscall.h>
+
 #include <unistd.h>
 
-DEFN_SYSCALL1(int, SysClose, SYSCALL_CLOSE, int);
+DEFN_SYSCALL1(int, sys_close, SYSCALL_CLOSE, int);
 
 extern "C" int close(int fd)
 {
-	return SysClose(fd);
+	return sys_close(fd);
 }

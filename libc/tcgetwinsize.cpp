@@ -17,17 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    winsize.cpp
+    tcgetwinsize.cpp
     Access to terminal resolution.
 
 *******************************************************************************/
 
 #include <sys/syscall.h>
+
 #include <termios.h>
 
-DEFN_SYSCALL2(int, SysTCGetWinSize, SYSCALL_TCGETWINSIZE, int, struct winsize*);
+DEFN_SYSCALL2(int, sys_tcgetwinsize, SYSCALL_TCGETWINSIZE, int, struct winsize*);
 
 extern "C" int tcgetwinsize(int fd, struct winsize* ws)
 {
-	return SysTCGetWinSize(fd, ws);
+	return sys_tcgetwinsize(fd, ws);
 }

@@ -355,6 +355,7 @@ sys/socket/socketpair.o \
 system.o \
 sys/time/gettimeofday.o \
 tcgetpgrp.o \
+tcgetwinsize.o \
 tcsetpgrp.o \
 tfork.o \
 time/clock_getres.o \
@@ -393,7 +394,6 @@ utime.o \
 vscanf.o \
 wait.o \
 waitpid.o \
-winsize.o \
 write.o \
 writev.o \
 

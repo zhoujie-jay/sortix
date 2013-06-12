@@ -23,11 +23,12 @@
 *******************************************************************************/
 
 #include <sys/syscall.h>
+
 #include <unistd.h>
 
-DEFN_SYSCALL2(int, SysFTruncate, SYSCALL_FTRUNCATE, int, off_t);
+DEFN_SYSCALL2(int, sys_ftruncate, SYSCALL_FTRUNCATE, int, off_t);
 
 extern "C" int ftruncate(int fd, off_t length)
 {
-	return SysFTruncate(fd, length);
+	return sys_ftruncate(fd, length);
 }

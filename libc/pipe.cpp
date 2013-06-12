@@ -23,11 +23,12 @@
 *******************************************************************************/
 
 #include <sys/syscall.h>
+
 #include <unistd.h>
 
-DEFN_SYSCALL1(int, SysPipe, SYSCALL_PIPE, int*);
+DEFN_SYSCALL1(int, sys_pipe, SYSCALL_PIPE, int*);
 
 extern "C" int pipe(int pipefd[2])
 {
-	return SysPipe(pipefd);
+	return sys_pipe(pipefd);
 }

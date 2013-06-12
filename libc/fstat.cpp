@@ -25,9 +25,9 @@
 #include <sys/stat.h>
 #include <sys/syscall.h>
 
-DEFN_SYSCALL2(int, SysFStat, SYSCALL_FSTAT, int, struct stat*);
+DEFN_SYSCALL2(int, sys_fstat, SYSCALL_FSTAT, int, struct stat*);
 
 extern "C" int fstat(int fd, struct stat* st)
 {
-	return SysFStat(fd, st);
+	return sys_fstat(fd, st);
 }

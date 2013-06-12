@@ -25,9 +25,9 @@
 #include <sys/readdirents.h>
 #include <sys/syscall.h>
 
-DEFN_SYSCALL4(ssize_t, SysReadDirEnts, SYSCALL_READDIRENTS, int, struct kernel_dirent*, size_t, size_t);
+DEFN_SYSCALL4(ssize_t, sys_readdirents, SYSCALL_READDIRENTS, int, struct kernel_dirent*, size_t, size_t);
 
 extern "C" ssize_t readdirents(int fd, struct kernel_dirent* dirent, size_t size)
 {
-	return SysReadDirEnts(fd, dirent, size, 1);
+	return sys_readdirents(fd, dirent, size, 1);
 }

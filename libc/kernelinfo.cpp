@@ -25,9 +25,9 @@
 #include <sys/kernelinfo.h>
 #include <sys/syscall.h>
 
-DEFN_SYSCALL3(ssize_t, SysKernelInfo, SYSCALL_KERNELINFO, const char*, char*, size_t);
+DEFN_SYSCALL3(ssize_t, sys_kernelinfo, SYSCALL_KERNELINFO, const char*, char*, size_t);
 
 extern "C" ssize_t kernelinfo(const char* req, char* resp, size_t resplen)
 {
-	return SysKernelInfo(req, resp, resplen);
+	return sys_kernelinfo(req, resp, resplen);
 }

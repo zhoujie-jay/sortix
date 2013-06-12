@@ -23,11 +23,12 @@
 *******************************************************************************/
 
 #include <sys/syscall.h>
+
 #include <unistd.h>
 
-DEFN_SYSCALL1(int, SysDup, SYSCALL_DUP, int);
+DEFN_SYSCALL1(int, sys_dup, SYSCALL_DUP, int);
 
 extern "C" int dup(int fd)
 {
-	return SysDup(fd);
+	return sys_dup(fd);
 }

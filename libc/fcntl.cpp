@@ -23,10 +23,11 @@
 *******************************************************************************/
 
 #include <sys/syscall.h>
+
 #include <fcntl.h>
 #include <stdarg.h>
 
-DEFN_SYSCALL3(int, SysFCntl, SYSCALL_FCNTL, int, int, unsigned long);
+DEFN_SYSCALL3(int, sys_fcntl, SYSCALL_FCNTL, int, int, unsigned long);
 
 extern "C" int fcntl(int fd, int cmd, ...)
 {
@@ -34,5 +35,5 @@ extern "C" int fcntl(int fd, int cmd, ...)
 	va_start(ap, cmd);
 	unsigned long arg = va_arg(ap, unsigned long);
 	va_end(ap);
-	return SysFCntl(fd, cmd, arg);
+	return sys_fcntl(fd, cmd, arg);
 }
