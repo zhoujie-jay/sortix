@@ -312,7 +312,19 @@ struct fsm_req_rename
 	//char newname[newnamelen];
 };
 
-#define FSM_MSG_NUM 38
+#define FSM_REQ_REFER 38
+struct fsm_req_refer
+{
+	ino_t ino;
+};
+
+#define FSM_REQ_UNREF 39
+struct fsm_req_unref
+{
+	ino_t ino;
+};
+
+#define FSM_MSG_NUM 40
 
 #if defined(__cplusplus)
 } /* extern "C" */

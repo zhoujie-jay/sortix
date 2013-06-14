@@ -585,10 +585,27 @@ Unode::Unode(Ref<Server> server, ino_t ino, mode_t type)
 	this->ino = ino;
 	this->dev = (dev_t) server;
 	this->type = type;
+
+	// Let the remote know that the kernel is using this inode.
+	if ( Channel* channel = server->Connect() )
+	{
+		struct fsm_req_refer msg;
+		msg.ino = ino;
+		SendMessage(channel, FSM_REQ_REFER, &msg, sizeof(msg));
+		channel->KernelClose();
+	}
 }
 
 Unode::~Unode()
 {
+	// Let the remote know that the kernel is no longer using this inode.
+	if ( Channel* channel = server->Connect() )
+	{
+		struct fsm_req_unref msg;
+		msg.ino = ino;
+		SendMessage(channel, FSM_REQ_UNREF, &msg, sizeof(msg));
+		channel->KernelClose();
+	}
 }
 
 bool Unode::SendMessage(Channel* channel, size_t type, void* ptr, size_t size,
