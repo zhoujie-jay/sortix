@@ -326,7 +326,13 @@ int get_and_run_command(FILE* fp, const char* fpname, bool interactive,
 				*exitexec = true;
 				return status;
 			}
-			if ( getppid() == 1 )
+			const char* init_pid_str = getenv("INIT_PID");
+			if ( !init_pid_str)
+				init_pid_str = "1";
+			pid_t init_pid = (pid_t) atol(init_pid_str);
+			if ( !init_pid )
+				init_pid = 1;
+			if ( getppid() == init_pid )
 			{
 				printf("\nType exit to shutdown the system.\n");
 				return status;
