@@ -1,6 +1,7 @@
 *.o
 calc
 cat
+chmod
 chroot
 chvideomode
 clear

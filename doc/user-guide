@@ -145,6 +145,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `benchsyscall` - slightly less useless benchmark
 * `calc` - reverse polish calculator
 * `cat` - display file on terminal
+* `chmod` - change file mode bits
 * `chroot` - change the root directory
 * `chvideomode` - change display resolution
 * `clear` - clear terminal
