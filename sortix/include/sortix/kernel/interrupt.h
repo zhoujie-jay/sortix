@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -35,22 +35,22 @@ struct InterruptRegisters;
 
 namespace Interrupt {
 
-const unsigned IRQ0 = 32;
-const unsigned IRQ1 = 33;
-const unsigned IRQ2 = 34;
-const unsigned IRQ3 = 35;
-const unsigned IRQ4 = 36;
-const unsigned IRQ5 = 37;
-const unsigned IRQ6 = 38;
-const unsigned IRQ7 = 39;
-const unsigned IRQ8 = 40;
-const unsigned IRQ9 = 41;
-const unsigned IRQ10 = 42;
-const unsigned IRQ11 = 43;
-const unsigned IRQ12 = 44;
-const unsigned IRQ13 = 45;
-const unsigned IRQ14 = 46;
-const unsigned IRQ15 = 47;
+const unsigned int IRQ0 = 32;
+const unsigned int IRQ1 = 33;
+const unsigned int IRQ2 = 34;
+const unsigned int IRQ3 = 35;
+const unsigned int IRQ4 = 36;
+const unsigned int IRQ5 = 37;
+const unsigned int IRQ6 = 38;
+const unsigned int IRQ7 = 39;
+const unsigned int IRQ8 = 40;
+const unsigned int IRQ9 = 41;
+const unsigned int IRQ10 = 42;
+const unsigned int IRQ11 = 43;
+const unsigned int IRQ12 = 44;
+const unsigned int IRQ13 = 45;
+const unsigned int IRQ14 = 46;
+const unsigned int IRQ15 = 47;
 
 extern "C" unsigned long asm_interrupts_are_enabled();
 extern "C" unsigned long asm_is_cpu_interrupted;
@@ -67,10 +67,10 @@ inline bool SetEnabled(bool isenabled)
 }
 
 typedef void (*Handler)(CPU::InterruptRegisters* regs, void* user);
-void RegisterHandler(unsigned index, Handler handler, void* user);
+void RegisterHandler(unsigned int index, Handler handler, void* user);
 
 typedef void (*RawHandler)(void);
-void RegisterRawHandler(unsigned index, RawHandler handler, bool userspace);
+void RegisterRawHandler(unsigned int index, RawHandler handler, bool userspace);
 
 void Init();
 void InitWorker();

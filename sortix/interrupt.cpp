@@ -22,19 +22,20 @@
 
 *******************************************************************************/
 
+#include <assert.h>
+#include <errno.h>
+#include <string.h>
+
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/cpu.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
 #include <sortix/kernel/thread.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/calltrace.h>
 #include <sortix/kernel/debugger.h>
-
-#include <assert.h>
-#include <errno.h>
-#include <string.h>
 
 #include "x86-family/idt.h"
 
@@ -67,42 +68,40 @@ const bool DEBUG_ISR = false;
 const bool CALLTRACE_KERNEL = false;
 const bool CALLTRACE_USER = false;
 const bool RUN_DEBUGGER_ON_CRASH = false;
-bool initialized;
 
 const size_t NUM_KNOWN_EXCEPTIONS = 20;
 const char* exceptions[] =
 {
-	"Divide by zero",
-	"Debug",
-	"Non maskable interrupt",
-	"Breakpoint",
-	"Into detected overflow",
-	"Out of bounds",
-	"Invalid opcode",
-	"No coprocessor",
-	"Double fault",
-	"Coprocessor segment overrun",
-	"Bad TSS",
-	"Segment not present",
-	"Stack fault",
-	"General protection fault",
-	"Page fault",
-	"Unknown interrupt",
-	"Coprocessor fault",
-	"Alignment check",
-	"Machine check",
-	"SIMD Floating-Point",
+	"Divide by zero",              /* 0, 0x0 */
+	"Debug",                       /* 1, 0x1 */
+	"Non maskable interrupt",      /* 2, 0x2 */
+	"Breakpoint",                  /* 3, 0x3 */
+	"Into detected overflow",      /* 4, 0x4 */
+	"Out of bounds",               /* 5, 0x5 */
+	"Invalid opcode",              /* 6, 0x6 */
+	"No coprocessor",              /* 7, 0x7 */
+	"Double fault",                /* 8, 0x8 */
+	"Coprocessor segment overrun", /* 9, 0x9 */
+	"Bad TSS",                     /* 10, 0xA */
+	"Segment not present",         /* 11, 0xB */
+	"Stack fault",                 /* 12, 0xC */
+	"General protection fault",    /* 13, 0xD */
+	"Page fault",                  /* 14, 0xE */
+	"Unknown interrupt",           /* 15, 0xF */
+	"Coprocessor fault",           /* 16, 0x10 */
+	"Alignment check",             /* 17, 0x11 */
+	"Machine check",               /* 18, 0x12 */
+	"SIMD Floating-Point",         /* 19, 0x13 */
 };
 
-const unsigned NUM_INTERRUPTS = 256UL;
-
-Handler interrupthandlers[NUM_INTERRUPTS];
-void* interrupthandlerptr[NUM_INTERRUPTS];
+const unsigned int NUM_INTERRUPTS = 256UL;
+static Handler interrupt_handlers[NUM_INTERRUPTS];
+static void* interrupt_handler_params[NUM_INTERRUPTS];
 
 extern "C" void ReprogramPIC()
 {
-	uint8_t mastermask = 0;
-	uint8_t slavemask = 0;
+	uint8_t master_mask = 0;
+	uint8_t slave_mask = 0;
 	CPU::OutPortB(PIC_MASTER + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
 	CPU::OutPortB(PIC_SLAVE + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
 	CPU::OutPortB(PIC_MASTER + PIC_DATA, IRQ0);
@@ -111,14 +110,14 @@ extern "C" void ReprogramPIC()
 	CPU::OutPortB(PIC_SLAVE + PIC_DATA, 0x02); // Cascade Identity
 	CPU::OutPortB(PIC_MASTER + PIC_DATA, PIC_MODE_8086);
 	CPU::OutPortB(PIC_SLAVE + PIC_DATA, PIC_MODE_8086);
-	CPU::OutPortB(PIC_MASTER + PIC_DATA, mastermask);
-	CPU::OutPortB(PIC_SLAVE + PIC_DATA, slavemask);
+	CPU::OutPortB(PIC_MASTER + PIC_DATA, master_mask);
+	CPU::OutPortB(PIC_SLAVE + PIC_DATA, slave_mask);
 }
 
 extern "C" void DeprogramPIC()
 {
-	uint8_t mastermask = 0;
-	uint8_t slavemask = 0;
+	uint8_t master_mask = 0;
+	uint8_t slave_mask = 0;
 	CPU::OutPortB(PIC_MASTER + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
 	CPU::OutPortB(PIC_SLAVE + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
 	CPU::OutPortB(PIC_MASTER + PIC_DATA, 0x08);
@@ -127,19 +126,18 @@ extern "C" void DeprogramPIC()
 	CPU::OutPortB(PIC_SLAVE + PIC_DATA, 0x02); // Cascade Identity
 	CPU::OutPortB(PIC_MASTER + PIC_DATA, PIC_MODE_8086);
 	CPU::OutPortB(PIC_SLAVE + PIC_DATA, PIC_MODE_8086);
-	CPU::OutPortB(PIC_MASTER + PIC_DATA, mastermask);
-	CPU::OutPortB(PIC_SLAVE + PIC_DATA, slavemask);
+	CPU::OutPortB(PIC_MASTER + PIC_DATA, master_mask);
+	CPU::OutPortB(PIC_SLAVE + PIC_DATA, slave_mask);
 }
 
 void Init()
 {
-	initialized = false;
 	IDT::Init();
 
-	for ( unsigned i = 0; i < NUM_INTERRUPTS; i++ )
+	for ( unsigned int i = 0; i < NUM_INTERRUPTS; i++ )
 	{
-		interrupthandlers[i] = NULL;
-		interrupthandlerptr[i] = NULL;
+		interrupt_handlers[i] = NULL;
+		interrupt_handler_params[i] = NULL;
 		RegisterRawHandler(i, interrupt_handler_null, false);
 	}
 
@@ -198,37 +196,38 @@ void Init()
 	// TODO: Let the syscall.cpp code register this.
 	RegisterRawHandler(128, syscall_handler, true);
 
-	IDT::Flush();
-	initialized = true;
-
 	Interrupt::Enable();
 }
 
-void RegisterHandler(unsigned n, Interrupt::Handler handler, void* user)
+void RegisterHandler(unsigned int index, Interrupt::Handler handler, void* user)
 {
-	interrupthandlers[n] = handler;
-	interrupthandlerptr[n] = user;
+	interrupt_handlers[index] = handler;
+	interrupt_handler_params[index] = user;
 }
 
 // TODO: This function contains magic IDT-related values!
-void RegisterRawHandler(unsigned index, RawHandler handler, bool userspace)
+void RegisterRawHandler(unsigned int index, RawHandler handler, bool userspace)
 {
-	addr_t handlerentry = (addr_t) handler;
-	uint16_t sel = 0x08;
+	addr_t handler_entry = (addr_t) handler;
+	uint16_t sel = KCS;
 	uint8_t flags = 0x8E;
-	if ( userspace ) { flags |= 0x60; }
-	IDT::SetGate(index, handlerentry, sel, flags);
-	if ( initialized ) { IDT::Flush(); }
+	if ( userspace )
+		flags |= 0x60;
+	IDT::SetEntry(index, handler_entry, sel, flags);
 }
 
 void CrashHandler(CPU::InterruptRegisters* regs)
 {
 	CurrentThread()->SaveRegisters(regs);
 
-	const char* message = ( regs->int_no < NUM_KNOWN_EXCEPTIONS )
+	const char* message = regs->int_no < NUM_KNOWN_EXCEPTIONS
 	                      ? exceptions[regs->int_no] : "Unknown";
 
-	if ( DEBUG_EXCEPTION ) { regs->LogRegisters(); Log::Print("\n"); }
+	if ( DEBUG_EXCEPTION )
+	{
+		regs->LogRegisters();
+		Log::Print("\n");
+	}
 
 #ifdef PLATFORM_X64
 	addr_t ip = regs->rip;
@@ -237,8 +236,8 @@ void CrashHandler(CPU::InterruptRegisters* regs)
 #endif
 
 	// Halt and catch fire if we are the kernel.
-	unsigned codemode = regs->cs & 0x3U;
-	bool is_in_kernel = !codemode;
+	unsigned code_mode = regs->cs & 0x3;
+	bool is_in_kernel = !code_mode;
 	bool is_in_user = !is_in_kernel;
 
 	if ( (is_in_kernel && CALLTRACE_KERNEL) || (is_in_user && CALLTRACE_USER) )
@@ -267,9 +266,6 @@ void CrashHandler(CPU::InterruptRegisters* regs)
 	Log::PrintF("%s exception at ip=0x%zx (cr2=0x%p, err_code=0x%p)\n",
 	            message, ip, regs->cr2, regs->err_code);
 
-	//addr_t topofstack = ((size_t*) regs->useresp)[0];
-	//Log::PrintF("Top of stack is 0x%zx\n", topofstack);
-
 	Sound::Mute();
 
 	// Exit the process with the right error code.
@@ -280,33 +276,30 @@ void CrashHandler(CPU::InterruptRegisters* regs)
 	Signal::Dispatch(regs);
 }
 
-void ISRHandler(Sortix::CPU::InterruptRegisters* regs)
+void ISRHandler(CPU::InterruptRegisters* regs)
 {
+	unsigned int int_no = regs->int_no;
+
 	if ( DEBUG_ISR )
 	{
-		Log::PrintF("ISR%u ", regs->int_no);
+		Log::PrintF("ISR%u ", int_no);
 		regs->LogRegisters();
 		Log::Print("\n");
 	}
 
-	if ( regs->int_no < 32 && regs->int_no != 7 )
-	{
+	// Run the desired interrupt handler.
+	if ( int_no < 32 && int_no != 7 )
 		CrashHandler(regs);
-		return;
-	}
-
-	if ( interrupthandlers[regs->int_no] != NULL )
-	{
-		void* user = interrupthandlerptr[regs->int_no];
-		interrupthandlers[regs->int_no](regs, user);
-	}
+	else if ( interrupt_handlers[regs->int_no] != NULL )
+		interrupt_handlers[int_no](regs, interrupt_handler_params[int_no]);
 }
 
-void IRQHandler(Sortix::CPU::InterruptRegisters* regs)
+void IRQHandler(CPU::InterruptRegisters* regs)
 {
 	// TODO: IRQ 7 and 15 might be spurious and might need to be ignored.
 	// See http://wiki.osdev.org/PIC for details (section Spurious IRQs).
-	if ( regs->int_no == 32 + 7 || regs->int_no == 32 + 15 ) { return; }
+	if ( regs->int_no == 32 + 7 || regs->int_no == 32 + 15 )
+		return;
 
 	if ( DEBUG_IRQ )
 	{
@@ -315,24 +308,23 @@ void IRQHandler(Sortix::CPU::InterruptRegisters* regs)
 		Log::Print("\n");
 	}
 
-	unsigned int_no = regs->int_no;
+	unsigned int int_no = regs->int_no;
 
 	// Send an EOI (end of interrupt) signal to the PICs.
-	if ( IRQ8 <= int_no ) { CPU::OutPortB(PIC_SLAVE, PIC_CMD_ENDINTR); }
+	if ( IRQ8 <= int_no )
+		CPU::OutPortB(PIC_SLAVE, PIC_CMD_ENDINTR);
 	CPU::OutPortB(PIC_MASTER, PIC_CMD_ENDINTR);
 
-	if ( interrupthandlers[int_no] )
-	{
-		void* user = interrupthandlerptr[int_no];
-		interrupthandlers[int_no](regs, user);
-	}
+	if ( interrupt_handlers[int_no] )
+		interrupt_handlers[int_no](regs, interrupt_handler_params[int_no]);
 }
 
-extern "C" void interrupt_handler(Sortix::CPU::InterruptRegisters* regs)
+extern "C" void interrupt_handler(CPU::InterruptRegisters* regs)
 {
-	size_t int_no = regs->int_no;
-	if ( 32 <= int_no && int_no < 48 ) { IRQHandler(regs); }
-	else { ISRHandler(regs); }
+	if ( 32 <= regs->int_no && regs->int_no < 48 )
+		IRQHandler(regs);
+	else
+		ISRHandler(regs);
 }
 
 // TODO: This implementation is a bit hacky and can be optimized.
@@ -357,9 +349,11 @@ void InitWorker()
 	const size_t QUEUE_SIZE = 4UL*1024UL;
 	STATIC_ASSERT(QUEUE_SIZE % sizeof(Package) == 0);
 	queue = new uint8_t[QUEUE_SIZE];
-	if ( !queue ) { Panic("Can't allocate interrupt worker queue"); }
+	if ( !queue )
+		Panic("Can't allocate interrupt worker queue");
 	storage = new uint8_t[QUEUE_SIZE];
-	if ( !storage ) { Panic("Can't allocate interrupt worker storage"); }
+	if ( !storage )
+		Panic("Can't allocate interrupt worker storage");
 	queuesize = QUEUE_SIZE;
 	queueoffset = 0;
 	queueused = 0;
@@ -373,7 +367,8 @@ static void WriteToQueue(const void* src, size_t size)
 	size_t count = available < size ? available : size;
 	memcpy(queue + writeat, buf, count);
 	queueused += count;
-	if ( count < size ) { WriteToQueue(buf + count, size - count); }
+	if ( count < size )
+		WriteToQueue(buf + count, size - count);
 }
 
 static void ReadFromQueue(void* dest, size_t size)
@@ -384,7 +379,8 @@ static void ReadFromQueue(void* dest, size_t size)
 	memcpy(buf, queue + queueoffset, count);
 	queueused -= count;
 	queueoffset = (queueoffset + count) % queuesize;
-	if ( count < size ) { ReadFromQueue(buf + count, size - count); }
+	if ( count < size )
+		ReadFromQueue(buf + count, size - count);
 }
 
 static Package* PopPackage(uint8_t** payloadp, Package* /*prev*/)
@@ -393,7 +389,8 @@ static Package* PopPackage(uint8_t** payloadp, Package* /*prev*/)
 	uint8_t* payload = NULL;
 	Interrupt::Disable();
 
-	if ( !queueused ) { goto out; }
+	if ( !queueused )
+		goto out;
 
 	package = (Package*) storage;
 	ReadFromQueue(package, sizeof(*package));
@@ -431,7 +428,8 @@ bool ScheduleWork(WorkHandler handler, void* payload, size_t payloadsize)
 	package.handler = handler;
 
 	size_t queuefreespace = queuesize - queueused;
-	if ( queuefreespace < package.size ) { return false; }
+	if ( queuefreespace < package.size )
+		return false;
 
 	WriteToQueue(&package, sizeof(package));
 	WriteToQueue(payload, payloadsize);

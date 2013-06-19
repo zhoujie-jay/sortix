@@ -48,7 +48,6 @@ ifdef X86FAMILY
              $(CPU)/interrupt.o \
              $(CPU)/gdt.o \
              x86-family/gdt.o \
-             $(CPU)/idt.o \
              x86-family/idt.o \
              $(CPU)/syscall.o \
              $(CPU)/thread.o \
