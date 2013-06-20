@@ -128,7 +128,7 @@ namespace Sortix
 				addr_t base = (addr_t) mmap->addr;
 				size_t length = Page::AlignDown(mmap->len);
 
-	#ifdef PLATFORM_X86
+	#if defined(__i386__)
 				// Figure out if the memory area is addressable (are our pointers big enough?)
 				if ( 0xFFFFFFFFULL < mmap->addr ) { continue; }
 				if ( 0xFFFFFFFFULL < mmap->addr + mmap->len ) { length = 0x100000000ULL - mmap->addr;  }

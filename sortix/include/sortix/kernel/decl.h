@@ -38,26 +38,12 @@ typedef uintptr_t addr_t;
 #define unlikely(x) __builtin_expect((x),0)
 #define STATIC_ASSERT(condition) static_assert(condition, #condition)
 
-// The following declarations should not be used if possible. They were part of
-// what libmaxsi's old platform.h header declared and the kernel continues to
-// depend on it.
-#if !defined(PLATFORM_X64) && defined(__x86_64__)
-	#define PLATFORM_X64
-#elif !defined(PLATFORM_X86) && defined(__i386__)
-	#define PLATFORM_X86
-#endif
-
-#if !defined(CPU) && defined(PLATFORM_X86)
+#if !defined(CPU) && defined(__i386__)
 	#define CPU X86
 #endif
 
-#if !defined(CPU) && defined(PLATFORM_X64)
+#if !defined(CPU) && defined(__x86_64__)
 	#define CPU X64
-#endif
-
-#if !defined(CPU_FAMILY) && defined(PLATFORM_X86) || defined(PLATFORM_X64)
-	#define PLATFORM_X86_FAMILY
-	#define CPU_FAMILY X86_FAMILY
 #endif
 
 #endif

@@ -92,11 +92,9 @@ namespace Sortix
 	}
 }
 
-#ifdef PLATFORM_X86
+#if defined(__i386__)
 #include "../x86/memorymanagement.h"
-#endif
-
-#ifdef PLATFORM_X64
+#elif defined(__x86_64__)
 #include "../x64/memorymanagement.h"
 #endif
 

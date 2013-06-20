@@ -216,7 +216,7 @@ addr_t Construct32(Process* process, const uint8_t* file, size_t filelen)
 
 addr_t Construct64(Process* process, const uint8_t* file, size_t filelen)
 {
-#ifndef PLATFORM_X64
+#if !defined(__x86_64__)
 	(void) process;
 	(void) file;
 	(void) filelen;

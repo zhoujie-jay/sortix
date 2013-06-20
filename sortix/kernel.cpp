@@ -618,9 +618,9 @@ static void BootThread(void* /*user*/)
 	}
 }
 
-#if defined(PLATFORM_X86)
+#if defined(__i386__)
 	#define CPUTYPE_STR "i486-sortix"
-#elif defined(PLATFORM_X64)
+#elif defined(__x86_64__)
 	#define CPUTYPE_STR "x86_64-sortix"
 #else
 	#error No cputype environmental variable provided here.

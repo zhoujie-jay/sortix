@@ -229,9 +229,9 @@ void CrashHandler(CPU::InterruptRegisters* regs)
 		Log::Print("\n");
 	}
 
-#ifdef PLATFORM_X64
+#if defined(__x86_64__)
 	addr_t ip = regs->rip;
-#else
+#elif defined(__i386__)
 	addr_t ip = regs->eip;
 #endif
 

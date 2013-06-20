@@ -109,10 +109,7 @@
 /*#define __SORTIX_SHOW_UNIMPLEMENTED*/
 
 #if !defined(_LIBC_HACK_FEATURE_NO_DECLARATIONS)
-
-#include <sortix/bits.h>
 #include <sys/__/types.h>
-
 #endif
 
 #undef _LIBC_HACK_FEATURE_NO_DECLARATIONS

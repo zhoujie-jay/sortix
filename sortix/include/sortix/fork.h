@@ -82,9 +82,9 @@ __BEGIN_DECLS
    own state into such a structure and calling tfork. Note that this structure
    is highly platform specific, portable code should use the standard threading
    facilities combined with sfork if possible. */
-#ifdef PLATFORM_X86
+#if defined(__i386__)
 typedef struct tforkregs_x86 tforkregs_t;
-#elif defined(PLATFORM_X64)
+#elif defined(__x86_64__)
 typedef struct tforkregs_x64 tforkregs_t;
 #else
 #warning No tforkregs_cpu structure declared
