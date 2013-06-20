@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2013.
 
     This file is part of Sortix.
 
@@ -22,20 +22,16 @@
 
 *******************************************************************************/
 
-#ifndef SORTIX_PANIC_H
-#define SORTIX_PANIC_H
+#ifndef INCLUDE_SORTIX_KERNEL_PANIC_H
+#define INCLUDE_SORTIX_KERNEL_PANIC_H
 
-namespace Sortix
-{
-	// This function halts the kernel. If you wish to give an error message first,
-	// then you ought to call Panic instead.
-	extern "C" __attribute__((noreturn)) void HaltKernel();
+namespace Sortix {
 
-	extern "C" __attribute__((noreturn)) void Panic(const char* Error);
-	extern "C" __attribute__((noreturn)) void PanicF(const char* Format, ...);
-	extern "C" void WaitForInterrupt();
-}
+extern "C" __attribute__((noreturn)) void HaltKernel();
+extern "C" __attribute__((noreturn)) void Panic(const char* error);
+extern "C" __attribute__((noreturn)) void PanicF(const char* format, ...);
+extern "C" void WaitForInterrupt();
 
-
+} // namespace Sortix
 
 #endif
