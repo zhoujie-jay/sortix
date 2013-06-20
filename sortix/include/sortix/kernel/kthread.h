@@ -32,7 +32,7 @@ namespace Sortix {
 extern "C" {
 
 inline static void kthread_yield(void) { asm volatile ("int $129"); }
-void kthread_exit(void* param = NULL) SORTIX_NORETURN;
+__attribute__((noreturn)) void kthread_exit(void* param = NULL);
 typedef unsigned kthread_mutex_t;
 const kthread_mutex_t KTHREAD_MUTEX_INITIALIZER = 0;
 unsigned kthread_mutex_trylock(kthread_mutex_t* mutex);

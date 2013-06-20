@@ -29,10 +29,10 @@ namespace Sortix
 {
 	// This function halts the kernel. If you wish to give an error message first,
 	// then you ought to call Panic instead.
-	extern "C" void SORTIX_NORETURN HaltKernel();
+	extern "C" __attribute__((noreturn)) void HaltKernel();
 
-	extern "C" void SORTIX_NORETURN Panic(const char* Error);
-	extern "C" void SORTIX_NORETURN PanicF(const char* Format, ...);
+	extern "C" __attribute__((noreturn)) void Panic(const char* Error);
+	extern "C" __attribute__((noreturn)) void PanicF(const char* Format, ...);
 	extern "C" void WaitForInterrupt();
 }
 

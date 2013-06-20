@@ -119,8 +119,11 @@ const uint64_t URPL = 0x3;
 
 // Portable functions for loading registers.
 namespace CPU {
-extern "C" void load_registers(InterruptRegisters* regs, size_t size) SORTIX_NORETURN;
-SORTIX_NORETURN inline void LoadRegisters(InterruptRegisters* regs)
+extern "C" __attribute__((noreturn))
+void load_registers(InterruptRegisters* regs, size_t size);
+
+__attribute__((noreturn))
+inline void LoadRegisters(InterruptRegisters* regs)
 {
 	load_registers(regs, sizeof(*regs));
 }

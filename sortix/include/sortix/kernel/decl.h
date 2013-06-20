@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -28,9 +28,6 @@
 
 typedef uintptr_t addr_t;
 
-#define SORTIX_NORETURN __attribute__((noreturn))
-#define SORTIX_MAYALIAS __attribute__((__may_alias__))
-#define SORTIX_PACKED __attribute__((packed))
 #define likely(x) __builtin_expect((x),1)
 #define unlikely(x) __builtin_expect((x),0)
 #define STATIC_ASSERT(condition) static_assert(condition, #condition)

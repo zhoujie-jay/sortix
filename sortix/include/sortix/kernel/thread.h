@@ -42,11 +42,12 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo);
 typedef void (*ThreadEntry)(void* user);
 
 // Simply exits the kernel thread.
-void KernelThreadExit() SORTIX_NORETURN;
+__attribute__((noreturn)) void KernelThreadExit();
 
 // Internally used as a kernel thread entry point that exits the thread
 // upon the actual thread entry returning.
-extern "C" void BootstrapKernelThread(void* user, ThreadEntry entry) SORTIX_NORETURN;
+extern "C" __attribute__((noreturn))
+void BootstrapKernelThread(void* user, ThreadEntry entry);
 
 // These functions create a new kernel process but doesn't start it.
 Thread* CreateKernelThread(Process* process, CPU::InterruptRegisters* regs);
@@ -130,7 +131,7 @@ public:
 
 private:
 	void GotoOnSigKill(CPU::InterruptRegisters* regs);
-	void OnSigKill() SORTIX_NORETURN;
+	__attribute__((noreturn)) void OnSigKill();
 	void LastPrayer();
 	void SetHavePendingSignals();
 	void HandleSignalFixupRegsCPU(CPU::InterruptRegisters* regs);
