@@ -26,10 +26,7 @@
 #ifndef SORTIX_DECL_H
 #define SORTIX_DECL_H
 
-#ifndef _ADDR_T_DECLARED
-#define _ADDR_T_DECLARED
 typedef uintptr_t addr_t;
-#endif
 
 #define SORTIX_NORETURN __attribute__((noreturn))
 #define SORTIX_MAYALIAS __attribute__((__may_alias__))

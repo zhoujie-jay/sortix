@@ -37,23 +37,19 @@
 #include <assert.h>
 #include <errno.h>
 #include <malloc.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define PARANOIA 1
 
 #ifdef SORTIX_KERNEL
-#include <sortix/kernel/platform.h>
+#include <sortix/kernel/decl.h>
+#include <sortix/kernel/addralloc.h>
 #include <sortix/kernel/kthread.h>
-#include <sortix/kernel/log.h> // DEBUG
+#include <sortix/kernel/log.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/panic.h>
-#include <sortix/kernel/addralloc.h>
-#endif
-
-#ifndef _ADDR_T_DECLARED
-#define _ADDR_T_DECLARED
-typedef uintptr_t addr_t;
 #endif
 
 //
@@ -72,15 +68,15 @@ const size_t ALIGNMENT = 8UL;
 const size_t PAGESIZE = 4UL * 1024UL; // 4 KiB
 const size_t NUMBINS = 8UL * sizeof(size_t);
 
-extern addr_t wilderness;
+static uintptr_t wilderness;
 
 #ifdef SORTIX_KERNEL
-static addr_t GetHeapStart()
+static uintptr_t GetHeapStart()
 {
 	return Sortix::GetHeapUpper();
 }
 
-static void FreeMemory(addr_t where, size_t bytes)
+static void FreeMemory(uintptr_t where, size_t bytes)
 {
 	assert(Sortix::Page::IsAligned(where + bytes));
 
@@ -94,11 +90,11 @@ static void FreeMemory(addr_t where, size_t bytes)
 	}
 }
 
-static bool AllocateMemory(addr_t where, size_t bytes)
+static bool AllocateMemory(uintptr_t where, size_t bytes)
 {
 	assert(Sortix::Page::IsAligned(where + bytes));
 
-	addr_t pos = where;
+	uintptr_t pos = where;
 
 	while ( bytes )
 	{
@@ -131,9 +127,9 @@ static bool ExtendHeap(size_t bytesneeded)
 	assert(bytesneeded <= got_bytes);
 
 	#ifdef HEAP_GROWS_DOWNWARDS
-	addr_t newwilderness = wilderness - got_bytes;
+	uintptr_t newwilderness = wilderness - got_bytes;
 	#else
-	addr_t newwilderness = wilderness + got_bytes;
+	uintptr_t newwilderness = wilderness + got_bytes;
 	#endif
 
 	if ( !AllocateMemory(newwilderness, got_bytes) )
@@ -145,15 +141,15 @@ static bool ExtendHeap(size_t bytesneeded)
 	return true;
 }
 #else
-static addr_t GetHeapStart()
+static uintptr_t GetHeapStart()
 {
-	addr_t base = (addr_t) sbrk(0);
-	addr_t unaligned = base % ALIGNMENT;
+	uintptr_t base = (uintptr_t) sbrk(0);
+	uintptr_t unaligned = base % ALIGNMENT;
 	if ( unaligned )
 	{
 		sbrk(ALIGNMENT-unaligned);
 	}
-	addr_t result = (addr_t) sbrk(0);
+	uintptr_t result = (uintptr_t) sbrk(0);
 	return result;
 }
 
@@ -214,11 +210,13 @@ Sortix::kthread_mutex_t heaplock;
 #endif
 
 // The location where the heap originally grows from.
-addr_t heapstart;
+uintptr_t heapstart;
 
 // If heap grows down: Location of the first mapped page.
 // If heap grows up: Location of the first not-mapped page.
-addr_t wilderness;
+#if 0 /* forward declared abvce */
+static uintptr_t wilderness;
+#endif
 
 // How many bytes remain in the wilderness.
 size_t wildernesssize;
@@ -301,23 +299,23 @@ const size_t OVERHEAD = sizeof(Chunk) + sizeof(Trailer);
 
 Trailer* Chunk::GetTrailer()
 {
-	return (Trailer*) (((addr_t) this) + size - sizeof(Trailer));
+	return (Trailer*) (((uintptr_t) this) + size - sizeof(Trailer));
 }
 
 Chunk* Chunk::LeftNeighbor()
 {
-	Trailer* trailer = (Trailer*) (((addr_t) this) - sizeof(Trailer));
+	Trailer* trailer = (Trailer*) (((uintptr_t) this) - sizeof(Trailer));
 	return trailer->GetChunk();
 }
 
 Chunk* Chunk::RightNeighbor()
 {
-	return (Chunk*) (((addr_t) this) + size);
+	return (Chunk*) (((uintptr_t) this) + size);
 }
 
 Chunk* Trailer::GetChunk()
 {
-	return (Chunk*) (((addr_t) this) + sizeof(Trailer) - size);
+	return (Chunk*) (((uintptr_t) this) + sizeof(Trailer) - size);
 }
 
 bool Chunk::IsSane()
@@ -337,8 +335,8 @@ bool Chunk::IsSane()
 	}
 	if ( !IsUsed() )
 	{
-		if ( ((addr_t) nextunused) & (ALIGNMENT-1UL) ) { return false; }
-		if ( ((addr_t) trailer->prevunused) & (ALIGNMENT-1UL) ) { return false; }
+		if ( ((uintptr_t) nextunused) & (ALIGNMENT-1UL) ) { return false; }
+		if ( ((uintptr_t) trailer->prevunused) & (ALIGNMENT-1UL) ) { return false; }
 		if ( nextunused && !IsGoodHeapPointer(nextunused->GetTrailer(),
 		                                      sizeof(Trailer)) )
 			return false;
@@ -385,10 +383,10 @@ static bool ValidateHeap()
 
 	#ifdef HEAP_GROWS_DOWNWARDS
 	Chunk* chunk = (Chunk*) (wilderness + wildernesssize);
-	while ( (addr_t) chunk < heapstart )
+	while ( (uintptr_t) chunk < heapstart )
 	#else
 	Chunk* chunk = (Chunk*) heapstart;
-	while ( (addr_t) chunk < wilderness - wildernesssize )
+	while ( (uintptr_t) chunk < wilderness - wildernesssize )
 	#endif
 	{
 		size_t timesfound = 0;
@@ -454,9 +452,9 @@ static bool ExpandWilderness(size_t bytesneeded)
 		return errno = ENOMEM, true;
 
 	#ifdef HEAP_GROWS_DOWNWARDS
-	addr_t newwilderness = wilderness - bytesneeded;
+	uintptr_t newwilderness = wilderness - bytesneeded;
 	#else
-	addr_t newwilderness = wilderness + bytesneeded;
+	uintptr_t newwilderness = wilderness + bytesneeded;
 	#endif
 
 	// Attempt to map pages so our wilderness grows.
@@ -540,7 +538,7 @@ extern "C" void* malloc(size_t size)
 		assert(ValidateHeap());
 		#endif
 
-		addr_t result = ((addr_t) chunk) + sizeof(Chunk);
+		uintptr_t result = ((uintptr_t) chunk) + sizeof(Chunk);
 		return (void*) result;
 	}
 
@@ -574,25 +572,25 @@ extern "C" void* malloc(size_t size)
 	assert(ValidateHeap());
 	#endif
 
-	addr_t result = ((addr_t) chunk) + sizeof(Chunk);
+	uintptr_t result = ((uintptr_t) chunk) + sizeof(Chunk);
 	return (void*) result;
 }
 
 static bool IsLeftmostChunk(Chunk* chunk)
 {
 	#ifdef HEAP_GROWS_DOWNWARDS
-	return (addr_t) chunk <= wilderness + wildernesssize;
+	return (uintptr_t) chunk <= wilderness + wildernesssize;
 	#else
-	return heapstart <= (addr_t) chunk;
+	return heapstart <= (uintptr_t) chunk;
 	#endif
 }
 
 static bool IsRightmostChunk(Chunk* chunk)
 {
 	#ifdef HEAP_GROWS_DOWNWARDS
-	return heapstart <= (addr_t) chunk + chunk->size;
+	return heapstart <= (uintptr_t) chunk + chunk->size;
 	#else
-	return heapstart + heapsize <= (addr_t) chunk + chunk->size;
+	return heapstart + heapsize <= (uintptr_t) chunk + chunk->size;
 	#endif
 }
 
@@ -666,7 +664,7 @@ extern "C" void free(void* addr)
 	#endif
 
 	if ( !addr) { return; }
-	Chunk* chunk = (Chunk*) ((addr_t) addr - sizeof(Chunk));
+	Chunk* chunk = (Chunk*) ((uintptr_t) addr - sizeof(Chunk));
 #ifndef SORTIX_KERNEL
 	if ( !IsGoodHeapPointer(addr, 1) ||
 	     !IsGoodHeapPointer(chunk, sizeof(*chunk)) )
@@ -711,7 +709,7 @@ extern "C" void free(void* addr)
 extern "C" void* realloc(void* ptr, size_t size)
 {
 	if ( !ptr ) { return malloc(size); }
-	Chunk* chunk = (Chunk*) ((addr_t) ptr - sizeof(Chunk));
+	Chunk* chunk = (Chunk*) ((uintptr_t) ptr - sizeof(Chunk));
 	assert(chunk->IsUsed());
 	assert(chunk->IsSane());
 	size_t allocsize = chunk->size - OVERHEAD;
