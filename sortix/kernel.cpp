@@ -145,6 +145,34 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Display the boot welcome screen.
 	DoWelcome();
 
+#if defined(__x86_64__)
+	// TODO: Remove this hack when qemu 1.4.x and 1.5.0 are obsolete.
+	// Verify that we are not running under a buggy qemu where the instruction
+	// movl (%eax), %esi is misinterpreted (amongst others). In this case it
+	// will try to access the memory at [bx + si]. We'll make sure that eax
+	// points to a variable on the stack that has another value than at bx + si,
+	// and if the values compare equal using the buggy instruction, we panic.
+	uint32_t intended_variable; // rax will point to here.
+	uint32_t is_buggy_qemu;
+	asm ("movq $0x1000, %%rbx\n" /* access 32-bit value at 0x1000 */
+	     "movl (%%rbx), %%esi\n"
+	     "subl $1, %%esi\n" /* change the 32-bit value */
+	     "movl %%esi, (%%rax)\n" /* store the new value in intended_variable */
+	     "movq $0x0, %%rsi\n" /* make rsi zero, so bx + si points to 0x1000 */
+	     "movl (%%eax), %%esi\n" /* do the perhaps-buggy memory access */
+	     "movl (%%rax), %%ebx\n" /* do a working memory access */
+	     "movl %%ebx, %0\n" /* load the desired value into is_buggy_qemu */
+	     "subl %%esi, %0\n" /* subtract the possibly incorrect value. */
+	     : "=r"(is_buggy_qemu)
+	     : "a"(&intended_variable)
+	     : "rsi", "rbx");
+	if ( is_buggy_qemu )
+		Panic("You are running a buggy version of qemu.  The 1.4.x and 1.5.0 "
+		      "releases are known to execute some instructions incorrectly on "
+		      "x86_64 without KVM.  You have three options: 1) Enable KVM 2) "
+		      "Use a 32-bit OS 3) Use another version of qemu.");
+#endif
+
 	if ( !bootinfo )
 	{
 		Panic("The bootinfo structure was NULL. Are your bootloader "
