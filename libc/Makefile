@@ -182,6 +182,7 @@ $(CPUDIR)/signal.o \
 $(CPUDIR)/syscall.o \
 creat.o \
 dirent/fddir-sortix.o \
+dirent/scandir.o \
 dirname.o \
 dispmsg_issue.o \
 dlfcn.o \

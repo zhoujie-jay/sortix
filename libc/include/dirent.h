@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef _DIRENT_H
-#define _DIRENT_H 1
+#ifndef INCLUDE_DIRENT_H
+#define INCLUDE_DIRENT_H
 
 #include <features.h>
 
@@ -46,6 +46,8 @@ DIR* fdopendir(int fd);
 DIR* opendir(const char* path);
 struct dirent* readdir(DIR* dir);
 void rewinddir(DIR* dir);
+int scandir(const char*, struct dirent***, int (*)(const struct dirent*),
+            int (*)(const struct dirent**, const struct dirent**));
 
 #if defined(_SORTIX_SOURCE)
 void dregister(DIR* dir);
