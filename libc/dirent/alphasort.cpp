@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,49 +17,15 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    dirent.h
-    Format of directory entries.
+    dirent/alphasort.cpp
+    Compare directory entries alphabetically.
 
 *******************************************************************************/
 
-#ifndef INCLUDE_DIRENT_H
-#define INCLUDE_DIRENT_H
+#include <dirent.h>
+#include <string.h>
 
-#include <features.h>
-
-__BEGIN_DECLS
-
-@include(ino_t.h)
-@include(size_t.h)
-@include(DIR.h)
-
-struct dirent
+extern "C" int alphasort(const struct dirent** a, const struct dirent** b)
 {
-	ino_t d_ino;
-	size_t d_reclen;
-	char d_name[0];
-};
-
-int alphasort(const struct dirent**, const struct dirent**);
-int closedir(DIR* dir);
-int dirfd(DIR* dir);
-DIR* fdopendir(int fd);
-DIR* opendir(const char* path);
-struct dirent* readdir(DIR* dir);
-void rewinddir(DIR* dir);
-int scandir(const char*, struct dirent***, int (*)(const struct dirent*),
-            int (*)(const struct dirent**, const struct dirent**));
-
-#if defined(_SORTIX_SOURCE)
-void dregister(DIR* dir);
-void dunregister(DIR* dir);
-DIR* dnewdir(void);
-int dcloseall(void);
-void dclearerr(DIR* dir);
-int derror(DIR* dir);
-int deof(DIR* dif);
-#endif
-
-__END_DECLS
-
-#endif
+	return strcoll((*a)->d_name, (*b)->d_name);
+}

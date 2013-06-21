@@ -29,6 +29,7 @@ calloc.o \
 clearerr.o \
 c++.o \
 ctype.o \
+dirent/alphasort.o \
 dirent/dir.o \
 div.o \
 errno.o \
