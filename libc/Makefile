@@ -256,7 +256,8 @@ libgen/basename.o \
 libgen/dirname.o \
 linkat.o \
 link.o \
-localeconv.o \
+locale/localeconv.o \
+locale/setlocale.o \
 lseek.o \
 lstat.o \
 memstat.o \
@@ -313,7 +314,6 @@ select.o \
 setegid.o \
 seteuid.o \
 setgid.o \
-setlocale.o \
 setpgid.o \
 settermmode.o \
 setuid.o \
