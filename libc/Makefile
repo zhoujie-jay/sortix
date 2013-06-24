@@ -288,9 +288,9 @@ netdb/setprotoent.o \
 netdb/setservent.o \
 pathconf.o \
 pipe.o \
-poll.o \
+poll/poll.o \
+poll/ppoll.o \
 popen.o \
-ppoll.o \
 preadv.o \
 print.o \
 psignal.o \
