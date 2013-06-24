@@ -158,7 +158,7 @@ wchar/wcsrchr.o \
 wchar/wcsrtombs.o \
 wchar/wcsspn.o \
 wchar/wcstok.o \
-wctype.o \
+wctype/wctype.o \
 
 HOSTEDOBJS=\
 access.o \
