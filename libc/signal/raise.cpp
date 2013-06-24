@@ -17,8 +17,8 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    kill.cpp
-    Send signal to process.
+    signal/raise.cpp
+    Send signal to current process.
 
 *******************************************************************************/
 
@@ -26,9 +26,9 @@
 #include <sys/syscall.h>
 #include <signal.h>
 
-DEFN_SYSCALL2(int, sys_kill, SYSCALL_KILL, pid_t, int);
+DEFN_SYSCALL1(int, sys_raise, SYSCALL_RAISE, int);
 
-extern "C" int kill(pid_t pid, int signum)
+extern "C" int raise(int signum)
 {
-	return sys_kill(pid, signum);
+	return sys_raise(signum);
 }

@@ -17,16 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    sigfillset.cpp
-    Add all signals to a signal set.
+    signal/sigemptyset.cpp
+    Removes all the signals from a signal set.
 
 *******************************************************************************/
 
 #include <signal.h>
 #include <string.h>
 
-extern "C" int sigfillset(sigset_t* set)
+extern "C" int sigemptyset(sigset_t* set)
 {
-	memset(set, 255, sizeof(*set));
+	memset(set, 0, sizeof(*set));
 	return 0;
 }

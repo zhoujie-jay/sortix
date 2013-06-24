@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,39 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    signal.cpp
-    Handles the good old unix signals.
+    signal/psignal.cpp
+    Print signal error condition to stderr.
 
 *******************************************************************************/
 
-#include <sys/types.h>
-#include <sys/syscall.h>
-
 #include <signal.h>
+#include <stdio.h>
+#include <string.h>
 
-const int MAX_SIGNALS = 128;
-sighandler_t handlers[MAX_SIGNALS];
-
-extern "C" void SignalHandlerAssembly(int signum);
-extern "C" void SignalHandler(int signum)
+extern "C" void psignal(int signum, const char* message)
 {
-	if ( 0 <= signum && signum < (int) MAX_SIGNALS )
-		handlers[signum](signum);
-}
-
-DEFN_SYSCALL1(int, sys_register_signal_handler, SYSCALL_REGISTER_SIGNAL_HANDLER, sighandler_t);
-
-extern "C" void init_signal()
-{
-	for ( int i = 0; i < MAX_SIGNALS; i++ )
-		handlers[i] = SIG_DFL;
-
-	// Tell the kernel which function we want called upon signals.
-	sys_register_signal_handler(&SignalHandlerAssembly);
-}
-
-extern "C" sighandler_t signal(int signum, sighandler_t handler)
-{
-	if ( signum < 0 || MAX_SIGNALS <= signum ) { return SIG_ERR; }
-	return handlers[signum] = handler;
+	if ( message && message[0] )
+		fprintf(stderr, "%s: ", message);
+	fprintf(stderr, strsignal(signum));
 }

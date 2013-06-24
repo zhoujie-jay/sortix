@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
     This file is part of the Sortix C Library.
 
@@ -17,16 +17,15 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    sigemptyset.cpp
-    Removes all the signals from a signal set.
+    signal/SIG_ERR.cpp
+    Abort on signal.
 
 *******************************************************************************/
 
 #include <signal.h>
-#include <string.h>
+#include <stdlib.h>
 
-extern "C" int sigemptyset(sigset_t* set)
+extern "C" void SIG_ERR(int /*signum*/)
 {
-	memset(set, 0, sizeof(*set));
-	return 0;
+	abort();
 }

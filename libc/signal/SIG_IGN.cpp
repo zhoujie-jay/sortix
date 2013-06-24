@@ -17,15 +17,15 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    SIG_ERR.cpp
-    Abort on signal.
+    signal/SIG_IGN.cpp
+    Ignore signal.
 
 *******************************************************************************/
 
 #include <signal.h>
 #include <stdlib.h>
 
-extern "C" void SIG_ERR(int /*signum*/)
+extern "C" void SIG_IGN(int /*signum*/)
 {
-	abort();
+
 }

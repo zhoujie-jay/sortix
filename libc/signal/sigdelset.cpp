@@ -17,18 +17,23 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    psignal.cpp
-    Print signal error condition to stderr.
+    signal/sigdelset.cpp
+    Remove a signal from a signal set.
 
 *******************************************************************************/
 
+#include <errno.h>
 #include <signal.h>
-#include <stdio.h>
-#include <string.h>
+#include <stdint.h>
 
-extern "C" void psignal(int signum, const char* message)
+extern "C" int sigdelset(sigset_t* set, int signum)
 {
-	if ( message && message[0] )
-		fprintf(stderr, "%s: ", message);
-	fprintf(stderr, strsignal(signum));
+	int max_signals = sizeof(set->__val) * 8;
+	if ( max_signals <= signum )
+		return errno = EINVAL, -1;
+	size_t which_byte = signum / 8;
+	size_t which_bit  = signum % 8;
+	uint8_t* bytes = (uint8_t*) set->__val;
+	bytes[which_byte] &= ~(1 << which_bit);
+	return 0;
 }

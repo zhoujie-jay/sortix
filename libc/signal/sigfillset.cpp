@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,15 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    SIG_IGN.cpp
-    Ignore signal.
+    signal/sigfillset.cpp
+    Add all signals to a signal set.
 
 *******************************************************************************/
 
 #include <signal.h>
-#include <stdlib.h>
+#include <string.h>
 
-extern "C" void SIG_IGN(int /*signum*/)
+extern "C" int sigfillset(sigset_t* set)
 {
-
+	memset(set, 255, sizeof(*set));
+	return 0;
 }

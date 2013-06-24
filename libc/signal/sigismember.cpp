@@ -17,8 +17,8 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    sigaddset.cpp
-    Add a signal to a signal set.
+    signal/sigismember.cpp
+    Test signal membership in a signal set.
 
 *******************************************************************************/
 
@@ -26,14 +26,13 @@
 #include <signal.h>
 #include <stdint.h>
 
-extern "C" int sigaddset(sigset_t* set, int signum)
+extern "C" int sigismember(const sigset_t* set, int signum)
 {
 	int max_signals = sizeof(set->__val) * 8;
 	if ( max_signals <= signum )
 		return errno = EINVAL, -1;
 	size_t which_byte = signum / 8;
 	size_t which_bit  = signum % 8;
-	uint8_t* bytes = (uint8_t*) set->__val;
-	bytes[which_byte] |= 1 << which_bit;
-	return 0;
+	const uint8_t* bytes = (const uint8_t*) set->__val;
+	return bytes[which_byte] & (1 << which_bit) ? 1 : 0;
 }

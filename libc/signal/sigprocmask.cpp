@@ -17,22 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    sigismember.cpp
-    Test signal membership in a signal set.
+    signal/sigprocmask.cpp
+    Examine and change blocked signals.
 
 *******************************************************************************/
 
-#include <errno.h>
 #include <signal.h>
-#include <stdint.h>
+#include <stdio.h>
 
-extern "C" int sigismember(const sigset_t* set, int signum)
+extern "C" int sigprocmask(int how, const sigset_t* set, sigset_t* oldset)
 {
-	int max_signals = sizeof(set->__val) * 8;
-	if ( max_signals <= signum )
-		return errno = EINVAL, -1;
-	size_t which_byte = signum / 8;
-	size_t which_bit  = signum % 8;
-	const uint8_t* bytes = (const uint8_t*) set->__val;
-	return bytes[which_byte] & (1 << which_bit) ? 1 : 0;
+	(void) how;
+	(void) set;
+	(void) oldset;
+	return 0;
 }

@@ -17,18 +17,23 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    sigprocmask.cpp
-    Examine and change blocked signals.
+    signal/sigaddset.cpp
+    Add a signal to a signal set.
 
 *******************************************************************************/
 
+#include <errno.h>
 #include <signal.h>
-#include <stdio.h>
+#include <stdint.h>
 
-extern "C" int sigprocmask(int how, const sigset_t* set, sigset_t* oldset)
+extern "C" int sigaddset(sigset_t* set, int signum)
 {
-	(void) how;
-	(void) set;
-	(void) oldset;
+	int max_signals = sizeof(set->__val) * 8;
+	if ( max_signals <= signum )
+		return errno = EINVAL, -1;
+	size_t which_byte = signum / 8;
+	size_t which_bit  = signum % 8;
+	uint8_t* bytes = (uint8_t*) set->__val;
+	bytes[which_byte] |= 1 << which_bit;
 	return 0;
 }
