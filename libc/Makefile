@@ -20,7 +20,7 @@ FREEOBJS=\
 assert/_assert.o \
 clearerr.o \
 c++.o \
-ctype.o \
+ctype/ctype.o \
 dirent/alphasort.o \
 dirent/dir.o \
 dirent/versionsort.o \
