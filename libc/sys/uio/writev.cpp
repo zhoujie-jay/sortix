@@ -17,18 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    preadv.cpp
-    Read data into multiple buffers.
+    sys/uio/writev.cpp
+    Write data from multiple buffers.
 
 *******************************************************************************/
 
 #include <sys/syscall.h>
 #include <sys/uio.h>
 
-DEFN_SYSCALL4(ssize_t, sys_preadv, SYSCALL_PREADV, int, const struct iovec*, int, off_t);
+DEFN_SYSCALL3(ssize_t, sys_writev, SYSCALL_WRITEV, int, const struct iovec*, int);
 
-extern "C"
-ssize_t preadv(int fd, const struct iovec* iov, int iovcnt, off_t offset)
+extern "C" ssize_t writev(int fd, const struct iovec* iov, int iovcnt)
 {
-	return sys_preadv(fd, iov, iovcnt, offset);
+	return sys_writev(fd, iov, iovcnt);
 }

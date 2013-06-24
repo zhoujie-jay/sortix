@@ -230,13 +230,10 @@ netdb/setservent.o \
 poll/poll.o \
 poll/ppoll.o \
 popen.o \
-preadv.o \
 print.o \
 putc.o \
 pwd/pwent.o \
-pwritev.o \
 readdirents.o \
-readv.o \
 removeat.o \
 remove.o \
 renameat.o \
@@ -297,6 +294,10 @@ sys/stat/umask.o \
 sys/stat/utimensat.o \
 sys/stat/utimens.o \
 sys/time/gettimeofday.o \
+sys/uio/preadv.o \
+sys/uio/pwritev.o \
+sys/uio/readv.o \
+sys/uio/writev.o \
 termios/tcgetwinsize.o \
 time/clock_getres.o \
 time/clock_gettime.o \
@@ -399,7 +400,6 @@ utime.o \
 vscanf.o \
 wait.o \
 waitpid.o \
-writev.o \
 
 OBJS=\
 $(FREEOBJS) \
