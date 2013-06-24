@@ -17,22 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fsm_bootstraprootfd.cpp
-    Creates a root file descriptor associated with a user-space filesystem.
+    fsmarshall/fsm_closechannel.cpp
+    Closes a user-space filesystem communication channel.
 
 *******************************************************************************/
 
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
+#include <unistd.h>
 
 #include <fsmarshall.h>
 
-extern "C" int fsm_bootstraprootfd(int server, ino_t ino, int open_flags,
-                                   mode_t mode)
+extern "C" int fsm_closechannel(int /*server*/, int channel)
 {
-	char name[sizeof(uintmax_t)*3];
-	snprintf(name, sizeof(name), "%ju", (uintmax_t) ino);
-	return openat(server, name, open_flags, mode);
+	return close(channel);
 }

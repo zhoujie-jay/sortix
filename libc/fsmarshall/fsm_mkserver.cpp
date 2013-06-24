@@ -17,16 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fsm_recv.cpp
-    Reads a message from a filesystem communication channel.
+    fsmarshall/fsm_mkserver.cpp
+    Creates a user-space filesystem server.
 
 *******************************************************************************/
 
-#include <unistd.h>
+#include <fcntl.h>
 
 #include <fsmarshall.h>
 
-extern "C" ssize_t fsm_recv(int /*server*/, int channel, void* ptr, size_t count)
+extern "C" int fsm_mkserver()
 {
-	return read(channel, ptr, count);
+	return open("/dev/fs/new", O_RDWR | O_CREAT, 0666);
 }

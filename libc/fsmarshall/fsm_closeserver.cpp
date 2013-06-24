@@ -17,16 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fsm_mkserver.cpp
-    Creates a user-space filesystem server.
+    fsmarshall/fsm_closeserver.cpp
+    Destroys a user-space filesystem server.
 
 *******************************************************************************/
 
-#include <fcntl.h>
+#include <unistd.h>
 
 #include <fsmarshall.h>
 
-extern "C" int fsm_mkserver()
+extern "C" int fsm_closeserver(int server)
 {
-	return open("/dev/fs/new", O_RDWR | O_CREAT, 0666);
+	return close(server);
 }

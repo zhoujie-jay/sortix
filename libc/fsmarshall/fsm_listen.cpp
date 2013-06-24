@@ -17,16 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fsm_closechannel.cpp
-    Closes a user-space filesystem communication channel.
+    fsmarshall/fsm_listen.cpp
+    Listens for a new channel on a given filesystem server.
 
 *******************************************************************************/
 
-#include <unistd.h>
+#include <fcntl.h>
 
 #include <fsmarshall.h>
 
-extern "C" int fsm_closechannel(int /*server*/, int channel)
+extern "C" int fsm_listen(int server)
 {
-	return close(channel);
+	return openat(server, "listen", O_RDWR);
 }

@@ -17,20 +17,22 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fsm_fsbind.cpp
-    Binds a user-space filesystem inode at a mount point.
+    fsmarshall/fsm_bootstraprootfd.cpp
+    Creates a root file descriptor associated with a user-space filesystem.
 
 *******************************************************************************/
 
-#include <sys/syscall.h>
-
-#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
 
 #include <fsmarshall.h>
 
-DEFN_SYSCALL3(int, sys_fsm_fsbind, SYSCALL_FSM_FSBIND, int, int, int);
-
-extern "C" int fsm_fsbind(int rootfd, int mountpoint, int flags)
+extern "C" int fsm_bootstraprootfd(int server, ino_t ino, int open_flags,
+                                   mode_t mode)
 {
-	return sys_fsm_fsbind(rootfd, mountpoint, flags);
+	char name[sizeof(uintmax_t)*3];
+	snprintf(name, sizeof(name), "%ju", (uintmax_t) ino);
+	return openat(server, name, open_flags, mode);
 }

@@ -17,8 +17,8 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fsm_send.cpp
-    Send a message to a filesystem communication channel.
+    fsmarshall/fsm_recv.cpp
+    Reads a message from a filesystem communication channel.
 
 *******************************************************************************/
 
@@ -26,8 +26,7 @@
 
 #include <fsmarshall.h>
 
-extern "C" ssize_t fsm_send(int /*server*/, int channel, const void* ptr,
-                            size_t count)
+extern "C" ssize_t fsm_recv(int /*server*/, int channel, void* ptr, size_t count)
 {
-	return write(channel, ptr, count);
+	return read(channel, ptr, count);
 }

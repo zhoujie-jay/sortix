@@ -17,16 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fsm_listen.cpp
-    Listens for a new channel on a given filesystem server.
+    fsmarshall/fsm_send.cpp
+    Send a message to a filesystem communication channel.
 
 *******************************************************************************/
 
-#include <fcntl.h>
+#include <unistd.h>
 
 #include <fsmarshall.h>
 
-extern "C" int fsm_listen(int server)
+extern "C" ssize_t fsm_send(int /*server*/, int channel, const void* ptr,
+                            size_t count)
 {
-	return openat(server, "listen", O_RDWR);
+	return write(channel, ptr, count);
 }

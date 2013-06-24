@@ -17,16 +17,20 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fsm_closeserver.cpp
-    Destroys a user-space filesystem server.
+    fsmarshall/fsm_fsbind.cpp
+    Binds a user-space filesystem inode at a mount point.
 
 *******************************************************************************/
 
-#include <unistd.h>
+#include <sys/syscall.h>
+
+#include <errno.h>
 
 #include <fsmarshall.h>
 
-extern "C" int fsm_closeserver(int server)
+DEFN_SYSCALL3(int, sys_fsm_fsbind, SYSCALL_FSM_FSBIND, int, int, int);
+
+extern "C" int fsm_fsbind(int rootfd, int mountpoint, int flags)
 {
-	return close(server);
+	return sys_fsm_fsbind(rootfd, mountpoint, flags);
 }
