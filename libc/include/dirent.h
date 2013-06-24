@@ -45,6 +45,9 @@ struct dirent
 #define _DIRENT_HAVE_D_OFF
 #undef _DIRENT_HAVE_D_TYPE
 
+#define _D_EXACT_NAMLEN(d) ((d)->d_reclen - __builtin_offsetof(struct dirent, d_name) - 1)
+#define _D_ALLOC_NAMLEN(d) (_D_EXACT_NAMLEN(d) + 1)
+
 int alphasort(const struct dirent**, const struct dirent**);
 int closedir(DIR* dir);
 int dirfd(DIR* dir);
