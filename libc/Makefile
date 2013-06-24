@@ -294,7 +294,7 @@ preadv.o \
 print.o \
 psignal.o \
 putc.o \
-pwent.o \
+pwd/pwent.o \
 pwritev.o \
 raise.o \
 readdirents.o \
