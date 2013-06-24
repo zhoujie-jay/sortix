@@ -24,8 +24,8 @@ all: $(BINARIES)
 
 .PHONY: all install uninstall clean
 
-%: %.cpp crc32.cpp rules.cpp $(LIBC)/ioleast.cpp
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< crc32.cpp rules.cpp $(LIBC)/ioleast.cpp -o $@
+%: %.cpp crc32.cpp rules.cpp $(LIBC)/unistd/ioleast.cpp
+	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< crc32.cpp rules.cpp $(LIBC)/unistd/ioleast.cpp -o $@
 
 clean:
 	rm -f $(BINARIES)
