@@ -180,7 +180,6 @@ $(CPUDIR)/fork.o \
 $(CPUDIR)/setjmp.o \
 $(CPUDIR)/signal.o \
 $(CPUDIR)/syscall.o \
-creat.o \
 dirent/fddir-sortix.o \
 dirent/scandir.o \
 dispmsg_issue.o \
@@ -206,7 +205,10 @@ fchown.o \
 fchrootat.o \
 fchroot.o \
 fcloseall.o \
-fcntl.o \
+fcntl/creat.o \
+fcntl/fcntl.o \
+fcntl/openat.o \
+fcntl/open.o \
 fdio.o \
 fgetpos.o \
 fileno.o \
@@ -283,8 +285,6 @@ netdb/sethostent.o \
 netdb/setnetent.o \
 netdb/setprotoent.o \
 netdb/setservent.o \
-openat.o \
-open.o \
 pathconf.o \
 pipe.o \
 poll.o \

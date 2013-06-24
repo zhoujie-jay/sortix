@@ -17,18 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    open.cpp
-    Open a file.
+    fcntl/openat.cpp
+    Open a file relative to directory.
 
 *******************************************************************************/
 
-#include <sys/types.h>
-#include <sys/stat.h>
-
+#include <sys/syscall.h>
 #include <fcntl.h>
 #include <stdarg.h>
 
-extern "C" int open(const char* path, int flags, ...)
+DEFN_SYSCALL4(int, sys_openat, SYSCALL_OPENAT, int, const char*, int, mode_t);
+
+extern "C" int openat(int dirfd, const char* path, int flags, ...)
 {
 	mode_t mode = 0;
 	if ( flags & O_CREAT )
@@ -38,5 +38,5 @@ extern "C" int open(const char* path, int flags, ...)
 		mode = va_arg(ap, mode_t);
 		va_end(ap);
 	}
-	return openat(AT_FDCWD, path, flags, mode);
+	return sys_openat(dirfd, path, flags, mode);
 }

@@ -17,23 +17,26 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fcntl.cpp
-    Manipulates a file descriptor.
+    fcntl/open.cpp
+    Open a file.
 
 *******************************************************************************/
 
-#include <sys/syscall.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <fcntl.h>
 #include <stdarg.h>
 
-DEFN_SYSCALL3(int, sys_fcntl, SYSCALL_FCNTL, int, int, unsigned long);
-
-extern "C" int fcntl(int fd, int cmd, ...)
+extern "C" int open(const char* path, int flags, ...)
 {
-	va_list ap;
-	va_start(ap, cmd);
-	unsigned long arg = va_arg(ap, unsigned long);
-	va_end(ap);
-	return sys_fcntl(fd, cmd, arg);
+	mode_t mode = 0;
+	if ( flags & O_CREAT )
+	{
+		va_list ap;
+		va_start(ap, flags);
+		mode = va_arg(ap, mode_t);
+		va_end(ap);
+	}
+	return openat(AT_FDCWD, path, flags, mode);
 }

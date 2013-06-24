@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,26 +17,14 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    openat.cpp
-    Open a file relative to directory.
+    fcntl/creat.cpp
+    Create a file.
 
 *******************************************************************************/
 
-#include <sys/syscall.h>
 #include <fcntl.h>
-#include <stdarg.h>
 
-DEFN_SYSCALL4(int, sys_openat, SYSCALL_OPENAT, int, const char*, int, mode_t);
-
-extern "C" int openat(int dirfd, const char* path, int flags, ...)
+extern "C" int creat(const char* path, mode_t mode)
 {
-	mode_t mode = 0;
-	if ( flags & O_CREAT )
-	{
-		va_list ap;
-		va_start(ap, flags);
-		mode = va_arg(ap, mode_t);
-		va_end(ap);
-	}
-	return sys_openat(dirfd, path, flags, mode);
+	return open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
 }
