@@ -242,7 +242,7 @@ getpid.o \
 getppid.o \
 gettermmode.o \
 getuid.o \
-grent.o \
+grp/grent.o \
 init.o \
 ioctl.o \
 ioleast.o \
