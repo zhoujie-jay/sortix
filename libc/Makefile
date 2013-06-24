@@ -31,6 +31,7 @@ c++.o \
 ctype.o \
 dirent/alphasort.o \
 dirent/dir.o \
+dirent/versionsort.o \
 div.o \
 errno.o \
 fabs.o \

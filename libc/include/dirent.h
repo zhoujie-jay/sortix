@@ -49,6 +49,7 @@ struct dirent* readdir(DIR* dir);
 void rewinddir(DIR* dir);
 int scandir(const char*, struct dirent***, int (*)(const struct dirent*),
             int (*)(const struct dirent**, const struct dirent**));
+int versionsort(const struct dirent**, const struct dirent**);
 
 #if defined(_SORTIX_SOURCE)
 void dregister(DIR* dir);
