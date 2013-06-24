@@ -40,6 +40,11 @@ struct dirent
 	char d_name[0];
 };
 
+#undef  _DIRENT_HAVE_D_NAMLEN
+#define _DIRENT_HAVE_D_RECLEN
+#define _DIRENT_HAVE_D_OFF
+#undef _DIRENT_HAVE_D_TYPE
+
 int alphasort(const struct dirent**, const struct dirent**);
 int closedir(DIR* dir);
 int dirfd(DIR* dir);
