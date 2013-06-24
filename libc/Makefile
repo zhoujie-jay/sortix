@@ -17,22 +17,13 @@ CXXFLAGS=-std=gnu++11 -fno-exceptions -fno-rtti
 ASFLAGS=
 
 FREEOBJS=\
-abort.o \
-abs.o \
 _assert.o \
-atof.o \
-atoi.o \
-atoll.o \
-atol.o \
-bsearch.o \
-calloc.o \
 clearerr.o \
 c++.o \
 ctype.o \
 dirent/alphasort.o \
 dirent/dir.o \
 dirent/versionsort.o \
-div.o \
 errno.o \
 fabs.o \
 fbufsize.o \
@@ -72,13 +63,6 @@ fwrite.o \
 fwriting.o \
 getdelim.o \
 getline.o \
-heap.o \
-integer.o \
-ldiv.o \
-lldiv.o \
-mblen.o \
-mbstowcs.o \
-mbtowc.o \
 op-new.o \
 rewind.o \
 setbuf.o \
@@ -88,9 +72,30 @@ sigdelset.o \
 sigemptyset.o \
 sigfillset.o \
 sigismember.o \
-sort.o \
 sprint.o \
 sscanf.o \
+stdlib/abort.o \
+stdlib/abs.o \
+stdlib/atof.o \
+stdlib/atoi.o \
+stdlib/atoll.o \
+stdlib/atol.o \
+stdlib/bsearch.o \
+stdlib/calloc.o \
+stdlib/div.o \
+stdlib/heap.o \
+stdlib/integer.o \
+stdlib/ldiv.o \
+stdlib/lldiv.o \
+stdlib/mblen.o \
+stdlib/mbstowcs.o \
+stdlib/mbtowc.o \
+stdlib/qsort.o \
+stdlib/strtod.o \
+stdlib/strtof.o \
+stdlib/strtold.o \
+stdlib/wcstombs.o \
+stdlib/wctomb.o \
 string/memccpy.o \
 string/memchr.o \
 string/memcmp.o \
@@ -125,9 +130,6 @@ string/strtok.o \
 string/strtok_r.o \
 string/strverscmp.o \
 string/strxfrm.o \
-strtod.o \
-strtof.o \
-strtold.o \
 time/asctime.o \
 time/asctime_r.o \
 time/gmtime.o \
@@ -156,8 +158,6 @@ wchar/wcsrchr.o \
 wchar/wcsrtombs.o \
 wchar/wcsspn.o \
 wchar/wcstok.o \
-wcstombs.o \
-wctomb.o \
 wctype.o \
 
 HOSTEDOBJS=\
@@ -169,8 +169,6 @@ arpa/inet/inet_ntoa.o \
 arpa/inet/inet_ntop.o \
 arpa/inet/inet_pton.o \
 calltrace.o \
-canonicalize_file_name_at.o \
-canonicalize_file_name.o \
 chdir.o \
 chmod.o \
 chown.o \
@@ -189,7 +187,6 @@ dispmsg_issue.o \
 dlfcn.o \
 dup2.o \
 dup.o \
-env.o \
 errorprint.o \
 execle.o \
 execl.o \
@@ -199,8 +196,6 @@ execv.o \
 execvpe.o \
 execvp.o \
 _exit.o \
-_Exit.o \
-exit.o \
 faccessat.o \
 fchdirat.o \
 fchdir.o \
@@ -266,7 +261,6 @@ memstat.o \
 mkdirat.o \
 mkdir.o \
 mkpartition.o \
-mktemp.o \
 netdb/endhostent.o \
 netdb/endnetent.o \
 netdb/endprotoent.o \
@@ -289,7 +283,6 @@ netdb/sethostent.o \
 netdb/setnetent.o \
 netdb/setprotoent.o \
 netdb/setservent.o \
-on_exit.o \
 openat.o \
 open.o \
 pathconf.o \
@@ -304,13 +297,11 @@ putc.o \
 pwent.o \
 pwritev.o \
 raise.o \
-rand.o \
 readdirents.o \
 readlinkat.o \
 readlink.o \
 read.o \
 readv.o \
-realpath.o \
 removeat.o \
 remove.o \
 renameat.o \
@@ -336,6 +327,16 @@ sigprocmask.o \
 sleep.o \
 stat.o \
 stdio.o \
+stdlib/canonicalize_file_name_at.o \
+stdlib/canonicalize_file_name.o \
+stdlib/env.o \
+stdlib/_Exit.o \
+stdlib/exit.o \
+stdlib/mktemp.o \
+stdlib/on_exit.o \
+stdlib/rand.o \
+stdlib/realpath.o \
+stdlib/system.o \
 sysconf.o \
 sys/socket/accept4.o \
 sys/socket/accept.o \
@@ -356,7 +357,6 @@ sys/socket/shutdown.o \
 sys/socket/sockatmark.o \
 sys/socket/socket.o \
 sys/socket/socketpair.o \
-system.o \
 sys/time/gettimeofday.o \
 tcgetpgrp.o \
 tcgetwinsize.o \
