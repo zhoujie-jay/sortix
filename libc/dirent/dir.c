@@ -17,7 +17,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    dir.c
+    dirent/dir.c
     DIR* is an interface allowing various directory backends.
 
 *******************************************************************************/

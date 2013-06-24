@@ -17,7 +17,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fddir-sortix.c
+    dirent/fddir-sortix.c
     Handles the file descriptor backend for the DIR* API on Sortix.
 
 *******************************************************************************/

@@ -29,7 +29,7 @@ calloc.o \
 clearerr.o \
 c++.o \
 ctype.o \
-dir.o \
+dirent/dir.o \
 div.o \
 errno.o \
 fabs.o \
@@ -181,6 +181,7 @@ $(CPUDIR)/setjmp.o \
 $(CPUDIR)/signal.o \
 $(CPUDIR)/syscall.o \
 creat.o \
+dirent/fddir-sortix.o \
 dirname.o \
 dispmsg_issue.o \
 dlfcn.o \
@@ -209,7 +210,6 @@ fchrootat.o \
 fchroot.o \
 fcloseall.o \
 fcntl.o \
-fddir-sortix.o \
 fdio.o \
 fgetpos.o \
 fileno.o \
