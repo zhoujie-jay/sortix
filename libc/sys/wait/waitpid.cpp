@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,14 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    wait.cpp
+    sys/wait/waitpid.cpp
     Wait for child process.
 
 *******************************************************************************/
 
+#include <sys/syscall.h>
 #include <sys/wait.h>
 
-extern "C" pid_t wait(int* status)
+DEFN_SYSCALL3(pid_t, sys_waitpid, SYSCALL_WAITPID, pid_t, int*, int);
+
+extern "C" pid_t waitpid(pid_t pid, int* status, int options)
 {
-	return waitpid(-1, status, 0);
+	return sys_waitpid(pid, status, options);
 }

@@ -298,6 +298,8 @@ sys/uio/preadv.o \
 sys/uio/pwritev.o \
 sys/uio/readv.o \
 sys/uio/writev.o \
+sys/wait/wait.o \
+sys/wait/waitpid.o \
 termios/tcgetwinsize.o \
 time/clock_getres.o \
 time/clock_gettime.o \
@@ -398,8 +400,6 @@ unistd/usleep.o \
 unistd/write.o \
 utime.o \
 vscanf.o \
-wait.o \
-waitpid.o \
 
 OBJS=\
 $(FREEOBJS) \
