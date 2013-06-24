@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef _STRING_H
-#define _STRING_H 1
+#ifndef INCLUDE_STRING_H
+#define INCLUDE_STRING_H
 
 #include <features.h>
 #include <strings.h>
@@ -61,6 +61,7 @@ size_t strspn(const char*, const char*);
 char* strstr(const char*, const char*);
 char* strtok(char* __restrict, const char* __restrict);
 char* strtok_r(char* __restrict, const char* __restrict, char** __restrict);
+int strverscmp(const char*, const char*);
 size_t strxfrm(char* __restrict, const char* __restrict, size_t);
 
 /* TODO: These are not implemented in sortix libc yet. */

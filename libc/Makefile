@@ -122,6 +122,7 @@ string/strspn.o \
 string/strstr.o \
 string/strtok.o \
 string/strtok_r.o \
+string/strverscmp.o \
 string/strxfrm.o \
 strtod.o \
 strtof.o \
