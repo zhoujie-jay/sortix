@@ -17,17 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    settermmode.cpp
-    Sets the terminal modes.
+    sys/termmode/gettermmode.cpp
+    Gets the terminal modes.
 
 *******************************************************************************/
 
 #include <sys/syscall.h>
 #include <sys/termmode.h>
 
-DEFN_SYSCALL2(int, sys_settermmode, SYSCALL_SETTERMMODE, int, unsigned);
+DEFN_SYSCALL2(int, sys_gettermmode, SYSCALL_GETTERMMODE, int, unsigned*);
 
-extern "C" int settermmode(int fd, unsigned mode)
+extern "C" int gettermmode(int fd, unsigned* mode)
 {
-	return sys_settermmode(fd, mode);
+	return sys_gettermmode(fd, mode);
 }

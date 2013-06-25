@@ -196,7 +196,6 @@ fsmarshall/fsm_mkserver.o \
 fsmarshall/fsm_recv.o \
 fsmarshall/fsm_send.o \
 getc.o \
-gettermmode.o \
 grp/grent.o \
 init.o \
 ioctl.o \
@@ -240,7 +239,6 @@ renameat.o \
 rename.o \
 scanf.o \
 select.o \
-settermmode.o \
 signal/kill.o \
 signal/psignal.o \
 signal/raise.o \
@@ -293,6 +291,8 @@ sys/stat/stat.o \
 sys/stat/umask.o \
 sys/stat/utimensat.o \
 sys/stat/utimens.o \
+sys/termmode/gettermmode.o \
+sys/termmode/settermmode.o \
 sys/time/gettimeofday.o \
 sys/uio/preadv.o \
 sys/uio/pwritev.o \
