@@ -25,7 +25,7 @@ ctype/ctype.o \
 dirent/alphasort.o \
 dirent/dir.o \
 dirent/versionsort.o \
-errno.o \
+errno/errno.o \
 fabs.o \
 fbufsize.o \
 fclose.o \
