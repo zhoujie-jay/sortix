@@ -173,7 +173,7 @@ $(CPUDIR)/signal.o \
 $(CPUDIR)/syscall.o \
 dirent/fddir-sortix.o \
 dirent/scandir.o \
-dlfcn.o \
+dlfcn/dlfcn.o \
 error/errorprint.o \
 fcloseall.o \
 fcntl/creat.o \
