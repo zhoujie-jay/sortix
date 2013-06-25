@@ -237,7 +237,6 @@ remove.o \
 renameat.o \
 rename.o \
 scanf.o \
-select.o \
 signal/kill.o \
 signal/psignal.o \
 signal/raise.o \
@@ -259,6 +258,7 @@ stdlib/rand.o \
 stdlib/realpath.o \
 stdlib/system.o \
 sys/display/dispmsg_issue.o \
+sys/select/select.o \
 sys/socket/accept4.o \
 sys/socket/accept.o \
 sys/socket/bind.o \
