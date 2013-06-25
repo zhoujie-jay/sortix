@@ -174,7 +174,7 @@ $(CPUDIR)/syscall.o \
 dirent/fddir-sortix.o \
 dirent/scandir.o \
 dlfcn.o \
-errorprint.o \
+error/errorprint.o \
 fcloseall.o \
 fcntl/creat.o \
 fcntl/fcntl.o \
