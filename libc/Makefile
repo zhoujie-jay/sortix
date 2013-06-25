@@ -197,7 +197,6 @@ fsmarshall/fsm_send.o \
 getc.o \
 grp/grent.o \
 init.o \
-ioctl.o \
 libgen/basename.o \
 libgen/dirname.o \
 locale/localeconv.o \
@@ -257,6 +256,7 @@ stdlib/rand.o \
 stdlib/realpath.o \
 stdlib/system.o \
 sys/display/dispmsg_issue.o \
+sys/ioctl/ioctl.o \
 sys/kernelinfo/kernelinfo.o \
 sys/select/select.o \
 sys/socket/accept4.o \
