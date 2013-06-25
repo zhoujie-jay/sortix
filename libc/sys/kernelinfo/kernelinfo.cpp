@@ -17,7 +17,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    kernelinfo.cpp
+    sys/kernelinfo/kernelinfo.cpp
     Queries information about the kernel.
 
 *******************************************************************************/
