@@ -17,7 +17,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    init.cpp
+    init/init.cpp
     Initializes the process by setting up the heap, signal handling, static
     memory and other useful things.
 

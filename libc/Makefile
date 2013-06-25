@@ -188,7 +188,7 @@ fsmarshall/fsm_mkserver.o \
 fsmarshall/fsm_recv.o \
 fsmarshall/fsm_send.o \
 grp/grent.o \
-init.o \
+init/init.o \
 libgen/basename.o \
 libgen/dirname.o \
 locale/localeconv.o \
