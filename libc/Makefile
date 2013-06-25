@@ -398,7 +398,7 @@ unistd/unlinkat.o \
 unistd/unlink.o \
 unistd/usleep.o \
 unistd/write.o \
-utime.o \
+utime/utime.o \
 vscanf.o \
 
 OBJS=\
