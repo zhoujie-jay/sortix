@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011.
 
     This file is part of the Sortix C Library.
 
@@ -17,15 +17,14 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    op-new.cpp
-    C++ allocation operators.
+    aux/c++.cpp
+    Implements required C++ stuff for use in the Sortix kernel.
 
 *******************************************************************************/
 
-#include <stddef.h>
-#include <stdlib.h>
+#include <stdint.h>
 
-void* operator new(size_t size)     { return malloc(size); }
-void* operator new[](size_t size)   { return malloc(size); }
-void  operator delete  (void* addr) { return free(addr); }
-void  operator delete[](void* addr) { return free(addr); }
+extern "C" void __attribute__ ((weak)) __cxa_pure_virtual()
+{
+	// This shouldn't happen. TODO: Possibly crash the kernel here.
+}

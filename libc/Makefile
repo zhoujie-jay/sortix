@@ -18,8 +18,9 @@ ASFLAGS=
 
 FREEOBJS=\
 assert/_assert.o \
+aux/c++.o \
+aux/op-new.o \
 clearerr.o \
-c++.o \
 ctype/ctype.o \
 dirent/alphasort.o \
 dirent/dir.o \
@@ -63,7 +64,6 @@ fwrite.o \
 fwriting.o \
 getdelim.o \
 getline.o \
-op-new.o \
 rewind.o \
 setbuf.o \
 setvbuf.o \
