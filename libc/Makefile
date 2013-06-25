@@ -135,7 +135,7 @@ time/asctime_r.o \
 time/gmtime.o \
 time/gmtime_r.o \
 time/mktime.o \
-timespec.o \
+timespec/timespec.o \
 time/strftime.o \
 time/timegm.o \
 ungetc.o \
