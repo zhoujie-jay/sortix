@@ -173,7 +173,6 @@ $(CPUDIR)/signal.o \
 $(CPUDIR)/syscall.o \
 dirent/fddir-sortix.o \
 dirent/scandir.o \
-dispmsg_issue.o \
 dlfcn.o \
 errorprint.o \
 fcloseall.o \
@@ -259,6 +258,7 @@ stdlib/on_exit.o \
 stdlib/rand.o \
 stdlib/realpath.o \
 stdlib/system.o \
+sys/display/dispmsg_issue.o \
 sys/socket/accept4.o \
 sys/socket/accept.o \
 sys/socket/bind.o \

@@ -17,7 +17,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    dispmsg_issue.cpp
+    sys/display/dispmsg_issue.cpp
     Send a message to the display engine.
 
 *******************************************************************************/
