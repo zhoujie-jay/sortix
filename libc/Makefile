@@ -229,7 +229,6 @@ popen.o \
 print.o \
 putc.o \
 pwd/pwent.o \
-readdirents.o \
 removeat.o \
 remove.o \
 renameat.o \
@@ -258,6 +257,7 @@ stdlib/system.o \
 sys/display/dispmsg_issue.o \
 sys/ioctl/ioctl.o \
 sys/kernelinfo/kernelinfo.o \
+sys/readdirents/readdirents.o \
 sys/select/select.o \
 sys/socket/accept4.o \
 sys/socket/accept.o \
