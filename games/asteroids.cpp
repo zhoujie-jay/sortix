@@ -115,7 +115,7 @@ void DrawLine(uint32_t color, long x0, long y0, long x1, long y1)
 	long e2;
 	while ( true )
 	{
-		if ( 0 <= x0 && (size_t) x0 < xres && 0 <= y0 && y0 < (size_t) yres )
+		if ( 0 <= x0 && (size_t) x0 < xres && 0 <= y0 && (size_t) y0 < yres )
 		{
 			size_t index = y0 * linesize + x0;
 			buf[index] = color;
