@@ -353,6 +353,7 @@ void Help(FILE* fp, const char* argv0)
 
 void Version(FILE* fp, const char* argv0)
 {
+	(void) argv0;
 	fprintf(fp, "mkinitrd 0.2\n");
 	fprintf(fp, "Copyright (C) 2012 Jonas 'Sortie' Termansen\n");
 	fprintf(fp, "This is free software; see the source for copying conditions.  There is NO\n");

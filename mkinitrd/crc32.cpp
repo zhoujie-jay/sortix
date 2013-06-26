@@ -78,7 +78,7 @@ bool CRC32File(uint32_t* result, const char* name, int fd, off_t offset,
 	const size_t BUFFER_SIZE = 16UL * 1024UL;
 	uint8_t buffer[BUFFER_SIZE];
 	off_t sofar = 0;
-	ssize_t amount;
+	ssize_t amount = 0;
 	while ( sofar < length &&
 	        0 < (amount = pread(fd, buffer, BUFFER_SIZE, offset + sofar)) )
 	{

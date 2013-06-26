@@ -110,6 +110,7 @@ initrd_inode_t* CloneInode(const initrd_inode_t* src)
 bool ReadInodeData(int fd, initrd_superblock_t* sb, initrd_inode_t* inode,
                    uint8_t* dest, size_t size)
 {
+	(void) sb;
 	if ( inode->size < size ) { errno = EINVAL; return false; }
 	return preadall(fd, dest, size, inode->dataoffset) == size;
 }
@@ -247,6 +248,7 @@ void Help(FILE* fp, const char* argv0)
 
 void Version(FILE* fp, const char* argv0)
 {
+	(void) argv0;
 	fprintf(fp, "initrdfs 0.2\n");
 	fprintf(fp, "Copyright (C) 2012 Jonas 'Sortie' Termansen\n");
 	fprintf(fp, "This is free software; see the source for copying conditions.  There is NO\n");
