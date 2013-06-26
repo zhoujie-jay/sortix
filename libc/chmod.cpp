@@ -29,6 +29,8 @@
 // TODO: Implement this in the kernel.
 extern "C" int chmod(const char* path, mode_t mode)
 {
+	(void) path;
+	(void) mode;
 	errno = ENOSYS;
 	return -1;
 }

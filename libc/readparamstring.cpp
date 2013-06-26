@@ -29,7 +29,6 @@
 
 static char* Substring(const char* src, size_t offset, size_t length)
 {
-	size_t srclen = strlen(src);
 	char* dest = new char[length + 1];
 	if ( !dest ) { return NULL; }
 	memcpy(dest, src + offset, length * sizeof(char));

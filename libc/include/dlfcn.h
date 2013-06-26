@@ -35,7 +35,7 @@ __BEGIN_DECLS
 #define RTLD_LOCAL 0 /* Bit 8 is not set. */
 
 int dlclose(void* handle);
-char* dlerror(void* handle);
+char* dlerror();
 void* dlopen(const char* filename, int mode);
 void* dlsym(void* handle, const char* name);
 

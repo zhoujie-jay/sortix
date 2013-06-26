@@ -30,5 +30,6 @@
 // TODO: Implement this in the kernel.
 extern "C" mode_t umask(mode_t mask)
 {
+	(void) mask;
 	return 0;
 }

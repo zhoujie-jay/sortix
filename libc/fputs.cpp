@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+	Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
 	This file is part of the Sortix C Library.
 
@@ -28,7 +28,8 @@
 extern "C" int fputs(const char* str, FILE* fp)
 {
 	size_t stringlen = strlen(str);
-	int result = fwrite(str, 1, stringlen, fp);
-	if ( result < stringlen ) { return EOF; }
+	size_t result = fwrite(str, 1, stringlen, fp);
+	if ( result < stringlen )
+		return EOF;
 	return result;
 }

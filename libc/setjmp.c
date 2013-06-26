@@ -28,12 +28,15 @@
 
 void longjmp(jmp_buf env, int val)
 {
+	(void) env;
+	(void) val;
 	fprintf(stderr, "setjmp(3) and longjmp(3) are unimplemented, abort!\n");
 	abort();
 }
 
 int setjmp(jmp_buf env)
 {
+	(void) env;
 	return 0;
 }
 

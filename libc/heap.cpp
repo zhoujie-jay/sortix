@@ -375,6 +375,7 @@ static void InsertChunk(Chunk* chunk)
 	assert(chunk->IsSane());
 }
 
+__attribute__((unused))
 static bool ValidateHeap()
 {
 	bool foundbin[NUMBINS];
@@ -524,7 +525,6 @@ extern "C" void* malloc(size_t size)
 			chunk->size -= left;
 			chunk->GetTrailer()->size = chunk->size;
 
-			size_t leftbinindex = BSR(left);
 			Chunk* leftchunk = chunk->RightNeighbor();
 			leftchunk->size = left;
 			Trailer* lefttrailer = leftchunk->GetTrailer();

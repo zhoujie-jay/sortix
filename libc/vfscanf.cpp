@@ -75,25 +75,25 @@ extern "C" int vfscanf(FILE* fp, const char* origformat, va_list ap)
 	union { const char* format; const unsigned char* formatuc; };
 	format = origformat;
 	int matcheditems = 0;
-	size_t fieldwidth;
+	size_t fieldwidth = 0;
 	bool escaped = false;
-	bool discard;
-	bool negint;
-	bool intunsigned;
-	bool leadingzero;
-	bool hasprefix;
-	bool string;
-	size_t intparsed;
-	uintmax_t intvalue;
+	bool discard = false;
+	bool negint = false;
+	bool intunsigned = false;
+	bool leadingzero = false;
+	bool hasprefix = false;
+	bool string = false;
+	size_t intparsed = 0;
+	uintmax_t intvalue = 0;
 	int ic;
-	int base;
+	int base = 0;
 	int cval;
 	const size_t UNDO_MAX = 4;
 	int undodata[UNDO_MAX];
 	size_t undoable = 0;
-	size_t strwritten;
-	char* strdest;
-	enum scantype scantype;
+	size_t strwritten = 0;
+	char* strdest = NULL;
+	enum scantype scantype = TYPE_INT;
 	enum scanmode scanmode = MODE_INIT;
 	while ( true )
 	{

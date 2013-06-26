@@ -29,6 +29,7 @@ static const char* dlerrormsg = NULL;
 
 extern "C" void* dlopen(const char* filename, int mode)
 {
+	(void) mode;
 	dlerrormsg = "Sortix does not yet support dynamic linking";
 	fprintf(stderr, "%s: loading file: %s\n", dlerrormsg, filename);
 	return NULL;
@@ -36,6 +37,7 @@ extern "C" void* dlopen(const char* filename, int mode)
 
 extern "C" void* dlsym(void* handle, const char* name)
 {
+	(void) handle;
 	dlerrormsg = "Sortix does not yet support dynamic linking";
 	fprintf(stderr, "%s: resolving symbol: %s\n", dlerrormsg, name);
 	return NULL;
@@ -43,12 +45,13 @@ extern "C" void* dlsym(void* handle, const char* name)
 
 extern "C" int dlclose(void* handle)
 {
+	(void) handle;
 	return 0;
 }
 
-extern "C" char* dlerror(void* handle)
+extern "C" char* dlerror()
 {
 	const char* result = dlerrormsg;
 	dlerrormsg = NULL;
-	return (char*) dlerrormsg;
+	return (char*) result;
 }

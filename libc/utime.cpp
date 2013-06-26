@@ -28,6 +28,8 @@
 
 extern "C" int utime(const char* filepath, const struct utimbuf* times)
 {
+	(void) filepath;
+	(void) times;
 	// TODO: Sure, I did that! There is no kernel support for this yet.
 	return 0;
 }

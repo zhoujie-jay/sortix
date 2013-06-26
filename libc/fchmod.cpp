@@ -29,6 +29,8 @@
 // TODO: Implement this in the kernel.
 extern "C" int fchmod(int fd, mode_t mode)
 {
+	(void) fd;
+	(void) mode;
 	errno = ENOSYS;
 	return -1;
 }
