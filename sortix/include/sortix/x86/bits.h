@@ -138,6 +138,8 @@ typedef int __uid_t;
 typedef int __locale_t; /* TODO: figure out what this does and typedef it properly. This is just a temporary assignment. */
 typedef unsigned int __mode_t;
 typedef __intmax_t __off_t;
+#define __OFF_MIN __INTMAX_MIN
+#define __OFF_MAX __INTMAX_MAX
 typedef unsigned int __wctrans_t;  /* TODO: figure out what this does and typedef it properly. This is just a temporary assignment. */
 typedef unsigned int __wctype_t;  /* TODO: figure out what this does and typedef it properly. This is just a temporary assignment. */
 typedef unsigned int __useconds_t;

@@ -38,3 +38,9 @@
 #warning Unsupported platform
 #endif
 
+#if (defined(SORTIX_KERNEL) || defined(LIBC_LIBRARY)) && !defined(OFF_MIN)
+#define OFF_MIN __OFF_MIN
+#endif
+#if (defined(SORTIX_KERNEL) || defined(LIBC_LIBRARY)) && !defined(OFF_MAX)
+#define OFF_MAX __OFF_MAX
+#endif
