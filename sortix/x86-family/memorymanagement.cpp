@@ -136,8 +136,8 @@ namespace Sortix
 
 				// Give all the physical memory to the physical memory allocator
 				// but make sure not to give it things we already use.
-				addr_t regionstart = mmap->addr;
-				addr_t regionend = mmap->addr + mmap->len;
+				addr_t regionstart = base;
+				addr_t regionend = base + length;
 				addr_t processed = regionstart;
 				while ( processed < regionend )
 				{

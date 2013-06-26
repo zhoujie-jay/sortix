@@ -94,12 +94,14 @@ namespace Sortix
 		if ( ENABLE_CALLTRACE ) { PanicCalltrace(); }
 	}
 
+	__attribute__((noreturn))
 	void PanicHalt()
 	{
 		#ifdef JSSORTIX
 		JSSortix::Exit();
 		#endif
 		HaltKernel();
+		__builtin_unreachable();
 	}
 
 	extern "C" void Panic(const char* Error)

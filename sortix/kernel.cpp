@@ -122,6 +122,8 @@ static size_t TextTermHeight(void* user)
 
 extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 {
+	(void) magic;
+
 	// Initialize system calls.
 	Syscall::Init();
 
@@ -179,7 +181,7 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 		      "multiboot compliant?");
 	}
 
-	addr_t initrd = NULL;
+	addr_t initrd = 0;
 	size_t initrdsize = 0;
 
 	uint32_t* modules = (uint32_t*) (addr_t) bootinfo->mods_addr;

@@ -140,6 +140,9 @@ namespace Sortix
 		addr_t Construct64(Process* process, const void* file, size_t filelen)
 		{
 			#ifndef PLATFORM_X64
+			(void) process;
+			(void) file;
+			(void) filelen;
 			errno = ENOEXEC;
 			return 0;
 			#else

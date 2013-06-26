@@ -88,8 +88,7 @@ namespace Sortix
 			memcpy(newlist, devices, sizeof(*devices) * numdevices);
 		}
 
-		size_t numpadded = newlistlength-numdevices;
-		for ( size_t i = numdevices; i < newlistlength; i++ )
+		for ( int i = numdevices; i < newlistlength; i++ )
 			newlist[i].dev = NULL,
 			newlist[i].path = NULL,
 			newlist[i].flags = 0;

@@ -118,7 +118,7 @@ ATABus::~ATABus()
 
 ATADrive* ATABus::Instatiate(unsigned driveid)
 {
-	if ( 1 < driveid ) { errno = EINVAL; return false; }
+	if ( 1 < driveid ) { errno = EINVAL; return NULL; }
 	curdriveid = 0;
 
 	uint8_t drivemagic = 0xA0 | (driveid << 4);
@@ -132,12 +132,12 @@ ATADrive* ATABus::Instatiate(unsigned driveid)
 	while ( true )
 	{
 		status = CPU::InPortB(iobase + STATUS);
-		if ( !status || status == 0xFF ) { errno = ENODEV; return false; }
+		if ( !status || status == 0xFF ) { errno = ENODEV; return NULL; }
 		if ( !(status & STATUS_BUSY) ) { break; }
 	}
 	if ( CPU::InPortB(iobase + LBA_MID) || CPU::InPortB(iobase + LBA_MID) )
 	{
-		errno = ENODEV; return false; // ATAPI device not following spec.
+		errno = ENODEV; return NULL; // ATAPI device not following spec.
 	}
 	while ( !(status & STATUS_DATAREADY) && !(status & STATUS_ERROR) )
 	{
@@ -164,7 +164,7 @@ ATADrive* ATABus::Instatiate(unsigned driveid)
 			//Log::PrintF("Error status during identify\n");
 		}
 		errno = EIO;
-		return false;
+		return NULL;
 	}
 	ATADrive* drive = new ATADrive(this, driveid, iobase, altport);
 	return drive;
@@ -198,13 +198,24 @@ ATADrive::ATADrive(ATABus* bus, unsigned driveid, uint16_t portoffset, uint16_t 
 		meta[i] = CPU::InPortW(iobase + DATA);
 	}
 	lba48 = meta[META_FLAGS] & FLAG_LBA48;
+	numsectors = 0;
 	if ( lba48 )
 	{
-		numsectors = *((uint64_t*) (meta + META_LBA48));
+		numsectors = (uint64_t) meta[META_LBA48 + 0] <<  0
+				   | (uint64_t) meta[META_LBA48 + 1] <<  8
+				   | (uint64_t) meta[META_LBA48 + 2] << 16
+				   | (uint64_t) meta[META_LBA48 + 3] << 24
+				   | (uint64_t) meta[META_LBA48 + 4] << 32
+				   | (uint64_t) meta[META_LBA48 + 5] << 40
+				   | (uint64_t) meta[META_LBA48 + 6] << 48
+				   | (uint64_t) meta[META_LBA48 + 7] << 56;
 	}
 	else
 	{
-		numsectors = *((uint32_t*) (meta + META_LBA28));
+		numsectors = meta[META_LBA28 + 0] <<  0
+				   | meta[META_LBA28 + 1] <<  8
+				   | meta[META_LBA28 + 2] << 16
+				   | meta[META_LBA28 + 3] << 24;
 	}
 	sectorsize = 512; // TODO: Detect this!
 	Initialize();
@@ -275,7 +286,7 @@ bool ATADrive::ReadSector(off_t sector, uint8_t* dest)
 		destword[i] = CPU::InPortW(iobase + DATA);
 	}
 	Wait400NSecs(iobase);
-	uint8_t status = CPU::InPortB(iobase + STATUS);
+	CPU::InPortB(iobase + STATUS);
 	return true;
 }
 

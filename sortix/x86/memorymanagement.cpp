@@ -46,7 +46,7 @@ namespace Sortix
 		{
 			PML* const BOOTPML2 = (PML* const) 0x11000UL;
 			PML* const BOOTPML1 = (PML* const) 0x12000UL;
-			PML* const FORKPML1 = (PML* const) 0x13000UL;
+			//PML* const FORKPML1 = (PML* const) 0x13000UL;
 			PML* const IDENPML1 = (PML* const) 0x14000UL;
 
 			// Initialize the memory structures with zeroes.
@@ -139,7 +139,7 @@ namespace Sortix
 			Page::Lock();
 
 			// In case any pages wasn't cleaned at this point.
-#warning Page::Put calls may internally Page::Get and then reusing pages we are not done with just yet
+			// TODO: Page::Put calls may internally Page::Get and then reusing pages we are not done with just yet
 			RecursiveFreeUserspacePages(TOPPMLLEVEL, 0);
 
 			// Switch to the address space from when the world was originally

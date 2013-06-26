@@ -145,7 +145,7 @@ namespace Sortix
 
 		// Check if the kbkey is outside the layout structure (not printable).
 		size_t numchars = sizeof(LAYOUT_US) / 4UL / sizeof(uint32_t);
-		if ( numchars < abskbkey ) { return 0; }
+		if ( numchars < (size_t) abskbkey ) { return 0; }
 
 		return LAYOUT_US[index];
 	}

@@ -136,6 +136,7 @@ namespace Sortix
 			tss_entry.cs = 0x08 | 0x3;
 			tss_entry.ss = tss_entry.ds = tss_entry.es = tss_entry.fs = tss_entry.gs = 0x10 | 0x3;
 #elif defined(PLATFORM_X64)
+			(void) ss0;
 			tss_entry.stack0 = stack0;
 #endif
 		}
@@ -143,8 +144,12 @@ namespace Sortix
 		void SetKernelStack(addr_t stacklower, size_t stacksize, addr_t stackhigher)
 		{
 #ifdef PLATFORM_X86
+			(void) stacklower;
+			(void) stacksize;
 			tss_entry.esp0 = (uint32_t) stackhigher;
 #elif defined(PLATFORM_X64)
+			(void) stacklower;
+			(void) stacksize;
 			tss_entry.stack0 = (uint64_t) stackhigher;
 #else
 			#warning "TSS is not yet supported on this arch!"

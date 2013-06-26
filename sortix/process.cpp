@@ -510,6 +510,7 @@ namespace Sortix
 	                     int envc, const char* const* envp,
 	                     CPU::InterruptRegisters* regs)
 	{
+		(void) programname;
 		assert(CurrentProcess() == this);
 
 		addr_t entry = ELF::Construct(CurrentProcess(), program, programsize);
@@ -568,6 +569,8 @@ namespace Sortix
 
 	DevBuffer* OpenProgramImage(const char* progname, const char* wd, const char* path)
 	{
+		(void) wd;
+		(void) path;
 		char* abs = Directory::MakeAbsolute("/", progname);
 		if ( !abs ) { errno = ENOMEM; return NULL; }
 

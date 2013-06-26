@@ -41,6 +41,7 @@ uint8_t* initrd;
 size_t initrdsize;
 const initrd_superblock_t* sb;
 
+__attribute__((unused))
 static uint32_t HostModeToInitRD(mode_t mode)
 {
 	uint32_t result = mode & 0777; // Lower 9 bits per POSIX and tradition.
@@ -55,6 +56,7 @@ static uint32_t HostModeToInitRD(mode_t mode)
 	return result;
 }
 
+__attribute__((unused))
 static mode_t InitRDModeToHost(uint32_t mode)
 {
 	mode_t result = mode & 0777; // Lower 9 bits per POSIX and tradition.

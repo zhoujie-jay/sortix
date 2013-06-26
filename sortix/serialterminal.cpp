@@ -64,7 +64,7 @@ namespace Sortix
 			int c;
 			while ( (c=UART::TryPopChar()) != -1 )
 			{
-				#warning Support for hooking the serial input up against the keyboard API have broken
+				// TODO: Support for hooking the serial input up against the keyboard API have broken
 				#if 0
 				// TODO: This is no longer compatible with the keyboard API, so
 				// it has been commented out. Besides, JSSortix isn't really
@@ -140,7 +140,7 @@ namespace Sortix
 
 		size_t Print(void* /*user*/, const char* string, size_t stringlen)
 		{
-			#warning Echoing to the VGA terminal is broken
+			// TODO: Echoing to the VGA terminal is broken
 #if 0
 			if ( ECHO_TO_VGA ) { VGATerminal::Print(NULL, string, stringlen); }
 #endif

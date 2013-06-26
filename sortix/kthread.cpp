@@ -45,6 +45,7 @@ extern "C" void kthread_exit(void* /*param*/)
 {
 	Worker::Schedule(kthread_do_kill_thread, CurrentThread());
 	Scheduler::ExitThread();
+	__builtin_unreachable();
 }
 
 struct kthread_cond_elem

@@ -149,7 +149,7 @@ namespace Sortix
 			Page::Lock();
 
 			// In case any pages wasn't cleaned at this point.
-#warning Page::Put calls may internally Page::Get and then reusing pages we are not done with just yet
+			// TODO: Page::Put calls may internally Page::Get and then reusing pages we are not done with just yet
 			RecursiveFreeUserspacePages(TOPPMLLEVEL, 0);
 
 			// Switch to the address space from when the world was originally
