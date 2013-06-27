@@ -124,6 +124,7 @@ $(CPUDIR)/signal.o \
 $(CPUDIR)/syscall.o \
 dispmsg_issue.o \
 dlfcn.o \
+dup2.o \
 dup.o \
 env.o \
 errorprint.o \

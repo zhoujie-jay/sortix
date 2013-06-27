@@ -122,6 +122,12 @@ static int sys_dup(int fd)
 	return dtable->Allocate(desc, 0);
 }
 
+static int sys_dup2(int oldfd, int newfd)
+{
+	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
+	return dtable->Copy(oldfd, newfd);
+}
+
 // TODO: If this function fails the file may still have been created. Does a
 // standard prohibit this and is that the wrong thing?
 static int sys_openat(int dirfd, const char* path, int flags, mode_t mode)
@@ -424,6 +430,7 @@ void Init()
 	Syscall::Register(SYSCALL_CHOWN, (void*) sys_chown);
 	Syscall::Register(SYSCALL_CLOSE, (void*) sys_close);
 	Syscall::Register(SYSCALL_DUP, (void*) sys_dup);
+	Syscall::Register(SYSCALL_DUP2, (void*) sys_dup2);
 	Syscall::Register(SYSCALL_FCNTL, (void*) sys_fcntl);
 	Syscall::Register(SYSCALL_FSTATAT, (void*) sys_fstatat);
 	Syscall::Register(SYSCALL_FSTAT, (void*) sys_fstat);

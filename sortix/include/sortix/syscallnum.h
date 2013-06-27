@@ -81,6 +81,7 @@
 #define SYSCALL_CHMOD 57
 #define SYSCALL_CHOWN 58
 #define SYSCALL_LINK 59
-#define SYSCALL_MAX_NUM 60 /* index of highest constant + 1 */
+#define SYSCALL_DUP2 60
+#define SYSCALL_MAX_NUM 61 /* index of highest constant + 1 */
 
 #endif
