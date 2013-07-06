@@ -61,7 +61,7 @@ bool writeall(int fd, const void* p, size_t size)
 	return true;
 }
 
-void usage(int argc, char* argv[])
+void usage(int /*argc*/, char* argv[])
 {
 	printf("usage: %s [OPTIONS] [FILE]...\n", argv[0]);
 	printf("Preprocess FILE(s), or standard input.");
