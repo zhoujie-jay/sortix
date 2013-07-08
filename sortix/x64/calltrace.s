@@ -29,6 +29,7 @@
 .type calltrace, @function
 calltrace:
 	push %rbp
+	push %rbx
 	movq %rsp, %rbp
 	xorl %edi, %edi
 	movq %rbp, %rbx
@@ -45,6 +46,7 @@ calltrace_unwind:
 	jmp calltrace_unwind
 
 calltrace_done:
+	popq %rbx
 	popq %rbp
 	retq
 

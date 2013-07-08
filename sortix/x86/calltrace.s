@@ -29,6 +29,7 @@
 .type calltrace, @function
 calltrace:
 	push %ebp
+	push %ebx
 	movl %esp, %ebp
 	xorl %edi, %edi
 	movl %ebp, %ebx
@@ -47,6 +48,7 @@ calltrace_unwind:
 	jmp calltrace_unwind
 
 calltrace_done:
+	popl %ebx
 	popl %ebp
 	retl
 
