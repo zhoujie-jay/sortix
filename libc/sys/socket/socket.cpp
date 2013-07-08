@@ -63,8 +63,7 @@ static const char* get_socket_factory(int domain, int type, int protocol)
 extern "C" int socket(int domain, int type, int protocol)
 {
 	int open_flags = O_RDWR;
-	// TODO: O_NONBLOCK is not supported!
-	//if ( type & SOCK_NONBLOCK ) open_flags |= O_NONBLOCK;
+	if ( type & SOCK_NONBLOCK ) open_flags |= O_NONBLOCK;
 	if ( type & SOCK_CLOEXEC ) open_flags |= O_CLOEXEC;
 	if ( type & SOCK_CLOFORK ) open_flags |= O_CLOFORK;
 	type &= SOCK_TYPE_MASK;

@@ -630,7 +630,6 @@ static int sys_accept4(int fd, void* addr, size_t* addrlen, int flags)
 	if ( !desc )
 		return -1;
 	int fdflags = 0;
-	// TODO: Support SOCK_NONBLOCK
 	if ( flags & SOCK_CLOEXEC ) fdflags |= FD_CLOEXEC;
 	if ( flags & SOCK_CLOFORK ) fdflags |= FD_CLOFORK;
 	flags &= ~(SOCK_CLOEXEC | SOCK_CLOFORK);
@@ -638,6 +637,8 @@ static int sys_accept4(int fd, void* addr, size_t* addrlen, int flags)
 	Ref<Descriptor> conn = desc->accept(&ctx, (uint8_t*) addr, addrlen, flags);
 	if ( !conn )
 		return -1;
+	if ( flags & SOCK_NONBLOCK )
+		conn->SetFlags(conn->GetFlags() | O_NONBLOCK);
 	return CurrentProcess()->GetDTable()->Allocate(conn, fdflags);
 }
 
