@@ -33,7 +33,12 @@ namespace Scheduler {
 void Init();
 void Switch(CPU::InterruptRegisters* regs);
 inline static void Yield() { asm volatile ("int $129"); }
-inline static void ExitThread() { asm volatile ("int $132"); }
+__attribute__ ((noreturn))
+inline static void ExitThread()
+{
+	asm volatile ("int $132");
+	__builtin_unreachable();
+}
 void SetThreadState(Thread* thread, Thread::State state);
 Thread::State GetThreadState(Thread* thread);
 void SetIdleThread(Thread* thread);
