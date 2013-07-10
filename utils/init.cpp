@@ -28,6 +28,7 @@
 #include <sys/wait.h>
 
 #include <assert.h>
+#include <brand.h>
 #include <dirent.h>
 #include <errno.h>
 #include <error.h>
@@ -454,7 +455,7 @@ int main(int /*argc*/, char* /*argv*/[])
 		return 2;
 
 	// Reset the terminal's color and the rest of it.
-	printf("\r\e[m\e[J");
+	printf(BRAND_INIT_BOOT_MESSAGE);
 	fflush(stdout);
 
 	// Set the default file creation mask.

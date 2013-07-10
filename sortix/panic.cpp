@@ -22,6 +22,7 @@
 
 *******************************************************************************/
 
+#include <brand.h>
 #include <string.h>
 
 #include <sortix/kernel/calltrace.h>
@@ -43,35 +44,12 @@ static bool doublepanic = false;
 
 static void PanicLogoLong()
 {
-	Log::Print("\e[m\e[31;40m\e[2J\e[H");
-	Log::Print("                                                       _                        \n");
-	Log::Print("                                                      / \\                       \n");
-	Log::Print("                  /\\    /\\                           /   \\                      \n");
-	Log::Print("                 /  \\  /  \\                          |   |                      \n");
-	Log::Print("                /    \\/    \\                         |   |                      \n");
-	Log::Print("               |  X    X    \\_______________________ /   |                      \n");
-	Log::Print("               |                                         |                      \n");
-	Log::Print("               | _________                               /                      \n");
-	Log::Print("                \\                                       /                       \n");
-	Log::Print("                  ------       ---------------      ---/                        \n");
-	Log::Print("                       /       \\             /      \\                           \n");
-	Log::Print("                      /         \\           /        \\                          \n");
-	Log::Print("                     /           \\         /          \\                         \n");
-	Log::Print("                    /_____________\\       /____________\\                        \n");
-	Log::Print("                                                                                \n");
-	Log::Print("                                                                                \n");
-	Log::Print("                              RED MAXSI OF DEATH                                \n");
-	Log::Print("                                                                                \n");
-	Log::Print("A critical error occured within the kernel of the operating system and it has\n");
-	Log::Print("forcefully shut down as a last resort.\n");
-	Log::Print("\n");
-	Log::Print("Technical information:\n");
+	Log::PrintF(BRAND_PANIC_LONG);
 }
 
 static void PanicLogoShort()
 {
-	Log::Print("\e[m\e[31m\e[0J");
-	Log::Print("RED MAXSI OF DEATH\n");
+	Log::Print(BRAND_PANIC_SHORT);
 }
 
 void PanicInit()

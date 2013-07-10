@@ -26,6 +26,7 @@
 #include <sys/types.h>
 
 #include <assert.h>
+#include <brand.h>
 #include <errno.h>
 #include <malloc.h>
 #include <stddef.h>
@@ -104,30 +105,9 @@ extern "C" { size_t stack[STACK_SIZE / sizeof(size_t)] = {0}; }
 
 namespace Sortix {
 
-void DoMaxsiLogo()
-{
-	Log::Print("\e[37;41m\e[2J"); // Make the background color red.
-	Log::Print("                                                       _                        \n");
-	Log::Print("                                                      / \\                       \n");
-	Log::Print("                  /\\    /\\                           /   \\                      \n");
-	Log::Print("                 /  \\  /  \\                          |   |                      \n");
-	Log::Print("                /    \\/    \\                         |   |                      \n");
-	Log::Print("               |  O    O    \\_______________________ /   |                      \n");
-	Log::Print("               |                                         |                      \n");
-	Log::Print("               | \\_______/                               /                      \n");
-	Log::Print("                \\                                       /                       \n");
-	Log::Print("                  ------       ---------------      ---/                        \n");
-	Log::Print("                       /       \\             /      \\                           \n");
-	Log::Print("                      /         \\           /        \\                          \n");
-	Log::Print("                     /           \\         /          \\                         \n");
-	Log::Print("                    /_____________\\       /____________\\                        \n");
-	Log::Print("                                                                                \n");
-}
-
 void DoWelcome()
 {
-	DoMaxsiLogo();
-	Log::Print("                           BOOTING OPERATING SYSTEM...                          ");
+	Log::Print(BRAND_KERNEL_BOOT_MESSAGE);
 }
 
 // Forward declarations.

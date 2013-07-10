@@ -21,13 +21,15 @@
 *******************************************************************************/
 
 #include <sys/kernelinfo.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
+
+#include <brand.h>
 #include <errno.h>
 #include <error.h>
 #include <limits.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #if !defined(VERSIONSTR)
 #define VERSIONSTR "unknown version"
@@ -99,7 +101,7 @@ const char* GetHardwarePlatform()
 
 const char* GetOperatingSystem()
 {
-	return GetKernelName();
+	return BRAND_OPERATING_SYSTEM_NAME;
 }
 
 bool has_printed = false;
