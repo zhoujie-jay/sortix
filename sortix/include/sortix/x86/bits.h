@@ -1,29 +1,29 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011.
 
-	This file is part of LibMaxsi.
+    This file is part of Sortix.
 
-	LibMaxsi is free software: you can redistribute it and/or modify it under
-	the terms of the GNU Lesser General Public License as published by the Free
-	Software Foundation, either version 3 of the License, or (at your option)
-	any later version.
+    Sortix is free software: you can redistribute it and/or modify it under the
+    terms of the GNU General Public License as published by the Free Software
+    Foundation, either version 3 of the License, or (at your option) any later
+    version.
 
-	LibMaxsi is distributed in the hope that it will be useful, but WITHOUT ANY
-	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for
-	more details.
+    Sortix is distributed in the hope that it will be useful, but WITHOUT ANY
+    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+    FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+    details.
 
-	You should have received a copy of the GNU Lesser General Public License
-	along with LibMaxsi. If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License along with
+    Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-	bits.h
-	Declares the required datatypes for the x86 architecture.
+    sortix/x86/bits.h
+    Declares the required datatypes for the x86 architecture.
 
-******************************************************************************/
+*******************************************************************************/
 
-#ifndef SORTIX_BITS_H
-#define SORTIX_BITS_H
+#ifndef INCLUDE_SORTIX_X86_BITS_H
+#define INCLUDE_SORTIX_X86_BITS_H
 
 /* TODO: Declare stuff from <limits.h>. */
 

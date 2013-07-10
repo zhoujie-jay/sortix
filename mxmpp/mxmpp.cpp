@@ -1,26 +1,26 @@
-/******************************************************************************
+/*******************************************************************************
 
-	COPYRIGHT(C) JONAS 'SORTIE' TERMANSEN 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2012.
 
-	This file is part of mxmpp.
+    This file is part of mxmpp.
 
-	mxmpp is free software: you can redistribute it and/or modify it under
-	the terms of the GNU General Public License as published by the Free
-	Software Foundation, either version 3 of the License, or (at your option)
-	any later version.
+    mxmpp is free software: you can redistribute it and/or modify it under the
+    terms of the GNU General Public License as published by the Free Software
+    Foundation, either version 3 of the License, or (at your option) any later
+    version.
 
-	mxmpp is distributed in the hope that it will be useful, but WITHOUT ANY
-	WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-	FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
-	details.
+    mxmpp is distributed in the hope that it will be useful, but WITHOUT ANY
+    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+    FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+    details.
 
-	You should have received a copy of the GNU General Public License along
-	with mxmpp. If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License along with
+    mxmpp. If not, see <http://www.gnu.org/licenses/>.
 
-	mxmpp.cpp
-	A simple macro preprocessor.
+    mxmpp.cpp
+    A simple macro preprocessor.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include <stdint.h>
 #include <stdio.h>
