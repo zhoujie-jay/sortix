@@ -46,6 +46,7 @@ char* strcat(char* __restrict, const char* __restrict);
 char* strchr(const char*, int);
 int strcmp(const char*, const char*);
 int strcoll(const char*, const char*);
+int strcoll_l(const char*, const char*, locale_t);
 size_t strcspn(const char*, const char*);
 char* strcpy(char* __restrict, const char* __restrict);
 char* strdup(const char*);
@@ -66,7 +67,6 @@ size_t strxfrm(char* __restrict, const char* __restrict, size_t);
 
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
-int strcoll_l(const char*, const char*, locale_t);
 char* strerror_l(int, locale_t);
 int strerror_r(int, char*, size_t);
 size_t strxfrm_l(char* __restrict, const char* __restrict, size_t, locale_t);

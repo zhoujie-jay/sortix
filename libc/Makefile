@@ -111,6 +111,7 @@ string/strcat.o \
 string/strchrnul.o \
 string/strchr.o \
 string/strcmp.o \
+string/strcoll_l.o \
 string/strcoll.o \
 string/strcpy.o \
 string/strcspn.o \
