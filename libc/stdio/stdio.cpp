@@ -17,23 +17,25 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/stdio.c
+    stdio/stdio.cpp
     Sets up stdin, stdout, stderr.
 
 *******************************************************************************/
 
 #define __SORTIX_STDLIB_REDIRECTS 0
+
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
+
 #include "fdio.h"
 
-FILE* stdin;
-FILE* stdout;
-FILE* stderr;
+extern "C" { FILE* stdin; }
+extern "C" { FILE* stdout; }
+extern "C" { FILE* stderr; }
 
-int init_stdio()
+extern "C" int init_stdio()
 {
 	// TODO: These calls require memory allocation and can fail - which we don't
 	//       currently handle. How about declaring these as global objects and
@@ -45,27 +47,28 @@ int init_stdio()
 	return 0;
 }
 
-int getchar(void)
+extern "C" int getchar(void)
 {
 	return fgetc(stdin);
 }
 
-int putchar(int c)
+extern "C" int putchar(int c)
 {
 	return fputc(c, stdout);
 }
 
-char* sortix_gets(void)
+extern "C" char* sortix_gets(void)
 {
 	char* buf = NULL;
 	size_t n;
-	if ( getline(&buf, &n, stdin) < 0 ) { return NULL; }
+	if ( getline(&buf, &n, stdin) < 0 )
+		return NULL;
 	size_t linelen = strlen(buf);
 	if ( linelen && buf[linelen-1] == '\n' ) { buf[linelen-1] = 0; }
 	return buf;
 }
 
-int puts(const char* str)
+extern "C" int puts(const char* str)
 {
 	return printf("%s\n", str) < 0 ? EOF : 1;
 }
