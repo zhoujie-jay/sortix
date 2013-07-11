@@ -382,6 +382,8 @@ unistd/memstat.o \
 unistd/mkpartition.o \
 unistd/pathconf.o \
 unistd/pipe.o \
+unistd/pread.o \
+unistd/pwrite.o \
 unistd/readlinkat.o \
 unistd/readlink.o \
 unistd/read.o \

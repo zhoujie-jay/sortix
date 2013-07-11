@@ -17,19 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    unistd/read.cpp
-    Reads from a file descriptor.
+    unistd/pread.cpp
+    Reads from a file descriptor at the given offset.
 
 *******************************************************************************/
 
 #include <sys/syscall.h>
 
-#include <errno.h>
 #include <unistd.h>
 
-DEFN_SYSCALL3(ssize_t, sys_read, SYSCALL_READ, int, void*, size_t);
+DEFN_SYSCALL4(ssize_t, sys_pread, SYSCALL_PREAD, int, void*, size_t, off_t);
 
-extern "C" ssize_t read(int fd, void* buf, size_t count)
+extern "C" ssize_t pread(int fd, void* buf, size_t count, off_t offset)
 {
-	return sys_read(fd, buf, count);
+	return sys_pread(fd, buf, count, offset);
 }

@@ -33,10 +33,3 @@ extern "C" ssize_t write(int fd, const void* buf, size_t count)
 {
 	return sys_write(fd, buf, count);
 }
-
-DEFN_SYSCALL4(ssize_t, sys_pwrite, SYSCALL_PWRITE, int, const void*, size_t, off_t);
-
-extern "C" ssize_t pwrite(int fd, const void* buf, size_t count, off_t offset)
-{
-	return sys_pwrite(fd, buf, count, offset);
-}
