@@ -17,7 +17,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/fdio.c
+    stdio/fdio.cpp
     Handles the file descriptor backend for the FILE* API.
 
 *******************************************************************************/
@@ -33,11 +33,11 @@
 
 #include "fdio.h"
 
-const int FDIO_WRITING = (1<<0);
-const int FDIO_READING = (1<<1);
-const int FDIO_APPEND = (1<<2);
-const int FDIO_ERROR = (1<<3);
-const int FDIO_EOF = (1<<4);
+const int FDIO_WRITING = 1 << 0;
+const int FDIO_READING = 1 << 1;
+const int FDIO_APPEND = 1 << 2;
+const int FDIO_ERROR = 1 << 3;
+const int FDIO_EOF = 1 << 4;
 
 typedef struct fdio_struct
 {
@@ -60,7 +60,8 @@ static size_t fdio_read(void* ptr, size_t size, size_t nmemb, void* user)
 {
 	uint8_t* buf = (uint8_t*) ptr;
 	fdio_t* fdio = (fdio_t*) user;
-	if ( !(fdio->flags & FDIO_READING) ) { errno = EBADF; return 0; }
+	if ( !(fdio->flags & FDIO_READING) )
+		return errno = EBADF, 0;
 	size_t sofar = 0;
 	size_t total = size * nmemb;
 	while ( sofar < total )
@@ -80,7 +81,8 @@ static size_t fdio_write(const void* ptr, size_t size, size_t nmemb, void* user)
 {
 	const uint8_t* buf = (const uint8_t*) ptr;
 	fdio_t* fdio = (fdio_t*) user;
-	if ( !(fdio->flags & FDIO_WRITING) ) { errno = EBADF; return 0; }
+	if ( !(fdio->flags & FDIO_WRITING) )
+		return errno = EBADF, 0;
 	size_t sofar = 0;
 	size_t total = size * nmemb;
 	while ( sofar < total )
@@ -143,7 +145,7 @@ static int fdio_close(void* user)
 	return result;
 }
 
-int fdio_open_descriptor(const char* path, const char* mode)
+extern "C" int fdio_open_descriptor(const char* path, const char* mode)
 {
 	int omode = 0;
 	int oflags = 0;
@@ -169,7 +171,7 @@ int fdio_open_descriptor(const char* path, const char* mode)
 	return open(path, omode | oflags, 0666);
 }
 
-int fdio_install_fd(FILE* fp, int fd, const char* mode)
+extern "C" int fdio_install_fd(FILE* fp, int fd, const char* mode)
 {
 	fdio_t* fdio = (fdio_t*) calloc(1, sizeof(fdio_t));
 	if ( !fdio )
@@ -210,7 +212,7 @@ int fdio_install_fd(FILE* fp, int fd, const char* mode)
 	return 1;
 }
 
-int fdio_install_path(FILE* fp, const char* path, const char* mode)
+extern "C" int fdio_install_path(FILE* fp, const char* path, const char* mode)
 {
 	int fd = fdio_open_descriptor(path, mode);
 	if ( fd < 0 )
@@ -220,7 +222,7 @@ int fdio_install_path(FILE* fp, const char* path, const char* mode)
 	return 1;
 }
 
-FILE* fdio_new_fd(int fd, const char* mode)
+extern "C" FILE* fdio_new_fd(int fd, const char* mode)
 {
 	FILE* fp = fnewfile();
 	if ( !fp )
@@ -230,7 +232,7 @@ FILE* fdio_new_fd(int fd, const char* mode)
 	return fp;
 }
 
-FILE* fdio_new_path(const char* path, const char* mode)
+extern "C" FILE* fdio_new_path(const char* path, const char* mode)
 {
 	FILE* fp = fnewfile();
 	if ( !fp )
@@ -240,12 +242,12 @@ FILE* fdio_new_path(const char* path, const char* mode)
 	return fp;
 }
 
-FILE* fdopen(int fd, const char* mode)
+extern "C" FILE* fdopen(int fd, const char* mode)
 {
 	return fdio_new_fd(fd, mode);
 }
 
-FILE* fopen(const char* path, const char* mode)
+extern "C" FILE* fopen(const char* path, const char* mode)
 {
 	return fdio_new_path(path, mode);
 }
