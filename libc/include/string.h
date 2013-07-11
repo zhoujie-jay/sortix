@@ -50,6 +50,7 @@ int strcoll_l(const char*, const char*, locale_t);
 size_t strcspn(const char*, const char*);
 char* strcpy(char* __restrict, const char* __restrict);
 char* strdup(const char*);
+int strerror_r(int, char*, size_t);
 size_t strlcpy(char* __restrict, const char* __restrict, size_t);
 size_t strlen(const char*);
 char* strncat(char* __restrict, const char* __restrict, size_t);
@@ -67,25 +68,22 @@ int strverscmp(const char*, const char*);
 size_t strxfrm(char* __restrict, const char* __restrict, size_t);
 size_t strxfrm_l(char* __restrict, const char* __restrict, size_t, locale_t);
 
-/* TODO: These are not implemented in sortix libc yet. */
-#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
-char* strerror_l(int, locale_t);
-int strerror_r(int, char*, size_t);
-#endif
-
 #if defined(_SORTIX_SOURCE) || defined(_GNU_SOURCE)
 char* strchrnul(const char* str, int c);
 #endif
 
 #if defined(_SORTIX_SOURCE)
 const char* sortix_strerror(int errnum);
+const char* sortix_strerror_l(int, locale_t);
 const char* sortix_strsignal(int signum);
 #endif
 #if defined(_SOURCE_SOURCE) && __SORTIX_STDLIB_REDIRECTS
 const char* strerror(int errnum) asm ("sortix_strerror");
+const char* strerror_l(int, locale_t) asm ("sortix_strerror_l");
 const char* strsignal(int signum) asm ("sortix_strsignal");
 #else
 char* strerror(int errnum);
+char* strerror_l(int, locale_t);
 char* strsignal(int signum);
 #endif
 

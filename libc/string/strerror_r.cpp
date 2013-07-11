@@ -1,0 +1,36 @@
+/*******************************************************************************
+
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+
+    This file is part of the Sortix C Library.
+
+    The Sortix C Library is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or (at your
+    option) any later version.
+
+    The Sortix C Library is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+    or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
+    License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
+
+    string/strerror_r.cpp
+    Convert error code to a string.
+
+*******************************************************************************/
+
+#include <errno.h>
+#include <string.h>
+
+extern "C" int strerror_r(int errnum, char* dest, size_t dest_len)
+{
+	const char* msg = sortix_strerror(errnum);
+	if ( !msg )
+		return -1;
+	if ( strlcpy(dest, msg, dest_len) != strlen(msg) )
+		errno = ERANGE;
+	return 0;
+}
