@@ -224,6 +224,7 @@ poll/poll.o \
 poll/ppoll.o \
 pwd/pwent.o \
 signal/kill.o \
+signal/killpg.o \
 signal/psignal.o \
 signal/raise.o \
 signal/sigaction.o \
