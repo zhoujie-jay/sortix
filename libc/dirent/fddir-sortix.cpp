@@ -17,21 +17,22 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    dirent/fddir-sortix.c
+    dirent/fddir-sortix.cpp
     Handles the file descriptor backend for the DIR* API on Sortix.
 
 *******************************************************************************/
 
+#include <sys/readdirents.h>
+
 #include <assert.h>
-#include <unistd.h>
+#include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-#include <sys/readdirents.h>
-#include <dirent.h>
+#include <unistd.h>
 
 typedef struct fddir_sortix_struct
 {
@@ -41,13 +42,13 @@ typedef struct fddir_sortix_struct
 	int fd;
 } fddir_sortix_t;
 
-int fddir_sortix_readents(fddir_sortix_t* info)
+static int fddir_sortix_readents(fddir_sortix_t* info)
 {
 	if ( !info->dirent )
 	{
 		// Allocate a buffer of at least sizeof(kernel_dirent).
 		info->direntsize = sizeof(struct kernel_dirent) + 4UL;
-		info->dirent = malloc(info->direntsize);
+		info->dirent = (struct kernel_dirent*) malloc(info->direntsize);
 		if ( !info->dirent )
 			return -1;
 	}
@@ -59,7 +60,7 @@ int fddir_sortix_readents(fddir_sortix_t* info)
 		size_t newdirentsize = sizeof(struct kernel_dirent) + info->dirent->d_namelen + 1;
 		if ( newdirentsize < info->direntsize )
 			newdirentsize *= 2;
-		struct kernel_dirent* newdirent = malloc(newdirentsize);
+		struct kernel_dirent* newdirent = (struct kernel_dirent*) malloc(newdirentsize);
 		if ( !newdirent )
 			return -1;
 		free(info->dirent);
@@ -71,7 +72,7 @@ int fddir_sortix_readents(fddir_sortix_t* info)
 	return 0;
 }
 
-int fddir_sortix_read(void* user, struct dirent* dirent, size_t* size)
+static int fddir_sortix_read(void* user, struct dirent* dirent, size_t* size)
 {
 	fddir_sortix_t* info = (fddir_sortix_t*) user;
 	if ( !info->current )
@@ -84,7 +85,8 @@ int fddir_sortix_read(void* user, struct dirent* dirent, size_t* size)
 	size_t provided = (user) ? *size : 0;
 	size_t needed = sizeof(struct dirent) + info->current->d_namelen + 1;
 	*size = needed;
-	if ( provided < needed ) { return 1; }
+	if ( provided < needed )
+		return 1;
 
 	dirent->d_ino = info->current->d_ino;
 	dirent->d_reclen = needed;
@@ -95,19 +97,19 @@ int fddir_sortix_read(void* user, struct dirent* dirent, size_t* size)
 	return 0;
 }
 
-int fddir_sortix_rewind(void* user)
+static int fddir_sortix_rewind(void* user)
 {
 	fddir_sortix_t* info = (fddir_sortix_t*) user;
 	return lseek(info->fd, 0, SEEK_SET);
 }
 
-int fddir_sortix_fd(void* user)
+static int fddir_sortix_fd(void* user)
 {
 	fddir_sortix_t* info = (fddir_sortix_t*) user;
 	return info->fd;
 }
 
-int fddir_sortix_close(void* user)
+static int fddir_sortix_close(void* user)
 {
 	fddir_sortix_t* info = (fddir_sortix_t*) user;
 	int result = close(info->fd);
@@ -116,10 +118,11 @@ int fddir_sortix_close(void* user)
 	return result;
 }
 
-DIR* fdopendir(int fd)
+extern "C" DIR* fdopendir(int fd)
 {
-	fddir_sortix_t* info = calloc(sizeof(fddir_sortix_t), 1);
-	if ( !info ) { return NULL; }
+	fddir_sortix_t* info = (fddir_sortix_t*) calloc(sizeof(fddir_sortix_t), 1);
+	if ( !info )
+		return NULL;
 
 	DIR* dir = dnewdir();
 	if ( !dir ) { free(info); return NULL; }
@@ -139,7 +142,7 @@ DIR* fdopendir(int fd)
 	return dir;
 }
 
-DIR* opendir(const char* path)
+extern "C" DIR* opendir(const char* path)
 {
 	int fd = open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
 	if ( fd < 0 ) { return NULL; }
