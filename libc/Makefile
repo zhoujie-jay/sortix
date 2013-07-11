@@ -132,6 +132,7 @@ string/strstr.o \
 string/strtok.o \
 string/strtok_r.o \
 string/strverscmp.o \
+string/strxfrm_l.o \
 string/strxfrm.o \
 time/asctime.o \
 time/asctime_r.o \

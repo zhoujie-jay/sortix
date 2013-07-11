@@ -64,12 +64,12 @@ char* strtok(char* __restrict, const char* __restrict);
 char* strtok_r(char* __restrict, const char* __restrict, char** __restrict);
 int strverscmp(const char*, const char*);
 size_t strxfrm(char* __restrict, const char* __restrict, size_t);
+size_t strxfrm_l(char* __restrict, const char* __restrict, size_t, locale_t);
 
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 char* strerror_l(int, locale_t);
 int strerror_r(int, char*, size_t);
-size_t strxfrm_l(char* __restrict, const char* __restrict, size_t, locale_t);
 #endif
 
 #if defined(_SORTIX_SOURCE) || defined(_GNU_SOURCE)
