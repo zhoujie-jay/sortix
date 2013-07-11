@@ -60,7 +60,8 @@ extern "C" void kthread_cond_wait(kthread_cond_t* cond, kthread_mutex_t* mutex)
 	elem.next = NULL;
 	elem.woken = 0;
 	if ( cond->last ) { cond->last->next = &elem; }
-	if ( !cond->last ) { cond->last = cond->first = &elem; }
+	if ( !cond->last ) { cond->first = &elem; }
+	cond->last = &elem;
 	while ( !elem.woken )
 	{
 		kthread_mutex_unlock(mutex);
@@ -78,7 +79,8 @@ extern "C" unsigned long kthread_cond_wait_signal(kthread_cond_t* cond,
 	elem.next = NULL;
 	elem.woken = 0;
 	if ( cond->last ) { cond->last->next = &elem; }
-	if ( !cond->last ) { cond->last = cond->first = &elem; }
+	if ( !cond->last ) { cond->first = &elem; }
+	cond->last = &elem;
 	while ( !elem.woken )
 	{
 		if ( Signal::IsPending() )
