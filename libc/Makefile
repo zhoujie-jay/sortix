@@ -117,6 +117,7 @@ string/strcpy.o \
 string/strcspn.o \
 string/strdup.o \
 string/strerror.o \
+string/strlcpy.o \
 string/strlen.o \
 string/strncasecmp.o \
 string/strncat.o \

@@ -50,6 +50,7 @@ int strcoll_l(const char*, const char*, locale_t);
 size_t strcspn(const char*, const char*);
 char* strcpy(char* __restrict, const char* __restrict);
 char* strdup(const char*);
+size_t strlcpy(char* __restrict, const char* __restrict, size_t);
 size_t strlen(const char*);
 char* strncat(char* __restrict, const char* __restrict, size_t);
 int strncmp(const char*, const char*, size_t);
