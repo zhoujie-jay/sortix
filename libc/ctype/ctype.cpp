@@ -17,7 +17,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    ctype/ctype.c
+    ctype/ctype.cpp
     Character types.
 
 *******************************************************************************/
@@ -26,77 +26,81 @@
 
 // TODO: Support other locales than ASCII.
 
-int isalnum(int c)
+extern "C" int isalnum(int c)
 {
 	return isalpha(c) || isdigit(c);
 }
 
-int isalpha(int c)
+extern "C" int isalpha(int c)
 {
 	return isupper(c) || islower(c);
 }
 
-int isblank(int c)
+extern "C" int isblank(int c)
 {
 	return c == ' ' || c == '\t';
 }
 
-int iscntrl(int c)
+extern "C" int iscntrl(int c)
 {
 	return 0 <= c && c < 32;
 }
 
-int isdigit(int c)
+extern "C" int isdigit(int c)
 {
 	return '0' <= c && c <= '9';
 }
 
-int isgraph(int c)
+extern "C" int isgraph(int c)
 {
 	return '!' <= c && c <= '~';
 }
 
-int islower(int c)
+extern "C" int islower(int c)
 {
 	return 'a' <= c && c <= 'z';
 }
 
-int isprint(int c)
+extern "C" int isprint(int c)
 {
 	return isgraph(c) || c == ' ';
 }
 
-int ispunct(int c)
+extern "C" int ispunct(int c)
 {
 	return isprint(c) && c != ' ' && !isalnum(c);
 }
 
-int isspace(int c)
+extern "C" int isspace(int c)
 {
-	return c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r' || c == ' ';
+	return c == '\t' || c == '\n' || c == '\v' ||
+	       c == '\f' || c == '\r' || c == ' ';
 }
 
-int isupper(int c)
+extern "C" int isupper(int c)
 {
 	return 'A' <= c && c <= 'Z';
 }
 
-int isxdigit(int c)
+extern "C" int isxdigit(int c)
 {
-	if ( isdigit(c) ) { return 1; }
-	if ( 'a' <= c && c <= 'f' ) { return 1; }
-	if ( 'A' <= c && c <= 'F' ) { return 1; }
+	if ( isdigit(c) )
+		return 1;
+	if ( 'a' <= c && c <= 'f' ) return 1;
+	if ( 'A' <= c && c <= 'F' ) return 1;
 	return 0;
 }
 
-int tolower(int c)
+extern "C" int tolower(int c)
 {
-	if ( 'A' <= c && c <= 'Z' ) { return 'a' + c - 'A'; }
+	if ( 'A' <= c && c <= 'Z' )
+		return 'a' + c - 'A';
 	return c;
 }
 
-int toupper(int c)
+extern "C" int toupper(int c)
 {
-	if ( 'a' <= c && c <= 'z' ) { return 'A' + c - 'a'; }
+	if ( 'a' <= c && c <= 'z' )
+		return 'A' + c - 'a';
 	return c;
 }
