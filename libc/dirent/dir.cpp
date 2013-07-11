@@ -17,18 +17,19 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    dirent/dir.c
+    dirent/dir.cpp
     DIR* is an interface allowing various directory backends.
 
 *******************************************************************************/
 
 #include <sys/types.h>
+
+#include <dirent.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <dirent.h>
 
-DIR* firstdir = NULL;
+static DIR* firstdir = NULL;
 
 void dregister(DIR* dir)
 {
@@ -41,10 +42,14 @@ void dregister(DIR* dir)
 
 void dunregister(DIR* dir)
 {
-	if ( !(dir->flags & _DIR_REGISTERED) ) { return; }
-	if ( !dir->prev ) { firstdir = dir->next; }
-	if ( dir->prev ) { dir->prev->next = dir->next; }
-	if ( dir->next ) { dir->next->prev = dir->prev; }
+	if ( !(dir->flags & _DIR_REGISTERED) )
+		return;
+	if ( !dir->prev )
+		firstdir = dir->next;
+	if ( dir->prev )
+		dir->prev->next = dir->next;
+	if ( dir->next )
+		dir->next->prev = dir->prev;
 	dir->flags &= ~_DIR_REGISTERED;
 }
 
@@ -66,7 +71,7 @@ struct dirent* readdir(DIR* dir)
 	}
 	if ( 0 < status )
 	{
-		struct dirent* biggerdir = malloc(size);
+		struct dirent* biggerdir = (struct dirent*) malloc(size);
 		if ( !biggerdir )
 		{
 			dir->flags |= _DIR_ERROR;
@@ -94,20 +99,22 @@ int closedir(DIR* dir)
 	int result = (dir->close_func) ? dir->close_func(dir->user) : 0;
 	dunregister(dir);
 	free(dir->entry);
-	if ( dir->free_func ) { dir->free_func(dir); }
+	if ( dir->free_func )
+		dir->free_func(dir);
 	return result;
 }
 
 void rewinddir(DIR* dir)
 {
-	if ( dir->rewind_func ) { dir->rewind_func(dir->user); }
+	if ( dir->rewind_func )
+		dir->rewind_func(dir->user);
 	dir->flags &= ~_DIR_EOF;
 }
 
 int dirfd(DIR* dir)
 {
-	if ( !dir->fd_func ) { errno = EBADF; return 0; }
-
+	if ( !dir->fd_func )
+		return errno = EBADF, 0;
 	return dir->fd_func(dir->user);
 }
 
@@ -134,7 +141,8 @@ static void dfreedir(DIR* dir)
 DIR* dnewdir(void)
 {
 	DIR* dir = (DIR*) calloc(sizeof(DIR), 1);
-	if ( !dir ) { return NULL; }
+	if ( !dir )
+		return NULL;
 	dir->flags = 0;
 	dir->free_func = dfreedir;
 	dregister(dir);
@@ -144,6 +152,7 @@ DIR* dnewdir(void)
 int dcloseall(void)
 {
 	int result = 0;
-	while ( firstdir ) { result |= closedir(firstdir); }
-	return (result) ? EOF : 0;
+	while ( firstdir )
+		result |= closedir(firstdir);
+	return result ? EOF : 0;
 }
