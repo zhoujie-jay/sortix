@@ -119,6 +119,7 @@ string/strdup.o \
 string/strerror_l.o \
 string/strerror.o \
 string/strerror_r.o \
+string/strlcat.o \
 string/strlcpy.o \
 string/strlen.o \
 string/strncasecmp.o \

@@ -51,6 +51,7 @@ size_t strcspn(const char*, const char*);
 char* strcpy(char* __restrict, const char* __restrict);
 char* strdup(const char*);
 int strerror_r(int, char*, size_t);
+size_t strlcat(char* __restrict, const char* __restrict, size_t);
 size_t strlcpy(char* __restrict, const char* __restrict, size_t);
 size_t strlen(const char*);
 char* strncat(char* __restrict, const char* __restrict, size_t);
