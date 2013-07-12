@@ -98,6 +98,9 @@ stdlib/strtof.o \
 stdlib/strtold.o \
 stdlib/wcstombs.o \
 stdlib/wctomb.o \
+string/ffsll.o \
+string/ffsl.o \
+string/ffs.o \
 string/memccpy.o \
 string/memchr.o \
 string/memcmp.o \

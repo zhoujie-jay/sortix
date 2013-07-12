@@ -34,6 +34,9 @@ __BEGIN_DECLS
 @include(size_t.h)
 @include(locale_t.h)
 
+int ffs(int);
+int ffsl(long int);
+int ffsll(long long int);
 void* memccpy(void* __restrict, const void* __restrict, int, size_t);
 void* memchr(const void*, int, size_t);
 int memcmp(const void*, const void*, size_t);
