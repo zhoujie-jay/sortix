@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -18,23 +18,15 @@
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
     strings.h
-    String operations.
+    Deprecated header providing previously non-standard functions that have now
+    either been obsoleted or merged into string.h.
 
 *******************************************************************************/
 
-#ifndef _STRINGS_H
-#define _STRINGS_H 1
+#ifndef INCLUDE_STRINGS_H
+#define INCLUDE_STRINGS_H
 
-#include <features.h>
-
-__BEGIN_DECLS
-
-@include(size_t.h)
-@include(locale_t.h)
-
-int strcasecmp(const char* a, const char* b);
-int strncasecmp(const char* a, const char* b, size_t n);
-
-__END_DECLS
+/* Simply include the standard header that will provide the functions. */
+#include <string.h>
 
 #endif
