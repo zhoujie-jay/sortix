@@ -25,6 +25,8 @@ dirent/alphasort.o \
 dirent/dir.o \
 dirent/versionsort.o \
 errno/errno.o \
+inttypes/strtoimax.o \
+inttypes/strtoumax.o \
 signal/sigaddset.o \
 signal/sigdelset.o \
 signal/sigemptyset.o \
@@ -86,7 +88,6 @@ stdlib/bsearch.o \
 stdlib/calloc.o \
 stdlib/div.o \
 stdlib/heap.o \
-stdlib/integer.o \
 stdlib/ldiv.o \
 stdlib/lldiv.o \
 stdlib/mblen.o \
@@ -96,6 +97,10 @@ stdlib/qsort.o \
 stdlib/strtod.o \
 stdlib/strtof.o \
 stdlib/strtold.o \
+stdlib/strtoll.o \
+stdlib/strtol.o \
+stdlib/strtoull.o \
+stdlib/strtoul.o \
 stdlib/wcstombs.o \
 stdlib/wctomb.o \
 string/ffsll.o \
