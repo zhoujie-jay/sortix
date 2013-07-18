@@ -200,8 +200,8 @@ __BEGIN_DECLS
 
 intmax_t imaxabs(intmax_t);
 /* TODO: imaxdiv */
-/* TODO: strtoimax */
-/* TODO: strtoumax */
+intmax_t strtoimax(const char* __restrict, char** __restrict, int);
+uintmax_t strtoumax(const char* __restrict, char** __restrict, int);
 /* TODO: wcstoimax */
 /* TODO: wcstoumax */
 

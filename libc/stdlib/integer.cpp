@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -23,6 +23,7 @@
 *******************************************************************************/
 
 #include <ctype.h>
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -79,6 +80,11 @@ extern "C" long long strtoll(const char* str, char** endptr, int base)
 	return ParseInteger<long long, false>(str, endptr, base);
 }
 
+extern "C" intmax_t strtoimax(const char* str, char** endptr, int base)
+{
+	return ParseInteger<intmax_t, false>(str, endptr, base);
+}
+
 extern "C" unsigned long strtoul(const char* str, char** endptr, int base)
 {
 	return ParseInteger<unsigned long, true>(str, endptr, base);
@@ -87,4 +93,9 @@ extern "C" unsigned long strtoul(const char* str, char** endptr, int base)
 extern "C" unsigned long long strtoull(const char* str, char** endptr, int base)
 {
 	return ParseInteger<unsigned long long, true>(str, endptr, base);
+}
+
+extern "C" uintmax_t strtoumax(const char* str, char** endptr, int base)
+{
+	return ParseInteger<uintmax_t, true>(str, endptr, base);
 }
