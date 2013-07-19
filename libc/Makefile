@@ -25,6 +25,7 @@ dirent/alphasort.o \
 dirent/dir.o \
 dirent/versionsort.o \
 errno/errno.o \
+inttypes/imaxdiv.o \
 inttypes/strtoimax.o \
 inttypes/strtoumax.o \
 inttypes/wcstoimax.o \
