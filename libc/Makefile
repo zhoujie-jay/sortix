@@ -158,6 +158,7 @@ time/gmtime.o \
 time/gmtime_r.o \
 time/mktime.o \
 timespec/timespec.o \
+time/strftime_l.o \
 time/strftime.o \
 time/timegm.o \
 wchar/mbrlen.o \
