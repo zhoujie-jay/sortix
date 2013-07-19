@@ -17,17 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    error/errorprint.cpp
-    Functions for printing error messages to the terminal.
+    error/gnu_error.cpp
+    Prints an error message to stderr and optionally exits the process.
 
 *******************************************************************************/
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
 #include <errno.h>
 #include <error.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 extern "C" void gnu_error(int status, int errnum, const char *format, ...)
 {
@@ -43,9 +43,4 @@ extern "C" void gnu_error(int status, int errnum, const char *format, ...)
 	fprintf(stderr, "\n");
 	if ( status )
 		exit(status);
-}
-
-extern "C" void perror(const char* s)
-{
-	error(0, errno, "%s", s);
 }

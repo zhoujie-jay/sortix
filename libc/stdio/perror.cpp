@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
 
     This file is part of the Sortix C Library.
 
@@ -17,23 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    error.h
-    Error reporting functions.
+    stdio/perror.cpp
+    Prints a error messages to the terminal.
 
 *******************************************************************************/
 
-#ifndef INCLUDE_ERROR_H
-#define INCLUDE_ERROR_H
+#include <errno.h>
+#include <error.h>
+#include <stdio.h>
 
-#include <features.h>
-
-__BEGIN_DECLS
-
-void gnu_error(int status, int errnum, const char* format, ...);
-#if __SORTIX_STDLIB_REDIRECTS
-void error(int status, int errnum, const char* format, ...) asm("gnu_error");
-#endif
-
-__END_DECLS
-
-#endif
+extern "C" void perror(const char* s)
+{
+	error(0, errno, "%s", s);
+}

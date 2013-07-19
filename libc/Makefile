@@ -182,7 +182,7 @@ $(CPUDIR)/syscall.o \
 dirent/fddir-sortix.o \
 dirent/scandir.o \
 dlfcn/dlfcn.o \
-error/errorprint.o \
+error/gnu_error.o \
 fcntl/creat.o \
 fcntl/fcntl.o \
 fcntl/openat.o \
@@ -244,6 +244,7 @@ stdio/fpipe.o \
 stdio/freopen.o \
 stdio/fsetpos.o \
 stdio/getc.o \
+stdio/perror.o \
 stdio/popen.o \
 stdio/print.o \
 stdio/putc.o \
