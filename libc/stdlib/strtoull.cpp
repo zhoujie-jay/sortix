@@ -24,6 +24,9 @@
 
 #define STRTOL strtoull
 #define STRTOL_INT unsigned long long
+#define STRTOL_UNSIGNED_INT unsigned long long
+#define STRTOL_INT_MIN 0
+#define STRTOL_INT_MAX ULLONG_MAX
 #define STRTOL_INT_IS_UNSIGNED true
 
 #include "strtol.cpp"

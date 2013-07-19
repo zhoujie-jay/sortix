@@ -24,6 +24,9 @@
 
 #define STRTOL strtoumax
 #define STRTOL_INT uintmax_t
+#define STRTOL_UNSIGNED_INT uintmax_t
+#define STRTOL_INT_MIN 0
+#define STRTOL_INT_MAX UINTMAX_MAX
 #define STRTOL_INT_IS_UNSIGNED true
 
 #include "../stdlib/strtol.cpp"
