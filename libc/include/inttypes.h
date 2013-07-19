@@ -198,6 +198,8 @@
 
 __BEGIN_DECLS
 
+@include(wchar_t.h)
+
 intmax_t imaxabs(intmax_t);
 /* TODO: imaxdiv */
 intmax_t strtoimax(const char* __restrict, char** __restrict, int);
