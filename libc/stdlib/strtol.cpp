@@ -24,6 +24,9 @@
 
 #ifndef STRTOL
 #define STRTOL strtol
+#define STRTOL_CHAR char
+#define STRTOL_L(x) x
+#define STRTOL_ISSPACE isspace
 #define STRTOL_INT long
 #define STRTOL_UNSIGNED_INT unsigned long
 #define STRTOL_INT_MIN LONG_MIN
@@ -38,20 +41,22 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <wchar.h>
+#include <wctype.h>
 
 // Nasty, nasty hack to get LLONG_* macros.
 #define __STDC_VERSION__ 199901L
 #include <limits.h>
 
 // Convert a character into a digit.
-static int debase(char c)
+static int debase( STRTOL_CHAR c)
 {
-	if ( '0' <= c && c <= '9' )
-		return c - '0';
-	if ( 'a' <= c && c <= 'z' )
-		return 10 + c - 'a';
-	if ( 'A' <= c && c <= 'Z' )
-		return 10 + c - 'A';
+	if ( STRTOL_L('0') <= c && c <= STRTOL_L('9') )
+		return c - STRTOL_L('0');
+	if ( STRTOL_L('a') <= c && c <= STRTOL_L('z') )
+		return 10 + c - STRTOL_L('a');
+	if ( STRTOL_L('A') <= c && c <= STRTOL_L('Z') )
+		return 10 + c - STRTOL_L('A');
 	return -1;
 }
 
@@ -114,36 +119,38 @@ static bool would_multiplication_overflow(T_INT a, T_INT b)
 }
 
 extern "C"
-STRTOL_INT STRTOL(const char* restrict str, char** restrict endptr, int base)
+STRTOL_INT STRTOL(const STRTOL_CHAR* restrict str,
+                  STRTOL_CHAR** restrict endptr,
+                  int base)
 {
-	const char* origstr = str;
+	const STRTOL_CHAR* origstr = str;
 	int origbase = base;
 
 	// Skip any leading white space.
-	while ( isspace(*str) )
+	while ( STRTOL_ISSPACE(*str) )
 		str++;
 
 	// Reject bad bases.
 	if ( base < 0 || 36 < base )
 	{
 		if ( endptr )
-			*endptr = (char*) str;
+			*endptr = (STRTOL_CHAR*) str;
 		return errno = EINVAL, 0;
 	}
 
 	bool negative = false;
-	char c = *str;
+	STRTOL_CHAR c = *str;
 
 	// Handle a leading sign character.
-	if ( c == '-' )
+	if ( c == STRTOL_L('-') )
 		str++, negative = true;
-	if ( c == '+' )
+	if ( c == STRTOL_L('+') )
 		str++, negative = false;
 
 	// Autodetect base 8 or base 16.
-	if ( !base && str[0] == '0' )
+	if ( !base && str[0] == STRTOL_L('0') )
 	{
-		if ( str[1] == 'x' || str[1] == 'X' )
+		if ( str[1] == STRTOL_L('x') || str[1] == STRTOL_L('X') )
 			str += 2, base = 16;
 		else if ( 0 <= debase(str[1]) && debase(str[1]) < 8 )
 			str++, base = 8;
@@ -154,7 +161,9 @@ STRTOL_INT STRTOL(const char* restrict str, char** restrict endptr, int base)
 		base = 10;
 
 	// Skip the leading '0x' prefix in base 16 for hexadecimal integers.
-	if ( origbase == 16 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X') )
+	if ( origbase == 16 &&
+	     str[0] == STRTOL_L('0') &&
+	     (str[1] == STRTOL_L('x') || str[1] == STRTOL_L('X')) )
 		str += 2;
 
 	// Determine what value will be returned on overflow/underflow.
@@ -213,7 +222,7 @@ STRTOL_INT STRTOL(const char* restrict str, char** restrict endptr, int base)
 
 	// Let the caller know where we got to.
 	if ( endptr )
-		*endptr = (char*) str;
+		*endptr = (STRTOL_CHAR*) str;
 
 	// Handle the special case where we are creating an unsigned integer and the
 	// string was negative and non-zero and no overflow occured, then we treat

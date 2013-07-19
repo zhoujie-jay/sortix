@@ -27,6 +27,8 @@ dirent/versionsort.o \
 errno/errno.o \
 inttypes/strtoimax.o \
 inttypes/strtoumax.o \
+inttypes/wcstoimax.o \
+inttypes/wcstoumax.o \
 signal/sigaddset.o \
 signal/sigdelset.o \
 signal/sigemptyset.o \
@@ -171,6 +173,10 @@ wchar/wcsrchr.o \
 wchar/wcsrtombs.o \
 wchar/wcsspn.o \
 wchar/wcstok.o \
+wchar/wcstoll.o \
+wchar/wcstol.o \
+wchar/wcstoull.o \
+wchar/wcstoul.o \
 wctype/wctype.o \
 
 HOSTEDOBJS=\

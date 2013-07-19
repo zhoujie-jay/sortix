@@ -17,19 +17,19 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdlib/strtoul.cpp
+    wchar/wcstoull.cpp
     Converts integers represented as strings to binary representation.
 
 *******************************************************************************/
 
-#define STRTOL strtoul
-#define STRTOL_CHAR char
-#define STRTOL_L(x) x
-#define STRTOL_ISSPACE isspace
-#define STRTOL_INT unsigned long
-#define STRTOL_UNSIGNED_INT unsigned long
+#define STRTOL wcstoull
+#define STRTOL_CHAR wchar_t
+#define STRTOL_L(x) L##x
+#define STRTOL_ISSPACE iswspace
+#define STRTOL_INT unsigned long long
+#define STRTOL_UNSIGNED_INT unsigned long long
 #define STRTOL_INT_MIN 0
-#define STRTOL_INT_MAX ULONG_MAX
+#define STRTOL_INT_MAX ULLONG_MAX
 #define STRTOL_INT_IS_UNSIGNED true
 
-#include "strtol.cpp"
+#include "../stdlib/strtol.cpp"

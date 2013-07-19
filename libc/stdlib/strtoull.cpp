@@ -23,6 +23,9 @@
 *******************************************************************************/
 
 #define STRTOL strtoull
+#define STRTOL_CHAR char
+#define STRTOL_L(x) x
+#define STRTOL_ISSPACE isspace
 #define STRTOL_INT unsigned long long
 #define STRTOL_UNSIGNED_INT unsigned long long
 #define STRTOL_INT_MIN 0

@@ -23,6 +23,9 @@
 *******************************************************************************/
 
 #define STRTOL strtoimax
+#define STRTOL_CHAR char
+#define STRTOL_L(x) x
+#define STRTOL_ISSPACE isspace
 #define STRTOL_INT intmax_t
 #define STRTOL_UNSIGNED_INT uintmax_t
 #define STRTOL_INT_MIN INTMAX_MIN
