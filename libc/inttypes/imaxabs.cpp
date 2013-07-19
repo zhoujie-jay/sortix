@@ -17,14 +17,14 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdlib/abs.cpp
+    inttypes/imaxabs.cpp
     Computes the absolute value of an integer.
 
 *******************************************************************************/
 
-#include <stdlib.h>
+#include <inttypes.h>
 
-extern "C" int abs(int val)
+extern "C" intmax_t imaxabs(intmax_t val)
 {
 	return val < 0 ? -val : val;
 }

@@ -17,14 +17,14 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdlib/abs.cpp
+    stdlib/labs.cpp
     Computes the absolute value of an integer.
 
 *******************************************************************************/
 
 #include <stdlib.h>
 
-extern "C" int abs(int val)
+extern "C" long int labs(long int val)
 {
 	return val < 0 ? -val : val;
 }

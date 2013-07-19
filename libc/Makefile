@@ -25,6 +25,7 @@ dirent/alphasort.o \
 dirent/dir.o \
 dirent/versionsort.o \
 errno/errno.o \
+inttypes/imaxabs.o \
 inttypes/imaxdiv.o \
 inttypes/strtoimax.o \
 inttypes/strtoumax.o \
@@ -91,7 +92,9 @@ stdlib/bsearch.o \
 stdlib/calloc.o \
 stdlib/div.o \
 stdlib/heap.o \
+stdlib/labs.o \
 stdlib/ldiv.o \
+stdlib/llabs.o \
 stdlib/lldiv.o \
 stdlib/mblen.o \
 stdlib/mbstowcs.o \
