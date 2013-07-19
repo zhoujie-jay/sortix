@@ -164,6 +164,7 @@ wchar/wcscat.o \
 wchar/wcschrnul.o \
 wchar/wcschr.o \
 wchar/wcscmp.o \
+wchar/wcscoll.o \
 wchar/wcscpy.o \
 wchar/wcscspn.o \
 wchar/wcslen.o \
