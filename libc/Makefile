@@ -48,6 +48,7 @@ stdio/fflush_stop_writing.o \
 stdio/fgetc.o \
 stdio/fgets.o \
 stdio/flbf.o \
+stdio/flockfile.o \
 stdio/flushlbf.o \
 stdio/fnewfile.o \
 stdio/format.o \
@@ -69,6 +70,8 @@ stdio/fsetlocking.o \
 stdio/fshutdown.o \
 stdio/ftell.o \
 stdio/ftello.o \
+stdio/ftrylockfile.o \
+stdio/funlockfile.o \
 stdio/fwritable.o \
 stdio/fwrite.o \
 stdio/fwriting.o \
