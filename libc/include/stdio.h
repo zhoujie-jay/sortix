@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef _STDIO_H
-#define _STDIO_H 1
+#ifndef INCLUDE_STDIO_H
+#define INCLUDE_STDIO_H
 
 #include <features.h>
 #include <sortix/seek.h>
@@ -72,6 +72,7 @@ extern FILE* stderr;
 #define stderr stderr
 
 extern void clearerr(FILE* stream);
+extern int dprintf(int fildes, const char* __restrict format, ...);
 extern int fclose(FILE* stream);
 extern FILE* fdopen(int fildes, const char* mode);
 extern int feof(FILE* stream);
@@ -123,6 +124,7 @@ extern int scanf(const char* __restrict format, ...);
 extern int sscanf(const char* __restrict s, const char* __restrict format, ...);
 extern FILE* tmpfile(void);
 extern int ungetc(int c, FILE* stream);
+extern int vdprintf(int fildes, const char* __restrict format, __gnuc_va_list ap);
 extern int vfprintf(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list ap);
 extern int vfscanf(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list arg);
 extern int vprintf(const char* __restrict format, __gnuc_va_list ap);
@@ -140,12 +142,10 @@ extern char* tmpnam(char* s);
 extern char* ctermid(char* s);
 extern FILE *fmemopen(void* __restrict buf, size_t size, const char* __restrict mode);
 extern FILE* open_memstream(char** bufp, size_t* sizep);
-extern int dprintf(int fildes, const char* __restrict format, ...);
 extern int getchar_unlocked(void);
 extern int getc_unlocked(FILE* stream);
 extern int putchar_unlocked(int c);
 extern int putc_unlocked(int c, FILE* steam);
-extern int vdprintf(int fildes, const char* __restrict format, __gnuc_va_list ap);
 
 #if __POSIX_OBSOLETE <= 200801
 extern char* tempnam(const char* dir, const char* pfx);

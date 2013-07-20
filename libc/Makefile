@@ -37,6 +37,7 @@ signal/sigemptyset.o \
 signal/sigfillset.o \
 signal/sigismember.o \
 stdio/clearerr.o \
+stdio/dprintf.o \
 stdio/fbufsize.o \
 stdio/fclose.o \
 stdio/fdeletefile.o \
@@ -84,6 +85,7 @@ stdio/snprintf.o \
 stdio/sprintf.o \
 stdio/sscanf.o \
 stdio/ungetc.o \
+stdio/vdprintf.o \
 stdio/vfscanf.o \
 stdio/vsnprintf.o \
 stdio/vsprintf.o \
