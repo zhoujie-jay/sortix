@@ -80,10 +80,13 @@ stdio/getline.o \
 stdio/rewind.o \
 stdio/setbuf.o \
 stdio/setvbuf.o \
-stdio/sprint.o \
+stdio/snprintf.o \
+stdio/sprintf.o \
 stdio/sscanf.o \
 stdio/ungetc.o \
 stdio/vfscanf.o \
+stdio/vsnprintf.o \
+stdio/vsprintf.o \
 stdio/vsscanf.o \
 stdlib/abort.o \
 stdlib/abs.o \
