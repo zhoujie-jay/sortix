@@ -261,12 +261,13 @@ stdio/fdio.o \
 stdio/fgetpos.o \
 stdio/fileno.o \
 stdio/fpipe.o \
+stdio/fprintf.o \
 stdio/freopen.o \
 stdio/fsetpos.o \
 stdio/getc.o \
 stdio/perror.o \
 stdio/popen.o \
-stdio/print.o \
+stdio/printf.o \
 stdio/putc.o \
 stdio/removeat.o \
 stdio/remove.o \
@@ -276,6 +277,8 @@ stdio/scanf.o \
 stdio/stdio.o \
 stdio/tmpfile.o \
 stdio/tmpnam.o \
+stdio/vfprintf.o \
+stdio/vprintf.o \
 stdio/vscanf.o \
 stdlib/canonicalize_file_name_at.o \
 stdlib/canonicalize_file_name.o \

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,46 +17,15 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/print.cpp
-    Provides the stubs for the printf family of functions.
+    stdio/printf.cpp
+    Prints a string to stdout.
 
 *******************************************************************************/
 
 #include <stdarg.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <string.h>
-#include <unistd.h>
 
-static size_t FileWriteCallback(void* user, const char* string, size_t stringlen)
-{
-	FILE* fp = (FILE*) user;
-	return fwrite(string, 1, stringlen, fp);
-}
-
-extern "C" int vfprintf(FILE* fp, const char* /*restrict*/ format, va_list list)
-{
-	size_t result = vprintf_callback(FileWriteCallback, fp, format, list);
-	if ( result == SIZE_MAX )
-		return -1;
-	return (int) result;
-}
-
-extern "C" int fprintf(FILE* fp, const char* /*restrict*/ format, ...)
-{
-	va_list list;
-	va_start(list, format);
-	int result = vfprintf(fp, format, list);
-	va_end(list);
-	return result;
-}
-
-extern "C" int vprintf(const char* /*restrict*/ format, va_list list)
-{
-	return vfprintf(stdout, format, list);
-}
-
-extern "C" int printf(const char* /*restrict*/ format, ...)
+extern "C" int printf(const char* restrict format, ...)
 {
 	va_list list;
 	va_start(list, format);
