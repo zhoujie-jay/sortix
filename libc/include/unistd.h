@@ -271,7 +271,7 @@ int fexecve(int, char* const [], char* const []);
 long fpathconf(int, int);
 int getgroups(int, gid_t []);
 long gethostid(void);
-int getopt(int, char* const [], const char*);
+
 pid_t getpgrp(void);
 pid_t getsid(pid_t);
 int lockf(int, int, off_t);
@@ -289,9 +289,6 @@ int ttyname_r(int, char*, size_t);
 #if __POSIX_OBSOLETE <= 200801
 pid_t setpgrp(void);
 #endif
-
-extern char* optarg;
-extern int opterr, optind, optopt;
 #endif
 
 int access(const char*, int);
@@ -382,6 +379,20 @@ size_t writeleast(int fd, const void* buf, size_t least, size_t max);
 #endif
 #if defined(_SORTIX_SOURCE) || defined(_SORTIX_ALWAYS_SBRK)
 void* sbrk(__intptr_t increment);
+#endif
+
+/* For compatibility with POSIX, declare getopt(3) here. */
+#if !defined(_SORTIX_SOURCE)
+/* These declarations are repeated in <getopt.h>. */
+#ifndef __getopt_unistd_shared_declared
+#define __getopt_unistd_shared_declared
+extern char* optarg;
+extern int opterr;
+extern int optind;
+extern int optopt;
+
+int getopt(int, char* const*, const char*);
+#endif
 #endif
 
 __END_DECLS

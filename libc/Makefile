@@ -220,6 +220,8 @@ fsmarshall/fsm_listen.o \
 fsmarshall/fsm_mkserver.o \
 fsmarshall/fsm_recv.o \
 fsmarshall/fsm_send.o \
+getopt/getopt_long.o \
+getopt/getopt.o \
 grp/grent.o \
 init/init.o \
 libgen/basename.o \
