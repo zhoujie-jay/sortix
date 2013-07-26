@@ -131,9 +131,7 @@ DIR* fdopendir(int fd)
 
 DIR* opendir(const char* path)
 {
-	// TODO: POSIX says we should use O_CLOEXEC here. That seems quite hacky to
-	// me. Is that stupid? If so, I'll leave it out.
-	int fd = open(path, O_SEARCH | O_DIRECTORY);
+	int fd = open(path, O_SEARCH | O_DIRECTORY | O_CLOEXEC);
 	if ( fd < 0 ) { return NULL; }
 	DIR* dir = fdopendir(fd);
 	if ( !dir ) { close(fd); return NULL; }
