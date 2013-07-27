@@ -32,10 +32,14 @@ inttypes/strtoumax.o \
 inttypes/wcstoimax.o \
 inttypes/wcstoumax.o \
 signal/sigaddset.o \
+signal/sigandset.o \
 signal/sigdelset.o \
 signal/sigemptyset.o \
 signal/sigfillset.o \
+signal/sigisemptyset.o \
 signal/sigismember.o \
+signal/signotset.o \
+signal/sigorset.o \
 stdio/clearerr.o \
 stdio/dprintf.o \
 stdio/fbufsize.o \

@@ -176,14 +176,18 @@ int raise(int sig);
 int sigaction(int, const struct sigaction* __restrict, struct sigaction* __restrict);
 int sigaddset(sigset_t*, int);
 int sigaltstack(const stack_t* __restrict, stack_t* __restrict);
+int sigandset(sigset_t*, const sigset_t*, const sigset_t*);
 int sigdelset(sigset_t*, int);
 int sigemptyset(sigset_t*);
 int sigfillset(sigset_t*);
 /* TODO: sighold (obsolescent XSI). */
 /* TODO: sigignore (obsolescent XSI). */
 /* TODO: siginterrupt (obsolescent XSI). */
+int sigisemptyset(const sigset_t*);
 int sigismember(const sigset_t*, int);
 sighandler_t signal(int, sighandler_t);
+int signotset(sigset_t*, const sigset_t*);
+int sigorset(sigset_t*, const sigset_t*, const sigset_t*);
 /* TODO: sigpause (obsolescent XSI). */
 int sigpending(sigset_t*);
 int sigprocmask(int, const sigset_t* __restrict, sigset_t* __restrict);
