@@ -151,10 +151,13 @@ void Switch(CPU::InterruptRegisters* regs)
 	assert(premagic == SCHED_MAGIC);
 	assert(postmagic == SCHED_MAGIC);
 	DoActualSwitch(regs);
-	if ( regs->signal_pending && regs->InUserspace() )
-		Signal::Dispatch(regs);
 	assert(premagic == SCHED_MAGIC);
 	assert(postmagic == SCHED_MAGIC);
+	if ( regs->signal_pending && regs->InUserspace() )
+	{
+		Interrupt::Enable();
+		Signal::DispatchHandler(regs, NULL);
+	}
 }
 
 const bool DEBUG_BEGINCTXSWITCH = false;

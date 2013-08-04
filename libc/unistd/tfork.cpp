@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -25,9 +25,9 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-DEFN_SYSCALL2(pid_t, sys_tfork, SYSCALL_TFORK, int, tforkregs_t*);
+DEFN_SYSCALL2(pid_t, sys_tfork, SYSCALL_TFORK, int, struct tfork*);
 
-extern "C" pid_t tfork(int flags, tforkregs_t* regs)
+extern "C" pid_t tfork(int flags, struct tfork* regs)
 {
 	return sys_tfork(flags, regs);
 }

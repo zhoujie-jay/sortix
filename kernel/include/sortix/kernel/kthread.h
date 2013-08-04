@@ -69,8 +69,14 @@ public:
 
 	~ScopedLock()
 	{
+		Reset();
+	}
+
+	void Reset()
+	{
 		if ( mutex )
 			kthread_mutex_unlock(mutex);
+		mutex = NULL;
 	}
 
 private:
@@ -89,8 +95,14 @@ public:
 
 	~ScopedLockSignal()
 	{
+		Reset();
+	}
+
+	void Reset()
+	{
 		if ( mutex && acquired )
 			kthread_mutex_unlock(mutex);
+		mutex = NULL;
 	}
 
 	bool IsAcquired() { return acquired; }

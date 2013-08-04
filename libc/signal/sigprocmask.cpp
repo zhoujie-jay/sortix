@@ -22,13 +22,13 @@
 
 *******************************************************************************/
 
+#include <sys/syscall.h>
+
 #include <signal.h>
-#include <stdio.h>
+
+DEFN_SYSCALL3(int, sys_sigprocmask, SYSCALL_SIGPROCMASK, int, const sigset_t*, sigset_t*);
 
 extern "C" int sigprocmask(int how, const sigset_t* set, sigset_t* oldset)
 {
-	(void) how;
-	(void) set;
-	(void) oldset;
-	return 0;
+	return sys_sigprocmask(how, set, oldset);
 }

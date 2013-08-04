@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -23,9 +23,12 @@
 *******************************************************************************/
 
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #include <calltrace.h>
+#include <signal.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #if defined(__is_sortix_kernel)
 
@@ -42,19 +45,30 @@ extern "C" void abort(void)
 extern "C" void abort(void)
 {
 	struct stat st;
-	if ( getenv("LIBC_DEBUG_CALLTRACE") || stat("/etc/calltrace", &st) == 0 )
+	if ( stat("/etc/calltrace", &st) == 0 )
 		calltrace();
-	if ( getenv("LIBC_DEBUG_LOOP") || stat("/etc/calltrace_loop", &st) == 0 )
+	if ( stat("/etc/calltrace_loop", &st) == 0 )
 		while ( true );
-	// TODO: Send SIGABRT instead!
-	_Exit(128 + 6);
+
+	sigset_t set_of_sigabrt;
+	sigemptyset(&set_of_sigabrt);
+	sigaddset(&set_of_sigabrt, SIGABRT);
+	sigprocmask(SIG_UNBLOCK, &set_of_sigabrt, NULL);
+
+	raise(SIGABRT);
+
+	int exit_code = WCONSTRUCT(WNATURE_SIGNALED, 128 + SIGABRT, SIGABRT);
+	int exit_flags = EXIT_THREAD_PROCESS | EXIT_THREAD_DUMP_CORE;
+	exit_thread(exit_code, exit_flags, NULL);
+
+	__builtin_unreachable();
 }
 
 #else
 
 extern "C" void abort(void)
 {
-	while ( true ) { };
+	while ( true ) { }
 	__builtin_unreachable();
 }
 

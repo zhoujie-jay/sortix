@@ -30,14 +30,6 @@
 namespace Sortix {
 namespace IDT {
 
-static struct idt_entry idt_entries[256];
-
-void Init()
-{
-	memset(&idt_entries, 0, sizeof(idt_entries));
-	Set(idt_entries, 256);
-}
-
 void Set(struct idt_entry* table, size_t length)
 {
 	size_t limit = sizeof(idt_entry) * length - 1;
@@ -67,11 +59,6 @@ void SetEntry(struct idt_entry* entry, uintptr_t handler, uint16_t selector, uin
 	entry->handler_highest = handler >> 32 & 0xFFFFFFFFU;
 	entry->reserved1 = 0;
 #endif
-}
-
-void SetEntry(uint8_t num, uintptr_t handler, uint16_t selector, uint8_t flags, uint8_t ist)
-{
-	SetEntry(idt_entries + num, handler, selector, flags, ist);
 }
 
 } // namespace IDT

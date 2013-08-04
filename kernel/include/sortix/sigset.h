@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -27,11 +27,13 @@
 
 #include <sys/cdefs.h>
 
+#include <sortix/__/sigset.h>
+
 __BEGIN_DECLS
 
 typedef struct
 {
-	unsigned long __val[(1024 / (8 * sizeof (unsigned long int)))];
+	unsigned long __val[__SIGSET_NUM_SIGNALS / (8 * sizeof(unsigned long int))];
 } sigset_t;
 
 __END_DECLS

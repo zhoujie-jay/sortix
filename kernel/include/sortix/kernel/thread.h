@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -25,8 +25,12 @@
 #ifndef INCLUDE_SORTIX_KERNEL_THREAD_H
 #define INCLUDE_SORTIX_KERNEL_THREAD_H
 
+#include <sortix/sigaction.h>
 #include <sortix/signal.h>
+#include <sortix/sigset.h>
+#include <sortix/stack.h>
 
+#include <sortix/kernel/kthread.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
 
@@ -68,17 +72,13 @@ Thread* RunKernelThread(ThreadEntry entry, void* user, size_t stacksize = 0);
 void SetupKernelThreadRegs(CPU::InterruptRegisters* regs, ThreadEntry entry,
                            void* user, addr_t stack, size_t stacksize);
 
-extern "C" void Thread__OnSigKill(Thread* thread);
-
-typedef void (*sighandler_t)(int);
-
 class Thread
 {
 friend Thread* CreateKernelThread(Process* process,
                                   CPU::InterruptRegisters* regs,
                                   unsigned long fsbase, unsigned long gsbase);
 friend void KernelInit(unsigned long magic, multiboot_info_t* bootinfo);
-friend void Thread__OnSigKill(Thread* thread);
+friend void UpdatePendingSignals(Thread* thread);
 
 public:
 	static void Init();
@@ -107,11 +107,14 @@ public:
 	bool fpuinitialized;
 
 public:
+	sigset_t signal_pending;
+	sigset_t signal_mask;
+	stack_t signal_stack;
 	addr_t addrspace;
-	sighandler_t sighandler;
 	addr_t kernelstackpos;
 	size_t kernelstacksize;
 	bool kernelstackmalloced;
+	bool pledged_destruction;
 
 #if defined(__i386__) || defined(__x86_64__)
 public:
@@ -121,11 +124,6 @@ public:
 
 private:
 	CPU::InterruptRegisters registers;
-	Signal::Queue signalqueue;
-	int currentsignal;
-	int siglevel;
-	int signums[SIG_NUM_LEVELS];
-	CPU::InterruptRegisters sigregs[SIG_NUM_LEVELS];
 
 public:
 	void SaveRegisters(const CPU::InterruptRegisters* src);
@@ -133,15 +131,8 @@ public:
 	void HandleSignal(CPU::InterruptRegisters* regs);
 	void HandleSigreturn(CPU::InterruptRegisters* regs);
 	bool DeliverSignal(int signum);
+	bool DeliverSignalUnlocked(int signum);
 	addr_t SwitchAddressSpace(addr_t newaddrspace);
-
-private:
-	void GotoOnSigKill(CPU::InterruptRegisters* regs);
-	__attribute__((noreturn)) void OnSigKill();
-	void LastPrayer();
-	void SetHavePendingSignals();
-	void HandleSignalFixupRegsCPU(CPU::InterruptRegisters* regs);
-	void HandleSignalCPU(CPU::InterruptRegisters* regs);
 
 };
 

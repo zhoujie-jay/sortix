@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -27,18 +27,24 @@
 
 #include <sys/cdefs.h>
 
+#include <sortix/__/sigset.h>
+
 __BEGIN_DECLS
 
 #if defined(__x86_64__)
-typedef unsigned long jmp_buf[8];
+typedef unsigned long sigjmp_buf[8 + 1 + __SIGSET_NUM_SIGNALS / (sizeof(unsigned long int) * 8)];
 #elif defined(__i386__)
-typedef unsigned long jmp_buf[6];
+typedef unsigned long sigjmp_buf[6 + 1 + __SIGSET_NUM_SIGNALS / (sizeof(unsigned long int) * 8)];
 #else
-#error "You need to implement jmp_buf on your CPU"
+#error "You need to implement sigjmp_buf on your CPU"
 #endif
 
-void longjmp(jmp_buf env, int val);
-int setjmp(jmp_buf env);
+typedef sigjmp_buf jmp_buf;
+
+void longjmp(jmp_buf, int);
+int setjmp(jmp_buf);
+void siglongjmp(sigjmp_buf, int);
+int sigsetjmp(sigjmp_buf, int);
 
 __END_DECLS
 

@@ -38,6 +38,7 @@ void Process::ExecuteCPU(int argc, char** argv, int envc, char** envp,
                          addr_t stackpos, addr_t entry,
                          CPU::InterruptRegisters* regs)
 {
+	memset(regs, 0, sizeof(*regs));
 	regs->eax = argc;
 	regs->ebx = (size_t) argv;
 	regs->edx = envc;
@@ -49,10 +50,11 @@ void Process::ExecuteCPU(int argc, char** argv, int envc, char** envp,
 	regs->ds = UDS | URPL;
 	regs->ss = UDS | URPL;
 	regs->eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+	regs->signal_pending = 0;
 }
 
 void InitializeThreadRegisters(CPU::InterruptRegisters* regs,
-                               const tforkregs_t* requested)
+                               const struct tfork* requested)
 {
 	memset(regs, 0, sizeof(*regs));
 	regs->eip = requested->eip;

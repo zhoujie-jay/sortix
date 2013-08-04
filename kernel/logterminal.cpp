@@ -187,17 +187,8 @@ void LogTerminal::ProcessKeystroke(int kbkey)
 	{
 		while ( linebuffer.CanBackspace() )
 			linebuffer.Backspace();
-		if ( foreground_pgid )
-		{
-			if ( Process* process = Process::Get(foreground_pgid) )
-				process->DeliverGroupSignal(SIGINT);
-		}
-		else // TODO: Backwards compatibility, delete this.
-		{
-			pid_t pid = Process::HackGetForegroundProcess();
-			if ( Process* process = Process::Get(pid) )
-				process->DeliverSignal(SIGINT);
-		}
+		if ( Process* process = Process::Get(foreground_pgid) )
+			process->DeliverGroupSignal(SIGINT);
 		return;
 	}
 	if ( termmode & TERMMODE_SIGNAL && control && kbkey == KBKEY_D )

@@ -406,7 +406,7 @@ int exit_thread(int, int, const struct exit_thread*);
 int memstat(size_t* memused, size_t* memtotal);
 int mkpartition(int fd, off_t start, off_t length);
 pid_t sfork(int flags);
-pid_t tfork(int flags, tforkregs_t* regs);
+pid_t tfork(int flags, struct tfork* regs);
 size_t writeall(int fd, const void* buf, size_t count);
 size_t writeleast(int fd, const void* buf, size_t least, size_t max);
 #endif

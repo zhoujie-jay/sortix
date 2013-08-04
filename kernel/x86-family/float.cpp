@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of Sortix.
 
@@ -34,6 +34,7 @@ namespace Sortix {
 namespace Float {
 
 static Thread* fputhread;
+bool fpu_is_enabled = false;
 
 static inline void InitFPU()
 {
@@ -50,6 +51,53 @@ static inline void LoadState(const uint8_t* src)
 {
 	assert( (((unsigned long) src) & (16UL-1UL)) == 0 );
 	asm volatile ("fxrstor (%0)" : : "r"(src));
+}
+
+void Yield()
+{
+	Thread* thread = CurrentThread();
+
+	Interrupt::Disable();
+
+	bool fpu_was_enabled = fpu_is_enabled;
+
+	// The FPU contains the registers for this thread.
+	if ( fputhread == thread )
+	{
+		if ( !fpu_was_enabled )
+			EnableFPU();
+		SaveState(thread->fpuenvaligned);
+		fputhread = NULL;
+		DisableFPU();
+	}
+
+	// This thread has used the FPU once.
+	else if ( thread->fpuinitialized )
+	{
+		// Nothing needs to be done, the FPU is owned by another thread and the
+		// FPU registers are already stored in the thread structure.
+	}
+
+	// This thread has never used the FPU and needs its registers initialized.
+	else
+	{
+		if ( !fpu_was_enabled )
+			EnableFPU();
+
+		if ( fputhread )
+			SaveState(fputhread->fpuenvaligned);
+
+		InitFPU();
+		SaveState(thread->fpuenvaligned);
+
+		if ( fputhread )
+			LoadState(fputhread->fpuenvaligned);
+
+		if ( !fpu_was_enabled )
+			DisableFPU();
+	}
+
+	Interrupt::Enable();
 }
 
 static void OnFPUAccess(CPU::InterruptRegisters* /*regs*/, void* /*user*/)

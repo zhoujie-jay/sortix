@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of Sortix.
 
@@ -27,7 +27,14 @@
 
 #include <sys/cdefs.h>
 
+#include <sys/__/types.h>
+
 __BEGIN_DECLS
+
+#ifndef __time_t_defined
+#define __time_t_defined
+typedef __time_t time_t;
+#endif
 
 struct timespec
 {

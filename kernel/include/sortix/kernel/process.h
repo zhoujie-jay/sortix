@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -27,6 +27,9 @@
 
 #include <sortix/fork.h>
 #include <sortix/resource.h>
+#include <sortix/sigaction.h>
+#include <sortix/signal.h>
+#include <sortix/sigset.h>
 
 #include <sortix/kernel/clock.h>
 #include <sortix/kernel/kthread.h>
@@ -98,6 +101,12 @@ public:
 	struct rlimit resource_limits[RLIMIT_NUM_DECLARED];
 
 public:
+	kthread_mutex_t signal_lock;
+	struct sigaction signal_actions[SIG_MAX_NUM];
+	sigset_t signal_pending;
+	void (*sigreturn)(void);
+
+public:
 	void BootstrapTables(Ref<DescriptorTable> dtable, Ref<MountTable> mtable);
 	void BootstrapDirectories(Ref<Descriptor> root);
 	Ref<MountTable> GetMTable();
@@ -123,7 +132,7 @@ private:
 	size_t zombiewaiting;
 	bool iszombie;
 	bool nozombify;
-	int exitstatus;
+	int exit_code;
 
 public:
 	Process* group;
@@ -138,6 +147,7 @@ public:
 public:
 	Thread* firstthread;
 	kthread_mutex_t threadlock;
+	bool threads_exiting;
 
 public:
 	struct segment* segments;
@@ -160,7 +170,8 @@ public:
 	            int envc, const char* const* envp,
 	            CPU::InterruptRegisters* regs);
 	void ResetAddressSpace();
-	void Exit(int status);
+	void ExitThroughSignal(int signal);
+	void ExitWithCode(int exit_code);
 	pid_t Wait(pid_t pid, int* status, int options);
 	bool DeliverSignal(int signum);
 	bool DeliverGroupSignal(int signum);
@@ -194,7 +205,6 @@ public:
 
 public:
 	static Process* Get(pid_t pid);
-	static pid_t HackGetForegroundProcess();
 
 private:
 	static bool Put(Process* process);
@@ -203,7 +213,7 @@ private:
 };
 
 void InitializeThreadRegisters(CPU::InterruptRegisters* regs,
-                               const tforkregs_t* requested);
+                               const struct tfork* requested);
 Process* CurrentProcess();
 
 } // namespace Sortix

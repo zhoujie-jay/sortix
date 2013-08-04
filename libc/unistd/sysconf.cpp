@@ -24,6 +24,7 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <signal.h>
 #include <unistd.h>
 
 extern "C" long sysconf(int name)
@@ -34,6 +35,7 @@ extern "C" long sysconf(int name)
 	case _SC_PAGESIZE: case _SC_PAGE_SIZE:
 		return getpagesize();
 	case _SC_OPEN_MAX: return 0x10000;
+	case _SC_RTSIG_MAX: return (SIGRTMAX+1) - SIGRTMIN;
 	default:
 		fprintf(stderr, "%s:%u warning: %s(%i) is unsupported\n",
 		        __FILE__, __LINE__, __func__, name);

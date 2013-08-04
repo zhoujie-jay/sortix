@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of Sortix.
 
@@ -17,43 +17,23 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    sortix/exit.h
-    Flags and constants related to process and thread exiting.
+    sortix/sigval.h
+    Declares union sigval.
 
 *******************************************************************************/
 
-#ifndef INCLUDE_SORTIX_EXIT_H
-#define INCLUDE_SORTIX_EXIT_H
+#ifndef INCLUDE_SORTIX_SIGVAL_H
+#define INCLUDE_SORTIX_SIGVAL_H
 
 #include <sys/cdefs.h>
 
-#include <sys/__/types.h>
-
 __BEGIN_DECLS
 
-#ifndef __size_t_defined
-#define __size_t_defined
-#define __need_size_t
-#include <stddef.h>
-#endif
-
-struct exit_thread
+union sigval
 {
-	void* unmap_from;
-	size_t unmap_size;
-	void* zero_from;
-	size_t zero_size;
-	void* tls_unmap_from;
-	size_t tls_unmap_size;
-	unsigned long reserved[2];
+	int sival_int;
+	void* sival_ptr;
 };
-
-#define EXIT_THREAD_ONLY_IF_OTHERS (1<<0)
-#define EXIT_THREAD_UNMAP (1<<1)
-#define EXIT_THREAD_ZERO (1<<2)
-#define EXIT_THREAD_TLS_UNMAP (1<<3)
-#define EXIT_THREAD_PROCESS (1<<4)
-#define EXIT_THREAD_DUMP_CORE (1<<5)
 
 __END_DECLS
 

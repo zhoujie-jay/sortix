@@ -26,6 +26,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -71,7 +72,7 @@ const unsigned long FLAGS_ID           = 1 << 21; // 0x200000
 
 #if defined(__i386__)
 static const unsigned long MINIMUM_STACK_SIZE = 4 * sizeof(unsigned long);
-static void setup_thread_state(struct pthread* thread, tforkregs_t* regs)
+static void setup_thread_state(struct pthread* thread, struct tfork* regs)
 {
 	assert(MINIMUM_STACK_SIZE <= thread->uthread.stack_size);
 
@@ -99,7 +100,7 @@ static void setup_thread_state(struct pthread* thread, tforkregs_t* regs)
 
 #if defined(__x86_64__)
 static const unsigned long MINIMUM_STACK_SIZE = 2 * sizeof(unsigned long);
-static void setup_thread_state(struct pthread* thread, tforkregs_t* regs)
+static void setup_thread_state(struct pthread* thread, struct tfork* regs)
 {
 	assert(MINIMUM_STACK_SIZE <= thread->uthread.stack_size);
 
@@ -120,12 +121,6 @@ static void setup_thread_state(struct pthread* thread, tforkregs_t* regs)
 	regs->rbp = regs->rsp;
 }
 #endif
-
-extern "C"
-{
-	pthread_mutex_t __pthread_num_threads_lock = PTHREAD_MUTEX_INITIALIZER;
-	size_t __pthread_num_threads = 1;
-}
 
 extern "C"
 int pthread_create(pthread_t* restrict thread_ptr,
@@ -225,20 +220,19 @@ int pthread_create(pthread_t* restrict thread_ptr,
 	}
 
 	// Prepare the registers and initial stack for the new thread.
-	tforkregs_t regs;
+	struct tfork regs;
 	setup_thread_state(thread, &regs);
+	memset(&regs.altstack, 0, sizeof(regs.altstack));
+	regs.altstack.ss_flags = SS_DISABLE;
+	sigprocmask(SIG_SETMASK, NULL, &regs.sigmask);
 
 	// Create a new thread with the requested state.
-	pthread_mutex_lock(&__pthread_num_threads_lock);
 	if ( tfork(SFTHREAD, &regs) < 0 )
 	{
-		pthread_mutex_unlock(&__pthread_num_threads_lock);
 		munmap(thread->uthread.stack_mmap, thread->uthread.stack_size);
 		munmap(thread->uthread.tls_mmap, thread->uthread.tls_size);
 		return errno;
 	}
-	__pthread_num_threads++;
-	pthread_mutex_unlock(&__pthread_num_threads_lock);
 
 	*thread_ptr = thread;
 

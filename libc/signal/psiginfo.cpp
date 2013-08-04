@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,24 +17,14 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    signal/sigaction.cpp
-    Set the action that happens when a signal is triggered.
+    signal/psiginfo.cpp
+    Print signal error condition to stderr.
 
 *******************************************************************************/
 
-#include <sys/syscall.h>
-
 #include <signal.h>
 
-DEFN_SYSCALL3(int, sys_sigaction, SYSCALL_SIGACTION,
-              int,
-              const struct sigaction*,
-              struct sigaction*);
-
-extern "C"
-int sigaction(int signum,
-              const struct sigaction* restrict act,
-              struct sigaction* restrict oldact)
+extern "C" void psiginfo(const siginfo_t* si, const char* message)
 {
-	return sys_sigaction(signum, act, oldact);
+	psignal(si->si_signo, message);
 }

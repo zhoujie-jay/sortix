@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,40 +22,86 @@
 
 *******************************************************************************/
 
+#define SIG_SETMASK 2
+
+/*
+ * sigjmp_buf[0] = %ebx
+ * sigjmp_buf[1] = %esi
+ * sigjmp_buf[2] = %edi
+ * sigjmp_buf[3] = %ebp
+ * sigjmp_buf[4] = %esp
+ * sigjmp_buf[5] = <return-address>
+ * sigjmp_buf[6] = <non-zero if sigmask saved>
+ * sigjmp_buf[7...] = <saved sigmask if sigjmp_buf[6] != 0>
+ */
+
 .global setjmp
 .type setjmp, @function
 setjmp:
-	mov 4(%esp), %ecx
-	# TODO: Floating point stuff!
-	mov %ebx, 0x00(%ecx)
-	mov %esi, 0x04(%ecx)
-	mov %edi, 0x08(%ecx)
-	mov %ebp, 0x0C(%ecx)
-	mov %esp, 0x10(%ecx)
-	mov 0(%esp), %eax
-	mov %eax, 0x14(%ecx)
-	xorl %eax, %eax
-.Lsetjmp_return:
-	ret
+	# setjmp saves the signal mask on Sortix
+	jmp 1f
 .size setjmp, . - setjmp
+
+.global sigsetjmp
+.type sigsetjmp, @function
+sigsetjmp:
+	movl 8(%esp), %edx
+	testl %edx, %edx
+	jz 2f
+1:	movl 4(%esp), %ecx
+	leal (7 * 4)(%ecx), %edx
+	pushl %edx # oldset
+	pushl $0 # set
+	pushl $0 # how (ignored because set is NULL)
+	call sigprocmask
+	addl $(3 * 4), %esp
+	movl $1, %edx
+2:	movl 4(%esp), %ecx
+	movl 0(%esp), %eax
+	movl %ebx, (0 * 4)(%ecx)
+	movl %esi, (1 * 4)(%ecx)
+	movl %edi, (2 * 4)(%ecx)
+	movl %ebp, (3 * 4)(%ecx)
+	movl %esp, (4 * 4)(%ecx)
+	movl %eax, (5 * 4)(%ecx)
+	movl %edx, (6 * 4)(%ecx)
+	xorl %eax, %eax
+	ret
+.size sigsetjmp, . - sigsetjmp
 
 .global longjmp
 .type longjmp, @function
 longjmp:
-	mov 4(%esp), %ecx
-	mov 8(%esp), %edx
-	testl %edx, %edx
-	jnz 1f
-	mov $1, %edx
-1:
-	# TODO: Floating point stuff!
-	mov 0x00(%ecx), %ebx
-	mov 0x04(%ecx), %esi
-	mov 0x08(%ecx), %edi
-	mov 0x0C(%ecx), %ebp
-	mov 0x10(%ecx), %esp
-	mov 0x14(%ecx), %eax
-	mov %eax, 0(%esp)
-	mov %edx, %eax
-	jmp .Lsetjmp_return
+    jmp siglongjmp
 .size longjmp, . - longjmp
+
+.global siglongjmp
+.type siglongjmp, @function
+siglongjmp:
+	movl 4(%esp), %ecx
+	movl 8(%esp), %eax
+	testl %eax, %eax
+	jnz 1f
+	movl $1, %eax
+1:	movl (6 * 4)(%ecx), %edx
+	testl %edx, %edx
+	jz 2f
+	pushl %eax
+	pushl %ecx
+	pushl $0 # oldset
+	leal (7 * 4)(%ecx), %edx
+	pushl %edx # set
+	pushl $SIG_SETMASK # how
+	call sigprocmask
+	addl $(3 * 4), %esp
+	popl %ecx
+	popl %eax
+2:	movl (0 * 4)(%ecx), %ebx
+	movl (1 * 4)(%ecx), %esi
+	movl (2 * 4)(%ecx), %edi
+	movl (3 * 4)(%ecx), %ebp
+	movl (4 * 4)(%ecx), %esp
+	movl (5 * 4)(%ecx), %edx
+	movl %edx, 0(%esp)
+	ret
+.size siglongjmp, . - siglongjmp

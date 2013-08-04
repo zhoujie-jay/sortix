@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of Sortix.
 
@@ -17,42 +17,38 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    sortix/wait.h
+    sortix/__/wait.h
     Declarations for waiting for the events of children.
 
 *******************************************************************************/
 
-#ifndef INCLUDE_SORTIX_WAIT_H
-#define INCLUDE_SORTIX_WAIT_H
+#ifndef INCLUDE_SORTIX____WAIT_H
+#define INCLUDE_SORTIX____WAIT_H
 
 #include <sys/cdefs.h>
 
-#include <sortix/__/wait.h>
-
 __BEGIN_DECLS
 
-#define WCONTINUED (1<<0)
-#define WNOHANG (1<<1)
-#define WUNTRACED (1<<2)
+#define __WNATURE_EXITED 0
+#define __WNATURE_SIGNALED 1
+#define __WNATURE_STOPPED 2
+#define __WNATURE_CONTINUED 3
 
-#define WNATURE_EXITED __WNATURE_EXITED
-#define WNATURE_SIGNALED __WNATURE_SIGNALED
-#define WNATURE_STOPPED __WNATURE_STOPPED
-#define WNATURE_CONTINUED __WNATURE_CONTINUED
+#define __WEXITSTATUS(status) ((status >> 8) & 0xFF)
+#define __WTERMSIG(status) ((status >> 0) & 0x7F)
+#define __WNATURE(status) ((status >> 16) & 0xFF)
 
-#define WEXITSTATUS(status) __WEXITSTATUS(status)
-#define WTERMSIG(status) __WTERMSIG(status)
-#define WNATURE(status) __WNATURE(status)
+#define __WIFEXITED(status) (__WNATURE(status) == __WNATURE_EXITED)
+#define __WIFSIGNALED(status) (__WNATURE(status) == __WNATURE_SIGNALED)
+#define __WIFSTOPPED(status) (__WNATURE(status) == __WNATURE_STOPPED)
+#define __WIFCONTINUED(status) (__WNATURE(status) == __WNATURE_CONTINUED)
 
-#define WIFEXITED(status) __WIFEXITED(status)
-#define WIFSIGNALED(status) __WIFSIGNALED(status)
-#define WIFSTOPPED(status) __WIFSTOPPED(status)
-#define WIFCONTINUED(status) __WIFCONTINUED(status)
+#define __WSTOPSIG(status) __WTERMSIG(status)
 
-#define WSTOPSIG(status) __WSTOPSIG(status)
-
-#define WCONSTRUCT(nature, exitcode, signal) \
-        __WCONSTRUCT(nature, exitcode, signal)
+#define __WCONSTRUCT(nature, exitcode, signal) \
+        (((nature) & 0xFF) << 16 | \
+         ((exitcode) & 0xFF) << 8 | \
+         ((signal) & 0x7F) << 0)
 
 __END_DECLS
 

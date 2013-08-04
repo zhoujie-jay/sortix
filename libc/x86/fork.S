@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -27,38 +27,45 @@
 
 .section .text
 
-.globl __call_tfork_with_regs
-.type __call_tfork_with_regs, @function
-__call_tfork_with_regs:
+.globl __sfork
+.type __sfork, @function
+__sfork:
 	pushl %ebp
 	movl %esp, %ebp
 
-	# The actual system call expects a struct tforkregs_x86 containing the state
-	# of each register in the child. Since we create an identical copy, we
-	# simply set each member of the structure to our own state. Note that since
-	# the stack goes downwards, we create it in the reverse order.
-	pushl $MSRID_GSBASE
-	call rdmsr
-	movl %eax, (%esp)
+	movl 12(%ebp), %ecx
+	push %ecx
+	movl 8(%ebp), %edx
+	push %edx
+	# -- stack is 16-byte aligned -- #
+
+	movl $.Lafter_fork, (0 * 4)(%ecx) # eip
+	movl $0,   (1 * 4)(%ecx) # rax, result is 0 for child
+	movl %ebx, (2 * 4)(%ecx)
+	movl %ecx, (3 * 4)(%ecx)
+	movl %edx, (4 * 4)(%ecx)
+	movl %edi, (5 * 4)(%ecx)
+	movl %esi, (6 * 4)(%ecx)
+	movl %esp, (7 * 4)(%ecx)
+	movl %ebp, (8 * 4)(%ecx)
+	pushfl
+	popl %eax
+	movl %eax, (9 * 4)(%ecx) # eflags
+
+	subl $12, %esp
 	pushl $MSRID_FSBASE
 	call rdmsr
-	movl %eax, (%esp)
-	pushfl
-	pushl %ebp
-	pushl %esp
-	pushl %esi
-	pushl %edi
-	pushl %edx
-	pushl %ecx
-	pushl %ebx
-	pushl $0 # eax, result of sfork (0 for the child).
-	pushl $.Lafter_fork # rip, child will start execution from here.
+	movl 12(%ebp), %ecx
+	movl %eax, (10 * 4)(%ecx) # fsbase
+	addl $16, %esp
 
-	# Call tfork with a nice pointer to our structure. Note that %edi contains
-	# the flag parameter that this function accepted.
-	movl 8(%ebp), %edx # flags parameter, edx need not be preserved.
-	pushl %esp
-	pushl %edx
+	subl $12, %esp
+	pushl $MSRID_GSBASE
+	call rdmsr
+	movl 12(%ebp), %ecx
+	movl %eax, (11 * 4)(%ecx) # gsbase
+	addl $16, %esp
+
 	call tfork
 
 .Lafter_fork:
@@ -67,4 +74,4 @@ __call_tfork_with_regs:
 	# which does that for us.
 	leavel
 	retl
-.size __call_tfork_with_regs, . - __call_tfork_with_regs
+.size __sfork, . - __sfork

@@ -30,15 +30,20 @@
 
 extern "C" { struct exit_handler* __exit_handler_stack = NULL; }
 
-static pthread_mutex_t exit_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t exit_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+static bool currently_exiting = false;
 
 extern "C" void exit(int status)
 {
-	// Only allow a single thread to do the exit cleanup. If somehow the cleanup
-	// code calls exit, then we'll self-destruct. If multiple threads attempt to
-	// call exit, then we'll destroy the ones that got here too late.
-	if ( pthread_mutex_trylock(&exit_lock) != 0 )
-		exit_thread(status, 0, NULL);
+	// It's undefined behavior to call this function more than once: If more
+	// than one thread calls the function we'll wait until the process dies.
+	pthread_mutex_lock(&exit_lock);
+
+	// It's undefined behavior to call this function more than once: If a
+	// cleanup function calls this function we'll self-destruct immediately.
+	if ( currently_exiting )
+		_Exit(status);
+	currently_exiting = true;
 
 	while ( __exit_handler_stack )
 	{

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,11 +22,18 @@
 
 *******************************************************************************/
 
+#include <signal.h>
+#include <string.h>
 #include <unistd.h>
 
-extern "C" pid_t __call_tfork_with_regs(int flags);
+extern "C" pid_t __sfork(int flags, struct tfork* regs);
 
 extern "C" pid_t sfork(int flags)
 {
-	return __call_tfork_with_regs(flags);
+	struct tfork regs;
+	memset(&regs, 0, sizeof(regs));
+	regs.altstack.ss_flags = SS_DISABLE;
+	sigprocmask(SIG_SETMASK, NULL, &regs.sigmask);
+	regs.altstack.ss_flags = SS_DISABLE;
+	return __sfork(flags, &regs);
 }

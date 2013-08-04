@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of Sortix.
 
@@ -22,13 +22,15 @@
 
 *******************************************************************************/
 
-#ifndef SORTIX_FORK_H
-#define SORTIX_FORK_H
+#ifndef INCLUDE_SORTIX_FORK_H
+#define INCLUDE_SORTIX_FORK_H
 
 #include <sys/cdefs.h>
 
-#include <sortix/x86/fork.h>
-#include <sortix/x64/fork.h>
+#include <stdint.h>
+
+#include <sortix/sigset.h>
+#include <sortix/stack.h>
 
 __BEGIN_DECLS
 
@@ -77,13 +79,48 @@ __BEGIN_DECLS
    own state into such a structure and calling tfork. Note that this structure
    is highly platform specific, portable code should use the standard threading
    facilities combined with sfork if possible. */
+struct tfork
+{
 #if defined(__i386__)
-typedef struct tforkregs_x86 tforkregs_t;
+	uint32_t eip;
+	uint32_t eax;
+	uint32_t ebx;
+	uint32_t ecx;
+	uint32_t edx;
+	uint32_t edi;
+	uint32_t esi;
+	uint32_t esp;
+	uint32_t ebp;
+	uint32_t eflags;
+	uint32_t fsbase;
+	uint32_t gsbase;
 #elif defined(__x86_64__)
-typedef struct tforkregs_x64 tforkregs_t;
+	uint64_t rip;
+	uint64_t rax;
+	uint64_t rbx;
+	uint64_t rcx;
+	uint64_t rdx;
+	uint64_t rdi;
+	uint64_t rsi;
+	uint64_t rsp;
+	uint64_t rbp;
+	uint64_t r8;
+	uint64_t r9;
+	uint64_t r10;
+	uint64_t r11;
+	uint64_t r12;
+	uint64_t r13;
+	uint64_t r14;
+	uint64_t r15;
+	uint64_t rflags;
+	uint64_t fsbase;
+	uint64_t gsbase;
 #else
-#warning No tforkregs_cpu structure declared
+#error "You need to add a struct tfork for your platform"
 #endif
+	sigset_t sigmask;
+	stack_t altstack;
+};
 
 __END_DECLS
 

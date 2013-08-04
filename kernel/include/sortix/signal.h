@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -25,59 +25,52 @@
 #ifndef SORTIX_INCLUDE_SIGNAL_H
 #define SORTIX_INCLUDE_SIGNAL_H
 
-/* TODO: Yes, signals are implemented in a non-standard manner for now. */
-
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
 
-#define SIGHUP		1 /* Hangup */
-#define SIGINT		2 /* Interrupt */
-#define SIGQUIT		3 /* Quit */
-#define SIGILL		4 /* Illegal Instruction */
-#define SIGTRAP		5 /* Trace/Breakpoint Trap */
-#define SIGABRT		6 /* Abort */
-#define SIGEMT		7 /* Emulation Trap */
-#define SIGFPE		8 /* Arithmetic Exception */
-#define SIGKILL		9 /* Killed */
-#define SIGBUS		10 /* Bus Error */
-#define SIGSEGV		11 /* Segmentation Fault */
-#define SIGSYS		12 /* Bad System Call */
-#define SIGPIPE		13 /* Broken Pipe */
-#define SIGALRM		14 /* Alarm Clock */
-#define SIGTERM		15 /* Terminated */
-#define SIGUSR1		16 /* User Signal 1 */
-#define SIGUSR2		17 /* User Signal 2 */
-#define SIGCHLD		18 /* Child Status */
-#define SIGPWR		19 /* Power Fail/Restart */
-#define SIGWINCH	20 /* Window Size Change */
-#define SIGURG		21 /* Urgent Socket Condition */
-#define SIGSTOP		23 /* Stopped (signal) */
-#define SIGTSTP		24 /* Stopped (user) */
-#define SIGCONT		25 /* Continued */
-#define SIGTTIN		26 /* Stopped (tty input) */
-#define SIGTTOU		27 /* Stopped (tty output) */
-#define SIGVTALRM	28 /* Virtual Timer Expired */
-#define SIGXCPU		30 /* CPU time limit exceeded */
-#define SIGXFSZ		31 /* File size limit exceeded */
-#define SIGWAITING	32 /* All LWPs blocked */
-#define SIGLWP		33 /* Virtual Interprocessor Interrupt for Threads Library */
-#define SIGAIO		34 /* Asynchronous I/O */
-#define SIGPROF		35
-#define SIG__NUM_DECLARED 36
-#define SIG_MAX_NUM 128
-#define NSIG SIG_MAX_NUM
+#define SIGHUP      1 /* Hangup */
+#define SIGINT      2 /* Interrupt */
+#define SIGQUIT     3 /* Quit */
+#define SIGILL      4 /* Illegal instruction */
+#define SIGTRAP     5 /* Trace/breakpoint trap */
+#define SIGABRT     6 /* Aborted */
+#define SIGBUS      7 /* Bus Error */
+#define SIGFPE      8 /* Floating point exception */
+#define SIGKILL     9 /* Killed */
+#define SIGUSR1     10 /* User defined signal 1 */
+#define SIGSEGV     11 /* Segmentation fault */
+#define SIGUSR2     12 /* User defined signal 2 */
+#define SIGPIPE     13 /* Broken pipe */
+#define SIGALRM     14 /* Alarm clock */
+#define SIGTERM     15 /* Terminated */
+#define SIGSYS      16 /* Bad system call */
+#define SIGCHLD     17 /* Child exited */
+#define SIGCONT     18 /* Continued */
+#define SIGSTOP     19 /* Stopped (signal) */
+#define SIGTSTP     20 /* Stopped */
+#define SIGTTIN     21 /* Stopped (tty input) */
+#define SIGTTOU     22 /* Stopped (tty output) */
+#define SIGURG      23 /* Urgent I/O condition */
+#define SIGXCPU     24 /* CPU time limit exceeded */
+#define SIGXFSZ     25 /* File size limit exceeded */
+#define SIGVTALRM   26 /* Virtual timer expired */
+#define SIGPWR      27 /* Power Fail/Restart */
+#define SIGWINCH    28 /* Window changed */
+#define SIGRTMIN    64 /* First user-available real-time signal. */
+#define SIGRTMAX    127 /* Last user-available real-time signal. */
 
-#define SIG_PRIO_NORMAL 0
-#define SIG_PRIO_HIGH 1
-#define SIG_PRIO_STOP 2
-#define SIG_PRIO_CORE 3
-#define SIG_PRIO_KILL 4
-#define SIG_NUM_LEVELS 5
+#define __SIG_NUM_DECLARED 31
+#define __SIG_MAX_NUM 128
 
-#define SIG_BLOCK 0
-#define SIG_UNBLOCK 1
-#define SIG_SETMASK 2
+#if defined(__is_sortix_kernel)
+#define SIG_NUM_DECLARED __SIG_NUM_DECLARED
+#define SIG_MAX_NUM __SIG_MAX_NUM
+#endif
+
+#define SIG_ERR ((void (*)(int)) -1)
+#define SIG_DFL ((void (*)(int)) 0)
+#define SIG_IGN ((void (*)(int)) 1)
 
 __END_DECLS
 

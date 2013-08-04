@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,15 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    signal/SIG_IGN.cpp
-    Ignore signal.
+    signal/sigaltstack.cpp
+    Sets the stack used during signal handling.
 
 *******************************************************************************/
 
+#include <sys/syscall.h>
+
 #include <signal.h>
-#include <stdlib.h>
 
-extern "C" void SIG_IGN(int /*signum*/)
+DEFN_SYSCALL2(int, sys_sigaltstack, SYSCALL_SIGALTSTACK, const stack_t*, stack_t*);
+
+extern "C" int sigaltstack(const stack_t* restrict ss, stack_t* restrict oss)
 {
-
+	return sys_sigaltstack(ss, oss);
 }

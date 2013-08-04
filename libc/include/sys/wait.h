@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,10 +22,8 @@
 
 *******************************************************************************/
 
-// TODO: Make this header comply with POSIX-1.2008
-
-#ifndef _SYS_WAIT_H
-#define _SYS_WAIT_H 1
+#ifndef INCLUDE_SYS_WAIT_H
+#define INCLUDE_SYS_WAIT_H 1
 
 #include <sys/cdefs.h>
 
@@ -40,12 +38,8 @@ __BEGIN_DECLS
 typedef __pid_t pid_t;
 #endif
 
-/* TODO: These are not implemented in sortix libc yet. */
-#if 0
-int waitid(idtype_t, id_t, siginfo_t*, int);
-#endif
-
 pid_t wait(int* stat_loc);
+/* TODO: int waitid(idtype_t, id_t, siginfo_t*, int); */
 pid_t waitpid(pid_t pid, int *stat_loc, int options);
 
 __END_DECLS

@@ -230,13 +230,13 @@ void Init()
 	RegisterRawHandler(47, irq15, false, false);
 	RegisterRawHandler(128, syscall_handler, true, true);
 	RegisterRawHandler(129, yield_cpu_handler, true, false);
-	RegisterRawHandler(130, isr130, true, false);
-	RegisterRawHandler(131, isr131, true, false);
+	RegisterRawHandler(130, isr130, true, true);
+	RegisterRawHandler(131, isr131, true, true);
 	RegisterRawHandler(132, thread_exit_handler, true, false);
 
 	RegisterHandler(129, Scheduler::InterruptYieldCPU, NULL);
-	RegisterHandler(130, Signal::Dispatch, NULL);
-	RegisterHandler(131, Signal::Return, NULL);
+	RegisterHandler(130, Signal::DispatchHandler, NULL);
+	RegisterHandler(131, Signal::ReturnHandler, NULL);
 	RegisterHandler(132, Scheduler::ThreadExitCPU, NULL);
 
 	IDT::Set(interrupt_table, NUM_INTERRUPTS);
@@ -313,6 +313,19 @@ void UserCrashHandler(CPU::InterruptRegisters* regs)
 	// Execute this crash handler with preemption on.
 	Interrupt::Enable();
 
+	// TODO: Also send signals for other types of user-space crashes.
+	if ( regs->int_no == 14 /* Page fault */ )
+	{
+		struct sigaction* act = &CurrentProcess()->signal_actions[SIGSEGV];
+		kthread_mutex_lock(&CurrentProcess()->signal_lock);
+		bool handled = act->sa_handler != SIG_DFL && act->sa_handler != SIG_IGN;
+		if ( handled )
+			CurrentThread()->DeliverSignalUnlocked(SIGSEGV);
+		kthread_mutex_unlock(&CurrentProcess()->signal_lock);
+		if ( handled )
+			return Signal::DispatchHandler(regs, NULL);
+	}
+
 	// Walk and print the stack frames if this is a debug build.
 	if ( CALLTRACE_USER )
 		CrashCalltrace(regs);
@@ -330,13 +343,10 @@ void UserCrashHandler(CPU::InterruptRegisters* regs)
 
 	// Exit the process with the right error code.
 	// TODO: Send a SIGINT, SIGBUS, or whatever instead.
-	CurrentProcess()->Exit(139);
-
-	// TODO: Is it strictly needed or even desirable to disable preemption here?
-	Interrupt::Disable();
+	CurrentProcess()->ExitThroughSignal(SIGSEGV);
 
 	// Deliver signals to this thread so it can exit correctly.
-	Signal::Dispatch(regs);
+	Signal::DispatchHandler(regs, NULL);
 }
 
 extern "C" void interrupt_handler(CPU::InterruptRegisters* regs)

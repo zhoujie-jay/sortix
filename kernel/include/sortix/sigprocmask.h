@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of Sortix.
 
@@ -17,43 +17,21 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    sortix/x64/fork.h
-    Declarations related to the fork family of system calls on x64 Sortix.
+    sortix/sigprocmask.h
+    Declares flags for sigprocmask.
 
 *******************************************************************************/
 
-#ifndef SORTIX_X64_FORK_H
-#define SORTIX_X64_FORK_H
+#ifndef INCLUDE_SORTIX_SIGPROCMASK_H
+#define INCLUDE_SORTIX_SIGPROCMASK_H
 
 #include <sys/cdefs.h>
 
-#include <stdint.h>
-
 __BEGIN_DECLS
 
-struct tforkregs_x64
-{
-	uint64_t rip;
-	uint64_t rax;
-	uint64_t rbx;
-	uint64_t rcx;
-	uint64_t rdx;
-	uint64_t rdi;
-	uint64_t rsi;
-	uint64_t rsp;
-	uint64_t rbp;
-	uint64_t r8;
-	uint64_t r9;
-	uint64_t r10;
-	uint64_t r11;
-	uint64_t r12;
-	uint64_t r13;
-	uint64_t r14;
-	uint64_t r15;
-	uint64_t rflags;
-	uint64_t fsbase;
-	uint64_t gsbase;
-};
+#define SIG_BLOCK 0
+#define SIG_UNBLOCK 1
+#define SIG_SETMASK 2
 
 __END_DECLS
 

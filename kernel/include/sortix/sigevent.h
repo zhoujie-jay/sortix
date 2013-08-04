@@ -31,6 +31,8 @@
 #include <__/pthread.h>
 #endif
 
+#include <sortix/sigval.h>
+
 __BEGIN_DECLS
 
 #if __STDC_HOSTED__
@@ -43,12 +45,6 @@ typedef __pthread_attr_t pthread_attr_t;
 #define SIGEV_NONE 0
 #define SIGEV_SIGNAL 1
 #define SIGEV_THREAD 2
-
-union sigval
-{
-	int sival_int;
-	void* sival_ptr;
-};
 
 struct sigevent
 {

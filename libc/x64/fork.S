@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -27,48 +27,45 @@
 
 .section .text
 
-.globl __call_tfork_with_regs
-.type __call_tfork_with_regs, @function
-__call_tfork_with_regs:
+.globl __sfork
+.type __sfork, @function
+__sfork:
 	pushq %rbp
 	movq %rsp, %rbp
 
-	# Save the flags parameter so rdmsr won't trash it and align stack.
 	pushq %rdi
-	sub $8, %rsp
+	pushq %rsi
 
-	# The actual system call expects a struct tforkregs_x64 containing the state
-	# of each register in the child. Since we create an identical copy, we
-	# simply set each member of the structure to our own state. Note that since
-	# the stack goes downwards, we create it in the reverse order.
-	movl $MSRID_GSBASE, %edi
-	call rdmsr
-	pushq %rax
+	movq $.Lafter_fork, (0 * 8)(%rsi) # rip
+	movq $0,   (1 * 8)(%rsi) # rax, result is 0 for child
+	movq %rbx, (2 * 8)(%rsi)
+	movq %rcx, (3 * 8)(%rsi)
+	movq %rdx, (4 * 8)(%rsi)
+	movq %rdi, (5 * 8)(%rsi)
+	movq %rsi, (6 * 8)(%rsi)
+	movq %rsp, (7 * 8)(%rsi)
+	movq %rbp, (8 * 8)(%rsi)
+	movq %r8,  (9 * 8)(%rsi)
+	movq %r9,  (10 * 8)(%rsi)
+	movq %r10, (11 * 8)(%rsi)
+	movq %r11, (12 * 8)(%rsi)
+	movq %r12, (13 * 8)(%rsi)
+	movq %r13, (14 * 8)(%rsi)
+	movq %r14, (15 * 8)(%rsi)
+	movq %r15, (16 * 8)(%rsi)
+	pushfq
+	popq %rax
+	movq %rax, (17 * 8)(%rsi) # rflags
 	movl $MSRID_FSBASE, %edi
 	call rdmsr
-	pushq %rax
-	movq -8(%rbp), %rdi
-	pushfq
-	pushq %r15
-	pushq %r14
-	pushq %r13
-	pushq %r12
-	pushq %r11
-	pushq %r10
-	pushq %r9
-	pushq %r8
-	pushq %rbp
-	pushq %rsp
-	pushq %rsi
-	pushq %rdi
-	pushq %rdx
-	pushq %rcx
-	pushq %rbx
-	pushq $0 # rax, result of sfork is 0 for the child.
-	pushq $.Lafter_fork # rip, child will start execution from here.
+	movq 0(%rsp), %rsi
+	movq %rax, (18 * 8)(%rsi) # fsbase
+	movl $MSRID_GSBASE, %edi
+	call rdmsr
+	movq 0(%rsp), %rsi
+	movq %rax, (19 * 8)(%rsi) # gsbase
+	movq 8(%rsp), %rdi
 
-	# Call tfork with a nice pointer to our structure.
-	movq %rsp, %rsi
 	call tfork
 
 .Lafter_fork:
@@ -77,4 +74,4 @@ __call_tfork_with_regs:
 	# which does that for us.
 	leaveq
 	retq
-.size __call_tfork_with_regs, . - __call_tfork_with_regs
+.size __sfork, . - __sfork

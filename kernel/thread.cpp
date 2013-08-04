@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -22,8 +22,11 @@
 
 *******************************************************************************/
 
+#include <sys/wait.h>
+
 #include <assert.h>
 #include <errno.h>
+#include <signal.h>
 #include <string.h>
 
 #include <sortix/exit.h>
@@ -58,15 +61,17 @@ Thread::Thread()
 	kernelstackpos = 0;
 	kernelstacksize = 0;
 	kernelstackmalloced = false;
-	currentsignal = 0;
-	siglevel = 0;
-	sighandler = NULL;
+	pledged_destruction = false;
 	terminated = false;
 	fpuinitialized = false;
 	// If malloc isn't 16-byte aligned, then we can't rely on offsets in
 	// our own class, so we'll just fix ourselves nicely up.
 	unsigned long fpuaddr = ((unsigned long) fpuenv+16UL) & ~(16UL-1UL);
 	fpuenvaligned = (uint8_t*) fpuaddr;
+	sigemptyset(&signal_pending);
+	sigemptyset(&signal_mask);
+	memset(&signal_stack, 0, sizeof(signal_stack));
+	signal_stack.ss_flags = SS_DISABLE;
 }
 
 Thread::~Thread()
@@ -87,11 +92,6 @@ addr_t Thread::SwitchAddressSpace(addr_t newaddrspace)
 	Memory::SwitchAddressSpace(newaddrspace);
 	Interrupt::SetEnabled(wasenabled);
 	return result;
-}
-
-// Last chance to clean up user-space things before this thread dies.
-void Thread::LastPrayer()
-{
 }
 
 extern "C" void BootstrapKernelThread(void* user, ThreadEntry entry)
@@ -196,98 +196,19 @@ Thread* RunKernelThread(ThreadEntry entry, void* user, size_t stacksize)
 	return thread;
 }
 
-void Thread::HandleSignal(CPU::InterruptRegisters* regs)
-{
-	int signum = signalqueue.Pop(currentsignal);
-	regs->signal_pending = 0;
-
-	if ( !signum )
-		return;
-
-	if ( !sighandler )
-		return;
-
-	if ( SIG_NUM_LEVELS <= siglevel )
-		return;
-
-	// Signals can't return to kernel mode because the kernel stack may have
-	// been overwritten by a system call during the signal handler. Correct
-	// the return state so it returns to userspace and not the kernel.
-	if ( !regs->InUserspace() )
-		HandleSignalFixupRegsCPU(regs);
-
-	if ( signum == SIGKILL )
-	{
-		// We need to run the OnSigKill method here with interrupts enabled
-		// and on our own stack. But this method this may have been called
-		// from the scheduler on any stack, so we need to do a little
-		// bootstrap and switch to our own stack.
-		GotoOnSigKill(regs);
-		return;
-	}
-
-	int level = siglevel++;
-	signums[level] = currentsignal = signum;
-	memcpy(sigregs + level, regs, sizeof(*regs));
-
-	HandleSignalCPU(regs);
-}
-
-void Thread::HandleSigreturn(CPU::InterruptRegisters* regs)
-{
-	if ( !siglevel )
-		return;
-
-	siglevel--;
-
-	currentsignal = siglevel ? signums[siglevel-1] : 0;
-	memcpy(regs, sigregs + siglevel, sizeof(*regs));
-	regs->signal_pending = 0;
-
-	// Check if a more important signal is pending.
-	HandleSignal(regs);
-}
-
-extern "C" void Thread__OnSigKill(Thread* thread)
-{
-	thread->OnSigKill();
-}
-
-void Thread::OnSigKill()
-{
-	LastPrayer();
-	kthread_exit();
-}
-
-void Thread::SetHavePendingSignals()
-{
-	// TODO: This doesn't really work if Interrupt::IsCPUInterrupted()!
-	if ( CurrentThread() == this )
-		asm_signal_is_pending = 1;
-	else
-		registers.signal_pending = 1;
-}
-
-bool Thread::DeliverSignal(int signum)
-{
-	if ( signum <= 0 || 128 <= signum )
-		return errno = EINVAL, false;
-
-	bool wasenabled = Interrupt::SetEnabled(false);
-	signalqueue.Push(signum);
-	SetHavePendingSignals();
-	Interrupt::SetEnabled(wasenabled);
-
-	return true;
-}
-
-static int sys_exit_thread(int status,
+static int sys_exit_thread(int requested_exit_code,
                            int flags,
                            const struct exit_thread* user_extended)
 {
 	if ( flags & ~(EXIT_THREAD_ONLY_IF_OTHERS |
 	               EXIT_THREAD_UNMAP |
-	               EXIT_THREAD_ZERO) )
+	               EXIT_THREAD_ZERO |
+	               EXIT_THREAD_TLS_UNMAP |
+	               EXIT_THREAD_PROCESS |
+	               EXIT_THREAD_DUMP_CORE) )
+		return errno = EINVAL, -1;
+
+	if ( (flags & EXIT_THREAD_ONLY_IF_OTHERS) && (flags & EXIT_THREAD_PROCESS) )
 		return errno = EINVAL, -1;
 
 	Thread* thread = CurrentThread();
@@ -309,11 +230,24 @@ static int sys_exit_thread(int status,
 	{
 		if ( iter == thread )
 			continue;
+		if ( iter->pledged_destruction )
+			continue;
 		if ( iter->terminated )
 			continue;
 		is_others = true;
 	}
+	if ( !(flags & EXIT_THREAD_ONLY_IF_OTHERS) || is_others )
+		thread->pledged_destruction = true;
+	bool are_threads_exiting = false;
+	if ( (flags & EXIT_THREAD_PROCESS) || !is_others )
+		process->threads_exiting = true;
+	else if ( process->threads_exiting )
+		are_threads_exiting = true;
 	kthread_mutex_unlock(&thread->process->threadlock);
+
+	// Self-destruct if another thread began exiting the process.
+	if ( are_threads_exiting )
+		kthread_exit();
 
 	if ( (flags & EXIT_THREAD_ONLY_IF_OTHERS) && !is_others )
 		return errno = ESRCH, -1;
@@ -326,62 +260,61 @@ static int sys_exit_thread(int status,
 		Memory::UnmapMemory(process, (uintptr_t) extended.unmap_from,
 		                                         extended.unmap_size);
 		Memory::Flush();
+		// TODO: The segment is not actually removed!
+	}
+
+	if ( flags & EXIT_THREAD_TLS_UNMAP &&
+	     Page::IsAligned((uintptr_t) extended.tls_unmap_from) &&
+	     extended.tls_unmap_size )
+	{
+		ScopedLock lock(&process->segment_lock);
+		Memory::UnmapMemory(process, (uintptr_t) extended.tls_unmap_from,
+		                                         extended.tls_unmap_size);
+		Memory::Flush();
 	}
 
 	if ( flags & EXIT_THREAD_ZERO )
 		ZeroUser(extended.zero_from, extended.zero_size);
 
 	if ( !is_others )
-		thread->process->Exit(status);
+	{
+		// Validate the requested exit code such that the process can't exit
+		// with an impossible exit status or that it wasn't actually terminated.
+
+		int the_nature = WNATURE(requested_exit_code);
+		int the_status = WEXITSTATUS(requested_exit_code);
+		int the_signal = WTERMSIG(requested_exit_code);
+
+		if ( the_nature == WNATURE_EXITED )
+			the_signal = 0;
+		else if ( the_nature == WNATURE_SIGNALED )
+		{
+			if ( the_signal == 0 /* null signal */ ||
+			     the_signal == SIGSTOP ||
+			     the_signal == SIGTSTP ||
+			     the_signal == SIGTTIN ||
+			     the_signal == SIGTTOU ||
+			     the_signal == SIGCONT )
+				the_signal = SIGKILL;
+			the_status = 128 + the_signal;
+		}
+		else
+		{
+			the_nature = WNATURE_SIGNALED;
+			the_signal = SIGKILL;
+		}
+
+		requested_exit_code = WCONSTRUCT(the_nature, the_status, the_signal);
+
+		thread->process->ExitWithCode(requested_exit_code);
+	}
 
 	kthread_exit();
-}
-
-static int sys_kill(pid_t pid, int signum)
-{
-	// Protect the system idle process.
-	if ( !pid )
-		return errno = EPERM, -1;
-
-	// TODO: Implement that pid == -1 means all processes!
-	bool process_group = pid < 0 ? (pid = -pid, true) : false;
-
-	// If we kill our own process, deliver the signal to this thread.
-	Thread* currentthread = CurrentThread();
-	if ( currentthread->process->pid == pid )
-			return currentthread->DeliverSignal(signum) ? 0 : -1;
-
-	// TODO: Race condition: The process could be deleted while we use it.
-	Process* process = Process::Get(pid);
-	if ( !process )
-		return errno = ESRCH, -1;
-
-	// TODO: Protect init?
-	// TODO: Check for permission.
-	// TODO: Check for zombies.
-
-	return process_group ?
-	       process->DeliverGroupSignal(signum) ? 0 : -1 :
-	       process->DeliverSignal(signum) ? 0 : -1;
-}
-
-static int sys_raise(int signum)
-{
-	return CurrentThread()->DeliverSignal(signum) ? 0 : -1;
-}
-
-static int sys_register_signal_handler(sighandler_t sighandler)
-{
-	CurrentThread()->sighandler = sighandler;
-	return 0;
 }
 
 void Thread::Init()
 {
 	Syscall::Register(SYSCALL_EXIT_THREAD, (void*) sys_exit_thread);
-	Syscall::Register(SYSCALL_KILL, (void*) sys_kill);
-	Syscall::Register(SYSCALL_RAISE, (void*) sys_raise);
-	Syscall::Register(SYSCALL_REGISTER_SIGNAL_HANDLER, (void*) sys_register_signal_handler);
 }
 
 } // namespace Sortix

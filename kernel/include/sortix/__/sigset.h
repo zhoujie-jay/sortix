@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of Sortix.
 
@@ -17,35 +17,19 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    sortix/x86/fork.h
-    Declarations related to the fork family of system calls on x86 Sortix.
+    sortix/__/sigset.h
+    Declaration of the sigset_t structure size.
 
 *******************************************************************************/
 
-#ifndef SORTIX_X86_FORK_H
-#define SORTIX_X86_FORK_H
+#ifndef INCLUDE_SORTIX____SIGSET_H
+#define INCLUDE_SORTIX____SIGSET_H
 
 #include <sys/cdefs.h>
 
-#include <stdint.h>
-
 __BEGIN_DECLS
 
-struct tforkregs_x86
-{
-	uint32_t eip;
-	uint32_t eax;
-	uint32_t ebx;
-	uint32_t ecx;
-	uint32_t edx;
-	uint32_t edi;
-	uint32_t esi;
-	uint32_t esp;
-	uint32_t ebp;
-	uint32_t eflags;
-	uint32_t fsbase;
-	uint32_t gsbase;
-};
+#define __SIGSET_NUM_SIGNALS 128
 
 __END_DECLS
 

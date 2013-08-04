@@ -18,7 +18,7 @@
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
     sortix/kernel/signal.h
-    Classes and functions making it easier to handle Unix signals.
+    Asynchronous user-space thread interruption.
 
 *******************************************************************************/
 
@@ -26,6 +26,7 @@
 #define INCLUDE_SORTIX_KERNEL_SIGNAL_H
 
 #include <sortix/signal.h>
+#include <sortix/sigset.h>
 
 #include <sortix/kernel/cpu.h>
 
@@ -35,28 +36,10 @@ extern "C" volatile unsigned long asm_signal_is_pending;
 
 namespace Signal {
 
-class Queue
-{
-public:
-	Queue();
-
-// TODO: This is the wrong data structure for the problem!
-private:
-	bool pending[SIG_MAX_NUM];
-
-// TODO: This is not SMP ready:
-// To avoid race conditions, these should be called with interrupts off.
-public:
-	void Push(int signum);
-	int Pop(int cursig);
-
-};
-
 void Init();
-int Priority(int signum);
-void Dispatch(CPU::InterruptRegisters* regs, void* user = NULL);
-void Return(CPU::InterruptRegisters* regs, void* user = NULL);
 inline bool IsPending() { return asm_signal_is_pending != 0; }
+void DispatchHandler(CPU::InterruptRegisters* regs, void* user);
+void ReturnHandler(CPU::InterruptRegisters* regs, void* user);
 
 } // namespace Signal
 

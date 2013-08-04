@@ -17,43 +17,46 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    sortix/exit.h
-    Flags and constants related to process and thread exiting.
+    sortix/sigaction.h
+    Declares struct sigaction and associated flags.
 
 *******************************************************************************/
 
-#ifndef INCLUDE_SORTIX_EXIT_H
-#define INCLUDE_SORTIX_EXIT_H
+#ifndef INCLUDE_SORTIX_SIGACTION_H
+#define INCLUDE_SORTIX_SIGACTION_H
 
 #include <sys/cdefs.h>
 
-#include <sys/__/types.h>
+#include <sortix/siginfo.h>
+#include <sortix/sigset.h>
 
 __BEGIN_DECLS
 
-#ifndef __size_t_defined
-#define __size_t_defined
-#define __need_size_t
-#include <stddef.h>
-#endif
+#define SA_NOCLDSTOP (1<<0)
+#define SA_ONSTACK (1<<1)
+#define SA_RESETHAND (1<<2)
+#define SA_RESTART (1<<3)
+#define SA_SIGINFO (1<<4)
+#define SA_NOCLDWAIT (1<<5)
+#define SA_NODEFER (1<<6)
+#define SA_COOKIE (1<<7)
 
-struct exit_thread
+#define __SA_SUPPORTED_FLAGS (SA_NOCLDSTOP | SA_ONSTACK | SA_RESETHAND | \
+                              SA_RESTART | SA_SIGINFO | SA_NOCLDWAIT | \
+                              SA_NODEFER | SA_COOKIE)
+
+struct sigaction
 {
-	void* unmap_from;
-	size_t unmap_size;
-	void* zero_from;
-	size_t zero_size;
-	void* tls_unmap_from;
-	size_t tls_unmap_size;
-	unsigned long reserved[2];
+	sigset_t sa_mask;
+	__extension__ union
+	{
+		void (*sa_handler)(int);
+		void (*sa_sigaction)(int, siginfo_t*, void*);
+		void (*sa_sigaction_cookie)(int, siginfo_t*, void*, void*);
+	};
+	void* sa_cookie;
+	int sa_flags;
 };
-
-#define EXIT_THREAD_ONLY_IF_OTHERS (1<<0)
-#define EXIT_THREAD_UNMAP (1<<1)
-#define EXIT_THREAD_ZERO (1<<2)
-#define EXIT_THREAD_TLS_UNMAP (1<<3)
-#define EXIT_THREAD_PROCESS (1<<4)
-#define EXIT_THREAD_DUMP_CORE (1<<5)
 
 __END_DECLS
 

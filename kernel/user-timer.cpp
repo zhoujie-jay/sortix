@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of Sortix.
 
@@ -25,6 +25,7 @@
 #include <sys/types.h>
 
 #include <errno.h>
+#include <limits.h>
 #include <timespec.h>
 
 #include <sortix/clock.h>
@@ -138,7 +139,12 @@ static int sys_timer_getoverrun(timer_t timerid)
 	if ( !timer )
 		return -1;
 
-	// TODO: This is not fully kept track of yet.
+	if ( (size_t) INT_MAX < timer->num_overrun_events)
+		return INT_MAX;
+
+	// TODO: How does the caller reset the overrun count back to 0? Should we
+	//       adopt the Linux semantics where it resets back to 0 after INT_MAX?
+	//       How about signed overflow in the kernel and in the user process?
 
 	return 0;
 }
@@ -164,15 +170,14 @@ static void timer_callback(Clock* /*clock*/, Timer* timer, void* user)
 	Process* process = user_timer->process;
 	ScopedLock lock(&process->user_timers_lock);
 
-	size_t current_overrun = timer->num_overrun_events;
 	// TODO: This delivery facility is insufficient! sigevent is much more
 	//       powerful than sending a simple old-school signal.
-	// TODO: If the last signal from last time is still being processed, we need
-	//       to handle the sum of overrun. I'm not sure how to handle overrun
-	//       properly, so we'll just pretend to user-space it never happens when
-	//       it does and we do some of the bookkeeping.
-	(void) current_overrun;
-	process->DeliverSignal(user_timer->event.sigev_signo);
+	if ( !process->DeliverSignal(user_timer->event.sigev_signo) &&
+	      errno == ESIGPENDING )
+	{
+		if ( timer->num_overrun_events < SIZE_MAX )
+			timer->num_overrun_events++;
+	}
 }
 
 static int sys_timer_settime(timer_t timerid, int flags,

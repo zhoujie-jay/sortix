@@ -99,11 +99,3 @@ asm_call_BootstrapKernelThread:
 	call BootstrapKernelThread
 	# BootstrapKernelThread is noreturn, no need for code here.
 .size asm_call_BootstrapKernelThread, . - asm_call_BootstrapKernelThread
-
-.global asm_call_Thread__OnSigKill
-.type asm_call_Thread__OnSigKill, @function
-asm_call_Thread__OnSigKill:
-	pushl %edi
-	call Thread__OnSigKill
-	# Thread__OnSigKill is noreturn, no need for code here.
-.size asm_call_Thread__OnSigKill, . - asm_call_Thread__OnSigKill

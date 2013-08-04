@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of Sortix.
 
@@ -31,16 +31,21 @@ class Thread;
 
 namespace Float {
 
+extern bool fpu_is_enabled;
+
 void Init();
 void NofityTaskExit(Thread* thread);
+void Yield();
 
 static inline void EnableFPU()
 {
 	asm volatile ("clts");
+	fpu_is_enabled = true;
 }
 
 static inline void DisableFPU()
 {
+	fpu_is_enabled = false;
 	unsigned long cr0;
 	asm volatile ("mov %%cr0, %0" : "=r"(cr0));
 	cr0 |= 1UL<<3UL;

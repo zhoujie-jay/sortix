@@ -17,8 +17,8 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    signal/sigaction.cpp
-    Set the action that happens when a signal is triggered.
+    signal/sigsuspend.cpp
+    Wait until a signal occurs.
 
 *******************************************************************************/
 
@@ -26,15 +26,9 @@
 
 #include <signal.h>
 
-DEFN_SYSCALL3(int, sys_sigaction, SYSCALL_SIGACTION,
-              int,
-              const struct sigaction*,
-              struct sigaction*);
+DEFN_SYSCALL1(int, sys_sigsuspend, SYSCALL_SIGSUSPEND, const sigset_t*);
 
-extern "C"
-int sigaction(int signum,
-              const struct sigaction* restrict act,
-              struct sigaction* restrict oldact)
+extern "C" int sigsuspend(const sigset_t* set)
 {
-	return sys_sigaction(signum, act, oldact);
+	return sys_sigsuspend(set);
 }

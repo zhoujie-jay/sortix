@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -30,40 +30,41 @@ extern "C" const char* sortix_strsignal(int signum)
 {
 	switch ( signum )
 	{
-	case SIGHUP: return "SIGHUP";
-	case SIGINT: return "SIGINT";
-	case SIGQUIT: return "SIGQUIT";
-	case SIGILL: return "SIGILL";
-	case SIGTRAP: return "SIGTRAP";
-	case SIGABRT: return "SIGABRT";
-	case SIGEMT: return "SIGEMT";
-	case SIGFPE: return "SIGFPE";
-	case SIGKILL: return "SIGKILL";
-	case SIGBUS: return "SIGBUS";
-	case SIGSEGV: return "SYSSEGV";
-	case SIGSYS: return "SIGSYS";
-	case SIGPIPE: return "SIGPIPE";
-	case SIGALRM: return "SIGALRM";
-	case SIGTERM: return "SIGTERM";
-	case SIGUSR1: return "SIGUSR1";
-	case SIGUSR2: return "SIGUSR2";
-	case SIGCHLD: return "SIGCHLD";
-	case SIGPWR: return "SIGPWR";
-	case SIGWINCH: return "SIGWINCH";
-	case SIGURG: return "SIGURG";
-	case SIGSTOP: return "SIGSTOP";
-	case SIGTSTP: return "SIGTSTP";
-	case SIGCONT: return "SIGCONT";
-	case SIGTTIN: return "SIGTTIN";
-	case SIGTTOU: return "SIGTTOU";
-	case SIGVTALRM: return "SIGVTALRM";
-	case SIGXCPU: return "SIGXCPU";
-	case SIGXFSZ: return "SIGXFSZ";
-	case SIGWAITING: return "SIGWAITING";
-	case SIGLWP: return "SIGLWP";
-	case SIGAIO: return "SIGAIO";
-	default: return "Unknown signal value";
+	case SIGHUP: return "Hangup";
+	case SIGINT: return "Interrupt";
+	case SIGQUIT: return "Quit";
+	case SIGILL: return "Illegal instruction";
+	case SIGTRAP: return "Trace/breakpoint trap";
+	case SIGABRT: return "Aborted";
+	case SIGBUS: return "Bus Error";
+	case SIGFPE: return "Floating point exception";
+	case SIGKILL: return "Killed";
+	case SIGUSR1: return "User defined signal 1";
+	case SIGSEGV: return "Segmentation fault";
+	case SIGUSR2: return "User defined signal 2";
+	case SIGPIPE: return "Broken pipe";
+	case SIGALRM: return "Alarm clock";
+	case SIGTERM: return "Terminated";
+	case SIGSYS: return "Bad system call";
+	case SIGCHLD: return "Child exited";
+	case SIGCONT: return "Continued";
+	case SIGSTOP: return "Stopped (signal)";
+	case SIGTSTP: return "Stopped";
+	case SIGTTIN: return "Stopped (tty input)";
+	case SIGTTOU: return "Stopped (tty output)";
+	case SIGURG: return "Urgent I/O condition";
+	case SIGXCPU: return "CPU time limit exceeded";
+	case SIGXFSZ: return "File size limit exceeded";
+	case SIGVTALRM: return "Virtual timer expired";
+	case SIGPWR: return "Power Fail/Restart";
+	case SIGWINCH: return "Window changed";
+	default: break;
 	}
+
+	if ( SIGRTMIN <= signum && signum <= SIGRTMAX )
+		return "Real-time signal";
+
+	return "Unknown signal value";
 }
 
 extern "C" char* strsignal(int signum)

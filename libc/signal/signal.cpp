@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -18,38 +18,35 @@
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
     signal/signal.cpp
-    Handles the good old unix signals.
+    Configure and retrieve a signal handler.
 
 *******************************************************************************/
 
-#include <sys/types.h>
-#include <sys/syscall.h>
-
 #include <signal.h>
+#include <string.h>
 
-const int MAX_SIGNALS = 128;
-sighandler_t handlers[MAX_SIGNALS];
-
-extern "C" void SignalHandlerAssembly(int signum);
-extern "C" void SignalHandler(int signum)
+extern "C" void (*signal(int signum, void (*handler)(int)))(int)
 {
-	if ( 0 <= signum && signum < (int) MAX_SIGNALS )
-		handlers[signum](signum);
-}
+	// Create a structure describing the new handler.
+	struct sigaction newact;
+	memset(&newact, 0, sizeof(newact));
+	sigemptyset(&newact.sa_mask);
+	newact.sa_handler = handler;
+	newact.sa_flags = SA_RESTART;
 
-DEFN_SYSCALL1(int, sys_register_signal_handler, SYSCALL_REGISTER_SIGNAL_HANDLER, sighandler_t);
+	// Register the new handler and atomically get the old.
+	struct sigaction oldact;
+	if ( sigaction(signum, &newact, &oldact) != 0 )
+		return SIG_ERR;
 
-extern "C" void init_signal()
-{
-	for ( int i = 0; i < MAX_SIGNALS; i++ )
-		handlers[i] = SIG_DFL;
+	// We can't return the old handler properly if it's SA_SIGINFO or SA_COOKIE,
+	// unless it's the common SIG_IGN or SIG_DFL handlers. Let's just say to the
+	// caller that it's SIG_DFL and assume that they'll be using sigaction
+	// instead if they wish to restore an old handler.
+	if ( (oldact.sa_flags & (SA_SIGINFO | SA_COOKIE)) &&
+	     oldact.sa_handler != SIG_IGN &&
+	     oldact.sa_handler != SIG_DFL )
+		return SIG_DFL;
 
-	// Tell the kernel which function we want called upon signals.
-	sys_register_signal_handler(&SignalHandlerAssembly);
-}
-
-extern "C" sighandler_t signal(int signum, sighandler_t handler)
-{
-	if ( signum < 0 || MAX_SIGNALS <= signum ) { return SIG_ERR; }
-	return handlers[signum] = handler;
+	return oldact.sa_handler;
 }

@@ -56,13 +56,9 @@ void pthread_exit(void* return_value)
 	thread->keys_length = 0;
 	pthread_mutex_unlock(&__pthread_keys_lock);
 
-	pthread_mutex_lock(&__pthread_num_threads_lock);
-	size_t num_threads = __pthread_num_threads--;
-	pthread_mutex_unlock(&__pthread_num_threads_lock);
-	if ( num_threads == 1 )
-		exit(0);
 	pthread_mutex_lock(&thread->detach_lock);
 	thread->exit_result = return_value;
+	int exit_flags = EXIT_THREAD_UNMAP;
 	struct exit_thread extended;
 	memset(&extended, 0, sizeof(extended));
 	extended.unmap_from = thread->uthread.stack_mmap;
@@ -71,13 +67,15 @@ void pthread_exit(void* return_value)
 	{
 		extended.zero_from = &thread->join_lock.lock;
 		extended.zero_size = sizeof(thread->join_lock.lock);
-		exit_thread(0, EXIT_THREAD_UNMAP | EXIT_THREAD_ZERO, &extended);
-		__builtin_unreachable();
+		exit_flags |= EXIT_THREAD_ZERO;
 	}
 	else
 	{
-		munmap(thread->uthread.tls_mmap, thread->uthread.tls_size);
-		exit_thread(0, EXIT_THREAD_UNMAP, &extended);
-		__builtin_unreachable();
+		extended.tls_unmap_from = thread->uthread.tls_mmap;
+		extended.tls_unmap_size = thread->uthread.tls_size;
+		exit_flags |= EXIT_THREAD_TLS_UNMAP;
 	}
+
+	exit_thread(0, EXIT_THREAD_ONLY_IF_OTHERS | exit_flags, &extended);
+	exit(0);
 }

@@ -117,43 +117,4 @@ void SetupKernelThreadRegs(CPU::InterruptRegisters* regs, ThreadEntry entry,
 	regs->signal_pending = 0;
 }
 
-void Thread::HandleSignalFixupRegsCPU(CPU::InterruptRegisters* regs)
-{
-	if ( regs->InUserspace() )
-		return;
-	regs->rip = regs->rdi;
-	regs->rflags = regs->rsi;
-	regs->rsp = regs->r8;
-	regs->cs = UCS | URPL;
-	regs->ds = UDS | URPL;
-	regs->ss = UDS | URPL;
-}
-
-void Thread::HandleSignalCPU(CPU::InterruptRegisters* regs)
-{
-	const size_t STACK_ALIGNMENT = 16UL;
-	const size_t RED_ZONE_SIZE = 128UL;
-	regs->rsp -= RED_ZONE_SIZE;
-	regs->rsp &= ~(STACK_ALIGNMENT-1UL);
-	regs->rbp = regs->rsp;
-	regs->rdi = currentsignal;
-	regs->rip = (size_t) sighandler;
-	regs->rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
-	regs->kerrno = 0;
-	regs->signal_pending = 0;
-}
-
-void Thread::GotoOnSigKill(CPU::InterruptRegisters* regs)
-{
-	regs->rip = (unsigned long) Thread__OnSigKill;
-	regs->rdi = (unsigned long) this;
-	regs->rsp = regs->rbp = kernelstackpos + kernelstacksize;
-	regs->rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
-	regs->cs = KCS | KRPL;
-	regs->ds = KDS | KRPL;
-	regs->ss = KDS | KRPL;
-	regs->kerrno = 0;
-	regs->signal_pending = 0;
-}
-
 } // namespace Sortix

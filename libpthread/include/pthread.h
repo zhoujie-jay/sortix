@@ -181,8 +181,6 @@ extern pthread_mutex_t __pthread_keys_lock;
 extern struct pthread_key* __pthread_keys;
 extern size_t __pthread_keys_used;
 extern size_t __pthread_keys_length;
-extern pthread_mutex_t __pthread_num_threads_lock;
-extern size_t __pthread_num_threads;
 
 struct pthread* pthread_allocate_tls(void);
 

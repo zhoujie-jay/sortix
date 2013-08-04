@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,15 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    signal/SIG_ERR.cpp
-    Abort on signal.
+    signal/sigpending.cpp
+    Get the set of pending signals.
 
 *******************************************************************************/
 
-#include <signal.h>
-#include <stdlib.h>
+#include <sys/syscall.h>
 
-extern "C" void SIG_ERR(int /*signum*/)
+#include <signal.h>
+
+DEFN_SYSCALL1(int, sys_sigpending, SYSCALL_SIGPENDING, sigset_t*);
+
+extern "C" int sigpending(sigset_t* set)
 {
-	abort();
+	return sys_sigpending(set);
 }

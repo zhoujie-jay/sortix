@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -17,13 +17,13 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    sortix/exit.h
-    Flags and constants related to process and thread exiting.
+    sortix/stack.h
+    Declares stack_t and associated flags.
 
 *******************************************************************************/
 
-#ifndef INCLUDE_SORTIX_EXIT_H
-#define INCLUDE_SORTIX_EXIT_H
+#ifndef INCLUDE_SORTIX_STACK_H
+#define INCLUDE_SORTIX_STACK_H
 
 #include <sys/cdefs.h>
 
@@ -37,23 +37,17 @@ __BEGIN_DECLS
 #include <stddef.h>
 #endif
 
-struct exit_thread
-{
-	void* unmap_from;
-	size_t unmap_size;
-	void* zero_from;
-	size_t zero_size;
-	void* tls_unmap_from;
-	size_t tls_unmap_size;
-	unsigned long reserved[2];
-};
+#define SS_ONSTACK (1<<0)
+#define SS_DISABLE (1<<1)
 
-#define EXIT_THREAD_ONLY_IF_OTHERS (1<<0)
-#define EXIT_THREAD_UNMAP (1<<1)
-#define EXIT_THREAD_ZERO (1<<2)
-#define EXIT_THREAD_TLS_UNMAP (1<<3)
-#define EXIT_THREAD_PROCESS (1<<4)
-#define EXIT_THREAD_DUMP_CORE (1<<5)
+#define __SS_SUPPORTED_FLAGS (SS_ONSTACK | SS_DISABLE)
+
+typedef struct
+{
+	void* ss_sp;
+	size_t ss_size;
+	int ss_flags;
+} stack_t;
 
 __END_DECLS
 

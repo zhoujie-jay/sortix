@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014
 
     This file is part of the Sortix C Library.
 
@@ -22,13 +22,13 @@
 
 *******************************************************************************/
 
-#include <sys/syscall.h>
-#include <unistd.h>
+#include <sys/wait.h>
 
-DEFN_SYSCALL1(int, sys_exit, SYSCALL_EXIT, int);
+#include <unistd.h>
 
 extern "C" void _exit(int status)
 {
-	sys_exit(status);
+	int exit_code = WCONSTRUCT(WNATURE_EXITED, status, 0);
+	exit_thread(exit_code, EXIT_THREAD_PROCESS, NULL);
 	__builtin_unreachable();
 }

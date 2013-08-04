@@ -46,6 +46,16 @@ Obsolescent in POSIX and scheduled for Sortix removal
 * ctime, ctime_r are scheduled for removal (obsolescent in POSIX).
 * utime, <utime.h> are scheduled for removal (obsolescent in POSIX).
 
+Signal Stacks
+-------------
+
+Threads are able to set a recursive signal handling stack using sigaltstack(2)
+even if SS_ONSTACK is currently set - while POSIX mandates EPERM in this case.
+Such a stack will be used for recursive signals (with SA_ONSTACK set) for the
+duration of the signal handler. The original signal stack state will be restored
+when the signal handler returns, any edit with sigaltstack will be temporary
+(unless the saved ucontext is modified).
+
 Timestamps
 ----------
 

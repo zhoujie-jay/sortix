@@ -22,10 +22,13 @@
 
 *******************************************************************************/
 
+#include <sys/wait.h>
+
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <msr.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -99,6 +102,7 @@ Process::Process()
 	grouplimbo = false;
 	firstthread = NULL;
 	threadlock = KTHREAD_MUTEX_INITIALIZER;
+	threads_exiting = false;
 	ptrlock = KTHREAD_MUTEX_INITIALIZER;
 	idlock = KTHREAD_MUTEX_INITIALIZER;
 	user_timers_lock = KTHREAD_MUTEX_INITIALIZER;
@@ -107,7 +111,7 @@ Process::Process()
 	segments_used = 0;
 	segments_length = 0;
 	segment_lock = KTHREAD_MUTEX_INITIALIZER;
-	exitstatus = -1;
+	exit_code = -1;
 	pid = AllocatePID();
 	uid = euid = 0;
 	gid = egid = 0;
@@ -115,6 +119,16 @@ Process::Process()
 	nicelock = KTHREAD_MUTEX_INITIALIZER;
 	nice = 0;
 	resource_limits_lock = KTHREAD_MUTEX_INITIALIZER;
+	signal_lock = KTHREAD_MUTEX_INITIALIZER;
+	sigemptyset(&signal_pending);
+	memset(&signal_actions, 0, sizeof(signal_actions));
+	for ( int i = 0; i < SIG_MAX_NUM; i++ )
+	{
+		sigemptyset(&signal_actions[i].sa_mask);
+		signal_actions[i].sa_handler = SIG_DFL;
+		signal_actions[i].sa_cookie = NULL;
+		signal_actions[i].sa_flags = 0;
+	}
 	for ( size_t i = 0; i < RLIMIT_NUM_DECLARED; i++ )
 	{
 		resource_limits[i].rlim_cur = RLIM_INFINITY;
@@ -415,7 +429,7 @@ void Process::NotifyChildExit(Process* child, bool zombify)
 void Process::NotifyNewZombies()
 {
 	ScopedLock lock(&childlock);
-	// TODO: Send SIGCHLD here?
+	DeliverSignal(SIGCHLD);
 	if ( zombiewaiting )
 		kthread_cond_broadcast(&zombiecond);
 }
@@ -481,9 +495,9 @@ pid_t Process::Wait(pid_t thepid, int* user_status, int options)
 	child_execute_clock.Advance(zombie->child_execute_clock.current_time);
 	child_system_clock.Advance(zombie->child_system_clock.current_time);
 
-	int status = zombie->exitstatus;
+	int status = zombie->exit_code;
 	if ( status < 0 )
-		status = W_EXITCODE(128 + SIGKILL, SIGKILL);
+		status = WCONSTRUCT(WNATURE_SIGNALED, 128 + SIGKILL, SIGKILL);
 
 	kthread_mutex_lock(&zombie->groupparentlock);
 	bool in_limbo = zombie->groupfirst && (zombie->grouplimbo = true);
@@ -504,12 +518,16 @@ static pid_t sys_waitpid(pid_t pid, int* user_status, int options)
 	return CurrentProcess()->Wait(pid, user_status, options);
 }
 
-void Process::Exit(int status)
+void Process::ExitThroughSignal(int signal)
+{
+	ExitWithCode(WCONSTRUCT(WNATURE_SIGNALED, 128 + signal, signal));
+}
+
+void Process::ExitWithCode(int requested_exit_code)
 {
 	ScopedLock lock(&threadlock);
-	// Status codes can only contain 8 bits according to ISO C and POSIX.
-	if ( exitstatus == -1 )
-		exitstatus = W_EXITCODE(status & 0xFF, 0);
+	if ( exit_code == -1 )
+		exit_code = requested_exit_code;
 
 	// Broadcast SIGKILL to all our threads which will begin our long path
 	// of process termination. We simply can't stop the threads as they may
@@ -517,30 +535,6 @@ void Process::Exit(int status)
 	// destroyed by SIGKILL once the system call returns.
 	for ( Thread* t = firstthread; t; t = t->nextsibling )
 		t->DeliverSignal(SIGKILL);
-}
-
-static int sys_exit(int status)
-{
-	CurrentProcess()->Exit(status);
-	return 0;
-}
-
-bool Process::DeliverSignal(int signum)
-{
-	// TODO: How to handle signals that kill the process?
-	if ( firstthread )
-		return firstthread->DeliverSignal(signum);
-	return errno = EINIT, false;
-}
-
-bool Process::DeliverGroupSignal(int signum)
-{
-	ScopedLock lock(&groupparentlock);
-	if ( !groupfirst )
-		return errno = ESRCH, false;
-	for ( Process* iter = groupfirst; iter; iter = iter->groupnext )
-		iter->DeliverSignal(signum);
-	return true;
 }
 
 void Process::AddChildProcess(Process* child)
@@ -740,6 +734,21 @@ void Process::ResetForExecute()
 
 	DeleteTimers();
 
+	for ( int i = 0; i < SIG_MAX_NUM; i++ )
+	{
+		signal_actions[i].sa_flags = 0;
+		if ( signal_actions[i].sa_handler == SIG_DFL )
+			continue;
+		if ( signal_actions[i].sa_handler == SIG_IGN )
+			continue;
+		signal_actions[i].sa_handler = SIG_DFL;
+	}
+
+	sigreturn = NULL;
+	stack_t* signal_stack = &CurrentThread()->signal_stack;
+	memset(signal_stack, 0, sizeof(*signal_stack));
+	signal_stack->ss_flags = SS_DISABLE;
+
 	ResetAddressSpace();
 }
 
@@ -833,6 +842,10 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	int tls_prot = PROT_READ | PROT_WRITE | PROT_KREAD | PROT_KWRITE | PROT_FORK;
 	void* tls_hint = stack_hint;
 
+	size_t auxcode_size = Page::Size();
+	int auxcode_prot = PROT_EXEC | PROT_READ | PROT_KREAD | PROT_KWRITE | PROT_FORK;
+	void* auxcode_hint = stack_hint;
+
 	size_t arg_size = 0;
 
 	size_t argv_size = sizeof(char*) * (argc + 1);
@@ -850,13 +863,15 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	struct segment stack_segment;
 	struct segment raw_tls_segment;
 	struct segment tls_segment;
+	struct segment auxcode_segment;
 
 	kthread_mutex_lock(&segment_lock);
 
 	if ( !(MapSegment(&arg_segment, stack_hint, arg_size, 0, stack_prot) &&
 	       MapSegment(&stack_segment, stack_hint, stack_size, 0, stack_prot) &&
 	       MapSegment(&raw_tls_segment, raw_tls_hint, raw_tls_size, 0, raw_tls_prot) &&
-	       MapSegment(&tls_segment, tls_hint, tls_size, 0, tls_prot)) )
+	       MapSegment(&tls_segment, tls_hint, tls_size, 0, tls_prot) &&
+	       MapSegment(&auxcode_segment, auxcode_hint, auxcode_size, 0, auxcode_prot)) )
 	{
 		kthread_mutex_unlock(&segment_lock);
 		ResetForExecute();
@@ -924,6 +939,20 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	GDT::SetGSBase((uint32_t) uthread);
 #elif defined(__x86_64__)
 	wrmsr(MSRID_FSBASE, (uint64_t) uthread);
+#endif
+
+	uint8_t* auxcode = (uint8_t*) auxcode_segment.addr;
+#if defined(__i386__)
+	sigreturn = (void (*)(void)) &auxcode[0];
+	auxcode[0] = 0xCD; /* int .... */
+	auxcode[1] = 0x83; /* ... $131 */
+#elif defined(__x86_64__)
+	sigreturn = (void (*)(void)) &auxcode[0];
+	auxcode[0] = 0xCD; /* int .... */
+	auxcode[1] = 0x83; /* ... $131 */
+#else
+	(void) auxcode;
+	#warning "You need to initialize auxcode with a sigreturn routine"
 #endif
 
 	dtable->OnExecute();
@@ -1076,9 +1105,9 @@ cleanup_done:
 	return result;
 }
 
-static pid_t sys_tfork(int flags, tforkregs_t* user_regs)
+static pid_t sys_tfork(int flags, struct tfork* user_regs)
 {
-	tforkregs_t regs;
+	struct tfork regs;
 	if ( !CopyFromUser(&regs, user_regs, sizeof(regs)) )
 		return -1;
 
@@ -1091,6 +1120,9 @@ static pid_t sys_tfork(int flags, tforkregs_t* user_regs)
 	// TODO: Properly support tfork(2).
 	if ( !(making_thread || making_process) )
 		return errno = ENOSYS, -1;
+
+	if ( regs.altstack.ss_flags & ~__SS_SUPPORTED_FLAGS )
+		return errno = EINVAL, -1;
 
 	CPU::InterruptRegisters cpuregs;
 	InitializeThreadRegisters(&cpuregs, &regs);
@@ -1124,7 +1156,8 @@ static pid_t sys_tfork(int flags, tforkregs_t* user_regs)
 	thread->kernelstackpos = (addr_t) newkernelstack;
 	thread->kernelstacksize = curthread->kernelstacksize;
 	thread->kernelstackmalloced = true;
-	thread->sighandler = curthread->sighandler;
+	memcpy(&thread->signal_mask, &regs.sigmask, sizeof(sigset_t));
+	memcpy(&thread->signal_stack, &regs.altstack, sizeof(stack_t));
 
 	StartKernelThread(thread);
 
@@ -1231,23 +1264,6 @@ pid_t Process::AllocatePID()
 {
 	ScopedLock lock(&pidalloclock);
 	return nextpidtoallocate++;
-}
-
-// TODO: This is not thread safe.
-pid_t Process::HackGetForegroundProcess()
-{
-	for ( pid_t i = nextpidtoallocate; 1 <= i; i-- )
-	{
-		Process* process = Get(i);
-		if ( !process )
-			continue;
-		if ( process->pid <= 1 )
-			continue;
-		if ( process->iszombie )
-			continue;
-		return i;
-	}
-	return 0;
 }
 
 int ProcessCompare(Process* a, Process* b)
@@ -1375,7 +1391,6 @@ static mode_t sys_getumask(void)
 void Process::Init()
 {
 	Syscall::Register(SYSCALL_EXECVE, (void*) sys_execve);
-	Syscall::Register(SYSCALL_EXIT, (void*) sys_exit);
 	Syscall::Register(SYSCALL_GETPAGESIZE, (void*) sys_getpagesize);
 	Syscall::Register(SYSCALL_GETPGID, (void*) sys_getpgid);
 	Syscall::Register(SYSCALL_GETPID, (void*) sys_getpid);
