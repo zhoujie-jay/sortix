@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -29,17 +29,17 @@ static const char* dlerrormsg = NULL;
 
 extern "C" void* dlopen(const char* filename, int mode)
 {
+	(void) filename;
 	(void) mode;
 	dlerrormsg = "Sortix does not yet support dynamic linking";
-	fprintf(stderr, "%s: loading file: %s\n", dlerrormsg, filename);
 	return NULL;
 }
 
 extern "C" void* dlsym(void* handle, const char* name)
 {
 	(void) handle;
+	(void) name;
 	dlerrormsg = "Sortix does not yet support dynamic linking";
-	fprintf(stderr, "%s: resolving symbol: %s\n", dlerrormsg, name);
 	return NULL;
 }
 
