@@ -176,6 +176,12 @@ namespace Sortix
 			*size = VIRTUAL_AREA_UPPER - VIRTUAL_AREA_LOWER;
 		}
 
+		void GetUserVirtualArea(uintptr_t* from, size_t* size)
+		{
+			*from = 0x400000; // 4 MiB.
+			*size = 0x80000000 - *from; // 2 GiB - 4 MiB.
+		}
+
 		addr_t GetKernelStack()
 		{
 			return KERNEL_STACK_START;

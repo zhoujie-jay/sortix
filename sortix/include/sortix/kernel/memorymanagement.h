@@ -83,6 +83,7 @@ namespace Sortix
 		addr_t GetKernelStack();
 		size_t GetKernelStackSize();
 		void GetKernelVirtualArea(addr_t* from, size_t* size);
+		void GetUserVirtualArea(uintptr_t* from, size_t* size);
 	}
 }
 
