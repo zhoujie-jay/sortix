@@ -17,27 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    sys/mman.h
-    Memory management declarations.
+    sys/mman/munmap.cpp
+    Unmaps a memory region.
 
 *******************************************************************************/
 
-#ifndef INCLUDE_SYS_MMAN_H
-#define INCLUDE_SYS_MMAN_H
+#include <sys/mman.h>
+#include <sys/syscall.h>
 
-#include <features.h>
-#include <sortix/mman.h>
+DEFN_SYSCALL2(int, sys_munmap, SYSCALL_MUNMAP, void*, size_t);
 
-__BEGIN_DECLS
-
-@include(mode_t.h)
-@include(off_t.h)
-@include(size_t.h)
-
-void* mmap(void*, size_t, int, int, int, off_t);
-int mprotect(const void*, size_t, int);
-int munmap(void*, size_t);
-
-__END_DECLS
-
-#endif
+extern "C" int munmap(void* addr, size_t size)
+{
+	return sys_munmap(addr, size);
+}

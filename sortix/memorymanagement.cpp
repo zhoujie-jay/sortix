@@ -31,7 +31,11 @@
 #include <string.h>
 
 #include <sortix/mman.h>
+#include <sortix/seek.h>
 
+#include <sortix/kernel/copy.h>
+#include <sortix/kernel/descriptor.h>
+#include <sortix/kernel/ioctx.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/process.h>
@@ -94,6 +98,7 @@ void UnmapMemory(Process* process, uintptr_t addr, size_t size)
 			struct segment right_segment;
 			right_segment.addr = addr + size;
 			right_segment.size = conflict->addr + conflict->size - (addr + size);
+			right_segment.prot = conflict->prot;
 			conflict->size = addr - conflict->addr;
 			// TODO: This shouldn't really fail as we free memory above, but
 			//       this code isn't really provably reliable.
@@ -246,6 +251,189 @@ bool MapMemory(Process* process, uintptr_t addr, size_t size, int prot)
 	return true;
 }
 
+const int USER_SETTABLE_PROT = PROT_USER | PROT_HEAP;
+const int UNDERSTOOD_MMAP_FLAGS = MAP_SHARED |
+                                  MAP_PRIVATE |
+                                  MAP_ANONYMOUS |
+                                  MAP_FIXED;
+
+static
+void* sys_mmap(void* addr_ptr, size_t size, int prot, int flags, int fd,
+               off_t offset)
+{
+	// Verify that that the address is suitable aligned if fixed.
+	uintptr_t addr = (uintptr_t) addr_ptr;
+	if ( flags & MAP_FIXED && !Page::IsAligned(addr) )
+		return errno = EINVAL, MAP_FAILED;
+	// We don't allow zero-size mappings.
+	if ( size == 0 )
+		return errno = EINVAL, MAP_FAILED;
+	// Verify that the user didn't request permissions not allowed.
+	if ( prot & ~USER_SETTABLE_PROT )
+		return errno = EINVAL, MAP_FAILED;
+	// Verify that we understand all the flags we were passed.
+	if ( flags & ~UNDERSTOOD_MMAP_FLAGS )
+		return errno = EINVAL, MAP_FAILED;
+	// Verify that MAP_PRIVATE and MAP_SHARED are not both set.
+	if ( bool(flags & MAP_PRIVATE) == bool(flags & MAP_SHARED) )
+		return errno = EINVAL, MAP_FAILED;
+	// TODO: MAP_SHARED is not currently supported.
+	if ( flags & MAP_SHARED )
+		return errno = EINVAL, MAP_FAILED;
+	// Verify the fíle descriptor and the offset is suitable set if needed.
+	if ( !(flags & MAP_ANONYMOUS) &&
+	     (fd < 0 || offset < 0 || (offset & (Page::Size()-1))) )
+		return errno = EINVAL, MAP_FAILED;
+
+	uintptr_t aligned_addr = Page::AlignDown(addr);
+	uintptr_t aligned_size = Page::AlignUp(size);
+
+	// Pick a good location near the end of user-space if no hint is given.
+	if ( !(flags & MAP_FIXED) && !aligned_addr )
+	{
+		uintptr_t userspace_addr;
+		size_t userspace_size;
+		Memory::GetUserVirtualArea(&userspace_addr, &userspace_size);
+		addr = aligned_addr =
+			Page::AlignDown(userspace_addr + userspace_size - aligned_size);
+	}
+
+	// Verify that the offset + size doesn't overflow.
+	if ( !(flags & MAP_ANONYMOUS) &&
+	     (uintmax_t) (OFF_MAX - offset) < (uintmax_t) aligned_size )
+		return errno = EOVERFLOW, MAP_FAILED;
+
+	Process* process = CurrentProcess();
+
+	// Verify whether the backing file is usable for memory mapping.
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	Ref<Descriptor> desc;
+	if ( !(flags & MAP_ANONYMOUS) )
+	{
+		if ( !(desc = process->GetDescriptor(fd)) )
+			return MAP_FAILED;
+		// Verify that the file is seekable.
+		if ( desc->lseek(&ctx, 0, SEEK_CUR) < 0 )
+			return errno = ENODEV, MAP_FAILED;
+		// Verify that we have read access to the file.
+		if ( desc->read(&ctx, NULL, 0) != 0 )
+			return errno = EACCES, MAP_FAILED;
+		// Verify that we have write access to the file if needed.
+		if ( (prot & PROT_WRITE) && !(flags & MAP_PRIVATE) &&
+		     desc->write(&ctx, NULL, 0) != 0 )
+			return errno = EACCES, MAP_FAILED;
+	}
+
+	ScopedLock lock(&process->segment_lock);
+
+	// Determine where to put the new segment and its protection.
+	struct segment new_segment;
+	if ( flags & MAP_FIXED )
+		new_segment.addr = aligned_addr, new_segment.size = aligned_size;
+	else if ( !PlaceSegment(&new_segment, process, (void*) addr, aligned_size, flags) )
+		return errno = ENOMEM, MAP_FAILED;
+	new_segment.prot = prot | PROT_KREAD | PROT_KWRITE | PROT_FORK;
+
+	// Allocate a memory segment with the desired properties.
+	if ( !MapMemory(process, new_segment.addr, new_segment.size, new_segment.prot) )
+		return MAP_FAILED;
+
+	// Read the file contents into the newly allocated memory.
+	if ( !(flags & MAP_ANONYMOUS) )
+	{
+		for ( size_t so_far = 0; so_far < aligned_size; )
+		{
+			uint8_t* ptr = (uint8_t*) (new_segment.addr + so_far);
+			size_t left = aligned_size - so_far;
+			off_t pos = offset + so_far;
+			ssize_t num_bytes = desc->pread(&ctx, ptr, left, pos);
+			if ( num_bytes < 0 )
+			{
+				// TODO: How should this situation be handled? For now we'll
+				//       just ignore the error condition.
+				errno = 0;
+				break;
+			}
+			if ( !num_bytes )
+			{
+				// We got an unexpected early end-of-file condition, but that's
+				// alright as the MapMemory call zero'd the new memory and we
+				// are expected to zero the remainder.
+				break;
+			}
+			so_far += num_bytes;
+		}
+	}
+
+	return (void*) new_segment.addr;
+}
+
+static int sys_mprotect(const void* addr_ptr, size_t size, int prot)
+{
+	// Verify that that the address is suitable aligned.
+	uintptr_t addr = (uintptr_t) addr_ptr;
+	if ( !Page::IsAligned(addr) )
+		return errno = EINVAL, -1;
+	// Verify that the user didn't request permissions not allowed.
+	if ( prot & ~USER_SETTABLE_PROT )
+		return errno = EINVAL, -1;
+
+	size = Page::AlignUp(size);
+	prot |= PROT_KREAD | PROT_KWRITE | PROT_FORK;
+
+	Process* process = CurrentProcess();
+	ScopedLock lock(&process->segment_lock);
+
+	if ( !ProtectMemory(process, addr, size, prot) )
+		return -1;
+
+	return 0;
+}
+
+static int sys_munmap(void* addr_ptr, size_t size)
+{
+	// Verify that that the address is suitable aligned.
+	uintptr_t addr = (uintptr_t) addr_ptr;
+	if ( !Page::IsAligned(addr) )
+		return errno = EINVAL, -1;
+	// We don't allow zero-size unmappings.
+	if ( size == 0 )
+		return errno = EINVAL, -1;
+
+	size = Page::AlignUp(size);
+
+	Process* process = CurrentProcess();
+	ScopedLock lock(&process->segment_lock);
+
+	UnmapMemory(process, addr, size);
+
+	return 0;
+}
+
+// TODO: We use a wrapper system call here because there are too many parameters
+//       to mmap for some platforms. We should extend the system call ABI so we
+//       can do system calls with huge parameter lists and huge return values
+//       portably - then we'll make sys_mmap use this mechanism if needed.
+
+struct mmap_request /* duplicated in libc/sys/mman/mmap.cpp */
+{
+	void* addr;
+	size_t size;
+	int prot;
+	int flags;
+	int fd;
+	off_t offset;
+};
+
+static void* sys_mmap_wrapper(struct mmap_request* user_request)
+{
+	struct mmap_request request;
+	if ( !CopyFromUser(&request, user_request, sizeof(request)) )
+		return MAP_FAILED;
+	return sys_mmap(request.addr, request.size, request.prot, request.flags,
+	                request.fd, request.offset);
+}
+
 void InitCPU(multiboot_info_t* bootinfo);
 
 void Init(multiboot_info_t* bootinfo)
@@ -253,6 +441,9 @@ void Init(multiboot_info_t* bootinfo)
 	InitCPU(bootinfo);
 
 	Syscall::Register(SYSCALL_MEMSTAT, (void*) sys_memstat);
+	Syscall::Register(SYSCALL_MMAP_WRAPPER, (void*) sys_mmap_wrapper);
+	Syscall::Register(SYSCALL_MPROTECT, (void*) sys_mprotect);
+	Syscall::Register(SYSCALL_MUNMAP, (void*) sys_munmap);
 }
 
 } // namespace Memory

@@ -137,6 +137,9 @@
 #define SYSCALL_SETPGID 113
 #define SYSCALL_TCGETPGRP 114
 #define SYSCALL_TCSETPGRP 115
-#define SYSCALL_MAX_NUM 116 /* index of highest constant + 1 */
+#define SYSCALL_MMAP_WRAPPER 116
+#define SYSCALL_MPROTECT 117
+#define SYSCALL_MUNMAP 118
+#define SYSCALL_MAX_NUM 119 /* index of highest constant + 1 */
 
 #endif
