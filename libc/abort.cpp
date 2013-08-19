@@ -24,8 +24,22 @@
 
 #include <stdlib.h>
 
+#if defined(SORTIX_KERNEL)
+
+#include <sortix/kernel/platform.h>
+#include <sortix/kernel/panic.h>
+
+extern "C" void abort(void)
+{
+	Sortix::PanicF("abort()");
+}
+
+#else
+
 extern "C" void abort(void)
 {
 	// TODO: Send SIGABRT instead!
 	_Exit(128 + 6);
 }
+
+#endif
