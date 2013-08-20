@@ -117,6 +117,7 @@ poll.o \
 process.o \
 refcount.o \
 scheduler.o \
+segment.o \
 serialterminal.o \
 signal.o \
 sound.o \

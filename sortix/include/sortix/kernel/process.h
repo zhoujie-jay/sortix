@@ -30,6 +30,7 @@
 #include <sortix/kernel/clock.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/refcount.h>
+#include <sortix/kernel/segment.h>
 #include <sortix/kernel/time.h>
 #include <sortix/kernel/timer.h>
 #include <sortix/kernel/user-timer.h>
@@ -49,30 +50,6 @@ struct ProcessTimer;
 struct ioctx_struct;
 typedef struct ioctx_struct ioctx_t;
 struct Symbol;
-
-const int SEG_NONE = 0;
-const int SEG_TEXT = 1;
-const int SEG_DATA = 2;
-const int SEG_STACK = 3;
-const int SEG_OTHER = 4;
-
-struct ProcessSegment
-{
-public:
-	ProcessSegment() : prev(NULL), next(NULL) { }
-
-public:
-	ProcessSegment* prev;
-	ProcessSegment* next;
-	addr_t position;
-	size_t size;
-	int type;
-
-public:
-	bool Intersects(ProcessSegment* segments);
-	ProcessSegment* Fork();
-
-};
 
 class Process
 {
@@ -156,7 +133,10 @@ public:
 	kthread_mutex_t threadlock;
 
 public:
-	ProcessSegment* segments;
+	struct segment* segments;
+	size_t segments_used;
+	size_t segments_length;
+	kthread_mutex_t segment_lock;
 
 public:
 	kthread_mutex_t user_timers_lock;

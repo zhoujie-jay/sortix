@@ -25,6 +25,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <sortix/clock.h>
@@ -60,53 +61,6 @@
 
 namespace Sortix {
 
-bool ProcessSegment::Intersects(ProcessSegment* segments)
-{
-	for ( ProcessSegment* tmp = segments; tmp != NULL; tmp = tmp->next )
-	{
-		if ( tmp->position < position + size &&
-		     position < tmp->position + tmp->size )
-		{
-			return true;
-		}
-	}
-
-	if ( next ) { return next->Intersects(segments); }
-
-	return false;
-}
-
-ProcessSegment* ProcessSegment::Fork()
-{
-	ProcessSegment* nextclone = NULL;
-	if ( next )
-	{
-		nextclone = next->Fork();
-		if ( nextclone == NULL ) { return NULL; }
-	}
-
-	ProcessSegment* clone = new ProcessSegment();
-	if ( clone == NULL )
-	{
-		while ( nextclone != NULL )
-		{
-			ProcessSegment* todelete = nextclone;
-			nextclone = nextclone->next;
-			delete todelete;
-		}
-
-		return NULL;
-	}
-
-	if ( nextclone )
-		nextclone->prev = clone;
-	clone->next = nextclone;
-	clone->position = position;
-	clone->size = size;
-
-	return clone;
-}
-
 Process::Process()
 {
 	string_table = NULL;
@@ -140,6 +94,10 @@ Process::Process()
 	ptrlock = KTHREAD_MUTEX_INITIALIZER;
 	idlock = KTHREAD_MUTEX_INITIALIZER;
 	user_timers_lock = KTHREAD_MUTEX_INITIALIZER;
+	segments = NULL;
+	segments_used = 0;
+	segments_length = 0;
+	segment_lock = KTHREAD_MUTEX_INITIALIZER;
 	mmapfrom = 0x80000000UL;
 	exitstatus = -1;
 	pid = AllocatePID();
@@ -370,16 +328,17 @@ void Process::LastPrayer()
 
 void Process::ResetAddressSpace()
 {
-	assert(Memory::GetAddressSpace() == addrspace);
-	ProcessSegment* tmp = segments;
-	while ( tmp != NULL )
-	{
-		Memory::UnmapRange(tmp->position, tmp->size);
-		ProcessSegment* todelete = tmp;
-		tmp = tmp->next;
-		delete todelete;
-	}
+	ScopedLock lock(&segment_lock);
 
+	assert(Memory::GetAddressSpace() == addrspace);
+
+	for ( size_t i = 0; i < segments_used; i++ )
+		Memory::UnmapRange(segments[i].addr, segments[i].size);
+
+	Memory::Flush();
+
+	segments_used = segments_length = 0;
+	free(segments);
 	segments = NULL;
 }
 
@@ -645,34 +604,34 @@ Process* Process::Fork()
 	if ( !clone )
 		return NULL;
 
-	ProcessSegment* clonesegments = NULL;
+	struct segment* clone_segments = NULL;
 
 	// Fork the segment list.
 	if ( segments )
 	{
-		clonesegments = segments->Fork();
-		if ( clonesegments == NULL ) { delete clone; return NULL; }
+		size_t segments_size = sizeof(struct segment) * segments_used;
+		if ( !(clone_segments = (struct segment*) malloc(segments_size)) )
+		{
+			delete clone;
+			return NULL;
+		}
+		memcpy(clone_segments, segments, segments_size);
 	}
 
 	// Fork address-space here and copy memory.
 	clone->addrspace = Memory::Fork();
 	if ( !clone->addrspace )
 	{
-		// Delete the segment list, since they are currently bogus.
-		ProcessSegment* tmp = clonesegments;
-		while ( tmp != NULL )
-		{
-			ProcessSegment* todelete = tmp;
-			tmp = tmp->next;
-			delete todelete;
-		}
-
-		delete clone; return NULL;
+		free(clone_segments);
+		delete clone;
+		return NULL;
 	}
 
 	// Now it's too late to clean up here, if anything goes wrong, we simply
 	// ask the process to commit suicide before it goes live.
-	clone->segments = clonesegments;
+	clone->segments = clone_segments;
+	clone->segments_used = segments_used;
+	clone->segments_length = segments_used;
 
 	// Remember the relation to the child process.
 	AddChildProcess(clone);
@@ -759,8 +718,6 @@ Process* Process::Fork()
 
 void Process::ResetForExecute()
 {
-	// TODO: Delete all threads and their stacks.
-
 	string_table_length = 0;
 	symbol_table_length = 0;
 	delete[] string_table; string_table = NULL;
@@ -1145,48 +1102,60 @@ void Process::Remove(Process* process)
 	pidlist->Remove(index);
 }
 
-void* sys_sbrk(intptr_t increment)
+static void* sys_sbrk(intptr_t increment)
 {
 	Process* process = CurrentProcess();
-	ProcessSegment* dataseg = NULL;
-	for ( ProcessSegment* iter = process->segments; iter; iter = iter->next )
+	ScopedLock lock(&process->segment_lock);
+
+	// Locate the heap segment.
+	struct segment* heap_segment = NULL;
+	for ( size_t i = process->segments_used; !heap_segment && i != 0; i-- )
 	{
-		if ( !iter->type == SEG_DATA )
+		struct segment* candidate = &process->segments[i-1];
+		if ( !(candidate->prot & PROT_HEAP) )
 			continue;
-		if ( dataseg && iter->position < dataseg->position )
-			continue;
-		dataseg = iter;
+		heap_segment = candidate;
 	}
-	if ( !dataseg )
+	if ( !heap_segment )
 		return errno = ENOMEM, (void*) -1UL;
-	addr_t currentend = dataseg->position + dataseg->size;
-	addr_t newend = currentend + increment;
-	if ( newend < dataseg->position )
-		return errno = EINVAL, (void*) -1UL;
-	if ( newend < currentend )
+
+	assert(IsUserspaceSegment(heap_segment));
+
+	// Decrease the size of the heap segment if requested.
+	if ( increment < 0 )
 	{
-		addr_t unmapfrom = Page::AlignUp(newend);
-		if ( unmapfrom < currentend )
-		{
-			size_t unmapbytes = Page::AlignUp(currentend - unmapfrom);
-			Memory::UnmapRange(unmapfrom, unmapbytes);
-		}
+		uintptr_t abs_amount = Page::AlignDown(- (uintptr_t) increment);
+		if ( heap_segment->size < abs_amount )
+			abs_amount = heap_segment->size;
+		uintptr_t new_end = heap_segment->addr + heap_segment->size - abs_amount;
+		Memory::UnmapRange(new_end, abs_amount);
+		heap_segment->size -= abs_amount;
+		// TODO: How do we handle that the heap shrinks to 0 bytes?
 	}
-	else if ( currentend < newend )
+
+	// Increase the size of the heap if requested.
+	if ( 0 < increment )
 	{
-		// TODO: HACK: Make a safer way of expanding the data segment
-		// without segments possibly colliding!
-		addr_t mapfrom = Page::AlignUp(currentend);
-		if ( mapfrom < newend )
-		{
-			size_t mapbytes = Page::AlignUp(newend - mapfrom);
-			int prot = PROT_FORK | PROT_READ | PROT_WRITE | PROT_KREAD | PROT_KWRITE;
-			if ( !Memory::MapRange(mapfrom, mapbytes, prot) )
-				return (void*) -1UL;
-		}
+		uintptr_t abs_amount = Page::AlignUp(increment);
+		uintptr_t max_growth = 0 - (heap_segment->addr + heap_segment->size);
+		if ( max_growth < abs_amount )
+			return errno = ENOMEM, (void*) -1UL;
+		struct segment growth;
+		growth.addr = heap_segment->addr + heap_segment->size;
+		growth.size = abs_amount;
+		growth.prot = heap_segment->prot;
+		if ( !IsUserspaceSegment(&growth) )
+			return errno = ENOMEM, (void*) -1UL;
+		if ( FindOverlappingSegment(process, &growth) )
+			return errno = ENOMEM, (void*) -1UL;
+		if ( !Memory::MapRange(growth.addr, growth.size, growth.prot) )
+			return errno = ENOMEM, (void*) -1UL;
+		heap_segment->size += growth.size;
 	}
-	dataseg->size += increment;
-	return (void*) newend;
+
+	assert(IsUserspaceSegment(heap_segment));
+
+	return (void*) (heap_segment->addr + heap_segment->size);
 }
 
 size_t sys_getpagesize()

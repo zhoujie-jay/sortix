@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <sortix/mman.h>
@@ -35,31 +36,13 @@
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/process.h>
+#include <sortix/kernel/segment.h>
 #include <sortix/kernel/symbol.h>
 
 #include "elf.h"
 
 namespace Sortix {
 namespace ELF {
-
-static int ToProgramSectionType(int flags)
-{
-	switch ( flags & (PF_X | PF_R | PF_W) )
-	{
-		case 0:
-			return SEG_NONE;
-		case PF_X:
-		case PF_X | PF_R:
-		case PF_X | PF_W:
-		case PF_X | PF_R | PF_W:
-			return SEG_TEXT;
-		case PF_R:
-		case PF_W:
-		case PF_R | PF_W:
-		default:
-			return SEG_DATA;
-	}
-}
 
 // TODO: This code doesn't respect that the size of program headers and section
 //       headers may vary depending on the ELF header and that using a simple
@@ -114,34 +97,47 @@ addr_t Construct32(Process* process, const uint8_t* file, size_t filelen)
 		assert(pht->offset + pht->filesize < filelen);
 		assert(pht->filesize <= pht->memorysize);
 
-		ProcessSegment* segment = new ProcessSegment;
-		if ( segment == NULL )
-			return 0;
-		segment->position = mapto;
-		segment->size = Page::AlignUp(mapbytes);
-		segment->type = ToProgramSectionType(pht->flags);
-
 		int prot = PROT_FORK | PROT_KREAD | PROT_KWRITE;
 		if ( pht->flags & PF_X ) { prot |= PROT_EXEC; }
 		if ( pht->flags & PF_R ) { prot |= PROT_READ; }
 		if ( pht->flags & PF_W ) { prot |= PROT_WRITE; }
 
-		if ( segment->Intersects(process->segments) )
+		if ( (pht->flags & (PF_X | PF_R | PF_W)) == (PF_R | PF_W) )
+			prot |= PROT_HEAP;
+
+		struct segment segment;
+		segment.addr = mapto;
+		segment.size = Page::AlignUp(mapbytes);
+		segment.prot = prot;
+
+		kthread_mutex_lock(&process->segment_lock);
+
+		if ( !IsUserspaceSegment(&segment) ||
+		     IsSegmentOverlapping(process, &segment) )
 		{
-			delete segment;
+			kthread_mutex_unlock(&process->segment_lock);
+			process->ResetAddressSpace();
 			return 0;
 		}
 
-		if ( !Memory::MapRange(mapto, mapbytes, prot) )
-			// TODO: Memory leak of segment?
-			return 0;
+		assert(process == CurrentProcess());
 
-		// Insert our newly allocated memory into the processes segment
-		// list such that it can be reclaimed later.
-		if ( process->segments )
-			process->segments->prev = segment;
-		segment->next = process->segments;
-		process->segments = segment;
+		if ( !Memory::MapRange(segment.addr, segment.size, prot) )
+		{
+			kthread_mutex_unlock(&process->segment_lock);
+			process->ResetAddressSpace();
+			return 0;
+		}
+
+		if ( !AddSegment(process, &segment) )
+		{
+			Memory::UnmapRange(segment.addr, segment.size);
+			kthread_mutex_unlock(&process->segment_lock);
+			process->ResetAddressSpace();
+			return 0;
+		}
+
+		kthread_mutex_unlock(&process->segment_lock);
 
 		// Copy as much data as possible and memset the rest to 0.
 		uint8_t* memdest = (uint8_t*) virtualaddr;
@@ -269,36 +265,47 @@ addr_t Construct64(Process* process, const uint8_t* file, size_t filelen)
 		assert(pht->offset + pht->filesize < filelen);
 		assert(pht->filesize <= pht->memorysize);
 
-		ProcessSegment* segment = new ProcessSegment;
-		if ( segment == NULL )
-			return 0;
-		segment->position = mapto;
-		segment->size = Page::AlignUp(mapbytes);
-		segment->type = ToProgramSectionType(pht->flags);
-
 		int prot = PROT_FORK | PROT_KREAD | PROT_KWRITE;
 		if ( pht->flags & PF_X ) { prot |= PROT_EXEC; }
 		if ( pht->flags & PF_R ) { prot |= PROT_READ; }
 		if ( pht->flags & PF_W ) { prot |= PROT_WRITE; }
 
-		if ( segment->Intersects(process->segments) )
+		if ( (pht->flags & (PF_X | PF_R | PF_W)) == (PF_R | PF_W) )
+			prot |= PROT_HEAP;
+
+		struct segment segment;
+		segment.addr = mapto;
+		segment.size = Page::AlignUp(mapbytes);
+		segment.prot = prot;
+
+		kthread_mutex_lock(&process->segment_lock);
+
+		if ( !IsUserspaceSegment(&segment) ||
+		     IsSegmentOverlapping(process, &segment) )
 		{
-			delete segment;
+			kthread_mutex_unlock(&process->segment_lock);
+			process->ResetAddressSpace();
 			return 0;
 		}
 
-		if ( !Memory::MapRange(mapto, mapbytes, prot) )
+		assert(process == CurrentProcess());
+
+		if ( !Memory::MapRange(segment.addr, segment.size, prot) )
 		{
-			// TODO: Memory leak of segment?
+			kthread_mutex_unlock(&process->segment_lock);
+			process->ResetAddressSpace();
 			return 0;
 		}
 
-		// Insert our newly allocated memory into the processes segment
-		// list such that it can be reclaimed later.
-		if ( process->segments )
-			process->segments->prev = segment;
-		segment->next = process->segments;
-		process->segments = segment;
+		if ( !AddSegment(process, &segment) )
+		{
+			Memory::UnmapRange(segment.addr, segment.size);
+			kthread_mutex_unlock(&process->segment_lock);
+			process->ResetAddressSpace();
+			return 0;
+		}
+
+		kthread_mutex_unlock(&process->segment_lock);
 
 		// Copy as much data as possible and memset the rest to 0.
 		uint8_t* memdest = (uint8_t*) virtualaddr;
