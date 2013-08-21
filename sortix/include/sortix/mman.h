@@ -48,4 +48,9 @@
 #define MAP_SHARED (1<<0)
 #define MAP_PRIVATE (1<<1)
 
+#define MAP_ANONYMOUS (1<<2)
+#define MAP_FIXED (1<<3)
+
+#define MAP_FAILED ((void*) -1)
+
 #endif
