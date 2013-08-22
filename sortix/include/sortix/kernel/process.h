@@ -115,7 +115,6 @@ private:
 	size_t zombiewaiting;
 	bool iszombie;
 	bool nozombify;
-	addr_t mmapfrom;
 	int exitstatus;
 
 public:
@@ -182,7 +181,6 @@ public:
 
 public:
 	void ResetForExecute();
-	addr_t AllocVirtualAddr(size_t size);
 
 public:
 	static Process* Get(pid_t pid);

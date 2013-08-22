@@ -51,8 +51,6 @@ Thread::Thread()
 	schedulerlistnext = NULL;
 	state = NONE;
 	memset(&registers, 0, sizeof(registers));
-	stackpos = 0;
-	stacksize = 0;
 	kernelstackpos = 0;
 	kernelstacksize = 0;
 	kernelstackmalloced = false;
@@ -90,8 +88,6 @@ addr_t Thread::SwitchAddressSpace(addr_t newaddrspace)
 // Last chance to clean up user-space things before this thread dies.
 void Thread::LastPrayer()
 {
-	Memory::UnmapRange(stackpos, stacksize);
-	Memory::Flush();
 }
 
 extern "C" void BootstrapKernelThread(void* user, ThreadEntry entry)

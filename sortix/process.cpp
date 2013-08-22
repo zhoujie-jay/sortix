@@ -98,7 +98,6 @@ Process::Process()
 	segments_used = 0;
 	segments_length = 0;
 	segment_lock = KTHREAD_MUTEX_INITIALIZER;
-	mmapfrom = 0x80000000UL;
 	exitstatus = -1;
 	pid = AllocatePID();
 	uid = euid = 0;
@@ -648,8 +647,6 @@ Process* Process::Fork()
 	kthread_mutex_unlock(&groupchildlock);
 
 	// Initialize everything that is safe and can't fail.
-	clone->mmapfrom = mmapfrom;
-
 	kthread_mutex_lock(&ptrlock);
 	clone->root = root;
 	clone->cwd = cwd;
@@ -745,10 +742,29 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	delete[] program_image_path;
 	program_image_path = programname_clone; programname_clone = NULL;
 
-	// TODO: This may be an ugly hack!
-	// TODO: Move this to x86/process.cpp.
+	uintptr_t userspace_addr;
+	size_t userspace_size;
+	Memory::GetUserVirtualArea(&userspace_addr, &userspace_size);
 
-	addr_t stackpos = CurrentThread()->stackpos + CurrentThread()->stacksize;
+	const size_t DEFAULT_STACK_SIZE = 512UL * 1024UL;
+	void* const PREFERRED_STACK_LOCATION =
+		(void*) (userspace_addr + userspace_size - DEFAULT_STACK_SIZE);
+	const int STACK_PROTECTION = PROT_READ | PROT_WRITE | PROT_KREAD |
+	                             PROT_KWRITE | PROT_FORK;
+
+	// Attempt to allocate a stack for the new process.
+	kthread_mutex_lock(&segment_lock);
+	struct segment stack_segment;
+	if ( !PlaceSegment(&stack_segment, this, PREFERRED_STACK_LOCATION, DEFAULT_STACK_SIZE, 0) ||
+	     !Memory::MapMemory(this, stack_segment.addr, stack_segment.size, stack_segment.prot = STACK_PROTECTION) )
+	{
+		kthread_mutex_unlock(&segment_lock);
+		ResetForExecute();
+		return errno = ENOMEM, -1;
+	}
+	kthread_mutex_unlock(&segment_lock);
+
+	addr_t stackpos = stack_segment.addr + stack_segment.size;
 
 	// Alright, move argv onto the new stack! First figure out exactly how
 	// big argv actually is.
@@ -929,8 +945,6 @@ pid_t sys_tfork(int flags, tforkregs_t* regs)
 	thread->kernelstackpos = (addr_t) newkernelstack;
 	thread->kernelstacksize = curthread->kernelstacksize;
 	thread->kernelstackmalloced = true;
-	thread->stackpos = curthread->stackpos;
-	thread->stacksize = curthread->stacksize;
 	thread->sighandler = curthread->sighandler;
 
 	StartKernelThread(thread);
@@ -1192,11 +1206,6 @@ void Process::Init()
 	pidlist = new SortedList<Process*>(ProcessCompare);
 	if ( !pidlist )
 		Panic("could not allocate pidlist\n");
-}
-
-addr_t Process::AllocVirtualAddr(size_t size)
-{
-	return mmapfrom -= size;
 }
 
 } // namespace Sortix

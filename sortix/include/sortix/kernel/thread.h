@@ -106,8 +106,6 @@ public:
 
 public:
 	addr_t addrspace;
-	addr_t stackpos;
-	size_t stacksize;
 	sighandler_t sighandler;
 	addr_t kernelstackpos;
 	size_t kernelstacksize;

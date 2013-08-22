@@ -632,7 +632,6 @@ static void InitThread(void* /*user*/)
 	// the init ramdisk and transfer execution to it. We will then become a
 	// regular user-space program with root permissions.
 
-	Thread* thread = CurrentThread();
 	Process* process = CurrentProcess();
 
 	const char* initpath = "/" CPUTYPE_STR "/bin/init";
@@ -665,21 +664,6 @@ static void InitThread(void* /*user*/)
 	}
 
 	init.Reset();
-
-	const size_t DEFAULT_STACK_SIZE = 512UL * 1024UL;
-
-	size_t stacksize = 0;
-	if ( !stacksize ) { stacksize = DEFAULT_STACK_SIZE; }
-
-	addr_t stackpos = process->AllocVirtualAddr(stacksize);
-	if ( !stackpos ) { Panic("Could not allocate init stack space"); }
-
-	int prot = PROT_FORK | PROT_READ | PROT_WRITE | PROT_KREAD | PROT_KWRITE;
-	if ( !Memory::MapRange(stackpos, stacksize, prot) )
-		Panic("Could not allocate init stack memory");
-
-	thread->stackpos = stackpos;
-	thread->stacksize = stacksize;
 
 	int argc = 1;
 	const char* argv[] = { "init", NULL };
