@@ -128,7 +128,7 @@ Thread* CreateKernelThread(Process* process, CPU::InterruptRegisters* regs)
 Thread* CreateKernelThread(Process* process, ThreadEntry entry, void* user,
                            size_t stacksize)
 {
-	const size_t DEFAULT_KERNEL_STACK_SIZE = 512 * 1024UL;
+	const size_t DEFAULT_KERNEL_STACK_SIZE = 8 * 1024UL;
 	if ( !stacksize )
 		stacksize = DEFAULT_KERNEL_STACK_SIZE;
 	uint8_t* stack = new uint8_t[stacksize];
