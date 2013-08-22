@@ -30,6 +30,8 @@ typedef struct multiboot_info multiboot_info_t;
 
 namespace Sortix
 {
+	class Process;
+
 	namespace Page
 	{
 		bool Reserve(size_t* counter, size_t amount);
@@ -84,6 +86,9 @@ namespace Sortix
 		size_t GetKernelStackSize();
 		void GetKernelVirtualArea(addr_t* from, size_t* size);
 		void GetUserVirtualArea(uintptr_t* from, size_t* size);
+		void UnmapMemory(Process* process, uintptr_t addr, size_t size);
+		bool ProtectMemory(Process* process, uintptr_t addr, size_t size, int prot);
+		bool MapMemory(Process* process, uintptr_t addr, size_t size, int prot);
 	}
 }
 
