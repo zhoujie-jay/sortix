@@ -103,6 +103,8 @@ Process::Process()
 	uid = euid = 0;
 	gid = egid = 0;
 	umask = 0022;
+	nicelock = KTHREAD_MUTEX_INITIALIZER;
+	nice = 0;
 	Time::InitializeProcessClocks(this);
 	alarm_timer.Attach(Time::GetClock(CLOCK_MONOTONIC));
 	Put(this);
@@ -647,6 +649,10 @@ Process* Process::Fork()
 	kthread_mutex_unlock(&groupchildlock);
 
 	// Initialize everything that is safe and can't fail.
+	kthread_mutex_lock(&nicelock);
+	clone->nice = nice;
+	kthread_mutex_unlock(&nicelock);
+
 	kthread_mutex_lock(&ptrlock);
 	clone->root = root;
 	clone->cwd = cwd;

@@ -73,6 +73,7 @@
 #include "uart.h"
 #include "logterminal.h"
 #include "vgatextbuffer.h"
+#include "resource.h"
 #include "serialterminal.h"
 #include "textterminal.h"
 #include "elf.h"
@@ -552,6 +553,9 @@ static void BootThread(void* /*user*/)
 
 	// Initialize the kernel information query syscall.
 	Info::Init();
+
+	// Initialize resource system calls.
+	Resource::Init();
 
 	// Initialize the Video Driver framework.
 	Video::Init(textbufhandle);

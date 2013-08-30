@@ -140,6 +140,8 @@
 #define SYSCALL_MMAP_WRAPPER 116
 #define SYSCALL_MPROTECT 117
 #define SYSCALL_MUNMAP 118
-#define SYSCALL_MAX_NUM 119 /* index of highest constant + 1 */
+#define SYSCALL_GETPRIORITY 119
+#define SYSCALL_SETPRIORITY 120
+#define SYSCALL_MAX_NUM 121 /* index of highest constant + 1 */
 
 #endif

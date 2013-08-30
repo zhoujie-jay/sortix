@@ -75,6 +75,10 @@ public:
 	pid_t pid;
 
 public:
+	kthread_mutex_t nicelock;
+	int nice;
+
+public:
 	kthread_mutex_t idlock;
 	uid_t uid, euid;
 	gid_t gid, egid;

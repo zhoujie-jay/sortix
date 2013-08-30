@@ -116,6 +116,7 @@ pipe.o \
 poll.o \
 process.o \
 refcount.o \
+resource.o \
 scheduler.o \
 segment.o \
 serialterminal.o \
