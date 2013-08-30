@@ -309,6 +309,7 @@ sys/mman/mprotect.o \
 sys/mman/munmap.o \
 sys/readdirents/readdirents.o \
 sys/resource/getpriority.o \
+sys/resource/prlimit.o \
 sys/resource/setpriority.o \
 sys/select/select.o \
 sys/socket/accept4.o \

@@ -29,6 +29,7 @@
 
 #include <sortix/resource.h>
 
+#include <sortix/kernel/copy.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/syscall.h>
@@ -148,9 +149,44 @@ static int sys_setpriority(int which, id_t who, int prio)
 	}
 }
 
+static
+int sys_prlimit(pid_t pid,
+                int resource,
+                const struct rlimit* user_new_limit,
+                struct rlimit* user_old_limit)
+{
+	if ( pid < 0 )
+		return errno = EINVAL, -1;
+	if ( resource < 0 || RLIMIT_NUM_DECLARED <= resource )
+		return errno = EINVAL, -1;
+	// TODO: If pid isn't the current process, then it could self-destruct at
+	//       any time while we use it; there is no safe way to do this yet.
+	Process* process = pid ? Process::Get(pid) : CurrentProcess();
+	if ( !process )
+		return errno = ESRCH, -1;
+	ScopedLock lock(&process->resource_limits_lock);
+	struct rlimit* limit = &process->resource_limits[resource];
+	if ( user_old_limit )
+	{
+		if ( !CopyToUser(user_old_limit, limit, sizeof(struct rlimit)) )
+			return -1;
+	}
+	if ( user_new_limit )
+	{
+		struct rlimit new_limit;
+		if ( !CopyFromUser(&new_limit, user_new_limit, sizeof(struct rlimit)) )
+			return -1;
+		if ( new_limit.rlim_max < new_limit.rlim_cur )
+			return errno = EINVAL, -1;
+		*limit = new_limit;
+	}
+	return 0;
+}
+
 void Init()
 {
 	Syscall::Register(SYSCALL_GETPRIORITY, (void*) sys_getpriority);
+	Syscall::Register(SYSCALL_PRLIMIT, (void*) sys_prlimit);
 	Syscall::Register(SYSCALL_SETPRIORITY, (void*) sys_setpriority);
 }
 

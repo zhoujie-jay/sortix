@@ -17,48 +17,25 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    sortix/resource.h
-    Resource limits and operations.
+    sys/resource/prlimit.cpp
+    Access and modify the resource limits of the given process.
 
 *******************************************************************************/
 
-#ifndef INCLUDE_SORTIX_RESOURCE_H
-#define INCLUDE_SORTIX_RESOURCE_H
+#include <sys/resource.h>
+#include <sys/syscall.h>
 
-#include <features.h>
-#include <__/stdint.h>
+DEFN_SYSCALL4(int, sys_prlimit, SYSCALL_PRLIMIT,
+              pid_t,
+              int,
+              const struct rlimit*,
+              struct rlimit*);
 
-__BEGIN_DECLS
-
-#define PRIO_PROCESS 0
-#define PRIO_PGRP 1
-#define PRIO_USER 2
-
-typedef __uintmax_t rlim_t;
-
-#define RLIM_INFINITY __UINTMAX_MAX
-#define RLIM_SAVED_CUR RLIM_INFINITY
-#define RLIM_SAVED_MAX RLIM_INFINITY
-
-struct rlimit
+extern "C"
+int prlimit(pid_t pid,
+            int resource,
+            const struct rlimit* new_limit,
+            struct rlimit* old_limit)
 {
-	rlim_t rlim_cur;
-	rlim_t rlim_max;
-};
-
-#define RLIMIT_AS 0
-#define RLIMIT_CORE 1
-#define RLIMIT_CPU 2
-#define RLIMIT_DATA 3
-#define RLIMIT_FSIZE 4
-#define RLIMIT_NOFILE 5
-#define RLIMIT_STACK 6
-#define __RLIMIT_NUM_DECLARED 7 /* index of highest constant plus 1. */
-
-#if !__STDC_HOSTED__ && defined(SORTIX_KERNEL)
-#define RLIMIT_NUM_DECLARED __RLIMIT_NUM_DECLARED
-#endif
-
-__END_DECLS
-
-#endif
+	return sys_prlimit(pid, resource, new_limit, old_limit);
+}

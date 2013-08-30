@@ -31,8 +31,10 @@
 __BEGIN_DECLS
 
 @include(id_t.h)
+@include(pid_t.h)
 
 int getpriority(int, id_t);
+int prlimit(pid_t, int, const struct rlimit*, struct rlimit*);
 int setpriority(int, id_t, int);
 
 __END_DECLS

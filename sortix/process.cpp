@@ -32,6 +32,7 @@
 #include <sortix/fcntl.h>
 #include <sortix/fork.h>
 #include <sortix/mman.h>
+#include <sortix/resource.h>
 #include <sortix/signal.h>
 #include <sortix/stat.h>
 #include <sortix/unistd.h>
@@ -105,6 +106,12 @@ Process::Process()
 	umask = 0022;
 	nicelock = KTHREAD_MUTEX_INITIALIZER;
 	nice = 0;
+	resource_limits_lock = KTHREAD_MUTEX_INITIALIZER;
+	for ( size_t i = 0; i < RLIMIT_NUM_DECLARED; i++ )
+	{
+		resource_limits[i].rlim_cur = RLIM_INFINITY;
+		resource_limits[i].rlim_max = RLIM_INFINITY;
+	}
 	Time::InitializeProcessClocks(this);
 	alarm_timer.Attach(Time::GetClock(CLOCK_MONOTONIC));
 	Put(this);
@@ -649,6 +656,11 @@ Process* Process::Fork()
 	kthread_mutex_unlock(&groupchildlock);
 
 	// Initialize everything that is safe and can't fail.
+	kthread_mutex_lock(&resource_limits_lock);
+	for ( size_t i = 0; i < RLIMIT_NUM_DECLARED; i++ )
+		clone->resource_limits[i] = resource_limits[i];
+	kthread_mutex_unlock(&resource_limits_lock);
+
 	kthread_mutex_lock(&nicelock);
 	clone->nice = nice;
 	kthread_mutex_unlock(&nicelock);

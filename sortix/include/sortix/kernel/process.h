@@ -26,6 +26,7 @@
 #define INCLUDE_SORTIX_KERNEL_PROCESS_H
 
 #include <sortix/fork.h>
+#include <sortix/resource.h>
 
 #include <sortix/kernel/clock.h>
 #include <sortix/kernel/kthread.h>
@@ -90,6 +91,10 @@ private:
 	Ref<Descriptor> cwd;
 	Ref<MountTable> mtable;
 	Ref<DescriptorTable> dtable;
+
+public:
+	kthread_mutex_t resource_limits_lock;
+	struct rlimit resource_limits[RLIMIT_NUM_DECLARED];
 
 public:
 	void BootstrapTables(Ref<DescriptorTable> dtable, Ref<MountTable> mtable);
