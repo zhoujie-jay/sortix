@@ -40,7 +40,7 @@ __BEGIN_DECLS
 /* TODO: fsblkcnt_t */
 /* TODO: fsfilcnt_t */
 @include(gid_t.h)
-/* TODO: id_t */
+@include(id_t.h)
 @include(ino_t.h)
 /* TODO: key_t */
 @include(mode_t.h)
