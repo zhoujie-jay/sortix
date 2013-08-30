@@ -17,28 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    sys/resource.h
-    Resource limits and operations.
+    sys/resource/setrlimit.cpp
+    Set the resource limits of the current process.
 
 *******************************************************************************/
 
-#ifndef INCLUDE_SYS_RESOURCE_H
-#define INCLUDE_SYS_RESOURCE_H
+#include <sys/resource.h>
+#include <sys/syscall.h>
 
-#include <features.h>
-#include <sortix/resource.h>
+#include <stddef.h>
 
-__BEGIN_DECLS
-
-@include(id_t.h)
-@include(pid_t.h)
-
-int getpriority(int, id_t);
-int getrlimit(int, struct rlimit*);
-int prlimit(pid_t, int, const struct rlimit*, struct rlimit*);
-int setpriority(int, id_t, int);
-int setrlimit(int, const struct rlimit*);
-
-__END_DECLS
-
-#endif
+extern "C" int setrlimit(int resource, const struct rlimit* limit)
+{
+	return prlimit(0, resource, limit, NULL);
+}
