@@ -310,6 +310,7 @@ sys/mman/munmap.o \
 sys/readdirents/readdirents.o \
 sys/resource/getpriority.o \
 sys/resource/getrlimit.o \
+sys/resource/getrusage.o \
 sys/resource/prlimit.o \
 sys/resource/setpriority.o \
 sys/resource/setrlimit.o \

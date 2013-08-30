@@ -17,41 +17,42 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    sys/resource.h
-    Resource limits and operations.
+    sys/resource/getrusage.cpp
+    Get resource usage statistics.
 
 *******************************************************************************/
 
-#ifndef INCLUDE_SYS_RESOURCE_H
-#define INCLUDE_SYS_RESOURCE_H
+#include <sys/resource.h>
+#include <sys/syscall.h>
 
-#include <features.h>
-#include <sortix/resource.h>
+#include <errno.h>
+#include <time.h>
+#include <timespec.h>
 
-__BEGIN_DECLS
-
-@include(id_t.h)
-@include(pid_t.h)
-@include(time_t.h)
-@include(suseconds_t.h)
-@include(timeval.h)
-
-#define RUSAGE_SELF 0
-#define RUSAGE_CHILDREN 1
-
-struct rusage
+static struct timeval timeval_of_timespec(struct timespec ts)
 {
-	struct timeval ru_utime;
-	struct timeval ru_stime;
-};
+	struct timeval tv;
+	tv.tv_sec = ts.tv_sec;
+	tv.tv_usec = ts.tv_nsec / 1000;
+	return tv;
+}
 
-int getpriority(int, id_t);
-int getrlimit(int, struct rlimit*);
-int getrusage(int, struct rusage*);
-int prlimit(pid_t, int, const struct rlimit*, struct rlimit*);
-int setpriority(int, id_t, int);
-int setrlimit(int, const struct rlimit*);
-
-__END_DECLS
-
-#endif
+extern "C" int getrusage(int who, struct rusage* usage)
+{
+	struct tmns tmns;
+	if ( timens(&tmns) != 0 )
+		return -1;
+	if ( who == RUSAGE_SELF )
+	{
+		usage->ru_utime = timeval_of_timespec(tmns.tmns_utime);
+		usage->ru_stime = timeval_of_timespec(tmns.tmns_stime);
+	}
+	else if ( who == RUSAGE_CHILDREN )
+	{
+		usage->ru_utime = timeval_of_timespec(tmns.tmns_cutime);
+		usage->ru_stime = timeval_of_timespec(tmns.tmns_cstime);
+	}
+	else
+		return errno = EINVAL, -1;
+	return 0;
+}
