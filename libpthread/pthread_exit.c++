@@ -56,7 +56,9 @@ void pthread_exit(void* /*return_value*/)
 	thread->keys_length = 0;
 	pthread_mutex_unlock(&__pthread_keys_lock);
 
-	size_t num_threads = 1;
+	pthread_mutex_lock(&__pthread_num_threads_lock);
+	size_t num_threads = __pthread_num_threads--;
+	pthread_mutex_unlock(&__pthread_num_threads_lock);
 	if ( num_threads == 1 )
 		exit(0);
 	struct exit_thread extended;

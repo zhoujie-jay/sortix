@@ -138,6 +138,8 @@ typedef __pthread_t pthread_t;
 struct pthread
 {
 	struct uthread uthread;
+	void* (*entry_function)(void*);
+	void* entry_cookie;
 	void** keys;
 	size_t keys_length;
 };
@@ -175,6 +177,10 @@ extern pthread_mutex_t __pthread_keys_lock;
 extern struct pthread_key* __pthread_keys;
 extern size_t __pthread_keys_used;
 extern size_t __pthread_keys_length;
+extern pthread_mutex_t __pthread_num_threads_lock;
+extern size_t __pthread_num_threads;
+
+struct pthread* pthread_allocate_tls(void);
 
 #endif
 
@@ -223,7 +229,10 @@ int pthread_condattr_getclock(const pthread_condattr_t* __restrict,
 int pthread_condattr_init(pthread_condattr_t*);
 int pthread_condattr_setclock(pthread_condattr_t*, clockid_t);
 /* TODO: pthread_condattr_setpshared */
-/* TODO: pthread_create */
+int pthread_create(pthread_t* __restrict,
+                   const pthread_attr_t* __restrict,
+                   void* (*)(void*),
+                   void* __restrict);
 /* TODO: pthread_detach */
 int pthread_equal(pthread_t, pthread_t);
 __attribute__((__noreturn__))

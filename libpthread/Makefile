@@ -21,6 +21,7 @@ pthread_cond_init.o \
 pthread_cond_signal.o \
 pthread_cond_timedwait.o \
 pthread_cond_wait.o \
+pthread_create.o \
 pthread_equal.o \
 pthread_exit.o \
 pthread_getspecific.o \
