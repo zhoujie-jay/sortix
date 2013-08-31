@@ -499,6 +499,7 @@ unistd/execv.o \
 unistd/execvpe.o \
 unistd/execvp.o \
 unistd/_exit.o \
+unistd/exit_thread.o \
 unistd/faccessat.o \
 unistd/fchdirat.o \
 unistd/fchdir.o \

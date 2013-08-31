@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of Sortix.
 
@@ -26,9 +26,11 @@
 #include <errno.h>
 #include <string.h>
 
+#include <sortix/exit.h>
 #include <sortix/mman.h>
 #include <sortix/signal.h>
 
+#include <sortix/kernel/copy.h>
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
@@ -279,6 +281,61 @@ bool Thread::DeliverSignal(int signum)
 	return true;
 }
 
+static int sys_exit_thread(int status,
+                           int flags,
+                           const struct exit_thread* user_extended)
+{
+	if ( flags & ~(EXIT_THREAD_ONLY_IF_OTHERS |
+	               EXIT_THREAD_UNMAP |
+	               EXIT_THREAD_ZERO) )
+		return errno = EINVAL, -1;
+
+	Thread* thread = CurrentThread();
+	Process* process = CurrentProcess();
+
+	struct exit_thread extended;
+	if ( !user_extended )
+		memset(&extended, 0, sizeof(extended));
+	else if ( !CopyFromUser(&extended, user_extended, sizeof(extended)) )
+		return -1;
+
+	extended.unmap_size = Page::AlignUp(extended.unmap_size);
+
+	kthread_mutex_lock(&thread->process->threadlock);
+	bool is_others = false;
+	for ( Thread* iter = thread->process->firstthread;
+	      !is_others && iter;
+	     iter = iter->nextsibling )
+	{
+		if ( iter == thread )
+			continue;
+		if ( iter->terminated )
+			continue;
+		is_others = true;
+	}
+	kthread_mutex_unlock(&thread->process->threadlock);
+
+	if ( (flags & EXIT_THREAD_ONLY_IF_OTHERS) && !is_others )
+		return errno = ESRCH, -1;
+
+	if ( flags & EXIT_THREAD_UNMAP &&
+	     Page::IsAligned((uintptr_t) extended.unmap_from) &&
+	     extended.unmap_size )
+	{
+		ScopedLock lock(&process->segment_lock);
+		Memory::UnmapMemory(process, (uintptr_t) extended.unmap_from,
+		                                         extended.unmap_size);
+	}
+
+	if ( flags & EXIT_THREAD_ZERO )
+		ZeroUser(extended.zero_from, extended.zero_size);
+
+	if ( !is_others )
+		thread->process->Exit(status);
+
+	kthread_exit();
+}
+
 static int sys_kill(pid_t pid, int signum)
 {
 	// Protect the system idle process.
@@ -320,6 +377,7 @@ static int sys_register_signal_handler(sighandler_t sighandler)
 
 void Thread::Init()
 {
+	Syscall::Register(SYSCALL_EXIT_THREAD, (void*) sys_exit_thread);
 	Syscall::Register(SYSCALL_KILL, (void*) sys_kill);
 	Syscall::Register(SYSCALL_RAISE, (void*) sys_raise);
 	Syscall::Register(SYSCALL_REGISTER_SIGNAL_HANDLER, (void*) sys_register_signal_handler);

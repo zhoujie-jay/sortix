@@ -153,6 +153,7 @@
 #define SYSCALL_RDMSR 129
 #define SYSCALL_WRMSR 130
 #define SYSCALL_SCHED_YIELD 131
-#define SYSCALL_MAX_NUM 132 /* index of highest constant + 1 */
+#define SYSCALL_EXIT_THREAD 132
+#define SYSCALL_MAX_NUM 133 /* index of highest constant + 1 */
 
 #endif

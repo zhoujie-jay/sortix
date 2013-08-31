@@ -36,6 +36,7 @@
 #if defined(_SORTIX_SOURCE)
 #include <stdarg.h>
 #include <stdint.h>
+#include <sortix/exit.h>
 #include <sortix/fork.h>
 __BEGIN_DECLS
 #ifndef __time_t_defined
@@ -401,6 +402,7 @@ ssize_t write(int, const void*, size_t);
 #if defined(_SORTIX_SOURCE)
 int alarmns(const struct timespec* delay, struct timespec* odelay);
 int execvpe(const char*, char* const [], char* const []);
+int exit_thread(int, int, const struct exit_thread*);
 int memstat(size_t* memused, size_t* memtotal);
 int mkpartition(int fd, off_t start, off_t length);
 pid_t sfork(int flags);
