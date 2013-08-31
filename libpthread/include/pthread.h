@@ -204,9 +204,10 @@ int pthread_equal(pthread_t, pthread_t);
 /* TODO: pthread_key_create */
 /* TODO: pthread_key_delete */
 /* TODO: pthread_mutex_consistent */
-/* TODO: pthread_mutex_destroy */
+int pthread_mutex_destroy(pthread_mutex_t*);
 /* TODO: pthread_mutex_getprioceiling */
-/* TODO: pthread_mutex_init */
+int pthread_mutex_init(pthread_mutex_t* __restrict,
+                       const pthread_mutexattr_t* __restrict);
 int pthread_mutex_lock(pthread_mutex_t*);
 /* TODO: pthread_mutex_setprioceiling */
 /* TODO: pthread_mutex_timedlock */
