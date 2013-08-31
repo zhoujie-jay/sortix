@@ -29,7 +29,9 @@ extern "C" int fprintf(FILE* fp, const char* restrict format, ...)
 {
 	va_list list;
 	va_start(list, format);
-	int result = vfprintf(fp, format, list);
+	flockfile(fp);
+	int result = vfprintf_unlocked(fp, format, list);
+	funlockfile(fp);
 	va_end(list);
 	return result;
 }

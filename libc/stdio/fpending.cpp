@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -26,5 +26,8 @@
 
 extern "C" size_t fpending(FILE* fp)
 {
-	return fp->amount_output_buffered;
+	flockfile(fp);
+	size_t ret = fpending_unlocked(fp);
+	funlockfile(fp);
+	return ret;
 }

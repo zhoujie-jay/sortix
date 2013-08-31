@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -26,5 +26,8 @@
 
 extern "C" int putc(int c, FILE* fp)
 {
-	return fputc(c, fp);
+	flockfile(fp);
+	int ret = putc_unlocked(c, fp);
+	funlockfile(fp);
+	return ret;
 }

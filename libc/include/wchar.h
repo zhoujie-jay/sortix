@@ -27,6 +27,7 @@
 
 #include <sys/cdefs.h>
 
+#include <__/pthread.h>
 #include <sys/__/types.h>
 
 #include <__/wchar.h>

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -26,7 +26,8 @@
 
 extern "C" int ferror(FILE* fp)
 {
-	if ( fp->error_func )
-		return fp->error_func(fp->user);
-	return 0;
+	flockfile(fp);
+	int ret = ferror_unlocked(fp);
+	funlockfile(fp);
+	return ret;
 }

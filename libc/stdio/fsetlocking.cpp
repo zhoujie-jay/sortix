@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -26,11 +26,8 @@
 
 extern "C" int fsetlocking(FILE* fp, int type)
 {
-	switch ( type )
-	{
-	case FSETLOCKING_INTERNAL: fp->flags |= _FILE_AUTO_LOCK;
-	case FSETLOCKING_BYCALLER: fp->flags &= ~_FILE_AUTO_LOCK;
-	}
-	return (fp->flags & _FILE_AUTO_LOCK) ? FSETLOCKING_INTERNAL
-	                                     : FSETLOCKING_BYCALLER;
+	flockfile(fp);
+	int ret = fsetlocking_unlocked(fp, type);
+	funlockfile(fp);
+	return ret;
 }

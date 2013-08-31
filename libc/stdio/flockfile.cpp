@@ -22,9 +22,10 @@
 
 *******************************************************************************/
 
+#include <pthread.h>
 #include <stdio.h>
 
-extern "C" void flockfile(FILE* /*fp*/)
+extern "C" void flockfile(FILE* fp)
 {
-	// TODO: Thread safety.
+	pthread_mutex_lock(&fp->file_lock);
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -22,10 +22,13 @@
 
 *******************************************************************************/
 
+#include <pthread.h>
 #include <stdio.h>
 
 extern "C" void flushlbf(void)
 {
-	for ( FILE* fp = _firstfile; fp; fp = fp->next )
+	pthread_mutex_lock(&__first_file_lock);
+	for ( FILE* fp = __first_file; fp; fp = fp->next )
 		fflush(fp);
+	pthread_mutex_unlock(&__first_file_lock);
 }

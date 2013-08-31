@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -27,7 +27,8 @@
 
 extern "C" int fileno(FILE* fp)
 {
-	int result = fp->fileno_func ? fp->fileno_func(fp->user) : -1;
-	if ( result < 0 ) { errno = EBADF; }
-	return result;
+	flockfile(fp);
+	int ret = fileno_unlocked(fp);
+	funlockfile(fp);
+	return ret;
 }

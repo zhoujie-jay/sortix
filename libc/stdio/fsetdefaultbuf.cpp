@@ -23,44 +23,11 @@
 *******************************************************************************/
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 
 extern "C" int fsetdefaultbuf(FILE* fp)
 {
-	char* buf = (char*) malloc(sizeof(char) * BUFSIZ);
-	if ( !buf )
-	{
-		// TODO: Determine whether this is truly what we would want and whether
-		// a buffer should be pre-allocated when the FILE is created such that
-		// this situation _cannot_ occur.
-
-		// Alright, we're in a bit of a situation here. Normally, we'd go
-		// buffered but we are out of memory. We could either fail, but that
-		// would mean subsequent calls such as fgetc and fputc would also fail -
-		// however that we are out of memory doesn't mean that IO would also
-		// fail. Therefore we'll revert to unbuffered semantics and hope that's
-		// good enough.
-
-		return setvbuf(fp, NULL, _IONBF, 0);
-	}
-
-	// Determine the buffering semantics depending on whether the destination is
-	// an interactive device or not.
-#if defined(__is_sortix_kernel)
-	int mode = _IOLBF; // TODO: Detect this?
-#else
-	int mode = fp->buffer_mode != -1 ? fp->buffer_mode
-	                                 : isatty(fileno(fp)) ? _IOLBF : _IOFBF;
-#endif
-	int ret = setvbuf(fp, buf, mode, BUFSIZ);
-	if ( ret )
-	{
-		free(buf);
-		return -1;
-	}
-
-	// The buffer now belongs to the FILE.
-	fp->flags |= _FILE_BUFFER_OWNED;
+	flockfile(fp);
+	int ret = fsetdefaultbuf_unlocked(fp);
+	funlockfile(fp);
 	return ret;
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -23,25 +23,11 @@
 *******************************************************************************/
 
 #include <stdio.h>
-#include <errno.h>
 
-extern "C" char* fgets(char* dest, int size, FILE* fp)
+extern "C" char* fgets(char* restrict dest, int size, FILE* restrict fp)
 {
-	if ( size <= 0 )
-		return errno = EINVAL, (char*) NULL;
-	int i;
-	for ( i = 0; i < size-1; i++ )
-	{
-		int c = getc(fp);
-		if ( c == EOF )
-			break;
-		dest[i] = c;
-		if ( c == '\n' ) { i++; break; }
-	}
-	if ( !i && (ferror(fp) || feof(fp)) )
-		return NULL;
-	// TODO: The end-of-file state is lost here if feof(fp) and we are reading
-	//       from a terminal that encountered a soft EOF.
-	dest[i] = '\0';
-	return dest;
+	flockfile(fp);
+	char* result = fgets_unlocked(dest, size, fp);
+	funlockfile(fp);
+	return result;
 }

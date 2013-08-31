@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -22,37 +22,12 @@
 
 *******************************************************************************/
 
-#include <sys/types.h>
-
-#include <assert.h>
 #include <stdio.h>
 
 extern "C" int fflush_stop_reading(FILE* fp)
 {
-	if ( !(fp->flags & _FILE_LAST_READ) )
-		return 0;
-	int ret = 0;
-	size_t bufferahead = fp->amount_input_buffered - fp->offset_input_buffer;
-	if ( (fp->flags & _FILE_STREAM) )
-	{
-		if ( bufferahead )
-			/* TODO: Data loss!*/{}
-	}
-	if ( !(fp->flags & _FILE_STREAM) )
-	{
-		off_t rewind_amount = -((off_t) bufferahead);
-		off_t my_pos = fp->tell_func(fp->user);
-		off_t expected_pos = my_pos + rewind_amount;
-#if 1
-		if ( fp->seek_func && fp->seek_func(fp->user, expected_pos, SEEK_SET) != 0 )
-#else
-		if ( fp->seek_func && fp->seek_func(fp->user, rewind_amount, SEEK_CUR) != 0 )
-#endif
-			ret = EOF;
-		off_t newpos = fp->tell_func(fp->user);
-		assert(ret == EOF || expected_pos == newpos);
-	}
-	fp->amount_input_buffered = fp->offset_input_buffer = 0;
-	fp->flags &= ~_FILE_LAST_READ;
+	flockfile(fp);
+	int ret = fflush_stop_reading_unlocked(fp);
+	funlockfile(fp);
 	return ret;
 }

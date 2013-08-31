@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -26,31 +26,8 @@
 
 extern "C" size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* fp)
 {
-	if ( fp->buffer_mode == _IONBF )
-	{
-		if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
-			if ( fsetdefaultbuf(fp) != 0 )
-				return EOF; // TODO: ferror doesn't report error!
-
-		if ( !fp->write_func )
-			return 0; // TODO: ferror doesn't report error!
-		if ( fp->flags & _FILE_LAST_READ )
-			fflush_stop_reading(fp);
-		fp->flags |= _FILE_LAST_WRITE;
-		return fp->write_func(ptr, size, nmemb, fp->user);
-	}
-
-	const unsigned char* buf = (const unsigned char*) ptr;
-	for ( size_t n = 0; n < nmemb; n++ )
-	{
-		size_t offset = n * size;
-		for ( size_t i = 0; i < size; i++ )
-		{
-			size_t index = offset + i;
-			if ( fputc(buf[index], fp) == EOF )
-				return n;
-		}
-	}
-
-	return nmemb;
+	flockfile(fp);
+	size_t ret = fwrite_unlocked(ptr, size, nmemb, fp);
+	funlockfile(fp);
+	return ret;
 }

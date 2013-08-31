@@ -22,9 +22,10 @@
 
 *******************************************************************************/
 
+#include <pthread.h>
 #include <stdio.h>
 
-extern "C" void funlockfile(FILE* /*fp*/)
+extern "C" void funlockfile(FILE* fp)
 {
-	// TODO: Thread safety.
+	pthread_mutex_unlock(&fp->file_lock);
 }

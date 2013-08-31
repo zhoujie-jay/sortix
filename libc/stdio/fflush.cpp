@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -22,23 +22,23 @@
 
 *******************************************************************************/
 
+#include <pthread.h>
 #include <stdio.h>
-#include <errno.h>
 
 extern "C" int fflush(FILE* fp)
 {
 	if ( !fp )
 	{
 		int result = 0;
-		for ( fp = _firstfile; fp; fp = fp->next ) { result |= fflush(fp); }
+		pthread_mutex_lock(&__first_file_lock);
+		for ( fp = __first_file; fp; fp = fp->next )
+			result |= fflush(fp);
+		pthread_mutex_unlock(&__first_file_lock);
 		return result;
 	}
 
-	int mode = fp->flags & (_FILE_LAST_READ | _FILE_LAST_WRITE);
-	if ( (mode & _FILE_LAST_READ) && fflush_stop_reading(fp) == EOF )
-		return EOF;
-	if ( (mode & _FILE_LAST_WRITE) && fflush_stop_writing(fp) == EOF )
-		return EOF;
-	fp->flags |= mode;
-	return 0;
+	flockfile(fp);
+	int ret = fflush_unlocked(fp);
+	funlockfile(fp);
+	return ret;
 }

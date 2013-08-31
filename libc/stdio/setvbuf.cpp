@@ -22,19 +22,12 @@
 
 *******************************************************************************/
 
-#include <errno.h>
 #include <stdio.h>
 
 extern "C" int setvbuf(FILE* fp, char* buf, int mode, size_t size)
 {
-	if ( fp->flags & _FILE_BUFFER_MODE_SET )
-		return errno = EINVAL, -1;
-	fp->buffer_mode = mode;
-	if ( buf )
-	{
-		fp->buffer = (unsigned char*) buf;
-		fp->buffersize = size;
-		fp->flags |= _FILE_BUFFER_MODE_SET;
-	}
-	return 0;
+	flockfile(fp);
+	int ret = setvbuf_unlocked(fp, buf, mode, size);
+	funlockfile(fp);
+	return ret;
 }

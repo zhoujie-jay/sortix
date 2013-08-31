@@ -22,52 +22,12 @@
 
 *******************************************************************************/
 
-#include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
-
-#include <errno.h>
-#include <string.h>
-#include <unistd.h>
 
 extern "C" int fgetc(FILE* fp)
 {
-	if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
-		if ( fsetdefaultbuf(fp) != 0 )
-			return EOF; // TODO: ferror doesn't report error!
-
-	if ( fp->buffer_mode == _IONBF )
-	{
-		unsigned char c;
-		if ( fread(&c, sizeof(c), 1, fp) != 1 )
-			return EOF;
-		return c;
-	}
-
-	if ( !fp->read_func )
-		return EOF; // TODO: ferror doesn't report error!
-
-	if ( fp->flags & _FILE_LAST_WRITE )
-		fflush_stop_writing(fp);
-	fp->flags |= _FILE_LAST_READ;
-
-	if ( fp->offset_input_buffer < fp->amount_input_buffered )
-retry:
-		return fp->buffer[fp->offset_input_buffer++];
-
-	assert(fp->buffer && fp->buffersize);
-
-	size_t pushback = _FILE_MAX_PUSHBACK;
-	if ( fp->buffersize <= pushback )
-		pushback = 0;
-	size_t count = fp->buffersize - pushback;
-	size_t size = sizeof(unsigned char);
-	size_t numread = fp->read_func(fp->buffer + pushback, size, count, fp->user);
-	if ( !numread )
-		return EOF;
-
-	fp->offset_input_buffer = pushback;
-	fp->amount_input_buffered = pushback + numread;
-
-	goto retry;
+	flockfile(fp);
+	int ret = fgetc_unlocked(fp);
+	funlockfile(fp);
+	return ret;
 }

@@ -22,10 +22,10 @@
 
 *******************************************************************************/
 
+#include <pthread.h>
 #include <stdio.h>
 
-extern "C" int ftrylockfile(FILE* /*fp*/)
+extern "C" int ftrylockfile(FILE* fp)
 {
-	// TODO: Thread safety.
-	return 0;
+	return pthread_mutex_lock(&fp->file_lock) ? -1 : 0;
 }

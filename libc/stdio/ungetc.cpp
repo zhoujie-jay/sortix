@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -24,33 +24,11 @@
 *******************************************************************************/
 
 #include <stdio.h>
-#include <errno.h>
-#include <string.h>
 
 extern "C" int ungetc(int c, FILE* fp)
 {
-	if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
-		if ( fsetdefaultbuf(fp) != 0 )
-			return EOF; // TODO: ferror doesn't report error!
-
-	if ( !fp->read_func || fp->buffer_mode == _IONBF )
-		return EOF;
-
-	if ( fp->flags & _FILE_LAST_WRITE )
-		fflush_stop_writing(fp);
-	fp->flags |= _FILE_LAST_READ;
-
-	if ( fp->offset_input_buffer == 0 )
-	{
-		size_t amount = fp->amount_input_buffered - fp->offset_input_buffer;
-		size_t offset = fp->buffersize - amount;
-		if ( !offset )
-			return EOF;
-		memmove(fp->buffer + offset, fp->buffer, sizeof(fp->buffer[0]) * amount);
-		fp->offset_input_buffer = offset;
-		fp->amount_input_buffered = offset + amount;
-	}
-
-	fp->buffer[--fp->offset_input_buffer] = c;
-	return c;
+	flockfile(fp);
+	int ret = ungetc_unlocked(c, fp);
+	funlockfile(fp);
+	return ret;
 }

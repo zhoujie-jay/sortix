@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -26,5 +26,8 @@
 
 extern "C" int fwritable(FILE* fp)
 {
-	return fp->write_func != NULL;
+	flockfile(fp);
+	int ret = fwritable_unlocked(fp);
+	funlockfile(fp);
+	return ret;
 }

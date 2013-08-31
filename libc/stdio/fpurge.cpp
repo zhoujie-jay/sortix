@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -26,7 +26,7 @@
 
 extern "C" void fpurge(FILE* fp)
 {
-	fp->offset_input_buffer = 0;
-	fp->amount_input_buffered = 0;
-	fp->amount_output_buffered = 0;
+	flockfile(fp);
+	fpurge_unlocked(fp);
+	funlockfile(fp);
 }

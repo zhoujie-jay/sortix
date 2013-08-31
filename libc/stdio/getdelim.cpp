@@ -37,9 +37,10 @@ extern "C" ssize_t getdelim(char** lineptr, size_t* n, int delim, FILE* fp)
 	if ( n ) { *n = bufsize; }
 	ssize_t written = 0;
 	int c;
+	flockfile(fp);
 	do
 	{
-		if ( (c = getc(fp)) == EOF )
+		if ( (c = getc_unlocked(fp)) == EOF )
 		{
 			if ( written ) { break; } else { goto cleanup; }
 		}
@@ -54,10 +55,12 @@ extern "C" ssize_t getdelim(char** lineptr, size_t* n, int delim, FILE* fp)
 		}
 		(*lineptr)[written++] = c;
 	} while ( c != delim );
+	funlockfile(fp);
 	(*lineptr)[written] = 0;
 	return written;
 
 cleanup:
+	funlockfile(fp);
 	free(malloced ? *lineptr : NULL);
 	return -1;
 }

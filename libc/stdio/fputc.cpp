@@ -26,31 +26,8 @@
 
 extern "C" int fputc(int c, FILE* fp)
 {
-	if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
-		if ( fsetdefaultbuf(fp) != 0 )
-			return EOF; // TODO: ferror doesn't report error!
-
-	if ( fp->buffer_mode == _IONBF )
-	{
-		unsigned char c_char = c;
-		if ( fwrite(&c_char, sizeof(c_char), 1, fp) != 1 )
-			return EOF;
-		return c;
-	}
-
-	if ( !fp->write_func )
-		return EOF; // TODO: ferror doesn't report error!
-
-	if ( fp->flags & _FILE_LAST_READ )
-		fflush_stop_reading(fp);
-	fp->flags |= _FILE_LAST_WRITE;
-
-	if ( fp->amount_output_buffered == fp->buffersize && fflush(fp) != 0 )
-		return EOF;
-
-	fp->buffer[fp->amount_output_buffered++] = c;
-	if ( fp->buffer_mode == _IOLBF && c == '\n' && fflush(fp) != 0 )
-		return EOF;
-
-	return c;
+	flockfile(fp);
+	int ret = fputc_unlocked(c, fp);
+	funlockfile(fp);
+	return ret;
 }

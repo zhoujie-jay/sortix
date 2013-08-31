@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -37,6 +37,7 @@ extern "C" void fresetfile(FILE* fp)
 	void (*free_func)(void*, FILE*) = fp->free_func;
 	int kept_flags = fp->flags & (_FILE_REGISTERED | 0);
 	memset(fp, 0, sizeof(*fp));
+	fp->file_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 	fp->flags = kept_flags | _FILE_AUTO_LOCK;
 	fp->buffer_mode = -1;
 	fp->free_user = free_user;

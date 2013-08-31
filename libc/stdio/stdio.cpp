@@ -47,14 +47,30 @@ extern "C" int init_stdio()
 	return 0;
 }
 
+extern "C" int getchar_unlocked(void)
+{
+	return fgetc_unlocked(stdin);
+}
+
+extern "C" int putchar_unlocked(int c)
+{
+	return fputc_unlocked(c, stdout);
+}
+
 extern "C" int getchar(void)
 {
-	return fgetc(stdin);
+	flockfile(stdin);
+	int ret = getchar_unlocked();
+	funlockfile(stdin);
+	return ret;
 }
 
 extern "C" int putchar(int c)
 {
-	return fputc(c, stdout);
+	flockfile(stdin);
+	int ret = putchar_unlocked(c);
+	funlockfile(stdin);
+	return ret;
 }
 
 extern "C" int puts(const char* str)

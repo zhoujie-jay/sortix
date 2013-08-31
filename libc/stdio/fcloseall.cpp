@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -27,6 +27,9 @@
 extern "C" int fcloseall(void)
 {
 	int result = 0;
-	while ( _firstfile ) { result |= fclose(_firstfile); }
-	return (result) ? EOF : 0;
+	// We do not lock __first_file_lock here because this function is called on
+	// process termination and only one thread can call exit(3).
+	while ( __first_file )
+		result |= fclose(__first_file);
+	return result ? EOF : 0;
 }

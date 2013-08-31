@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -27,16 +27,8 @@
 
 extern "C" int fflush_stop_writing(FILE* fp)
 {
-	if ( !(fp->flags & _FILE_LAST_WRITE) )
-		return 0;
-	if ( !fp->write_func )
-		return errno = EBADF, EOF;
-	size_t size = sizeof(unsigned char);
-	size_t count = fp->amount_output_buffered;
-	int ret = 0;
-	if ( fp->write_func(fp->buffer, size, count, fp->user) != count )
-		ret = EOF; // TODO: Set errno!
-	fp->amount_output_buffered = 0;
-	fp->flags &= ~_FILE_LAST_WRITE;
+	flockfile(fp);
+	int ret = fflush_stop_writing_unlocked(fp);
+	funlockfile(fp);
 	return ret;
 }

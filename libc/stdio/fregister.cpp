@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -23,24 +23,39 @@
 
 *******************************************************************************/
 
+#include <pthread.h>
 #include <stdio.h>
 
-extern "C" { FILE* _firstfile = NULL; }
+extern "C"
+{
+	FILE* __first_file = NULL;
+	pthread_mutex_t __first_file_lock = PTHREAD_MUTEX_INITIALIZER;
+}
 
 extern "C" void fregister(FILE* fp)
 {
+	pthread_mutex_lock(&__first_file_lock);
 	fp->flags |= _FILE_REGISTERED;
-	if ( !_firstfile ) { _firstfile = fp; return; }
-	fp->next = _firstfile;
-	_firstfile->prev = fp;
-	_firstfile = fp;
+	if ( __first_file )
+	{
+		fp->next = __first_file;
+		__first_file->prev = fp;
+	}
+	__first_file = fp;
+	pthread_mutex_unlock(&__first_file_lock);
 }
 
 extern "C" void funregister(FILE* fp)
 {
-	if ( !(fp->flags & _FILE_REGISTERED) ) { return; }
-	if ( !fp->prev ) { _firstfile = fp->next; }
-	if ( fp->prev ) { fp->prev->next = fp->next; }
-	if ( fp->next ) { fp->next->prev = fp->prev; }
+	if ( !(fp->flags & _FILE_REGISTERED) )
+		return;
+	pthread_mutex_lock(&__first_file_lock);
+	if ( !fp->prev )
+		__first_file = fp->next;
+	if ( fp->prev )
+		fp->prev->next = fp->next;
+	if ( fp->next )
+		fp->next->prev = fp->prev;
 	fp->flags &= ~_FILE_REGISTERED;
+	pthread_mutex_unlock(&__first_file_lock);
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -26,32 +26,8 @@
 
 extern "C" size_t fread(void* ptr, size_t size, size_t nmemb, FILE* fp)
 {
-	if ( fp->buffer_mode == _IONBF )
-	{
-		if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
-			if ( fsetdefaultbuf(fp) != 0 )
-				return EOF; // TODO: ferror doesn't report error!
-		if ( !fp->read_func )
-			return 0; // TODO: ferror doesn't report error!
-		if ( fp->flags & _FILE_LAST_WRITE )
-			fflush_stop_writing(fp);
-		fp->flags |= _FILE_LAST_READ;
-		return fp->read_func(ptr, size, nmemb, fp->user);
-	}
-
-	unsigned char* buf = (unsigned char*) ptr;
-	for ( size_t n = 0; n < nmemb; n++ )
-	{
-		size_t offset = n * size;
-		for ( size_t i = 0; i < size; i++ )
-		{
-			int c = fgetc(fp);
-			if ( c == EOF )
-				return n;
-			size_t index = i + offset;
-			buf[index] = c;
-		}
-	}
-
-	return nmemb;
+	flockfile(fp);
+	size_t ret = fread_unlocked(ptr, size, nmemb, fp);
+	funlockfile(fp);
+	return ret;
 }

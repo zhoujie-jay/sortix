@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -24,17 +24,10 @@
 
 #include <stdio.h>
 
-static int wrap_fgetc(void* fp)
-{
-	return fgetc((FILE*) fp);
-}
-
-static int wrap_ungetc(int c, void* fp)
-{
-	return ungetc(c, (FILE*) fp);
-}
-
 extern "C" int vfscanf(FILE* fp, const char* format, va_list ap)
 {
-	return vscanf_callback(fp, wrap_fgetc, wrap_ungetc, format, ap);
+	flockfile(fp);
+	int result = vfscanf_unlocked(fp, format, ap);
+	funlockfile(fp);
+	return result;
 }

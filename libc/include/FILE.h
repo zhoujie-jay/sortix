@@ -29,6 +29,8 @@
 
 #include <sys/__/types.h>
 
+#include <pthread.h>
+
 __BEGIN_DECLS
 
 #ifndef __off_t_defined
@@ -80,6 +82,7 @@ struct FILE
 	int (*close_func)(void* user);
 	void (*free_func)(void* free_user, struct FILE* fp);
 	/* Application writers shouldn't use anything beyond this point. */
+	pthread_mutex_t file_lock;
 	struct FILE* prev;
 	struct FILE* next;
 	int flags;
@@ -88,6 +91,12 @@ struct FILE
 	size_t amount_input_buffered;
 	size_t amount_output_buffered;
 };
+
+/* Internally used by standard library. */
+#if defined(__is_sortix_libc)
+extern FILE* __first_file;
+extern __pthread_mutex_t __first_file_lock;
+#endif
 
 __END_DECLS
 

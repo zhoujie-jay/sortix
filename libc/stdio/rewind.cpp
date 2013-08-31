@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -26,6 +26,8 @@
 
 extern "C" void rewind(FILE* fp)
 {
-	fseek(fp, 0L, SEEK_SET);
-	clearerr(fp);
+	flockfile(fp);
+	fseeko_unlocked(fp, 0, SEEK_SET);
+	clearerr_unlocked(fp);
+	funlockfile(fp);
 }

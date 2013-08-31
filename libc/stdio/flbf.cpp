@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -26,5 +26,8 @@
 
 extern "C" int flbf(FILE* fp)
 {
-	return fp->buffer_mode == _IOLBF;
+	flockfile(fp);
+	int ret = flbf_unlocked(fp);
+	funlockfile(fp);
+	return ret;
 }
