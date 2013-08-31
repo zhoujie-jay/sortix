@@ -1084,8 +1084,11 @@ static pid_t sys_tfork(int flags, tforkregs_t* user_regs)
 	if ( Signal::IsPending() )
 		return errno = EINTR, -1;
 
+	bool making_process = flags == SFFORK;
+	bool making_thread = (flags & (SFPROC | SFPID | SFFD | SFMEM | SFCWD | SFROOT)) == SFPROC;
+
 	// TODO: Properly support tfork(2).
-	if ( flags != SFFORK )
+	if ( !(making_thread || making_process) )
 		return errno = ENOSYS, -1;
 
 	CPU::InterruptRegisters cpuregs;
@@ -1097,16 +1100,23 @@ static pid_t sys_tfork(int flags, tforkregs_t* user_regs)
 	if ( !newkernelstack )
 		return -1;
 
-	Process* clone = CurrentProcess()->Fork();
-	if ( !clone ) { delete[] newkernelstack; return -1; }
+	Process* child_process;
+	if ( making_thread )
+		child_process = CurrentProcess();
+	else if ( !(child_process = CurrentProcess()->Fork()) )
+	{
+		delete[] newkernelstack;
+		return -1;
+	}
 
 	// If the thread could not be created, make the process commit suicide
 	// in a manner such that we don't wait for its zombie.
-	Thread* thread = CreateKernelThread(clone, &cpuregs, regs.fsbase,
+	Thread* thread = CreateKernelThread(child_process, &cpuregs, regs.fsbase,
 	                                    regs.gsbase);
 	if ( !thread )
 	{
-		clone->AbortConstruction();
+		if ( making_process )
+			child_process->AbortConstruction();
 		return -1;
 	}
 
@@ -1117,7 +1127,7 @@ static pid_t sys_tfork(int flags, tforkregs_t* user_regs)
 
 	StartKernelThread(thread);
 
-	return clone->pid;
+	return child_process->pid;
 }
 
 static pid_t sys_getpid()
