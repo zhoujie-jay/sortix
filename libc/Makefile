@@ -586,7 +586,7 @@ ifeq ($(HOST),x86_64-sortix)
     LIBK_FLAGS:=$(LIBK_FLAGS) -mno-red-zone -mno-mmx -mno-sse -mno-sse2
 endif
 
-BINS=libc.a libdl.a libg.a libpthread.a librt.a $(CRTOBJ)
+BINS=libc.a libdl.a libg.a librt.a $(CRTOBJ)
 BINSKERNEL=libk.a
 INSTALLLIBS:=$(addprefix $(DESTDIR)$(LIBDIR)/,$(BINS))
 INSTALLLIBSKERNEL:=$(addprefix $(DESTDIR)$(LIBDIR)/,$(BINSKERNEL))
@@ -613,9 +613,6 @@ libg.a:
 
 libk.a: $(LIBK_OBJS)
 	$(HOSTAR) rcs $@ $(LIBK_OBJS)
-
-libpthread.a:
-	$(HOSTAR) rcs $@
 
 librt.a:
 	$(HOSTAR) rcs $@

@@ -29,6 +29,10 @@
 
 #include <sys/__/types.h>
 
+#if __STDC_HOSTED__
+#include <__/pthread.h>
+#endif
+
 #include <sortix/signal.h>
 
 __BEGIN_DECLS
@@ -55,8 +59,19 @@ typedef __pid_t pid_t;
 typedef __time_t time_t;
 #endif
 
-/* TODO: pthread_t */
-/* TODO: pthread_attr_t */
+#if __STDC_HOSTED__
+
+#ifndef __pthread_attr_t_defined
+#define __pthread_attr_t_defined
+typedef __pthread_attr_t pthread_attr_t;
+#endif
+
+#ifndef __pthread_t_defined
+#define __pthread_t_defined
+typedef __pthread_t pthread_t;
+#endif
+
+#endif
 
 __END_DECLS
 
@@ -191,7 +206,8 @@ int kill(pid_t, int);
 int killpg(pid_t, int);
 void psiginfo(const siginfo_t*, const char*);
 void psignal(int, const char*);
-int pthread_sigmask(int, const sigset_t* __restrict, sigset_t* __restrict);
+/* TODO: int pthread_kill(pthread_t, int); */
+/* TODO: int pthread_sigmask(int, const sigset_t* __restrict, sigset_t* __restrict); */
 int raise(int sig);
 int sigaction(int, const struct sigaction* __restrict, struct sigaction* __restrict);
 int sigaddset(sigset_t*, int);

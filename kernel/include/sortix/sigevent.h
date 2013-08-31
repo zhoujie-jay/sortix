@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of Sortix.
 
@@ -27,7 +27,18 @@
 
 #include <sys/cdefs.h>
 
+#if __STDC_HOSTED__
+#include <__/pthread.h>
+#endif
+
 __BEGIN_DECLS
+
+#if __STDC_HOSTED__
+#ifndef __pthread_attr_t_defined
+#define __pthread_attr_t_defined
+typedef __pthread_attr_t pthread_attr_t;
+#endif
+#endif
 
 #define SIGEV_NONE 0
 #define SIGEV_SIGNAL 1
@@ -45,8 +56,11 @@ struct sigevent
 	int sigev_signo;
 	union sigval sigev_value;
 	void (*sigev_notify_function)(union sigval);
-	/*pthread_attr_t* sigev_notify_attributes;*/
+#if __STDC_HOSTED__
+	pthread_attr_t* sigev_notify_attributes;
+#else
 	void* sigev_notify_attributes;
+#endif
 };
 
 __END_DECLS

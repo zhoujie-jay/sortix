@@ -19,6 +19,7 @@ clean:
 	$(MAKE) -B -C $(SRCDIR)/doc clean
 	$(MAKE) -B -C $(SRCDIR)/libc clean
 	$(MAKE) -B -C $(SRCDIR)/libm clean
+	$(MAKE) -B -C $(SRCDIR)/libpthread clean
 	$(MAKE) -B -C $(SRCDIR)/dispd clean
 	$(MAKE) -B -C $(SRCDIR)/bench clean
 	$(MAKE) -B -C $(SRCDIR)/games clean
@@ -57,6 +58,7 @@ system-headers_internal:
 	$(MAKE) -B -C $(SRCDIR)/kernel install-headers DESTDIR=$(ROOT)
 	$(MAKE) -B -C $(SRCDIR)/libc install-headers DESTDIR=$(ROOT)
 	$(MAKE) -B -C $(SRCDIR)/libm install-headers DESTDIR=$(ROOT)
+	$(MAKE) -B -C $(SRCDIR)/libpthread install-headers DESTDIR=$(ROOT)
 
 # Rebuild and install the entire system.
 system:
@@ -65,6 +67,7 @@ system:
 	$(MAKE) -B -C $(SRCDIR)/doc install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
 	$(MAKE) -B -C $(SRCDIR)/libc install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
 	$(MAKE) -B -C $(SRCDIR)/libm install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
+	$(MAKE) -B -C $(SRCDIR)/libpthread install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
 	$(MAKE) -B -C $(SRCDIR)/dispd install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
 	$(MAKE) -B -C $(SRCDIR)/games install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
 	$(MAKE) -B -C $(SRCDIR)/mkinitrd install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib

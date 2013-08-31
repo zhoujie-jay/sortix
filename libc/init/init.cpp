@@ -24,6 +24,7 @@
 *******************************************************************************/
 
 #include <malloc.h>
+#include <pthread.h>
 #include <string.h>
 
 extern "C" { char* program_invocation_name; }
@@ -58,6 +59,9 @@ extern "C" void initialize_standard_library(int argc, char* argv[])
 
 	// It's probably best to initialize the Unix signals early on.
 	init_signal();
+
+	// Initialize pthreads and stuff like thread-local storage.
+	pthread_initialize();
 
 	// Initialize the dynamic heap.
 	_init_heap();

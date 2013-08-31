@@ -455,6 +455,16 @@ large parts of user-land if you update this library.
     make
     make install
 
+### Building the Pthread Library ###
+
+The Pthread Library (libpthread) provides a threading implementation through the
+standard header <pthread.h> as known from POSIX. Like the C library, you will
+likely want to recompile large parts of user-land if you update this library.
+
+    cd /src/libpthread
+    make
+    make install
+
 ### Building the Display Daemon ###
 
 The dispd library allows processes to communicate with the dispd server that
