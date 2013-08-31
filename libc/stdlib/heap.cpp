@@ -26,6 +26,7 @@
 
 #if __STDC_HOSTED__
 #include <error.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
 #endif
@@ -195,7 +196,9 @@ inline size_t BSF(size_t Value)
 struct Chunk;
 struct Trailer;
 
-#if defined(__is_sortix_kernel)
+#if __STDC_HOSTED__
+pthread_mutex_t heaplock;
+#elif defined(__is_sortix_kernel)
 Sortix::kthread_mutex_t heaplock;
 #endif
 
@@ -407,7 +410,9 @@ extern "C" void _init_heap()
 	wildernesssize = 0;
 	for ( size_t i = 0; i < NUMBINS; i++ ) { bins[i] = NULL; }
 	bincontainschunks = 0;
-#if defined(__is_sortix_kernel)
+#if __STDC_HOSTED__
+	heaplock = PTHREAD_MUTEX_INITIALIZER;
+#elif defined(__is_sortix_kernel)
 	heaplock = Sortix::KTHREAD_MUTEX_INITIALIZER;
 #endif
 }
@@ -445,8 +450,10 @@ static bool ExpandWilderness(size_t bytesneeded)
 
 extern "C" void* malloc(size_t size)
 {
-	#if defined(__is_sortix_kernel)
-	Sortix::ScopedLock scopedlock(&heaplock);
+	#if __STDC_HOSTED__
+	pthread_mutex_lock(&heaplock);
+	#elif defined(__is_sortix_kernel)
+	Sortix::kthread_mutex_lock(&heaplock);
 	#endif
 
 	#if 2 <= PARANOIA
@@ -516,6 +523,13 @@ extern "C" void* malloc(size_t size)
 		#endif
 
 		uintptr_t result = ((uintptr_t) chunk) + sizeof(Chunk);
+
+		#if __STDC_HOSTED__
+		pthread_mutex_unlock(&heaplock);
+		#elif defined(__is_sortix_kernel)
+		Sortix::kthread_mutex_unlock(&heaplock);
+		#endif
+
 		return (void*) result;
 	}
 
@@ -525,6 +539,13 @@ extern "C" void* malloc(size_t size)
 	if ( wildernesssize < size && !ExpandWilderness(size) )
 	{
 		errno = ENOMEM;
+
+		#if __STDC_HOSTED__
+		pthread_mutex_unlock(&heaplock);
+		#elif defined(__is_sortix_kernel)
+		Sortix::kthread_mutex_unlock(&heaplock);
+		#endif
+
 		return NULL;
 	}
 
@@ -546,6 +567,13 @@ extern "C" void* malloc(size_t size)
 	#endif
 
 	uintptr_t result = ((uintptr_t) chunk) + sizeof(Chunk);
+
+	#if __STDC_HOSTED__
+	pthread_mutex_unlock(&heaplock);
+	#elif defined(__is_sortix_kernel)
+	Sortix::kthread_mutex_unlock(&heaplock);
+	#endif
+
 	return (void*) result;
 }
 
@@ -620,15 +648,27 @@ static void UnifyNeighbors(Chunk** chunk)
 
 extern "C" void free(void* addr)
 {
-	#if defined(__is_sortix_kernel)
-	Sortix::ScopedLock scopedlock(&heaplock);
+	#if __STDC_HOSTED__
+	pthread_mutex_lock(&heaplock);
+	#elif defined(__is_sortix_kernel)
+	Sortix::kthread_mutex_lock(&heaplock);
 	#endif
 
 	#if 2 <= PARANOIA
 	assert(ValidateHeap());
 	#endif
 
-	if ( !addr) { return; }
+	if ( !addr)
+	{
+		#if __STDC_HOSTED__
+		pthread_mutex_unlock(&heaplock);
+		#elif defined(__is_sortix_kernel)
+		Sortix::kthread_mutex_unlock(&heaplock);
+		#endif
+
+		return;
+	}
+
 	Chunk* chunk = (Chunk*) ((uintptr_t) addr - sizeof(Chunk));
 #if __STDC_HOSTED__
 	if ( !IsGoodHeapPointer(addr, 1) ||
@@ -656,6 +696,13 @@ extern "C" void free(void* addr)
 	{
 		heapsize -= chunk->size;
 		wildernesssize += chunk->size;
+
+		#if __STDC_HOSTED__
+		pthread_mutex_unlock(&heaplock);
+		#elif defined(__is_sortix_kernel)
+		Sortix::kthread_mutex_unlock(&heaplock);
+		#endif
+
 		return;
 	}
 
@@ -663,6 +710,12 @@ extern "C" void free(void* addr)
 
 	#if 3 <= PARANOIA
 	assert(ValidateHeap());
+	#endif
+
+	#if __STDC_HOSTED__
+	pthread_mutex_unlock(&heaplock);
+	#elif defined(__is_sortix_kernel)
+	Sortix::kthread_mutex_unlock(&heaplock);
 	#endif
 }
 
