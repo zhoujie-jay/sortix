@@ -14,6 +14,7 @@ OBJS=\
 pthread_equal.o \
 pthread_initialize.o \
 pthread_mutex_lock.o \
+pthread_mutex_trylock.o \
 pthread_mutex_unlock.o \
 pthread_self.o \
 

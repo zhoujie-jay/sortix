@@ -210,7 +210,7 @@ int pthread_equal(pthread_t, pthread_t);
 int pthread_mutex_lock(pthread_mutex_t*);
 /* TODO: pthread_mutex_setprioceiling */
 /* TODO: pthread_mutex_timedlock */
-/* TODO: pthread_mutex_trylock */
+int pthread_mutex_trylock(pthread_mutex_t*);
 int pthread_mutex_unlock(pthread_mutex_t*);
 /* TODO: pthread_mutexattr_destroy */
 /* TODO: pthread_mutexattr_getprioceiling */
