@@ -55,10 +55,10 @@ __BEGIN_DECLS
 /* TODO: #define PTHREAD_CREATE_JOINABLE */
 /* TODO: #define PTHREAD_EXPLICIT_SCHED */
 /* TODO: #define PTHREAD_INHERIT_SCHED */
-/* TODO: #define PTHREAD_MUTEX_DEFAULT */
+#define PTHREAD_MUTEX_DEFAULT PTHREAD_MUTEX_NORMAL
 /* TODO: #define PTHREAD_MUTEX_ERRORCHECK */
-/* TODO: #define PTHREAD_MUTEX_NORMAL */
-/* TODO: #define PTHREAD_MUTEX_RECURSIVE */
+#define PTHREAD_MUTEX_NORMAL 0
+#define PTHREAD_MUTEX_RECURSIVE 1
 /* TODO: #define PTHREAD_MUTEX_ROBUST */
 /* TODO: #define PTHREAD_MUTEX_STALLED */
 /* TODO: #define PTHREAD_ONCE_INIT */
@@ -143,8 +143,11 @@ struct pthread
 #endif
 
 #define PTHREAD_COND_INITIALIZER 0
-#define PTHREAD_MUTEX_INITIALIZER 0
+#define PTHREAD_MUTEX_INITIALIZER { 0, PTHREAD_MUTEX_DEFAULT, 0, 0 }
 #define PTHREAD_RWLOCK_INITIALIZER 0
+
+#define PTHREAD_NORMAL_MUTEX_INITIALIZER_NP { 0, PTHREAD_MUTEX_NORMAL, 0, 0 }
+#define PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP { 0, PTHREAD_MUTEX_RECURSIVE, 0, 0 }
 
 void pthread_initialize(void);
 
@@ -204,11 +207,11 @@ int pthread_equal(pthread_t, pthread_t);
 /* TODO: pthread_mutex_destroy */
 /* TODO: pthread_mutex_getprioceiling */
 /* TODO: pthread_mutex_init */
-/* TODO: pthread_mutex_lock */
+int pthread_mutex_lock(pthread_mutex_t*);
 /* TODO: pthread_mutex_setprioceiling */
 /* TODO: pthread_mutex_timedlock */
 /* TODO: pthread_mutex_trylock */
-/* TODO: pthread_mutex_unlock */
+int pthread_mutex_unlock(pthread_mutex_t*);
 /* TODO: pthread_mutexattr_destroy */
 /* TODO: pthread_mutexattr_getprioceiling */
 /* TODO: pthread_mutexattr_getprotocol */

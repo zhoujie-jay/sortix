@@ -45,7 +45,23 @@ typedef int __pthread_condattr_t;
 
 typedef int __pthread_key_t;
 
-typedef int __pthread_mutex_t;
+#if defined(__is_sortix_libpthread)
+typedef struct
+{
+	unsigned long lock;
+	unsigned long type;
+	unsigned long owner;
+	unsigned long recursion;
+} __pthread_mutex_t;
+#else
+typedef struct
+{
+	unsigned long __pthread_lock;
+	unsigned long __pthread_type;
+	unsigned long __pthread_owner;
+	unsigned long __pthread_recursion;
+} __pthread_mutex_t;
+#endif
 
 typedef int __pthread_mutexattr_t;
 
