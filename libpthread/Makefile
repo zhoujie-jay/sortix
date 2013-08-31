@@ -22,6 +22,7 @@ pthread_cond_signal.o \
 pthread_cond_timedwait.o \
 pthread_cond_wait.o \
 pthread_equal.o \
+pthread_exit.o \
 pthread_initialize.o \
 pthread_mutexattr_destroy.o \
 pthread_mutexattr_gettype.o \

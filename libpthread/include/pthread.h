@@ -209,7 +209,8 @@ int pthread_condattr_setclock(pthread_condattr_t*, clockid_t);
 /* TODO: pthread_create */
 /* TODO: pthread_detach */
 int pthread_equal(pthread_t, pthread_t);
-/* TODO: pthread_exit */
+__attribute__((__noreturn__))
+void pthread_exit(void*);
 /* TODO: pthread_getconcurrency */
 /* TODO: pthread_getcpuclockid */
 /* TODO: pthread_getschedparam */
