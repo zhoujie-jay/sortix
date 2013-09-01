@@ -23,18 +23,29 @@
 *******************************************************************************/
 
 #include <dirent.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 extern "C" { struct exit_handler* __exit_handler_stack = NULL; }
 
+static pthread_mutex_t exit_lock = PTHREAD_MUTEX_INITIALIZER;
+
 extern "C" void exit(int status)
 {
+	// Only allow a single thread to do the exit cleanup. If somehow the cleanup
+	// code calls exit, then we'll self-destruct. If multiple threads attempt to
+	// call exit, then we'll destroy the ones that got here too late.
+	if ( pthread_mutex_trylock(&exit_lock) != 0 )
+		exit_thread(status, 0, NULL);
+
 	while ( __exit_handler_stack )
 	{
 		__exit_handler_stack->hook(status, __exit_handler_stack->param);
 		__exit_handler_stack = __exit_handler_stack->next;
 	}
+
 	dcloseall();
 	fcloseall();
 	_Exit(status);
