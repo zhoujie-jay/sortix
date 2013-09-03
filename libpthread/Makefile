@@ -33,6 +33,8 @@ pthread_mutex_lock.o \
 pthread_mutex_trylock.o \
 pthread_mutex_unlock.o \
 pthread_rwlock_rdlock.o \
+pthread_rwlock_tryrdlock.o \
+pthread_rwlock_trywrlock.o \
 pthread_rwlock_unlock.o \
 pthread_rwlock_wrlock.o \
 pthread_self.o \

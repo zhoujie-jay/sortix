@@ -245,8 +245,8 @@ int pthread_mutexattr_settype(pthread_mutexattr_t*, int);
 int pthread_rwlock_rdlock(pthread_rwlock_t*);
 /* TODO: pthread_rwlock_timedrdlock */
 /* TODO: pthread_rwlock_timedwrlock */
-/* TODO: pthread_rwlock_tryrdlock */
-/* TODO: pthread_rwlock_trywrlock */
+int pthread_rwlock_tryrdlock(pthread_rwlock_t*);
+int pthread_rwlock_trywrlock(pthread_rwlock_t*);
 int pthread_rwlock_unlock(pthread_rwlock_t*);
 int pthread_rwlock_wrlock(pthread_rwlock_t*);
 /* TODO: pthread_rwlockattr_destroy */
