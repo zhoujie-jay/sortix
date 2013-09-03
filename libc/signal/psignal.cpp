@@ -28,7 +28,9 @@
 
 extern "C" void psignal(int signum, const char* message)
 {
+	flockfile(stderr);
 	if ( message && message[0] )
-		fprintf(stderr, "%s: ", message);
-	fprintf(stderr, strsignal(signum));
+		fprintf_unlocked(stderr, "%s: ", message);
+	fprintf_unlocked(stderr, strsignal(signum));
+	funlockfile(stderr);
 }
