@@ -152,7 +152,9 @@ struct pthread_cond_elem
 
 #define PTHREAD_COND_INITIALIZER { NULL, NULL, CLOCK_REALTIME }
 #define PTHREAD_MUTEX_INITIALIZER { 0, PTHREAD_MUTEX_DEFAULT, 0, 0 }
-#define PTHREAD_RWLOCK_INITIALIZER 0
+#define PTHREAD_RWLOCK_INITIALIZER { PTHREAD_COND_INITIALIZER, \
+                                     PTHREAD_COND_INITIALIZER, \
+                                     PTHREAD_MUTEX_INITIALIZER, 0, 0, 0, 0 }
 
 #define PTHREAD_NORMAL_MUTEX_INITIALIZER_NP { 0, PTHREAD_MUTEX_NORMAL, 0, 0 }
 #define PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP { 0, PTHREAD_MUTEX_RECURSIVE, 0, 0 }
@@ -240,13 +242,13 @@ int pthread_mutexattr_settype(pthread_mutexattr_t*, int);
 /* TODO: pthread_once */
 /* TODO: pthread_rwlock_destroy */
 /* TODO: pthread_rwlock_init */
-/* TODO: pthread_rwlock_rdlock */
+int pthread_rwlock_rdlock(pthread_rwlock_t*);
 /* TODO: pthread_rwlock_timedrdlock */
 /* TODO: pthread_rwlock_timedwrlock */
 /* TODO: pthread_rwlock_tryrdlock */
 /* TODO: pthread_rwlock_trywrlock */
-/* TODO: pthread_rwlock_unlock */
-/* TODO: pthread_rwlock_wrlock */
+int pthread_rwlock_unlock(pthread_rwlock_t*);
+int pthread_rwlock_wrlock(pthread_rwlock_t*);
 /* TODO: pthread_rwlockattr_destroy */
 /* TODO: pthread_rwlockattr_getpshared */
 /* TODO: pthread_rwlockattr_init */

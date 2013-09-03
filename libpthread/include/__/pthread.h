@@ -101,7 +101,29 @@ typedef struct
 
 typedef int __pthread_once_t;
 
-typedef int __pthread_rwlock_t;
+#if defined(__is_sortix_libpthread)
+typedef struct
+{
+	__pthread_cond_t reader_condition;
+	__pthread_cond_t writer_condition;
+	__pthread_mutex_t request_mutex;
+	unsigned long num_readers;
+	unsigned long num_writers;
+	unsigned long pending_readers;
+	unsigned long pending_writers;
+} __pthread_rwlock_t;
+#else
+typedef struct
+{
+	__pthread_cond_t __pthread_reader_condition;
+	__pthread_cond_t __pthread_writer_condition;
+	__pthread_mutex_t __pthread_request_mutex;
+	unsigned long __pthread_num_readers;
+	unsigned long __pthread_num_writers;
+	unsigned long __pthread_pending_readers;
+	unsigned long __pthread_pending_writers;
+} __pthread_rwlock_t;
+#endif
 
 typedef int __pthread_rwlockattr_t;
 
