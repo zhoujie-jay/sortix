@@ -197,10 +197,10 @@ int pthread_cond_timedwait(pthread_cond_t* __restrict,
                            pthread_mutex_t* __restrict,
                            const struct timespec* __restrict);
 int pthread_cond_wait(pthread_cond_t* __restrict, pthread_mutex_t* __restrict);
-/* TODO: pthread_condattr_destroy */
+int pthread_condattr_destroy(pthread_condattr_t*);
 /* TODO: pthread_condattr_getclock */
 /* TODO: pthread_condattr_getpshared */
-/* TODO: pthread_condattr_init */
+int pthread_condattr_init(pthread_condattr_t*);
 /* TODO: pthread_condattr_setclock */
 /* TODO: pthread_condattr_setpshared */
 /* TODO: pthread_create */

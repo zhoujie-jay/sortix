@@ -11,6 +11,8 @@ CPPFLAGS:=$(CPPFLAGS) -D__is_sortix_libpthread -I include
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 OBJS=\
+pthread_condattr_destroy.o \
+pthread_condattr_init.o \
 pthread_cond_broadcast.o \
 pthread_cond_destroy.o \
 pthread_cond_init.o \

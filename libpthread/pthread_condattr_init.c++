@@ -17,26 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with Sortix libpthread. If not, see <http://www.gnu.org/licenses/>.
 
-    pthread_cond_init.c++
-    Initializes a condition variable.
+    pthread_condattr_init.c++
+    Initialize a condition variable attributes object.
 
 *******************************************************************************/
 
 #include <pthread.h>
+#include <string.h>
 
-extern "C"
-int pthread_cond_init(pthread_cond_t* restrict cond,
-                       const pthread_condattr_t* restrict attr)
+extern "C" int pthread_condattr_init(pthread_condattr_t* attr)
 {
-	pthread_condattr_t default_attr;
-	if ( !attr )
-	{
-		pthread_condattr_init(&default_attr);
-		attr = &default_attr;
-	}
-
-	cond->first = NULL;
-	cond->last = NULL;
-
+	memset(attr, 0, sizeof(*attr));
 	return 0;
 }
