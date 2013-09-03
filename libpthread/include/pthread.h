@@ -240,8 +240,9 @@ int pthread_mutexattr_init(pthread_mutexattr_t*);
 /* TODO: pthread_mutexattr_setrobust */
 int pthread_mutexattr_settype(pthread_mutexattr_t*, int);
 /* TODO: pthread_once */
-/* TODO: pthread_rwlock_destroy */
-/* TODO: pthread_rwlock_init */
+int pthread_rwlock_destroy(pthread_rwlock_t*);
+int pthread_rwlock_init(pthread_rwlock_t* __restrict,
+                        const pthread_rwlockattr_t* __restrict);
 int pthread_rwlock_rdlock(pthread_rwlock_t*);
 /* TODO: pthread_rwlock_timedrdlock */
 /* TODO: pthread_rwlock_timedwrlock */
