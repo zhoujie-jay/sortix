@@ -33,7 +33,15 @@ __BEGIN_DECLS
 
 #define __sortix_libpthread__ 1
 
-typedef int __pthread_attr_t;
+#if defined(__is_sortix_libpthread)
+typedef struct
+{
+} __pthread_attr_t;
+#else
+typedef struct
+{
+} __pthread_attr_t;
+#endif
 
 typedef int __pthread_barrier_t;
 

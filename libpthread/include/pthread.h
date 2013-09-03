@@ -185,7 +185,7 @@ struct pthread* pthread_allocate_tls(void);
 #endif
 
 /* TODO: pthread_atfork */
-/* TODO: pthread_attr_destroy */
+int pthread_attr_destroy(pthread_attr_t*);
 /* TODO: pthread_attr_getdetachstate */
 /* TODO: pthread_attr_getguardsize */
 /* TODO: pthread_attr_getinheritsched */
@@ -194,7 +194,7 @@ struct pthread* pthread_allocate_tls(void);
 /* TODO: pthread_attr_getscope */
 /* TODO: pthread_attr_getstack */
 /* TODO: pthread_attr_getstacksize */
-/* TODO: pthread_attr_init */
+int pthread_attr_init(pthread_attr_t*);
 /* TODO: pthread_attr_setdetachstate */
 /* TODO: pthread_attr_setguardsize */
 /* TODO: pthread_attr_setinheritsched */
