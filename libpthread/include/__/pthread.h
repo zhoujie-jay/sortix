@@ -63,7 +63,15 @@ typedef struct
 } __pthread_mutex_t;
 #endif
 
-typedef int __pthread_mutexattr_t;
+#if defined(__is_sortix_libpthread)
+typedef struct
+{
+} __pthread_mutexattr_t;
+#else
+typedef struct
+{
+} __pthread_mutexattr_t;
+#endif
 
 typedef int __pthread_once_t;
 
