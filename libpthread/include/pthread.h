@@ -250,9 +250,9 @@ int pthread_rwlock_tryrdlock(pthread_rwlock_t*);
 int pthread_rwlock_trywrlock(pthread_rwlock_t*);
 int pthread_rwlock_unlock(pthread_rwlock_t*);
 int pthread_rwlock_wrlock(pthread_rwlock_t*);
-/* TODO: pthread_rwlockattr_destroy */
+int pthread_rwlockattr_destroy(pthread_rwlockattr_t*);
 /* TODO: pthread_rwlockattr_getpshared */
-/* TODO: pthread_rwlockattr_init */
+int pthread_rwlockattr_init(pthread_rwlockattr_t*);
 /* TODO: pthread_rwlockattr_setpshared */
 pthread_t pthread_self(void);
 /* TODO: pthread_setcancelstate */

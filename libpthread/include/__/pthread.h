@@ -125,7 +125,15 @@ typedef struct
 } __pthread_rwlock_t;
 #endif
 
-typedef int __pthread_rwlockattr_t;
+#if defined(__is_sortix_libpthread)
+typedef struct
+{
+} __pthread_rwlockattr_t;
+#else
+typedef struct
+{
+} __pthread_rwlockattr_t;
+#endif
 
 typedef int __pthread_spinlock_t;
 
