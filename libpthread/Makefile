@@ -12,6 +12,8 @@ CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 OBJS=\
 pthread_cond_broadcast.o \
+pthread_cond_destroy.o \
+pthread_cond_init.o \
 pthread_cond_signal.o \
 pthread_cond_timedwait.o \
 pthread_cond_wait.o \

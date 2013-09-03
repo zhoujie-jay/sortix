@@ -189,8 +189,9 @@ void pthread_initialize(void);
 /* TODO: pthread_cleanup_pop */
 /* TODO: pthread_cleanup_push */
 int pthread_cond_broadcast(pthread_cond_t*);
-/* TODO: pthread_cond_destroy */
-/* TODO: pthread_cond_init */
+int pthread_cond_destroy(pthread_cond_t*);
+int pthread_cond_init(pthread_cond_t* __restrict,
+                      const pthread_condattr_t* __restrict);
 int pthread_cond_signal(pthread_cond_t*);
 int pthread_cond_timedwait(pthread_cond_t* __restrict,
                            pthread_mutex_t* __restrict,
