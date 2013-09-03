@@ -31,16 +31,21 @@
 
 extern "C" void gnu_error(int status, int errnum, const char *format, ...)
 {
-	fprintf(stderr, "%s: ", program_invocation_name);
+	flockfile(stderr);
+
+	fprintf_unlocked(stderr, "%s: ", program_invocation_name);
 
 	va_list list;
 	va_start(list, format);
-	vfprintf(stderr, format, list);
+	vfprintf_unlocked(stderr, format, list);
 	va_end(list);
 
 	if ( errnum )
-		fprintf(stderr, ": %s", strerror(errnum));
-	fprintf(stderr, "\n");
+		fprintf_unlocked(stderr, ": %s", strerror(errnum));
+	fprintf_unlocked(stderr, "\n");
+
+	funlockfile(stderr);
+
 	if ( status )
 		exit(status);
 }
