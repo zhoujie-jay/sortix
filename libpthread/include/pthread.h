@@ -142,7 +142,15 @@ struct pthread
 };
 #endif
 
-#define PTHREAD_COND_INITIALIZER 0
+#if defined(__is_sortix_libpthread)
+struct pthread_cond_elem
+{
+	struct pthread_cond_elem* next;
+	volatile unsigned long woken;
+};
+#endif
+
+#define PTHREAD_COND_INITIALIZER { NULL, NULL }
 #define PTHREAD_MUTEX_INITIALIZER { 0, PTHREAD_MUTEX_DEFAULT, 0, 0 }
 #define PTHREAD_RWLOCK_INITIALIZER 0
 
@@ -180,12 +188,12 @@ void pthread_initialize(void);
 /* TODO: pthread_cancel */
 /* TODO: pthread_cleanup_pop */
 /* TODO: pthread_cleanup_push */
-/* TODO: pthread_cond_broadcast */
+int pthread_cond_broadcast(pthread_cond_t*);
 /* TODO: pthread_cond_destroy */
 /* TODO: pthread_cond_init */
-/* TODO: pthread_cond_signal */
+int pthread_cond_signal(pthread_cond_t*);
 /* TODO: pthread_cond_timedwait */
-/* TODO: pthread_cond_wait */
+int pthread_cond_wait(pthread_cond_t* __restrict, pthread_mutex_t* __restrict);
 /* TODO: pthread_condattr_destroy */
 /* TODO: pthread_condattr_getclock */
 /* TODO: pthread_condattr_getpshared */

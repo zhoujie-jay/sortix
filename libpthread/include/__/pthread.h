@@ -39,7 +39,19 @@ typedef int __pthread_barrier_t;
 
 typedef int __pthread_barrierattr_t;
 
-typedef int __pthread_cond_t;
+#if defined(__is_sortix_libpthread)
+typedef struct
+{
+	struct pthread_cond_elem* first;
+	struct pthread_cond_elem* last;
+} __pthread_cond_t;
+#else
+typedef struct
+{
+	void* __pthread_first;
+	void* __pthread_last;
+} __pthread_cond_t;
+#endif
 
 typedef int __pthread_condattr_t;
 
