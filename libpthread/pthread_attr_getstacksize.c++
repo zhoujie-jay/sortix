@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of Sortix libpthread.
 
@@ -17,19 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with Sortix libpthread. If not, see <http://www.gnu.org/licenses/>.
 
-    pthread_attr_init.c++
-    Initialize a thread attributes object.
+    pthread_attr_getstacksize.c++
+    Gets the requested stack size in a thread attribute object.
 
 *******************************************************************************/
 
 #include <pthread.h>
-#include <string.h>
 
-static const unsigned long DEFAULT_STACK_SIZE = 64 * 1024;
-
-extern "C" int pthread_attr_init(pthread_attr_t* attr)
+extern "C"
+int pthread_attr_getstacksize(const pthread_attr_t* restrict attr,
+                              size_t* restrict stack_size_ptr)
 {
-	memset(attr, 0, sizeof(*attr));
-	attr->stack_size = DEFAULT_STACK_SIZE;
+	*stack_size_ptr = attr->stack_size;
 	return 0;
 }

@@ -36,10 +36,12 @@ __BEGIN_DECLS
 #if defined(__is_sortix_libpthread)
 typedef struct
 {
+	__SIZE_TYPE__ stack_size;
 } __pthread_attr_t;
 #else
 typedef struct
 {
+	__SIZE_TYPE__ __pthread_stack_size;
 } __pthread_attr_t;
 #endif
 

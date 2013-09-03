@@ -121,8 +121,6 @@ static void setup_thread_state(struct pthread* thread, tforkregs_t* regs)
 }
 #endif
 
-static const unsigned long DEFAULT_STACK_SIZE = 64 * 1024;
-
 extern "C"
 {
 	pthread_mutex_t __pthread_num_threads_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -131,11 +129,18 @@ extern "C"
 
 extern "C"
 int pthread_create(pthread_t* restrict thread_ptr,
-                   const pthread_attr_t* restrict /*attr*/,
+                   const pthread_attr_t* restrict attr,
                    void* (*entry_function)(void*),
                    void* restrict entry_cookie)
 {
 	assert(thread_ptr);
+
+	pthread_attr_t default_attr;
+	if ( !attr )
+	{
+		pthread_attr_init(&default_attr);
+		attr = &default_attr;
+	}
 
 	struct pthread* self = pthread_self();
 
@@ -204,7 +209,7 @@ int pthread_create(pthread_t* restrict thread_ptr,
 	// Set up a stack for the new thread.
 	int stack_prot = PROT_READ | PROT_WRITE;
 	int stack_flags = MAP_PRIVATE | MAP_ANONYMOUS;
-	thread->uthread.stack_size = DEFAULT_STACK_SIZE;
+	thread->uthread.stack_size = attr->stack_size;
 	thread->uthread.stack_mmap =
 		mmap(NULL, thread->uthread.stack_size, stack_prot, stack_flags, -1, 0);
 	if ( thread->uthread.stack_mmap == MAP_FAILED )

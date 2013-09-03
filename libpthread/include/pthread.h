@@ -193,7 +193,8 @@ int pthread_attr_destroy(pthread_attr_t*);
 /* TODO: pthread_attr_getschedpolicy */
 /* TODO: pthread_attr_getscope */
 /* TODO: pthread_attr_getstack */
-/* TODO: pthread_attr_getstacksize */
+int pthread_attr_getstacksize(const pthread_attr_t* __restrict,
+                              size_t* __restrict);
 int pthread_attr_init(pthread_attr_t*);
 /* TODO: pthread_attr_setdetachstate */
 /* TODO: pthread_attr_setguardsize */
@@ -202,7 +203,7 @@ int pthread_attr_init(pthread_attr_t*);
 /* TODO: pthread_attr_setschedpolicy */
 /* TODO: pthread_attr_setscope */
 /* TODO: pthread_attr_setstack */
-/* TODO: pthread_attr_setstacksize */
+int pthread_attr_setstacksize(pthread_attr_t*, size_t);
 /* TODO: pthread_barrier_destroy */
 /* TODO: pthread_barrier_init */
 /* TODO: pthread_barrier_wait */
