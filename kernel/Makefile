@@ -54,7 +54,8 @@ ifdef X86FAMILY
              $(CPU)/process.o \
              x86-family/cmos.o \
              x86-family/time.o \
-             x86-family/msr.o \
+             x86-family/mtrr.o \
+             x86-family/pat.o \
              x86-family/float.o \
              x86-family/x86-family.o
     # TODO: Are these -m flags even needed in the first place?

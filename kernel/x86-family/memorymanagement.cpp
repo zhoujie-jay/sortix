@@ -32,6 +32,7 @@
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/panic.h>
+#include <sortix/kernel/pat.h>
 #include <sortix/kernel/syscall.h>
 
 #include "multiboot.h"
@@ -92,9 +93,9 @@ void InitCPU(multiboot_info_t* bootinfo)
 
 	// If supported, setup the Page Attribute Table feature that allows
 	// us to control the memory type (caching) of memory more precisely.
-	if ( MSR::IsPATSupported() )
+	if ( IsPATSupported() )
 	{
-		MSR::InitializePAT();
+		InitializePAT();
 		for ( addr_t i = 0; i < PAT_NUM; i++ )
 			PAT2PMLFlags[i] = EncodePATAsPMLFlag(i);
 	}
