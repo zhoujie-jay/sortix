@@ -150,6 +150,8 @@
 #define SYSCALL_GETUMASK 126
 #define SYSCALL_FSTATVFS 127
 #define SYSCALL_FSTATVFSAT 128
-#define SYSCALL_MAX_NUM 129 /* index of highest constant + 1 */
+#define SYSCALL_RDMSR 129
+#define SYSCALL_WRMSR 130
+#define SYSCALL_MAX_NUM 131 /* index of highest constant + 1 */
 
 #endif

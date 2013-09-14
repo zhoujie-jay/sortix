@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
 
     This file is part of Sortix.
 
@@ -22,9 +22,14 @@
 
 *******************************************************************************/
 
+#include <errno.h>
+#include <msr.h>
 #include <stdint.h>
 
 #include <sortix/kernel/kernel.h>
+#include <sortix/kernel/syscall.h>
+
+#include "gdt.h"
 
 namespace Sortix {
 namespace CPU {
@@ -105,6 +110,62 @@ void ShutDown()
 {
 	// TODO: Unimplemented, just reboot.
 	Reboot();
+}
+
+static uint64_t sys_rdmsr(uint32_t msrid)
+{
+	switch ( msrid )
+	{
+	case MSRID_FSBASE:
+#if defined(__i386__)
+		return GDT::GetFSBase();
+#elif defined(__x86_64__)
+		return rdmsr(msrid);
+#endif
+	case MSRID_GSBASE:
+#if defined(__i386__)
+		return GDT::GetGSBase();
+#elif defined(__x86_64__)
+		return rdmsr(msrid);
+#endif
+	default:
+		return errno = EPERM, UINT64_MAX;
+	};
+}
+
+static uint64_t sys_wrmsr(uint32_t msrid, uint64_t value)
+{
+	switch ( msrid )
+	{
+	case MSRID_FSBASE:
+#if defined(__i386__)
+		if ( UINT32_MAX < value )
+			return errno = EINVAL, UINT64_MAX;
+		return GDT::SetFSBase((uint32_t) value), value;
+#elif defined(__x86_64__)
+		if ( value >> 48 != 0x0000 && value >> 48 != 0xFFFF )
+			return errno = EINVAL, UINT64_MAX;
+		return wrmsr(msrid, value);
+#endif
+	case MSRID_GSBASE:
+#if defined(__i386__)
+		if ( UINT32_MAX < value )
+			return errno = EINVAL, UINT64_MAX;
+		return GDT::SetGSBase((uint32_t) value), value;
+#elif defined(__x86_64__)
+		if ( value >> 48 != 0x0000 && value >> 48 != 0xFFFF )
+			return errno = EINVAL, UINT64_MAX;
+		return wrmsr(msrid, value);
+#endif
+	default:
+		return errno = EPERM, UINT64_MAX;
+	};
+}
+
+void Init()
+{
+	Syscall::Register(SYSCALL_RDMSR, (void*) sys_rdmsr);
+	Syscall::Register(SYSCALL_WRMSR, (void*) sys_wrmsr);
 }
 
 } // namespace CPU

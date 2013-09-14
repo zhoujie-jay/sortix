@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -94,9 +94,13 @@
 #include "uart.h"
 #include "vga.h"
 #include "vgatextbuffer.h"
+
+#if defined(__i386__) || defined(__x86_64__)
 #include "x86-family/cmos.h"
 #include "x86-family/float.h"
 #include "x86-family/gdt.h"
+#include "x86-family/x86-family.h"
+#endif
 
 // Keep the stack size aligned with $CPU/base.s
 const size_t STACK_SIZE = 64*1024;
@@ -407,6 +411,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	//
 	// Stage 2. Transition to Multithreaded Environment
 	//
+
+	// Initialize CPU system calls.
+	CPU::Init();
 
 	// Initialize the clocks.
 	Time::Init();

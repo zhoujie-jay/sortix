@@ -41,8 +41,13 @@ __call_tfork_with_regs:
 	# of each register in the child. Since we create an identical copy, we
 	# simply set each member of the structure to our own state. Note that since
 	# the stack goes downwards, we create it in the reverse order.
-	pushq $0 # gsbase
-	pushq $0 # fsbase
+	movl $MSRID_GSBASE, %edi
+	call rdmsr
+	pushq %rax
+	movl $MSRID_FSBASE, %edi
+	call rdmsr
+	pushq %rax
+	movq -8(%rbp), %rdi
 	pushfq
 	pushq %r15
 	pushq %r14

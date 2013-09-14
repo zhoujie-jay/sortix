@@ -302,6 +302,8 @@ libgen/basename.o \
 libgen/dirname.o \
 locale/localeconv.o \
 locale/setlocale.o \
+msr/rdmsr.o \
+msr/wrmsr.o \
 netdb/endhostent.o \
 netdb/endnetent.o \
 netdb/endprotoent.o \
