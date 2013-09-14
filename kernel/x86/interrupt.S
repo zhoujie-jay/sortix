@@ -368,8 +368,6 @@ fixup_relocate_stack_complete:
 	movw $0x10, %bp
 	movl %ebp, %ds
 	movl %ebp, %es
-	movl %ebp, %fs
-	movl %ebp, %gs
 
 	# Push CR2 in case of page faults
 	movl %cr2, %ebp
@@ -404,8 +402,6 @@ load_interrupted_registers:
 	popl %ebp
 	movl %ebp, %ds
 	movl %ebp, %es
-	movl %ebp, %fs
-	movl %ebp, %gs
 
 	popl %edi
 	popl %esi

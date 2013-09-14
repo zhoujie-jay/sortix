@@ -27,6 +27,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#if defined(__x86_64__)
+#include <msr.h>
+#endif
+
 #include <sortix/keycodes.h>
 
 #include <sortix/kernel/cpu.h>
@@ -35,6 +39,10 @@
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/keyboard.h>
 #include <sortix/kernel/thread.h>
+
+#if defined(__i386__)
+#include "../x86-family/gdt.h"
+#endif
 
 #include "ps2.h"
 
@@ -97,7 +105,15 @@ void PS2Keyboard::OnInterrupt(CPU::InterruptRegisters* regs)
 	uint8_t scancode = PopScancode();
 	if ( scancode == KBKEY_F10 )
 	{
-		CurrentThread()->SaveRegisters(regs);
+		Thread* thread = CurrentThread();
+#if defined(__i386__)
+		thread->fsbase = (unsigned long) GDT::GetFSBase();
+		thread->gsbase = (unsigned long) GDT::GetGSBase();
+#elif defined(__x86_64__)
+		thread->fsbase = (unsigned long) rdmsr(MSRID_FSBASE);
+		thread->gsbase = (unsigned long) rdmsr(MSRID_GSBASE);
+#endif
+		thread->SaveRegisters(regs);
 		Debugger::Run();
 	}
 	PS2KeyboardWork work;

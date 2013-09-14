@@ -995,7 +995,8 @@ static pid_t sys_tfork(int flags, tforkregs_t* user_regs)
 
 	// If the thread could not be created, make the process commit suicide
 	// in a manner such that we don't wait for its zombie.
-	Thread* thread = CreateKernelThread(clone, &cpuregs);
+	Thread* thread = CreateKernelThread(clone, &cpuregs, regs.fsbase,
+	                                    regs.gsbase);
 	if ( !thread )
 	{
 		clone->AbortConstruction();

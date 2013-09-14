@@ -25,12 +25,20 @@
 #ifndef SORTIX_X86_FAMILY_GDT_H
 #define SORTIX_X86_FAMILY_GDT_H
 
+#include <stdint.h>
+
 namespace Sortix {
 namespace GDT {
 
 void Init();
 void WriteTSS(int32_t num, uint16_t ss0, uintptr_t stack0);
 void SetKernelStack(uintptr_t stacklower, size_t stacksize, uintptr_t stackhigher);
+#if defined(__i386__)
+uint32_t GetFSBase();
+uint32_t GetGSBase();
+void SetFSBase(uint32_t fsbase);
+void SetGSBase(uint32_t gsbase);
+#endif
 
 } // namespace GDT
 } // namespace Sortix

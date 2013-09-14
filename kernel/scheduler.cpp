@@ -25,6 +25,7 @@
 #include <sys/types.h>
 
 #include <assert.h>
+#include <msr.h>
 #include <string.h>
 
 #include <timespec.h>
@@ -129,6 +130,18 @@ static void DoActualSwitch(CPU::InterruptRegisters* regs)
 	addr_t stackhigher = stacklower + stacksize;
 	assert(stacklower && stacksize && stackhigher);
 	GDT::SetKernelStack(stacklower, stacksize, stackhigher);
+
+#if defined(__x86_64__)
+	current->fsbase = (unsigned long) rdmsr(MSRID_FSBASE);
+	current->gsbase = (unsigned long) rdmsr(MSRID_GSBASE);
+	wrmsr(MSRID_FSBASE, (uint64_t) next->fsbase);
+	wrmsr(MSRID_GSBASE, (uint64_t) next->gsbase);
+#elif defined(__i386__)
+	current->fsbase = (unsigned long) GDT::GetFSBase();
+	current->gsbase = (unsigned long) GDT::GetGSBase();
+	GDT::SetFSBase((uint32_t) next->fsbase);
+	GDT::SetGSBase((uint32_t) next->gsbase);
+#endif
 
 	LogEndSwitch(next, regs);
 }

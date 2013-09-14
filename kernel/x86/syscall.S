@@ -37,8 +37,6 @@ syscall_handler:
 	movw $0x10, %bp
 	movl %ebp, %ds
 	movl %ebp, %es
-	movl %ebp, %fs
-	movl %ebp, %gs
 
 	# Make sure the requested system call is valid.
 	cmp SYSCALL_MAX, %eax
@@ -66,8 +64,6 @@ valid_syscall:
 	popl %ebp
 	movl %ebp, %ds
 	movl %ebp, %es
-	movl %ebp, %fs
-	movl %ebp, %gs
 
 	# Return to user-space, system call result in %eax:%edx, errno in %ecx.
 	popl %ebp

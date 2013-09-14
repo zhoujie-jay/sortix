@@ -34,6 +34,9 @@
 
 __BEGIN_DECLS
 
+#define MSRID_FSBASE __UINT32_C(0xC0000100)
+#define MSRID_GSBASE __UINT32_C(0xC0000101)
+
 __attribute__((unused))
 static __inline uint64_t rdmsr(uint32_t msrid)
 {

@@ -110,7 +110,13 @@ struct tss_entry
 } __attribute__((packed));
 #endif
 
+#if defined(__i386__)
+const size_t GDT_NUM_ENTRIES = 9;
+const size_t GDT_FS_ENTRY = 7;
+const size_t GDT_GS_ENTRY = 8;
+#else
 const size_t GDT_NUM_ENTRIES = 7;
+#endif
 static struct gdt_entry gdt_entries[GDT_NUM_ENTRIES];
 
 static struct tss_entry tss_entry;
@@ -166,6 +172,11 @@ void Init()
 
 	WriteTSS(5, 0x10, 0x0);
 
+#if defined(__i386__)
+	SetGate(GDT_FS_ENTRY, 0, 0xFFFFFFFF, 0xF2, gran);
+	SetGate(GDT_GS_ENTRY, 0, 0xFFFFFFFF, 0xF2, gran);
+#endif
+
 	// Reload the Global Descriptor Table.
 	volatile struct gdt_ptr gdt_ptr;
 	gdt_ptr.limit = (sizeof(struct gdt_entry) * GDT_NUM_ENTRIES) - 1;
@@ -175,10 +186,16 @@ void Init()
 	// Switch the current data segment.
 	asm volatile ("mov %0, %%ds\n"
 	              "mov %0, %%es\n"
-	              "mov %0, %%fs\n"
-	              "mov %0, %%gs\n"
 	              "mov %0, %%ss\n" : :
 	              "r"(KDS));
+
+#if defined(__i386__)
+	asm volatile ("mov %0, %%fs" : : "r"(GDT_FS_ENTRY << 3 | URPL));
+	asm volatile ("mov %0, %%gs" : : "r"(GDT_GS_ENTRY << 3 | URPL));
+#elif defined(__x86_64__)
+	asm volatile ("mov %0, %%fs" : : "r"(UDS | URPL));
+	asm volatile ("mov %0, %%gs" : : "r"(UDS | URPL));
+#endif
 
 	// Switch the current code segment.
 	#if defined(__i386__)
@@ -249,6 +266,42 @@ void SetKernelStack(uintptr_t stacklower, size_t stacksize, uintptr_t stackhighe
 	tss_entry.stack0 = (uint64_t) stackhigher;
 #endif
 }
+
+#if defined(__i386__)
+uint32_t GetFSBase()
+{
+	struct gdt_entry* entry = gdt_entries + GDT_FS_ENTRY;
+	return (uint32_t) entry->base_low << 0 |
+	       (uint32_t) entry->base_middle << 16 |
+	       (uint32_t) entry->base_high << 24;
+}
+
+uint32_t GetGSBase()
+{
+	struct gdt_entry* entry = gdt_entries + GDT_GS_ENTRY;
+	return (uint32_t) entry->base_low << 0 |
+	       (uint32_t) entry->base_middle << 16 |
+	       (uint32_t) entry->base_high << 24;
+}
+
+void SetFSBase(uint32_t fsbase)
+{
+	struct gdt_entry* entry = gdt_entries + GDT_FS_ENTRY;
+	entry->base_low = fsbase >> 0 & 0xFFFF;
+	entry->base_middle = fsbase >> 16 & 0xFF;
+	entry->base_high = fsbase >> 24 & 0xFF;
+	asm volatile ("mov %0, %%fs" : : "r"(GDT_FS_ENTRY << 3 | URPL));
+}
+
+void SetGSBase(uint32_t gsbase)
+{
+	struct gdt_entry* entry = gdt_entries + GDT_GS_ENTRY;
+	entry->base_low = gsbase >> 0 & 0xFFFF;
+	entry->base_middle = gsbase >> 16 & 0xFF;
+	entry->base_high = gsbase >> 24 & 0xFF;
+	asm volatile ("mov %0, %%gs" : : "r"(GDT_GS_ENTRY << 3 | URPL));
+}
+#endif
 
 } // namespace GDT
 } // namespace Sortix

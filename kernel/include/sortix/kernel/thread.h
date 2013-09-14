@@ -50,7 +50,8 @@ extern "C" __attribute__((noreturn))
 void BootstrapKernelThread(void* user, ThreadEntry entry);
 
 // These functions create a new kernel process but doesn't start it.
-Thread* CreateKernelThread(Process* process, CPU::InterruptRegisters* regs);
+Thread* CreateKernelThread(Process* process, CPU::InterruptRegisters* regs,
+                           unsigned long fsbase, unsigned long gsbase);
 Thread* CreateKernelThread(Process* process, ThreadEntry entry, void* user,
                            size_t stacksize = 0);
 Thread* CreateKernelThread(ThreadEntry entry, void* user, size_t stacksize = 0);
@@ -74,7 +75,8 @@ typedef void (*sighandler_t)(int);
 class Thread
 {
 friend Thread* CreateKernelThread(Process* process,
-                                  CPU::InterruptRegisters* regs);
+                                  CPU::InterruptRegisters* regs,
+                                  unsigned long fsbase, unsigned long gsbase);
 friend void KernelInit(unsigned long magic, multiboot_info_t* bootinfo);
 friend void Thread__OnSigKill(Thread* thread);
 
@@ -110,6 +112,12 @@ public:
 	addr_t kernelstackpos;
 	size_t kernelstacksize;
 	bool kernelstackmalloced;
+
+#if defined(__i386__) || defined(__x86_64__)
+public:
+	unsigned long fsbase;
+	unsigned long gsbase;
+#endif
 
 private:
 	CPU::InterruptRegisters registers;

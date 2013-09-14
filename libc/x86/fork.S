@@ -22,6 +22,9 @@
 
 *******************************************************************************/
 
+#define MSRID_FSBASE 0xC0000100
+#define MSRID_GSBASE 0xC0000101
+
 .section .text
 
 .globl __call_tfork_with_regs
@@ -30,12 +33,12 @@ __call_tfork_with_regs:
 	pushl %ebp
 	movl %esp, %ebp
 
-	movl 8(%ebp), %edx # flags parameter, edx need not be preserved.
-
 	# The actual system call expects a struct tforkregs_x86 containing the state
 	# of each register in the child. Since we create an identical copy, we
 	# simply set each member of the structure to our own state. Note that since
 	# the stack goes downwards, we create it in the reverse order.
+	pushl $0 # gsbase
+	pushl $0 # fsbase
 	pushfl
 	pushl %ebp
 	pushl %esp
@@ -49,6 +52,7 @@ __call_tfork_with_regs:
 
 	# Call tfork with a nice pointer to our structure. Note that %edi contains
 	# the flag parameter that this function accepted.
+	movl 8(%ebp), %edx # flags parameter, edx need not be preserved.
 	pushl %esp
 	pushl %edx
 	call tfork

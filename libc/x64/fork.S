@@ -22,6 +22,9 @@
 
 *******************************************************************************/
 
+#define MSRID_FSBASE 0xC0000100
+#define MSRID_GSBASE 0xC0000101
+
 .section .text
 
 .globl __call_tfork_with_regs
@@ -30,10 +33,16 @@ __call_tfork_with_regs:
 	pushq %rbp
 	movq %rsp, %rbp
 
+	# Save the flags parameter so rdmsr won't trash it and align stack.
+	pushq %rdi
+	sub $8, %rsp
+
 	# The actual system call expects a struct tforkregs_x64 containing the state
 	# of each register in the child. Since we create an identical copy, we
 	# simply set each member of the structure to our own state. Note that since
 	# the stack goes downwards, we create it in the reverse order.
+	pushq $0 # gsbase
+	pushq $0 # fsbase
 	pushfq
 	pushq %r15
 	pushq %r14
@@ -53,8 +62,7 @@ __call_tfork_with_regs:
 	pushq $0 # rax, result of sfork is 0 for the child.
 	pushq $.Lafter_fork # rip, child will start execution from here.
 
-	# Call tfork with a nice pointer to our structure. Note that %rdi contains
-	# the flag parameter that this function accepted.
+	# Call tfork with a nice pointer to our structure.
 	movq %rsp, %rsi
 	call tfork
 

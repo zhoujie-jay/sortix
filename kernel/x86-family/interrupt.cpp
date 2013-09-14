@@ -24,6 +24,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <msr.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -38,6 +39,7 @@
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/thread.h>
 
+#include "gdt.h"
 #include "idt.h"
 #include "pic.h"
 
@@ -272,7 +274,15 @@ void CrashCalltrace(const CPU::InterruptRegisters* regs)
 __attribute__((noreturn))
 void KernelCrashHandler(CPU::InterruptRegisters* regs)
 {
-	CurrentThread()->SaveRegisters(regs);
+	Thread* thread = CurrentThread();
+#if defined(__i386__)
+	thread->fsbase = (unsigned long) GDT::GetFSBase();
+	thread->gsbase = (unsigned long) GDT::GetGSBase();
+#elif defined(__x86_64__)
+	thread->fsbase = (unsigned long) rdmsr(MSRID_FSBASE);
+	thread->gsbase = (unsigned long) rdmsr(MSRID_GSBASE);
+#endif
+	thread->SaveRegisters(regs);
 
 	// Walk and print the stack frames if this is a debug build.
 	if ( CALLTRACE_KERNEL )
@@ -290,7 +300,15 @@ void KernelCrashHandler(CPU::InterruptRegisters* regs)
 
 void UserCrashHandler(CPU::InterruptRegisters* regs)
 {
-	CurrentThread()->SaveRegisters(regs);
+	Thread* thread = CurrentThread();
+#if defined(__i386__)
+	thread->fsbase = (unsigned long) GDT::GetFSBase();
+	thread->gsbase = (unsigned long) GDT::GetGSBase();
+#elif defined(__x86_64__)
+	thread->fsbase = (unsigned long) rdmsr(MSRID_FSBASE);
+	thread->gsbase = (unsigned long) rdmsr(MSRID_GSBASE);
+#endif
+	thread->SaveRegisters(regs);
 
 	// Execute this crash handler with preemption on.
 	Interrupt::Enable();

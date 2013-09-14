@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -27,6 +27,8 @@
 
 #include <sys/cdefs.h>
 
+#include <stdint.h>
+
 __BEGIN_DECLS
 
 struct tforkregs_x64
@@ -49,6 +51,8 @@ struct tforkregs_x64
 	uint64_t r14;
 	uint64_t r15;
 	uint64_t rflags;
+	uint64_t fsbase;
+	uint64_t gsbase;
 };
 
 __END_DECLS

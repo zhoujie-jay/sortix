@@ -371,8 +371,6 @@ interrupt_handler_prepare:
 	movw $0x10, %bp
 	movl %ebp, %ds
 	movl %ebp, %es
-	movl %ebp, %fs
-	movl %ebp, %gs
 
 	# Push CR2 in case of page faults
 	movq %cr2, %rbp
@@ -406,8 +404,6 @@ load_interrupted_registers:
 	popq %rbp
 	movl %ebp, %ds
 	movl %ebp, %es
-	movl %ebp, %fs
-	movl %ebp, %gs
 
 	popq %rdi
 	popq %rsi

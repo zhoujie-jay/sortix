@@ -51,6 +51,8 @@ Thread::Thread()
 	schedulerlistnext = NULL;
 	state = NONE;
 	memset(&registers, 0, sizeof(registers));
+	fsbase = 0;
+	gsbase = 0;
 	kernelstackpos = 0;
 	kernelstacksize = 0;
 	kernelstackmalloced = false;
@@ -96,8 +98,16 @@ extern "C" void BootstrapKernelThread(void* user, ThreadEntry entry)
 	kthread_exit();
 }
 
-Thread* CreateKernelThread(Process* process, CPU::InterruptRegisters* regs)
+Thread* CreateKernelThread(Process* process, CPU::InterruptRegisters* regs,
+                           unsigned long fsbase, unsigned long gsbase)
 {
+#if defined(__x86_64__)
+	if ( fsbase >> 48 != 0x0000 && fsbase >> 48 != 0xFFFF )
+		return errno = EINVAL, (Thread*) NULL;
+	if ( gsbase >> 48 != 0x0000 && gsbase >> 48 != 0xFFFF )
+		return errno = EINVAL, (Thread*) NULL;
+#endif
+
 	assert(process && regs && process->addrspace);
 	Thread* thread = new Thread;
 	if ( !thread )
@@ -105,6 +115,8 @@ Thread* CreateKernelThread(Process* process, CPU::InterruptRegisters* regs)
 
 	thread->addrspace = process->addrspace;
 	thread->SaveRegisters(regs);
+	thread->fsbase = fsbase;
+	thread->gsbase = gsbase;
 
 	kthread_mutex_lock(&process->threadlock);
 
@@ -134,7 +146,7 @@ Thread* CreateKernelThread(Process* process, ThreadEntry entry, void* user,
 	CPU::InterruptRegisters regs;
 	SetupKernelThreadRegs(&regs, entry, user, (addr_t) stack, stacksize);
 
-	Thread* thread = CreateKernelThread(process, &regs);
+	Thread* thread = CreateKernelThread(process, &regs, 0, 0);
 	if ( !thread ) { delete[] stack; return NULL; }
 
 	thread->kernelstackpos = (addr_t) stack;
@@ -156,7 +168,7 @@ void StartKernelThread(Thread* thread)
 
 Thread* RunKernelThread(Process* process, CPU::InterruptRegisters* regs)
 {
-	Thread* thread = CreateKernelThread(process, regs);
+	Thread* thread = CreateKernelThread(process, regs, 0, 0);
 	if ( !thread )
 		return NULL;
 	StartKernelThread(thread);
