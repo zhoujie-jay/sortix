@@ -188,6 +188,7 @@ wchar/wcslen.o \
 wchar/wcsncat.o \
 wchar/wcsncmp.o \
 wchar/wcsncpy.o \
+wchar/wcspbrk.o \
 wchar/wcsrchr.o \
 wchar/wcsrtombs.o \
 wchar/wcsspn.o \
