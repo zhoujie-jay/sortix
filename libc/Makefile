@@ -195,6 +195,7 @@ wchar/wcstoll.o \
 wchar/wcstol.o \
 wchar/wcstoull.o \
 wchar/wcstoul.o \
+wchar/wmemcmp.o \
 wctype/wctype.o \
 
 HOSTEDOBJS=\

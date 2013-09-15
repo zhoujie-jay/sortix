@@ -83,6 +83,7 @@ long long wcstoll(const wchar_t* __restrict, wchar_t** __restrict, int);
 long wcstol(const wchar_t* __restrict, wchar_t** __restrict, int);
 unsigned long long wcstoull(const wchar_t* __restrict, wchar_t** __restrict, int);
 unsigned long wcstoul(const wchar_t* __restrict, wchar_t** __restrict, int);
+int wmemcmp(const wchar_t*, const wchar_t*, size_t);
 
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
@@ -106,7 +107,6 @@ int wcsncmp(const wchar_t*, const wchar_t*, size_t);
 int wcswidth(const wchar_t*, size_t);
 int wctob(wint_t);
 int wcwidth(wchar_t);
-int wmemcmp(const wchar_t*, const wchar_t*, size_t);
 int wprintf(const wchar_t* __restrict, ...);
 int wscanf(const wchar_t* __restrict, ...);
 long double wcstold(const wchar_t* __restrict, wchar_t** __restrict);
