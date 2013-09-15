@@ -235,7 +235,7 @@ void pthread_initialize(void);
 /* TODO: pthread_rwlockattr_getpshared */
 /* TODO: pthread_rwlockattr_init */
 /* TODO: pthread_rwlockattr_setpshared */
-/* TODO: pthread_self */
+pthread_t pthread_self(void);
 /* TODO: pthread_setcancelstate */
 /* TODO: pthread_setcanceltype */
 /* TODO: pthread_setconcurrency */

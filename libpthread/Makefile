@@ -12,6 +12,7 @@ CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 OBJS=\
 pthread_initialize.o \
+pthread_self.o \
 
 BINS:=libpthread.a
 
