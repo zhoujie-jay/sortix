@@ -11,6 +11,7 @@ CPPFLAGS:=$(CPPFLAGS) -D__is_sortix_libpthread -I include
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 OBJS=\
+pthread_equal.o \
 pthread_initialize.o \
 pthread_self.o \
 

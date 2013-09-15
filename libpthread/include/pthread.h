@@ -191,7 +191,7 @@ void pthread_initialize(void);
 /* TODO: pthread_condattr_setpshared */
 /* TODO: pthread_create */
 /* TODO: pthread_detach */
-/* TODO: pthread_equal */
+int pthread_equal(pthread_t, pthread_t);
 /* TODO: pthread_exit */
 /* TODO: pthread_getconcurrency */
 /* TODO: pthread_getcpuclockid */
