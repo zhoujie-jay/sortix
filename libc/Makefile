@@ -186,6 +186,7 @@ wchar/wcscpy.o \
 wchar/wcscspn.o \
 wchar/wcslen.o \
 wchar/wcsncat.o \
+wchar/wcsncmp.o \
 wchar/wcsncpy.o \
 wchar/wcsrchr.o \
 wchar/wcsrtombs.o \
