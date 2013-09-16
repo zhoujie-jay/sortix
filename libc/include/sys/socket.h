@@ -29,7 +29,6 @@
 
 #include <sys/__/types.h>
 
-/* TODO: #include <sys/uio.h> */
 #include <sortix/socket.h>
 
 __BEGIN_DECLS
@@ -38,6 +37,12 @@ __BEGIN_DECLS
 @include(size_t.h)
 @include(ssize_t.h)
 @include(sa_family_t.h)
+
+__END_DECLS
+
+#include <sortix/uio.h>
+
+__BEGIN_DECLS
 
 struct sockaddr
 {
@@ -54,8 +59,6 @@ struct sockaddr_storage
 	__ss_aligntype __ss_align;
 	char __ss_padding[_SS_PADSIZE];
 };
-
-/* TODO: struct iovec from <sys/uio.h> */
 
 struct msghdr
 {
