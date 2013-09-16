@@ -89,6 +89,7 @@ unsigned long wcstoul(const wchar_t* __restrict, wchar_t** __restrict, int);
 size_t wcsxfrm(wchar_t* __restrict, const wchar_t* __restrict, size_t);
 wchar_t* wmemchr(const wchar_t*, wchar_t, size_t);
 int wmemcmp(const wchar_t*, const wchar_t*, size_t);
+wchar_t* wmemcpy(wchar_t* __restrict, const wchar_t* __restrict, size_t);
 
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
@@ -116,7 +117,6 @@ int wscanf(const wchar_t* __restrict, ...);
 long double wcstold(const wchar_t* __restrict, wchar_t** __restrict);
 size_t wcsftime(wchar_t* __restrict, size_t, const wchar_t* __restrict, const struct tm* __restrict);
 wchar_t* fgetws(wchar_t* __restrict, int, FILE* __restrict);
-wchar_t* wmemcpy(wchar_t* __restrict, const wchar_t* __restrict, size_t);
 wchar_t* wmemmove(wchar_t*, const wchar_t*, size_t);
 wchar_t* wmemset(wchar_t*, wchar_t, size_t);
 wint_t btowc(int);
