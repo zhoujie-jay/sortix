@@ -192,6 +192,7 @@ wchar/wcspbrk.o \
 wchar/wcsrchr.o \
 wchar/wcsrtombs.o \
 wchar/wcsspn.o \
+wchar/wcsstr.o \
 wchar/wcstok.o \
 wchar/wcstoll.o \
 wchar/wcstol.o \
