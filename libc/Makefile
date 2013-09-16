@@ -339,6 +339,7 @@ pwd/getpwuid.o \
 pwd/getpwuid_r.o \
 pwd/openpw.o \
 pwd/setpwent.o \
+sched/sched_yield.o \
 signal/kill.o \
 signal/killpg.o \
 signal/psignal.o \

@@ -311,6 +311,11 @@ static int sys_usleep(size_t usecs)
 	return 0;
 }
 
+static int sys_sched_yield(void)
+{
+	return kthread_yield(), 0;
+}
+
 void Init()
 {
 	premagic = postmagic = SCHED_MAGIC;
@@ -329,6 +334,7 @@ void Init()
 
 	Syscall::Register(SYSCALL_SLEEP, (void*) sys_sleep);
 	Syscall::Register(SYSCALL_USLEEP, (void*) sys_usleep);
+	Syscall::Register(SYSCALL_SCHED_YIELD, (void*) sys_sched_yield);
 }
 
 } // namespace Scheduler
