@@ -202,6 +202,7 @@ wchar/wcsxfrm.o \
 wchar/wmemchr.o \
 wchar/wmemcmp.o \
 wchar/wmemcpy.o \
+wchar/wmemmove.o \
 wctype/wctype.o \
 
 HOSTEDOBJS=\
