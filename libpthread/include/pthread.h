@@ -192,7 +192,9 @@ int pthread_cond_broadcast(pthread_cond_t*);
 /* TODO: pthread_cond_destroy */
 /* TODO: pthread_cond_init */
 int pthread_cond_signal(pthread_cond_t*);
-/* TODO: pthread_cond_timedwait */
+int pthread_cond_timedwait(pthread_cond_t* __restrict,
+                           pthread_mutex_t* __restrict,
+                           const struct timespec* __restrict);
 int pthread_cond_wait(pthread_cond_t* __restrict, pthread_mutex_t* __restrict);
 /* TODO: pthread_condattr_destroy */
 /* TODO: pthread_condattr_getclock */
