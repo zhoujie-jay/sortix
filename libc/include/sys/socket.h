@@ -132,6 +132,9 @@ struct linger
 #define PF_INET6 AF_INET6
 #define PF_UNIX AF_UNIX
 
+#define AF_LOCAL AF_UNIX
+#define PF_LOCAL PF_UNIX
+
 /* TODO: Nicely wrap this in an enum, as in glibc's header? */
 /* TODO: Should SHUT_RDWR = SHUT_RD | SHUT_WR? */
 #define SHUT_RD 0
