@@ -48,7 +48,7 @@ __BEGIN_DECLS
 
 @include(pid_t.h)
 
-struct _flock
+struct flock
 {
 	short l_type; /* Type of lock; F_RDLCK, F_WRLCK, F_UNLCK. */
 	short l_whence; /* Type of lock; F_RDLCK, F_WRLCK, F_UNLCK. */
@@ -56,8 +56,6 @@ struct _flock
 	off_t l_len; /* Size; if 0 then until EOF. */
 	pid_t l_pid; /* Process ID of the process holding the lock; returned with F_GETLK. */
 };
-
-typedef struct _flock flock;
 
 int fcntl(int fd, int cmd, ...);
 int open(const char* path, int oflag, ...);
