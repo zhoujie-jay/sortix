@@ -305,6 +305,7 @@ stdlib/canonicalize_file_name.o \
 stdlib/env.o \
 stdlib/_Exit.o \
 stdlib/exit.o \
+stdlib/mkstemp.o \
 stdlib/mktemp.o \
 stdlib/on_exit.o \
 stdlib/rand.o \

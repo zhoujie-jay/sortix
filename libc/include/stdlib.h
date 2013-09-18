@@ -84,6 +84,7 @@ void* malloc(size_t);
 int mblen(const char*, size_t);
 size_t mbstowcs(wchar_t* __restrict, const char* __restrict, size_t);
 int mbtowc(wchar_t *__restrict, const char* __restrict, size_t);
+int mkstemp(char*);
 #if !defined(_SORTIX_SOURCE)
 char* mktemp(char* templ);
 #endif
@@ -137,7 +138,6 @@ char* l64a(long);
 void lcong48(unsigned short [7]);
 long lrand48(void);
 char* mkdtemp(char*);
-int mkstemp(char*);
 long mrand48(void);
 long nrand48(unsigned short[3]);
 int posix_memalign(void**, size_t, size_t);
