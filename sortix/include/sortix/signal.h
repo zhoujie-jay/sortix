@@ -63,7 +63,8 @@ __BEGIN_DECLS
 #define SIGWAITING	32 /* All LWPs blocked */
 #define SIGLWP		33 /* Virtual Interprocessor Interrupt for Threads Library */
 #define SIGAIO		34 /* Asynchronous I/O */
-#define SIG__NUM_DECLARED 35
+#define SIGPROF		35
+#define SIG__NUM_DECLARED 36
 #define SIG_MAX_NUM 128
 #define NSIG SIG_MAX_NUM
 
