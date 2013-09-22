@@ -56,7 +56,7 @@ __BEGIN_DECLS
 @include(uid_t.h)
 @include(useconds_t.h)
 
-#if !defined(SORTIX_KERNEL)
+#if !defined(__is_sortix_kernel)
 /* TODO: pthread*_t */
 #endif
 

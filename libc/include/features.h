@@ -52,7 +52,7 @@
 #endif
 
 /* Sortix system components implicitly use the native API. */
-#if __is_sortix_libc || defined(SORTIX_KERNEL)
+#if __is_sortix_libc || __is_sortix_kernel
 #define _SORTIX_SOURCE 1
 #endif
 

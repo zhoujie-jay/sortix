@@ -13,7 +13,7 @@ CXXFLAGS?=$(OPTLEVEL)
 
 # Base compiler options and definitions.
 
-CPPFLAGS:=$(CPPFLAGS) -I. -Iinclude -DSORTIX_KERNEL
+CPPFLAGS:=$(CPPFLAGS) -I. -Iinclude -D__is_sortix_kernel
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -ffreestanding -fbuiltin -std=gnu++11 \
                       -fno-exceptions -fno-rtti
 

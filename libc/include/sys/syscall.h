@@ -22,7 +22,7 @@
 
 *******************************************************************************/
 
-#if defined(SORTIX_KERNEL)
+#if defined(__is_sortix_kernel)
 #error "This file is part of user-space and should not be built in kernel mode"
 #endif
 

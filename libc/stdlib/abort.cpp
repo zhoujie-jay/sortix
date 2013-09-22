@@ -27,7 +27,7 @@
 #include <calltrace.h>
 #include <stdlib.h>
 
-#if defined(SORTIX_KERNEL)
+#if defined(__is_sortix_kernel)
 
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/panic.h>

@@ -24,11 +24,11 @@
 
 #include <assert.h>
 #include <stdint.h>
-#if !defined(SORTIX_KERNEL)
+#if !defined(__is_sortix_kernel)
 #include <stdio.h>
 #include <stdlib.h>
 #endif
-#if defined(SORTIX_KERNEL)
+#if defined(__is_sortix_kernel)
 #include <sortix/kernel/decl.h>
 #include <sortix/kernel/panic.h>
 #endif
@@ -36,7 +36,7 @@
 void _assert(const char* filename, unsigned int line, const char* functionname,
              const char* expression)
 {
-#if !defined(SORTIX_KERNEL)
+#if !defined(__is_sortix_kernel)
 	fprintf(stderr, "Assertion failure: %s:%u: %s: %s\n", filename, line,
 	        functionname, expression);
 	abort();

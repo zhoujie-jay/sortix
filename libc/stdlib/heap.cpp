@@ -24,11 +24,11 @@
 
 #include <sys/mman.h>
 
-#ifdef SORTIX_KERNEL
+#ifdef __is_sortix_kernel
 #define HEAP_GROWS_DOWNWARDS
 #endif
 
-#ifndef SORTIX_KERNEL
+#ifndef __is_sortix_kernel
 #include <error.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -43,7 +43,7 @@
 
 #define PARANOIA 1
 
-#ifdef SORTIX_KERNEL
+#ifdef __is_sortix_kernel
 #include <sortix/kernel/decl.h>
 #include <sortix/kernel/addralloc.h>
 #include <sortix/kernel/kthread.h>
@@ -70,7 +70,7 @@ const size_t NUMBINS = 8UL * sizeof(size_t);
 
 static uintptr_t wilderness;
 
-#ifdef SORTIX_KERNEL
+#ifdef __is_sortix_kernel
 static uintptr_t GetHeapStart()
 {
 	return Sortix::GetHeapUpper();
@@ -205,7 +205,7 @@ inline size_t BSF(size_t Value)
 struct Chunk;
 struct Trailer;
 
-#ifdef SORTIX_KERNEL
+#ifdef __is_sortix_kernel
 Sortix::kthread_mutex_t heaplock;
 #endif
 
@@ -427,7 +427,7 @@ extern "C" void _init_heap()
 	wildernesssize = 0;
 	for ( size_t i = 0; i < NUMBINS; i++ ) { bins[i] = NULL; }
 	bincontainschunks = 0;
-#ifdef SORTIX_KERNEL
+#ifdef __is_sortix_kernel
 	heaplock = Sortix::KTHREAD_MUTEX_INITIALIZER;
 #endif
 }
@@ -469,7 +469,7 @@ static bool ExpandWilderness(size_t bytesneeded)
 
 extern "C" void* malloc(size_t size)
 {
-	#ifdef SORTIX_KERNEL
+	#ifdef __is_sortix_kernel
 	Sortix::ScopedLock scopedlock(&heaplock);
 	#endif
 
@@ -655,7 +655,7 @@ static void UnifyNeighbors(Chunk** chunk)
 
 extern "C" void free(void* addr)
 {
-	#ifdef SORTIX_KERNEL
+	#ifdef __is_sortix_kernel
 	Sortix::ScopedLock scopedlock(&heaplock);
 	#endif
 
@@ -665,7 +665,7 @@ extern "C" void free(void* addr)
 
 	if ( !addr) { return; }
 	Chunk* chunk = (Chunk*) ((uintptr_t) addr - sizeof(Chunk));
-#ifndef SORTIX_KERNEL
+#ifndef __is_sortix_kernel
 	if ( !IsGoodHeapPointer(addr, 1) ||
 	     !IsGoodHeapPointer(chunk, sizeof(*chunk)) )
 	{
