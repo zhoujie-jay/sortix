@@ -52,7 +52,7 @@
 #endif
 
 /* Sortix system components implicitly use the native API. */
-#if defined(LIBC_LIBRARY) || defined(SORTIX_KERNEL)
+#if __is_sortix_libc || defined(SORTIX_KERNEL)
 #define _SORTIX_SOURCE 1
 #endif
 
@@ -90,7 +90,7 @@
 #endif
 
 /* Provide the restrict keyword when building the C library. */
-#if !__HAS_RESTRICT && defined(LIBC_LIBRARY)
+#if !__HAS_RESTRICT && defined(__is_sortix_libc)
 #define restrict __restrict
 #undef __HAS_RESTRICT
 #define __HAS_RESTRICT 2

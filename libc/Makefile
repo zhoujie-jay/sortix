@@ -10,7 +10,7 @@ endif
 CPUDIR:=$(CPU)
 
 CPPINCLUDES=-I preproc
-CPPFLAGS=-DLIBC_LIBRARY $(CPPINCLUDES)
+CPPFLAGS=-D__is_sortix_libc=1 $(CPPINCLUDES)
 FLAGS=-Wall -Wextra $(OPTLEVEL)
 CFLAGS=-std=gnu99
 CXXFLAGS=-std=gnu++11 -fno-exceptions -fno-rtti

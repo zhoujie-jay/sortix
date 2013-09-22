@@ -177,7 +177,7 @@ int fcloseall(void);
 int fshutdown(FILE* fp);
 int fpipe(FILE* pipes[2]);
 /* Internally used by standard library. */
-#if defined(LIBC_LIBRARY)
+#if defined(__is_sortix_libc)
 extern FILE* _firstfile;
 #endif
 #endif

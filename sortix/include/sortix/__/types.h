@@ -57,10 +57,10 @@ typedef int __ssize_t;
 typedef __uintptr_t __timer_t;
 typedef __SIZE_TYPE__ __socklen_t;
 
-#if defined(SORTIX_KERNEL) || defined(LIBC_LIBRARY)
+#if defined(SORTIX_KERNEL) || defined(__is_sortix_libc)
 #define OFF_MIN __OFF_MIN
 #endif
-#if defined(SORTIX_KERNEL) || defined(LIBC_LIBRARY)
+#if defined(SORTIX_KERNEL) || defined(__is_sortix_libc)
 #define OFF_MAX __OFF_MAX
 #endif
 
