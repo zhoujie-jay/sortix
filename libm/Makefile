@@ -352,7 +352,7 @@ CFLAGS:=$(CFLAGS) -std=gnu99 -Wall -Wextra
 CPPFLAGS:=$(CPPFLAGS) -I include -I src -I $(ARCH_SUBDIR)
 
 # TODO: Figure out whether these are the defines that we want to pass.
-CPPFLAGS:=$(CPPFLAGS) -D_MULTI_LIBM -D_POSIX_MODE
+CPPFLAGS:=$(CPPFLAGS) -D__is_sortix_libm=1 -D_MULTI_LIBM -D_POSIX_MODE
 
 ARCH_SRCS:=$(addprefix $(ARCH_SUBDIR)/,$(ARCH_SRCS))
 COMMON_SRCS:=$(addprefix src/,$(COMMON_SRCS))
