@@ -25,6 +25,8 @@
 #ifndef _FEATURES_H
 #define _FEATURES_H	1
 
+#define __sortix_libc__ 1
+
 /* Support macro to ease testing the compiler version. */
 #define __GCC_PREREQ(gcc_major, gcc_minor) \
 	(((gcc_major) == __GNUC__ && (gcc_minor) >= __GNUC_MINOR__) || \
