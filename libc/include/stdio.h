@@ -67,78 +67,78 @@ extern FILE* stderr;
 #define stdout stdout
 #define stderr stderr
 
-extern void clearerr(FILE* stream);
-extern int dprintf(int fildes, const char* __restrict format, ...);
-extern int fclose(FILE* stream);
-extern FILE* fdopen(int fildes, const char* mode);
-extern int feof(FILE* stream);
-extern int ferror(FILE* stream);
-extern int fflush(FILE* stream);
-extern int fileno(FILE* stream);
-extern int fgetc(FILE* stream);
-extern int fgetpos(FILE* __restrict stream, fpos_t* __restrict pos);
-extern char* fgets(char* __restrict s, int n, FILE* __restrict stream);
-extern void flockfile(FILE* file);
-extern FILE* fopen(const char* __restrict filename, const char* __restrict mode);
-extern int fprintf(FILE* __restrict stream, const char* __restrict format, ...);
-extern int fputc(int c, FILE* stream);
-extern int fputs(const char* __restrict s, FILE* __restrict stream);
-extern size_t fread(void* __restrict ptr, size_t size, size_t nitems, FILE* __restrict stream);
-extern FILE* freopen(const char* __restrict filename, const char *__restrict mode, FILE* __restrict stream);
-extern int fscanf(FILE* __restrict stream, const char* __restrict format, ... );
-extern int fseek(FILE* stream, long offset, int whence);
-extern int fseeko(FILE* stream, off_t offset, int whence);
-extern int fsetpos(FILE* stream, const fpos_t* pos);
-extern long ftell(FILE* stream);
-extern off_t ftello(FILE* stream);
-extern int ftrylockfile(FILE* file);
-extern void funlockfile(FILE* file);
-extern size_t fwrite(const void* __restrict ptr, size_t size, size_t nitems, FILE* __restrict stream);
-extern int getc(FILE* stream);
-extern int getchar(void);
-extern ssize_t getdelim(char** __restrict lineptr, size_t* __restrict n, int delimiter, FILE* __restrict stream);
-extern ssize_t getline(char** __restrict lineptr, size_t* __restrict n, FILE* __restrict stream);
-extern int pclose(FILE* steam);
-extern void perror(const char* s);
-extern FILE* popen(const char* command, const char* mode);
-extern int printf(const char* __restrict format, ...);
-extern int putc(int c, FILE* stream);
-extern int putchar(int c);
-extern int puts(const char* str);
-extern int removeat(int dirrfd, const char* path);
-extern int remove(const char* path);
-extern int renameat(int oldfd, const char* oldname, int newfd, const char* newname);
-extern int rename(const char* oldname, const char* newname);
-extern void rewind(FILE* stream);
-extern int snprintf(char* __restrict s, size_t n, const char* __restrict format, ...);
-extern void setbuf(FILE* __restrict stream, char* __restrict buf);
-extern int setvbuf(FILE* __restrict stream, char* __restrict buf, int type, size_t size);
-extern char* sortix_gets(void);
-extern int sortix_puts(const char* str);
-extern int sprintf(char* __restrict s, const char* __restrict format, ...);
-extern int scanf(const char* __restrict format, ...);
-extern int sscanf(const char* __restrict s, const char* __restrict format, ...);
-extern FILE* tmpfile(void);
-extern char* tmpnam(char* s);
-extern int ungetc(int c, FILE* stream);
-extern int vdprintf(int fildes, const char* __restrict format, __gnuc_va_list ap);
-extern int vfprintf(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list ap);
-extern int vfscanf(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list arg);
-extern int vprintf(const char* __restrict format, __gnuc_va_list ap);
-extern int vscanf(const char* __restrict format, __gnuc_va_list arg);
-extern int vsnprintf(char* __restrict, size_t, const char* __restrict, __gnuc_va_list);
-extern int vsprintf(char* __restrict s, const char* __restrict format, __gnuc_va_list ap);
-extern int vsscanf(const char* __restrict s, const char* __restrict format, __gnuc_va_list arg);
+void clearerr(FILE* stream);
+int dprintf(int fildes, const char* __restrict format, ...);
+int fclose(FILE* stream);
+FILE* fdopen(int fildes, const char* mode);
+int feof(FILE* stream);
+int ferror(FILE* stream);
+int fflush(FILE* stream);
+int fileno(FILE* stream);
+int fgetc(FILE* stream);
+int fgetpos(FILE* __restrict stream, fpos_t* __restrict pos);
+char* fgets(char* __restrict s, int n, FILE* __restrict stream);
+void flockfile(FILE* file);
+FILE* fopen(const char* __restrict filename, const char* __restrict mode);
+int fprintf(FILE* __restrict stream, const char* __restrict format, ...);
+int fputc(int c, FILE* stream);
+int fputs(const char* __restrict s, FILE* __restrict stream);
+size_t fread(void* __restrict ptr, size_t size, size_t nitems, FILE* __restrict stream);
+FILE* freopen(const char* __restrict filename, const char *__restrict mode, FILE* __restrict stream);
+int fscanf(FILE* __restrict stream, const char* __restrict format, ... );
+int fseek(FILE* stream, long offset, int whence);
+int fseeko(FILE* stream, off_t offset, int whence);
+int fsetpos(FILE* stream, const fpos_t* pos);
+long ftell(FILE* stream);
+off_t ftello(FILE* stream);
+int ftrylockfile(FILE* file);
+void funlockfile(FILE* file);
+size_t fwrite(const void* __restrict ptr, size_t size, size_t nitems, FILE* __restrict stream);
+int getc(FILE* stream);
+int getchar(void);
+ssize_t getdelim(char** __restrict lineptr, size_t* __restrict n, int delimiter, FILE* __restrict stream);
+ssize_t getline(char** __restrict lineptr, size_t* __restrict n, FILE* __restrict stream);
+int pclose(FILE* steam);
+void perror(const char* s);
+FILE* popen(const char* command, const char* mode);
+int printf(const char* __restrict format, ...);
+int putc(int c, FILE* stream);
+int putchar(int c);
+int puts(const char* str);
+int removeat(int dirrfd, const char* path);
+int remove(const char* path);
+int renameat(int oldfd, const char* oldname, int newfd, const char* newname);
+int rename(const char* oldname, const char* newname);
+void rewind(FILE* stream);
+int snprintf(char* __restrict s, size_t n, const char* __restrict format, ...);
+void setbuf(FILE* __restrict stream, char* __restrict buf);
+int setvbuf(FILE* __restrict stream, char* __restrict buf, int type, size_t size);
+char* sortix_gets(void);
+int sortix_puts(const char* str);
+int sprintf(char* __restrict s, const char* __restrict format, ...);
+int scanf(const char* __restrict format, ...);
+int sscanf(const char* __restrict s, const char* __restrict format, ...);
+FILE* tmpfile(void);
+char* tmpnam(char* s);
+int ungetc(int c, FILE* stream);
+int vdprintf(int fildes, const char* __restrict format, __gnuc_va_list ap);
+int vfprintf(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list ap);
+int vfscanf(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list arg);
+int vprintf(const char* __restrict format, __gnuc_va_list ap);
+int vscanf(const char* __restrict format, __gnuc_va_list arg);
+int vsnprintf(char* __restrict, size_t, const char* __restrict, __gnuc_va_list);
+int vsprintf(char* __restrict s, const char* __restrict format, __gnuc_va_list ap);
+int vsscanf(const char* __restrict s, const char* __restrict format, __gnuc_va_list arg);
 
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
-extern char* ctermid(char* s);
-extern FILE *fmemopen(void* __restrict buf, size_t size, const char* __restrict mode);
-extern FILE* open_memstream(char** bufp, size_t* sizep);
-extern int getchar_unlocked(void);
-extern int getc_unlocked(FILE* stream);
-extern int putchar_unlocked(int c);
-extern int putc_unlocked(int c, FILE* steam);
+char* ctermid(char* s);
+FILE *fmemopen(void* __restrict buf, size_t size, const char* __restrict mode);
+FILE* open_memstream(char** bufp, size_t* sizep);
+int getchar_unlocked(void);
+int getc_unlocked(FILE* stream);
+int putchar_unlocked(int c);
+int putc_unlocked(int c, FILE* steam);
 #endif
 
 #if defined(_SORTIX_SOURCE)
@@ -173,16 +173,16 @@ extern FILE* _firstfile;
 
 #if (defined(_SOURCE_SOURCE) && __SORTIX_STDLIB_REDIRECTS) || \
     defined(_WANT_SORTIX_GETS)
-extern char* gets(void) asm ("sortix_gets");
+char* gets(void) asm ("sortix_gets");
 #else
 /* traditional gets(3) is no longer POSIX, hence removed. */
 #endif
 
 #if defined(_SORTIX_SOURCE) || defined(_WANT_SORTIX_VPRINTF_CALLBACK)
-extern size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
-                               void* user,
-                               const char* __restrict format,
-                               __gnuc_va_list ap);
+size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
+                        void* user,
+                        const char* __restrict format,
+                        __gnuc_va_list ap);
 #endif
 
 __END_DECLS

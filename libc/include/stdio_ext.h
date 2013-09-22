@@ -41,16 +41,16 @@ enum
 
 __BEGIN_DECLS
 
-extern size_t __fbufsize(FILE* fp);
-extern int __freading(FILE* fp);
-extern int __fwriting(FILE* fp);
-extern int __freadable(FILE* fp);
-extern int __fwritable(FILE* fp);
-extern int __flbf(FILE* fp);
-extern void __fpurge(FILE* fp);
-extern size_t __fpending(FILE* fp);
-extern void _flushlbf(void);
-extern int __fsetlocking(FILE* fp, int type);
+size_t __fbufsize(FILE* fp);
+int __freading(FILE* fp);
+int __fwriting(FILE* fp);
+int __freadable(FILE* fp);
+int __fwritable(FILE* fp);
+int __flbf(FILE* fp);
+void __fpurge(FILE* fp);
+size_t __fpending(FILE* fp);
+void _flushlbf(void);
+int __fsetlocking(FILE* fp, int type);
 
 __END_DECLS
 
