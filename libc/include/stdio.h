@@ -43,9 +43,7 @@ __BEGIN_DECLS
 typedef off_t fpos_t;
 
 /* TODO: Implement L_ctermid */
-#if __POSIX_OBSOLETE <= 200801
 #define L_tmpnam 128
-#endif
 
 /* The possibilities for the third argument to `setvbuf'. */
 #define _IOFBF 0 /* Fully buffered. */
@@ -58,9 +56,7 @@ typedef off_t fpos_t;
    do not have these restrictions. */
 
 /* Default path prefix for `tempnam' and `tmpnam'. */
-#if __POSIX_OBSOLETE <= 200801
 #define P_tmpdir "/tmp"
-#endif
 
 extern FILE* stdin;
 extern FILE* stdout;
@@ -123,6 +119,7 @@ extern int sprintf(char* __restrict s, const char* __restrict format, ...);
 extern int scanf(const char* __restrict format, ...);
 extern int sscanf(const char* __restrict s, const char* __restrict format, ...);
 extern FILE* tmpfile(void);
+extern char* tmpnam(char* s);
 extern int ungetc(int c, FILE* stream);
 extern int vdprintf(int fildes, const char* __restrict format, __gnuc_va_list ap);
 extern int vfprintf(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list ap);
@@ -133,10 +130,6 @@ extern int vsnprintf(char* __restrict, size_t, const char* __restrict, __gnuc_va
 extern int vsprintf(char* __restrict s, const char* __restrict format, __gnuc_va_list ap);
 extern int vsscanf(const char* __restrict s, const char* __restrict format, __gnuc_va_list arg);
 
-#if __POSIX_OBSOLETE <= 200801
-extern char* tmpnam(char* s);
-#endif
-
 /* TODO: These are not implemented in sortix libc yet. */
 #if defined(__SORTIX_SHOW_UNIMPLEMENTED)
 extern char* ctermid(char* s);
@@ -146,10 +139,6 @@ extern int getchar_unlocked(void);
 extern int getc_unlocked(FILE* stream);
 extern int putchar_unlocked(int c);
 extern int putc_unlocked(int c, FILE* steam);
-
-#if __POSIX_OBSOLETE <= 200801
-extern char* tempnam(const char* dir, const char* pfx);
-#endif
 #endif
 
 #if defined(_SORTIX_SOURCE)

@@ -55,10 +55,6 @@ __BEGIN_DECLS
 	#define __mbstate_t_defined 1
 #endif
 
-#if __POSIX_OBSOLETE <= 200809L
-@include(wctype_t.h)
-#endif
-
 struct tm;
 
 size_t mbsrtowcs(wchar_t* __restrict, const char** __restrict, size_t, mbstate_t* __restrict);
@@ -127,24 +123,6 @@ wint_t getwchar(void);
 wint_t putwchar(wchar_t);
 wint_t putwc(wchar_t, FILE*);
 wint_t ungetwc(wint_t, FILE*);
-
-#if __POSIX_OBSOLETE <= 200809L
-int iswalnum(wint_t);
-int iswalpha(wint_t);
-int iswcntrl(wint_t);
-int iswctype(wint_t, wctype_t);
-int iswdigit(wint_t);
-int iswgraph(wint_t);
-int iswlower(wint_t);
-int iswprint(wint_t);
-int iswpunct(wint_t);
-int iswspace(wint_t);
-int iswupper(wint_t);
-int iswxdigit(wint_t);
-wint_t towlower(wint_t);
-wint_t towupper(wint_t);
-wctype_t wctype(const char *);
-#endif
 #endif
 
 __END_DECLS

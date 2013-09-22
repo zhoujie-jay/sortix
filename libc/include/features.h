@@ -123,15 +123,6 @@
 #define __STDC_LIMIT_MACROS
 #endif
 
-/* TODO: Improve these declarations, perhaps like they are in glibc. */
-/*#define __POSIX_NO_OBSOLETE*/
-
-#ifdef __POSIX_NO_OBSOLETE
-	#define __POSIX_OBSOLETE 999999L
-#else
-	#define __POSIX_OBSOLETE 200112L
-#endif
-
 #define __pure2 __attribute__((__const__))
 
 /* Don't provide things from standard headers that is not implemented. */

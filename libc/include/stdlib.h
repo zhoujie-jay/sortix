@@ -144,17 +144,13 @@ int posix_memalign(void**, size_t, size_t);
 int posix_openpt(int);
 char* ptsname(int);
 long random(void);
+int rand_r(unsigned *);
 unsigned short *seed48(unsigned short [3]);
 void setkey(const char*);
 char* setstate(char*);
 void srand48(long);
 void srandom(unsigned);
 int unlockpt(int);
-
-#if __POSIX_OBSOLETE <= 200801
-int rand_r(unsigned *);
-#endif
-
 #endif
 
 __END_DECLS

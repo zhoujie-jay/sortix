@@ -285,10 +285,6 @@ int symlink(const char*, const char*);
 int symlinkat(const char*, int, const char*);
 void sync(void);
 int ttyname_r(int, char*, size_t);
-
-#if __POSIX_OBSOLETE <= 200801
-pid_t setpgrp(void);
-#endif
 #endif
 
 int access(const char*, int);
