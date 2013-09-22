@@ -10,6 +10,10 @@
 
 #include <features.h>
 
+#ifndef __sortix_libm__
+#define __sortix_libm__ 1
+#endif
+
 #include <machine/fenv.h>
 
 __BEGIN_DECLS

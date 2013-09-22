@@ -10,6 +10,10 @@
 
 #include <features.h>
 
+#ifndef __sortix_libm__
+#define __sortix_libm__ 1
+#endif
+
 #define complex _Complex
 #define _Complex_I 1.0fi
 #define I _Complex_I

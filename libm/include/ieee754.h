@@ -27,6 +27,11 @@
 #define INCLUDE_IEEE754_H
 
 #include <features.h>
+
+#ifndef __sortix_libm__
+#define __sortix_libm__ 1
+#endif
+
 #include <endian.h>
 
 /* glibc compatibility */

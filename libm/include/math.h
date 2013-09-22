@@ -28,6 +28,10 @@
 
 #include <features.h>
 
+#ifndef __sortix_libm__
+#define __sortix_libm__ 1
+#endif
+
 #if defined(__sortix__)
 #include <__/limits.h>
 #include <__/wordsize.h>
