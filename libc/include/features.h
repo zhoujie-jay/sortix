@@ -27,6 +27,20 @@
 
 #define __sortix_libc__ 1
 
+/* Detect whether we are a core system library. */
+#if __is_sortix_libc || __is_sortix_libm
+#if !defined(__is_sortix_system_library)
+#define __is_sortix_system_library 1
+#endif
+#endif
+
+/* Detect whether we are a core system component. */
+#if __is_sortix_kernel || __is_sortix_system_library
+#if !defined(__is_sortix_system_component)
+#define __is_sortix_system_component 1
+#endif
+#endif
+
 /* Support macro to ease testing the compiler version. */
 #define __GCC_PREREQ(gcc_major, gcc_minor) \
 	(((gcc_major) == __GNUC__ && (gcc_minor) >= __GNUC_MINOR__) || \
@@ -52,7 +66,7 @@
 #endif
 
 /* Sortix system components implicitly use the native API. */
-#if __is_sortix_libc || __is_sortix_kernel
+#if __is_sortix_system_component
 #define _SORTIX_SOURCE 1
 #endif
 
