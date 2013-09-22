@@ -90,6 +90,11 @@
 	#endif
 #endif
 
+/* Provide the restrict keyword when building system components. */
+#if __is_sortix_system_component && !defined(__want_restrict)
+#define __want_restrict 1
+#endif
+
 /* Detect whether the restrict keyword is available. */
 #if __STDC_VERSION__ >= 199901L
 #define __HAS_RESTRICT 1
@@ -103,8 +108,8 @@
 #define __restrict restrict
 #endif
 
-/* Provide the restrict keyword when building the C library. */
-#if !__HAS_RESTRICT && defined(__is_sortix_libc)
+/* Provide the restrict keyword if requested and unavailable. */
+#if !__HAS_RESTRICT && __want_restrict
 #define restrict __restrict
 #undef __HAS_RESTRICT
 #define __HAS_RESTRICT 2
