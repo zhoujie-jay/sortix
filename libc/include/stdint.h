@@ -31,8 +31,7 @@
 __BEGIN_DECLS
 
 /* Only define these constant macros in C++ if requested. */
-#if !defined(__cplusplus) || defined(__STDC_CONSTANT_MACROS) || \
-    defined(__is_sortix_libc) || defined(__is_sortix_kernel) /* TODO: HACK! */
+#if !defined(__cplusplus) || defined(__STDC_CONSTANT_MACROS)
 
 #define INT8_C(c) __INT8_C(c)
 #define INT16_C(c) __INT16_C(c)
@@ -50,8 +49,7 @@ __BEGIN_DECLS
 #endif
 
 /* Only define these limit macros in C++ if requested. */
-#if !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS) || \
-    defined(__is_sortix_libc) || defined(__is_sortix_kernel) /* TODO: HACK! */
+#if !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS)
 
 #define INT8_MIN __INT8_MIN
 #define INT16_MIN __INT16_MIN

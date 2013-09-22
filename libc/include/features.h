@@ -115,6 +115,14 @@
 #define __HAS_RESTRICT 2
 #endif
 
+/* Provide the full <stdint.h> in all system components. */
+#if __is_sortix_system_component
+#undef __STDC_CONSTANT_MACROS
+#undef __STDC_LIMIT_MACROS
+#define __STDC_CONSTANT_MACROS
+#define __STDC_LIMIT_MACROS
+#endif
+
 /* TODO: Improve these declarations, perhaps like they are in glibc. */
 /*#define __POSIX_NO_OBSOLETE*/
 
