@@ -81,7 +81,6 @@
 #include "initrd.h"
 #include "vga.h"
 #include "bga.h"
-#include "sound.h"
 #include "io.h"
 #include "pipe.h"
 #include "poll.h"
@@ -529,9 +528,6 @@ static void BootThread(void* /*user*/)
 
 	// Initialize the VGA driver.
 	VGA::Init("/dev", slashdev);
-
-	// Initialize the sound driver.
-	Sound::Init();
 
 	// Initialize the identity system calls.
 	Identity::Init();

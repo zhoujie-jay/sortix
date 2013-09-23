@@ -39,8 +39,6 @@
 
 #include "x86-family/idt.h"
 
-#include "sound.h" // Hack for SIGSEGV
-
 namespace Sortix {
 
 namespace Interrupt {
@@ -265,8 +263,6 @@ void CrashHandler(CPU::InterruptRegisters* regs)
 	            CurrentProcess()->pid, CurrentProcess()->program_image_path);
 	Log::PrintF("%s exception at ip=0x%zx (cr2=0x%p, err_code=0x%p)\n",
 	            message, ip, regs->cr2, regs->err_code);
-
-	Sound::Mute();
 
 	// Exit the process with the right error code.
 	// TODO: Sent a SIGINT, SIGBUS, or whatever instead.

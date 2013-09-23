@@ -121,7 +121,6 @@ scheduler.o \
 segment.o \
 serialterminal.o \
 signal.o \
-sound.o \
 string.o \
 symbol.o \
 syscall.o \
