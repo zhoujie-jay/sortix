@@ -45,7 +45,7 @@ public:
 	Ref<DescriptorTable> Fork();
 	Ref<Descriptor> Get(int index);
 	int Allocate(Ref<Descriptor> desc, int flags);
-	int Copy(int from, int to);
+	int Copy(int from, int to, int flags);
 	void Free(int index);
 	Ref<Descriptor> FreeKeep(int index);
 	void OnExecute();

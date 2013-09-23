@@ -298,6 +298,7 @@ int chroot(const char*);
 int close(int);
 size_t confstr(int, char*, size_t);
 int dup2(int, int);
+int dup3(int, int, int);
 int dup(int);
 void _exit(int)  __attribute__ ((noreturn));
 int execl(const char*, const char*, ...);

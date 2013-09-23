@@ -397,6 +397,7 @@ unistd/chroot.o \
 unistd/close.o \
 unistd/confstr.o \
 unistd/dup2.o \
+unistd/dup3.o \
 unistd/dup.o \
 unistd/execle.o \
 unistd/execl.o \

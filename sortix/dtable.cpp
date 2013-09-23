@@ -122,8 +122,10 @@ int DescriptorTable::Allocate(Ref<Descriptor> desc, int flags)
 	return i;
 }
 
-int DescriptorTable::Copy(int from, int to)
+int DescriptorTable::Copy(int from, int to, int flags)
 {
+	if ( flags & ~__FD_ALLOWED_FLAGS )
+		return errno = EINVAL, -1;
 	ScopedLock lock(&dtablelock);
 	if ( from < 0 || to < 0 )
 		return errno = EINVAL, -1;
@@ -131,6 +133,8 @@ int DescriptorTable::Copy(int from, int to)
 		return errno = EBADF, -1;
 	if ( !entries[from].desc )
 		return errno = EBADF, -1;
+	if ( from == to )
+		return errno = EINVAL, -1;
 	while ( !(to < numentries) )
 		if ( !Enlargen(to+1) )
 			return -1;
@@ -139,8 +143,8 @@ int DescriptorTable::Copy(int from, int to)
 		if ( entries[to].desc )
 			/* TODO: Should this be synced or otherwise properly closed? */{}
 		entries[to].desc = entries[from].desc;
-		entries[to].flags = entries[from].flags;
 	}
+	entries[to].flags = flags;
 	return to;
 }
 

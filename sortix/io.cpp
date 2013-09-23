@@ -128,10 +128,25 @@ static int sys_dup(int fd)
 	return dtable->Allocate(desc, 0);
 }
 
+static int sys_dup3(int oldfd, int newfd, int flags)
+{
+	if ( flags & ~(O_CLOEXEC | O_CLOFORK) )
+		return errno = EINVAL, -1;
+	int fd_flags = 0;
+	flags |= flags & O_CLOEXEC ? FD_CLOEXEC : 0;
+	flags |= flags & O_CLOFORK ? FD_CLOFORK : 0;
+	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
+	return dtable->Copy(oldfd, newfd, fd_flags);
+}
+
 static int sys_dup2(int oldfd, int newfd)
 {
-	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
-	return dtable->Copy(oldfd, newfd);
+	if ( oldfd < 0 || newfd < 0 )
+		return errno = EINVAL, -1;
+	int ret = sys_dup3(oldfd, newfd, 0);
+	if ( ret < 0 && errno == EINVAL )
+		return errno = 0, newfd;
+	return ret;
 }
 
 // TODO: If this function fails the file may still have been created. Does a
@@ -949,6 +964,7 @@ void Init()
 	Syscall::Register(SYSCALL_CLOSE, (void*) sys_close);
 	Syscall::Register(SYSCALL_CONNECT, (void*) sys_connect);
 	Syscall::Register(SYSCALL_DUP2, (void*) sys_dup2);
+	Syscall::Register(SYSCALL_DUP3, (void*) sys_dup3);
 	Syscall::Register(SYSCALL_DUP, (void*) sys_dup);
 	Syscall::Register(SYSCALL_FACCESSAT, (void*) sys_faccessat);
 	Syscall::Register(SYSCALL_FCHDIRAT, (void*) sys_fchdirat);
