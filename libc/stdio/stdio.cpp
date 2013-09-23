@@ -57,17 +57,6 @@ extern "C" int putchar(int c)
 	return fputc(c, stdout);
 }
 
-extern "C" char* sortix_gets(void)
-{
-	char* buf = NULL;
-	size_t n;
-	if ( getline(&buf, &n, stdin) < 0 )
-		return NULL;
-	size_t linelen = strlen(buf);
-	if ( linelen && buf[linelen-1] == '\n' ) { buf[linelen-1] = 0; }
-	return buf;
-}
-
 extern "C" int puts(const char* str)
 {
 	return printf("%s\n", str) < 0 ? EOF : 1;

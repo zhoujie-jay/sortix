@@ -174,13 +174,6 @@ extern FILE* _firstfile;
 #endif
 #endif
 
-#if (defined(_SOURCE_SOURCE) && __SORTIX_STDLIB_REDIRECTS) || \
-    defined(_WANT_SORTIX_GETS)
-char* gets(void) asm ("sortix_gets");
-#else
-/* traditional gets(3) is no longer POSIX, hence removed. */
-#endif
-
 #if defined(_SORTIX_SOURCE) || defined(_WANT_SORTIX_VPRINTF_CALLBACK)
 size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
                         void* user,
