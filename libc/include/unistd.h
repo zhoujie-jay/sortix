@@ -29,7 +29,10 @@
 #define _UNISTD_H 1
 
 #include <features.h>
+
+#include <sys/__/types.h>
 #include <__/stdint.h>
+
 #if defined(_SORTIX_SOURCE)
 #include <stdarg.h>
 #include <stdint.h>

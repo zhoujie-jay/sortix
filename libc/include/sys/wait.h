@@ -28,6 +28,9 @@
 #define _SYS_WAIT_H 1
 
 #include <features.h>
+
+#include <sys/__/types.h>
+
 #include <sortix/wait.h>
 
 __BEGIN_DECLS

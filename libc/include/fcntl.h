@@ -28,6 +28,9 @@
 #define INCLUDE_FCNTL_H
 
 #include <features.h>
+
+#include <sys/__/types.h>
+
 #include <sortix/fcntl.h>
 #include <sortix/seek.h>
 #include <sys/stat.h>

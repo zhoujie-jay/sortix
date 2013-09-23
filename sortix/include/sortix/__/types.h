@@ -26,6 +26,7 @@
 #define INCLUDE_SORTIX____TYPES_H
 
 #include <features.h>
+
 #include <__/stdint.h>
 #include <__/wordsize.h>
 

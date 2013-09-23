@@ -26,6 +26,7 @@
 #define INCLUDE_SYS_TERMMODE_H
 
 #include <features.h>
+
 #include <sortix/termmode.h>
 
 __BEGIN_DECLS

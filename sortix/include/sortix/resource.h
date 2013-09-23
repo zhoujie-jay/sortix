@@ -26,6 +26,7 @@
 #define INCLUDE_SORTIX_RESOURCE_H
 
 #include <features.h>
+
 #include <__/stdint.h>
 
 __BEGIN_DECLS

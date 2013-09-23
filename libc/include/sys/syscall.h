@@ -30,6 +30,7 @@
 #define _SYS_SYSCALL_H 1
 
 #include <features.h>
+
 #include <sortix/syscallnum.h>
 
 /* Expand a macro and convert it to string. */

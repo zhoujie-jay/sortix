@@ -26,6 +26,7 @@
 #define INCLUDE_SORTIX_TMNS_H
 
 #include <features.h>
+
 #include <sortix/timespec.h>
 
 __BEGIN_DECLS

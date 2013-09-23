@@ -26,6 +26,7 @@
 #define SORTIX_INCLUDE_DISPLAY_H
 
 #include <features.h>
+
 #include <stdint.h>
 
 __BEGIN_DECLS

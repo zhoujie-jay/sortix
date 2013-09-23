@@ -26,6 +26,9 @@
 #define INCLUDE_SIGNAL_H
 
 #include <features.h>
+
+#include <sys/__/types.h>
+
 #include <sortix/signal.h>
 
 __BEGIN_DECLS

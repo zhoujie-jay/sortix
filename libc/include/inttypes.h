@@ -26,6 +26,9 @@
 #define INCLUDE_INTTYPES_H
 
 #include <features.h>
+
+#include <sys/__/types.h>
+
 #include <stdint.h>
 
 #define PRId8 __PRId8

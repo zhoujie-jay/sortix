@@ -27,6 +27,9 @@
 #define _SYS_SELECT_H 1
 
 #include <features.h>
+
+#include <sys/__/types.h>
+
 #include <string.h> /* TODO: HACK: for FD_ZERO */
 
 __BEGIN_DECLS

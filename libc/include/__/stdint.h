@@ -25,8 +25,8 @@
 #ifndef INCLUDE____STDINT_H
 #define INCLUDE____STDINT_H
 
-#define _LIBC_HACK_FEATURE_NO_DECLARATIONS
 #include <features.h>
+
 #include <__/wordsize.h>
 
 __BEGIN_DECLS

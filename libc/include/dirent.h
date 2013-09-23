@@ -27,6 +27,8 @@
 
 #include <features.h>
 
+#include <sys/__/types.h>
+
 __BEGIN_DECLS
 
 @include(ino_t.h)

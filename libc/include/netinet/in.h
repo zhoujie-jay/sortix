@@ -26,8 +26,11 @@
 #define INCLUDE_NETINET_IN_H
 
 #include <features.h>
-#include <inttypes.h>
+
+#include <sys/__/types.h>
 #include <__/endian.h>
+
+#include <inttypes.h>
 
 __BEGIN_DECLS
 

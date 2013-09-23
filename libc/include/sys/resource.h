@@ -26,6 +26,9 @@
 #define INCLUDE_SYS_RESOURCE_H
 
 #include <features.h>
+
+#include <sys/__/types.h>
+
 #include <sortix/resource.h>
 
 __BEGIN_DECLS

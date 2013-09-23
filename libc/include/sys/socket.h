@@ -26,6 +26,9 @@
 #define _SYS_SOCKET_H 1
 
 #include <features.h>
+
+#include <sys/__/types.h>
+
 /* TODO: #include <sys/uio.h> */
 #include <sortix/socket.h>
 

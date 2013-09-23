@@ -26,6 +26,9 @@
 #define INCLUDE_STDIO_H
 
 #include <features.h>
+
+#include <sys/__/types.h>
+
 #include <sortix/seek.h>
 #if __STRICT_ANSI__
 #define __need___va_list

@@ -26,6 +26,9 @@
 #define _STDLIB_H 1
 
 #include <features.h>
+
+#include <sys/__/types.h>
+
 #include <sortix/wait.h>
 
 __BEGIN_DECLS

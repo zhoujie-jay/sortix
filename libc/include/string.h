@@ -26,6 +26,9 @@
 #define INCLUDE_STRING_H
 
 #include <features.h>
+
+#include <sys/__/types.h>
+
 #include <strings.h>
 
 __BEGIN_DECLS

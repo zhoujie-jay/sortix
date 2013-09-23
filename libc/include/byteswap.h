@@ -26,6 +26,7 @@
 #define _BYTESWAP_H 1
 
 #include <features.h>
+
 #include <__/byteswap.h>
 
 __BEGIN_DECLS

@@ -26,6 +26,7 @@
 #define _STDIO_EXT_H 1
 
 #include <features.h>
+
 #include <stdio.h>
 
 enum

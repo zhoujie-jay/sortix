@@ -26,6 +26,7 @@
 #define INCLUDE_SYS_KEYCODES_H
 
 #include <features.h>
+
 #include <sortix/keycodes.h>
 
 #endif

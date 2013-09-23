@@ -26,6 +26,9 @@
 #define INCLUDE_SYS_MMAN_H
 
 #include <features.h>
+
+#include <sys/__/types.h>
+
 #include <sortix/mman.h>
 
 __BEGIN_DECLS

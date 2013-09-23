@@ -26,6 +26,9 @@
 #define _SYS_READDIRENTS_H 1
 
 #include <features.h>
+
+#include <sys/__/types.h>
+
 #include <sys/types.h>
 #include <stddef.h>
 #include <stdint.h>

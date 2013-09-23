@@ -26,6 +26,9 @@
 #define _NETDB_H 1
 
 #include <features.h>
+
+#include <sys/__/types.h>
+
 #include <inttypes.h>
 
 __BEGIN_DECLS

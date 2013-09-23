@@ -26,6 +26,9 @@
 #define INCLUDE_TIMESPEC_H
 
 #include <features.h>
+
+#include <sys/__/types.h>
+
 #include <stdbool.h>
 
 __BEGIN_DECLS

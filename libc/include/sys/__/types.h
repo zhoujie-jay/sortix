@@ -26,6 +26,7 @@
 #define INCLUDE_SYS____TYPES_H
 
 #include <features.h>
+
 #include <sortix/__/types.h>
 
 #endif
