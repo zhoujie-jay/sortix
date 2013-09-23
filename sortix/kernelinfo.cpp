@@ -22,10 +22,10 @@
 
 *******************************************************************************/
 
+#include <errno.h>
+
 #include <sortix/kernel/platform.h>
 #include <sortix/kernel/syscall.h>
-
-#include <errno.h>
 
 #include "kernelinfo.h"
 
@@ -45,23 +45,21 @@ const char* KernelInfo(const char* req)
 	return NULL;
 }
 
-ssize_t SysKernelInfo(const char* req, char* resp, size_t resplen)
+static ssize_t sys_kernelinfo(const char* req, char* resp, size_t resplen)
 {
 	const char* str = KernelInfo(req);
-	if ( !str ) { errno = EINVAL; return -1; }
+	if ( !str )
+		return errno = EINVAL, -1;
 	size_t stringlen = strlen(str);
 	if ( resplen < stringlen + 1 )
-	{
-		errno = ERANGE;
-		return (ssize_t) stringlen;
-	}
+		return errno = ERANGE, (ssize_t) stringlen;
 	strcpy(resp, str);
 	return 0;
 }
 
 void Init()
 {
-	Syscall::Register(SYSCALL_KERNELINFO, (void*) SysKernelInfo);
+	Syscall::Register(SYSCALL_KERNELINFO, (void*) sys_kernelinfo);
 }
 
 } // namespace Info
