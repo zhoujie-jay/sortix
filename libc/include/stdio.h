@@ -134,7 +134,7 @@ int vsprintf(char* __restrict s, const char* __restrict format, __gnuc_va_list a
 int vsscanf(const char* __restrict s, const char* __restrict format, __gnuc_va_list arg);
 
 /* TODO: These are not implemented in sortix libc yet. */
-#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
+#if 0
 char* ctermid(char* s);
 FILE *fmemopen(void* __restrict buf, size_t size, const char* __restrict mode);
 FILE* open_memstream(char** bufp, size_t* sizep);

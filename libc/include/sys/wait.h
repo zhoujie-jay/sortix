@@ -38,7 +38,7 @@ __BEGIN_DECLS
 @include(pid_t.h)
 
 /* TODO: These are not implemented in sortix libc yet. */
-#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
+#if 0
 int waitid(idtype_t, id_t, siginfo_t*, int);
 #endif
 

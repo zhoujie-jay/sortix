@@ -265,7 +265,7 @@ extern char** environ;
 #endif
 
 /* TODO: These are not implemented in sortix libc yet. */
-#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
+#if 0
 char* crypt(const char*, const char*);
 char* ctermid(char*);
 void encrypt(char [64], int);

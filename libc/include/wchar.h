@@ -92,7 +92,7 @@ wchar_t* wmemmove(wchar_t*, const wchar_t*, size_t);
 wchar_t* wmemset(wchar_t*, wchar_t, size_t);
 
 /* TODO: These are not implemented in sortix libc yet. */
-#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
+#if 0
 double wcstod(const wchar_t* __restrict, wchar_t** __restrict);
 FILE* open_wmemstream(wchar_t** bufp, size_t* sizep);
 float wcstof(const wchar_t* __restrict, wchar_t** __restrict);

@@ -129,7 +129,7 @@ int clearenv(void);
 #endif
 
 /* TODO: These are not implemented in sortix libc yet. */
-#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
+#if 0
 long a64l(const char* s);
 double drand48(void);
 double erand48(unsigned short [3]);

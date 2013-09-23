@@ -55,7 +55,7 @@ wint_t towupper(wint_t);
 wctype_t wctype(const char *);
 
 /* TODO: These are not implemented in sortix libc yet. */
-#if defined(__SORTIX_SHOW_UNIMPLEMENTED)
+#if 0
 int iswalnum_l(wint_t, locale_t);
 int iswalpha_l(wint_t, locale_t);
 int iswblank_l(wint_t, locale_t);
