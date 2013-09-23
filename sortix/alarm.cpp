@@ -45,6 +45,7 @@ static void alarm_handler(Clock* /*clock*/, Timer* /*timer*/, void* user)
 	process->DeliverSignal(SIGALRM);
 }
 
+static
 int sys_alarmns(const struct timespec* user_delay, struct timespec* user_odelay)
 {
 	Process* process = CurrentProcess();

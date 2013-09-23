@@ -493,7 +493,7 @@ pid_t Process::Wait(pid_t thepid, int* status, int options)
 	return thepid;
 }
 
-pid_t sys_waitpid(pid_t pid, int* status, int options)
+static pid_t sys_waitpid(pid_t pid, int* status, int options)
 {
 	return CurrentProcess()->Wait(pid, status, options);
 }
@@ -513,7 +513,7 @@ void Process::Exit(int status)
 		t->DeliverSignal(SIGKILL);
 }
 
-int sys_exit(int status)
+static int sys_exit(int status)
 {
 	CurrentProcess()->Exit(status);
 	return 0;
@@ -841,6 +841,7 @@ Ref<Descriptor> Process::Open(ioctx_t* ctx, const char* path, int flags, mode_t 
 	return dir->open(ctx, path, flags, mode);
 }
 
+static
 int sys_execve(const char* _filename, char* const _argv[], char* const _envp[])
 {
 	char* filename;
@@ -930,7 +931,7 @@ cleanup_done:
 	return result;
 }
 
-pid_t sys_tfork(int flags, tforkregs_t* regs)
+static pid_t sys_tfork(int flags, tforkregs_t* regs)
 {
 	if ( Signal::IsPending() )
 		return errno = EINTR, -1;
@@ -970,7 +971,7 @@ pid_t sys_tfork(int flags, tforkregs_t* regs)
 	return clone->pid;
 }
 
-pid_t sys_getpid()
+static pid_t sys_getpid()
 {
 	return CurrentProcess()->pid;
 }
@@ -983,7 +984,7 @@ pid_t Process::GetParentProcessId()
 	return parent->pid;
 }
 
-pid_t sys_getppid()
+static pid_t sys_getppid()
 {
 	return CurrentProcess()->GetParentProcessId();
 }
@@ -1190,12 +1191,12 @@ static void* sys_sbrk(intptr_t increment)
 	return (void*) (heap_segment->addr + heap_segment->size);
 }
 
-size_t sys_getpagesize()
+static size_t sys_getpagesize()
 {
 	return Page::Size();
 }
 
-mode_t sys_umask(mode_t newmask)
+static mode_t sys_umask(mode_t newmask)
 {
 	Process* process = CurrentProcess();
 	ScopedLock lock(&process->idlock);
