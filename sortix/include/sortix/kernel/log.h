@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -22,74 +22,80 @@
 
 *******************************************************************************/
 
-#ifndef SORTIX_LOG_H
-#define SORTIX_LOG_H
+#ifndef INCLUDE_SORTIX_KERNEL_LOG_H
+#define INCLUDE_SORTIX_KERNEL_LOG_H
 
+#include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 
-namespace Sortix
+namespace Sortix {
+namespace Log {
+
+extern size_t (*device_callback)(void*, const char*, size_t);
+extern size_t (*device_width)(void*);
+extern size_t (*device_height)(void*);
+extern bool (*device_sync)(void*);
+extern void* device_pointer;
+
+void Init(size_t (*callback)(void*, const char*, size_t),
+          size_t (*widthfunc)(void*),
+          size_t (*heightfunc)(void*),
+          bool (*syncfunc)(void*),
+          void* user);
+
+inline void Flush()
 {
-	namespace Log
-	{
-		extern size_t (*deviceCallback)(void*, const char*, size_t);
-		extern size_t (*deviceWidth)(void*);
-		extern size_t (*deviceHeight)(void*);
-		extern bool (*deviceSync)(void*);
-		extern void* devicePointer;
-
-		void Init(size_t (*callback)(void*, const char*, size_t),
-		          size_t (*widthfunc)(void*),
-		          size_t (*heightfunc)(void*),
-		          bool (*syncfunc)(void*),
-		          void* user);
-
-		inline void Flush()
-		{
-			if ( deviceCallback ) { deviceCallback(devicePointer, NULL, 0); }
-		}
-
-		inline size_t Width()
-		{
-			return deviceWidth(devicePointer);
-		}
-
-		inline size_t Height()
-		{
-			return deviceHeight(devicePointer);
-		}
-
-		inline bool Sync()
-		{
-			return deviceSync(devicePointer);
-		}
-
-		inline size_t Print(const char* str)
-		{
-			if ( !deviceCallback ) { return 0; }
-			return deviceCallback(devicePointer, str, strlen(str));
-		}
-
-		inline size_t PrintData(const void* ptr, size_t size)
-		{
-			if ( !deviceCallback ) { return 0; }
-			return deviceCallback(devicePointer, (const char*) ptr, size);
-		}
-
-		inline size_t PrintF(const char* format, ...)
-		{
-			va_list list;
-			va_start(list, format);
-			size_t result = vprintf_callback(deviceCallback, devicePointer, format, list);
-			va_end(list);
-			return result;
-		}
-
-		inline size_t PrintFV(const char* format, va_list list)
-		{
-			return vprintf_callback(deviceCallback, devicePointer, format, list);
-		}
-	}
+	if ( !device_callback )
+		return;
+	device_callback(device_pointer, NULL, 0);
 }
+
+inline size_t Width()
+{
+	return device_width(device_pointer);
+}
+
+inline size_t Height()
+{
+	return device_height(device_pointer);
+}
+
+inline bool Sync()
+{
+	return device_sync(device_pointer);
+}
+
+inline size_t Print(const char* str)
+{
+	if ( !device_callback )
+		return 0;
+	return device_callback(device_pointer, str, strlen(str));
+}
+
+inline size_t PrintData(const void* ptr, size_t size)
+{
+	if ( !device_callback )
+		return 0;
+	return device_callback(device_pointer, (const char*) ptr, size);
+}
+
+inline size_t PrintF(const char* format, ...)
+{
+	va_list list;
+	va_start(list, format);
+	size_t result = vprintf_callback(device_callback, device_pointer, format, list);
+	va_end(list);
+	return result;
+}
+
+inline size_t PrintFV(const char* format, va_list list)
+{
+	return vprintf_callback(device_callback, device_pointer, format, list);
+}
+
+} // namespace Log
+} // namespace Sortix
 
 #endif

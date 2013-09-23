@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -22,42 +22,42 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/syscall.h>
-#include <sortix/kernel/log.h>
-
+#include <stddef.h>
 #include <string.h>
 
-namespace Sortix
+#include <sortix/kernel/log.h>
+#include <sortix/kernel/platform.h>
+#include <sortix/kernel/syscall.h>
+
+namespace Sortix {
+namespace Log {
+
+size_t (*device_callback)(void*, const char*, size_t) = NULL;
+size_t (*device_width)(void*) = NULL;
+size_t (*device_height)(void*) = NULL;
+bool (*device_sync)(void*) = NULL;
+void* device_pointer = NULL;
+
+static size_t sys_print_string(const char* str)
 {
-	namespace Log
-	{
-		size_t (*deviceCallback)(void*, const char*, size_t) = NULL;
-		size_t (*deviceWidth)(void*) = NULL;
-		size_t (*deviceHeight)(void*) = NULL;
-		bool (*deviceSync)(void*) = NULL;
-		void* devicePointer = NULL;
-
-		size_t SysPrintString(const char* str)
-		{
-			// TODO: Check that str is a user-readable string!
-
-			return Print(str);
-		}
-
-		void Init(size_t (*callback)(void*, const char*, size_t),
-		          size_t (*widthfunc)(void*),
-		          size_t (*heightfunc)(void*),
-		          bool (*syncfunc)(void*),
-		          void* user)
-		{
-			deviceCallback = callback;
-			deviceWidth = widthfunc;
-			deviceHeight = heightfunc;
-			deviceSync = syncfunc;
-			devicePointer = user;
-
-			Syscall::Register(SYSCALL_PRINT_STRING, (void*) SysPrintString);
-		}
-	}
+	// TODO: Check that str is a user-readable string!
+	return Print(str);
 }
+
+void Init(size_t (*callback)(void*, const char*, size_t),
+          size_t (*widthfunc)(void*),
+          size_t (*heightfunc)(void*),
+          bool (*syncfunc)(void*),
+          void* user)
+{
+	device_callback = callback;
+	device_width = widthfunc;
+	device_height = heightfunc;
+	device_sync = syncfunc;
+	device_pointer = user;
+
+	Syscall::Register(SYSCALL_PRINT_STRING, (void*) sys_print_string);
+}
+
+} // namespace Log
+} // namespace Sortix
