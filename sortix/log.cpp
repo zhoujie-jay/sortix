@@ -38,12 +38,6 @@ size_t (*device_height)(void*) = NULL;
 bool (*device_sync)(void*) = NULL;
 void* device_pointer = NULL;
 
-static size_t sys_print_string(const char* str)
-{
-	// TODO: Check that str is a user-readable string!
-	return Print(str);
-}
-
 void Init(size_t (*callback)(void*, const char*, size_t),
           size_t (*widthfunc)(void*),
           size_t (*heightfunc)(void*),
@@ -55,8 +49,6 @@ void Init(size_t (*callback)(void*, const char*, size_t),
 	device_height = heightfunc;
 	device_sync = syncfunc;
 	device_pointer = user;
-
-	Syscall::Register(SYSCALL_PRINT_STRING, (void*) sys_print_string);
 }
 
 } // namespace Log
