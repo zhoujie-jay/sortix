@@ -22,10 +22,8 @@
 
 *******************************************************************************/
 
-/* TODO: POSIX-1.2008 compliance is only partial */
-
-#ifndef	_UNISTD_H
-#define	_UNISTD_H 1
+#ifndef _MALLOC_H
+#define _MALLOC_H 1
 
 #include <features.h>
 
