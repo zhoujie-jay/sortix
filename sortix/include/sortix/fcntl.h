@@ -88,6 +88,12 @@ __BEGIN_DECLS
 #define F_GETFL_NUM 3
 #define F_GETFL F_ENCODE_CMD(F_GETFL_NUM, F_TYPE_VOID)
 
+/* Duplicates the file descriptor with at least the given index. */
+#define F_DUPFD_NUM 4
+#define F_DUPFD F_ENCODE_CMD(F_ENCODE(F_DUPFD_NUM, 0), F_TYPE_INT)
+#define F_DUPFD_CLOEXEC F_ENCODE_CMD(F_ENCODE(F_DUPFD_NUM, FD_CLOEXEC), F_TYPE_INT)
+#define F_DUPFD_CLOFORK F_ENCODE_CMD(F_ENCODE(F_DUPFD_NUM, FD_CLOFORK), F_TYPE_INT)
+
 #define AT_FDCWD (-100)
 #define AT_REMOVEDIR (1<<0)
 #define AT_EACCESS (1<<1)

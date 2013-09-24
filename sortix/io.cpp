@@ -328,6 +328,11 @@ static int sys_fcntl(int fd, int cmd, uintptr_t arg)
 		return dtable->GetFlags(fd);
 
 	// Operations on the file description.
+	if ( F_DECODE_CMD(F_DECODE_CMD_RAW(cmd)) == F_DUPFD_NUM )
+	{
+		int fd_flags = F_DECODE_FLAGS(F_DECODE_CMD_RAW(cmd));
+		return dtable->Allocate(fd, fd_flags, (int) arg);
+	}
 	Ref<Descriptor> desc = dtable->Get(fd);
 	if ( !desc )
 		return -1;
