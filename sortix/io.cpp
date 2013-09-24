@@ -316,32 +316,27 @@ static int sys_fstat(int fd, struct stat* st)
 	return desc->stat(&ctx, st);
 }
 
-static int sys_fcntl(int fd, int cmd, unsigned long arg)
+static int sys_fcntl(int fd, int cmd, uintptr_t arg)
 {
+	// Operations on the descriptor table.
 	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
-	Ref<Descriptor> desc;
-	int ret = -1;
-	switch ( cmd )
-	{
-	case F_SETFD:
-		ret = dtable->SetFlags(fd, (int) arg) ? 0 : -1;
-		break;
-	case F_GETFD:
-		ret = dtable->GetFlags(fd);
-		break;
-	case F_SETFL:
-		if ( (desc = dtable->Get(fd)) )
-			ret = desc->SetFlags((int) arg) ? 0 : -1;
-		break;
-	case F_GETFL:
-		if ( (desc = dtable->Get(fd)) )
-			ret = desc->GetFlags();
-		break;
-	default:
-		errno = EINVAL;
-		break;
-	}
-	return ret;
+
+	// Operations on the file descriptior.
+	if ( cmd == F_SETFD )
+		return dtable->SetFlags(fd, (int) arg) ? 0 : -1;;
+	if ( cmd == F_GETFD )
+		return dtable->GetFlags(fd);
+
+	// Operations on the file description.
+	Ref<Descriptor> desc = dtable->Get(fd);
+	if ( !desc )
+		return -1;
+	if ( cmd == F_SETFL )
+		return desc->SetFlags((int) arg);
+	if ( cmd == F_GETFL )
+		return desc->GetFlags();
+
+	return errno = EINVAL, -1;
 }
 
 static int sys_ioctl(int fd, int cmd, void* /*ptr*/)

@@ -50,10 +50,43 @@ __BEGIN_DECLS
 
 #define __FD_ALLOWED_FLAGS (FD_CLOEXEC | FD_CLOFORK)
 
-#define F_SETFD 0
-#define F_GETFD 1
-#define F_SETFL 2
-#define F_GETFL 3
+/* Encode type information about arguments into fcntl commands. Unfortunately
+   the fcntl function declaration doesn't include type information, which means
+   that the fcntl implementation either needs a list of command type information
+   to use va_list correctly - or we can simply embed the information into the
+   commands. */
+#define F_TYPE_EXP 3 /* 2^3 kinds of argument types supported.*/
+#define F_TYPE_VOID 0
+#define F_TYPE_INT 1
+#define F_TYPE_LONG 2
+#define F_TYPE_PTR 3
+/* 5-7 is unused in case of future expansion. */
+#define F_ENCODE_CMD(cmd_val, arg_type) ((cmd_val) << F_TYPE_EXP | (arg_type))
+#define F_DECODE_CMD_RAW(cmd) (cmd >> F_TYPE_EXP)
+#define F_DECODE_CMD_TYPE(cmd) ((cmd) & ((1 << F_TYPE_EXP)-1))
+
+/* Encode small parameters into fcntl commands. This allows adding some flags
+   and other modifiers to fcntl commands without declaring a heap of new fcntl
+   commands variants. */
+#define F_ENCODE(cmd, small_param) (((cmd) & 0xFFFF) | ((small_param) << 16))
+#define F_DECODE_CMD(val) (val & 0xFFFF)
+#define F_DECODE_FLAGS(val) ((val & ~0xFFFF) >> 16)
+
+/* Set file descriptor status. */
+#define F_SETFD_NUM 0
+#define F_SETFD F_ENCODE_CMD(F_SETFD_NUM, F_TYPE_INT)
+
+/* Get file descriptor status. */
+#define F_GETFD_NUM 1
+#define F_GETFD F_ENCODE_CMD(F_GETFD_NUM, F_TYPE_VOID)
+
+/* Set descriptor table entry flags. */
+#define F_SETFL_NUM 3
+#define F_SETFL F_ENCODE_CMD(F_SETFL_NUM, F_TYPE_INT)
+
+/* Get descriptor table entry flags. */
+#define F_GETFL_NUM 3
+#define F_GETFL F_ENCODE_CMD(F_GETFL_NUM, F_TYPE_VOID)
 
 #define AT_FDCWD (-100)
 #define AT_REMOVEDIR (1<<0)
