@@ -24,8 +24,8 @@
 
 #include <string.h>
 
-extern "C" char* strchr(const char* str, int c)
+extern "C" char* strchr(const char* str, int uc)
 {
-	char* ret = strchrnul(str, c);
-	return ret && c == ret[0] ? ret : NULL;
+	char* ret = strchrnul(str, uc);
+	return uc == ((unsigned char*) ret)[0] ? ret : NULL;
 }

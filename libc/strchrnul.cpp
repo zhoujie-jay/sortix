@@ -24,10 +24,10 @@
 
 #include <string.h>
 
-extern "C" char* strchrnul(const char* str, int c)
+extern "C" char* strchrnul(const char* str, int uc)
 {
-	for ( ; *str != c; str++ )
-		if ( !*str )
-			return NULL;
-	return (char*) str;
+	const unsigned char* ustr = (const unsigned char*) str;
+	for ( size_t i = 0; true; i++)
+		if ( ustr[i] == uc || !ustr[i] )
+			return (char*) str + i;
 }
