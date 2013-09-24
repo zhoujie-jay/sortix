@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-ssize_t getdelim(char** lineptr, size_t* n, int delim, FILE* fp)
+extern "C" ssize_t getdelim(char** lineptr, size_t* n, int delim, FILE* fp)
 {
 	if ( !lineptr || (*lineptr && !n) || !fp ) { errno = EINVAL; return -1; }
 	const size_t DEFAULT_BUFSIZE = 32UL;
