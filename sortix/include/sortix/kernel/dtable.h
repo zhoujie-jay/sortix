@@ -44,7 +44,8 @@ public:
 	~DescriptorTable();
 	Ref<DescriptorTable> Fork();
 	Ref<Descriptor> Get(int index);
-	int Allocate(Ref<Descriptor> desc, int flags);
+	int Allocate(Ref<Descriptor> desc, int flags, int min_index = 0);
+	int Allocate(int src_index, int flags, int min_index = 0);
 	int Copy(int from, int to, int flags);
 	void Free(int index);
 	Ref<Descriptor> FreeKeep(int index);
@@ -56,6 +57,7 @@ private:
 	void Reset(); // Hey, reference counted. Don't call this.
 	bool IsGoodEntry(int i);
 	bool Enlargen(int atleast);
+	int AllocateInternal(Ref<Descriptor> desc, int flags, int min_index);
 
 private:
 	kthread_mutex_t dtablelock;

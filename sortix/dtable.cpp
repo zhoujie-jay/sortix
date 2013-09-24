@@ -101,12 +101,15 @@ bool DescriptorTable::Enlargen(int atleast)
 	return true;
 }
 
-int DescriptorTable::Allocate(Ref<Descriptor> desc, int flags)
+int DescriptorTable::AllocateInternal(Ref<Descriptor> desc, int flags,
+                                      int min_index)
 {
+	// dtablelock is held.
 	if ( flags & ~__FD_ALLOWED_FLAGS )
 		return errno = EINVAL, -1;
-	ScopedLock lock(&dtablelock);
-	for ( int i = 0; i < numentries; i++ )
+	if ( min_index < 0 )
+		return errno = EINVAL, -1;
+	for ( int i = min_index; i < numentries; i++ )
 		if ( !entries[i].desc )
 		{
 			entries[i].desc = desc;
@@ -114,12 +117,26 @@ int DescriptorTable::Allocate(Ref<Descriptor> desc, int flags)
 			return i;
 		}
 	int oldnumentries = numentries;
-	if ( !Enlargen(0) )
+	if ( !Enlargen(min_index) )
 		return -1;
 	int i = oldnumentries++;
 	entries[i].desc = desc;
 	entries[i].flags = flags;
 	return i;
+}
+
+int DescriptorTable::Allocate(Ref<Descriptor> desc, int flags, int min_index)
+{
+	ScopedLock lock(&dtablelock);
+	return AllocateInternal(desc, flags, min_index);
+}
+
+int DescriptorTable::Allocate(int src_index, int flags, int min_index)
+{
+	ScopedLock lock(&dtablelock);
+	if ( !IsGoodEntry(src_index) )
+		return errno = EBADF, -1;
+	return AllocateInternal(entries[src_index].desc, flags, min_index);
 }
 
 int DescriptorTable::Copy(int from, int to, int flags)
