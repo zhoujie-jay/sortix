@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,7 +17,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    unistd/ioleast.cpp
+    ioleast.h
     Versions of {,p}{read,write} that don't return until it has returned as much
     data as requested, end of file, or an error occurs. This is sometimes needed
     as read(2) and write(2) is not always guaranteed to fill up the entire
@@ -25,20 +25,34 @@
 
 *******************************************************************************/
 
+#ifndef SORTIX_COMPATIBILITY_INCLUDE_IOLEAST_H
+#define SORTIX_COMPATIBILITY_INCLUDE_IOLEAST_H
+
+#if defined(__sortix__) || defined(__sortix_libc__)
+
+#include_next <ioleast.h>
+
+#else
+
 #include <sys/types.h>
+
+#include <errno.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <errno.h>
 
-#ifndef EEOF
+#if !defined(EEOF) && defined(EIO)
 #define EEOF EIO
 #endif
 
-extern "C" size_t readleast(int fd, void* buf, size_t least, size_t max)
+__attribute__((unused)) static inline
+size_t readleast(int fd, void* buf, size_t least, size_t max)
 {
 	ssize_t amount = read(fd, buf, max);
-	if ( amount < 0 ) { return 0; }
-	if ( least && !amount ) { errno = EEOF; return 0; }
+	if ( amount < 0 )
+		return 0;
+	if ( least && !amount )
+		return errno = EEOF, 0;
 	if ( (size_t) amount < least )
 	{
 		void* nextbuf = (uint8_t*) buf + amount;
@@ -49,17 +63,32 @@ extern "C" size_t readleast(int fd, void* buf, size_t least, size_t max)
 	return amount;
 }
 
-extern "C" size_t readall(int fd, void* buf, size_t count)
+__attribute__((unused)) static inline
+size_t writeleast(int fd, const void* buf, size_t least, size_t max)
 {
-	return readleast(fd, buf, count, count);
+	ssize_t amount = write(fd, buf, max);
+	if ( amount < 0 )
+		return 0;
+	if ( least && !amount )
+		return errno = EEOF, 0;
+	if ( (size_t) amount < least )
+	{
+		const void* nextbuf = (const uint8_t*) buf + amount;
+		size_t nextleast = least - amount;
+		size_t nextmax = max - amount;
+		amount += writeleast(fd, nextbuf, nextleast, nextmax);
+	}
+	return amount;
 }
 
-extern "C" size_t preadleast(int fd, void* buf, size_t least, size_t max,
-                             off_t off)
+__attribute__((unused)) static inline
+size_t preadleast(int fd, void* buf, size_t least, size_t max, off_t off)
 {
 	ssize_t amount = pread(fd, buf, max, off);
-	if ( amount < 0 ) { return 0; }
-	if ( least && !amount ) { errno = EEOF; return 0; }
+	if ( amount < 0 )
+		return 0;
+	if ( least && !amount )
+		return errno = EEOF, 0;
 	if ( (size_t) amount < least )
 	{
 		void* nextbuf = (uint8_t*) buf + amount;
@@ -71,37 +100,14 @@ extern "C" size_t preadleast(int fd, void* buf, size_t least, size_t max,
 	return amount;
 }
 
-extern "C" size_t preadall(int fd, void* buf, size_t count, off_t off)
-{
-	return preadleast(fd, buf, count, count, off);
-}
-
-extern "C" size_t writeleast(int fd, const void* buf, size_t least, size_t max)
-{
-	ssize_t amount = write(fd, buf, max);
-	if ( amount < 0 ) { return 0; }
-	if ( least && !amount ) { errno = EEOF; return 0; }
-	if ( (size_t) amount < least )
-	{
-		const void* nextbuf = (const uint8_t*) buf + amount;
-		size_t nextleast = least - amount;
-		size_t nextmax = max - amount;
-		amount += writeleast(fd, nextbuf, nextleast, nextmax);
-	}
-	return amount;
-}
-
-extern "C" size_t writeall(int fd, const void* buf, size_t count)
-{
-	return writeleast(fd, buf, count, count);
-}
-
-extern "C" size_t pwriteleast(int fd, const void* buf, size_t least, size_t max,
-                              off_t off)
+__attribute__((unused)) static inline
+size_t pwriteleast(int fd, const void* buf, size_t least, size_t max, off_t off)
 {
 	ssize_t amount = pwrite(fd, buf, max, off);
-	if ( amount < 0 ) { return 0; }
-	if ( least && !amount ) { errno = EEOF; return 0; }
+	if ( amount < 0 )
+		return 0;
+	if ( least && !amount )
+		return errno = EEOF, 0;
 	if ( (size_t) amount < least )
 	{
 		const void* nextbuf = (const uint8_t*) buf + amount;
@@ -113,7 +119,30 @@ extern "C" size_t pwriteleast(int fd, const void* buf, size_t least, size_t max,
 	return amount;
 }
 
-extern "C" size_t pwriteall(int fd, const void* buf, size_t count, off_t off)
+__attribute__((unused)) static inline
+size_t readall(int fd, void* buf, size_t count)
+{
+	return readleast(fd, buf, count, count);
+}
+
+__attribute__((unused)) static inline
+size_t writeall(int fd, const void* buf, size_t count)
+{
+	return writeleast(fd, buf, count, count);
+}
+
+__attribute__((unused)) static inline
+size_t preadall(int fd, void* buf, size_t count, off_t off)
+{
+	return preadleast(fd, buf, count, count, off);
+}
+
+__attribute__((unused)) static inline
+size_t pwriteall(int fd, const void* buf, size_t count, off_t off)
 {
 	return pwriteleast(fd, buf, count, count, off);
 }
+
+#endif
+
+#endif

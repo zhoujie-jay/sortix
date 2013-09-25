@@ -11,9 +11,8 @@ ifndef CXXFLAGS
 endif
 
 SORTIXKERNEL=../sortix
-LIBC=../libc
 
-CPPFLAGS:=$(CPPFLAGS) -I$(SORTIXKERNEL)/include
+CPPFLAGS:=$(CPPFLAGS) -I$(SORTIXKERNEL)/include -I.
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 BINARIES=mkinitrd initrdfs
@@ -24,8 +23,8 @@ all: $(BINARIES)
 
 .PHONY: all install uninstall clean
 
-%: %.cpp crc32.cpp rules.cpp $(LIBC)/unistd/ioleast.cpp
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< crc32.cpp rules.cpp $(LIBC)/unistd/ioleast.cpp -o $@
+%: %.cpp crc32.cpp rules.cpp
+	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< crc32.cpp rules.cpp -o $@
 
 clean:
 	rm -f $(BINARIES)

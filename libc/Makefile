@@ -237,6 +237,14 @@ getopt/getopt_long.o \
 getopt/getopt.o \
 grp/grent.o \
 init/init.o \
+ioleast/preadall.o \
+ioleast/preadleast.o \
+ioleast/pwriteall.o \
+ioleast/pwriteleast.o \
+ioleast/readall.o \
+ioleast/readleast.o \
+ioleast/writeall.o \
+ioleast/writeleast.o \
 libgen/basename.o \
 libgen/dirname.o \
 locale/localeconv.o \
@@ -430,7 +438,6 @@ unistd/getpgid.o \
 unistd/getpid.o \
 unistd/getppid.o \
 unistd/getuid.o \
-unistd/ioleast.o \
 unistd/isatty.o \
 unistd/lchown.o \
 unistd/linkat.o \

@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
+#include <ioleast.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -34,19 +35,6 @@
 #include <sortix/initrd.h>
 
 #include "crc32.h"
-
-#if !defined(sortix)
-__BEGIN_DECLS
-size_t preadall(int fd, void* buf, size_t count, off_t off);
-size_t preadleast(int fd, void* buf, size_t least, size_t max, off_t off);
-size_t pwriteall(int fd, const void* buf, size_t count, off_t off);
-size_t pwriteleast(int fd, const void* buf, size_t least, size_t max, off_t off);
-size_t readall(int fd, void* buf, size_t count);
-size_t readleast(int fd, void* buf, size_t least, size_t max);
-size_t writeall(int fd, const void* buf, size_t count);
-size_t writeleast(int fd, const void* buf, size_t least, size_t max);
-__END_DECLS
-#endif
 
 char* Substring(const char* str, size_t start, size_t length)
 {
