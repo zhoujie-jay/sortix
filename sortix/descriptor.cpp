@@ -46,7 +46,7 @@ namespace Sortix {
 const int ACCESS_FLAGS = O_READ | O_WRITE | O_EXEC | O_SEARCH;
 
 // Flags that only make sense at open time.
-const int OPEN_FLAGS = O_CREAT | O_DIRECTORY | O_EXCL | O_TRUNC;
+const int OPEN_FLAGS = O_CREATE | O_DIRECTORY | O_EXCL | O_TRUNC;
 
 // Flags that only make sense for descriptors.
 const int DESCRIPTOR_FLAGS = O_APPEND | O_NONBLOCK;
@@ -334,11 +334,11 @@ ssize_t Descriptor::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 
 static bool IsSaneFlagModeCombination(int flags, mode_t /*mode*/)
 {
-	// It doesn't make sense to pass O_CREAT or O_TRUNC when attempting to open
+	// It doesn't make sense to pass O_CREATE or O_TRUNC when attempting to open
 	// a directory. We also reject O_TRUNC | O_DIRECTORY early to prevent
 	// opening a directory, attempting to truncate it, and then aborting with an
 	// error because a directory was opened.
-	if ( (flags & (O_CREAT | O_TRUNC)) && (flags & (O_DIRECTORY)) )
+	if ( (flags & (O_CREATE | O_TRUNC)) && (flags & (O_DIRECTORY)) )
 		return errno = EINVAL, false;
 
 	return true;

@@ -45,6 +45,9 @@ __BEGIN_DECLS
 #define O_WRONLY O_WRITE
 #define O_RDWR (O_READ | O_WRITE)
 
+/* Backwards compatibility with existing systems that call it O_CREAT. */
+#define O_CREAT O_CREATE
+
 /* Compatibility with Linux and other systems that have this. */
 #define O_ACCMODE (O_READ | O_WRITE | O_EXEC | O_SEARCH)
 

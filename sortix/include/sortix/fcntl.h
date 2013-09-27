@@ -36,7 +36,7 @@ __BEGIN_DECLS
 #define O_EXEC (1<<2)
 #define O_APPEND (1<<3)
 #define O_CLOEXEC (1<<4)
-#define O_CREAT (1<<5)
+#define O_CREATE (1<<5)
 #define O_DIRECTORY (1<<6)
 #define O_EXCL (1<<7)
 #define O_TRUNC (1<<8)

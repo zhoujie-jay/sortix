@@ -289,7 +289,7 @@ static bool ExtractDir(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> dir)
 		}
 		if ( INITRD_S_ISREG(child->mode) )
 		{
-			Ref<Descriptor> desc = dir->open(ctx, name, O_WRITE | O_CREAT, mode);
+			Ref<Descriptor> desc = dir->open(ctx, name, O_WRITE | O_CREATE, mode);
 			if ( !desc )
 				return false;
 			if ( !ExtractNode(ctx, childino, desc) )

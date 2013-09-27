@@ -556,7 +556,7 @@ Ref<Inode> ServerNode::open(ioctx_t* /*ctx*/, const char* filename, int flags,
 	     errno != ERANGE )
 	{
 		errno = saved_errno;
-		if ( !(flags & O_CREAT) )
+		if ( !(flags & O_CREATE) )
 			return errno = ENOENT, Ref<Inode>(NULL);
 		ino_t ino = (ino_t) ull_ino;
 		return server->BootstrapNode(ino, mode & S_IFMT);

@@ -228,7 +228,7 @@ Ref<Inode> Dir::open(ioctx_t* ctx, const char* filename, int flags, mode_t mode)
 		if ( flags & O_EXCL ) { errno = EEXIST; return Ref<Inode>(NULL); }
 		return children[childindex].inode;
 	}
-	if ( !(flags & O_CREAT) )
+	if ( !(flags & O_CREATE) )
 		return errno = ENOENT, Ref<Inode>(NULL);
 	Ref<File> file(new File(dev, 0, ctx->uid, ctx->gid, mode));
 	if ( !file )
