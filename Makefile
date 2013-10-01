@@ -57,6 +57,7 @@ sysroot-fsh:
 	mkdir -p "$(SYSROOT)/share"
 	mkdir -p "$(SYSROOT)/src"
 	mkdir -p "$(SYSROOT)/tmp"
+	echo "root::0:0:root:/root:sh" > "$(SYSROOT)/etc/passwd"
 
 .PHONY: sysroot-base-headers
 sysroot-base-headers: sysroot-fsh

@@ -31,28 +31,40 @@
 
 __BEGIN_DECLS
 
+@include(FILE.h)
 @include(gid_t.h)
-@include(uid_t.h)
 @include(size_t.h)
-
-#define _PASSWD_BUFFER_SIZE 64
+@include(uid_t.h)
 
 struct passwd
 {
-	char pw_name[_PASSWD_BUFFER_SIZE];
-	char pw_dir[_PASSWD_BUFFER_SIZE];
-	char pw_shell[_PASSWD_BUFFER_SIZE];
-	char pw_gecos[_PASSWD_BUFFER_SIZE];
 	uid_t pw_uid;
 	gid_t pw_gid;
+	char* pw_dir;
+	char* pw_gecos;
+	char* pw_name;
+	char* pw_passwd;
+	char* pw_shell;
 };
 
+#if __is_sortix_libc
+extern FILE* __pwd_file;
+#endif
+
 void endpwent(void);
+struct passwd* fgetpwent(FILE*);
+int fgetpwent_r(FILE* __restrict, struct passwd* __restrict, char* __restrict,
+                size_t, struct passwd** __restrict);
 struct passwd* getpwent(void);
+int getpwent_r(struct passwd* __restrict, char* __restrict, size_t,
+               struct passwd** __restrict);
 struct passwd* getpwnam(const char*);
-int getpwnam_r(const char*, struct passwd*, char*, size_t, struct passwd**);
+int getpwnam_r(const char* __restrict, struct passwd* __restrict,
+               char* __restrict, size_t, struct passwd** __restrict);
 struct passwd* getpwuid(uid_t);
-int getpwuid_r(uid_t, struct passwd *, char*, size_t, struct passwd**);
+int getpwuid_r(uid_t, struct passwd* __restrict, char* __restrict, size_t,
+               struct passwd** __restrict);
+FILE* openpw(void);
 void setpwent(void);
 
 __END_DECLS
