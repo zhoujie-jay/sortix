@@ -182,11 +182,14 @@ int child()
 	tcsetpgrp(0, getpid());
 
 	const char* default_shell = "sh";
+	const char* default_home = "/root";
 	const char* shell;
+	const char* home;
 	if ( struct passwd* passwd = getpwuid(getuid()) )
 	{
 		setenv("USERNAME", passwd->pw_name, 1);
-		setenv("HOME", passwd->pw_dir, 1);
+		home = passwd->pw_dir[0] ? passwd->pw_dir : default_home;
+		setenv("HOME", default_home, 1);
 		shell = passwd->pw_shell[0] ? passwd->pw_shell : default_shell;
 		setenv("SHELL", shell, 1);
 		setenv("DEFAULT_STUFF", "NO", 1);
@@ -194,10 +197,12 @@ int child()
 	else
 	{
 		setenv("USERNAME", "root", 1);
-		setenv("HOME", "/root", 1);
+		setenv("HOME", home = default_home, 1);
 		setenv("SHELL", shell = default_shell, 1);
 		setenv("DEFAULT_STUFF", "YES", 1);
 	}
+
+	chdir(home);
 
 	const char* newargv[] = { shell, NULL };
 
