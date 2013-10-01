@@ -29,6 +29,10 @@
 
 #include <sys/__/types.h>
 
+#if __is_sortix_libc
+#include <FILE.h>
+#endif
+
 __BEGIN_DECLS
 
 @include(size_t.h)

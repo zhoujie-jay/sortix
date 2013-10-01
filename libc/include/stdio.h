@@ -35,6 +35,10 @@
 #endif
 #include <stdarg.h>
 
+#if __is_sortix_libc
+#include <FILE.h>
+#endif
+
 __BEGIN_DECLS
 
 @include(off_t.h)
@@ -60,6 +64,9 @@ typedef off_t fpos_t;
 
 /* Default path prefix for `tempnam' and `tmpnam'. */
 #define P_tmpdir "/tmp"
+
+/* Size of <stdio.h> buffers. */
+#define BUFSIZ 8192UL
 
 extern FILE* stdin;
 extern FILE* stdout;
