@@ -58,6 +58,7 @@ sysroot-fsh:
 	mkdir -p "$(SYSROOT)/src"
 	mkdir -p "$(SYSROOT)/tmp"
 	echo "root::0:0:root:/root:sh" > "$(SYSROOT)/etc/passwd"
+	echo "root::0:root" > "$(SYSROOT)/etc/group"
 
 .PHONY: sysroot-base-headers
 sysroot-base-headers: sysroot-fsh

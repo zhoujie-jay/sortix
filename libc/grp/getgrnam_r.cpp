@@ -17,51 +17,39 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    grp/grent.cpp
-    Group database.
+    grp/getgrnam_r.cpp
+    Searchs the group database for a group with the given groupname.
 
 *******************************************************************************/
 
-#include <sys/types.h>
-
+#include <errno.h>
 #include <grp.h>
-#include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
-const gid_t ROOT_GID = 0;
-const char* const ROOT_NAME = "root";
-
-static struct group global_group;
-
-static struct group* fill_group(struct group* gr)
+extern "C"
+int getgrnam_r(const char* restrict groupname,
+               struct group* restrict ret,
+               char* restrict buf,
+               size_t buflen,
+               struct group** restrict ret_ptr)
 {
-	const char* env_groupname = getenv("GROUPNAME");
-	strcpy(gr->gr_name, env_groupname ? env_groupname : ROOT_NAME);
-	const char* env_groupid = getenv("GROUPID");
-	gr->gr_gid = env_groupid ? atoi(env_groupid) : ROOT_GID;
-	return gr;
-}
-
-static gid_t lookup_groupname(const char* name)
-{
-	const char* env_groupname = getenv("GROUPNAME");
-	const char* my_groupname = env_groupname ? env_groupname : ROOT_NAME;
-	if ( !strcmp(my_groupname, name) )
+	if ( !ret_ptr )
+		return errno = EINVAL;
+	if ( !groupname || !ret || !buf )
+		return *ret_ptr = NULL, errno = EINVAL;
+	FILE* fgroup = opengr();
+	if ( !fgroup )
+		return *ret_ptr = NULL, errno;
+	int errnum;
+	while ( (errnum = fgetgrent_r(fgroup, ret, buf, buflen, ret_ptr)) == 0 &&
+	        *ret_ptr )
 	{
-		const char* env_groupid = getenv("GROUPID");
-		if ( env_groupid )
-			return atoi(env_groupid);
+		if ( strcmp((*ret_ptr)->gr_name, groupname) != 0 )
+			continue;
+		fclose(fgroup);
+		return *ret_ptr = *ret_ptr, 0;
 	}
-	return 1;
-}
-
-extern "C" struct group* getgrgid(gid_t gid)
-{
-	(void) gid;
-	return fill_group(&global_group);
-}
-
-extern "C" struct group* getgrnam(const char* name)
-{
-	return getgrgid(lookup_groupname(name));
+	fclose(fgroup);
+	return *ret_ptr = NULL, errnum ? errnum : errno = ENOGROUP;
 }

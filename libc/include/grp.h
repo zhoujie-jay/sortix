@@ -31,21 +31,36 @@
 
 __BEGIN_DECLS
 
+@include(FILE.h)
 @include(gid_t.h)
-@include(uid_t.h)
 @include(size_t.h)
-
-#define _GROUP_BUFFER_SIZE 64
 
 struct group
 {
-	char gr_name[_GROUP_BUFFER_SIZE];
 	gid_t gr_gid;
 	char** gr_mem;
+	char* gr_name;
+	char* gr_passwd;
 };
 
-struct group* getgrgid(gid_t gid);
-struct group* getgrnam(const char* name);
+#if __is_sortix_libc
+extern FILE* __grp_file;
+#endif
+
+void endgrent(void);
+struct group* fgetgrent(FILE*);
+int fgetgrent_r(FILE* __restrict, struct group* __restrict, char* __restrict,
+                size_t, struct group** __restrict);
+struct group* getgrent(void);
+int getgrent_r(struct group* __restrict, char* __restrict, size_t,
+               struct group** __restrict);
+struct group* getgrgid(gid_t);
+int getgrgid_r(gid_t, struct group* __restrict, char* __restrict, size_t,
+               struct group** __restrict);
+struct group* getgrnam(const char*);
+int getgrnam_r(const char*, struct group*, char*, size_t, struct group**);
+FILE* opengr(void);
+void setgrent(void);
 
 __END_DECLS
 
