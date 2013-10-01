@@ -33,6 +33,8 @@
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
+#include <grp.h>
+#include <pwd.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -179,11 +181,28 @@ int child()
 	setpgid(0, 0);
 	tcsetpgrp(0, getpid());
 
-	const char* programname = "sh";
-	const char* newargv[] = { programname, NULL };
+	const char* default_shell = "sh";
+	const char* shell;
+	if ( struct passwd* passwd = getpwuid(getuid()) )
+	{
+		setenv("USERNAME", passwd->pw_name, 1);
+		setenv("HOME", passwd->pw_dir, 1);
+		shell = passwd->pw_shell[0] ? passwd->pw_shell : default_shell;
+		setenv("SHELL", shell, 1);
+		setenv("DEFAULT_STUFF", "NO", 1);
+	}
+	else
+	{
+		setenv("USERNAME", "root", 1);
+		setenv("HOME", "/root", 1);
+		setenv("SHELL", shell = default_shell, 1);
+		setenv("DEFAULT_STUFF", "YES", 1);
+	}
 
-	execvp(programname, (char* const*) newargv);
-	error(0, errno, "%s", programname);
+	const char* newargv[] = { shell, NULL };
+
+	execvp(shell, (char* const*) newargv);
+	error(0, errno, "%s", shell);
 
 	return 2;
 }
