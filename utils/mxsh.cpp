@@ -132,6 +132,22 @@ readcmd:
 	cmdnext = cmdend + 1;
 	argv = (char**) (tokens + cmdstart);
 
+	updateenv();
+	char statusstr[32];
+	sprintf(statusstr, "%i", status);
+	setenv("?", statusstr, 1);
+
+	for ( char** argp = argv; *argp; argp++ )
+	{
+		char* arg = *argp;
+		if ( arg[0] != '$' )
+			continue;
+		arg = getenv(arg+1);
+		if ( !arg )
+			arg = (char*) "";
+		*argp = arg;
+	}
+
 	internal = false;
 	internalresult = 0;
 	if ( strcmp(argv[0], "cd") == 0 )
@@ -245,20 +261,6 @@ readcmd:
 		{
 			error(127, errno, "%s", outputfile);
 		}
-	}
-
-	updateenv();
-	char statusstr[32];
-	sprintf(statusstr, "%i", status);
-	setenv("?", statusstr, 1);
-
-	for ( char** argp = argv; *argp; argp++ )
-	{
-		char* arg = *argp;
-		if ( arg[0] != '$' ) { continue; }
-		arg = getenv(arg+1);
-		if ( !arg ) { arg = (char*) ""; }
-		*argp = arg;
 	}
 
 	if ( !strcmp(argv[0], "env") )
