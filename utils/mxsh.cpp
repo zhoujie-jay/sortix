@@ -153,7 +153,7 @@ readcmd:
 	if ( strcmp(argv[0], "cd") == 0 )
 	{
 		internal = true;
-		const char* newdir = getenv_safe("HOME", "/root");
+		const char* newdir = getenv_safe("HOME", "/");
 		if ( argv[1] ) { newdir = argv[1]; }
 		if ( chdir(newdir) )
 		{
@@ -307,7 +307,7 @@ int get_and_run_command(FILE* fp, const char* fpname, bool interactive,
 			print_username = getuid() == 0 ? "root" : "?";
 		const char* print_hostname = getenv_safe("HOSTNAME", "sortix");
 		const char* print_dir = getenv_safe("PWD", "?");
-		const char* home_dir = getenv_safe("HOME", "/root");
+		const char* home_dir = getenv_safe("HOME", "");
 		size_t home_dir_len = strlen(home_dir);
 		printf("\e[32m");
 		printf("%s", print_username);
