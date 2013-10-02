@@ -426,7 +426,6 @@ unistd/fork.o \
 unistd/fsync.o \
 unistd/ftruncate.o \
 unistd/getcwd.o \
-unistd/getdtablesize.o \
 unistd/getegid.o \
 unistd/geteuid.o \
 unistd/getgid.o \

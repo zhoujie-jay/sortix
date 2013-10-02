@@ -363,7 +363,6 @@ ssize_t write(int, const void*, size_t);
 #if defined(_SORTIX_SOURCE)
 int alarmns(const struct timespec* delay, struct timespec* odelay);
 int execvpe(const char*, char* const [], char* const []);
-int getdtablesize(void);
 size_t getpagesize(void);
 int memstat(size_t* memused, size_t* memtotal);
 int mkpartition(int fd, off_t start, off_t length);
