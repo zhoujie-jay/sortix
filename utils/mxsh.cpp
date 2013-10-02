@@ -296,7 +296,9 @@ int get_and_run_command(FILE* fp, const char* fpname, bool interactive,
 		                  | TERMMODE_LINEBUFFER
 		                  | TERMMODE_ECHO;
 		settermmode(fd, termmode);
-		const char* print_username = getenv_safe("USERNAME", "root");
+		const char* print_username = getlogin();
+		if ( !print_username )
+			print_username = getuid() == 0 ? "root" : "?";
 		const char* print_hostname = getenv_safe("HOSTNAME", "sortix");
 		const char* print_dir = getenv_safe("PWD", "?");
 		const char* home_dir = getenv_safe("HOME", "/root");
