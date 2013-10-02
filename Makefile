@@ -3,7 +3,7 @@ MAKEFILE_NOT_MEANT_FOR_SORTIX=1
 include compiler.mak
 include version.mak
 
-MODULES=libc dispd games utils bench sortix
+MODULES=libc dispd games mkinitrd utils bench sortix
 
 ifndef SYSROOT
   SYSROOT:=$(shell pwd)/sysroot
