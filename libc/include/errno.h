@@ -102,6 +102,7 @@ __BEGIN_DECLS
 #define ENFILE 82
 #define EPROTOTYPE 83
 #define ENOLCK 84
+#define ENOUSER 85
 
 #define EOPNOTSUPP ENOTSUP
 
