@@ -104,6 +104,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case EPROTOTYPE: return "Wrong protocol type for socket";
 	case ENOLCK: return "No locks available";
 	case ENOUSER: return "No such user";
+	case ENOGROUP: return "No such group";
 	default: return "Unknown error condition";
 	}
 }
