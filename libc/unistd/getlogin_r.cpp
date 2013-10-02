@@ -18,22 +18,42 @@
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
     unistd/getlogin_r.cpp
-    Get name of user logged ina t the controlling terminal.
+    Get name of user logged in at the controlling terminal.
 
 *******************************************************************************/
 
 #include <errno.h>
+#include <pwd.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 
 extern "C" int getlogin_r(char* buf, size_t size)
 {
-	const char* env_username = getenv("USERNAME");
-	const char* username = env_username ? env_username : "root";
+	struct passwd passwd_object;
+	struct passwd* passwd;
+	int errnum = 0;
+
+	char* pwdbuf = NULL;
+	size_t pwdbuflen = 0;
+	do
+	{
+		size_t new_pwdbuflen = pwdbuflen ? 2 * pwdbuflen : 64;
+		char* new_pwdbuf = pwdbuf = (char*) realloc(pwdbuf, new_pwdbuflen);
+		if ( !new_pwdbuf )
+			return free(pwdbuf), -1;
+		pwdbuf = new_pwdbuf;
+		pwdbuflen = new_pwdbuflen;
+	} while ( (errnum = getpwuid_r(getuid(), &passwd_object, pwdbuf, pwdbuflen,
+	                               &passwd)) == ERANGE );
+	if ( errnum )
+		return free(pwdbuf), errno = errnum, -1;
+
+	const char* username = passwd->pw_name;
 	size_t username_len = strlen(username);
 	if ( size < (username_len + 1) * sizeof(char) )
-		return errno = ERANGE, -1;
+		return free(pwdbuf), errno = ERANGE, -1;
 	strcpy(buf, username);
+
 	return 0;
 }
