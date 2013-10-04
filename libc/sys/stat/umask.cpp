@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,16 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stat.cpp
-    Retrieves status of a file.
+    sys/stat/umask.cpp
+    Set file mode creation mask.
 
 *******************************************************************************/
 
 #include <sys/stat.h>
+#include <sys/syscall.h>
 
-#include <fcntl.h>
+DEFN_SYSCALL1(mode_t, sys_umask, SYSCALL_UMASK, mode_t);
 
-extern "C" int stat(const char* path, struct stat* st)
+extern "C" mode_t umask(mode_t mask)
 {
-	return fstatat(AT_FDCWD, path, st, 0);
+	return sys_umask(mask);
 }

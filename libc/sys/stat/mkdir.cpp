@@ -17,17 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fstatat.cpp
-    Retrieves status of an open file.
+    sys/stat/mkdir.cpp
+    Creates a new directory.
 
 *******************************************************************************/
 
 #include <sys/stat.h>
-#include <sys/syscall.h>
 
-DEFN_SYSCALL4(int, sys_fstatat, SYSCALL_FSTATAT, int, const char*, struct stat*, int);
+#include <fcntl.h>
 
-extern "C" int fstatat(int dirfd, const char* path, struct stat* buf, int flags)
+extern "C" int mkdir(const char* pathname, mode_t mode)
 {
-	return sys_fstatat(dirfd, path, buf, flags);
+	return mkdirat(AT_FDCWD, pathname, mode);
 }

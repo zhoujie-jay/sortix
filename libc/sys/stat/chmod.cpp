@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012.
 
     This file is part of the Sortix C Library.
 
@@ -17,17 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    utimens.cpp
-    Change file last access and modification times.
+    sys/stat/chmod.cpp
+    Changes the mode bits of a file.
 
 *******************************************************************************/
 
+#include <sys/types.h>
 #include <sys/stat.h>
 
 #include <fcntl.h>
 
-extern "C"
-int utimens(const char* path, const struct timespec times[2])
+extern "C" int chmod(const char* path, mode_t mode)
 {
-	return utimensat(AT_FDCWD, path, times, 0);
+	return fchmodat(AT_FDCWD, path, mode, 0);
 }

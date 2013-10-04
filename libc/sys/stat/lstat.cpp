@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,17 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    chmod.cpp
-    Changes the mode bits of a file.
+    sys/stat/lstat.cpp
+    Retrieves status of a file.
 
 *******************************************************************************/
 
-#include <sys/types.h>
 #include <sys/stat.h>
 
 #include <fcntl.h>
 
-extern "C" int chmod(const char* path, mode_t mode)
+extern "C" int lstat(const char* path, struct stat* st)
 {
-	return fchmodat(AT_FDCWD, path, mode, 0);
+	return fstatat(AT_FDCWD, path, st, AT_SYMLINK_NOFOLLOW);
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,16 +17,23 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    mkdir.cpp
-    Creates a new directory.
+    sys/stat/utimensat.cpp
+    Change file last access and modification times.
 
 *******************************************************************************/
 
 #include <sys/stat.h>
+#include <sys/syscall.h>
 
 #include <fcntl.h>
 
-extern "C" int mkdir(const char* pathname, mode_t mode)
+// TODO: You cannot currently pass array types to the DEFN_SYSCALL* family.
+DEFN_SYSCALL4(int, sys_utimensat, SYSCALL_UTIMENSAT, int, const char*,
+              const struct timespec*, int);
+
+extern "C"
+int utimensat(int dirfd, const char* path, const struct timespec times[2],
+              int flags)
 {
-	return mkdirat(AT_FDCWD, pathname, mode);
+	return sys_utimensat(dirfd, path, times, flags);
 }

@@ -166,7 +166,6 @@ arpa/inet/inet_ntoa.o \
 arpa/inet/inet_ntop.o \
 arpa/inet/inet_pton.o \
 calltrace.o \
-chmod.o \
 $(CPUDIR)/calltrace.o \
 $(CPUDIR)/fork.o \
 $(CPUDIR)/setjmp.o \
@@ -177,8 +176,6 @@ dirent/scandir.o \
 dispmsg_issue.o \
 dlfcn.o \
 errorprint.o \
-fchmodat.o \
-fchmod.o \
 fcloseall.o \
 fcntl/creat.o \
 fcntl/fcntl.o \
@@ -198,9 +195,6 @@ fsmarshall/fsm_listen.o \
 fsmarshall/fsm_mkserver.o \
 fsmarshall/fsm_recv.o \
 fsmarshall/fsm_send.o \
-fstatat.o \
-fstat.o \
-futimens.o \
 getc.o \
 gettermmode.o \
 grp/grent.o \
@@ -211,9 +205,6 @@ libgen/basename.o \
 libgen/dirname.o \
 locale/localeconv.o \
 locale/setlocale.o \
-lstat.o \
-mkdirat.o \
-mkdir.o \
 netdb/endhostent.o \
 netdb/endnetent.o \
 netdb/endprotoent.o \
@@ -262,7 +253,6 @@ signal/SIG_ERR.o \
 signal/SIG_IGN.o \
 signal/signal.o \
 signal/sigprocmask.o \
-stat.o \
 stdio.o \
 stdlib/canonicalize_file_name_at.o \
 stdlib/canonicalize_file_name.o \
@@ -293,6 +283,19 @@ sys/socket/shutdown.o \
 sys/socket/sockatmark.o \
 sys/socket/socket.o \
 sys/socket/socketpair.o \
+sys/stat/chmod.o \
+sys/stat/fchmodat.o \
+sys/stat/fchmod.o \
+sys/stat/fstatat.o \
+sys/stat/fstat.o \
+sys/stat/futimens.o \
+sys/stat/lstat.o \
+sys/stat/mkdirat.o \
+sys/stat/mkdir.o \
+sys/stat/stat.o \
+sys/stat/umask.o \
+sys/stat/utimensat.o \
+sys/stat/utimens.o \
 sys/time/gettimeofday.o \
 termios/tcgetwinsize.o \
 time/clock_getres.o \
@@ -318,7 +321,6 @@ time/timer_settime.o \
 time/times.o \
 tmpfile.o \
 tmpnam.o \
-umask.o \
 unistd/access.o \
 unistd/alarmns.o \
 unistd/alarm.o \
@@ -393,8 +395,6 @@ unistd/unlinkat.o \
 unistd/unlink.o \
 unistd/usleep.o \
 unistd/write.o \
-utimensat.o \
-utimens.o \
 utime.o \
 vscanf.o \
 wait.o \

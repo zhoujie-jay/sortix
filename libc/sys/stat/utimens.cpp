@@ -17,18 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    futimens.cpp
+    sys/stat/utimens.cpp
     Change file last access and modification times.
 
 *******************************************************************************/
 
 #include <sys/stat.h>
-#include <sys/syscall.h>
 
-// TODO: You cannot currently pass array types to the DEFN_SYSCALL* family.
-DEFN_SYSCALL2(int, sys_futimens, SYSCALL_FUTIMENS, int, const struct timespec*);
+#include <fcntl.h>
 
-extern "C" int futimens(int fd, const struct timespec times[2])
+extern "C"
+int utimens(const char* path, const struct timespec times[2])
 {
-	return sys_futimens(fd, times);
+	return utimensat(AT_FDCWD, path, times, 0);
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012.
 
     This file is part of the Sortix C Library.
 
@@ -17,17 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fstat.cpp
-    Retrieves status of an open file.
+    sys/stat/fchmodat.cpp
+    Changes the mode bits of a file.
 
 *******************************************************************************/
 
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 
-DEFN_SYSCALL2(int, sys_fstat, SYSCALL_FSTAT, int, struct stat*);
+DEFN_SYSCALL4(int, sys_fchmodat, SYSCALL_FCHMODAT, int, const char*, mode_t, int);
 
-extern "C" int fstat(int fd, struct stat* st)
+extern "C" int fchmodat(int dirfd, const char* path, mode_t mode, int flags)
 {
-	return sys_fstat(fd, st);
+	return sys_fchmodat(dirfd, path, mode, flags);
 }
