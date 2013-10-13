@@ -25,7 +25,7 @@
 #ifndef INCLUDE_INTTYPES_H
 #define INCLUDE_INTTYPES_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sys/__/types.h>
 

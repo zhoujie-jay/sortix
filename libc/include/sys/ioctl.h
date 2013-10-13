@@ -25,7 +25,7 @@
 #ifndef INCLUDE_SYS_IOCTL_H
 #define INCLUDE_SYS_IOCTL_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 

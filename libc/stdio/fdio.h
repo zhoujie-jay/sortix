@@ -25,7 +25,7 @@
 #ifndef STDIO_FDIO_H
 #define STDIO_FDIO_H 1
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 

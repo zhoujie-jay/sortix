@@ -26,7 +26,7 @@
 #ifndef _SYS_SELECT_H
 #define _SYS_SELECT_H 1
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sys/__/types.h>
 

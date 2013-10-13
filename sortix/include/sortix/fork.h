@@ -25,7 +25,7 @@
 #ifndef SORTIX_FORK_H
 #define SORTIX_FORK_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sortix/x86/fork.h>
 #include <sortix/x64/fork.h>

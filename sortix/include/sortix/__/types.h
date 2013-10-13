@@ -25,7 +25,7 @@
 #ifndef INCLUDE_SORTIX____TYPES_H
 #define INCLUDE_SORTIX____TYPES_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <__/stdint.h>
 #include <__/wordsize.h>

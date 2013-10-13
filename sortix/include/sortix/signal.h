@@ -27,7 +27,7 @@
 
 /* TODO: Yes, signals are implemented in a non-standard manner for now. */
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 

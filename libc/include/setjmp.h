@@ -25,7 +25,7 @@
 #ifndef _SETJMP_H
 #define _SETJMP_H 1
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 

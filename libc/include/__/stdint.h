@@ -25,7 +25,7 @@
 #ifndef INCLUDE____STDINT_H
 #define INCLUDE____STDINT_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <__/wordsize.h>
 

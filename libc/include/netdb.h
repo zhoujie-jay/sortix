@@ -25,7 +25,7 @@
 #ifndef _NETDB_H
 #define _NETDB_H 1
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sys/__/types.h>
 

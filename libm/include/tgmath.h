@@ -30,7 +30,7 @@
 #ifndef INCLUDE_TGMATH_H
 #define INCLUDE_TGMATH_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #ifndef __sortix_libm__
 #define __sortix_libm__ 1

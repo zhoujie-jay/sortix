@@ -27,7 +27,7 @@
 #ifndef INCLUDE_FCNTL_H
 #define INCLUDE_FCNTL_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sys/__/types.h>
 

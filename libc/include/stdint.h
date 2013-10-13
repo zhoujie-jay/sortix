@@ -25,7 +25,7 @@
 #ifndef _STDINT_H
 #define _STDINT_H 1
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <__/stdint.h>
 

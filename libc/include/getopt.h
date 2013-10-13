@@ -25,7 +25,7 @@
 #ifndef INCLUDE_GETOPT_H
 #define INCLUDE_GETOPT_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 

@@ -26,7 +26,7 @@
 #ifndef INCLUDE____MATH_H
 #define INCLUDE____MATH_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #if defined(__sortix__)
 #include <__/wordsize.h>

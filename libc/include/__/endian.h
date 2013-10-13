@@ -25,7 +25,7 @@
 #ifndef INCLUDE____ENDIAN_H
 #define INCLUDE____ENDIAN_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <__/byteswap.h>
 

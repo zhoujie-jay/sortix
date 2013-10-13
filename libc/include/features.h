@@ -18,12 +18,12 @@
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
     features.h
-    Various things for various systems, programs, compabillity, and whatnot.
+    Detects the appropriate standard that this translation unit uses.
 
 *******************************************************************************/
 
 #ifndef INCLUDE_FEATURES_H
-#define INCLUDE_FEATURES_H 1
+#define INCLUDE_FEATURES_H
 
 #define __sortix_libc__ 1
 
@@ -45,25 +45,6 @@
 #define __GCC_PREREQ(gcc_major, gcc_minor) \
 	(((gcc_major) == __GNUC__ && (gcc_minor) >= __GNUC_MINOR__) || \
 	 ((gcc_major) < __GNUC__))
-
-/* Preprocessor trick to turn anything into a string. */
-#define __STRINGIFY(x) #x
-
-/* Issue warning when this is used, except in defines, where the warning is
-   inserted whenever the macro is expanded. This can be used to deprecated
-   macros - and it happens on preprocessor level - so it shouldn't change any
-   semantics of any code that uses such a macro. The argument msg should be a
-   string that contains the warning. */
-#define __PRAGMA_WARNING(msg) _Pragma(__STRINGIFY(GCC warning msg))
-
-/* C++ needs to know that types and declarations are C, not C++. */
-#ifdef __cplusplus
-	#define __BEGIN_DECLS   extern "C" {
-	#define __END_DECLS     }
-#else
-	#define __BEGIN_DECLS
-	#define __END_DECLS
-#endif
 
 /* Sortix system components implicitly use the native API. */
 #if __is_sortix_system_component
@@ -100,21 +81,6 @@
 #define __HAS_RESTRICT 1
 #endif
 
-/* Use the real restrict keyword if it is available. Not that this really
-   matters as gcc uses __restrict and __restrict__ as aliases for restrict, but
-   it will look nicer after preprocessing. */
-#if __HAS_RESTRICT
-#undef __restrict
-#define __restrict restrict
-#endif
-
-/* Provide the restrict keyword if requested and unavailable. */
-#if !__HAS_RESTRICT && __want_restrict
-#define restrict __restrict
-#undef __HAS_RESTRICT
-#define __HAS_RESTRICT 2
-#endif
-
 /* Provide the full <stdint.h> in all system components. */
 #if __is_sortix_system_component
 #undef __STDC_CONSTANT_MACROS
@@ -122,7 +88,5 @@
 #define __STDC_CONSTANT_MACROS
 #define __STDC_LIMIT_MACROS
 #endif
-
-#define __pure2 __attribute__((__const__))
 
 #endif

@@ -25,7 +25,7 @@
 #ifndef INCLUDE_UTIME_H
 #define INCLUDE_UTIME_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sys/__/types.h>
 

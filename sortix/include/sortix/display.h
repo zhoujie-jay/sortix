@@ -25,7 +25,7 @@
 #ifndef SORTIX_INCLUDE_DISPLAY_H
 #define SORTIX_INCLUDE_DISPLAY_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <stdint.h>
 

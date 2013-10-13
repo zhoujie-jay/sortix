@@ -25,7 +25,7 @@
 #ifndef INCLUDE_SYS_TIMES_H
 #define INCLUDE_SYS_TIMES_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sys/__/types.h>
 

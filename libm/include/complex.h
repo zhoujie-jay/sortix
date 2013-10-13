@@ -8,7 +8,7 @@
 #ifndef INCLUDE_COMPLEX_H
 #define INCLUDE_COMPLEX_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #ifndef __sortix_libm__
 #define __sortix_libm__ 1

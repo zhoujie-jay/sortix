@@ -25,7 +25,7 @@
 #ifndef INC_SORTIX_VGA_H
 #define INC_SORTIX_VGA_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 

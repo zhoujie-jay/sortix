@@ -25,7 +25,7 @@
 #ifndef SORTIX_INCLUDE_MOUNT_H
 #define SORTIX_INCLUDE_MOUNT_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 

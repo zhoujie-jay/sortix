@@ -25,7 +25,7 @@
 #ifndef _STDIO_EXT_H
 #define _STDIO_EXT_H 1
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <stdio.h>
 

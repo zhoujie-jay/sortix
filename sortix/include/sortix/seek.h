@@ -25,7 +25,7 @@
 #ifndef SORTIX_SEEK_H
 #define SORTIX_SEEK_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 

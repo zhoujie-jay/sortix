@@ -25,7 +25,7 @@
 #ifndef _DLFCN_H
 #define _DLFCN_H 1
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 

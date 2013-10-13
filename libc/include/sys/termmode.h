@@ -25,7 +25,7 @@
 #ifndef INCLUDE_SYS_TERMMODE_H
 #define INCLUDE_SYS_TERMMODE_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sortix/termmode.h>
 

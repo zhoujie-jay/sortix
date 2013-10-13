@@ -25,7 +25,7 @@
 #ifndef INCLUDE_SORTIX_TMNS_H
 #define INCLUDE_SORTIX_TMNS_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sortix/timespec.h>
 

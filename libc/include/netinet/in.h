@@ -25,7 +25,7 @@
 #ifndef INCLUDE_NETINET_IN_H
 #define INCLUDE_NETINET_IN_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sys/__/types.h>
 #include <__/endian.h>

@@ -25,7 +25,7 @@
 #ifndef INCLUDE_SORTIX_ITIMERSPEC_H
 #define INCLUDE_SORTIX_ITIMERSPEC_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 

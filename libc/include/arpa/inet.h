@@ -25,7 +25,7 @@
 #ifndef INCLUDE_ARPA_INET_H
 #define INCLUDE_ARPA_INET_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <netinet/in.h>
 

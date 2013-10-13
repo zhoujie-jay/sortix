@@ -25,7 +25,7 @@
 #ifndef INCLUDE_WCHAR_H
 #define INCLUDE_WCHAR_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sys/__/types.h>
 

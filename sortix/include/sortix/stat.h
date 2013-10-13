@@ -26,7 +26,7 @@
 #ifndef INCLUDE_SORTIX_STAT_H
 #define INCLUDE_SORTIX_STAT_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sys/types.h>
 #include <sortix/timespec.h>

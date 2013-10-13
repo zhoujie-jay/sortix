@@ -25,7 +25,7 @@
 #ifndef _POLL_H
 #define _POLL_H 1
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sys/__/types.h>
 

@@ -28,7 +28,7 @@
 #ifndef _UNISTD_H
 #define _UNISTD_H 1
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sys/__/types.h>
 #include <__/stdint.h>

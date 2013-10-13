@@ -25,7 +25,7 @@
 #ifndef SORTIX_X64_FORK_H
 #define SORTIX_X64_FORK_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 

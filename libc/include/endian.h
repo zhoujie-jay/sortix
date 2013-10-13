@@ -25,7 +25,7 @@
 #ifndef _ENDIAN_H
 #define _ENDIAN_H 1
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <__/endian.h>
 

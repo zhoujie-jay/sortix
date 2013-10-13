@@ -25,7 +25,7 @@
 #ifndef _LOCALE_H
 #define _LOCALE_H 1
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sys/__/types.h>
 

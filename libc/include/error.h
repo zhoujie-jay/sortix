@@ -25,7 +25,7 @@
 #ifndef INCLUDE_ERROR_H
 #define INCLUDE_ERROR_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 

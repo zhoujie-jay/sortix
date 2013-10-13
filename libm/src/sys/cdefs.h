@@ -34,9 +34,7 @@
  *	@(#)cdefs.h	8.8 (Berkeley) 1/9/95
  */
 
-#if !defined(__sortix__)
 #include_next <sys/cdefs.h>
-#endif
 
 #if !defined(_C_LABEL)
 #define _C_LABEL(x) x

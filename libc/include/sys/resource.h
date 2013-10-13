@@ -25,7 +25,7 @@
 #ifndef INCLUDE_SYS_RESOURCE_H
 #define INCLUDE_SYS_RESOURCE_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sys/__/types.h>
 

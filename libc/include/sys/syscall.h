@@ -29,7 +29,7 @@
 #ifndef _SYS_SYSCALL_H
 #define _SYS_SYSCALL_H 1
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sortix/syscallnum.h>
 

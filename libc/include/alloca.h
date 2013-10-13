@@ -25,7 +25,7 @@
 #ifndef INCLUDE_ALLOCA_H
 #define INCLUDE_ALLOCA_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sys/__/types.h>
 

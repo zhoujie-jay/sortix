@@ -25,7 +25,7 @@
 #ifndef _ASSERT_H
 #define _ASSERT_H 1
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 /* stdlib.h is not needed, but GCC fixincludes thinks it is, so fool it. */
 #if 0

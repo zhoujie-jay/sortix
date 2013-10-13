@@ -25,7 +25,7 @@
 #ifndef INCLUDE_SYS____TYPES_H
 #define INCLUDE_SYS____TYPES_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sortix/__/types.h>
 

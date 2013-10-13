@@ -25,7 +25,7 @@
 #ifndef INCLUDE_SORTIX_POLL_H
 #define INCLUDE_SORTIX_POLL_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 __BEGIN_DECLS
 
