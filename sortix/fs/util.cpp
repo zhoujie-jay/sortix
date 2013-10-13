@@ -213,4 +213,3 @@ bool DevMemoryBuffer::IsWritable()
 }
 
 } // namespace Sortix
-

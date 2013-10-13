@@ -67,4 +67,3 @@ int openat(int fd, const char* path, int oflag, ...);
 __END_DECLS
 
 #endif
-

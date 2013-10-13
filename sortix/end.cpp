@@ -30,4 +30,3 @@ namespace Sortix
 {
 	size_t end; // Put in the bss, the last segment.
 }
-

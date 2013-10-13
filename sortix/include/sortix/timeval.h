@@ -38,4 +38,3 @@ struct timeval
 __END_DECLS
 
 #endif
-

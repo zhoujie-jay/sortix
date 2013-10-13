@@ -34,4 +34,3 @@
 #define TERMMODE_NONBLOCK (1U<<6U)
 
 #endif
-

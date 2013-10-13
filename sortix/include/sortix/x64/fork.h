@@ -54,4 +54,3 @@ struct tforkregs_x64
 __END_DECLS
 
 #endif
-

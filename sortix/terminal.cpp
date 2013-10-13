@@ -87,4 +87,3 @@ namespace Sortix
 		Syscall::Register(SYSCALL_TCGETWINSIZE, (void*) SysTCGetWinSize);
 	}
 }
-

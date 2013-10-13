@@ -247,4 +247,3 @@ namespace Sortix
 		return false;
 	}
 }
-

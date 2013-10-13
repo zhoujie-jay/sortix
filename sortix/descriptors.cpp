@@ -193,4 +193,3 @@ namespace Sortix
 		return devices[index].path;
 	}
 }
-

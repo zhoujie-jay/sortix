@@ -211,4 +211,3 @@ int remove(const char* pathname)
 	}
 	return result;
 }
-

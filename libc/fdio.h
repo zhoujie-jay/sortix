@@ -35,4 +35,3 @@ FILE* fdio_newfile(int fd, const char* mode);
 __END_DECLS
 
 #endif
-

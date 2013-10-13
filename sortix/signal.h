@@ -60,4 +60,3 @@ inline bool IsPending() { return asm_signal_is_pending != 0; }
 } // namespace Sortix
 
 #endif
-

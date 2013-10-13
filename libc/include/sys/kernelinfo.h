@@ -37,4 +37,3 @@ ssize_t kernelinfo(const char* req, char* resp, size_t resplen);
 __END_DECLS
 
 #endif
-

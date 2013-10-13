@@ -221,4 +221,3 @@ typedef struct multiboot_mod_list multiboot_module_t;
 #endif /* ! ASM_FILE */
 
 #endif /* ! MULTIBOOT_HEADER */
-

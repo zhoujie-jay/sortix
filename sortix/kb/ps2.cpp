@@ -224,4 +224,3 @@ namespace Sortix
 		return queueused;
 	}
 }
-

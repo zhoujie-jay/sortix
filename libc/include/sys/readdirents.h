@@ -45,4 +45,3 @@ int readdirents(int fd, struct sortix_dirent* dirent, size_t size);
 __END_DECLS
 
 #endif
-

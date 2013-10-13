@@ -55,4 +55,3 @@ mode_t umask(mode_t mask);
 __END_DECLS
 
 #endif
-

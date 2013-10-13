@@ -415,4 +415,3 @@ bool ScheduleWork(WorkHandler handler, void* payload, size_t payloadsize)
 
 } // namespace Interrupt
 } // namespace Sortix
-

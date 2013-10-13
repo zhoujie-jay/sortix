@@ -119,4 +119,3 @@ namespace Sortix
 		return bufferused - bufferfrozen;
 	}
 }
-

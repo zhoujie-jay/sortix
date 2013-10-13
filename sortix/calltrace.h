@@ -32,4 +32,3 @@ void Perform();
 } // namespace Sortix
 
 #endif
-

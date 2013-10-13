@@ -82,4 +82,3 @@ struct stat
 __END_DECLS
 
 #endif
-

@@ -60,4 +60,3 @@ extern "C" char* setlocale(int category, const char* locale)
 {
 	return (char*) sortix_setlocale(category, locale);
 }
-

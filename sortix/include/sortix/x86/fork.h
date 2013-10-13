@@ -46,4 +46,3 @@ struct tforkregs_x86
 __END_DECLS
 
 #endif
-

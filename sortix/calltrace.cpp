@@ -42,4 +42,3 @@ void Perform()
 
 } // namespace Calltrace
 } // namespace Sortix
-

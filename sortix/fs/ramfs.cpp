@@ -367,4 +367,3 @@ namespace Sortix
 		return file->name;
 	}
 }
-

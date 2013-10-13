@@ -149,4 +149,3 @@ wctype_t wctype(const char *);
 __END_DECLS
 
 #endif
-

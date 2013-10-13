@@ -46,4 +46,3 @@ namespace Sortix
 		if ( !tty ) { Panic("Could not allocate a simple terminal"); }
 	}
 }
-

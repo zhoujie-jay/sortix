@@ -99,4 +99,3 @@ typedef struct initrd_dirent
 __END_DECLS
 
 #endif
-

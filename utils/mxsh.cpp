@@ -382,4 +382,3 @@ int main(int /*argc*/, char* argv[])
 	updatepwd();
 	while ( true ) { get_and_run_command(); }
 }
-

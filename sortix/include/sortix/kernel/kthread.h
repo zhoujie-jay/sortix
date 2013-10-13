@@ -102,4 +102,3 @@ private:
 } // namespace Sortix
 
 #endif
-

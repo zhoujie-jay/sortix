@@ -183,4 +183,3 @@ int main(int argc, char* argv[])
 	if ( !doformat() ) { exit(1); }
 	return 0;
 }
-

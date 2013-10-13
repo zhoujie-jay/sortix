@@ -159,4 +159,3 @@ namespace Sortix
 		return LAYOUT_US[index];
 	}
 }
-

@@ -147,4 +147,3 @@ int dcloseall(void)
 	while ( firstdir ) { result |= closedir(firstdir); }
 	return (result) ? EOF : 0;
 }
-

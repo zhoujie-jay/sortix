@@ -42,4 +42,3 @@ namespace Sortix
 extern "C" void syscall_handler();
 
 #endif
-

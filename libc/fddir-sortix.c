@@ -137,4 +137,3 @@ DIR* opendir(const char* path)
 	if ( !dir ) { close(fd); return NULL; }
 	return dir;
 }
-

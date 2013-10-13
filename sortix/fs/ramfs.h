@@ -57,4 +57,3 @@ namespace Sortix
 }
 
 #endif
-

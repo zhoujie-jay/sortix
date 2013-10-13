@@ -62,4 +62,3 @@ tss_flush:
 GDT_FLUSH_POSTJMP:
 	.long gdt_flush_postjmp
 	.word 0x08 # 0x08 is the offset to our code segment
-

@@ -72,4 +72,3 @@ addr_t ParseDevBar0(uint32_t devaddr);
 } // namespace Sortix
 
 #endif
-

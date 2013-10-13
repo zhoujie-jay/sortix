@@ -50,4 +50,3 @@ int toupper(int c);
 __END_DECLS
 
 #endif
-

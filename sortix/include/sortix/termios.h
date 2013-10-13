@@ -40,4 +40,3 @@ struct winsize
 __END_DECLS
 
 #endif
-

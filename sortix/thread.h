@@ -143,4 +143,3 @@ namespace Sortix
 }
 
 #endif
-

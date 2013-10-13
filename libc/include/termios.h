@@ -38,4 +38,3 @@ int tcgetwinsize(int fd, struct winsize* ws);
 __END_DECLS
 
 #endif
-

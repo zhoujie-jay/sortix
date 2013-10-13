@@ -318,5 +318,3 @@ namespace Sortix
 		return true;
 	}
 }
-
-

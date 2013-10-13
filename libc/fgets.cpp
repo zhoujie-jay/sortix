@@ -43,4 +43,3 @@ extern "C" char* fgets(char* dest, int size, FILE* fp)
 	dest[i] = '\0';
 	return dest;
 }
-

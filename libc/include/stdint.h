@@ -36,4 +36,3 @@ __BEGIN_DECLS
 __END_DECLS
 
 #endif
-

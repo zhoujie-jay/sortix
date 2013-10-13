@@ -77,4 +77,3 @@ struct lconv* localeconv(void);
 __END_DECLS
 
 #endif
-

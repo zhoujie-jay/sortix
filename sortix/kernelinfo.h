@@ -35,4 +35,3 @@ void Init();
 } // namespace Sortix
 
 #endif
-

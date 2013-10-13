@@ -35,4 +35,3 @@ extern "C" int abs(int val) { return Absolute(val); }
 extern "C" long int labs(long int val) { return Absolute(val); }
 extern "C" long long int llabs(long long int val) { return Absolute(val); }
 extern "C" intmax_t imaxabs(intmax_t val) { return Absolute(val); }
-
