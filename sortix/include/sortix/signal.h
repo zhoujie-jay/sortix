@@ -74,6 +74,10 @@ __BEGIN_DECLS
 #define SIG_PRIO_KILL 4
 #define SIG_NUM_LEVELS 5
 
+#define SIG_BLOCK 0
+#define SIG_UNBLOCK 1
+#define SIG_SETMASK 2
+
 __END_DECLS
 
 #endif
