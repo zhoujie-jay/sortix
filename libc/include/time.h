@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -22,26 +22,22 @@
 
 *******************************************************************************/
 
-#ifndef _TIME_H
-#define _TIME_H 1
+#ifndef INCLUDE_TIME_H
+#define INCLUDE_TIME_H
 
 #include <features.h>
 
 __BEGIN_DECLS
 
 @include(clock_t.h)
-@include(clockid_t.h)
 @include(size_t.h)
-@include(pid_t.h)
 @include(time_t.h)
-@include(NULL.h)
+@include(clockid_t.h)
+@include(timer_t.h)
+@include(locale_t.h)
+@include(pid_t.h)
 
-__END_DECLS
-#include <sortix/clock.h>
-#include <sortix/timespec.h>
-__BEGIN_DECLS
-
-#define CLOCKS_PER_SEC 1000000
+struct sigevent;
 
 struct tm
 {
@@ -56,22 +52,66 @@ struct tm
 	int tm_isdst;
 };
 
-struct utimbuf
+__END_DECLS
+#include <sortix/timespec.h>
+__BEGIN_DECLS
+
+/* TODO: This itimer stuff is replaced with another interface IIRC. */
+struct itimerspec
 {
-	time_t actime;
-	time_t modtime;
+	struct timespec it_interval;
+	struct timespec it_value;
 };
 
+@include(NULL.h)
+
+#define CLOCKS_PER_SEC ((clock_t) 1000000)
+
+__END_DECLS
+#include <sortix/clock.h>
+__BEGIN_DECLS
+
+#define TIMER_ABSTIME (1<<0)
+
+/* getdate_err is omitted, use strptime */
+
+char* asctime(const struct tm*);
+char* asctime_r(const struct tm* restrict, char* restrict);
 clock_t clock(void);
-time_t time(time_t* t);
-char* ctime(const time_t* timep);
-struct tm* localtime_r(const time_t* timer, struct tm* ret);
-struct tm* gmtime_r(const time_t* timer, struct tm* ret);
-#if !defined(_SORTIX_SOURCE)
-struct tm* localtime(const time_t* timer);
-struct tm* gmtime(const time_t* timer);
-#endif
-int utime(const char* filepath, const struct utimbuf* times);
+/* TODO: clock_getcpuclockid */
+int clock_getres(clockid_t, struct timespec*);
+int clock_gettime(clockid_t, struct timespec*);
+int clock_nanosleep(clockid_t, int, const struct timespec*, struct timespec*);
+int clock_settime(clockid_t, const struct timespec*);
+char* ctime(const time_t* clock);
+char* ctime_r(const time_t* clock, char* buf);
+/* ctime_r is obsolescent */
+double difftime(time_t, time_t);
+/* getdate is omitted, use strptime */
+struct tm* gmtime(const time_t*);
+struct tm* gmtime_r(const time_t* restrict, struct tm* restrict);
+struct tm* localtime(const time_t*);
+struct tm* localtime_r(const time_t* restrict, struct tm* restrict);
+time_t mktime(struct tm*);
+int nanosleep(const struct timespec*, struct timespec*);
+size_t strftime(char* restrict, size_t, const char* restrict,
+                const struct tm* restrict);
+size_t strftime_l(char* restrict, size_t, const char* restrict,
+                const struct tm* restrict, locale_t);
+char* strptime(const char* restrict, const char* restrict,
+               struct tm* restrict);
+time_t time(time_t*);
+int timer_create(clockid_t, struct sigevent* restrict, time_t* restrict);
+int timer_delete(timer_t);
+int timer_getoverrun(timer_t);
+int timer_gettime(timer_t, struct itimerspec*);
+int timer_settime(timer_t, int, const struct itimerspec* restrict,
+                  struct itimerspec* restrict);
+void tzset(void);
+
+extern int daylight;
+extern long timezone;
+extern char* tzname[];
 
 __END_DECLS
 

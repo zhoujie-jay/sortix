@@ -151,5 +151,6 @@ typedef __intmax_t __clock_t;
 typedef int __clockid_t;
 typedef long __time_t;
 typedef long __suseconds_t;
+typedef void* __timer_t;
 
 #endif

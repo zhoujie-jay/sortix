@@ -33,6 +33,8 @@ __BEGIN_DECLS
 #define CLOCK_MONOTONIC 1 /* Always increasing time. */
 #define CLOCK_BOOT 2 /* Time since system boot (uptime). */
 #define CLOCK_INIT 3 /* Time since 'init' process began. */
+#define CLOCK_PROCESS_CPUTIME_ID 4
+#define CLOCK_THREAD_CPUTIME_ID 5
 
 __END_DECLS
 
