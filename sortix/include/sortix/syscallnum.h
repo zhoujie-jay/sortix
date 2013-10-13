@@ -118,6 +118,11 @@
 #define SYSCALL_WRITEV 94
 #define SYSCALL_PREADV 95
 #define SYSCALL_PWRITEV 96
-#define SYSCALL_MAX_NUM 97 /* index of highest constant + 1 */
+#define SYSCALL_TIMER_CREATE 97
+#define SYSCALL_TIMER_DELETE 98
+#define SYSCALL_TIMER_GETOVERRUN 99
+#define SYSCALL_TIMER_GETTIME 100
+#define SYSCALL_TIMER_SETTIME 101
+#define SYSCALL_MAX_NUM 102 /* index of highest constant + 1 */
 
 #endif

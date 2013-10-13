@@ -54,7 +54,7 @@ typedef long int __ssize_t;
 #else
 typedef int __ssize_t;
 #endif
-typedef void* __timer_t;
+typedef __uintptr_t __timer_t;
 typedef __SIZE_TYPE__ __socklen_t;
 
 #if defined(SORTIX_KERNEL) || defined(LIBC_LIBRARY)

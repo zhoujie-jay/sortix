@@ -54,6 +54,7 @@ ifdef X86FAMILY
              $(CPU)/thread.o \
              $(CPU)/scheduler.o \
              $(CPU)/process.o \
+             x86-family/time.o \
              x86-family/msr.o \
              x86-family/float.o \
              x86-family/x86-family.o
@@ -74,6 +75,7 @@ addralloc.o \
 ata.o \
 bga.o \
 calltrace.o \
+clock.o \
 com.o \
 copy.o \
 $(CPU)/calltrace.o \
@@ -123,7 +125,9 @@ textbuffer.o \
 textterminal.o \
 thread.o \
 time.o \
+timer.o \
 uart.o \
+user-timer.o \
 utf8.o \
 vga.o \
 vgatextbuffer.o \

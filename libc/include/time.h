@@ -54,14 +54,8 @@ struct tm
 
 __END_DECLS
 #include <sortix/timespec.h>
+#include <sortix/itimerspec.h>
 __BEGIN_DECLS
-
-/* TODO: This itimer stuff is replaced with another interface IIRC. */
-struct itimerspec
-{
-	struct timespec it_interval;
-	struct timespec it_value;
-};
 
 @include(NULL.h)
 
@@ -69,9 +63,8 @@ struct itimerspec
 
 __END_DECLS
 #include <sortix/clock.h>
+#include <sortix/time.h>
 __BEGIN_DECLS
-
-#define TIMER_ABSTIME (1<<0)
 
 /* getdate_err is omitted, use strptime */
 
@@ -101,7 +94,7 @@ size_t strftime_l(char* __restrict, size_t, const char* __restrict,
 char* strptime(const char* __restrict, const char* __restrict,
                struct tm* __restrict);
 time_t time(time_t*);
-int timer_create(clockid_t, struct sigevent* __restrict, time_t* __restrict);
+int timer_create(clockid_t, struct sigevent* __restrict, timer_t* __restrict);
 int timer_delete(timer_t);
 int timer_getoverrun(timer_t);
 int timer_gettime(timer_t, struct itimerspec*);

@@ -47,6 +47,7 @@
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/fcache.h>
 #include <sortix/kernel/string.h>
+#include <sortix/kernel/user-timer.h>
 
 #include <sortix/fcntl.h>
 #include <sortix/stat.h>
@@ -247,6 +248,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Stage 2. Transition to Multithreaded Environment
 	//
 
+	// Initialize the clocks.
+	Time::Init();
+
 	// Initialize the process system.
 	Process::Init();
 
@@ -296,7 +300,7 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	Float::Init();
 
 	// The time driver will run the scheduler on the next timer interrupt.
-	Time::Init();
+	Time::Start();
 
 	// Become the system idle thread.
 	SystemIdleThread(NULL);
@@ -421,6 +425,9 @@ static void BootThread(void* /*user*/)
 
 	// Initialize poll system call.
 	Poll::Init();
+
+	// Initialize per-process timers.
+	UserTimer::Init();
 
 	// Initialize the kernel information query syscall.
 	Info::Init();

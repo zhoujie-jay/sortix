@@ -350,6 +350,11 @@ sys/socket/socketpair.o \
 system.o \
 tfork.o \
 time.o \
+time/timer_create.o \
+time/timer_delete.o \
+time/timer_getoverrun.o \
+time/timer_gettime.o \
+time/timer_settime.o \
 tmpfile.o \
 tmpnam.o \
 truncateat.o \

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,49 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    sys/types.h
-    Data types.
+    time/timer_delete.cpp
+    Delete a per-process timer.
 
 *******************************************************************************/
 
-// TODO: Make this header comply with POSIX-1.2008
+#include <sys/syscall.h>
 
-#ifndef INCLUDE_SYS_TYPES_H
-#define INCLUDE_SYS_TYPES_H
+#include <time.h>
 
-#include <features.h>
-#include <sys/__/types.h>
+DEFN_SYSCALL1(int, sys_timer_delete, SYSCALL_TIMER_DELETE, timer_t);
 
-__BEGIN_DECLS
-
-@include(blkcnt_t.h)
-@include(blksize_t.h)
-@include(clock_t.h)
-@include(clockid_t.h)
-@include(dev_t.h)
-/* TODO: fsblkcnt_t */
-/* TODO: fsfilcnt_t */
-@include(gid_t.h)
-/* TODO: id_t */
-@include(ino_t.h)
-/* TODO: key_t */
-@include(mode_t.h)
-@include(nlink_t.h)
-@include(off_t.h)
-@include(pid_t.h)
-@include(size_t.h)
-@include(ssize_t.h)
-@include(suseconds_t.h)
-@include(time_t.h)
-@include(timer_t.h)
-/* TODO: trace*_t */
-@include(uid_t.h)
-@include(useconds_t.h)
-
-#if !defined(SORTIX_KERNEL)
-/* TODO: pthread*_t */
-#endif
-
-__END_DECLS
-
-#endif
+extern "C" int timer_delete(timer_t timerid)
+{
+	return sys_timer_delete(timerid);
+}

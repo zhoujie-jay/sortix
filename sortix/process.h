@@ -25,10 +25,18 @@
 #ifndef SORTIX_PROCESS_H
 #define SORTIX_PROCESS_H
 
-#include "cpu.h"
+#include <sortix/fork.h>
+
+#include <sortix/kernel/clock.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/refcount.h>
-#include <sortix/fork.h>
+#include <sortix/kernel/time.h>
+#include <sortix/kernel/timer.h>
+#include <sortix/kernel/user-timer.h>
+
+#include "cpu.h"
+
+#define PROCESS_TIMER_NUM_MAX 32
 
 namespace Sortix
 {
@@ -38,6 +46,7 @@ namespace Sortix
 	class DescriptorTable;
 	class MountTable;
 	struct ProcessSegment;
+	struct ProcessTimer;
 	struct ioctx_struct;
 	typedef struct ioctx_struct ioctx_t;
 
@@ -132,6 +141,10 @@ namespace Sortix
 
 	public:
 		ProcessSegment* segments;
+
+	public:
+		kthread_mutex_t user_timers_lock;
+		UserTimer user_timers[PROCESS_TIMER_NUM_MAX];
 
 	public:
 		int Execute(const char* programname, const uint8_t* program,

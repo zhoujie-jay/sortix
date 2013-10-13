@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of Sortix.
 
@@ -17,36 +17,34 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    sortix/kernel/time.h
-    Retrieving the current time.
+    sortix/kernel/user-timer.h
+    Timer facility provided to user-space.
 
 *******************************************************************************/
 
-#ifndef INCLUDE_SORTIX_KERNEL_TIME_H
-#define INCLUDE_SORTIX_KERNEL_TIME_H
+#ifndef INCLUDE_SORTIX_KERNEL_USER_TIMER_H
+#define INCLUDE_SORTIX_KERNEL_USER_TIMER_H
 
-#include <features.h>
+#include <sortix/sigevent.h>
 
-#include <sys/types.h>
-
-#include <stddef.h>
-
-#include <sortix/timespec.h>
+#include <sortix/kernel/timer.h>
 
 namespace Sortix {
-class Clock;
-} // namespace Sortix
 
-namespace Sortix {
-namespace Time {
+class Process;
 
-void Init();
-void Start();
-void OnTick(struct timespec tick_period);
-struct timespec Get(clockid_t clock);
-Clock* GetClock(clockid_t clock);
+struct UserTimer
+{
+	Timer timer;
+	struct sigevent event;
+	Process* process;
+	timer_t timerid;
 
-} // namespace Time
+public:
+	static void Init();
+
+};
+
 } // namespace Sortix
 
 #endif

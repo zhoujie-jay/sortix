@@ -123,6 +123,7 @@ namespace Sortix
 		threadlock = KTHREAD_MUTEX_INITIALIZER;
 		ptrlock = KTHREAD_MUTEX_INITIALIZER;
 		idlock = KTHREAD_MUTEX_INITIALIZER;
+		user_timers_lock = KTHREAD_MUTEX_INITIALIZER;
 		mmapfrom = 0x80000000UL;
 		exitstatus = -1;
 		pid = AllocatePID();
@@ -233,6 +234,16 @@ namespace Sortix
 
 		// This can't be called if the process is still alive.
 		assert(!firstthread);
+
+		// Disarm and detach all the timers in the process.
+		for ( timer_t i = 0; i < PROCESS_TIMER_NUM_MAX; i++ )
+		{
+			if ( user_timers[i].timer.IsAttached() )
+			{
+				user_timers[i].timer.Cancel();
+				user_timers[i].timer.Detach();
+			}
+		}
 
 		// We need to temporarily reload the correct addrese space of the dying
 		// process such that we can unmap and free its memory.
