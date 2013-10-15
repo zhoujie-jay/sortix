@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -23,13 +23,35 @@
 *******************************************************************************/
 
 #include <stdarg.h>
+#include <stdlib.h>
 #include <unistd.h>
 
-extern "C" int execlp(const char* filename, ...)
+extern "C" int execlp(const char* filename, const char* argv0, ...)
 {
+	if ( !argv0 )
+		return execvp(filename, (char* const*) &argv0);
+
 	va_list args;
-	va_start(args, filename);
-	int result = vexeclp(filename, args);
+	va_start(args, argv0);
+	size_t numargs = 1;
+	while ( argv0 && va_arg(args, const char*) )
+		numargs++;
 	va_end(args);
+
+	char** argv = (char**) malloc(sizeof(char*) * (numargs+1));
+	if ( !argv )
+		return -1;
+
+	argv[0] = (char*) argv0;
+	va_start(args, argv0);
+	for ( size_t i = 1; i <= numargs; i++ )
+		argv[i] = (char*) va_arg(args, const char*);
+	va_end(args);
+	argv[numargs] = NULL;
+
+	int result = execvp(filename, argv);
+
+	free(argv);
+
 	return result;
 }
