@@ -33,14 +33,13 @@ extern "C" int vexecle(const char* pathname, va_list args)
 	size_t numargs = 0;
 	while ( va_arg(iter, const char*) ) { numargs++; }
 	va_end(iter);
-	numargs--; // envp
 	char** argv = (char**) malloc(sizeof(char*) * (numargs+1));
 	if ( !argv ) { return -1; }
 	for ( size_t i = 0; i < numargs; i++ )
 	{
 		argv[i] = (char*) va_arg(args, const char*);
 	}
-	argv[numargs] = NULL;
+	argv[numargs] = (char*) va_arg(args, char* const*) /* NULL */;
 	char* const* envp = va_arg(args, char* const*);
 	int result = execve(pathname, argv, envp);
 	free(argv);
