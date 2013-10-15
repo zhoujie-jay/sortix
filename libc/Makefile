@@ -197,9 +197,6 @@ unlink.o \
 uptime.o \
 usleep.o \
 utime.o \
-vexecle.o \
-vexecl.o \
-vexeclp.o \
 vscanf.o \
 wait.o \
 waitpid.o \
