@@ -49,6 +49,7 @@ type \
 time \
 uname \
 uptime \
+wc \
 which \
 
 INSTALLBINARIES:=$(addprefix $(DESTDIR)$(BINDIR)/,$(BINARIES))
