@@ -23,6 +23,7 @@
 #include <sys/wait.h>
 #include <sys/termmode.h>
 
+#include <dirent.h>
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
@@ -68,6 +69,21 @@ void updateenv()
 	}
 }
 
+bool matches_simple_pattern(const char* string, const char* pattern)
+{
+	size_t wildcard_index = strcspn(pattern, "*");
+	if ( !pattern[wildcard_index] )
+		return strcmp(string, pattern) == 0;
+	if ( pattern[0] == '*' && string[0] == '.' )
+		return false;
+	size_t string_length = strlen(string);
+	size_t pattern_length = strlen(pattern);
+	size_t pattern_last = pattern_length - (wildcard_index + 1);
+	return strncmp(string, pattern, wildcard_index) == 0 &&
+	       strcmp(string + string_length - pattern_last,
+	              pattern + wildcard_index + 1) == 0;
+}
+
 int runcommandline(const char** tokens, bool* exitexec, bool interactive)
 {
 	int result = 127;
@@ -86,6 +102,9 @@ int runcommandline(const char** tokens, bool* exitexec, bool interactive)
 	pid_t pgid = -1;
 	bool internal;
 	int internalresult;
+	size_t num_tokens = 0;
+	while ( tokens[num_tokens] )
+		num_tokens++;
 readcmd:
 	// Collect any pending zombie processes.
 	while ( 0 < waitpid(-1, NULL, WNOHANG) );
@@ -127,6 +146,63 @@ readcmd:
 		if ( !outputfile ) { fprintf(stderr, "expected filename\n"); goto out; }
 		const char* nexttok = tokens[cmdend+2];
 		if ( nexttok ) { fprintf(stderr, "too many filenames\n"); goto out; }
+	}
+
+	for ( size_t i = cmdstart; i < cmdend; i++ )
+	{
+		const char* pattern = tokens[i];
+		size_t wildcard_pos = strcspn(pattern, "*");
+		if ( !pattern[wildcard_pos] )
+			continue;
+		bool found_slash = false;
+		size_t last_slash = 0;
+		for ( size_t i = 0; i < wildcard_pos; i++ )
+			if ( pattern[i] == '/' )
+				last_slash = i, found_slash = true;
+		size_t match_from = found_slash ? last_slash + 1 : 0;
+		DIR* dir;
+		size_t pattern_prefix = 0;
+		if ( !found_slash )
+		{
+			if ( !(dir = opendir(".")) )
+				continue;
+		}
+		else
+		{
+			char* dirpath = strdup(pattern);
+			if ( !dirpath )
+				continue;
+			dirpath[last_slash] = '\0';
+			pattern_prefix = last_slash + 1;
+			dir = opendir(dirpath);
+			free(dirpath);
+			if ( !dir )
+				continue;
+		}
+		size_t num_inserted = 0;
+		size_t last_inserted_index = i;
+		while ( struct dirent* entry = readdir(dir) )
+		{
+			if ( !matches_simple_pattern(entry->d_name, pattern + match_from) )
+				continue;
+			// TODO: Memory leak.
+			char* name = (char*) malloc(pattern_prefix + strlen(entry->d_name) + 1);
+			memcpy(name, pattern, pattern_prefix);
+			strcpy(name + pattern_prefix, entry->d_name);
+			if ( !name )
+				continue;
+			if ( num_inserted )
+			{
+				// TODO: Reckless modification of the tokens array.
+				for ( size_t n = num_tokens; n != last_inserted_index; n-- )
+					tokens[n+1] = tokens[n];
+				num_tokens++;
+				cmdend++;
+			}
+			// TODO: Reckless modification of the tokens array.
+			tokens[last_inserted_index = i + num_inserted++] = name;
+		}
+		closedir(dir);
 	}
 
 	cmdnext = cmdend + 1;
