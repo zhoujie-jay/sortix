@@ -24,6 +24,7 @@ colormake \
 column \
 cp \
 date \
+du \
 echo \
 editor \
 find \
