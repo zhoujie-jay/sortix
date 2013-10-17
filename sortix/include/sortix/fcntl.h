@@ -43,7 +43,7 @@ __BEGIN_DECLS
 #define O_CLOFORK (1<<9)
 #define O_SEARCH (1<<10)
 #define O_NONBLOCK (1<<11)
-// TODO: O_NOFOLLOW.
+#define O_NOFOLLOW (1<<12)
 
 #define FD_CLOEXEC (1<<0)
 #define FD_CLOFORK (1<<1)
