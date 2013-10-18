@@ -160,6 +160,8 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Stage 1. Initialization of Early Environment.
 	//
 
+	// TODO: Call global constructors using the _init function.
+
 	// Initialize system calls.
 	Syscall::Init();
 

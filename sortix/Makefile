@@ -62,6 +62,11 @@ endif
 
 # Object files that constitute the kernel.
 
+CRTI_OBJ:=$(CPU)/crti.o
+CRTBEGIN_OBJ:=$(shell $(HOSTCXX) $(CXXFLAGS) -print-file-name=crtbegin.o)
+CRTEND_OBJ:=$(shell $(HOSTCXX) $(CXXFLAGS) -print-file-name=crtend.o)
+CRTN_OBJ:=$(CPU)/crtn.o
+
 LIBS=\
 -nostdlib \
 -lc-sortix \
@@ -139,8 +144,13 @@ vnode.o \
 worker.o \
 
 ALLOBJS=\
+$(CRTI_OBJ) \
 $(OBJS) \
+$(CRTN_OBJ) \
 end.o
+
+LINK_OBJECTS=\
+$(CRTI_OBJ) $(CRTBEGIN_OBJ) $(OBJS) $(LIBS) $(CRTN_OBJ) $(CRTEND_OBJ) end.o
 
 # Rules and recipes for building the kernel.
 
@@ -157,7 +167,7 @@ headers:
 ifeq ($(CPU),x64)
 
 sortix-x86_64.bin: $(ALLOBJS)
-	$(HOSTCXX) $(CXXFLAGS) -Wl,-Ttext -Wl,100000 -Wl,-z -Wl,max-page-size=0x1000 $(OBJS) $(LIBS) end.o -o $@
+	$(HOSTCXX) $(CXXFLAGS) -Wl,-Ttext -Wl,100000 -Wl,-z -Wl,max-page-size=0x1000 $(LINK_OBJECTS) -o $@
 
 sortix.bin: sortix-x86_64.bin
 	$(HOSTOBJCOPY) $< -O elf32-i386-sortix $@
@@ -168,7 +178,7 @@ endif
 ifeq ($(CPU),x86)
 
 sortix.bin: $(ALLOBJS)
-	$(HOSTCXX) $(CXXFLAGS) -Wl,-Ttext -Wl,100000 $(OBJS) $(LIBS) end.o -o $@
+	$(HOSTCXX) $(CXXFLAGS) -Wl,-Ttext -Wl,100000 $(LINK_OBJECTS) -o $@
 
 endif
 
