@@ -21,6 +21,9 @@
 *******************************************************************************/
 
 #define _SORTIX_SOURCE
+
+#include <sys/ioctl.h>
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -143,9 +146,18 @@ void version(const char* argv0)
 
 int main(int argc, char* argv[])
 {
+#if defined(__sortix__)
 	struct winsize ws;
 	if ( tcgetwinsize(1, &ws) == 0 )
 		termwidth = ws.ws_col;
+#elif defined(TIOCGWINSZ)
+	struct winsize ws;
+	if ( ioctl(1, TIOCGWINSZ, &ws) == 0 )
+		termwidth = ws.ws_col;
+#else
+	if ( getenv("COLUMNS") )
+		termwidth = atoi(getenv("COLUMNS"));
+#endif
 
 	const char* argv0 = argv[0];
 
