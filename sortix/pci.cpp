@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -22,14 +22,12 @@
 
 *******************************************************************************/
 
+#include <assert.h>
+#include <endian.h>
+
 #include <sortix/kernel/platform.h>
-#include <sortix/kernel/endian.h>
 #include <sortix/kernel/pci.h>
 #include <sortix/kernel/cpu.h>
-#include <assert.h>
-
-// TODO: Verify that the endian conversions in this file actually works. I have
-// a sneaking suspicion that they won't work on non-little endian platforms.
 
 namespace Sortix {
 namespace PCI {
@@ -66,12 +64,12 @@ void WriteRaw32(uint32_t devaddr, uint8_t off, uint32_t val)
 
 uint32_t Read32(uint32_t devaddr, uint8_t off)
 {
-	return LittleToHost(ReadRaw32(devaddr, off));
+	return le32toh(ReadRaw32(devaddr, off));
 }
 
 void Write32(uint32_t devaddr, uint8_t off, uint32_t val)
 {
-	WriteRaw32(devaddr, off, HostToLittle(val));
+	WriteRaw32(devaddr, off, htole32(val));
 }
 
 uint16_t Read16(uint32_t devaddr, uint8_t off)
@@ -81,14 +79,14 @@ uint16_t Read16(uint32_t devaddr, uint8_t off)
 	union { uint16_t val16[2]; uint32_t val32; };
 	val32 = ReadRaw32(devaddr, alignedoff);
 	uint16_t ret = off & 0x2 ? val16[0] : val16[1];
-	return LittleToHost(ret);
+	return le16toh(ret);
 }
 
 uint8_t Read8(uint32_t devaddr, uint8_t off)
 {
 	uint8_t alignedoff = off & ~0x1;
 	union { uint8_t val8[2]; uint32_t val16; };
-	val16 = HostToLittle(Read16(devaddr, alignedoff));
+	val16 = htole16(Read16(devaddr, alignedoff));
 	uint8_t ret = off & 0x1 ? val8[0] : val8[1];
 	return ret;
 }
