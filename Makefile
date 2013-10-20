@@ -72,6 +72,8 @@ sysroot-source: sysroot-fsh
 	cp dirs.mak -t "$(SYSROOT)/src"
 	cp platform.mak -t "$(SYSROOT)/src"
 	cp version.mak -t "$(SYSROOT)/src"
+	cp COPYING-GPL -t "$(SYSROOT)/src"
+	cp COPYING-LGPL -t "$(SYSROOT)/src"
 	cp README -t "$(SYSROOT)/src"
 	(for D in $(MODULES); do (cp -LR $$D -t "$(SYSROOT)/src" && $(MAKE) -C "$(SYSROOT)/src/$$D" clean) || exit $$?; done)
 
