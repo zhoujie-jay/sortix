@@ -31,42 +31,18 @@
 //       do remove this function when all the calls to it has been purged.
 extern "C" char* asctime_r(const struct tm* tm, char* buf)
 {
-	static char wday_names[7][4] =
-	{
-		"Sun",
-		"Mon",
-		"Tue",
-		"Wed",
-		"Thu",
-		"Fri",
-		"Sat"
-	};
-	static char mon_names[12][4] =
-	{
-		"Jan",
-		"Feb",
-		"Mar",
-		"Apr",
-		"May",
-		"Jun",
-		"Jul",
-		"Aug",
-		"Sep",
-		"Oct",
-		"Nov",
-		"Dec",
-	};
-
-	// TODO: This is not exactly the same as in POSIX because printf currently
-	//       doesn't support precision ('.'), only field width.
-	int bytes = sprintf(buf, "%s %s%3d %02d:%02d%02d %d\n",
-	                    wday_names[tm->tm_wday],
-	                    mon_names[tm->tm_mon],
-	                    tm->tm_mday,
-	                    tm->tm_hour,
-	                    tm->tm_min,
-	                    tm->tm_sec,
-	                    tm->tm_year + 1900);
-	assert(bytes+1 <= 26);
+	static char weekday_names[7][4] =
+		{ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+	static char month_names[12][4] =
+		{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
+		  "Nov", "Dec" };
+	sprintf(buf, "%.3s %.3s%3d %.2d:%.2d%.2d %d\n",
+	             weekday_names[tm->tm_wday],
+	             month_names[tm->tm_mon],
+	             tm->tm_mday,
+	             tm->tm_hour,
+	             tm->tm_min,
+	             tm->tm_sec,
+	             tm->tm_year + 1900);
 	return buf;
 }
