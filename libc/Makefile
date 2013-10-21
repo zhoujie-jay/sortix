@@ -328,6 +328,7 @@ stdio/tmpnam.o \
 stdio/vfprintf.o \
 stdio/vprintf.o \
 stdio/vscanf.o \
+stdlib/atexit.o \
 stdlib/canonicalize_file_name_at.o \
 stdlib/canonicalize_file_name.o \
 stdlib/env.o \

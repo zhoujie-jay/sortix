@@ -26,11 +26,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-extern "C" void call_exit_handlers(int status);
+extern "C" { struct exit_handler* __exit_handler_stack = NULL; }
 
 extern "C" void exit(int status)
 {
-	call_exit_handlers(status);
+	while ( __exit_handler_stack )
+	{
+		__exit_handler_stack->hook(status, __exit_handler_stack->param);
+		__exit_handler_stack = __exit_handler_stack->next;
+	}
 	dcloseall();
 	fcloseall();
 	_Exit(status);

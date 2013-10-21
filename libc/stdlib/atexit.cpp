@@ -17,22 +17,19 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdlib/on_exit.cpp
+    stdlib/atexit.cpp
     Hooks that are called upon process exit.
 
 *******************************************************************************/
 
 #include <stdlib.h>
 
-extern "C" int on_exit(void (*hook)(int, void*), void* param)
+static void atexit_adapter(int /*status*/, void* user)
 {
-	struct exit_handler* handler =
-		(struct exit_handler*) malloc(sizeof(struct exit_handler));
-	if ( !handler )
-		return -1;
-	handler->hook = hook;
-	handler->param = param;
-	handler->next = __exit_handler_stack;
-	__exit_handler_stack = handler;
-	return 0;
+	((void (*)(void)) user)();
+}
+
+extern "C" int atexit(void (*hook)(void))
+{
+	return on_exit(atexit_adapter, (void*) hook);
 }

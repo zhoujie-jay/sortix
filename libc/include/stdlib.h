@@ -128,6 +128,16 @@ char* getenv(const char*);
 int clearenv(void);
 #endif
 
+#if __is_sortix_libc
+struct exit_handler
+{
+	void (*hook)(int, void*);
+	void* param;
+	struct exit_handler* next;
+};
+extern struct exit_handler* __exit_handler_stack;
+#endif
+
 /* TODO: These are not implemented in sortix libc yet. */
 #if 0
 long a64l(const char* s);
