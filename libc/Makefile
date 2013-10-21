@@ -56,7 +56,6 @@ stdio/flbf.o \
 stdio/flockfile.o \
 stdio/flushlbf.o \
 stdio/fnewfile.o \
-stdio/format.o \
 stdio/fpending.o \
 stdio/fpurge.o \
 stdio/fputc.o \
@@ -91,6 +90,7 @@ stdio/sscanf.o \
 stdio/ungetc.o \
 stdio/vdprintf.o \
 stdio/vfscanf.o \
+stdio/vprintf_callback.o \
 stdio/vsnprintf.o \
 stdio/vsprintf.o \
 stdio/vsscanf.o \
