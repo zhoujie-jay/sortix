@@ -49,7 +49,7 @@
 #include <limits.h>
 
 // Convert a character into a digit.
-static int debase( STRTOL_CHAR c)
+static int debase(STRTOL_CHAR c)
 {
 	if ( STRTOL_L('0') <= c && c <= STRTOL_L('9') )
 		return c - STRTOL_L('0');
@@ -150,9 +150,10 @@ STRTOL_INT STRTOL(const STRTOL_CHAR* restrict str,
 	// Autodetect base 8 or base 16.
 	if ( !base && str[0] == STRTOL_L('0') )
 	{
-		if ( str[1] == STRTOL_L('x') || str[1] == STRTOL_L('X') )
+		if ( (str[1] == STRTOL_L('x') || str[1] == STRTOL_L('X')) &&
+		     (str[2] && debase(str[2]) < 16) )
 			str += 2, base = 16;
-		else if ( 0 <= debase(str[1]) && debase(str[1]) < 8 )
+		else if ( 0 <= debase(str[1]) )
 			str++, base = 8;
 	}
 
