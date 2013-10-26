@@ -100,11 +100,6 @@ namespace Sortix
 		{
 			InvalidateVGA();
 
-#ifdef JSSORTIX
-			// This crashes the JS VM, so don't do it.
-			return;
-#endif
-
 			Baud = ProbeBaud(Port);
 
 			CPU::OutPortB(Port + LCR, 0x3); // 8n1
