@@ -50,13 +50,13 @@ bool AllocateKernelAddress(addralloc_t* ret, size_t size)
 	addr_t kmem_from;
 	size_t kmem_size;
 	Memory::GetKernelVirtualArea(&kmem_from, &kmem_size);
-	addr_t aux_reached = kmem_from + aux_allocated;
-	size_t heap_reached = kmem_from + kmem_size - heap_allocated;
-	size_t unused_left = heap_reached - aux_reached;
+	addr_t aux_reached = kmem_from + kmem_size - aux_allocated;
+	size_t heap_reached = kmem_from + heap_allocated;
+	size_t unused_left = aux_reached - heap_reached;
 	if ( unused_left < size )
 		return errno = ENOMEM, false;
 	aux_allocated += size;
-	ret->from = aux_reached;
+	ret->from = kmem_from + kmem_size - aux_allocated;
 	ret->size = size;
 	return true;
 }
@@ -77,9 +77,9 @@ size_t ExpandHeap(size_t increase)
 	addr_t kmem_from;
 	size_t kmem_size;
 	Memory::GetKernelVirtualArea(&kmem_from, &kmem_size);
-	addr_t aux_reached = kmem_from + aux_allocated;
-	size_t heap_reached = kmem_from + kmem_size - heap_allocated;
-	size_t unused_left = heap_reached - aux_reached;
+	addr_t aux_reached = kmem_from + kmem_size - aux_allocated;
+	size_t heap_reached = kmem_from + heap_allocated;
+	size_t unused_left = aux_reached - heap_reached;
 	if ( unused_left < increase )
 		return errno = ENOMEM, 0;
 	heap_allocated += increase;
@@ -103,7 +103,8 @@ addr_t GetHeapLower()
 	addr_t kmem_from;
 	size_t kmem_size;
 	Memory::GetKernelVirtualArea(&kmem_from, &kmem_size);
-	return kmem_from + kmem_size;
+	(void) kmem_size;
+	return kmem_from;
 }
 
 addr_t GetHeapUpper()
@@ -111,7 +112,8 @@ addr_t GetHeapUpper()
 	addr_t kmem_from;
 	size_t kmem_size;
 	Memory::GetKernelVirtualArea(&kmem_from, &kmem_size);
-	return kmem_from + kmem_size - heap_allocated;
+	(void) kmem_size;
+	return kmem_from + heap_allocated;
 }
 
 size_t GetHeapSize()

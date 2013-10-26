@@ -24,10 +24,6 @@
 
 #include <sys/mman.h>
 
-#ifdef __is_sortix_kernel
-#define HEAP_GROWS_DOWNWARDS
-#endif
-
 #ifndef __is_sortix_kernel
 #include <error.h>
 #include <stdio.h>
@@ -73,7 +69,7 @@ static uintptr_t wilderness;
 #ifdef __is_sortix_kernel
 static uintptr_t GetHeapStart()
 {
-	return Sortix::GetHeapUpper();
+	return Sortix::GetHeapLower();
 }
 
 static void FreeMemory(uintptr_t where, size_t bytes)
@@ -126,13 +122,7 @@ static bool ExtendHeap(size_t bytesneeded)
 		return false;
 	assert(bytesneeded <= got_bytes);
 
-	#ifdef HEAP_GROWS_DOWNWARDS
-	uintptr_t newwilderness = wilderness - got_bytes;
-	#else
-	uintptr_t newwilderness = wilderness + got_bytes;
-	#endif
-
-	if ( !AllocateMemory(newwilderness, got_bytes) )
+	if ( !AllocateMemory(wilderness, got_bytes) )
 	{
 		Sortix::ShrinkHeap(got_bytes);
 		return false;
@@ -240,13 +230,8 @@ static bool IsGoodHeapPointer(void* ptr, size_t size)
 {
 	uintptr_t ptrlower = (uintptr_t) ptr;
 	uintptr_t ptrupper = ptrlower + size;
-#ifdef HEAP_GROWS_DOWNWARDS
-	uintptr_t heaplower = wilderness;
-	uintptr_t heapupper = heapstart;
-#else
 	uintptr_t heaplower = heapstart;
 	uintptr_t heapupper = wilderness;
-#endif
 	return heaplower <= ptrlower && ptrupper <= heapupper;
 }
 
@@ -381,13 +366,8 @@ static bool ValidateHeap()
 	bool foundbin[NUMBINS];
 	for ( size_t i = 0; i < NUMBINS; i++ ) { foundbin[i] = false; }
 
-	#ifdef HEAP_GROWS_DOWNWARDS
-	Chunk* chunk = (Chunk*) (wilderness + wildernesssize);
-	while ( (uintptr_t) chunk < heapstart )
-	#else
 	Chunk* chunk = (Chunk*) heapstart;
 	while ( (uintptr_t) chunk < wilderness - wildernesssize )
-	#endif
 	{
 		size_t timesfound = 0;
 		for ( size_t i = 0; i < NUMBINS; i++ )
@@ -451,11 +431,7 @@ static bool ExpandWilderness(size_t bytesneeded)
 	if ( heapmaxsize <= heapsize + wildernesssize + bytesneeded )
 		return errno = ENOMEM, true;
 
-	#ifdef HEAP_GROWS_DOWNWARDS
-	uintptr_t newwilderness = wilderness - bytesneeded;
-	#else
 	uintptr_t newwilderness = wilderness + bytesneeded;
-	#endif
 
 	// Attempt to map pages so our wilderness grows.
 	if ( !ExtendHeap(bytesneeded) )
@@ -552,11 +528,7 @@ extern "C" void* malloc(size_t size)
 	}
 
 	// Carve a new chunk out of the wilderness and initialize it.
-	#ifdef HEAP_GROWS_DOWNWARDS
-	Chunk* chunk = (Chunk*) (wilderness + wildernesssize - size);
-	#else
 	Chunk* chunk = (Chunk*) (wilderness - wildernesssize);
-	#endif
 	assert(size <= wildernesssize);
 	wildernesssize -= size;
 	heapsize += size;
@@ -578,20 +550,12 @@ extern "C" void* malloc(size_t size)
 
 static bool IsLeftmostChunk(Chunk* chunk)
 {
-	#ifdef HEAP_GROWS_DOWNWARDS
-	return (uintptr_t) chunk <= wilderness + wildernesssize;
-	#else
 	return heapstart <= (uintptr_t) chunk;
-	#endif
 }
 
 static bool IsRightmostChunk(Chunk* chunk)
 {
-	#ifdef HEAP_GROWS_DOWNWARDS
-	return heapstart <= (uintptr_t) chunk + chunk->size;
-	#else
 	return heapstart + heapsize <= (uintptr_t) chunk + chunk->size;
-	#endif
 }
 
 // Removes a chunk from its bin.
@@ -684,11 +648,7 @@ extern "C" void free(void* addr)
 
 	UnifyNeighbors(&chunk);
 
-	#ifdef HEAP_GROWS_DOWNWARDS
-	bool nexttowilderness = IsLeftmostChunk(chunk);
-	#else
 	bool nexttowilderness = IsRightmostChunk(chunk);
-	#endif
 
 	// If possible, let the wilderness regain the memory.
 	if ( nexttowilderness )
