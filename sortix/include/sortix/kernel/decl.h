@@ -26,6 +26,8 @@
 #ifndef SORTIX_DECL_H
 #define SORTIX_DECL_H
 
+#include <stdint.h>
+
 typedef uintptr_t addr_t;
 
 #define likely(x) __builtin_expect((x),1)
