@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -22,21 +22,23 @@
 
 *******************************************************************************/
 
-#ifndef _ASSERT_H
-#define _ASSERT_H 1
+#ifndef INCLUDE_ASSERT_H
+#define INCLUDE_ASSERT_H
 
 #include <sys/cdefs.h>
 
-/* stdlib.h is not needed, but GCC fixincludes thinks it is, so fool it. */
-#if 0
-#include <stdlib.h>
-#endif
-
 __BEGIN_DECLS
 
+/* Determine how the value should be cast to void. */
+#if defined __cplusplus
+#define __ASSERT_VOID_CAST(x) static_cast<void>(x)
+#else
+#define __ASSERT_VOID_CAST(x) (void) x
+#endif
+
 /* The actual implementation of assert. */
-void _assert(const char* filename, unsigned int line, const char* functionname,
-             const char* expression) __attribute__ ((noreturn));
+__attribute__((noreturn))
+void __assert(const char*, unsigned long, const char*, const char*);
 
 __END_DECLS
 
@@ -47,20 +49,15 @@ __END_DECLS
 #undef assert
 #endif
 
-/* Redefine the assert macro on each <assert.h> inclusion. */
-#ifdef NDEBUG
+/* If not debugging, we'll declare a no-operation assert macro. */
+#if defined(NDEBUG)
+#define assert(ignore) (__ASSERT_VOID_CAST(0))
+#endif
 
-#define assert(ignore) ((void) 0)
-
-#else /* !NDEBUG */
-
-/* Use __builtin_expect to tell the compiler that we don't expect a failure to
-   happen and thus it can do better branch prediction. Naturally we don't
-   optimize for the case where the program is about to abort(). */
+/* Otherwise, declare the normal assert macro. */
+#if !defined(NDEBUG)
 #define assert(invariant) \
-	if ( __builtin_expect(!(invariant), 0) ) \
-	{ \
-		_assert(__FILE__, __LINE__, __PRETTY_FUNCTION__, #invariant); \
-	}
-
-#endif /* !NDEBUG */
+  ((invariant) \
+   ? __ASSERT_VOID_CAST(0) \
+   : __assert(__FILE__, __LINE__, __PRETTY_FUNCTION__, #invariant))
+#endif

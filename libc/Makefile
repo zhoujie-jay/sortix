@@ -17,7 +17,7 @@ CXXFLAGS=-std=gnu++11 -fno-exceptions -fno-rtti
 ASFLAGS=
 
 FREEOBJS=\
-assert/_assert.o \
+assert/__assert.o \
 aux/c++.o \
 aux/op-new.o \
 ctype/ctype.o \

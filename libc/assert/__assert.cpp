@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,31 +17,33 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    assert/_assert.cpp
+    assert/__assert.cpp
     Reports the occurence of an assertion failure.
 
 *******************************************************************************/
 
 #include <assert.h>
 #include <stdint.h>
-#if !defined(__is_sortix_kernel)
 #include <stdio.h>
 #include <stdlib.h>
-#endif
+
 #if defined(__is_sortix_kernel)
 #include <sortix/kernel/decl.h>
 #include <sortix/kernel/panic.h>
 #endif
 
-void _assert(const char* filename, unsigned int line, const char* functionname,
-             const char* expression)
+extern "C"
+void __assert(const char* filename,
+              unsigned long line,
+              const char* function_name,
+              const char* expression)
 {
-#if !defined(__is_sortix_kernel)
-	fprintf(stderr, "Assertion failure: %s:%u: %s: %s\n", filename, line,
-	        functionname, expression);
-	abort();
+#if __is_sortix_kernel
+	Sortix::PanicF("Assertion failure: %s:%lu: %s: %s\n", filename, line,
+	               function_name, expression);
 #else
-	Sortix::PanicF("Assertion failure: %s:%u: %s: %s\n", filename, line,
-	               functionname, expression);
+	fprintf(stderr, "Assertion failure: %s:%lu: %s: %s\n", filename, line,
+	        function_name, expression);
+	abort();
 #endif
 }
