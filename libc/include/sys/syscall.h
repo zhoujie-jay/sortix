@@ -64,6 +64,7 @@ asm("\n" \
 ".type " #syscall_name ", @function\n" \
 #syscall_name ":\n" \
 SYSCALL_FUNCTION_BODY(syscall_index) \
+".size " #syscall_name ", . - " #syscall_name "\n" \
 ".popsection\n" \
 );
 
