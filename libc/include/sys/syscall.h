@@ -26,8 +26,8 @@
 #error "This file is part of user-space and should not be built in kernel mode"
 #endif
 
-#ifndef _SYS_SYSCALL_H
-#define _SYS_SYSCALL_H 1
+#ifndef INCLUDE_SYS_SYSCALL_H
+#define INCLUDE_SYS_SYSCALL_H
 
 #include <sys/cdefs.h>
 
@@ -52,7 +52,7 @@
 
 #else
 
-#error Provide an implementation for your platform.
+#error "Provide an implementation for your platform."
 
 #endif
 
@@ -73,7 +73,7 @@ SYSCALL_FUNCTION_BODY(syscall_index) \
 #define DEFINE_SYSCALL(syscall_type, syscall_name, syscall_index, syscall_formals) \
 SYSCALL_FUNCTION(syscall_name, syscall_index) \
 __BEGIN_DECLS \
-extern "C" { syscall_type syscall_name syscall_formals; } \
+syscall_type syscall_name syscall_formals; \
 __END_DECLS \
 
 /* System call accepting no parameters. */
