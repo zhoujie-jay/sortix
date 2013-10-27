@@ -25,10 +25,6 @@
 #ifndef SORTIX_KERNEL_H
 #define SORTIX_KERNEL_H
 
-#include <sys/types.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
 #include <sortix/kernel/decl.h>
 #include <sortix/kernel/log.h>
 #include <sortix/kernel/panic.h>
