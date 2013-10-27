@@ -40,7 +40,7 @@ fflush.o \
 fgetc.o \
 fgets.o \
 flbf.o \
-flushlfb.o \
+flushlbf.o \
 fnewfile.o \
 format.o \
 fpending.o \
