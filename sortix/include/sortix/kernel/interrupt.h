@@ -25,6 +25,8 @@
 #ifndef INCLUDE_SORTIX_KERNEL_INTERRUPT_H
 #define INCLUDE_SORTIX_KERNEL_INTERRUPT_H
 
+#include <stddef.h>
+
 #include <sortix/kernel/decl.h>
 
 namespace Sortix {
