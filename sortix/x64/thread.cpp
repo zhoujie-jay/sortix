@@ -22,7 +22,7 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/thread.h>
 
 namespace Sortix

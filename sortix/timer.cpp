@@ -25,10 +25,10 @@
 #include <assert.h>
 #include <timespec.h>
 
-#include <sortix/kernel/platform.h>
 #include <sortix/kernel/clock.h>
-#include <sortix/kernel/kthread.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/kthread.h>
 #include <sortix/kernel/timer.h>
 
 namespace Sortix {

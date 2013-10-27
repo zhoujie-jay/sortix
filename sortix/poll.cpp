@@ -34,14 +34,14 @@
 #include <sortix/syscallnum.h>
 #include <sortix/timespec.h>
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/kthread.h>
 #include <sortix/kernel/copy.h>
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/kthread.h>
 #include <sortix/kernel/poll.h>
-#include <sortix/kernel/syscall.h>
 #include <sortix/kernel/process.h>
+#include <sortix/kernel/syscall.h>
 
 #include "poll.h"
 

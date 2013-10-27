@@ -22,10 +22,13 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/process.h>
-#include <sortix/fork.h>
+#include <stdint.h>
 #include <string.h>
+
+#include <sortix/fork.h>
+
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/process.h>
 
 namespace Sortix
 {

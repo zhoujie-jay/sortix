@@ -22,14 +22,15 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/kthread.h>
-#include <sortix/kernel/textbuffer.h>
-#include <sortix/kernel/video.h>
-#include <sortix/kernel/string.h>
 #include <stdarg.h>
 #include <errno.h>
 #include <string.h>
+
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/string.h>
+#include <sortix/kernel/textbuffer.h>
+#include <sortix/kernel/video.h>
 
 namespace Sortix {
 

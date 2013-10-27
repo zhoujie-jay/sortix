@@ -22,23 +22,28 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/kthread.h>
-#include <sortix/kernel/refcount.h>
-#include <sortix/kernel/ioctx.h>
-#include <sortix/kernel/inode.h>
-#include <sortix/kernel/vnode.h>
-#include <sortix/kernel/descriptor.h>
-#include <sortix/kernel/fsfunc.h>
-#include <sortix/kernel/string.h>
-#include <sortix/kernel/process.h>
+#include <sys/types.h>
+
+#include <assert.h>
+#include <errno.h>
+#include <stdint.h>
+#include <string.h>
+
 #include <sortix/dirent.h>
 #include <sortix/fcntl.h>
 #include <sortix/seek.h>
 #include <sortix/stat.h>
-#include <assert.h>
-#include <errno.h>
-#include <string.h>
+
+#include <sortix/kernel/descriptor.h>
+#include <sortix/kernel/fsfunc.h>
+#include <sortix/kernel/inode.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/process.h>
+#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/string.h>
+#include <sortix/kernel/vnode.h>
 
 namespace Sortix {
 

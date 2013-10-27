@@ -22,10 +22,11 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
+#include <assert.h>
+
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/refcount.h>
-#include <assert.h>
 
 namespace Sortix {
 

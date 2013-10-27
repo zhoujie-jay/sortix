@@ -22,16 +22,19 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/kthread.h>
-#include <sortix/kernel/interlock.h>
-#include <sortix/kernel/refcount.h>
-#include <sortix/kernel/ioctx.h>
-#include <sortix/kernel/inode.h>
-#include <sortix/stat.h>
-#include <sortix/seek.h>
 #include <errno.h>
 #include <string.h>
+
+#include <sortix/stat.h>
+#include <sortix/seek.h>
+
+#include <sortix/kernel/inode.h>
+#include <sortix/kernel/interlock.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/refcount.h>
+
 #include "util.h"
 
 namespace Sortix {

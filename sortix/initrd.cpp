@@ -36,16 +36,16 @@
 #include <sortix/mman.h>
 #include <sortix/stat.h>
 
-#include <sortix/kernel/platform.h>
 #include <sortix/kernel/addralloc.h>
-#include <sortix/kernel/vnode.h>
-#include <sortix/kernel/descriptor.h>
-#include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/crc32.h>
-#include <sortix/kernel/string.h>
-#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/fsfunc.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/memorymanagement.h>
+#include <sortix/kernel/string.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/vnode.h>
 
 #include "initrd.h"
 

@@ -33,10 +33,10 @@
 #include <sortix/mman.h>
 #include <sortix/seek.h>
 
-#include <sortix/kernel/platform.h>
 #include <sortix/kernel/addralloc.h>
 #include <sortix/kernel/fcache.h>
 #include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/memorymanagement.h>
 

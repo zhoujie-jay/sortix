@@ -22,11 +22,11 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/memorymanagement.h>
-#include <sortix/kernel/interrupt.h>
-
 #include <string.h>
+
+#include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/memorymanagement.h>
 
 #include "multiboot.h"
 #include "x86-family/memorymanagement.h"

@@ -22,18 +22,21 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/interlock.h>
-#include <sortix/kernel/kthread.h>
-#include <sortix/kernel/refcount.h>
-#include <sortix/kernel/inode.h>
-#include <sortix/kernel/ioctx.h>
-#include <sortix/kernel/descriptor.h>
-#include <sortix/kernel/cpu.h>
-#include <sortix/stat.h>
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+
+#include <sortix/stat.h>
+
+#include <sortix/kernel/cpu.h>
+#include <sortix/kernel/descriptor.h>
+#include <sortix/kernel/inode.h>
+#include <sortix/kernel/interlock.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/refcount.h>
+
 #include "ata.h"
 
 // TODO: Use the PCI to detect ATA devices instead of relying on them being on

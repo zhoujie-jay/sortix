@@ -22,8 +22,10 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
 #include <string.h>
+
+#include <sortix/kernel/kernel.h>
+
 #include "linebuffer.h"
 
 namespace Sortix

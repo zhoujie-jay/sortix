@@ -22,11 +22,18 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/fsfunc.h>
-#include <sortix/kernel/string.h>
+#include <sys/types.h>
+
+#include <stddef.h>
+#include <stdint.h>
+
 #include <sortix/dirent.h>
 #include <sortix/stat.h>
+
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/fsfunc.h>
+#include <sortix/kernel/string.h>
+
 #include <string.h>
 
 namespace Sortix {

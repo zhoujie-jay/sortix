@@ -26,8 +26,8 @@
 #include <errno.h>
 #include <stddef.h>
 
-#include <sortix/kernel/platform.h>
 #include <sortix/kernel/addralloc.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/memorymanagement.h>
 

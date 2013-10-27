@@ -24,9 +24,9 @@
 
 #include <string.h>
 
-#include <sortix/kernel/platform.h>
 #include <sortix/kernel/calltrace.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/log.h>
 #include <sortix/kernel/panic.h>
 

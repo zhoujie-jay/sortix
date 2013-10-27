@@ -22,28 +22,32 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/refcount.h>
-#include <sortix/kernel/ioctx.h>
-#include <sortix/kernel/copy.h>
-#include <sortix/kernel/descriptor.h>
-#include <sortix/kernel/dtable.h>
-#include <sortix/kernel/string.h>
-#include <sortix/kernel/kthread.h>
-#include <sortix/kernel/syscall.h>
-#include <sortix/kernel/process.h>
-#include <sortix/kernel/thread.h>
-#include <sortix/kernel/vnode.h>
-
-#include <sortix/seek.h>
-#include <sortix/dirent.h>
-#include <sortix/fcntl.h>
-#include <sortix/stat.h>
-#include <sortix/socket.h>
-#include <sortix/uio.h>
+#include <sys/types.h>
 
 #include <assert.h>
 #include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <sortix/dirent.h>
+#include <sortix/fcntl.h>
+#include <sortix/seek.h>
+#include <sortix/socket.h>
+#include <sortix/stat.h>
+#include <sortix/uio.h>
+
+#include <sortix/kernel/copy.h>
+#include <sortix/kernel/descriptor.h>
+#include <sortix/kernel/dtable.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/process.h>
+#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/string.h>
+#include <sortix/kernel/syscall.h>
+#include <sortix/kernel/thread.h>
+#include <sortix/kernel/vnode.h>
 
 #include "io.h"
 #include "partition.h"

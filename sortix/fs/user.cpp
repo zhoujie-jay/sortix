@@ -41,16 +41,16 @@
 
 #include <fsmarshall-msg.h>
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/kthread.h>
-#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/inode.h>
 #include <sortix/kernel/ioctx.h>
-#include <sortix/kernel/descriptor.h>
-#include <sortix/kernel/vnode.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/kthread.h>
 #include <sortix/kernel/mtable.h>
-#include <sortix/kernel/syscall.h>
 #include <sortix/kernel/process.h>
+#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/syscall.h>
+#include <sortix/kernel/vnode.h>
 
 namespace Sortix {
 

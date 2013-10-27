@@ -22,7 +22,12 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
+#include <assert.h>
+#include <errno.h>
+
+#include <sortix/mount.h>
+
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/ioctx.h>
 #include <sortix/kernel/descriptor.h>
@@ -30,9 +35,6 @@
 #include <sortix/kernel/vnode.h>
 #include <sortix/kernel/mtable.h>
 #include <sortix/kernel/process.h>
-#include <sortix/mount.h>
-#include <assert.h>
-#include <errno.h>
 
 namespace Sortix {
 

@@ -22,11 +22,11 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
+#include <string.h>
+
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/keyboard.h>
 #include <sortix/kernel/scheduler.h>
-
-#include <string.h>
 
 #include "vga.h"
 #include "uart.h"

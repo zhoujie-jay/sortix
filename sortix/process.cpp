@@ -38,11 +38,11 @@
 #include <sortix/unistd.h>
 #include <sortix/wait.h>
 
-#include <sortix/kernel/platform.h>
 #include <sortix/kernel/copy.h>
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/dtable.h>
 #include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/mtable.h>

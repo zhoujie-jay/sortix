@@ -29,8 +29,8 @@
 #include <sortix/mman.h>
 #include <sortix/signal.h>
 
-#include <sortix/kernel/platform.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/process.h>

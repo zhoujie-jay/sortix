@@ -22,8 +22,10 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
 #include <errno.h>
+
+#include <sortix/kernel/kernel.h>
+
 #include "utf8.h"
 
 namespace Sortix

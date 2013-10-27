@@ -22,17 +22,17 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/panic.h>
-#include <sortix/kernel/kthread.h>
-#include <sortix/kernel/memorymanagement.h>
-#include <sortix/kernel/syscall.h>
-
-#include <sortix/mman.h>
-
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+
+#include <sortix/mman.h>
+
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/memorymanagement.h>
+#include <sortix/kernel/panic.h>
+#include <sortix/kernel/syscall.h>
 
 #include "multiboot.h"
 #include "memorymanagement.h"

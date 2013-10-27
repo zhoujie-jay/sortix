@@ -25,8 +25,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/log.h>
-#include <sortix/kernel/platform.h>
 #include <sortix/kernel/syscall.h>
 
 namespace Sortix {

@@ -22,11 +22,13 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
+#include <sortix/vga.h>
+
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/textbuffer.h>
-#include <sortix/vga.h>
+
 #include "vga.h"
 #include "vgatextbuffer.h"
 

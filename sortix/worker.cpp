@@ -22,7 +22,7 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/worker.h>
 

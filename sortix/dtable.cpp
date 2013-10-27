@@ -22,17 +22,19 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/kthread.h>
-#include <sortix/kernel/refcount.h>
-#include <sortix/kernel/descriptor.h>
-#include <sortix/kernel/dtable.h>
-#include <sortix/kernel/process.h>
-#include <sortix/fcntl.h>
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <string.h>
+
+#include <sortix/fcntl.h>
+
+#include <sortix/kernel/descriptor.h>
+#include <sortix/kernel/dtable.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/process.h>
+#include <sortix/kernel/refcount.h>
 
 namespace Sortix {
 

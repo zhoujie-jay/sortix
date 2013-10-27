@@ -25,9 +25,9 @@
 #include <assert.h>
 #include <endian.h>
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/pci.h>
 #include <sortix/kernel/cpu.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/pci.h>
 
 namespace Sortix {
 namespace PCI {

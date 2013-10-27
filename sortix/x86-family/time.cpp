@@ -28,10 +28,10 @@
 
 #include <sortix/timespec.h>
 
-#include <sortix/kernel/platform.h>
 #include <sortix/kernel/clock.h>
 #include <sortix/kernel/cpu.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/time.h>

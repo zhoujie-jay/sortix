@@ -30,9 +30,9 @@
 
 #include <sortix/clock.h>
 
-#include <sortix/kernel/platform.h>
 #include <sortix/kernel/clock.h>
 #include <sortix/kernel/cpu.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/time.h>
 
 namespace Sortix {

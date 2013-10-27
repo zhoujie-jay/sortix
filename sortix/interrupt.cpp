@@ -26,16 +26,16 @@
 #include <errno.h>
 #include <string.h>
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/syscall.h>
-#include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/calltrace.h>
 #include <sortix/kernel/cpu.h>
+#include <sortix/kernel/debugger.h>
+#include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/process.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
+#include <sortix/kernel/syscall.h>
 #include <sortix/kernel/thread.h>
-#include <sortix/kernel/process.h>
-#include <sortix/kernel/calltrace.h>
-#include <sortix/kernel/debugger.h>
 
 #include "x86-family/idt.h"
 

@@ -28,9 +28,9 @@
 
 #include <sortix/seek.h>
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/refcount.h>
 #include <sortix/kernel/inode.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/refcount.h>
 
 #include "partition.h"
 

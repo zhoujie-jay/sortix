@@ -29,7 +29,7 @@
 
 #if defined(__is_sortix_kernel)
 
-#include <sortix/kernel/platform.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/panic.h>
 
 extern "C" void abort(void)

@@ -24,12 +24,12 @@
 
 #include <sortix/signal.h>
 
-#include <sortix/kernel/platform.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
-#include <sortix/kernel/worker.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
 #include <sortix/kernel/thread.h>
+#include <sortix/kernel/worker.h>
 
 namespace Sortix {
 

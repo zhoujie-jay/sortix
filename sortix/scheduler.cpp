@@ -32,15 +32,15 @@
 #include <sortix/clock.h>
 #include <sortix/timespec.h>
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/memorymanagement.h>
-#include <sortix/kernel/syscall.h>
 #include <sortix/kernel/interrupt.h>
-#include <sortix/kernel/time.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/memorymanagement.h>
+#include <sortix/kernel/process.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
-#include <sortix/kernel/process.h>
+#include <sortix/kernel/syscall.h>
 #include <sortix/kernel/thread.h>
+#include <sortix/kernel/time.h>
 
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"

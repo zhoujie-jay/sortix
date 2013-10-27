@@ -31,10 +31,10 @@
 #include <sortix/display.h>
 #include <sortix/syscallnum.h>
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/video.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/string.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/video.h>
 
 #include "dispmsg.h"
 

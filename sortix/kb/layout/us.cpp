@@ -22,9 +22,11 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/keyboard.h>
 #include <sortix/keycodes.h>
+
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/keyboard.h>
+
 #include "us.h"
 
 namespace Sortix

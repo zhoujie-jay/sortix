@@ -22,16 +22,16 @@
 
 *******************************************************************************/
 
-#include <sortix/signal.h>
-
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/panic.h>
-#include <sortix/kernel/interrupt.h>
-#include <sortix/kernel/signal.h>
-#include <sortix/kernel/thread.h>
-
 #include <assert.h>
 #include <string.h>
+
+#include <sortix/signal.h>
+
+#include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/panic.h>
+#include <sortix/kernel/signal.h>
+#include <sortix/kernel/thread.h>
 
 namespace Sortix {
 

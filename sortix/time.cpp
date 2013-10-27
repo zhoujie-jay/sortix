@@ -30,14 +30,14 @@
 
 #include <sortix/clock.h>
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/syscall.h>
+#include <sortix/kernel/clock.h>
 #include <sortix/kernel/copy.h>
 #include <sortix/kernel/interrupt.h>
-#include <sortix/kernel/clock.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/process.h>
-#include <sortix/kernel/time.h>
 #include <sortix/kernel/scheduler.h>
+#include <sortix/kernel/syscall.h>
+#include <sortix/kernel/time.h>
 
 #ifdef PLATFORM_SERIAL
 #include "serialterminal.h"

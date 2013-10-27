@@ -33,10 +33,10 @@
 
 #include <sortix/keycodes.h>
 
-#include <sortix/kernel/platform.h>
 #include <sortix/kernel/cpu.h>
 #include <sortix/kernel/debugger.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/keyboard.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/process.h>

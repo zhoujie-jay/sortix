@@ -22,12 +22,13 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/kthread.h>
-#include <sortix/kernel/refcount.h>
-#include <sortix/kernel/inode.h>
-#include <sortix/kernel/mtable.h>
 #include <string.h>
+
+#include <sortix/kernel/inode.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/mtable.h>
+#include <sortix/kernel/refcount.h>
 
 namespace Sortix {
 

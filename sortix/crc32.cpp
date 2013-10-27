@@ -25,8 +25,8 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
 #include <sortix/kernel/crc32.h>
+#include <sortix/kernel/kernel.h>
 
 namespace Sortix {
 namespace CRC32 {

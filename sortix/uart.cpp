@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
 #include <sortix/kernel/cpu.h>
+#include <sortix/kernel/kernel.h>
 
 #include <string.h>
 #include "vga.h"

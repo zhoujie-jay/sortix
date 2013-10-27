@@ -22,16 +22,16 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/kthread.h>
-#include <sortix/kernel/refcount.h>
-#include <sortix/kernel/textbuffer.h>
-#include <sortix/kernel/scheduler.h>
-#include <sortix/kernel/thread.h>
+#include <string.h>
 
 #include <sortix/vga.h>
 
-#include <string.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/scheduler.h>
+#include <sortix/kernel/textbuffer.h>
+#include <sortix/kernel/thread.h>
 
 #include "vga.h"
 #include "lfbtextbuffer.h"

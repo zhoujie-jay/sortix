@@ -24,7 +24,8 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
+#include <sortix/kernel/kernel.h>
+
 #include "memorymanagement.h"
 
 namespace Sortix {

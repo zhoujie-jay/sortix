@@ -22,11 +22,11 @@
 
 *******************************************************************************/
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/interrupt.h>
-#include <sortix/kernel/thread.h>
-
 #include <assert.h>
+
+#include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/thread.h>
 
 #include "float.h"
 

@@ -27,33 +27,26 @@
 #include <string.h>
 
 #include <sortix/fcntl.h>
+#include <sortix/poll.h>
 #include <sortix/signal.h>
 #include <sortix/stat.h>
-#include <sortix/poll.h>
 
-#include <sortix/kernel/platform.h>
-#include <sortix/kernel/kthread.h>
-#include <sortix/kernel/interlock.h>
-#include <sortix/kernel/refcount.h>
-#include <sortix/kernel/ioctx.h>
 #include <sortix/kernel/copy.h>
-#include <sortix/kernel/inode.h>
-#include <sortix/kernel/vnode.h>
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/dtable.h>
-#include <sortix/kernel/syscall.h>
+#include <sortix/kernel/inode.h>
+#include <sortix/kernel/interlock.h>
+#include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/kernel.h>
+#include <sortix/kernel/kthread.h>
 #include <sortix/kernel/pipe.h>
 #include <sortix/kernel/poll.h>
-#include <sortix/kernel/signal.h>
 #include <sortix/kernel/process.h>
+#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/signal.h>
+#include <sortix/kernel/syscall.h>
 #include <sortix/kernel/thread.h>
-
-#include <sortix/signal.h>
-#include <sortix/stat.h>
-
-#include <assert.h>
-#include <errno.h>
-#include <string.h>
+#include <sortix/kernel/vnode.h>
 
 #include "pipe.h"
 

@@ -33,14 +33,14 @@
 #include <sortix/time.h>
 #include <sortix/tmns.h>
 
-#include <sortix/kernel/platform.h>
 #include <sortix/kernel/copy.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/process.h>
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/time.h>
 #include <sortix/kernel/user-timer.h>
-#include <sortix/kernel/process.h>
 
 // TODO: Memset all user timers in process constructor.
 
