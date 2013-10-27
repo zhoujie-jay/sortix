@@ -17,7 +17,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fnewline.cpp
+    fnewfile.cpp
     Allocates and initializes a simple FILE object ready for construction.
 
 *******************************************************************************/

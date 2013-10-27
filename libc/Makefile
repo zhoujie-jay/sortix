@@ -41,7 +41,7 @@ fgetc.o \
 fgets.o \
 flbf.o \
 flushlfb.o \
-fnewline.o \
+fnewfile.o \
 format.o \
 fpending.o \
 fpurge.o \
