@@ -25,6 +25,9 @@
 #ifndef INCLUDE_SORTIX_KERNEL_CPU_H
 #define INCLUDE_SORTIX_KERNEL_CPU_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <sortix/kernel/decl.h>
 
 namespace Sortix {
