@@ -28,6 +28,9 @@
 #ifndef SORTIX_CRC32_H
 #define SORTIX_CRC32_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 namespace Sortix {
 namespace CRC32 {
 
