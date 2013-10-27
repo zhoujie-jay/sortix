@@ -25,6 +25,8 @@
 #ifndef SORTIX_KTHREAD_H
 #define SORTIX_KTHREAD_H
 
+#include <stddef.h>
+
 #include <sortix/signal.h>
 
 namespace Sortix {
