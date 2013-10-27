@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of the Sortix C Library.
 
@@ -23,17 +23,17 @@
 *******************************************************************************/
 
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
-// TODO: This is a hacky implementation!
-extern "C" void* memmove(void* _dest, const void* _src, size_t n)
+extern "C" void* memmove(void* dest_ptr, const void* src_ptr, size_t n)
 {
-	uint8_t* dest = (uint8_t*) _dest;
-	const uint8_t* src = (const uint8_t*) _src;
-	uint8_t* tmp = (uint8_t*) malloc(n);
-	memcpy(tmp, src, n);
-	memcpy(dest, tmp, n);
-	free(tmp);
-	return _dest;
+	uint8_t* dest = (uint8_t*) dest_ptr;
+	const uint8_t* src = (const uint8_t*) src_ptr;
+	if ( dest < src )
+		for ( size_t i = 0; i < n; i++ )
+			dest[i] = src[i];
+	else
+		for ( size_t i = n; i != 0; i-- )
+			dest[i-1] = src[i-1];
+	return dest_ptr;
 }
