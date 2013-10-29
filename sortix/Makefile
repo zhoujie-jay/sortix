@@ -93,6 +93,7 @@ elf.o \
 fcache.o \
 fsfunc.o \
 fs/kram.o \
+fs/null.o \
 fs/user.o \
 fs/util.o \
 identity.o \

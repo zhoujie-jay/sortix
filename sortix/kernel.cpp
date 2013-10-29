@@ -73,6 +73,7 @@
 #include "dispmsg.h"
 #include "elf.h"
 #include "fs/kram.h"
+#include "fs/null.h"
 #include "fs/user.h"
 #include "identity.h"
 #include "initrd.h"
@@ -528,6 +529,14 @@ static void BootThread(void* /*user*/)
 		Panic("Could not allocate a kernel terminal");
 	if ( LinkInodeInDir(&ctx, slashdev, "tty", tty) != 0 )
 		Panic("Unable to link /dev/tty to kernel terminal.");
+
+	// Register the null device as /dev/null.
+	Ref<Inode> null_device(new Null(slashdev->dev, (ino_t) 0, (uid_t) 0,
+	                                (gid_t) 0, (mode_t) 0666));
+	if ( !null_device )
+		Panic("Could not allocate a null device");
+	if ( LinkInodeInDir(&ctx, slashdev, "null", null_device) != 0 )
+		Panic("Unable to link /dev/null to the null device.");
 
 	// Initialize the COM ports.
 	COM::Init("/dev", slashdev);
