@@ -16,7 +16,9 @@ ifndef SYSROOT_OVERLAY
 endif
 
 SORTIX_BUILDS_DIR?=builds
+SORTIX_PORTS_DIR?=ports
 SORTIX_RELEASE_DIR?=release
+SORTIX_REPOSITORY_DIR?=repository
 
 include dirs.mak
 
@@ -82,26 +84,50 @@ sysroot-source: sysroot-fsh
 	(for D in $(MODULES); do (cp -LR $$D -t "$(SYSROOT)/src" && $(MAKE) -C "$(SYSROOT)/src/$$D" clean) || exit $$?; done)
 	cp -LR system -t "$(SYSROOT)/src"
 
+.PHONY: sysroot-ports
+sysroot-ports: sysroot-fsh sysroot-base-headers sysroot-system sysroot-source
+	@SORTIX_PORTS_DIR="$(SORTIX_PORTS_DIR)" \
+	 SORTIX_REPOSITORY_DIR="$(SORTIX_REPOSITORY_DIR)" \
+	 SYSROOT="$(SYSROOT)" \
+	 HOST="$(HOST)" \
+	 MAKE="$(MAKE)" \
+	 MAKEFLAGS="$(MAKEFLAGS) $(SUBMAKE_OPTIONS)" \
+	 ./build-ports.sh
+
 .PHONY: sysroot-overlay
-sysroot-overlay: sysroot-fsh sysroot-system
+sysroot-overlay: sysroot-fsh sysroot-system sysroot-ports
 	! [ -d "$(SYSROOT_OVERLAY)" ] || \
 	cp -R --preserve=mode,timestamp,links "$(SYSROOT_OVERLAY)" -T "$(SYSROOT)"
 
 .PHONY: sysroot-user-skel
-sysroot-user-skel: sysroot-fsh sysroot-system sysroot-overlay
+sysroot-user-skel: sysroot-fsh sysroot-system sysroot-ports sysroot-overlay
 	cp "$(SYSROOT)/share/doc/welcome" -t "$(SYSROOT)/etc/skel"
 
 .PHONY: sysroot-home-directory
-sysroot-home-directory: sysroot-fsh sysroot-system sysroot-overlay sysroot-user-skel
+sysroot-home-directory: sysroot-fsh sysroot-system sysroot-ports sysroot-overlay sysroot-user-skel
 	mkdir -p "$(SYSROOT)/root"
 	cp -R "$(SYSROOT)/etc/skel" -T "$(SYSROOT)/root"
 
 .PHONY: sysroot
-sysroot: sysroot-system sysroot-source sysroot-overlay sysroot-home-directory
+sysroot: sysroot-system sysroot-source sysroot-ports sysroot-overlay sysroot-home-directory
+
+$(SORTIX_REPOSITORY_DIR):
+	mkdir -p $@
+
+$(SORTIX_REPOSITORY_DIR)/$(HOST): $(SORTIX_REPOSITORY_DIR)
+	mkdir -p $@
 
 .PHONY: clean-core
 clean-core:
 	(for D in $(MODULES) tix; do $(MAKE) clean $(SUBMAKE_OPTIONS) --directory $$D || exit $$?; done)
+
+.PHONY: clean-ports
+clean-ports:
+	@SORTIX_PORTS_DIR="$(SORTIX_PORTS_DIR)" \
+	 HOST="$(HOST)" \
+	 MAKE="$(MAKE)" \
+	 MAKEFLAGS="$(MAKEFLAGS) $(SUBMAKE_OPTIONS)" \
+	 ./clean-ports.sh
 
 .PHONY: clean-builds
 clean-builds:
@@ -114,18 +140,22 @@ clean-builds:
 clean-release:
 	rm -rf "$(SORTIX_RELEASE_DIR)"
 
+.PHONY: clean-repository
+clean-repository:
+	rm -rf "$(SORTIX_REPOSITORY_DIR)"
+
 .PHONY: clean-sysroot
 clean-sysroot:
 	rm -rf "$(SYSROOT)"
 
 .PHONY: clean
-clean: clean-core
+clean: clean-core clean-ports
 
 .PHONY: mostlyclean
-mostlyclean: clean-core clean-builds clean-release clean-sysroot
+mostlyclean: clean-core clean-ports clean-builds clean-release clean-sysroot
 
 .PHONY: distclean
-distclean: clean-core clean-builds clean-release clean-sysroot
+distclean: clean-core clean-ports clean-builds clean-release clean-repository clean-sysroot
 
 .PHONY: most-things
 most-things: sysroot initrd deb tar iso
@@ -176,6 +206,7 @@ $(INITRD): sysroot
 	  echo "exclude /$$OTHER_PLATFORM" >> $(INITRD).filter; \
 	  echo "exclude /etc/$$OTHER_PLATFORM" >> $(INITRD).filter; \
 	  echo "exclude /include/$$OTHER_PLATFORM" >> $(INITRD).filter; \
+	  echo "exclude /tix/$$OTHER_PLATFORM" >> $(INITRD).filter; \
 	done;
 	if ! which mkinitrd; then echo You need to install mkinitrd; fi
 	mkinitrd --filter $(INITRD).filter "$(SYSROOT)" -o $(INITRD)
@@ -319,8 +350,17 @@ $(SORTIX_RELEASE_DIR)/$(VERSION)/README: README $(SORTIX_RELEASE_DIR)/$(VERSION)
 .PHONY: release-readme
 release-readme: $(SORTIX_RELEASE_DIR)/$(VERSION)/README
 
+$(SORTIX_RELEASE_DIR)/$(VERSION)/repository:
+	mkdir -p $@
+
+$(SORTIX_RELEASE_DIR)/$(VERSION)/repository/$(HOST): sysroot $(SORTIX_REPOSITORY_DIR)/$(HOST) $(SORTIX_RELEASE_DIR)/$(VERSION)/repository
+	cp -R $(SORTIX_REPOSITORY_DIR)/$(HOST) -T $@
+
+.PHONY: release-repository
+release-repository: $(SORTIX_RELEASE_DIR)/$(VERSION)/repository/$(HOST)
+
 .PHONY: release-arch
-release-arch: release-builds release-doc release-readme
+release-arch: release-builds release-doc release-readme release-repository
 
 .PHONY: release-shared
 release-shared: release-doc release-readme
@@ -340,4 +380,4 @@ run-virtualbox-debug: sortix.iso
 # Statistics
 .PHONY: linecount
 linecount:
-	wc -l `find | grep -E '\.h$$|\.h\+\+$$|\.c$$|\.cpp$$|\.c\+\+$$|\.s$$|\.S$$|\.asm$$|Makefile$$' | grep -v sysroot | grep -v sysroot-overlay` | sort -n
+	wc -l `find | grep -E '\.h$$|\.h\+\+$$|\.c$$|\.cpp$$|\.c\+\+$$|\.s$$|\.S$$|\.asm$$|Makefile$$' | grep -v sysroot | grep -v sysroot-overlay | grep -v ports` | sort -n

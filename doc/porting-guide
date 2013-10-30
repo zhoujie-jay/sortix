@@ -1,0 +1,592 @@
+Porting Guide
+=============
+
+This guide documents how to port software to the Sortix operating system and how
+to release your port to the Sortix community. Before you get started, you should
+get the system source code and the current core set of existing ports and be
+comfortable with building the system (with ports) entirely from scratch.
+
+Overview
+--------
+
+### `$SORTIX_TOPLEVEL` ###
+
+This is the top-level source directory containing the system source code. This
+is actually not a real environmental variable, but just something used in this
+document to denote the top-level system source code directory. This is where you
+have cloned the Sortix source repository.
+
+### Source Tix ###
+
+A source tix is simply a directory, whose name is the name of a package, and
+which contains the source code for the package and a special `tixbuildinfo`
+file, which contains instructions for building the source tix into a binary tix.
+
+### `$SORTIX_PORTS_DIR` (default `$SORTIX_TOPLEVEL/ports`) ###
+
+This directory is where the build system will search for source tixes that
+will automatically be built along with the rest of the system. Any other files
+and sub-directories will be ignored. You can use symbolic links to source tixes
+if you wish. You integrate new packages into the build simply by simply putting
+the source tix inside this directory as a sub-directory. It will automatically
+be built along with the rest of the system during the next system build.
+
+### `.srctix.tar.xz` (Archived Source Tix) ###
+
+Since you cannot publish raw directories, published source tixes are put into
+a compressed archive and given the extension `.srctix.tar.xz`. You can easily
+install an archived source tix by extracting it using standard tools:
+
+    cd $SORTIX_PORTS_DIR &&
+    tar --extract --file libfoo.srctix.tar.xz
+
+This will install the source tix into the source repository and it will
+automatically be built the next time you compile the system and ports.
+
+The archived source tix is simply a tarball that contains a single directory,
+which is a source tix as described above.
+
+### `.porttix.tar.xz` (Archived Port Tix) ###
+
+Upstream releases of software cannot be expected to contain a `tixbuildinfo`
+file and sometimes they need to be patched. When maintaining a port, it is often
+useful to have a copy of the upstream release and the patches applied to it.
+The `.porttix.tar.xz` archives contain a copy of the upstream release (as a
+compressed archive) and all the patches applied to it. This can automatically be
+converted into an archived source tix using the `srctix-create` program. Users
+will normally not use this format unless they wish to inspect how a package was
+ported or confirm that no malicious alternations were made to the upstream
+release.
+
+Can the package be ported?
+--------------------------
+
+It's a very good idea to examine the package closely before attempting to port
+it, or you might end up wasting a lot of time on something that isn't even
+possible in the first place. There's a number of red flags that can prevent the
+successful porting of a package, at least not without enhancements to the tix
+package management system or to Sortix itself.
+
+The first thing to verify is whether we want such a package on Sortix. Not all
+packages are good, some have bad licenses, some have security problems, or bad
+code quality -- and so on. Perhaps there is a similar package already ported,
+which is technically superior, and it's better to have just one such package on
+the system for the sake of purity. Perhaps it's just better to leave this
+package behind and focus on the pure Sortix future? Does the philosophy of the
+package developers contradict that of the Sortix project?
+
+The second thing to verify is the build system. If it uses GNU autoconf or a
+compatible ./configure script things are looking good. If the package has a
+custom hand-written ./configure script you will likely have trouble, as the
+authors of these tend to be ignorant about many useful ./configure options and
+likely don't properly support-cross-compilation. If the package uses some exotic
+build system, you might need to write wrapper scripts or teach Tix how to deal
+with such build systems. If the package just has a makefile, you will likely run
+into trouble if it doesn't follow good makefile conventions and you might end up
+heavily patching it or rolling your own makefile. In these bad cases, consider
+whether we even want to port such a package to Sortix.
+
+The third thing to check is whether it cross-compiles. A lot of software have
+considerable problems with this, and while we are able to work around some of
+these problems, sometimes it's just not feasible. It's probably worth searching
+around the net to see if other people have cross-compiled it. Perhaps they ran
+into similar problems - as you are about to have - but have a fix?
+
+The fourth thing to verify is whether Sortix is ready. Perhaps it uses some API
+that Sortix doesn't have yet or depend on kernel features that are missing?
+Perhaps the package has dependencies that are not yet satisfies, because nobody
+has ported all the dependencies yet. You can often check guides such as "Beyond
+Linux from Scratch" which contains a lot of building instructions and
+dependency information. Try ask around in the operating system development
+community if anyone has ported it before and what their experience was.
+
+Authoring a Source Tix
+----------------------
+
+The first step in porting software to Sortix is creating a working source tix
+and building it along with the rest of the system. You will need to get a copy
+of the software you wish to install. You will need to save a copy of this
+original compressed archive in a safe place, as you will need it later when you
+create an archived port tix for publishing.
+
+In this example we will pretend to port a fictitious piece of software called
+`libfoo`. The latest release of libfoo is released as a compressed tarball with
+the filename `libfoo-0.42.tar.xz`. You will save a copy of this original tarball
+in a safe location and then proceed to extract it into the `$SORTIX_PORTS_DIR`
+directory. This will usually create a `libfoo-0.42` sub-directory, but you need
+to rename it to simply `libfoo`.
+
+The next step is to author a `libfoo/tixbuildinfo` file, if libfoo does not ship
+with support for Sortix. You will need to examine the package and deduce what
+it's build system is and write the file accordingly. As a minimum, you will need
+to put this in the file (with no leading spaces):
+
+    tix.version=1
+    tix.class=srctix
+    pkg.name=libfoo
+    pkg.build-libraries=libbar libbaz libqux
+
+This is a simple key-value format. You will need to set the `pkg.name` variable
+to the exact name of the source tix. The `pkg.build-libraries` variable contains
+the build-time dependencies of the package as a space-delimited set. This is the
+common key-values that all `tixbuildinfo` files *must* contain. In addition,
+they must also contain the `pkg.build-system` variable.
+
+GNU configure scripts
+---------------------
+
+The Tix package management system is designed such that it is normally easy to
+port a package using autoconf generated `./configure` scripts (or compatible).
+In the best case, it will simply suffice to write:
+
+    pkg.build-system=configure
+
+### config.sub ###
+
+Most packages contain a copy of the config.sub shell script that recognizes the
+platform triplets. There is a list of operating system names and the Sortix
+operating system isn't in the upstream config.sub file yet, so we will need to
+add it ourselves. You can simply search the line that contains the `-aos*`
+operating system entry and append `-sortix*` to it:
+
+    -	      | -aos* | -aros* \
+    +	      | -aos* | -aros* | -sortix* \
+
+If you don't do this, you will receive mysterious errors about that the package
+doesn't know what Sortix is.
+
+### Passing options and variables to configure and make ###
+
+However, some packages are known to be silly and requires further tricks to be
+ported. Fortunately, the `tixbuildinfo` file provides control of what arguments
+and environmental variables are given to `./configure` and to make:
+
+    pkg.configure.args=--enable-bar --without-x
+    pkg.configure.vars=gt_cv_locale_fr=false gt_cv_locale_ja=false
+    pkg.make.vars=V=1
+
+It is generally recommended to set V=1 when running Make, if the package is
+silly and doesn't actually report the exact executed commands to the terminal
+during the compilation. This often happens with packages that use libtool. The
+exact used commands are valuable for debugging purposes, if you run into a
+compile warning or a compile error.
+
+### Building Out-Of-Directory ###
+
+If the package requires being built outside of the main source directory, you
+can easily enable this behaviour:
+
+    pkg.configure.use-build-directory=true
+
+### Changing Make Targets ###
+
+By default the make command will be run twice as `make all` and `make install`.
+However, in some cases you would want to customize which targets are invoked:
+
+    pkg.make.build-target=all-libfoo
+    pkg.make.install-target=install-libfoo
+
+### Post-Install Command ###
+
+After the make install target has been run, you have the option of running a
+custom command, with the working directory being the temporary staging
+directory, before the package is fully packaged up. If you need to run multiple
+commands at this point, you will need to wrap them in a shell script:
+
+    pkg.post-install.cmd=./srctix-post-install.sh
+
+### `.la` files ###
+
+Packages that use libtool have a nasty habit of installing `.la` files into the
+system library directory. However, this format doesn't properly support
+cross-compilation and have a number of other problems. The better choice is
+simply to eradicate such files using a post build command:
+
+    pkg.post-install.cmd=tix-eradicate-libtool-la
+
+You should check whether your port produces such `.la` files and use this post
+build command if you see any.
+
+### `--with-sysroot`, `--with-build-sysroot` ###
+
+If the package supports the --with-sysroot configure option and it works
+correctly for cross-compilation, then you can take advantage of it:
+
+    pkg.configure.with-sysroot=true
+
+Otherwise the build system will simply communicate the correct system root to
+the compiler through hidden environmental variables and other tricks (such as
+the cross-compiler's default system root). If the package supports also the
+--with-build-sysroot to support having one system-root at runtime and another
+at build-time, then you should enable both options:
+
+    pkg.configure.with-sysroot=true
+    pkg.configure.with-build-sysroot=true
+
+If you are in doubt whether this works, simply disable these options (they are
+disabled by default) and the default system-root tricks will do just fine.
+
+### Wrapping configure and make ###
+
+If you are unlucky, the configure script is custom and doesn't support common
+options or have other flaws. In that case you best yell a lot at the developers
+and question whether we want to port such a package in the first place, if the
+developers can't get the build system right. However, you can often work-around
+such problems by wrapping the configure and make commands in custom shell
+scripts:
+
+    pkg.configure.cmd=./srctix-configure.sh
+    pkg.make.cmd=./srctix-make.sh
+
+You'll need to set the executable bit on these files and these scripts should
+emulate the standard configure and make tools and do whatever magic to work
+around the broken build system. This should be considered the last resort - you
+should check if there are other key-values you can set that works around the
+issue or whether patching the software solves the issue.
+
+### CC, CXX ###
+
+If the package somehow fails to detect the correct compiler from the `--build`,
+`--host`, and `--target` configure options, but it honours the CC and CXX
+environmental variables, then you can set these keys and they will be set:
+
+    pkg.make.needed-vars.CC=true
+    pkg.make.needed-vars.CXX=true
+
+### DESTDIR ###
+
+During the install phase, the DESTDIR environmental variable points to a
+temporary staging directory, which the port *must* use as an additional prefix.
+If the package does not honour this, please yell a lot at the developers and
+question whether we want to port such a package in the first place. You can
+possibly work around this by wrapping make and configure.
+
+### make distclean ###
+
+The source tix will automatically be cleaned whenever it is built. If you are
+using the configure build system, then the `make distclean` target will be used.
+There currently is no way to override this, but you can wrap the make command to
+work-around this or add support to `tix-build` for configuration.
+
+Simple Makefile
+---------------
+
+Unfortunately, there are not enough common conventions on how to write a
+"standard" makefile to the point where Tix can just use most makefiles without
+special `tixbuildinfo` magic. However, Tix does have a plain makefile as a
+buikld system.
+
+    pkg.build-system=makefile
+
+However, such makefiles *must* follow a common interface and it must respect the
+environmental variables through which Tix expresses its wishes. Here is an
+example makefile that detects installation directories and the compiler
+correctly:
+
+	# Determine where files will be installed at run-tine,
+	PREFIX?=/usr/local
+	EXEC_PREFIX?=$(PREFIX)
+	BINDIR?=$(EXEC_PREFIX)/bin
+	SBINDIR?=$(EXEC_PREFIX)/sbin
+	LIBEXECDIR?=$(EXEC_PREFIX)/libexec
+	BOOTDIR?=$(PREFIX)/boot
+	DATAROOTDIR?=$(PREFIX)/share
+	DATADIR?=$(DATAROOTDIR)
+	SYSCONFDIR?=$(PREFIX)/etc
+	SHAREDSTATEDIR?=$(PREFIX)/com
+	LOCALSTATEDIR?=$(PREFIX)/var
+	RUNSTATEDIR?=$(LOCALSTATEDIR)/run
+	INCLUDEDIR?=$(PREFIX)/include
+	DOCDIR?=$(DATAROOTDIR)/doc
+	INFODIR?=$(DATAROOTDIR)/info
+	HTMLDIR?=$(DOCDIR)
+	DVIDIR?=$(DOCDIR)
+	PSDIR?=$(DOCDIR)
+	PDFDIR?=$(DOCDIR)
+	PSDIR?=$(DOCDIR)
+	LIBDIR?=$(EXEC_PREFIX)/lib
+	LOCALEDIR?=$(DATAROOTDIR/locale
+	MANDIR?=$(DATAROOTDIR)/man
+	MAN1DIR?=$(MANDIR)/man1
+	MAN2DIR?=$(MANDIR)/man2
+	MAN3DIR?=$(MANDIR)/man3
+	MAN4DIR?=$(MANDIR)/man4
+	MAN5DIR?=$(MANDIR)/man5
+	MAN6DIR?=$(MANDIR)/man6
+	MAN7DIR?=$(MANDIR)/man7
+	MAN8DIR?=$(MANDIR)/man8
+	MAN9DIR?=$(MANDIR)/man9
+	MANEXT?=.1
+	MAN1EXT?=.1
+	MAN2EXT?=.2
+	MAN3EXT?=.3
+	MAN4EXT?=.4
+	MAN5EXT?=.5
+	MAN6EXT?=.6
+	MAN7EXT?=.7
+	MAN8EXT?=.8
+	MAN9EXT?=.9
+
+	# An additional prefix during the installation.
+	DESTDIR?=
+
+	# Determine which compilation tools to use.
+	HOST_TOOL_PREFIX?=$(if $(HOST),$(HOST)-,)
+	DEFAULT_CC:=$(HOST_TOOL_PREFIX)gcc
+	DEFAULT_CXX:=$(HOST_TOOL_PREFIX)g++
+	CC?=$(DEFAULT_CC)
+	CXX?=$(DEFAULT_CXX)
+
+	# Defaults for common variables if not set in the environment.
+	CFLAGS?=-O2 -g
+	CXXFLAGS?=-O2 -g
+	CPPFLAGS?=-DNDEBUG
+	LDFLAGS?=
+	LIBS?=
+
+	# Required options in common variables.
+	CFLAGS:=$(CFLAGS) -Wall -Wextra
+	CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra
+	CPPFLAGS:=-Iinclude
+	LDFLAGS:=$(LDFLAGS)
+	LIBS:=$(LIBS) -lqux
+
+	PROGRAMS=foo bar
+
+	all: $(PROGRAMS)
+
+	.PHONY: all install clean distclean
+
+	%: %.c
+		$(CC) (CPPFLAGS) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
+
+	%: %.c++
+		$(CXX) (CPPFLAGS) $(CXXFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
+
+	install: all
+		install $(PROGRAMS) $(DESTDIR)$(BINDIR)
+
+	clean:
+		rm -f $(PROGRAMS)
+
+	distclean: clean
+
+This is a bit verbose. Simply remove the variables you don't need, but keep in
+mind that the logic that determines the remaining variables is important. The
+correct design here is that the makefile respects environmental variables with
+standard names whenever they are present. Default values are assigned to the
+environmental variables using ?= to make sure the defaults takes precedence. The
+logic that determines the compiler is important, as the `HOST` environmental
+variable contains the platform triplet of the platform that the program will run
+on. You should not assume that you can execute the programs you compile, as this
+simple scheme doesn't allow compiling for multiple platforms. In that case, we
+would need additional variables such as `BUILDCC` and `HOSTCC`. Additionally, it
+is important to implement the standard targets here (all, install, clean, and
+distclean).
+
+If everyone sticks to simple programs with makefiles that implement this simple
+interface correctly, then the process of compiling a given project is much
+simpler. Tix will currently compile such a makefile correctly and will continue
+to, but it doesn't set all the environmental variables at this point -- it may
+set then in the future, however.
+
+Testing the Port
+----------------
+
+You can now proceed to attempt to compile your port. The simplest solution is
+simply to rebuild the system along with all its ports, as usual. Keep in mind
+that you will likely run into compile warnings or errors. It might be useful
+to pass the `-O` or '--output-sync` option to Make to ensure the output is
+consistent, even in the face of parallel execution - if you are using the -j
+make option.
+
+If everything goes well, congratulations, you just ported a piece of software to
+Sortix. You should test it out and see if it works as expected and whether the
+port can be improved -- be sure to follow the rest of the guide and publish it
+to the Sortix community.
+
+If things didn't work, it's time to troubleshoot and examine whether the port is
+actually possible and what modifications will have to be made, as described in
+the next section.
+
+Porting the Software
+--------------------
+
+Alright, so things didn't work in the first try. Tough luck. A lot of packages
+do the same silly things that makes it harder to port them. You'll have to be
+creative to determine the correct strategy for completing the port, sometimes
+you will have to implement features in Sortix or add some compatibility. Other
+times, you can work around the build system or patch the software.
+
+Try ask around and examine other archived port tixes and see their patches
+reveal any useful advise on how to resolve the situation:
+
+Here is a list of common problems:
+
+### Configure fails ###
+
+Try and examine the config.log file inside the build directory. At the bottom,
+there is a dump of environmental variables, but just above it is information
+about what particular test program failed.
+
+If you examine the ./configure script closely, you will find that most checks
+have an associated cache environmental variable. If a particular check fails
+erroneously or isn't cross-compilation compatible, you can work around this
+issue by modifying the `tixbuildinfo` file such that it declares these
+environmental variables.
+
+### Running cross-compiled programs ###
+
+Some packages are silly and think they are always able to execute compiled test
+programs, but this is inherently untrue for cross-compilation. Fortunately most
+packages know better as cross-compilation is somewhat common. Still -- some
+packages still do this, sometimes even as part of the check whether the compiler
+works. The result is often that the process hangs, as Sortix executables are
+Linux speak for "just hang and do nothing" in many cases. You'll have to fix the
+package or somehow work around the problem. Don't forget to yell at the
+developers of the package and question whether we really want it.
+
+### Broken Locale Check ###
+
+Some packages (like GNU tar) suffers from a defect where they scan for many
+locales by running cross-compiled programs (see above). This can be worked
+around by declaring the appropriate cache variables.
+
+### Gnulib ###
+
+Yuck! There's a lot of dirty hacks here and everybody has partial copies of it
+integrated into the build system, but people rarely update such copies. As such,
+it'll continue to be a pain to repeatedly work around. You should really check
+existing ports and see if their patches solve this particular gnulib problem.
+The problems here are often nasty, as gnulib occasionally wants to access libc
+internals it has no business dealing with to work-around some obscure bug on
+long-forgotten systems. You can probably safely `#if defined(__sortix__)` at the
+relevant places where there seem to be no better solution.
+
+You may even run into gnulib adding a warning to the gets(3) prototype telling
+people to never use it. This ironically fails to compile on Sortix, which has no
+gets(3) function in the first place.
+
+### PATH_MAX ###
+
+Sortix has no such limit and programs shouldn't rely on such a limit existing.
+Nonetheless, sometimes it's easier to work-around the problem rather than really
+fixing the problem:
+
+    #if defined(__sortix__) && !defined(PATH_MAX)
+    #define PATH_MAX 32768
+    #endif
+
+### Other problems ###
+
+There's lots of problems that can arise when porting packages. While Sortix
+itself is at fault for many of them, as it is still young and much remains to be
+implemented, a lot of problems is the direct result of poor packages with
+cross-compilation problems or not adhering strictly enough to standards. It can
+be useful to maintain a branch of the main system, which has had a number of
+hacks applied for compatibility. Ideally, this allows the Sortix developers to
+know what compatibility problems needs to be addressed. Indeed, many features
+originally started out as compatibility hacks.
+
+Be also sure to consult the `obsolete-stuff` document, as it enumerates a list
+of problematic APIs that we'd like to remove or refuse to implement - and what
+the modern replacement APIs are.
+
+Publishing the Port
+-------------------
+
+Now that your port works, it's time to publish it and let the community enjoy
+your work.
+
+### Cleaning the Source Directory ###
+
+Your source tix likely have a lot of left-over temporary files as the result of
+the testing phase. We'll need to clean the source directory before proceeding:
+
+    cd $SORTIX_PORTS_DIR/libfoo &&
+    ./configure &&
+    make distclean
+
+Or perhaps you'll need to do something else. The important thing is that no
+object files and other problematic binary files are left behind. If the source
+tree is already configured, you can skip the ./configure step.
+
+### Creating the Normalized Tree ###
+
+Unfortunately, some upstream releases are not actually distcleaned. This is a
+problem because the diff between the upstream release and your port will contain
+a lot of garbage. We'll then proceed to create a normalized tree that you can
+diff cleanly against.
+
+    cd $SORTIX_PORTS_DIR &&
+    tar --extract --file $THAT_SAFE_LOCATION/libfoo-0.42.tar.xz &&
+    mv libfoo-0.42 libfoo.normalized &
+    (cd libfoo.original && ./configure && colormake distclean)
+
+This should hopefully ensure that the two trees should be identical, except the
+few changes you had to make to port the package. Be mindful if the upstream
+developers are silly and don't put a single directory in their tarballs. You can
+then proceed to analyse the difference between the two trees:
+
+    diff -Naur libfoo.normalized libfoo
+
+If everything went well, you should only see your changes. If there are other
+changes, you should resolve the situation by deleting files from the normalized
+tree, or by copying files from the normalized tree into the patched tree. Be
+mindful that diff(1) and patch(1) doesn't preserve the executable bit. Don't put
+a `tixbuildinfo` into the normalized tree, or it might unexpectedly become a
+source tix.
+
+### Creating the Archived Port Tix ###
+
+The next step is to create the archived port tix, which contains the upstream
+tarball and the patches done to it (including the normalization step). This file
+allows others to easily review your port and ensure you have not made any
+malicious changes. It will also allow others to recreate the normalized tree
+and continue further development of the port. To create the archived port tix,
+you simply have to invoke this command:
+
+    cd $SORTIX_PORTS_DIR &&
+    porttix-create --tarball $THAT_SAFE_LOCATION/libfoo-0.42.tar.xz \
+                   --normalized libfoo.normalized \
+                   libfoo
+
+This will create a `libfoo.porttix.tar.xz` file, which is publishable. It is
+not, however, ideal for simple extraction as a source tix.
+
+### Creating the Archived Source Tix ###
+
+In concept, it's easy to create an archived source tix: You simply tar up the
+source tix you previously created. However, while it is easy to convert an
+archived port tix into an archived source tix, it is not possible to go in the
+other direction. It is recommended to create a port tix as it forces you to
+carefully consider all the applied patches and is respectful to the community.
+As mentioned, it is easy to convert the `.porttix.tar.xz` file into the desired
+archived source tix:
+
+    srctix-create libfoo.porttix.tar.xz
+
+This will create an suitabe `libfoo.srctix.tar.xz` in the current directory,
+which is an archive containing the normalized tree with all patches applied.
+When reviewing, be sure to verify the included tarball in the archived port tix
+is entirely identical to the upstream release byte-for-byte to avoid security
+problems.
+
+### Publishing ###
+
+Now that you have completed your port and built the archived port tix, it is
+time to share your work with the Sortix community. The simplest solution is
+sending the archived port tix (not the archived source tix) to the Sortix
+developers. They will then review your work and graciously publish your port
+through the appropriate channels. Alternatively, you can upload the port tix and
+the source tix to your own site and maintain it as a third party port.
+
+Conclusion
+----------
+
+This should be a basic walk-through the process of porting a piece of software
+to the Sortix operating system. Note how the porting facilities are experimental
+and much is subject to change in the near future. Porting software is an
+advanced topic and this documentation merely touches the more common situations
+and surely important advise is missing from this documentation. It's always a
+good idea to consult the Sortix developers for advise.

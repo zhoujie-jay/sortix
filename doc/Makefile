@@ -5,6 +5,7 @@ include ../dirs.mak
 DOCUMENTS:=\
 cross-development \
 obsolete-stuff \
+porting-guide \
 user-guide \
 welcome \
 

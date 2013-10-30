@@ -196,3 +196,40 @@ be interested in the target `mostlyclean `that doesn't delete binary packages
 for ports, as they may take considerable time to recompile. See also the targets
 `clean`, `clean-core`, `clean-sysroot`, `clean-repository`, `clean-builds`,
 and `clean-ports` which lets you control what is cleaned.
+
+Building Ports
+--------------
+
+You can extend your Sortix system with third party software that has been ported
+to Sortix. You can find the suitable ports if you visit the download directory
+for this release and enter the subdirectory `srctix` which contains compressed
+archived source tixes. Each such file is simply a compressed tarball that
+contains a single directory with the source code for this port. If you have the
+file `libfoo.srctix.tar.xz`, you can extract it into ~/sortix/ports as such:
+
+  cd ~/sortix &&
+  make -p ports &&
+  cd ports &&
+  tar --extract --file $HOME/Downloads/libfoo.srctix.tar.xz
+
+This will create the directory `~/sortix/ports/libfoo` that contains the source
+code for the libfoo port. Keep in mind that many ports depends on another more
+basic ports and you will need to satisfy the dependencies. The build process
+will give an error and tell you which dependency was missing if you haven't
+satisfied the dependencies. Other ports have optional dependencies which gives
+an inferior installation if the dependencies are not satisfied.
+
+If you have installed the Tix package management (which is done by the
+`make install-build-tools` command above), then the top-level makefile will
+automatically detect all the installed ports. They will automatically be built
+along with the core system the next time you build Sortix and is present in
+your initrd and bootable images.
+
+For more information on ports and how they work, please read:
+
+  $MY_LOCAL_DOCUMENTATION_MIRROR/porting-guide
+
+Building some ports may require additional tools to be installed on your system
+and other unforeseen problems may arise that means the port doesn't compile
+properly on your system. Should a port fail to compile, then the `tix-build`
+command will offer you a chance to investigate the situation in a shell.

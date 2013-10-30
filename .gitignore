@@ -10,3 +10,5 @@ sysroot
 sysroot-overlay
 initrd
 release
+ports
+repository

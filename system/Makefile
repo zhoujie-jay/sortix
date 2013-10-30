@@ -95,6 +95,7 @@ initrd:
 	echo exclude /$(OTHER_PLATFORM_1) >> $(INITRD_FILTER)
 	echo exclude /etc/$(OTHER_PLATFORM_1) >> $(INITRD_FILTER)
 	echo exclude /include/$(OTHER_PLATFORM_1) >> $(INITRD_FILTER)
+	echo exclude /tix/$(OTHER_PLATFORM_1) >> $(INITRD_FILTER)
 	mkinitrd $(ROOT)/ -o $(INITRD) -f $(INITRD_FILTER)
 	rm -f $(INITRD_FILTER)
 	gzip -v $(INITRD)
