@@ -75,6 +75,7 @@
 #include "fs/kram.h"
 #include "fs/null.h"
 #include "fs/user.h"
+#include "fs/zero.h"
 #include "identity.h"
 #include "initrd.h"
 #include "io.h"
@@ -537,6 +538,14 @@ static void BootThread(void* /*user*/)
 		Panic("Could not allocate a null device");
 	if ( LinkInodeInDir(&ctx, slashdev, "null", null_device) != 0 )
 		Panic("Unable to link /dev/null to the null device.");
+
+	// Register the zero device as /dev/zero.
+	Ref<Inode> zero_device(new Zero(slashdev->dev, (ino_t) 0, (uid_t) 0,
+	                                (gid_t) 0, (mode_t) 0666));
+	if ( !zero_device )
+		Panic("Could not allocate a zero device");
+	if ( LinkInodeInDir(&ctx, slashdev, "zero", zero_device) != 0 )
+		Panic("Unable to link /dev/zero to the zero device.");
 
 	// Initialize the COM ports.
 	COM::Init("/dev", slashdev);

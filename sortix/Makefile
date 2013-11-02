@@ -96,6 +96,7 @@ fs/kram.o \
 fs/null.o \
 fs/user.o \
 fs/util.o \
+fs/zero.o \
 identity.o \
 initrd.o \
 inode.o \
