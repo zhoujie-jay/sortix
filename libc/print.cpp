@@ -22,8 +22,9 @@
 
 *******************************************************************************/
 
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -36,6 +37,8 @@ static size_t FileWriteCallback(void* user, const char* string, size_t stringlen
 extern "C" int vfprintf(FILE* fp, const char* /*restrict*/ format, va_list list)
 {
 	size_t result = vprintf_callback(FileWriteCallback, fp, format, list);
+	if ( result == SIZE_MAX )
+		return -1;
 	return (int) result;
 }
 
@@ -43,22 +46,21 @@ extern "C" int fprintf(FILE* fp, const char* /*restrict*/ format, ...)
 {
 	va_list list;
 	va_start(list, format);
-	size_t result = vfprintf(fp, format, list);
+	int result = vfprintf(fp, format, list);
 	va_end(list);
-	return (int) result;
+	return result;
 }
 
 extern "C" int vprintf(const char* /*restrict*/ format, va_list list)
 {
-	size_t result = vfprintf(stdout, format, list);
-	return (int) result;
+	return vfprintf(stdout, format, list);
 }
 
 extern "C" int printf(const char* /*restrict*/ format, ...)
 {
 	va_list list;
 	va_start(list, format);
-	size_t result = vprintf(format, list);
+	int result = vprintf(format, list);
 	va_end(list);
-	return (int) result;
+	return result;
 }
