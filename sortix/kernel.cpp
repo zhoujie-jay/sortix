@@ -72,6 +72,7 @@
 #include "com.h"
 #include "dispmsg.h"
 #include "elf.h"
+#include "fs/full.h"
 #include "fs/kram.h"
 #include "fs/null.h"
 #include "fs/user.h"
@@ -546,6 +547,14 @@ static void BootThread(void* /*user*/)
 		Panic("Could not allocate a zero device");
 	if ( LinkInodeInDir(&ctx, slashdev, "zero", zero_device) != 0 )
 		Panic("Unable to link /dev/zero to the zero device.");
+
+	// Register the full device as /dev/full.
+	Ref<Inode> full_device(new Full(slashdev->dev, (ino_t) 0, (uid_t) 0,
+	                                (gid_t) 0, (mode_t) 0666));
+	if ( !full_device )
+		Panic("Could not allocate a full device");
+	if ( LinkInodeInDir(&ctx, slashdev, "full", full_device) != 0 )
+		Panic("Unable to link /dev/full to the full device.");
 
 	// Initialize the COM ports.
 	COM::Init("/dev", slashdev);

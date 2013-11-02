@@ -92,6 +92,7 @@ dtable.o \
 elf.o \
 fcache.o \
 fsfunc.o \
+fs/full.o \
 fs/kram.o \
 fs/null.o \
 fs/user.o \
