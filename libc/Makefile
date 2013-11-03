@@ -77,7 +77,6 @@ memcpy.o \
 memmove.o \
 memset.o \
 op-new.o \
-readparamstring.o \
 rewind.o \
 sort.o \
 sprint.o \

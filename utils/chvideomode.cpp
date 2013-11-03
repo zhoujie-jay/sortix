@@ -36,7 +36,6 @@
 #include <error.h>
 #include <errno.h>
 #include <termios.h>
-#include <readparamstring.h>
 
 // TODO: Provide this using asprintf or somewhere sane in user-space.
 char* Combine(size_t NumParameters, ...)
