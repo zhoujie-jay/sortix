@@ -130,6 +130,8 @@ namespace Sortix
 		if ( kbkey == -KBKEY_LCTRL ) { control = false; }
 		if ( mode & TERMMODE_SIGNAL && control && kbkey == KBKEY_C )
 		{
+			while ( linebuffer.CanBackspace() )
+				linebuffer.Backspace();
 			pid_t pid = Process::HackGetForegroundProcess();
 			Process* process = Process::Get(pid);
 			if ( process )
