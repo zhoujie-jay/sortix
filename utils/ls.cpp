@@ -35,6 +35,10 @@
 #include <error.h>
 #include <fcntl.h>
 
+#if !defined(VERSIONSTR)
+#define VERSIONSTR "unknown version"
+#endif
+
 bool longformat = false;
 bool showdotdot = false;
 bool showdotfiles = false;
@@ -203,7 +207,10 @@ void usage(FILE* fp, const char* argv0)
 
 void version(FILE* fp, const char* argv0)
 {
-	return usage(fp, argv0);
+	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
+	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
+	fprintf(fp, "This is free software: you are free to change and redistribute it.\n");
+	fprintf(fp, "There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
 void help(FILE* fp, const char* argv0)
