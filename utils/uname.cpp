@@ -28,6 +28,10 @@
 #include <errno.h>
 #include <error.h>
 
+#if !defined(VERSIONSTR)
+#define VERSIONSTR "unknown version"
+#endif
+
 const unsigned long PRINT_KERNELNAME = 1UL << 0UL;
 const unsigned long PRINT_NODENAME = 1UL << 1UL;
 const unsigned long PRINT_KERNELREL = 1UL << 2UL;
@@ -120,7 +124,10 @@ void Help(FILE* fp, const char* argv0)
 
 void Version(FILE* fp, const char* argv0)
 {
-	Usage(fp, argv0);
+	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
+	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
+	fprintf(fp, "This is free software: you are free to change and redistribute it.\n");
+	fprintf(fp, "There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
 int main(int argc, char* argv[])
