@@ -37,6 +37,10 @@
 #include <errno.h>
 #include <termios.h>
 
+#if !defined(VERSIONSTR)
+#define VERSIONSTR "unknown version"
+#endif
+
 // TODO: Provide this using asprintf or somewhere sane in user-space.
 char* Combine(size_t NumParameters, ...)
 {
@@ -333,7 +337,10 @@ void Help(FILE* fp, const char* argv0)
 
 void Version(FILE* fp, const char* argv0)
 {
-	Usage(fp, argv0);
+	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
+	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
+	fprintf(fp, "This is free software: you are free to change and redistribute it.\n");
+	fprintf(fp, "There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
 bool SizeTParam(const char* name, const char* option,
