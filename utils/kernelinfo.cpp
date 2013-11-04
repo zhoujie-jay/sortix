@@ -27,6 +27,10 @@
 #include <errno.h>
 #include <error.h>
 
+#if !defined(VERSIONSTR)
+#define VERSIONSTR "unknown version"
+#endif
+
 void usage(const char* argv0)
 {
 	printf("usage: %s <REQUEST> ...\n", argv0);
@@ -44,7 +48,11 @@ void help(const char* argv0)
 
 void version(const char* argv0)
 {
-	usage(argv0);
+	FILE* fp = stdout;
+	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
+	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
+	fprintf(fp, "This is free software: you are free to change and redistribute it.\n");
+	fprintf(fp, "There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
 int main(int argc, char* argv[])
