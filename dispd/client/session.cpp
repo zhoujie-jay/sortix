@@ -26,6 +26,7 @@
 #include <sys/display.h>
 #include <sys/wait.h>
 
+#include <error.h>
 #include <fcntl.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -80,7 +81,11 @@ bool dispd_session_setup_game_vga(struct dispd_session* session)
 	msg.connector = session->connector;
 	if ( dispmsg_issue(&msg, sizeof(msg)) != 0 )
 		return false;
-	return session->is_vga =  (msg.mode.control & 1)== 0;
+	if ( (session->is_vga = !(msg.mode.control & 1)) )
+		return true;
+	error(0, 0, "This program requires a VGA Text Mode buffer, but you are "
+	            "currently using an incompatible (perhaps graphics) mode.");
+	return false;
 }
 
 bool dispd_session_setup_game_rgba(struct dispd_session* session)
