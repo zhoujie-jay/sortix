@@ -28,6 +28,7 @@ date \
 du \
 echo \
 editor \
+false \
 find \
 head \
 help \
@@ -47,8 +48,9 @@ rm \
 rmdir \
 sh \
 tail \
-type \
 time \
+true \
+type \
 uname \
 uptime \
 wc \

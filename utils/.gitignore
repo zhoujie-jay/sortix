@@ -12,6 +12,7 @@ date
 du
 echo
 editor
+false
 find
 head
 help
@@ -32,6 +33,7 @@ rmdir
 sh
 tail
 time
+true
 type
 uname
 uptime
