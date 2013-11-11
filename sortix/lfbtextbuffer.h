@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -83,6 +83,9 @@ public:
 	virtual void SetCursorEnabled(bool enablecursor);
 	virtual TextPos GetCursorPos() const;
 	virtual void SetCursorPos(TextPos newcursorpos);
+	virtual bool EmergencyIsImpaired();
+	virtual bool EmergencyRecoup();
+	virtual void EmergencyReset();
 
 public:
 	virtual void RenderThread();
@@ -102,8 +105,16 @@ private:
 	void IssueCommand(TextBufferCmd* cmd);
 	void StopRendering();
 	void ResumeRendering();
+	bool IsCommandIdempotent(const TextBufferCmd* cmd) const;
+	void ExecuteCommand(TextBufferCmd* cmd,
+	                    bool& exit_requested,
+	                    bool& sync_requested,
+	                    bool& pause_requested,
+	                    TextPos& render_from,
+	                    TextPos& render_to);
 
 private:
+	kthread_mutex_t execute_lock;
 	kthread_mutex_t queue_lock;
 	kthread_cond_t queue_not_full;
 	kthread_cond_t queue_not_empty;
@@ -131,6 +142,8 @@ private:
 	uint32_t lfbformat;
 	bool cursorenabled;
 	TextPos cursorpos;
+	bool emergency_state;
+	size_t execute_amount;
 
 };
 

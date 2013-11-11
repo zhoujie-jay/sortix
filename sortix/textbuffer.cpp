@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -69,6 +69,41 @@ void TextBufferHandle::Release(TextBuffer* textbuf)
 	assert(numused);
 	if ( !--numused )
 		kthread_cond_signal(&unusedcond);
+}
+
+bool TextBufferHandle::EmergencyIsImpaired()
+{
+	if ( !kthread_mutex_trylock(&mutex) )
+		return true;
+	kthread_mutex_unlock(&mutex);
+	return false;
+}
+
+bool TextBufferHandle::EmergencyRecoup()
+{
+	if ( !EmergencyIsImpaired() )
+		return true;
+	mutex = KTHREAD_MUTEX_INITIALIZER;
+	return true;
+}
+
+void TextBufferHandle::EmergencyReset()
+{
+}
+
+TextBuffer* TextBufferHandle::EmergencyAcquire()
+{
+	// This is during a kernel emergency where preemption has been disabled and
+	// this is the only thread running.
+	return textbuf ? textbuf : def;
+}
+
+void TextBufferHandle::EmergencyRelease(TextBuffer* textbuf)
+{
+	// This is during a kernel emergency where preemption has been disabled and
+	// this is the only thread running. We don't maintain the reference count
+	// during this state, so this is a no-operation.
+	(void) textbuf;
 }
 
 void TextBufferHandle::Replace(TextBuffer* newtextbuf, bool deletebuf)

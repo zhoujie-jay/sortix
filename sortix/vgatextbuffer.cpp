@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -190,6 +190,23 @@ void VGATextBuffer::UpdateCursor()
 		VGA::SetCursor(cursorpos.x, cursorpos.y);
 	else
 		VGA::SetCursor(width, height-1);
+}
+
+bool VGATextBuffer::EmergencyIsImpaired()
+{
+	return false;
+}
+
+bool VGATextBuffer::EmergencyRecoup()
+{
+	return true;
+}
+
+void VGATextBuffer::EmergencyReset()
+{
+	return;
+	Fill(TextPos{0, 0}, TextPos{width-1, height-1}, TextChar{0, 0}, 0);
+	SetCursorPos(TextPos{0, 0});
 }
 
 } // namespace Sortix

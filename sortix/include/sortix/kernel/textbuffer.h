@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -74,6 +74,9 @@ public:
 	virtual void SetCursorEnabled(bool enablecursor) = 0;
 	virtual TextPos GetCursorPos() const = 0;
 	virtual void SetCursorPos(TextPos cursorpos) = 0;
+	virtual bool EmergencyIsImpaired() = 0;
+	virtual bool EmergencyRecoup() = 0;
+	virtual void EmergencyReset() = 0;
 
 };
 
@@ -91,6 +94,11 @@ public:
 	TextBuffer* Acquire();
 	void Release(TextBuffer* textbuf);
 	void Replace(TextBuffer* newtextbuf, bool deletebuf = true);
+	bool EmergencyIsImpaired();
+	bool EmergencyRecoup();
+	void EmergencyReset();
+	TextBuffer* EmergencyAcquire();
+	void EmergencyRelease(TextBuffer* textbuf);
 
 private:
 	kthread_mutex_t mutex;

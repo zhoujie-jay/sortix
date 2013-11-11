@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -99,6 +99,116 @@ bool TextTerminal::Sync()
 	TextBuffer* textbuf = textbufhandle->Acquire();
 	textbuf->GetCursorPos();
 	textbufhandle->Release(textbuf);
+	return true;
+}
+
+bool TextTerminal::EmergencyIsImpaired()
+{
+	// This is during a kernel emergency where preemption has been disabled and
+	// this is the only thread running.
+
+	if ( !kthread_mutex_trylock(&termlock) )
+		return true;
+	kthread_mutex_unlock(&termlock);
+
+	if ( textbufhandle->EmergencyIsImpaired() )
+		return true;
+
+	TextBuffer* textbuf = textbufhandle->EmergencyAcquire();
+	bool textbuf_was_impaired = textbuf->EmergencyIsImpaired();
+	textbufhandle->EmergencyRelease(textbuf);
+	if ( textbuf_was_impaired )
+		return true;
+
+	return false;
+}
+
+bool TextTerminal::EmergencyRecoup()
+{
+	// This is during a kernel emergency where preemption has been disabled and
+	// this is the only thread running.
+
+	if ( !kthread_mutex_trylock(&termlock) )
+		return false;
+	kthread_mutex_unlock(&termlock);
+
+	if ( textbufhandle->EmergencyIsImpaired() &&
+	     !textbufhandle->EmergencyRecoup() )
+		return false;
+
+	TextBuffer* textbuf = textbufhandle->EmergencyAcquire();
+	bool textbuf_failure = textbuf->EmergencyIsImpaired() &&
+	                       !textbuf->EmergencyRecoup();
+	textbufhandle->EmergencyRelease(textbuf);
+
+	if ( !textbuf_failure )
+		return false;
+
+	return true;
+}
+
+void TextTerminal::EmergencyReset()
+{
+	// This is during a kernel emergency where preemption has been disabled and
+	// this is the only thread running.
+
+	textbufhandle->EmergencyReset();
+
+	TextBuffer* textbuf = textbufhandle->EmergencyAcquire();
+	textbuf->EmergencyReset();
+	textbufhandle->EmergencyRelease(textbuf);
+
+	this->termlock = KTHREAD_MUTEX_INITIALIZER;
+	Reset();
+}
+
+size_t TextTerminal::EmergencyPrint(const char* string, size_t stringlen)
+{
+	// This is during a kernel emergency where preemption has been disabled and
+	// this is the only thread running. Another thread may have been interrupted
+	// while it held the terminal lock. The best case is if the terminal lock is
+	// currently unused, which would mean everything is safe.
+
+	TextBuffer* textbuf = textbufhandle->EmergencyAcquire();
+	for ( size_t i = 0; i < stringlen; i++ )
+		PutChar(textbuf, string[i]);
+	UpdateCursor(textbuf);
+	textbufhandle->EmergencyRelease(textbuf);
+	return stringlen;
+}
+
+size_t TextTerminal::EmergencyWidth() const
+{
+	// This is during a kernel emergency where preemption has been disabled and
+	// this is the only thread running. Another thread may have been interrupted
+	// while it held the terminal lock. The best case is if the terminal lock is
+	// currently unused, which would mean everything is safe.
+
+	TextBuffer* textbuf = textbufhandle->EmergencyAcquire();
+	size_t width = textbuf->Width();
+	textbufhandle->EmergencyRelease(textbuf);
+	return width;
+}
+
+size_t TextTerminal::EmergencyHeight() const
+{
+	// This is during a kernel emergency where preemption has been disabled and
+	// this is the only thread running. Another thread may have been interrupted
+	// while it held the terminal lock. The best case is if the terminal lock is
+	// currently unused, which would mean everything is safe.
+
+	TextBuffer* textbuf = textbufhandle->EmergencyAcquire();
+	size_t height = textbuf->Height();
+	textbufhandle->EmergencyRelease(textbuf);
+	return height;
+}
+
+bool TextTerminal::EmergencySync()
+{
+	// This is during a kernel emergency where preemption has been disabled and
+	// this is the only thread running. There is no need to synchronize the
+	// text buffer here as there is no background thread rendering the console.
+
 	return true;
 }
 

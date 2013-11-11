@@ -37,19 +37,14 @@ size_t (*device_width)(void*) = NULL;
 size_t (*device_height)(void*) = NULL;
 bool (*device_sync)(void*) = NULL;
 void* device_pointer = NULL;
-
-void Init(size_t (*callback)(void*, const char*, size_t),
-          size_t (*widthfunc)(void*),
-          size_t (*heightfunc)(void*),
-          bool (*syncfunc)(void*),
-          void* user)
-{
-	device_callback = callback;
-	device_width = widthfunc;
-	device_height = heightfunc;
-	device_sync = syncfunc;
-	device_pointer = user;
-}
+bool (*emergency_device_is_impaired)(void*) = NULL;
+bool (*emergency_device_recoup)(void*) = NULL;
+void (*emergency_device_reset)(void*) = NULL;
+size_t (*emergency_device_callback)(void*, const char*, size_t) = NULL;
+size_t (*emergency_device_width)(void*) = NULL;
+size_t (*emergency_device_height)(void*) = NULL;
+bool (*emergency_device_sync)(void*) = NULL;
+void* emergency_device_pointer = NULL;
 
 } // namespace Log
 } // namespace Sortix

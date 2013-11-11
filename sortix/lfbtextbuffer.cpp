@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -83,6 +83,7 @@ LFBTextBuffer* CreateLFBTextBuffer(uint8_t* lfb, uint32_t lfbformat,
 		goto cleanup_queue;
 
 	memcpy(font, VGA::GetFont(), fontsize);
+	ret->execute_lock = KTHREAD_MUTEX_INITIALIZER;
 	ret->queue_lock = KTHREAD_MUTEX_INITIALIZER;
 	ret->queue_not_full = KTHREAD_COND_INITIALIZER;
 	ret->queue_not_empty = KTHREAD_COND_INITIALIZER;
@@ -120,6 +121,7 @@ LFBTextBuffer* CreateLFBTextBuffer(uint8_t* lfb, uint32_t lfbformat,
 	ret->cursorpos = TextPos(0, 0);
 	for ( size_t y = 0; y < yres; y++ )
 		memset(lfb + scansize * y, 0, lfbformat/8UL * xres);
+	ret->emergency_state = false;
 
 	if ( !RunKernelThread(kernel_process, LFBTextBuffer__RenderThread, ret) )
 	{
@@ -304,6 +306,18 @@ void LFBTextBuffer::RenderRange(TextPos from, TextPos to)
 
 void LFBTextBuffer::IssueCommand(TextBufferCmd* cmd)
 {
+	if ( emergency_state )
+	{
+		bool exit_requested = false;
+		bool sync_requested = false;
+		bool pause_requested = false;
+		TextPos render_from(columns - 1, rows - 1);
+		TextPos render_to(0, 0);
+		ExecuteCommand(cmd, exit_requested, sync_requested, pause_requested, render_from, render_to);
+		if ( !IsTextPosBeforeTextPos(render_to, render_from) )
+			RenderRange(render_from, render_to);
+		return;
+	}
 	ScopedLock lock(&queue_lock);
 	while ( queue_used == queue_length )
 		kthread_cond_wait(&queue_not_full, &queue_lock);
@@ -314,6 +328,8 @@ void LFBTextBuffer::IssueCommand(TextBufferCmd* cmd)
 
 void LFBTextBuffer::StopRendering()
 {
+	if ( emergency_state )
+		return;
 	TextBufferCmd cmd;
 	cmd.type = TEXTBUFCMD_PAUSE;
 	IssueCommand(&cmd);
@@ -324,6 +340,8 @@ void LFBTextBuffer::StopRendering()
 
 void LFBTextBuffer::ResumeRendering()
 {
+	if ( emergency_state )
+		return;
 	ScopedLock lock(&queue_lock);
 	queue_is_paused = false;
 	kthread_cond_signal(&queue_resume);
@@ -496,6 +514,114 @@ void LFBTextBuffer::DoFill(TextPos from, TextPos to, uint16_t fillwith,
 		attrs[i] = fillattr;
 }
 
+bool LFBTextBuffer::IsCommandIdempotent(const TextBufferCmd* cmd) const
+{
+	switch ( cmd->type )
+	{
+		case TEXTBUFCMD_EXIT: return true;
+		case TEXTBUFCMD_SYNC: return true;
+		case TEXTBUFCMD_PAUSE: return true;
+		case TEXTBUFCMD_CHAR: return true;
+		case TEXTBUFCMD_ATTR: return true;
+		case TEXTBUFCMD_CURSOR_SET_ENABLED: return true;
+		case TEXTBUFCMD_CURSOR_MOVE: return true;
+		case TEXTBUFCMD_MOVE: return false;
+		case TEXTBUFCMD_FILL: return true;
+		case TEXTBUFCMD_SCROLL: return false;
+		default: return false;
+	}
+}
+
+void LFBTextBuffer::ExecuteCommand(TextBufferCmd* cmd,
+                                   bool& exit_requested,
+                                   bool& sync_requested,
+                                   bool& pause_requested,
+                                   TextPos& render_from,
+                                   TextPos& render_to)
+{
+	switch ( cmd->type )
+	{
+		case TEXTBUFCMD_EXIT:
+			exit_requested = true;
+			break;
+		case TEXTBUFCMD_SYNC:
+			sync_requested = true;
+			break;
+		case TEXTBUFCMD_PAUSE:
+			pause_requested = true;
+			break;
+		case TEXTBUFCMD_CHAR:
+		{
+			TextPos pos(cmd->x, cmd->y);
+			chars[pos.y * columns + pos.x] = cmd->c;
+			if ( IsTextPosBeforeTextPos(pos, render_from) )
+				render_from = pos;
+			if ( IsTextPosAfterTextPos(pos, render_to) )
+				render_to = pos;
+		} break;
+		case TEXTBUFCMD_ATTR:
+		{
+			TextPos pos(cmd->x, cmd->y);
+			attrs[pos.y * columns + pos.x] = cmd->attr;
+		} break;
+		case TEXTBUFCMD_CURSOR_SET_ENABLED:
+			if ( cmd->b != cursorenabled )
+			{
+				cursorenabled = cmd->b;
+				if ( IsTextPosBeforeTextPos(cursorpos, render_from) )
+					render_from = cursorpos;
+				if ( IsTextPosAfterTextPos(cursorpos, render_to) )
+					render_to = cursorpos;
+			}
+			break;
+		case TEXTBUFCMD_CURSOR_MOVE:
+		{
+			TextPos pos(cmd->x, cmd->y);
+			if ( cursorpos.x != pos.x || cursorpos.y != pos.y )
+			{
+				if ( IsTextPosBeforeTextPos(cursorpos, render_from) )
+					render_from = cursorpos;
+				if ( IsTextPosAfterTextPos(cursorpos, render_to) )
+					render_to = cursorpos;
+				cursorpos = pos;
+				if ( IsTextPosBeforeTextPos(cursorpos, render_from) )
+					render_from = cursorpos;
+				if ( IsTextPosAfterTextPos(cursorpos, render_to) )
+					render_to = cursorpos;
+			}
+		} break;
+		case TEXTBUFCMD_MOVE:
+		{
+			TextPos to(cmd->to_x, cmd->to_y);
+			TextPos from(cmd->from_x, cmd->from_y);
+			size_t numchars = cmd->val;
+			DoMove(to, from, numchars);
+			TextPos toend = AddToPosition(to, numchars);
+			if ( IsTextPosBeforeTextPos(to, render_from) )
+				render_from = to;
+			if ( IsTextPosAfterTextPos(toend, render_to) )
+				render_to = toend;
+		} break;
+		case TEXTBUFCMD_FILL:
+		{
+			TextPos from(cmd->from_x, cmd->from_y);
+			TextPos to(cmd->to_x, cmd->to_y);
+			DoFill(from, to, cmd->c, cmd->attr);
+			if ( IsTextPosBeforeTextPos(from, render_from) )
+				render_from = from;
+			if ( IsTextPosAfterTextPos(to, render_to) )
+				render_to = to;
+		} break;
+		case TEXTBUFCMD_SCROLL:
+		{
+			ssize_t off = cmd->scroll_offset;
+			DoScroll(off, cmd->c);
+			render_from = {0, 0};
+			render_to = {columns-1, rows-1};
+		} break;
+	}
+}
+
 void LFBTextBuffer::RenderThread()
 {
 	queue_is_paused = false;
@@ -549,98 +675,79 @@ void LFBTextBuffer::RenderThread()
 
 		kthread_mutex_unlock(&queue_lock);
 
+		execute_amount = amount;
+
+		kthread_mutex_lock(&execute_lock);
+
 		TextPos render_from(columns - 1, rows - 1);
 		TextPos render_to(0, 0);
 
 		for ( size_t i = 0; i < amount; i++ )
 		{
 			TextBufferCmd* cmd = &queue[(offset + i) % queue_length];
-			switch ( cmd->type )
-			{
-				case TEXTBUFCMD_EXIT:
-					exit_requested = true;
-					break;
-				case TEXTBUFCMD_SYNC:
-					sync_requested = true;
-					break;
-				case TEXTBUFCMD_PAUSE:
-					pause_requested = true;
-					break;
-				case TEXTBUFCMD_CHAR:
-				{
-					TextPos pos(cmd->x, cmd->y);
-					chars[pos.y * columns + pos.x] = cmd->c;
-					if ( IsTextPosBeforeTextPos(pos, render_from) )
-						render_from = pos;
-					if ( IsTextPosAfterTextPos(pos, render_to) )
-						render_to = pos;
-				} break;
-				case TEXTBUFCMD_ATTR:
-				{
-					TextPos pos(cmd->x, cmd->y);
-					attrs[pos.y * columns + pos.x] = cmd->attr;
-				} break;
-				case TEXTBUFCMD_CURSOR_SET_ENABLED:
-					if ( cmd->b != cursorenabled )
-					{
-						cursorenabled = cmd->b;
-						if ( IsTextPosBeforeTextPos(cursorpos, render_from) )
-							render_from = cursorpos;
-						if ( IsTextPosAfterTextPos(cursorpos, render_to) )
-							render_to = cursorpos;
-					}
-					break;
-				case TEXTBUFCMD_CURSOR_MOVE:
-				{
-					TextPos pos(cmd->x, cmd->y);
-					if ( cursorpos.x != pos.x || cursorpos.y != pos.y )
-					{
-						if ( IsTextPosBeforeTextPos(cursorpos, render_from) )
-							render_from = cursorpos;
-						if ( IsTextPosAfterTextPos(cursorpos, render_to) )
-							render_to = cursorpos;
-						cursorpos = pos;
-						if ( IsTextPosBeforeTextPos(cursorpos, render_from) )
-							render_from = cursorpos;
-						if ( IsTextPosAfterTextPos(cursorpos, render_to) )
-							render_to = cursorpos;
-					}
-				} break;
-				case TEXTBUFCMD_MOVE:
-				{
-					TextPos to(cmd->to_x, cmd->to_y);
-					TextPos from(cmd->from_x, cmd->from_y);
-					size_t numchars = cmd->val;
-					DoMove(to, from, numchars);
-					TextPos toend = AddToPosition(to, numchars);
-					if ( IsTextPosBeforeTextPos(to, render_from) )
-						render_from = to;
-					if ( IsTextPosAfterTextPos(toend, render_to) )
-						render_to = toend;
-				} break;
-				case TEXTBUFCMD_FILL:
-				{
-					TextPos from(cmd->from_x, cmd->from_y);
-					TextPos to(cmd->to_x, cmd->to_y);
-					DoFill(from, to, cmd->c, cmd->attr);
-					if ( IsTextPosBeforeTextPos(from, render_from) )
-						render_from = from;
-					if ( IsTextPosAfterTextPos(to, render_to) )
-						render_to = to;
-				} break;
-				case TEXTBUFCMD_SCROLL:
-				{
-					ssize_t off = cmd->scroll_offset;
-					DoScroll(off, cmd->c);
-					render_from = {0, 0};
-					render_to = {columns-1, rows-1};
-				} break;
-			}
+			ExecuteCommand(cmd, exit_requested, sync_requested, pause_requested, render_from, render_to);
 		}
+
+		kthread_mutex_unlock(&execute_lock);
 
 		if ( !IsTextPosBeforeTextPos(render_to, render_from) )
 			RenderRange(render_from, render_to);
 	}
+}
+
+bool LFBTextBuffer::EmergencyIsImpaired()
+{
+	return !emergency_state;
+}
+
+bool LFBTextBuffer::EmergencyRecoup()
+{
+	if ( !emergency_state )
+		emergency_state = true;
+
+	if ( !kthread_mutex_trylock(&queue_lock) )
+		return false;
+	kthread_mutex_unlock(&queue_lock);
+
+	if ( !kthread_mutex_trylock(&execute_lock) )
+	{
+		for ( size_t i = 0; i < execute_amount; i++ )
+		{
+			TextBufferCmd* cmd = &queue[(queue_offset + i) % queue_length];
+			if ( !IsCommandIdempotent(cmd) )
+				return false;
+		}
+	}
+	else
+		kthread_mutex_unlock(&execute_lock);
+
+	TextPos render_from(0, 0);
+	TextPos render_to(columns - 1, rows - 1);
+
+	for ( size_t i = 0; i < queue_used; i++ )
+	{
+		bool exit_requested = false;
+		bool sync_requested = false;
+		bool pause_requested = false;
+		TextBufferCmd* cmd = &queue[(queue_offset + i) % queue_length];
+		ExecuteCommand(cmd, exit_requested, sync_requested, pause_requested,
+		               render_from, render_to);
+	}
+
+	queue_used = 0;
+	queue_offset = 0;
+
+	RenderRange(render_from, render_to);
+
+	return true;
+}
+
+void LFBTextBuffer::EmergencyReset()
+{
+	// TODO: Reset everything here!
+
+	Fill(TextPos{0, 0}, TextPos{columns-1, rows-1}, TextChar{0, 0}, 0);
+	SetCursorPos(TextPos{0, 0});
 }
 
 } // namespace Sortix

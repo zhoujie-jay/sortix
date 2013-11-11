@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -48,6 +48,9 @@ public:
 	virtual void SetCursorEnabled(bool enablecursor);
 	virtual TextPos GetCursorPos() const;
 	virtual void SetCursorPos(TextPos cursorpos);
+	virtual bool EmergencyIsImpaired();
+	virtual bool EmergencyRecoup();
+	virtual void EmergencyReset();
 
 private:
 	bool UsablePosition(TextPos pos) const;

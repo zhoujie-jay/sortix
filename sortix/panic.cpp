@@ -41,6 +41,7 @@ const bool longpanic = true;
 
 static bool panicing = false;
 static bool doublepanic = false;
+static bool logrecovering = false;
 
 static void PanicLogoLong()
 {
@@ -54,7 +55,52 @@ static void PanicLogoShort()
 
 void PanicInit()
 {
+	// This is a kernel emergency. We will need to disable preemption, such that
+	// this is the only thread running. This means that we cannot acquire locks
+	// and the data protected by them may be inconsistent.
 	Interrupt::Disable();
+
+	// Detect whether a panic happened during the log recovery.
+	if ( logrecovering )
+	{
+		// Oh no! We paniced during the log recovery that we will do momentarily
+		// - this means that there probably isn't anything we can do but halt.
+		HaltKernel();
+	}
+	logrecovering = true;
+
+	// The kernel log normally uses locks internally and the console may be
+	// rendered by a background thread. This means that we cannot use the normal
+	// kernel log, but that we rather need to switch to the kernel emergency
+	// log, which is able to cope with the potential inconsistencies.
+
+	Log::device_callback = Log::emergency_device_callback;
+	Log::device_width = Log::emergency_device_width;
+	Log::device_height = Log::emergency_device_height;
+	Log::device_sync = Log::emergency_device_sync;
+	Log::device_pointer = Log::emergency_device_pointer;
+
+	// Check whether the panic condition left the kernel log unharmed.
+	if ( !Log::emergency_device_is_impaired(Log::emergency_device_pointer) )
+	{
+		// The kernel log device transitioned ideally to the emergency state.
+	}
+
+	// Attempt to repair inconsistent state of the emergency log device.
+	else if ( Log::emergency_device_recoup(Log::emergency_device_pointer) )
+	{
+		// The kernel log was successfully repaired and is ready for use in the
+		// current emergency state.
+	}
+
+	// It was not possible to repair the emergency device properly, so instead
+	// we will need to perform a hard reset of the emergency device.
+	else
+	{
+		Log::emergency_device_reset(Log::emergency_device_pointer);
+		// The kernel log was successfully repaired and is ready for use in the
+		// current emergency state.
+	}
 
 	// Handle the case where the panic code caused another system crash.
 	if ( panicing )

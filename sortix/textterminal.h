@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
 
     This file is part of Sortix.
 
@@ -41,6 +41,13 @@ public:
 	size_t Width() const;
 	size_t Height() const;
 	bool Sync();
+	bool EmergencyIsImpaired();
+	bool EmergencyRecoup();
+	void EmergencyReset();
+	size_t EmergencyPrint(const char* string, size_t stringlen);
+	size_t EmergencyWidth() const;
+	size_t EmergencyHeight() const;
+	bool EmergencySync();
 
 private:
 	void PutChar(TextBuffer* textbuf, char c);

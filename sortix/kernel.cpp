@@ -135,6 +135,42 @@ static bool TextTermSync(void* user)
 	return ((TextTerminal*) user)->Sync();
 }
 
+static bool EmergencyTextTermIsImpaired(void* user)
+{
+	return ((TextTerminal*) user)->EmergencyIsImpaired();
+}
+
+static bool EmergencyTextTermRecoup(void* user)
+{
+	return ((TextTerminal*) user)->EmergencyRecoup();
+}
+
+static void EmergencyTextTermReset(void* user)
+{
+	((TextTerminal*) user)->EmergencyReset();
+}
+
+static
+size_t EmergencyPrintToTextTerminal(void* user, const char* str, size_t len)
+{
+	return ((TextTerminal*) user)->EmergencyPrint(str, len);
+}
+
+static size_t EmergencyTextTermWidth(void* user)
+{
+	return ((TextTerminal*) user)->EmergencyWidth();
+}
+
+static size_t EmergencyTextTermHeight(void* user)
+{
+	return ((TextTerminal*) user)->EmergencyHeight();
+}
+
+static bool EmergencyTextTermSync(void* user)
+{
+	return ((TextTerminal*) user)->EmergencySync();
+}
+
 addr_t initrd;
 size_t initrdsize;
 Ref<TextBufferHandle> textbufhandle;
@@ -167,9 +203,22 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Setup a text terminal instance.
 	TextTerminal textterm(textbufhandle);
 
-	// Register the text terminal as the kernel log and initialize it.
-	Log::Init(PrintToTextTerminal, TextTermWidth, TextTermHeight, TextTermSync,
-	          &textterm);
+	// Register the text terminal as the kernel log.
+	Log::device_callback = PrintToTextTerminal;
+	Log::device_width = TextTermWidth;
+	Log::device_height = TextTermHeight;
+	Log::device_sync = TextTermSync;
+	Log::device_pointer = &textterm;
+
+	// Register the emergency kernel log.
+	Log::emergency_device_is_impaired = EmergencyTextTermIsImpaired;
+	Log::emergency_device_recoup = EmergencyTextTermRecoup;
+	Log::emergency_device_reset = EmergencyTextTermReset;
+	Log::emergency_device_callback = EmergencyPrintToTextTerminal;
+	Log::emergency_device_width = EmergencyTextTermWidth;
+	Log::emergency_device_height = EmergencyTextTermHeight;
+	Log::emergency_device_sync = EmergencyTextTermSync;
+	Log::emergency_device_pointer = &textterm;
 
 	// Display the boot welcome screen.
 	DoWelcome();

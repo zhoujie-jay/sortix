@@ -38,12 +38,14 @@ extern size_t (*device_width)(void*);
 extern size_t (*device_height)(void*);
 extern bool (*device_sync)(void*);
 extern void* device_pointer;
-
-void Init(size_t (*callback)(void*, const char*, size_t),
-          size_t (*widthfunc)(void*),
-          size_t (*heightfunc)(void*),
-          bool (*syncfunc)(void*),
-          void* user);
+extern bool (*emergency_device_is_impaired)(void*);
+extern bool (*emergency_device_recoup)(void*);
+extern void (*emergency_device_reset)(void*);
+extern size_t (*emergency_device_callback)(void*, const char*, size_t);
+extern size_t (*emergency_device_width)(void*);
+extern size_t (*emergency_device_height)(void*);
+extern bool (*emergency_device_sync)(void*);
+extern void* emergency_device_pointer;
 
 inline void Flush()
 {
