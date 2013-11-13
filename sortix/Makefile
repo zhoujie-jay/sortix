@@ -6,7 +6,7 @@ include ../dirs.mak
 # Default values in case the user doesn't override these variables.
 OPTLEVEL?=-g -O2
 CALLTRACE?=0
-DISKWRITE?=0
+DISKWRITE?=1
 ASLFAGS?=
 CPPFLAGS?=
 CXXFLAGS?=$(OPTLEVEL)
