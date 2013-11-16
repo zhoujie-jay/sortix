@@ -186,8 +186,8 @@ static int sys_open(const char* path, int flags, mode_t mode)
 // TODO: This is a hack! Stat the file in some manner and check permissions.
 static int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
 {
-	if ( flags )
-		return errno = ENOSYS, -1;
+	if ( flags & (AT_SYMLINK_NOFOLLOW) )
+		return errno = EINVAL, -1;
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
 		return -1;
@@ -195,7 +195,8 @@ static int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
 	const char* relpath = pathcopy;
 	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_READ);
+	int open_flags = O_READ | (flags & AT_SYMLINK_NOFOLLOW ? O_SYMLINK_NOFOLLOW : 0);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, open_flags);
 	delete[] pathcopy;
 	return desc ? 0 : -1;
 }
@@ -289,8 +290,10 @@ static int sys_ftruncate(int fd, off_t length)
 	return desc->truncate(&ctx, length);
 }
 
-static int sys_fstatat(int dirfd, const char* path, struct stat* st, int /*flags*/)
+static int sys_fstatat(int dirfd, const char* path, struct stat* st, int flags)
 {
+	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
+		return errno = EINVAL;
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
 		return -1;
@@ -298,7 +301,8 @@ static int sys_fstatat(int dirfd, const char* path, struct stat* st, int /*flags
 	const char* relpath = pathcopy;
 	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_READ);
+	int open_flags = O_READ | (flags & AT_SYMLINK_NOFOLLOW ? O_SYMLINK_NOFOLLOW : 0);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, open_flags);
 	delete[] pathcopy;
 	if ( !desc )
 		return -1;
@@ -451,8 +455,8 @@ static int sys_fchown(int fd, uid_t owner, gid_t group)
 
 static int sys_fchownat(int dirfd, const char* path, uid_t owner, gid_t group, int flags)
 {
-	if ( flags )
-		return errno = ENOTSUP, -1;
+	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
+		return errno = EINVAL, -1;
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
 		return -1;
@@ -460,7 +464,8 @@ static int sys_fchownat(int dirfd, const char* path, uid_t owner, gid_t group, i
 	const char* relpath = pathcopy;
 	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_WRITE);
+	int open_flags = O_WRITE | (flags & AT_SYMLINK_NOFOLLOW ? O_SYMLINK_NOFOLLOW : 0);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, open_flags);
 	from.Reset();
 	delete[] pathcopy;
 	if ( !desc )
@@ -485,8 +490,8 @@ static int sys_fchmod(int fd, mode_t mode)
 
 static int sys_fchmodat(int dirfd, const char* path, mode_t mode, int flags)
 {
-	if ( flags )
-		return errno = ENOTSUP, -1;
+	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
+		return errno = EINVAL, -1;
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
 		return -1;
@@ -494,7 +499,8 @@ static int sys_fchmodat(int dirfd, const char* path, mode_t mode, int flags)
 	const char* relpath = pathcopy;
 	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_WRITE);
+	int open_flags = O_WRITE | (flags & AT_SYMLINK_NOFOLLOW ? O_SYMLINK_NOFOLLOW : 0);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, open_flags);
 	from.Reset();
 	delete[] pathcopy;
 	if ( !desc )
@@ -523,8 +529,8 @@ static int sys_futimens(int fd, const struct timespec user_times[2])
 static int sys_utimensat(int dirfd, const char* path,
                          const struct timespec user_times[2], int flags)
 {
-	if ( flags )
-		return errno = ENOTSUP, -1;
+	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
+		return errno = EINVAL, -1;
 	struct timespec times[2];
 	if ( !CopyFromUser(times, user_times, sizeof(times)) )
 		return -1;
@@ -535,7 +541,8 @@ static int sys_utimensat(int dirfd, const char* path,
 	const char* relpath = pathcopy;
 	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_WRITE);
+	int open_flags = O_WRITE | (flags & AT_SYMLINK_NOFOLLOW ? O_SYMLINK_NOFOLLOW : 0);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, open_flags);
 	from.Reset();
 	delete[] pathcopy;
 	if ( !desc )
@@ -547,8 +554,8 @@ static int sys_linkat(int olddirfd, const char* oldpath,
                       int newdirfd, const char* newpath,
                       int flags)
 {
-	if ( flags )
-		return errno = ENOTSUP, -1;
+	if ( flags & ~(AT_SYMLINK_FOLLOW) )
+		return errno = EINVAL, -1;
 
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
 
@@ -572,7 +579,8 @@ static int sys_linkat(int olddirfd, const char* oldpath,
 	Ref<Descriptor> oldfrom = PrepareLookup(&oldrelpath, olddirfd);
 	if ( !oldfrom ) { delete[] oldpathcopy; delete[] final_elem; return -1; }
 
-	Ref<Descriptor> file = oldfrom->open(&ctx, oldrelpath, O_READ);
+	int open_flags = O_READ | (flags & AT_SYMLINK_FOLLOW ? 0 : O_SYMLINK_NOFOLLOW);
+	Ref<Descriptor> file = oldfrom->open(&ctx, oldrelpath, open_flags);
 	delete[] oldpathcopy;
 	if ( !file ) { delete[] final_elem; return -1; }
 
