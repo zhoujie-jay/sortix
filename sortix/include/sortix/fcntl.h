@@ -44,6 +44,7 @@ __BEGIN_DECLS
 #define O_SEARCH (1<<10)
 #define O_NONBLOCK (1<<11)
 #define O_NOFOLLOW (1<<12)
+#define O_SYMLINK_NOFOLLOW (1<<13)
 
 #define FD_CLOEXEC (1<<0)
 #define FD_CLOFORK (1<<1)
