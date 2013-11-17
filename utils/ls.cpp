@@ -106,8 +106,13 @@ void getentrycolor(const char** pre, const char** post, mode_t mode)
 {
 	*pre = "";
 	*post = "";
-	if ( colors && S_ISDIR(mode) )
+	if ( !colors )
+		return;
+	if ( S_ISDIR(mode) )
 		*pre = "\e[36m",
+		*post = "\e[37m";
+	else if ( mode & 0111 )
+		*pre = "\e[32m",
 		*post = "\e[37m";
 }
 
