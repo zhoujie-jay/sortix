@@ -144,6 +144,7 @@
 #define SYSCALL_SETPRIORITY 120
 #define SYSCALL_PRLIMIT 121
 #define SYSCALL_DUP3 122
-#define SYSCALL_MAX_NUM 123 /* index of highest constant + 1 */
+#define SYSCALL_SYMLINKAT 123
+#define SYSCALL_MAX_NUM 124 /* index of highest constant + 1 */
 
 #endif

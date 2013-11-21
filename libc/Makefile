@@ -481,6 +481,8 @@ unistd/setpgid.o \
 unistd/setuid.o \
 unistd/sfork.o \
 unistd/sleep.o \
+unistd/symlinkat.o \
+unistd/symlink.o \
 unistd/sysconf.o \
 unistd/tcgetpgrp.o \
 unistd/tcsetpgrp.o \

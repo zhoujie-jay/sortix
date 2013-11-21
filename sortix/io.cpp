@@ -595,6 +595,36 @@ static int sys_link(const char* oldpath, const char* newpath)
 	return sys_linkat(AT_FDCWD, oldpath, AT_FDCWD, newpath, 0);
 }
 
+static int sys_symlinkat(const char* oldpath, int newdirfd, const char* newpath)
+{
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+
+	char* newpathcopy = GetStringFromUser(newpath);
+	if ( !newpathcopy )
+		return -1;
+	const char* newrelpath = newpathcopy;
+	Ref<Descriptor> newfrom(PrepareLookup(&newrelpath, newdirfd));
+	if ( !newfrom ) { delete[] newpathcopy; return -1; }
+
+	char* final_elem;
+	Ref<Descriptor> dir = OpenDirContainingPath(&ctx, newfrom, newpathcopy,
+	                                            &final_elem);
+	delete[] newpathcopy;
+	if ( !dir )
+		return -1;
+
+	char* oldpathcopy = GetStringFromUser(oldpath);
+	if ( !oldpathcopy ) { delete[] final_elem; return -1; }
+
+	int ret = (errno = EPERM, -1);
+
+	delete[] oldpathcopy;
+	delete[] final_elem;
+
+	return ret;
+}
+
+
 static int sys_settermmode(int fd, unsigned mode)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
@@ -1019,6 +1049,7 @@ void Init()
 	Syscall::Register(SYSCALL_SEND, (void*) sys_send);
 	Syscall::Register(SYSCALL_SETTERMMODE, (void*) sys_settermmode);
 	Syscall::Register(SYSCALL_STAT, (void*) sys_stat);
+	Syscall::Register(SYSCALL_SYMLINKAT, (void*) sys_symlinkat);
 	Syscall::Register(SYSCALL_TCGETPGRP, (void*) sys_tcgetpgrp);
 	Syscall::Register(SYSCALL_TCGETWINSIZE, (void*) sys_tcgetwinsize);
 	Syscall::Register(SYSCALL_TCSETPGRP, (void*) sys_tcsetpgrp);
