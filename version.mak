@@ -1,1 +1,1 @@
-VERSION=0.8dev
+VERSION=0.8
