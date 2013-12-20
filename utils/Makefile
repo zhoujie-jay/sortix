@@ -41,7 +41,6 @@ ls \
 memstat \
 mkdir \
 mv \
-mxsh \
 pager \
 pwd \
 rm \
@@ -72,9 +71,6 @@ uninstall:
 
 %: %.cpp
 	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@
-
-sh: mxsh
-	cp $< $@
 
 clean:
 	rm -f $(BINARIES) *.o
