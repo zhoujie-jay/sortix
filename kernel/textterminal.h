@@ -40,6 +40,7 @@ public:
 	size_t Print(const char* string, size_t stringlen);
 	size_t Width() const;
 	size_t Height() const;
+	void GetCursor(size_t* column, size_t* row) const;
 	bool Sync();
 	bool EmergencyIsImpaired();
 	bool EmergencyRecoup();
@@ -47,6 +48,7 @@ public:
 	size_t EmergencyPrint(const char* string, size_t stringlen);
 	size_t EmergencyWidth() const;
 	size_t EmergencyHeight() const;
+	void EmergencyGetCursor(size_t* column, size_t* row) const;
 	bool EmergencySync();
 
 private:

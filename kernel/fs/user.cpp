@@ -212,6 +212,7 @@ public:
 	virtual int symlink(ioctx_t* ctx, const char* oldname,
 	                    const char* filename);
 	virtual ssize_t readlink(ioctx_t* ctx, char* buf, size_t bufsiz);
+	virtual int tcgetwincurpos(ioctx_t* ctx, struct wincurpos* wcp);
 	virtual int tcgetwinsize(ioctx_t* ctx, struct winsize* ws);
 	virtual int tcsetpgrp(ioctx_t* ctx, pid_t pgid);
 	virtual pid_t tcgetpgrp(ioctx_t* ctx);
@@ -1097,6 +1098,23 @@ ssize_t Unode::readlink(ioctx_t* ctx, char* buf, size_t bufsiz)
 		if ( channel->KernelRecv(ctx, buf, bufsiz) )
 			ret = (ssize_t) bufsiz;
 	}
+	channel->KernelClose();
+	return ret;
+}
+
+int Unode::tcgetwincurpos(ioctx_t* ctx, struct wincurpos* wcp)
+{
+	Channel* channel = server->Connect();
+	if ( !channel )
+		return -1;
+	int ret = -1;
+	struct fsm_req_tcgetwincurpos msg;
+	struct fsm_resp_tcgetwincurpos resp;
+	msg.ino = ino;
+	if ( SendMessage(channel, FSM_REQ_TCGETWINCURPOS, &msg, sizeof(msg)) &&
+	     RecvMessage(channel, FSM_RESP_TCGETWINCURPOS, &resp, sizeof(resp)) &&
+	     ctx->copy_to_dest(wcp, &resp.pos, sizeof(*wcp)) )
+		ret = 0;
 	channel->KernelClose();
 	return ret;
 }

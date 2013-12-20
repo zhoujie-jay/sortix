@@ -91,6 +91,13 @@ size_t TextTerminal::Height() const
 	return height;
 }
 
+void TextTerminal::GetCursor(size_t* column, size_t* row) const
+{
+	ScopedLock lock(&termlock);
+	*column = this->column;
+	*row = this->line;
+}
+
 bool TextTerminal::Sync()
 {
 	// Reading something from the textbuffer may cause it to block while
@@ -201,6 +208,17 @@ size_t TextTerminal::EmergencyHeight() const
 	size_t height = textbuf->Height();
 	textbufhandle->EmergencyRelease(textbuf);
 	return height;
+}
+
+void TextTerminal::EmergencyGetCursor(size_t* column, size_t* row) const
+{
+	// This is during a kernel emergency where preemption has been disabled and
+	// this is the only thread running. Another thread may have been interrupted
+	// while it held the terminal lock. The best case is if the terminal lock is
+	// currently unused, which would mean everything is safe.
+
+	*column = this->column;
+	*row = this->line;
 }
 
 bool TextTerminal::EmergencySync()

@@ -652,6 +652,16 @@ static int sys_isatty(int fd)
 	return desc->isatty(&ctx);
 }
 
+static int sys_tcgetwincurpos(int fd, struct wincurpos* wcp)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->tcgetwincurpos(&ctx, wcp);
+}
+
+
 static int sys_tcgetwinsize(int fd, struct winsize* ws)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
@@ -1051,6 +1061,7 @@ void Init()
 	Syscall::Register(SYSCALL_STAT, (void*) sys_stat);
 	Syscall::Register(SYSCALL_SYMLINKAT, (void*) sys_symlinkat);
 	Syscall::Register(SYSCALL_TCGETPGRP, (void*) sys_tcgetpgrp);
+	Syscall::Register(SYSCALL_TCGETWINCURPOS, (void*) sys_tcgetwincurpos);
 	Syscall::Register(SYSCALL_TCGETWINSIZE, (void*) sys_tcgetwinsize);
 	Syscall::Register(SYSCALL_TCSETPGRP, (void*) sys_tcsetpgrp);
 	Syscall::Register(SYSCALL_TRUNCATEAT, (void*) sys_truncateat);

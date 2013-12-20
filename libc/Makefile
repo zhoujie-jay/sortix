@@ -435,6 +435,7 @@ sys/uio/readv.o \
 sys/uio/writev.o \
 sys/wait/wait.o \
 sys/wait/waitpid.o \
+termios/tcgetwincurpos.o \
 termios/tcgetwinsize.o \
 time/clock_getres.o \
 time/clock_gettime.o \

@@ -77,6 +77,7 @@ void PanicInit()
 	Log::device_callback = Log::emergency_device_callback;
 	Log::device_width = Log::emergency_device_width;
 	Log::device_height = Log::emergency_device_height;
+	Log::device_get_cursor = Log::emergency_device_get_cursor;
 	Log::device_sync = Log::emergency_device_sync;
 	Log::device_pointer = Log::emergency_device_pointer;
 

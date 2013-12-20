@@ -221,6 +221,11 @@ int Vnode::fsbind(ioctx_t* /*ctx*/, Vnode* /*node*/, int /*flags*/)
 	return -1;
 }
 
+int Vnode::tcgetwincurpos(ioctx_t* ctx, struct wincurpos* wcp)
+{
+	return inode->tcgetwincurpos(ctx, wcp);
+}
+
 int Vnode::tcgetwinsize(ioctx_t* ctx, struct winsize* ws)
 {
 	return inode->tcgetwinsize(ctx, ws);

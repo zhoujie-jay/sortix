@@ -258,6 +258,13 @@ ssize_t AbstractInode::readlink(ioctx_t* /*ctx*/, char* /*buf*/,
 	return errno = EINVAL, -1;
 }
 
+int AbstractInode::tcgetwincurpos(ioctx_t* /*ctx*/, struct wincurpos* /*wcp*/)
+{
+	if ( inode_type == INODE_TYPE_TTY )
+		return errno = EBADF, -1;
+	return errno = ENOTTY, -1;
+}
+
 int AbstractInode::tcgetwinsize(ioctx_t* /*ctx*/, struct winsize* /*ws*/)
 {
 	if ( inode_type == INODE_TYPE_TTY )

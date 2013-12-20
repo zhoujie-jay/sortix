@@ -118,6 +118,19 @@ int LogTerminal::gettermmode(ioctx_t* ctx, unsigned* mode)
 	return 0;
 }
 
+int LogTerminal::tcgetwincurpos(ioctx_t* ctx, struct wincurpos* wcp)
+{
+	struct wincurpos retwcp;
+	memset(&retwcp, 0, sizeof(retwcp));
+	size_t cursor_column, cursor_row;
+	Log::GetCursor(&cursor_column, &cursor_row);
+	retwcp.wcp_col = cursor_column;
+	retwcp.wcp_row = cursor_row;
+	if ( !ctx->copy_to_dest(wcp, &retwcp, sizeof(retwcp)) )
+		return -1;
+	return 0;
+}
+
 int LogTerminal::tcgetwinsize(ioctx_t* ctx, struct winsize* ws)
 {
 	struct winsize retws;

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013.
 
     This file is part of the Sortix C Library.
 
@@ -17,27 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    termios.h
-    Defines values for termios.
+    termios/tcgetwincurpos.cpp
+    Access to terminal cursor position.
 
 *******************************************************************************/
 
-/* TODO: POSIX-1.2008 compliance is only partial */
+#include <sys/syscall.h>
 
-#ifndef INCLUDE_TERMIOS_H
-#define INCLUDE_TERMIOS_H
+#include <termios.h>
 
-#include <sys/cdefs.h>
+DEFN_SYSCALL2(int, sys_tcgetwincurpos, SYSCALL_TCGETWINCURPOS, int, struct wincurpos*);
 
-#include <stddef.h>
-
-#include <sortix/termios.h>
-
-__BEGIN_DECLS
-
-int tcgetwincurpos(int fd, struct wincurpos* wcp);
-int tcgetwinsize(int fd, struct winsize* ws);
-
-__END_DECLS
-
-#endif
+extern "C" int tcgetwincurpos(int fd, struct wincurpos* ws)
+{
+	return sys_tcgetwincurpos(fd, ws);
+}

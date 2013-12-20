@@ -35,6 +35,7 @@
 #include <sortix/kernel/refcount.h>
 
 struct stat;
+struct wincurpos;
 struct winsize;
 struct kernel_dirent;
 
@@ -77,6 +78,7 @@ public:
 	int rmdir(ioctx_t* ctx, const char* filename);
 	int symlink(ioctx_t* ctx, const char* oldname, const char* filename);
 	ssize_t readlink(ioctx_t* ctx, char* buf, size_t bufsiz);
+	int tcgetwincurpos(ioctx_t* ctx, struct wincurpos* wcp);
 	int tcgetwinsize(ioctx_t* ctx, struct winsize* ws);
 	int tcsetpgrp(ioctx_t* ctx, pid_t pgid);
 	pid_t tcgetpgrp(ioctx_t* ctx);

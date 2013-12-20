@@ -129,6 +129,11 @@ static size_t TextTermHeight(void* user)
 	return ((TextTerminal*) user)->Height();
 }
 
+static void TextTermGetCursor(void* user, size_t* column, size_t* row)
+{
+	((TextTerminal*) user)->GetCursor(column, row);
+}
+
 static bool TextTermSync(void* user)
 {
 	return ((TextTerminal*) user)->Sync();
@@ -163,6 +168,11 @@ static size_t EmergencyTextTermWidth(void* user)
 static size_t EmergencyTextTermHeight(void* user)
 {
 	return ((TextTerminal*) user)->EmergencyHeight();
+}
+
+static void EmergencyTextTermGetCursor(void* user, size_t* column, size_t* row)
+{
+	((TextTerminal*) user)->EmergencyGetCursor(column, row);
 }
 
 static bool EmergencyTextTermSync(void* user)
@@ -206,6 +216,7 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	Log::device_callback = PrintToTextTerminal;
 	Log::device_width = TextTermWidth;
 	Log::device_height = TextTermHeight;
+	Log::device_get_cursor = TextTermGetCursor;
 	Log::device_sync = TextTermSync;
 	Log::device_pointer = &textterm;
 
@@ -216,6 +227,7 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	Log::emergency_device_callback = EmergencyPrintToTextTerminal;
 	Log::emergency_device_width = EmergencyTextTermWidth;
 	Log::emergency_device_height = EmergencyTextTermHeight;
+	Log::emergency_device_get_cursor = EmergencyTextTermGetCursor;
 	Log::emergency_device_sync = EmergencyTextTermSync;
 	Log::emergency_device_pointer = &textterm;
 

@@ -44,6 +44,7 @@ public:
 	virtual int sync(ioctx_t* ctx);
 	virtual ssize_t read(ioctx_t* ctx, uint8_t* buf, size_t count);
 	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
+	virtual int tcgetwincurpos(ioctx_t* ctx, struct wincurpos* wcp);
 	virtual int tcgetwinsize(ioctx_t* ctx, struct winsize* ws);
 	virtual int tcsetpgrp(ioctx_t* ctx, pid_t pgid);
 	virtual pid_t tcgetpgrp(ioctx_t* ctx);

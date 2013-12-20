@@ -36,6 +36,7 @@ namespace Log {
 extern size_t (*device_callback)(void*, const char*, size_t);
 extern size_t (*device_width)(void*);
 extern size_t (*device_height)(void*);
+extern void (*device_get_cursor)(void*, size_t*, size_t*);
 extern bool (*device_sync)(void*);
 extern void* device_pointer;
 extern bool (*emergency_device_is_impaired)(void*);
@@ -44,6 +45,7 @@ extern void (*emergency_device_reset)(void*);
 extern size_t (*emergency_device_callback)(void*, const char*, size_t);
 extern size_t (*emergency_device_width)(void*);
 extern size_t (*emergency_device_height)(void*);
+extern void (*emergency_device_get_cursor)(void*, size_t*, size_t*);
 extern bool (*emergency_device_sync)(void*);
 extern void* emergency_device_pointer;
 
@@ -62,6 +64,11 @@ inline size_t Width()
 inline size_t Height()
 {
 	return device_height(device_pointer);
+}
+
+inline void GetCursor(size_t* col, size_t* row)
+{
+	return device_get_cursor(device_pointer, col, row);
 }
 
 inline bool Sync()

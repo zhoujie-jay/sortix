@@ -548,6 +548,11 @@ ssize_t Descriptor::readlink(ioctx_t* ctx, char* buf, size_t bufsize)
 	return vnode->readlink(ctx, buf, bufsize);
 }
 
+int Descriptor::tcgetwincurpos(ioctx_t* ctx, struct wincurpos* wcp)
+{
+	return vnode->tcgetwincurpos(ctx, wcp);
+}
+
 int Descriptor::tcgetwinsize(ioctx_t* ctx, struct winsize* ws)
 {
 	return vnode->tcgetwinsize(ctx, ws);

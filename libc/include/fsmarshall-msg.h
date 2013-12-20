@@ -343,7 +343,19 @@ struct fsm_resp_tcgetpgrp
 	pid_t pgid;
 };
 
-#define FSM_MSG_NUM 43
+#define FSM_REQ_TCGETWINCURPOS 43
+struct fsm_req_tcgetwincurpos
+{
+	ino_t ino;
+};
+
+#define FSM_RESP_TCGETWINCURPOS 44
+struct fsm_resp_tcgetwincurpos
+{
+	struct wincurpos pos;
+};
+
+#define FSM_MSG_NUM 45
 
 #if defined(__cplusplus)
 } /* extern "C" */

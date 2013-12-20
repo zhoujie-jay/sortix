@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
 
     This file is part of Sortix.
 
@@ -22,12 +22,26 @@
 
 *******************************************************************************/
 
-#ifndef SORTIX_TERMIOS_H
-#define SORTIX_TERMIOS_H
+#ifndef INCLUDE_SORTIX_TERMIOS_H
+#define INCLUDE_SORTIX_TERMIOS_H
 
 #include <sys/cdefs.h>
 
+#include <sys/__/types.h>
+
 __BEGIN_DECLS
+
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
+
+struct wincurpos
+{
+	size_t wcp_row;
+	size_t wcp_col;
+};
 
 struct winsize
 {

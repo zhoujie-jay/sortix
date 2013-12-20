@@ -35,6 +35,7 @@ namespace Log {
 size_t (*device_callback)(void*, const char*, size_t) = NULL;
 size_t (*device_width)(void*) = NULL;
 size_t (*device_height)(void*) = NULL;
+void (*device_get_cursor)(void*, size_t*, size_t*) = NULL;
 bool (*device_sync)(void*) = NULL;
 void* device_pointer = NULL;
 bool (*emergency_device_is_impaired)(void*) = NULL;
@@ -42,6 +43,7 @@ bool (*emergency_device_recoup)(void*) = NULL;
 void (*emergency_device_reset)(void*) = NULL;
 size_t (*emergency_device_callback)(void*, const char*, size_t) = NULL;
 size_t (*emergency_device_width)(void*) = NULL;
+void (*emergency_device_get_cursor)(void*, size_t*, size_t*) = NULL;
 size_t (*emergency_device_height)(void*) = NULL;
 bool (*emergency_device_sync)(void*) = NULL;
 void* emergency_device_pointer = NULL;
