@@ -27,7 +27,7 @@ clean:
 	$(MAKE) -B -C $(SRCDIR)/utils clean
 	$(MAKE) -B -C $(SRCDIR)/ext clean
 	$(MAKE) -B -C $(SRCDIR)/mbr clean
-	$(MAKE) -B -C $(SRCDIR)/sortix clean
+	$(MAKE) -B -C $(SRCDIR)/kernel clean
 
 # Set up the base filesystem.
 fsh:
@@ -55,7 +55,7 @@ system-headers:
 	$(MAKE) system-headers_internal ROOT=$(ROOT)
 
 system-headers_internal:
-	$(MAKE) -B -C $(SRCDIR)/sortix install-headers DESTDIR=$(ROOT)
+	$(MAKE) -B -C $(SRCDIR)/kernel install-headers DESTDIR=$(ROOT)
 	$(MAKE) -B -C $(SRCDIR)/libc install-headers DESTDIR=$(ROOT)
 	$(MAKE) -B -C $(SRCDIR)/libm install-headers DESTDIR=$(ROOT)
 
@@ -74,12 +74,12 @@ system:
 	$(MAKE) -B -C $(SRCDIR)/bench install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
 	$(MAKE) -B -C $(SRCDIR)/ext install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
 	$(MAKE) -B -C $(SRCDIR)/mbr install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
-	$(MAKE) -B -C $(SRCDIR)/sortix install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/libs
+	$(MAKE) -B -C $(SRCDIR)/kernel install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/libs
 
 # Rebuild and install the kernel
 kernel:
-	$(MAKE) -B -C $(SRCDIR)/sortix install-headers DESTDIR=$(ROOT)
-	$(MAKE) -B -C $(SRCDIR)/sortix install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/libs
+	$(MAKE) -B -C $(SRCDIR)/kernel install-headers DESTDIR=$(ROOT)
+	$(MAKE) -B -C $(SRCDIR)/kernel install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/libs
 
 # Rebuild the initrd and the kernel.
 boot-files: initrd kernel

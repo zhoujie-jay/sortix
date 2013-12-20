@@ -31,7 +31,7 @@
 //       values portably - then we'll make a new mmap system call that uses this
 //       mechanism if needed.
 
-struct mmap_request /* duplicated in sortix/mmap.cpp */
+struct mmap_request /* duplicated in kernel/mmap.cpp */
 {
 	void* addr;
 	size_t size;

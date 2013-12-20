@@ -538,7 +538,7 @@ initial filesystem used to bootstrap the real root filesystem.
 The Sortix kernel is the core of the Sortix operating system. It provides all
 the primitives libc needs to implement a Unix-like environment.
 
-    cd /src/sortix
+    cd /src/kernel
     make
     make install
 

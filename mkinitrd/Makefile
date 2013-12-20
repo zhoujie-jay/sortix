@@ -10,7 +10,7 @@ ifndef CXXFLAGS
   CXXFLAGS:=$(OPTLEVEL)
 endif
 
-SORTIXKERNEL=../sortix
+SORTIXKERNEL=../kernel
 
 CPPFLAGS:=$(CPPFLAGS) -I$(SORTIXKERNEL)/include -I.
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
