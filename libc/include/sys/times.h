@@ -31,7 +31,10 @@
 
 __BEGIN_DECLS
 
-@include(clock_t.h);
+#ifndef __clock_t_defined
+#define __clock_t_defined
+typedef __clock_t clock_t;
+#endif
 
 struct tms
 {

@@ -31,9 +31,21 @@
 
 __BEGIN_DECLS
 
-@include(size_t.h)
-@include(ssize_t.h)
-@include(off_t.h)
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
+
+#ifndef __ssize_t_defined
+#define __ssize_t_defined
+typedef __ssize_t ssize_t;
+#endif
+
+#ifndef __off_t_defined
+#define __off_t_defined
+typedef __off_t off_t;
+#endif
 
 __END_DECLS
 

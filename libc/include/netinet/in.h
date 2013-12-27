@@ -34,10 +34,25 @@
 
 __BEGIN_DECLS
 
-@include(in_port_t.h)
-@include(in_addr_t.h)
-@include(sa_family_t.h)
-@include(socklen_t.h)
+#ifndef __in_port_t_defined
+#define __in_port_t_defined
+typedef uint16_t in_port_t;
+#endif
+
+#ifndef __in_addr_t_defined
+#define __in_addr_t_defined
+typedef uint32_t in_addr_t;
+#endif
+
+#ifndef __sa_family_t_defined
+#define __sa_family_t_defined
+typedef unsigned short int sa_family_t;
+#endif
+
+#ifndef __socklen_t_defined
+#define __socklen_t_defined
+typedef __socklen_t socklen_t;
+#endif
 
 struct in_addr
 {

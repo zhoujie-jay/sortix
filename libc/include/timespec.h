@@ -33,7 +33,10 @@
 
 __BEGIN_DECLS
 
-@include(time_t.h)
+#ifndef __time_t_defined
+#define __time_t_defined
+typedef __time_t time_t;
+#endif
 
 __END_DECLS
 

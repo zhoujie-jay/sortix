@@ -9,7 +9,7 @@ endif
 
 CPUDIR:=$(CPU)
 
-CPPINCLUDES=-I preproc
+CPPINCLUDES=-Iinclude
 CPPFLAGS=-D__is_sortix_libc $(CPPINCLUDES)
 FLAGS=-Wall -Wextra $(OPTLEVEL)
 CFLAGS=-std=gnu99
@@ -509,12 +509,7 @@ crtn.o \
 MISCOBJ=\
 $(CRTOBJ) \
 
-UNPROCHEADERDIRS:=$(shell find include -type d)
-UNPROCHEADERS:=$(shell find include -type f)
-HEADERDIRS:=$(patsubst include%,preproc%,$(UNPROCHEADERDIRS))
-HEADERS:=$(patsubst include%,preproc%,$(UNPROCHEADERS))
-INSTALLHEADERDIRS:=$(addprefix $(DESTDIR)$(INCLUDEDIR),$(patsubst preproc%,%,$(HEADERDIRS)))
-INSTALLHEADERS:=$(addprefix $(DESTDIR)$(INCLUDEDIR),$(patsubst preproc%,%,$(HEADERS)))
+HEADERS:=$(shell find include -type d)
 
 SORTIXOBJS:=$(addprefix sortix/,$(FREEOBJS))
 SORTIXCPPFLAGS:=$(CPPFLAGS) -D__is_sortix_kernel
@@ -571,15 +566,7 @@ crtn.o: $(CPUDIR)/crtn.o
 # header preprocessing
 $(OBJS) $(SORTIXOBJS): $(HEADERS)
 
-$(HEADERDIRS):
-	mkdir -p $@
-
-preproc/%: include/%
-	mxmpp -I decl $< -o $@
-
-$(HEADERS): | $(HEADERDIRS)
-
-headers: $(HEADERDIRS) $(HEADERS)
+headers:
 
 # standard library
 %.o: %.c
@@ -600,18 +587,12 @@ sortix/%.o: %.cpp
 
 clean:
 	rm -f $(wildcard *.o) $(wildcard */*.o) $(wildcard */*/*.o) $(wildcard *.a)
-	rm -rf $(HEADERDIRS)
 
 # Installation into sysroot
 install: install-headers install-libs install-libs-kernel
 
-$(INSTALLHEADERDIRS) $(DESTDIR)$(LIBDIR):
+$(DESTDIR)$(LIBDIR):
 	mkdir -p $@
-
-$(DESTDIR)$(INCLUDEDIR)/%: preproc/%
-	cp $< $@
-
-$(INSTALLHEADERS): | $(INSTALLHEADERDIRS)
 
 $(DESTDIR)$(LIBDIR)/%: %
 	cp -P $< $@
@@ -620,11 +601,11 @@ $(INSTALLLIBS): | $(DESTDIR)$(LIBDIR)
 
 $(INSTALLLIBSKERNEL): | $(DESTDIR)$(LIBDIR)
 
-$(DESTDIR)$(INCLUDEDIR) $(DESTDIR)$(LIBDIR) $(INSTALLHEADERS): FORCE
+install-include-dirs: headers
+	mkdir -p $(DESTDIR)$(INCLUDEDIR)
 
-install-include-dirs: $(INSTALLHEADERDIRS)
-
-install-headers: $(INSTALLHEADERDIRS) $(INSTALLHEADERS)
+install-headers: install-include-dirs headers
+	cp -RTv include $(DESTDIR)$(INCLUDEDIR)
 
 install-lib-dirs: $(DESTDIR)$(LIBDIR)
 

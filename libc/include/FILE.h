@@ -31,9 +31,22 @@
 
 __BEGIN_DECLS
 
-@include(off_t.h)
-@include(size_t.h)
-@include(FILE.h)
+#ifndef __off_t_defined
+#define __off_t_defined
+typedef __off_t off_t;
+#endif
+
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
+
+#ifndef __FILE_defined
+#define __FILE_defined
+typedef struct FILE FILE;
+#define FILE FILE
+#endif
 
 #define _FILE_REGISTERED (1<<0)
 #define _FILE_BUFFER_MODE_SET (1<<1)

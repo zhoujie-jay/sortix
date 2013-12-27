@@ -174,7 +174,6 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `mkdir` - create directory
 * `mkinitrd` - create an initrd
 * `mv` - move a file
-* `mxmpp` - silly preprocessor
 * `mxsh` - the shell
 * `pager` - display file page by page
 * `pong` - remake of the classic pong game
@@ -511,16 +510,6 @@ The `extfs` program translates a block device formatted with the second extended
 filesystem and mounts it at an empty directory.
 
     cd /src/extfs
-    make
-    make install
-
-### Building mxmpp ###
-
-The program mxmpp is a simple and hacky macro preprocessor. It supports a special
-@incude(foo_t.h) directive, which is used to pre-preprocess the headers in the C
-library to avoid the overhead of repeated declarations.
-
-    cd /src/mxmpp
     make
     make install
 

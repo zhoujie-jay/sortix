@@ -38,7 +38,10 @@
 #include <stdint.h>
 #include <sortix/fork.h>
 __BEGIN_DECLS
-@include(time_t.h)
+#ifndef __time_t_defined
+#define __time_t_defined
+typedef __time_t time_t;
+#endif
 __END_DECLS
 #include <sortix/timespec.h>
 #include <ioleast.h>
@@ -63,7 +66,10 @@ __BEGIN_DECLS
 
 /* TODO: _POSIX_*, _POSIX2_* is missing here. */
 
-@include(NULL.h)
+#ifndef NULL
+#define __need_NULL
+#include <stddef.h>
+#endif
 
 #define _CS_PATH 0
 #define _CS_POSIX_V7_ILP32_OFF32_CFLAGS 1
@@ -253,13 +259,41 @@ __BEGIN_DECLS
 
 /* TODO: _POSIX_VDISABLE is missing here. */
 
-@include(size_t.h)
-@include(ssize_t.h)
-@include(uid_t.h)
-@include(gid_t.h)
-@include(off_t.h)
-@include(pid_t.h)
-@include(useconds_t.h)
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
+
+#ifndef __ssize_t_defined
+#define __ssize_t_defined
+typedef __ssize_t ssize_t;
+#endif
+
+#ifndef __uid_t_defined
+#define __uid_t_defined
+typedef __uid_t uid_t;
+#endif
+
+#ifndef __gid_t_defined
+#define __gid_t_defined
+typedef __gid_t gid_t;
+#endif
+
+#ifndef __off_t_defined
+#define __off_t_defined
+typedef __off_t off_t;
+#endif
+
+#ifndef __pid_t_defined
+#define __pid_t_defined
+typedef __pid_t pid_t;
+#endif
+
+#ifndef __useconds_t_defined
+#define __useconds_t_defined
+typedef __useconds_t useconds_t;
+#endif
 
 #if defined(_WANT_ENVIRON)
 extern char** environ;

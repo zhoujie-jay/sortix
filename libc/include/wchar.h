@@ -35,17 +35,69 @@
 
 __BEGIN_DECLS
 
-@include(size_t.h)
-@include(off_t.h)
-@include(FILE.h)
-@include(locale_t.h)
-@include(va_list.h)
-@include(wchar_t.h)
-@include(wint_t.h)
-@include(WCHAR_MAX.h)
-@include(WCHAR_MIN.h)
-@include(WEOF.h)
-@include(NULL.h)
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
+
+#ifndef __off_t_defined
+#define __off_t_defined
+typedef __off_t off_t;
+#endif
+
+#ifndef __FILE_defined
+#define __FILE_defined
+typedef struct FILE FILE;
+#define FILE FILE
+#endif
+
+#ifndef __locale_t_defined
+#define __locale_t_defined
+/* TODO: figure out what this does and typedef it properly. This is just a
+         temporary assignment. */
+typedef int __locale_t;
+typedef __locale_t locale_t;
+#endif
+
+#ifndef __valist_defined
+#define __valist_defined
+#define va_start(v,l) __builtin_va_start(v,l)
+#define va_arg(v,l)   __builtin_va_arg(v,l)
+#define va_end(v)     __builtin_va_end(v)
+#define va_copy(d,s)  __builtin_va_copy(d,s)
+typedef __builtin_va_list __gnuc_va_list;
+typedef __gnuc_va_list va_list;
+#endif
+
+#ifndef __wchar_t_defined
+#define __wchar_t_defined
+#define __need_wchar_t
+#include <stddef.h>
+#endif
+
+#ifndef __wint_t_defined
+#define __wint_t_defined
+typedef int __wint_t;
+typedef __wint_t wint_t;
+#endif
+
+#ifndef WCHAR_MAX
+#define WCHAR_MAX __WCHAR_MAX
+#endif
+
+#ifndef WCHAR_MIN
+#define WCHAR_MIN __WCHAR_MIN
+#endif
+
+#ifndef WEOF
+#define WEOF (-1)
+#endif
+
+#ifndef NULL
+#define __need_NULL
+#include <stddef.h>
+#endif
 
 #ifndef __mbstate_t_defined
 	/* Conversion state information. */

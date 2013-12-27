@@ -33,11 +33,34 @@
 
 __BEGIN_DECLS
 
-@include(id_t.h)
-@include(pid_t.h)
-@include(time_t.h)
-@include(suseconds_t.h)
-@include(timeval.h)
+#ifndef __id_t_defined
+#define __id_t_defined
+typedef __id_t id_t;
+#endif
+
+#ifndef __pid_t_defined
+#define __pid_t_defined
+typedef __pid_t pid_t;
+#endif
+
+#ifndef __time_t_defined
+#define __time_t_defined
+typedef __time_t time_t;
+#endif
+
+#ifndef __suseconds_t_defined
+#define __suseconds_t_defined
+typedef __suseconds_t suseconds_t;
+#endif
+
+#ifndef __timeval_defined
+#define __timeval_defined
+struct timeval
+{
+	time_t tv_sec;
+	suseconds_t tv_usec;
+};
+#endif
 
 #define RUSAGE_SELF 0
 #define RUSAGE_CHILDREN 1

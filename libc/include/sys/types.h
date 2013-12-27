@@ -33,29 +33,109 @@
 
 __BEGIN_DECLS
 
-@include(blkcnt_t.h)
-@include(blksize_t.h)
-@include(clock_t.h)
-@include(clockid_t.h)
-@include(dev_t.h)
+#ifndef __blkcnt_t_defined
+#define __blkcnt_t_defined
+typedef __blkcnt_t blkcnt_t;
+#endif
+
+#ifndef __blksize_t_defined
+#define __blksize_t_defined
+typedef __blksize_t blksize_t;
+#endif
+
+#ifndef __clock_t_defined
+#define __clock_t_defined
+typedef __clock_t clock_t;
+#endif
+
+#ifndef __clockid_t_defined
+#define __clockid_t_defined
+typedef __clockid_t clockid_t;
+#endif
+
+#ifndef __dev_t_defined
+#define __dev_t_defined
+typedef __dev_t dev_t;
+#endif
+
 /* TODO: fsblkcnt_t */
+
 /* TODO: fsfilcnt_t */
-@include(gid_t.h)
-@include(id_t.h)
-@include(ino_t.h)
+
+#ifndef __gid_t_defined
+#define __gid_t_defined
+typedef __gid_t gid_t;
+#endif
+
+#ifndef __id_t_defined
+#define __id_t_defined
+typedef __id_t id_t;
+#endif
+
+#ifndef __ino_t_defined
+#define __ino_t_defined
+typedef __ino_t ino_t;
+#endif
+
 /* TODO: key_t */
-@include(mode_t.h)
-@include(nlink_t.h)
-@include(off_t.h)
-@include(pid_t.h)
-@include(size_t.h)
-@include(ssize_t.h)
-@include(suseconds_t.h)
-@include(time_t.h)
-@include(timer_t.h)
+
+#ifndef __mode_t_defined
+#define __mode_t_defined
+typedef __mode_t mode_t;
+#endif
+
+#ifndef __nlink_t_defined
+#define __nlink_t_defined
+typedef __nlink_t nlink_t;
+#endif
+
+#ifndef __off_t_defined
+#define __off_t_defined
+typedef __off_t off_t;
+#endif
+
+#ifndef __pid_t_defined
+#define __pid_t_defined
+typedef __pid_t pid_t;
+#endif
+
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
+
+#ifndef __ssize_t_defined
+#define __ssize_t_defined
+typedef __ssize_t ssize_t;
+#endif
+
+#ifndef __suseconds_t_defined
+#define __suseconds_t_defined
+typedef __suseconds_t suseconds_t;
+#endif
+
+#ifndef __time_t_defined
+#define __time_t_defined
+typedef __time_t time_t;
+#endif
+
+#ifndef __timer_t_defined
+#define __timer_t_defined
+typedef __timer_t timer_t;
+#endif
+
 /* TODO: trace*_t */
-@include(uid_t.h)
-@include(useconds_t.h)
+
+#ifndef __uid_t_defined
+#define __uid_t_defined
+typedef __uid_t uid_t;
+#endif
+
+#ifndef __useconds_t_defined
+#define __useconds_t_defined
+typedef __useconds_t useconds_t;
+#endif
 
 #if !defined(__is_sortix_kernel)
 /* TODO: pthread*_t */

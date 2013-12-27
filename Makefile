@@ -3,7 +3,7 @@ MAKEFILE_NOT_MEANT_FOR_SORTIX=1
 include compiler.mak
 include version.mak
 
-MODULES=doc libc libm dispd games mkinitrd mxmpp utils bench ext mbr kernel
+MODULES=doc libc libm dispd games mkinitrd utils bench ext mbr kernel
 
 ifndef SYSROOT
   SYSROOT:=$(shell pwd)/sysroot
@@ -35,13 +35,11 @@ all: sysroot
 .PHONY: build-tools
 build-tools:
 	$(MAKE) -C mkinitrd
-	$(MAKE) -C mxmpp
 	$(MAKE) -C tix
 
 .PHONY: install-build-tools
 install-build-tools:
 	$(MAKE) -C mkinitrd install
-	$(MAKE) -C mxmpp install
 	$(MAKE) -C tix install
 
 .PHONY: sysroot-fsh

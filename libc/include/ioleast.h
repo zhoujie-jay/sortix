@@ -34,8 +34,16 @@
 
 __BEGIN_DECLS
 
-@include(off_t.h)
-@include(size_t.h)
+#ifndef __off_t_defined
+#define __off_t_defined
+typedef __off_t off_t;
+#endif
+
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
 
 size_t preadall(int fd, void* buf, size_t count, off_t off);
 size_t preadleast(int fd, void* buf, size_t least, size_t max, off_t off);

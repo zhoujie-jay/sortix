@@ -31,13 +31,44 @@
 
 __BEGIN_DECLS
 
-@include(clock_t.h)
-@include(size_t.h)
-@include(time_t.h)
-@include(clockid_t.h)
-@include(timer_t.h)
-@include(locale_t.h)
-@include(pid_t.h)
+#ifndef __clock_t_defined
+#define __clock_t_defined
+typedef __clock_t clock_t;
+#endif
+
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
+
+#ifndef __time_t_defined
+#define __time_t_defined
+typedef __time_t time_t;
+#endif
+
+#ifndef __clockid_t_defined
+#define __clockid_t_defined
+typedef __clockid_t clockid_t;
+#endif
+
+#ifndef __timer_t_defined
+#define __timer_t_defined
+typedef __timer_t timer_t;
+#endif
+
+#ifndef __locale_t_defined
+#define __locale_t_defined
+/* TODO: figure out what this does and typedef it properly. This is just a
+         temporary assignment. */
+typedef int __locale_t;
+typedef __locale_t locale_t;
+#endif
+
+#ifndef __pid_t_defined
+#define __pid_t_defined
+typedef __pid_t pid_t;
+#endif
 
 struct sigevent;
 
@@ -62,7 +93,10 @@ __END_DECLS
 #endif
 __BEGIN_DECLS
 
-@include(NULL.h)
+#ifndef NULL
+#define __need_NULL
+#include <stddef.h>
+#endif
 
 #define CLOCKS_PER_SEC 1000000l
 

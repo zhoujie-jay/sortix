@@ -33,11 +33,28 @@
 
 __BEGIN_DECLS
 
-@include(uid_t.h)
-@include(pid_t.h)
-@include(size_t.h)
+#ifndef __uid_t_defined
+#define __uid_t_defined
+typedef __uid_t uid_t;
+#endif
+
+#ifndef __pid_t_defined
+#define __pid_t_defined
+typedef __pid_t pid_t;
+#endif
+
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
+
 /* TODO: POSIX says this header declares struct timespec, but not time_t... */
-@include(time_t.h)
+#ifndef __time_t_defined
+#define __time_t_defined
+typedef __time_t time_t;
+#endif
+
 /* TODO: pthread_t */
 /* TODO: pthread_attr_t */
 

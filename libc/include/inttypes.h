@@ -201,7 +201,11 @@
 
 __BEGIN_DECLS
 
-@include(wchar_t.h)
+#ifndef __wchar_t_defined
+#define __wchar_t_defined
+#define __need_wchar_t
+#include <stddef.h>
+#endif
 
 typedef struct
 {

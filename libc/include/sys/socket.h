@@ -33,10 +33,26 @@
 
 __BEGIN_DECLS
 
-@include(socklen_t.h)
-@include(size_t.h)
-@include(ssize_t.h)
-@include(sa_family_t.h)
+#ifndef __socklen_t_defined
+#define __socklen_t_defined
+typedef __socklen_t socklen_t;
+#endif
+
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
+
+#ifndef __ssize_t_defined
+#define __ssize_t_defined
+typedef __ssize_t ssize_t;
+#endif
+
+#ifndef __sa_family_t_defined
+#define __sa_family_t_defined
+typedef unsigned short int sa_family_t;
+#endif
 
 __END_DECLS
 

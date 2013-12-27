@@ -31,7 +31,11 @@
 
 __BEGIN_DECLS
 
-@include(size_t.h)
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
 
 /* If somehow another declaration of alloca happened. This shouldn't happen, but
    glibc does this and we might as well do it also. */

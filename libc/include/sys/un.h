@@ -31,7 +31,10 @@
 
 __BEGIN_DECLS
 
-@include(sa_family_t.h)
+#ifndef __sa_family_t_defined
+#define __sa_family_t_defined
+typedef unsigned short int sa_family_t;
+#endif
 
 struct sockaddr_un
 {

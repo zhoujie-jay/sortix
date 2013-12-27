@@ -60,9 +60,22 @@ typedef struct
 	long long rem;
 } lldiv_t;
 
-@include(NULL.h)
-@include(size_t.h)
-@include(wchar_t.h)
+#ifndef NULL
+#define __need_NULL
+#include <stddef.h>
+#endif
+
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
+
+#ifndef __wchar_t_defined
+#define __wchar_t_defined
+#define __need_wchar_t
+#include <stddef.h>
+#endif
 
 void abort(void) __attribute__ ((__noreturn__));
 int abs(int value);

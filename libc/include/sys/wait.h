@@ -35,7 +35,10 @@
 
 __BEGIN_DECLS
 
-@include(pid_t.h)
+#ifndef __pid_t_defined
+#define __pid_t_defined
+typedef __pid_t pid_t;
+#endif
 
 /* TODO: These are not implemented in sortix libc yet. */
 #if 0

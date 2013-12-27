@@ -41,11 +41,32 @@
 
 __BEGIN_DECLS
 
-@include(off_t.h)
-@include(size_t.h)
-@include(ssize_t.h)
-@include(NULL.h)
-@include(FILE.h)
+#ifndef __off_t_defined
+#define __off_t_defined
+typedef __off_t off_t;
+#endif
+
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
+
+#ifndef __ssize_t_defined
+#define __ssize_t_defined
+typedef __ssize_t ssize_t;
+#endif
+
+#ifndef NULL
+#define __need_NULL
+#include <stddef.h>
+#endif
+
+#ifndef __FILE_defined
+#define __FILE_defined
+typedef struct FILE FILE;
+#define FILE FILE
+#endif
 
 typedef off_t fpos_t;
 

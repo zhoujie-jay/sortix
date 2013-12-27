@@ -31,9 +31,22 @@
 
 __BEGIN_DECLS
 
-@include(FILE.h)
-@include(gid_t.h)
-@include(size_t.h)
+#ifndef __FILE_defined
+#define __FILE_defined
+typedef struct FILE FILE;
+#define FILE FILE
+#endif
+
+#ifndef __gid_t_defined
+#define __gid_t_defined
+typedef __gid_t gid_t;
+#endif
+
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
 
 struct group
 {

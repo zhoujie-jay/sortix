@@ -33,9 +33,24 @@
 
 __BEGIN_DECLS
 
-@include(NULL.h)
-@include(size_t.h)
-@include(locale_t.h)
+#ifndef NULL
+#define __need_NULL
+#include <stddef.h>
+#endif
+
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
+
+#ifndef __locale_t_defined
+#define __locale_t_defined
+/* TODO: figure out what this does and typedef it properly. This is just a
+         temporary assignment. */
+typedef int __locale_t;
+typedef __locale_t locale_t;
+#endif
 
 int ffs(int);
 int ffsl(long int);

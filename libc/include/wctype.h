@@ -31,11 +31,36 @@
 
 __BEGIN_DECLS
 
-@include(wint_t.h)
-@include(wctrans_t.h)
-@include(wctype_t.h)
-@include(locale_t.h)
-@include(WEOF.h)
+#ifndef __wint_t_defined
+#define __wint_t_defined
+typedef int __wint_t;
+typedef __wint_t wint_t;
+#endif
+
+#ifndef __wctrans_t_defined
+#define __wctrans_t_defined
+/* TODO: figure out what this does and typedef it properly. This is just a
+         temporary assignment. */
+typedef unsigned int __wctrans_t;
+typedef __wctrans_t wctrans_t;
+#endif
+
+#ifndef __wctype_t_defined
+#define __wctype_t_defined
+typedef int (*wctype_t)(wint_t);
+#endif
+
+#ifndef __locale_t_defined
+#define __locale_t_defined
+/* TODO: figure out what this does and typedef it properly. This is just a
+         temporary assignment. */
+typedef int __locale_t;
+typedef __locale_t locale_t;
+#endif
+
+#ifndef WEOF
+#define WEOF (-1)
+#endif
 
 int iswalnum(wint_t);
 int iswalpha(wint_t);

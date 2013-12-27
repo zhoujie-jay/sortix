@@ -36,7 +36,11 @@
 
 __BEGIN_DECLS
 
-@include(size_t.h)
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
 
 ssize_t readdirents(int fd, struct kernel_dirent* dirent, size_t size);
 

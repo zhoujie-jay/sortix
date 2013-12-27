@@ -59,7 +59,10 @@ __BEGIN_DECLS
 
 /* TODO: POSIX_FADV_* missing here */
 
-@include(pid_t.h)
+#ifndef __pid_t_defined
+#define __pid_t_defined
+typedef __pid_t pid_t;
+#endif
 
 struct flock
 {

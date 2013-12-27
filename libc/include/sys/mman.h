@@ -33,9 +33,21 @@
 
 __BEGIN_DECLS
 
-@include(mode_t.h)
-@include(off_t.h)
-@include(size_t.h)
+#ifndef __mode_t_defined
+#define __mode_t_defined
+typedef __mode_t mode_t;
+#endif
+
+#ifndef __off_t_defined
+#define __off_t_defined
+typedef __off_t off_t;
+#endif
+
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
 
 void* mmap(void*, size_t, int, int, int, off_t);
 int mprotect(const void*, size_t, int);
