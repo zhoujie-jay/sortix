@@ -29,6 +29,8 @@
 
 #include <sys/__/types.h>
 
+#include <stdarg.h>
+
 #if defined(__is_sortix_libc)
 #include <FILE.h>
 #endif
@@ -58,16 +60,6 @@ typedef struct FILE FILE;
          temporary assignment. */
 typedef int __locale_t;
 typedef __locale_t locale_t;
-#endif
-
-#ifndef __valist_defined
-#define __valist_defined
-#define va_start(v,l) __builtin_va_start(v,l)
-#define va_arg(v,l)   __builtin_va_arg(v,l)
-#define va_end(v)     __builtin_va_end(v)
-#define va_copy(d,s)  __builtin_va_copy(d,s)
-typedef __builtin_va_list __gnuc_va_list;
-typedef __gnuc_va_list va_list;
 #endif
 
 #ifndef __wchar_t_defined
