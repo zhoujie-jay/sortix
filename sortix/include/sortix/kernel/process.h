@@ -166,7 +166,7 @@ public:
 	bool DeliverSignal(int signum);
 	bool DeliverGroupSignal(int signum);
 	void OnThreadDestruction(Thread* thread);
-	int GetParentProcessId();
+	pid_t GetParentProcessId();
 	void AddChildProcess(Process* child);
 	void ScheduleDeath();
 	void AbortConstruction();
