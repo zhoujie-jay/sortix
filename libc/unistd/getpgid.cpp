@@ -28,7 +28,7 @@
 
 DEFN_SYSCALL1(pid_t, sys_getpgid, SYSCALL_GETPGID, pid_t);
 
-extern "C" int getpgid(pid_t pid)
+extern "C" pid_t getpgid(pid_t pid)
 {
 	return sys_getpgid(pid);
 }
