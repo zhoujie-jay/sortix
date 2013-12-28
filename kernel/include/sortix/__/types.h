@@ -32,31 +32,55 @@
 
 __BEGIN_DECLS
 
-typedef int __id_t;
+typedef __intmax_t __blkcnt_t;
+
+typedef __intmax_t __blksize_t;
+
+typedef long __clock_t;
+
+typedef int __clockid_t;
+
+typedef __uintptr_t __dev_t;
+
+/* TODO: __fsblkcnt_t */
+
+/* TODO: __fsblksize_t */
+
 typedef int __gid_t;
-typedef int __uid_t;
-typedef int __pid_t;
+
+typedef int __id_t;
+
+typedef __uintmax_t __ino_t;
+
+/* TODO: __key_t */
+
 typedef unsigned int __mode_t;
+
+typedef unsigned int __nlink_t;
+
 typedef __intmax_t __off_t;
 #define __OFF_MIN __INTMAX_MIN
 #define __OFF_MAX __INTMAX_MAX
-typedef unsigned int __useconds_t;
-typedef __intmax_t __blksize_t;
-typedef __intmax_t __blkcnt_t;
-typedef unsigned int __nlink_t;
-typedef __uintmax_t __ino_t;
-typedef __uintptr_t __dev_t;
-typedef long __clock_t;
-typedef int __clockid_t;
-typedef long __time_t; /* TODO: Increase on 32-bit systems! */
-typedef long __suseconds_t;
-#if __WORDSIZE == 64
-typedef long int __ssize_t;
-#else
-typedef int __ssize_t;
-#endif
-typedef __uintptr_t __timer_t;
+
+typedef int __pid_t;
+
+/* TODO: __size_t */
+
 typedef __SIZE_TYPE__ __socklen_t;
+
+typedef __SSIZE_TYPE__ __ssize_t;
+
+typedef long __suseconds_t;
+
+typedef long __time_t;
+
+typedef __uintptr_t __timer_t;
+
+/* TODO: trace*_t */
+
+typedef int __uid_t;
+
+typedef unsigned int __useconds_t;
 
 #if defined(__is_sortix_kernel) || defined(__is_sortix_libc)
 #define OFF_MIN __OFF_MIN
