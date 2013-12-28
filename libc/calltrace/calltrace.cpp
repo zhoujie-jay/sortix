@@ -24,6 +24,7 @@
 
 #include <calltrace.h>
 #include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -31,13 +32,13 @@ extern "C" void asm_calltrace();
 
 extern "C" void calltrace_print_function(size_t index, unsigned long ip)
 {
-	fprintf(stdout, "[pid=%i %s] %zu: 0x%lx\n", getpid(),
+	fprintf(stdout, "[pid=%ji %s] %zu: 0x%lx\n", (intmax_t) getpid(),
 	        program_invocation_short_name, index, ip);
 }
 
 extern "C" void calltrace()
 {
-	fprintf(stdout, "[pid=%i %s] Calltrace: (%s)\n", getpid(),
+	fprintf(stdout, "[pid=%ji %s] Calltrace: (%s)\n", (intmax_t) getpid(),
 	        program_invocation_short_name, program_invocation_name);
 	asm_calltrace();
 }
