@@ -578,7 +578,7 @@ int run_string(int argc, char* argv[], const char* str, bool exit_on_error)
 {
 	// TODO: Implement fmemopen and open_memstream.
 	char unique_ish[64];
-	snprintf(unique_ish, sizeof(unique_ish), "/tmp/shinput.%i", getpid());
+	snprintf(unique_ish, sizeof(unique_ish), "/tmp/shinput.%ji", (intmax_t) getpid());
 	FILE* fp = fopen(unique_ish, "w");
 	if ( !fp ) { error(0, errno, "write-open: %s", unique_ish); return 1; }
 	if ( fputs(str, fp) == EOF ) { fclose(fp); error(0, errno, "write: %s", unique_ish); return 1; }
@@ -611,10 +611,10 @@ int main(int argc, char* argv[])
 			argv[i] = argv[i+1];
 		argv[argc] = NULL;
 	}
-	char pidstr[32];
-	char ppidstr[32];
-	sprintf(pidstr, "%i", getpid());
-	sprintf(ppidstr, "%i", getppid());
+	char pidstr[3 * sizeof(pid_t)];
+	char ppidstr[3 * sizeof(pid_t)];
+	sprintf(pidstr, "%ji", (intmax_t) getpid());
+	sprintf(ppidstr, "%ji", (intmax_t) getppid());
 	setenv("SHELL", argv[0], 1);
 	setenv("$", pidstr, 1);
 	setenv("PPID", ppidstr, 1);
