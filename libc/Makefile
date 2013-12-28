@@ -575,8 +575,8 @@ headers:
 %.o: %.cpp
 	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CXXFLAGS)
 
-%.o: %.s
-	$(HOSTAS) $(ASFLAGS) $< -o $@
+%.o: %.S
+	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CFLAGS)
 
 # libc-sortix
 sortix/%.o: %.c

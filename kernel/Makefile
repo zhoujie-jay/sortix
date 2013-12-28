@@ -188,8 +188,8 @@ endif
 %.o: %.cpp
 	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 
-%.o: %.s
-	$(HOSTAS) $< -o $@ $(ASFLAGS)
+%.o: %.S
+	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 
 clean:
 	rm -f $(ALLOBJS) sortix.bin
