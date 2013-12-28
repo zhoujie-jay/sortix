@@ -49,19 +49,41 @@ static char* next_field(char** current)
 	return result;
 }
 
-static id_t next_field_id(char** current)
+static bool next_field_uintmax(char** current, uintmax_t* result)
 {
 	char* id_str = next_field(current);
 	if ( !id_str )
-		return -1;
+		return false;
 	char* id_endptr;
-	intmax_t id_imax = strtoimax(id_str, &id_endptr, 10);
-	if ( id_imax < 0 || *id_endptr )
-		return -1;
-	id_t id = (id_t) id_imax;
-	if ( id != id_imax )
-		return -1;
-	return id;
+	uintmax_t id_umax = strtoumax(id_str, &id_endptr, 10);
+	if ( *id_endptr )
+		return false;
+	*result = id_umax;
+	return true;
+}
+
+static gid_t next_field_gid(char** current, gid_t* result)
+{
+	uintmax_t id_umax;
+	if ( !next_field_uintmax(current, &id_umax) )
+		return false;
+	gid_t gid = (gid_t) id_umax;
+	if ( (uintmax_t) gid != (uintmax_t) id_umax )
+		return false;
+	*result = gid;
+	return true;
+}
+
+static uid_t next_field_uid(char** current, uid_t* result)
+{
+	uintmax_t id_umax;
+	if ( !next_field_uintmax(current, &id_umax) )
+		return false;
+	uid_t uid = (uid_t) id_umax;
+	if ( (uintmax_t) uid != (uintmax_t) id_umax )
+		return false;
+	*result = uid;
+	return true;
 }
 
 extern "C"
@@ -132,9 +154,9 @@ int fgetpwent_r(FILE* restrict fp,
 		goto parse_failure;
 	if ( !(result->pw_passwd = next_field(&parse_str)) )
 		goto parse_failure;
-	if ( (result->pw_uid = next_field_id(&parse_str)) < 0 )
+	if ( !next_field_uid(&parse_str, &result->pw_uid) )
 		goto parse_failure;
-	if ( !(result->pw_gid = next_field_id(&parse_str)) < 0 )
+	if ( !next_field_gid(&parse_str, &result->pw_gid) )
 		goto parse_failure;
 	if ( !(result->pw_gecos = next_field(&parse_str)) )
 		goto parse_failure;
