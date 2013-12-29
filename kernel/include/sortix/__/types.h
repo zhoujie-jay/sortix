@@ -42,9 +42,9 @@ typedef int __clockid_t;
 
 typedef __uintptr_t __dev_t;
 
-/* TODO: __fsblkcnt_t */
+typedef __intmax_t __fsblkcnt_t;
 
-/* TODO: __fsblksize_t */
+typedef __intmax_t __fsfilcnt_t;
 
 typedef __uint64_t __gid_t;
 

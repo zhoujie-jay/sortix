@@ -58,9 +58,15 @@ typedef __clockid_t clockid_t;
 typedef __dev_t dev_t;
 #endif
 
-/* TODO: fsblkcnt_t */
+#ifndef __fsblkcnt_t_defined
+#define __fsblkcnt_t_defined
+typedef __fsblkcnt_t fsblkcnt_t;
+#endif
 
-/* TODO: fsfilcnt_t */
+#ifndef __fsfilcnt_t_defined
+#define __fsfilcnt_t_defined
+typedef __fsfilcnt_t fsfilcnt_t;
+#endif
 
 #ifndef __gid_t_defined
 #define __gid_t_defined
