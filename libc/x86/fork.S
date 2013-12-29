@@ -44,8 +44,8 @@ __call_tfork_with_regs:
 	pushl %edx
 	pushl %ecx
 	pushl %ebx
-	pushl $0 # rax, result of sfork is 0 for the child.
-	pushl $after_fork # rip, child will start execution from here.
+	pushl $0 # eax, result of sfork (0 for the child).
+	pushl $.Lafter_fork # rip, child will start execution from here.
 
 	# Call tfork with a nice pointer to our structure. Note that %edi contains
 	# the flag parameter that this function accepted.
@@ -53,8 +53,8 @@ __call_tfork_with_regs:
 	pushl %edx
 	call tfork
 
-after_fork:
-	# The value in %eax determines whether we are child or parent. There is no
+.Lafter_fork:
+	# The value in %eax: determines whether we are child or parent. There is no
 	# need to clean up the stack from the above pushes, leavel sets %esp to %ebp
 	# which does that for us.
 	leavel

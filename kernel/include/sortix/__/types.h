@@ -46,9 +46,9 @@ typedef __uintptr_t __dev_t;
 
 /* TODO: __fsblksize_t */
 
-typedef int __gid_t;
+typedef __uint64_t __gid_t;
 
-typedef int __id_t;
+typedef __uint64_t __id_t;
 
 typedef __uintmax_t __ino_t;
 
@@ -62,7 +62,7 @@ typedef __intmax_t __off_t;
 #define __OFF_MIN __INTMAX_MIN
 #define __OFF_MAX __INTMAX_MAX
 
-typedef int __pid_t;
+typedef __intptr_t __pid_t;
 
 /* TODO: __size_t */
 
@@ -72,13 +72,13 @@ typedef __SSIZE_TYPE__ __ssize_t;
 
 typedef long __suseconds_t;
 
-typedef long __time_t;
+typedef __int64_t __time_t;
 
 typedef __uintptr_t __timer_t;
 
 /* TODO: trace*_t */
 
-typedef int __uid_t;
+typedef __uint64_t __uid_t;
 
 typedef unsigned int __useconds_t;
 

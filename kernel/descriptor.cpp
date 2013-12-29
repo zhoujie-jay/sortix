@@ -177,7 +177,6 @@ int Descriptor::chmod(ioctx_t* ctx, mode_t mode)
 
 int Descriptor::chown(ioctx_t* ctx, uid_t owner, gid_t group)
 {
-	if ( owner < 0 || group < 0 ) { errno = EINVAL; return -1; }
 	return vnode->chown(ctx, owner, group);
 }
 

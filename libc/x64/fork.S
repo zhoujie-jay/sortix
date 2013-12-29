@@ -51,14 +51,14 @@ __call_tfork_with_regs:
 	pushq %rcx
 	pushq %rbx
 	pushq $0 # rax, result of sfork is 0 for the child.
-	pushq $after_fork # rip, child will start execution from here.
+	pushq $.Lafter_fork # rip, child will start execution from here.
 
 	# Call tfork with a nice pointer to our structure. Note that %rdi contains
 	# the flag parameter that this function accepted.
 	movq %rsp, %rsi
 	call tfork
 
-after_fork:
+.Lafter_fork:
 	# The value in %rax determines whether we are child or parent. There is no
 	# need to clean up the stack from the above pushes, leaveq sets %rsp to %rbp
 	# which does that for us.
