@@ -82,13 +82,6 @@ typedef __uint64_t __uid_t;
 
 typedef unsigned int __useconds_t;
 
-#if defined(__is_sortix_kernel) || defined(__is_sortix_libc)
-#define OFF_MIN __OFF_MIN
-#endif
-#if defined(__is_sortix_kernel) || defined(__is_sortix_libc)
-#define OFF_MAX __OFF_MAX
-#endif
-
 __END_DECLS
 
 #endif

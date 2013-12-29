@@ -99,6 +99,10 @@ typedef __nlink_t nlink_t;
 #define __off_t_defined
 typedef __off_t off_t;
 #endif
+#if defined(__is_sortix_kernel) || defined(__is_sortix_libc)
+#define OFF_MIN __OFF_MIN
+#define OFF_MAX __OFF_MAX
+#endif
 
 #ifndef __pid_t_defined
 #define __pid_t_defined
