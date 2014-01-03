@@ -42,7 +42,7 @@ struct kernel_dirent
 {
 	size_t d_reclen;
 	size_t d_off;
-	size_t d_namelen;
+	size_t d_namlen;
 	ino_t d_ino;
 	dev_t d_dev;
 	unsigned char d_type;

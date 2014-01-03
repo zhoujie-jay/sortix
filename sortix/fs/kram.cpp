@@ -150,7 +150,7 @@ ssize_t Dir::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 	if ( size < needed )
 	{
 		errno = ERANGE;
-		retdirent.d_namelen = namelen;
+		retdirent.d_namlen = namelen;
 	}
 	else
 	{
@@ -158,7 +158,7 @@ ssize_t Dir::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 		ret = needed;
 		retdirent.d_reclen = needed;
 		retdirent.d_off = 0;
-		retdirent.d_namelen = namelen;
+		retdirent.d_namlen = namelen;
 		retdirent.d_ino = inode->ino;
 		retdirent.d_dev = inode->dev;
 		retdirent.d_type = ModeToDT(inode->type);

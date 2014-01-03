@@ -229,9 +229,9 @@ bool RespondReadDir(int svr, int chl, struct kernel_dirent* dirent)
 	struct fsm_resp_readdirents body;
 	body.ino = dirent->d_ino;
 	body.type = dirent->d_type;
-	body.namelen = dirent->d_namelen;
+	body.namelen = dirent->d_namlen;
 	return RespondMessage(svr, chl, FSM_RESP_READDIRENTS, &body, sizeof(body)) &&
-	       RespondData(svr, chl, dirent->d_name, dirent->d_namelen);
+	       RespondData(svr, chl, dirent->d_name, dirent->d_namlen);
 }
 
 void HandleRefer(int svr, int chl, struct fsm_req_refer* msg, Filesystem* fs)
@@ -466,10 +466,10 @@ void HandleReadDir(int svr, int chl, struct fsm_req_readdirents* msg, Filesystem
 			kernel_entry.d_ino = entry->inode;
 			kernel_entry.d_dev = 0;
 			kernel_entry.d_type = 0; // TODO: Support this!
-			kernel_entry.d_namelen = entry->name_len;
+			kernel_entry.d_namlen = entry->name_len;
 			memcpy(kernel_entry.d_name, entry->name, entry->name_len);
 			size_t dname_offset = offsetof(struct kernel_dirent, d_name);
-			padding[dname_offset + kernel_entry.d_namelen] = '\0';
+			padding[dname_offset + kernel_entry.d_namlen] = '\0';
 			block->Unref();
 			inode->Unref();
 			RespondReadDir(svr, chl, &kernel_entry);

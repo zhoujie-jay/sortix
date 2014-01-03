@@ -921,7 +921,7 @@ ssize_t Unode::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 		struct kernel_dirent entry;
 		entry.d_reclen = sizeof(entry) + resp.namelen + 1;
 		entry.d_off = 0;
-		entry.d_namelen = resp.namelen;
+		entry.d_namlen = resp.namelen;
 		entry.d_dev = (dev_t) server;
 		entry.d_ino = resp.ino;
 		entry.d_type = resp.type;

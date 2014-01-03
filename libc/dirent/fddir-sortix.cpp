@@ -57,7 +57,7 @@ static int fddir_sortix_readents(fddir_sortix_t* info)
 	{
 		if ( errno != ERANGE )
 			return -1;
-		size_t newdirentsize = sizeof(struct kernel_dirent) + info->dirent->d_namelen + 1;
+		size_t newdirentsize = sizeof(struct kernel_dirent) + info->dirent->d_namlen + 1;
 		if ( newdirentsize < info->direntsize )
 			newdirentsize *= 2;
 		struct kernel_dirent* newdirent = (struct kernel_dirent*) malloc(newdirentsize);
@@ -83,7 +83,7 @@ static int fddir_sortix_read(void* user, struct dirent* dirent, size_t* size)
 	}
 
 	size_t provided = (user) ? *size : 0;
-	size_t needed = sizeof(struct dirent) + info->current->d_namelen + 1;
+	size_t needed = sizeof(struct dirent) + info->current->d_namlen + 1;
 	*size = needed;
 	if ( provided < needed )
 		return 1;
