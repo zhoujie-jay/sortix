@@ -86,6 +86,10 @@ int derror(DIR* dir);
 int deof(DIR* dif);
 #endif
 
+#if defined(__is_sortix_libc)
+extern DIR* __firstdir;
+#endif
+
 __END_DECLS
 
 #endif
