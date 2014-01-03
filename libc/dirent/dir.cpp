@@ -31,7 +31,7 @@
 
 static DIR* firstdir = NULL;
 
-void dregister(DIR* dir)
+extern "C" void dregister(DIR* dir)
 {
 	dir->flags |= _DIR_REGISTERED;
 	if ( !firstdir ) { firstdir = dir; return; }
@@ -40,7 +40,7 @@ void dregister(DIR* dir)
 	firstdir = dir;
 }
 
-void dunregister(DIR* dir)
+extern "C" void dunregister(DIR* dir)
 {
 	if ( !(dir->flags & _DIR_REGISTERED) )
 		return;
@@ -53,7 +53,7 @@ void dunregister(DIR* dir)
 	dir->flags &= ~_DIR_REGISTERED;
 }
 
-struct dirent* readdir(DIR* dir)
+extern "C" struct dirent* readdir(DIR* dir)
 {
 	if ( !dir->read_func )
 	{
@@ -94,7 +94,7 @@ struct dirent* readdir(DIR* dir)
 	return dir->entry;
 }
 
-int closedir(DIR* dir)
+extern "C" int closedir(DIR* dir)
 {
 	int result = (dir->close_func) ? dir->close_func(dir->user) : 0;
 	dunregister(dir);
@@ -104,31 +104,31 @@ int closedir(DIR* dir)
 	return result;
 }
 
-void rewinddir(DIR* dir)
+extern "C" void rewinddir(DIR* dir)
 {
 	if ( dir->rewind_func )
 		dir->rewind_func(dir->user);
 	dir->flags &= ~_DIR_EOF;
 }
 
-int dirfd(DIR* dir)
+extern "C" int dirfd(DIR* dir)
 {
 	if ( !dir->fd_func )
 		return errno = EBADF, 0;
 	return dir->fd_func(dir->user);
 }
 
-void dclearerr(DIR* dir)
+extern "C" void dclearerr(DIR* dir)
 {
 	dir->flags &= ~_DIR_ERROR;
 }
 
-int derror(DIR* dir)
+extern "C" int derror(DIR* dir)
 {
 	return dir->flags & _DIR_ERROR;
 }
 
-int deof(DIR* dir)
+extern "C" int deof(DIR* dir)
 {
 	return dir->flags & _DIR_EOF;
 }
@@ -138,7 +138,7 @@ static void dfreedir(DIR* dir)
 	free(dir);
 }
 
-DIR* dnewdir(void)
+extern "C" DIR* dnewdir(void)
 {
 	DIR* dir = (DIR*) calloc(sizeof(DIR), 1);
 	if ( !dir )
@@ -149,7 +149,7 @@ DIR* dnewdir(void)
 	return dir;
 }
 
-int dcloseall(void)
+extern "C" int dcloseall(void)
 {
 	int result = 0;
 	while ( firstdir )

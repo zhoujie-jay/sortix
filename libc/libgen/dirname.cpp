@@ -25,7 +25,7 @@
 #include <libgen.h>
 #include <string.h>
 
-char* dirname(char* path)
+extern "C" char* dirname(char* path)
 {
 	static char static_stuff[2];
 	if ( !path || !*path )

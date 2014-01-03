@@ -29,6 +29,7 @@ const int MAX_SIGNALS = 128;
 extern sighandler_t handlers[MAX_SIGNALS];
 
 // TODO: Actually implement the sigaction interface for real.
+extern "C"
 int sigaction(int signum, const struct sigaction* restrict act,
               struct sigaction* restrict oldact)
 {

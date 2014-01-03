@@ -30,6 +30,7 @@
 #include <string.h>
 #include <unistd.h>
 
+extern "C"
 char* realpath(const char* restrict path, char* restrict resolved_path)
 {
 	char* ret_path = canonicalize_file_name(path);
