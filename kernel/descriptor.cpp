@@ -322,7 +322,7 @@ ssize_t Descriptor::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 		struct kernel_dirent retdirent;
 		memset(&retdirent, 0, sizeof(retdirent));
 		retdirent.d_reclen = needed;
-		retdirent.d_off = 0;
+		retdirent.d_nextoff = 0;
 		retdirent.d_namlen = namelen;
 		if ( !ctx->copy_to_dest(dirent, &retdirent, sizeof(retdirent)) )
 			return -1;

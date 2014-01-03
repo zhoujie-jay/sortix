@@ -72,7 +72,7 @@ typedef __ino_t ino_t;
 struct kernel_dirent
 {
 	size_t d_reclen;
-	size_t d_off;
+	size_t d_nextoff;
 	size_t d_namlen;
 	ino_t d_ino;
 	dev_t d_dev;
@@ -82,9 +82,9 @@ struct kernel_dirent
 
 static inline struct kernel_dirent* kernel_dirent_next(struct kernel_dirent* ent)
 {
-	if ( !ent->d_off )
+	if ( !ent->d_nextoff )
 		return NULL;
-	return (struct kernel_dirent*) ((uint8_t*) ent + ent->d_off);
+	return (struct kernel_dirent*) ((uint8_t*) ent + ent->d_nextoff);
 }
 
 __END_DECLS

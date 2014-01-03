@@ -462,7 +462,7 @@ void HandleReadDir(int svr, int chl, struct fsm_req_readdirents* msg, Filesystem
 		if ( entry->inode && entry->name_len && !(msg->rec_num--) )
 		{
 			kernel_entry.d_reclen = sizeof(kernel_entry) + entry->name_len;
-			kernel_entry.d_off = 0;
+			kernel_entry.d_nextoff = 0;
 			kernel_entry.d_ino = entry->inode;
 			kernel_entry.d_dev = 0;
 			kernel_entry.d_type = 0; // TODO: Support this!

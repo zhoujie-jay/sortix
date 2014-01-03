@@ -157,7 +157,7 @@ ssize_t Dir::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 		Ref<Inode> inode = children[start].inode;
 		ret = needed;
 		retdirent.d_reclen = needed;
-		retdirent.d_off = 0;
+		retdirent.d_nextoff = 0;
 		retdirent.d_namlen = namelen;
 		retdirent.d_ino = inode->ino;
 		retdirent.d_dev = inode->dev;
