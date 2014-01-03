@@ -29,6 +29,8 @@
 
 #include <sys/__/types.h>
 
+__BEGIN_DECLS
+
 @include(off_t.h)
 @include(size_t.h)
 @include(FILE.h)
@@ -73,5 +75,7 @@ struct FILE
 	size_t amount_input_buffered;
 	size_t amount_output_buffered;
 };
+
+__END_DECLS
 
 #endif
