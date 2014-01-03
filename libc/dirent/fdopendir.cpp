@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,7 +17,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    dirent/fddir-sortix.cpp
+    dirent/fdopendir.cpp
     Handles the file descriptor backend for the DIR* API on Sortix.
 
 *******************************************************************************/
@@ -126,7 +126,8 @@ extern "C" DIR* fdopendir(int fd)
 		return NULL;
 
 	DIR* dir = dnewdir();
-	if ( !dir ) { free(info); return NULL; }
+	if ( !dir )
+		return free(info), (DIR*) NULL;
 
 	int old_dflags = fcntl(fd, F_GETFD);
 	if ( 0 <= old_dflags )
@@ -140,14 +141,5 @@ extern "C" DIR* fdopendir(int fd)
 	dir->close_func = fddir_sortix_close;
 	dir->user = (void*) info;
 
-	return dir;
-}
-
-extern "C" DIR* opendir(const char* path)
-{
-	int fd = open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
-	if ( fd < 0 ) { return NULL; }
-	DIR* dir = fdopendir(fd);
-	if ( !dir ) { close(fd); return NULL; }
 	return dir;
 }

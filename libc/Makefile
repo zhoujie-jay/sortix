@@ -228,7 +228,8 @@ $(CPUDIR)/fork.o \
 $(CPUDIR)/setjmp.o \
 $(CPUDIR)/signal.o \
 $(CPUDIR)/syscall.o \
-dirent/fddir-sortix.o \
+dirent/fdopendir.o \
+dirent/opendir.o \
 dirent/scandir.o \
 dlfcn/dlfcn.o \
 error/gnu_error.o \
