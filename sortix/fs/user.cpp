@@ -924,6 +924,7 @@ ssize_t Unode::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 		entry.d_namelen = resp.namelen;
 		entry.d_dev = (dev_t) server;
 		entry.d_ino = resp.ino;
+		entry.d_type = resp.type;
 
 		if ( !ctx->copy_from_src(dirent, &entry, sizeof(entry)) )
 			goto break_if;
