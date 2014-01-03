@@ -25,6 +25,7 @@
 #include <sys/types.h>
 
 #include <dirent.h>
+#include <DIR.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>

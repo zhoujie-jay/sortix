@@ -17,13 +17,13 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    dirent.h
-    Format of directory entries.
+    DIR.h
+    The DIR structure from <dirent.h>
 
 *******************************************************************************/
 
-#ifndef INCLUDE_DIRENT_H
-#define INCLUDE_DIRENT_H
+#ifndef INCLUDE_DIR_H
+#define INCLUDE_DIR_H
 
 #include <sys/cdefs.h>
 
@@ -31,60 +31,38 @@
 
 __BEGIN_DECLS
 
-#ifndef __ino_t_defined
-#define __ino_t_defined
-typedef __ino_t ino_t;
-#endif
-
 #ifndef __size_t_defined
 #define __size_t_defined
 #define __need_size_t
 #include <stddef.h>
 #endif
 
+struct dirent;
+
 #ifndef __DIR_defined
 #define __DIR_defined
 typedef struct DIR DIR;
 #endif
 
-struct dirent
+#define _DIR_REGISTERED (1<<0)
+#define _DIR_ERROR (1<<1)
+#define _DIR_EOF (1<<2)
+
+struct DIR
 {
-	ino_t d_ino;
-	size_t d_reclen;
-	char d_name[0];
+	void* user;
+	int (*read_func)(void* user, struct dirent* dirent, size_t* size);
+	int (*rewind_func)(void* user);
+	int (*fd_func)(void* user);
+	int (*close_func)(void* user);
+	void (*free_func)(DIR* dir);
+	/* Application writers shouldn't use anything beyond this point. */
+	DIR* prev;
+	DIR* next;
+	struct dirent* entry;
+	size_t entrysize;
+	int flags;
 };
-
-#undef  _DIRENT_HAVE_D_NAMLEN
-#define _DIRENT_HAVE_D_RECLEN
-#define _DIRENT_HAVE_D_OFF
-#undef  _DIRENT_HAVE_D_TYPE
-
-#define _D_EXACT_NAMLEN(d) ((d)->d_reclen - __builtin_offsetof(struct dirent, d_name) - 1)
-#define _D_ALLOC_NAMLEN(d) (_D_EXACT_NAMLEN(d) + 1)
-
-int alphasort(const struct dirent**, const struct dirent**);
-int closedir(DIR* dir);
-int dirfd(DIR* dir);
-DIR* fdopendir(int fd);
-DIR* opendir(const char* path);
-struct dirent* readdir(DIR* dir);
-/* TODO: readdir_r */
-void rewinddir(DIR* dir);
-int scandir(const char*, struct dirent***, int (*)(const struct dirent*),
-            int (*)(const struct dirent**, const struct dirent**));
-/* TODO: seekdir */
-/* TODO: telldir */
-int versionsort(const struct dirent**, const struct dirent**);
-
-#if defined(_SORTIX_SOURCE)
-void dregister(DIR* dir);
-void dunregister(DIR* dir);
-DIR* dnewdir(void);
-int dcloseall(void);
-void dclearerr(DIR* dir);
-int derror(DIR* dir);
-int deof(DIR* dif);
-#endif
 
 __END_DECLS
 
