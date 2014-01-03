@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -29,6 +29,11 @@
 #include <sys/cdefs.h>
 
 #include <sys/types.h>
+
+#include <sortix/__/dirent.h>
+#include <sortix/__/dt.h>
+#include <sortix/__/stat.h>
+
 #include <sortix/timespec.h>
 
 __BEGIN_DECLS
@@ -62,26 +67,26 @@ struct stat
 #define S_IWUSR 0200
 #define S_IRUSR 0400
 #define S_IRWXU 0700
-#define S_IFMT 0xF000
-#define S_IFSOCK 0xC000
-#define S_IFLNK 0xA000
-#define S_IFREG 0x8000
-#define S_IFBLK 0x6000
-#define S_IFDIR 0x4000
-#define S_IFCHR 0x2000
-#define S_IFIFO 0x1000
+#define S_IFMT __DTTOIF(__DT_BITS)
+#define S_IFSOCK __DTTOIF(__DT_SOCK)
+#define S_IFLNK __DTTOIF(__DT_LNK)
+#define S_IFREG __DTTOIF(__DT_REG)
+#define S_IFBLK __DTTOIF(__DT_BLK)
+#define S_IFDIR __DTTOIF(__DT_DIR)
+#define S_IFCHR __DTTOIF(__DT_CHR)
+#define S_IFIFO __DTTOIF(__DT_FIFO)
 /* Intentionally not part of Sortix. */
 /*#define S_ISUID 0x0800 */
 /*#define S_ISGID 0x0400 */
 #define S_ISVTX 0x0200
 #define S_SETABLE (0777 | 0x0200 | 0x0400 | 0x0800)
-#define S_ISSOCK(mode) ((mode & S_IFMT) == S_IFSOCK)
-#define S_ISLNK(mode) ((mode & S_IFMT) == S_IFLNK)
-#define S_ISREG(mode) ((mode & S_IFMT) == S_IFREG)
-#define S_ISBLK(mode) ((mode & S_IFMT) == S_IFBLK)
-#define S_ISDIR(mode) ((mode & S_IFMT) == S_IFDIR)
-#define S_ISCHR(mode) ((mode & S_IFMT) == S_IFCHR)
-#define S_ISFIFO(mode) ((mode & S_IFMT) == S_IFIFO)
+#define S_ISSOCK(mode) (((mode) & S_IFMT) == S_IFSOCK)
+#define S_ISLNK(mode) (((mode) & S_IFMT) == S_IFLNK)
+#define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
+#define S_ISBLK(mode) (((mode) & S_IFMT) == S_IFBLK)
+#define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
+#define S_ISCHR(mode) (((mode) & S_IFMT) == S_IFCHR)
+#define S_ISFIFO(mode) (((mode) & S_IFMT) == S_IFIFO)
 
 __END_DECLS
 

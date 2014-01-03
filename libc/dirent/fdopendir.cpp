@@ -89,8 +89,11 @@ static int fddir_sortix_read(void* user, struct dirent* dirent, size_t* size)
 	if ( provided < needed )
 		return 1;
 
-	dirent->d_ino = info->current->d_ino;
 	dirent->d_reclen = needed;
+	dirent->d_namlen = info->current->d_namlen;
+	dirent->d_ino = info->current->d_ino;
+	dirent->d_dev = info->current->d_dev;
+	dirent->d_type = info->current->d_type;
 	strcpy(dirent->d_name, info->current->d_name);
 
 	info->current = kernel_dirent_next(info->current);
