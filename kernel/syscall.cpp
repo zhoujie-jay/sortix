@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -22,6 +22,8 @@
 
 *******************************************************************************/
 
+#include <stddef.h>
+
 #include <sortix/syscallnum.h>
 
 #include <sortix/kernel/kernel.h>
@@ -39,10 +41,10 @@ extern "C"
 	volatile void* syscall_list[SYSCALL_MAX_NUM];
 }
 
-int BadSyscall()
+static int sys_bad_syscall()
 {
-	Log::PrintF("I am the bad system call!\n");
 	// TODO: Send signal, set errno, or crash/abort process?
+	Log::PrintF("I am the bad system call!\n");
 	return -1;
 }
 
@@ -50,16 +52,16 @@ void Init()
 {
 	SYSCALL_MAX = SYSCALL_MAX_NUM;
 	for ( size_t i = 0; i < SYSCALL_MAX_NUM; i++ )
-		syscall_list[i] = (void*) BadSyscall;
+		syscall_list[i] = (void*) sys_bad_syscall;
 }
 
-void Register(size_t index, void* funcptr)
+void Register(size_t index, void* function)
 {
 
 	if ( SYSCALL_MAX_NUM <= index )
-		PanicF("attempted to register syscall 0x%p to index %zu, but "
-		       "SYSCALL_MAX_NUM = %zu", funcptr, index, SYSCALL_MAX_NUM);
-	syscall_list[index] = funcptr;
+		PanicF("Attempted to register system call %p to index %zu, but "
+		       "SYSCALL_MAX_NUM = %zu", function, index, SYSCALL_MAX_NUM);
+	syscall_list[index] = function;
 }
 
 } // namespace Syscall
