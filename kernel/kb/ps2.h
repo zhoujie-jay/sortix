@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of Sortix.
 
@@ -25,47 +25,51 @@
 #ifndef SORTIX_KB_PS2_H
 #define SORTIX_KB_PS2_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/keyboard.h>
 
-namespace Sortix
+namespace Sortix {
+
+class PS2Keyboard : public Keyboard
 {
-	class PS2Keyboard : public Keyboard
-	{
-	public:
-		PS2Keyboard(uint16_t iobase, uint8_t interrupt);
-		virtual ~PS2Keyboard();
-		virtual int Read();
-		virtual size_t GetPending() const;
-		virtual bool HasPending() const;
-		virtual void SetOwner(KeyboardOwner* owner, void* user);
+public:
+	PS2Keyboard(uint16_t iobase, uint8_t interrupt);
+	virtual ~PS2Keyboard();
+	virtual int Read();
+	virtual size_t GetPending() const;
+	virtual bool HasPending() const;
+	virtual void SetOwner(KeyboardOwner* owner, void* user);
 
-	public:
-		void OnInterrupt(CPU::InterruptRegisters* regs);
-		void InterruptWork(uint8_t scancode);
+public:
+	void OnInterrupt(CPU::InterruptRegisters* regs);
+	void InterruptWork(uint8_t scancode);
 
-	private:
-		uint8_t PopScancode();
-		int DecodeScancode(uint8_t scancode);
-		void UpdateLEDs(int ledval);
-		bool PushKey(int key);
-		int PopKey();
-		void NotifyOwner();
+private:
+	uint8_t PopScancode();
+	int DecodeScancode(uint8_t scancode);
+	void UpdateLEDs(int ledval);
+	bool PushKey(int key);
+	int PopKey();
+	void NotifyOwner();
 
-	private:
-		int* queue;
-		size_t queuelength;
-		size_t queueoffset;
-		size_t queueused;
-		KeyboardOwner* owner;
-		void* ownerptr;
-		uint16_t iobase;
-		uint8_t interrupt;
-		bool scancodeescaped;
-		uint8_t leds;
-		mutable kthread_mutex_t kblock;
+private:
+	int* queue;
+	size_t queuelength;
+	size_t queueoffset;
+	size_t queueused;
+	KeyboardOwner* owner;
+	void* ownerptr;
+	uint16_t iobase;
+	uint8_t interrupt;
+	bool scancodeescaped;
+	uint8_t leds;
+	mutable kthread_mutex_t kblock;
 
-	};
-}
+};
+
+} // namespace Sortix
 
 #endif
