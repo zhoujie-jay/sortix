@@ -26,24 +26,24 @@
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/log.h>
 
-namespace Sortix
+namespace Sortix {
+namespace X64 {
+
+void InterruptRegisters::LogRegisters() const
 {
-	namespace X64
-	{
-		void InterruptRegisters::LogRegisters() const
-		{
-			Log::PrintF("[cr2=0x%zx,ds=0x%zx,rdi=0x%zx,rsi=0x%zx,rbp=0x%zx,"
-			            "rsp=0x%zx,rbx=0x%zx,rdx=0x%zx,rcx=0x%zx,rax=0x%zx,"
-			            "r8=0x%zx,r9=0x%zx,r10=0x%zx,r11=0x%zx,r12=0x%zx,"
-			            "r13=0x%zx,r14=0x%zx,r15=0x%zx,int_no=0x%zx,"
-			            "err_code=0x%zx,rip=0x%zx,cs=0x%zx,rflags=0x%zx,"
-			            "userrsp=0x%zx,ss=0x%zx]",
-			            cr2, ds, rdi, rsi, rbp,
-			            rsp, rbx, rdx, rcx, rax,
-			            r8, r9, r10, r11, r12,
-			            r13, r14, r15, int_no,
-			            err_code, rip, cs, rflags,
-			            userrsp, ss);
-		}
-	}
+	Log::PrintF("[cr2=0x%zx,ds=0x%zx,rdi=0x%zx,rsi=0x%zx,rbp=0x%zx,"
+	            "rsp=0x%zx,rbx=0x%zx,rdx=0x%zx,rcx=0x%zx,rax=0x%zx,"
+	            "r8=0x%zx,r9=0x%zx,r10=0x%zx,r11=0x%zx,r12=0x%zx,"
+	            "r13=0x%zx,r14=0x%zx,r15=0x%zx,int_no=0x%zx,"
+	            "err_code=0x%zx,rip=0x%zx,cs=0x%zx,rflags=0x%zx,"
+	            "userrsp=0x%zx,ss=0x%zx]",
+	            cr2, ds, rdi, rsi, rbp,
+	            rsp, rbx, rdx, rcx, rax,
+	            r8, r9, r10, r11, r12,
+	            r13, r14, r15, int_no,
+	            err_code, rip, cs, rflags,
+	            userrsp, ss);
 }
+
+} // namespace X64
+} // namespace Sortix
