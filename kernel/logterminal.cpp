@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <wchar.h>
 
 #include <sortix/fcntl.h>
 #include <sortix/keycodes.h>
@@ -48,7 +49,6 @@
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/scheduler.h>
 
-#include "utf8.h"
 #include "logterminal.h"
 
 namespace Sortix {
@@ -299,9 +299,11 @@ void LogTerminal::QueueUnicode(uint32_t unicode)
 	// if it is unprintable (it's an encoded keystroke)?
 	if ( !KBKEY_DECODE(unicode) && echomode )
 	{
-		char utf8buf[6];
-		unsigned numbytes = UTF8::Encode(unicode, utf8buf);
-		Log::PrintData(utf8buf, numbytes);
+		mbstate_t ps;
+		memset(&ps, 0, sizeof(ps));
+		char utf8buf[MB_CUR_MAX];
+		size_t num_bytes = wcrtomb(utf8buf, (wchar_t) unicode, &ps);
+		Log::PrintData(utf8buf, num_bytes);
 	}
 
 	bool commit = !linemode || wasenter;
@@ -356,18 +358,21 @@ ssize_t LogTerminal::read(ioctx_t* ctx, uint8_t* userbuf, size_t count)
 		uint8_t* buf;
 		size_t bufsize;
 		uint8_t codepointbuf[4];
-		char utf8buf[6];
+		char utf8buf[MB_CUR_MAX];
 
 		if ( termmode & TERMMODE_UTF8 )
 		{
-			unsigned numbytes = UTF8::Encode(codepoint, utf8buf);
-			if ( !numbytes )
+			mbstate_t ps;
+			memset(&ps, 0, sizeof(ps));
+			size_t num_bytes = wcrtomb(utf8buf, (wchar_t) codepoint, &ps);
+			if ( num_bytes == (size_t) -1)
 			{
 				Log::PrintF("Warning: logterminal driver dropping invalid "
 				            "codepoint 0x%x\n", codepoint);
+				num_bytes = 0;
 			}
 			buf = (uint8_t*) utf8buf;
-			bufsize = numbytes;
+			bufsize = num_bytes;
 		}
 		else
 		{

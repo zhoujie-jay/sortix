@@ -138,7 +138,6 @@ time.o \
 timer.o \
 uart.o \
 user-timer.o \
-utf8.o \
 vga.o \
 vgatextbuffer.o \
 video.o \
