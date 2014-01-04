@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
 
     This file is part of Sortix.
 
@@ -26,7 +26,8 @@
 
 #include <sortix/kernel/kernel.h>
 
-namespace Sortix
-{
-	size_t end; // Put in the bss, the last segment.
+namespace Sortix {
+
+size_t end; // Put in the bss, the last segment.
+
 }
