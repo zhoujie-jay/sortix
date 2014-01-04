@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of Sortix.
 
@@ -25,24 +25,27 @@
 #ifndef SORTIX_KB_LAYOUT_US_H
 #define SORTIX_KB_LAYOUT_US_H
 
+#include <stdint.h>
+
 #include <sortix/kernel/keyboard.h>
 
-namespace Sortix
+namespace Sortix {
+
+class KBLayoutUS : public KeyboardLayout
 {
-	class KBLayoutUS : public KeyboardLayout
-	{
-	public:
-		KBLayoutUS();
-		virtual ~KBLayoutUS();
-		virtual uint32_t Translate(int kbkey);
+public:
+	KBLayoutUS();
+	virtual ~KBLayoutUS();
+	virtual uint32_t Translate(int kbkey);
 
-	public:
-		bool ProcessModifier(int kbkey, int modkey, unsigned flag);
+public:
+	bool ProcessModifier(int kbkey, int modkey, unsigned flag);
 
-	private:
-		unsigned modifiers;
+private:
+	unsigned modifiers;
 
-	};
-}
+};
+
+} // namespace Sortix
 
 #endif
