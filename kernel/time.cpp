@@ -39,10 +39,6 @@
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/time.h>
 
-#ifdef PLATFORM_SERIAL
-#include "serialterminal.h"
-#endif
-
 namespace Sortix {
 namespace Time {
 

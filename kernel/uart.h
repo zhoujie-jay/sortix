@@ -34,10 +34,6 @@ namespace Sortix
 		void Write(const void* Buffer, size_t Size);
 		void WriteChar(char C);
 		int TryPopChar();
-#ifdef SORTIX_VGA_H
-		void InvalidateVGA();
-		void RenderVGA(const uint16_t* frame = (const uint16_t*) 0xB8000UL);
-#endif
 	}
 }
 

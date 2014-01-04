@@ -127,7 +127,6 @@ refcount.o \
 resource.o \
 scheduler.o \
 segment.o \
-serialterminal.o \
 signal.o \
 string.o \
 symbol.o \

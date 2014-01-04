@@ -90,7 +90,6 @@
 #include "pipe.h"
 #include "poll.h"
 #include "resource.h"
-#include "serialterminal.h"
 #include "textterminal.h"
 #include "uart.h"
 #include "vga.h"

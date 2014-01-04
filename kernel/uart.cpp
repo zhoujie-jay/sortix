@@ -65,10 +65,6 @@ namespace Sortix
 		const unsigned BASE_BAUD = 1843200/16;
 		const unsigned BOTH_EMPTY = LSR_TEMT | LSR_THRE;
 
-		const unsigned FrameWidth = 80;
-		const unsigned FrameHeight = 25;
-		uint16_t VGALastFrame[FrameWidth * FrameHeight];
-
 		unsigned ProbeBaud(unsigned Port)
 		{
 			uint8_t lcr = CPU::InPortB(Port + LCR);
@@ -98,8 +94,6 @@ namespace Sortix
 
 		void Init()
 		{
-			InvalidateVGA();
-
 			Baud = ProbeBaud(Port);
 
 			CPU::OutPortB(Port + LCR, 0x3); // 8n1
@@ -186,133 +180,6 @@ namespace Sortix
 			CPU::OutPortB(Port + IER, ier);
 
 			return Result;
-		}
-
-		void WriteNumberAsString(uint8_t Num)
-		{
-			if ( Num > 100 ) { WriteChar(Num / 100); }
-			if ( Num > 10 ) { WriteChar(Num / 10); }
-
-			WriteChar(Num % 10);
-		}
-
-		// Change from VGA color to another color system.
-		unsigned ConversionTable[16] = { 0, 4, 2, 6, 1, 5, 3, 7, 0, 4, 2, 6, 1, 5, 3, 7 };
-
-		void InvalidateVGA()
-		{
-			for ( unsigned I = 0; I < FrameWidth * FrameHeight; I++ ) { VGALastFrame[I] = 0; }
-		}
-
-		void RenderVGA(const uint16_t* Frame)
-		{
-			const uint16_t* Source = Frame;
-
-			unsigned LastColor = 1337;
-			unsigned SkippedSince = 0;
-			bool posundefined = true;
-
-			for ( unsigned Y = 0; Y < FrameHeight; Y++)
-			{
-				for ( unsigned X = 0; X < FrameWidth; X++ )
-				{
-					unsigned Index = Y * FrameWidth + X;
-
-					unsigned Element = Source[Index];
-					unsigned OldElement = VGALastFrame[Index];
-
-					if ( Element == OldElement ) { continue; }
-
-					// Update the position if we skipped some characters.
-					if ( Index - SkippedSince > 8 || posundefined )
-					{
-						const unsigned LineId = Y + 1;
-						const unsigned ColumnId = X + 1;
-
-						if ( ColumnId > 1 )
-						{
-							UART::WriteChar('\e');
-							UART::WriteChar('[');
-							UART::WriteChar('0' + LineId / 10);
-							UART::WriteChar('0' + LineId % 10);
-							UART::WriteChar(';');
-							UART::WriteChar('0' + ColumnId / 10);
-							UART::WriteChar('0' + ColumnId % 10);
-							UART::WriteChar('H');
-						}
-						else
-						{
-							UART::WriteChar('\e');
-							UART::WriteChar('[');
-							UART::WriteChar('0' + LineId / 10);
-							UART::WriteChar('0' + LineId % 10);
-							UART::WriteChar('H');
-						}
-
-						SkippedSince = Index;
-						posundefined = false;
-					}
-
-					for ( unsigned Pos = SkippedSince; Pos <= Index; Pos++ )
-					{
-						Element = Source[Pos];
-						OldElement = VGALastFrame[Pos];
-
-						unsigned NewColor = (ConversionTable[ (Element >> 12) & 0xF ] << 3) | (ConversionTable[ (Element >> 8) & 0xF ]);
-
-						// Change the color if we need to.
-						if ( LastColor != NewColor )
-						{
-							unsigned OldFGColor = LastColor % 8;
-							unsigned OldBGColor = LastColor / 8;
-							unsigned FGColor = NewColor % 8;
-							unsigned BGColor = NewColor / 8;
-							if ( LastColor == 1337 ) { OldFGColor = 9; OldBGColor = 9; }
-
-							if ( (OldFGColor != FGColor) && (OldBGColor != BGColor) )
-							{
-								UART::WriteChar('\e');
-								UART::WriteChar('[');
-								UART::WriteChar('3');
-								UART::WriteChar('0' + FGColor);
-								UART::WriteChar(';');
-								UART::WriteChar('4');
-								UART::WriteChar('0' + BGColor);
-								UART::WriteChar('m');
-							}
-							else if ( OldFGColor != FGColor )
-							{
-								UART::WriteChar('\e');
-								UART::WriteChar('[');
-								UART::WriteChar('3');
-								UART::WriteChar('0' + FGColor);
-								UART::WriteChar('m');
-							}
-							else if ( OldBGColor != BGColor )
-							{
-								UART::WriteChar('\e');
-								UART::WriteChar('[');
-								UART::WriteChar('4');
-								UART::WriteChar('0' + BGColor);
-								UART::WriteChar('m');
-							}
-
-							LastColor = NewColor;
-						}
-
-						VGALastFrame[Pos] = Element;
-
-						Element &= 0x7F;
-
-						// Filter away any non-printable characters.
-						if ( Element < 32 || Element > 126 ) { Element = '?'; }
-
-						UART::WriteChar(Element);
-					}
-
-					SkippedSince = Index + 1;
-				}
-			}
 		}
 	}
 }
