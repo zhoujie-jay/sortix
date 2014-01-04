@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -25,34 +25,38 @@
 #ifndef SORTIX_LINEBUFFER_H
 #define SORTIX_LINEBUFFER_H
 
-namespace Sortix
+#include <stddef.h>
+#include <stdint.h>
+
+namespace Sortix {
+
+class LineBuffer
 {
-	class LineBuffer
-	{
-	public:
-		LineBuffer();
-		~LineBuffer();
+public:
+	LineBuffer();
+	~LineBuffer();
 
-	public:
-		bool Push(uint32_t unicode);
-		uint32_t Pop();
-		uint32_t Peek() const;
-		uint32_t Backspace();
-		uint32_t WouldBackspace() const;
-		void Commit();
-		void Freeze();
-		bool CanPop() const;
-		bool CanBackspace() const;
+public:
+	bool Push(uint32_t unicode);
+	uint32_t Pop();
+	uint32_t Peek() const;
+	uint32_t Backspace();
+	uint32_t WouldBackspace() const;
+	void Commit();
+	void Freeze();
+	bool CanPop() const;
+	bool CanBackspace() const;
 
-	private:
-		uint32_t* buffer;
-		size_t bufferlength;
-		size_t bufferoffset;
-		size_t buffercommitted;
-		size_t bufferfrozen;
-		size_t bufferused;
+private:
+	uint32_t* buffer;
+	size_t bufferlength;
+	size_t bufferoffset;
+	size_t buffercommitted;
+	size_t bufferfrozen;
+	size_t bufferused;
 
-	};
-}
+};
+
+} // namespace Sortix
 
 #endif
