@@ -17,29 +17,22 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    unistd/ttyname.cpp
+    unistd/ttyname_r.cpp
     Returns the pathname of a terminal.
 
 *******************************************************************************/
 
 #include <errno.h>
-#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
-extern "C" char* ttyname(int fd)
+extern "C" int ttyname_r(int fd, char* path, size_t path_size)
 {
-	static char* result = NULL;
-	static size_t result_size = 0;
-	while ( ttyname_r(fd, result, result_size) < 0 )
-	{
-		if ( errno != ERANGE )
-			return NULL;
-		size_t new_result_size = result_size ? 2 * result_size : 16;
-		char* new_result = (char*) realloc(result, new_result_size);
-		if ( !new_result )
-			return NULL;
-		result = new_result;
-		result_size = new_result_size;
-	}
-	return result;
+	if ( isatty(fd) < 1 )
+		return -1;
+	const char* result = "/dev/tty";
+	size_t result_length = strlen(result);
+	if ( result_length + 1 < path_size )
+		return errno = ERANGE, -1;
+	return strcpy(path, result), 0;
 }

@@ -532,6 +532,7 @@ unistd/tfork.o \
 unistd/truncateat.o \
 unistd/truncate.o \
 unistd/ttyname.o \
+unistd/ttyname_r.o \
 unistd/unlinkat.o \
 unistd/unlink.o \
 unistd/usleep.o \

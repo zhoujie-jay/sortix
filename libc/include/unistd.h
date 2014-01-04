@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -320,7 +320,6 @@ int setreuid(uid_t, uid_t);
 pid_t setsid(void);
 void swab(const void* __restrict, void* __restrict, ssize_t);
 void sync(void);
-int ttyname_r(int, char*, size_t);
 #endif
 
 int access(const char*, int);
@@ -390,6 +389,7 @@ int tcsetpgrp(int, pid_t);
 int truncate(const char*, off_t);
 int truncateat(int dirfd, const char*, off_t);
 char* ttyname(int);
+int ttyname_r(int, char*, size_t);
 int usleep(useconds_t useconds);
 int unlinkat(int, const char*, int);
 int unlink(const char*);
