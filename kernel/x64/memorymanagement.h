@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
 
     This file is part of Sortix.
 
@@ -25,32 +25,35 @@
 #ifndef SORTIX_X64_MEMORYMANAGEMENT_H
 #define SORTIX_X64_MEMORYMANAGEMENT_H
 
-namespace Sortix
+namespace Sortix {
+namespace Memory {
+
+const size_t TOPPMLLEVEL = 4;
+const size_t ENTRIES = 4096UL / sizeof(addr_t);
+const size_t TRANSBITS = 9;
+
+PML* const PMLS[TOPPMLLEVEL + 1] =
 {
-	namespace Memory
-	{
-		const size_t TOPPMLLEVEL = 4;
-		const size_t ENTRIES = 4096UL / sizeof(addr_t);
-		const size_t TRANSBITS = 9;
+	(PML* const) 0x0,
+	(PML* const) 0xFFFFFF8000000000UL,
+	(PML* const) 0xFFFFFF7FC0000000UL,
+	(PML* const) 0XFFFFFF7FBFE00000UL,
+	(PML* const) 0xFFFFFF7FBFDFF000UL,
+};
 
-		PML* const PMLS[TOPPMLLEVEL + 1] =
-		{
-			(PML* const) 0x0,
-			(PML* const) 0xFFFFFF8000000000UL,
-			(PML* const) 0xFFFFFF7FC0000000UL,
-			(PML* const) 0XFFFFFF7FBFE00000UL,
-			(PML* const) 0xFFFFFF7FBFDFF000UL,
-		};
+PML* const FORKPML = (PML* const) 0xFFFFFF0000000000UL;
 
-		PML* const FORKPML = (PML* const) 0xFFFFFF0000000000UL;
-	}
+} // namespace Memory
+} // namespace Sortix
 
-	namespace Page
-	{
-		addr_t* const STACK = (addr_t* const) 0xFFFFFE8000000000UL;
-		const size_t MAXSTACKSIZE = (512UL*1024UL*1024UL*1024UL);
-		const size_t MAXSTACKLENGTH = MAXSTACKSIZE / sizeof(addr_t);
-	}
-}
+namespace Sortix {
+namespace Page {
+
+addr_t* const STACK = (addr_t* const) 0xFFFFFE8000000000UL;
+const size_t MAXSTACKSIZE = (512UL*1024UL*1024UL*1024UL);
+const size_t MAXSTACKLENGTH = MAXSTACKSIZE / sizeof(addr_t);
+
+} // namespace Page
+} // namespace Sortix
 
 #endif
