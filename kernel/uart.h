@@ -25,16 +25,16 @@
 #ifndef SORTIX_UART_H
 #define SORTIX_UART_H
 
-namespace Sortix
-{
-	namespace UART
-	{
-		void Init();
-		void Read(uint8_t* Buffer, size_t Size);
-		void Write(const void* Buffer, size_t Size);
-		void WriteChar(char C);
-		int TryPopChar();
-	}
-}
+namespace Sortix {
+namespace UART {
+
+void Init();
+void Read(uint8_t* buffer, size_t size);
+void Write(const void* buffer, size_t size);
+void WriteChar(char c);
+int TryPopChar();
+
+} // namespace UART
+} // namespace Sortix
 
 #endif
