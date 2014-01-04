@@ -32,53 +32,54 @@
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/process.h>
 
-namespace Sortix
+namespace Sortix {
+
+void Process::ExecuteCPU(int argc, char** argv, int envc, char** envp,
+                         addr_t stackpos, addr_t entry,
+                         CPU::InterruptRegisters* regs)
 {
-	void Process::ExecuteCPU(int argc, char** argv, int envc, char** envp,
-	                         addr_t stackpos, addr_t entry,
-	                         CPU::InterruptRegisters* regs)
-	{
-		const uint64_t CS = 0x18;
-		const uint64_t DS = 0x20;
-		const uint64_t RPL = 0x3;
+	const uint64_t CS = 0x18;
+	const uint64_t DS = 0x20;
+	const uint64_t RPL = 0x3;
 
-		regs->rdi = argc;
-		regs->rsi = (size_t) argv;
-		regs->rdx = envc;
-		regs->rcx = (size_t) envp;
-		regs->rip = entry;
-		regs->userrsp = stackpos & ~(15UL);
-		regs->rbp = regs->userrsp;
-		regs->cs = CS | RPL;
-		regs->ds = DS | RPL;
-		regs->ss = DS | RPL;
-		regs->rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
-	}
-
-	void InitializeThreadRegisters(CPU::InterruptRegisters* regs,
-                                   const tforkregs_t* requested)
-	{
-		memset(regs, 0, sizeof(*regs));
-		regs->rip = requested->rip;
-		regs->userrsp = requested->rsp;
-		regs->rax = requested->rax;
-		regs->rbx = requested->rbx;
-		regs->rcx = requested->rcx;
-		regs->rdx = requested->rdx;
-		regs->rdi = requested->rdi;
-		regs->rsi = requested->rsi;
-		regs->rbp = requested->rbp;
-		regs->r8  = requested->r8;
-		regs->r9  = requested->r9;
-		regs->r10 = requested->r10;
-		regs->r11 = requested->r11;
-		regs->r12 = requested->r12;
-		regs->r13 = requested->r13;
-		regs->r14 = requested->r14;
-		regs->r15 = requested->r15;
-		regs->cs = 0x18 | 0x3;
-		regs->ds = 0x20 | 0x3;
-		regs->ss = 0x20 | 0x3;
-		regs->rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
-	}
+	regs->rdi = argc;
+	regs->rsi = (size_t) argv;
+	regs->rdx = envc;
+	regs->rcx = (size_t) envp;
+	regs->rip = entry;
+	regs->userrsp = stackpos & ~15UL;
+	regs->rbp = regs->userrsp;
+	regs->cs = CS | RPL;
+	regs->ds = DS | RPL;
+	regs->ss = DS | RPL;
+	regs->rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
 }
+
+void InitializeThreadRegisters(CPU::InterruptRegisters* regs,
+                               const tforkregs_t* requested)
+{
+	memset(regs, 0, sizeof(*regs));
+	regs->rip = requested->rip;
+	regs->userrsp = requested->rsp;
+	regs->rax = requested->rax;
+	regs->rbx = requested->rbx;
+	regs->rcx = requested->rcx;
+	regs->rdx = requested->rdx;
+	regs->rdi = requested->rdi;
+	regs->rsi = requested->rsi;
+	regs->rbp = requested->rbp;
+	regs->r8  = requested->r8;
+	regs->r9  = requested->r9;
+	regs->r10 = requested->r10;
+	regs->r11 = requested->r11;
+	regs->r12 = requested->r12;
+	regs->r13 = requested->r13;
+	regs->r14 = requested->r14;
+	regs->r15 = requested->r15;
+	regs->cs = 0x18 | 0x3;
+	regs->ds = 0x20 | 0x3;
+	regs->ss = 0x20 | 0x3;
+	regs->rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+}
+
+} // namespace Sortix

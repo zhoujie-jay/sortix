@@ -32,41 +32,42 @@
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/process.h>
 
-namespace Sortix
-{
-	void Process::ExecuteCPU(int argc, char** argv, int envc, char** envp,
-	                         addr_t stackpos, addr_t entry,
-	                         CPU::InterruptRegisters* regs)
-	{
-		regs->eax = argc;
-		regs->ebx = (size_t) argv;
-		regs->edx = envc;
-		regs->ecx = (size_t) envp;
-		regs->eip = entry;
-		regs->useresp = stackpos & ~(15UL);
-		regs->ebp = regs->useresp;
-		regs->cs = UCS | URPL;
-		regs->ds = UDS | URPL;
-		regs->ss = UDS | URPL;
-		regs->eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
-	}
+namespace Sortix {
 
-	void InitializeThreadRegisters(CPU::InterruptRegisters* regs,
-                                   const tforkregs_t* requested)
-	{
-		memset(regs, 0, sizeof(*regs));
-		regs->eip = requested->eip;
-		regs->useresp = requested->esp;
-		regs->eax = requested->eax;
-		regs->ebx = requested->ebx;
-		regs->ecx = requested->ecx;
-		regs->edx = requested->edx;
-		regs->edi = requested->edi;
-		regs->esi = requested->esi;
-		regs->ebp = requested->ebp;
-		regs->cs = UCS | URPL;
-		regs->ds = UDS | URPL;
-		regs->ss = UDS | URPL;
-		regs->eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
-	}
+void Process::ExecuteCPU(int argc, char** argv, int envc, char** envp,
+                         addr_t stackpos, addr_t entry,
+                         CPU::InterruptRegisters* regs)
+{
+	regs->eax = argc;
+	regs->ebx = (size_t) argv;
+	regs->edx = envc;
+	regs->ecx = (size_t) envp;
+	regs->eip = entry;
+	regs->useresp = stackpos & ~(15UL);
+	regs->ebp = regs->useresp;
+	regs->cs = UCS | URPL;
+	regs->ds = UDS | URPL;
+	regs->ss = UDS | URPL;
+	regs->eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
 }
+
+void InitializeThreadRegisters(CPU::InterruptRegisters* regs,
+                               const tforkregs_t* requested)
+{
+	memset(regs, 0, sizeof(*regs));
+	regs->eip = requested->eip;
+	regs->useresp = requested->esp;
+	regs->eax = requested->eax;
+	regs->ebx = requested->ebx;
+	regs->ecx = requested->ecx;
+	regs->edx = requested->edx;
+	regs->edi = requested->edi;
+	regs->esi = requested->esi;
+	regs->ebp = requested->ebp;
+	regs->cs = UCS | URPL;
+	regs->ds = UDS | URPL;
+	regs->ss = UDS | URPL;
+	regs->eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+}
+
+} // namespace Sortix
