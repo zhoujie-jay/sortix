@@ -17,27 +17,14 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    wctype/wctype.cpp
-    Returns the character class description with the given name.
+    wctype/iswgraph.cpp
+    Returns whether the wide character is graphical.
 
 *******************************************************************************/
 
-#include <string.h>
 #include <wctype.h>
 
-extern "C" wctype_t wctype(const char *name)
+extern "C" int iswgraph(wint_t c)
 {
-	if ( !strcmp(name, "alnum") ) return (wctype_t) iswalnum;
-	if ( !strcmp(name, "alpha") ) return (wctype_t) iswalpha;
-	if ( !strcmp(name, "blank") ) return (wctype_t) iswblank;
-	if ( !strcmp(name, "cntrl") ) return (wctype_t) iswcntrl;
-	if ( !strcmp(name, "digit") ) return (wctype_t) iswdigit;
-	if ( !strcmp(name, "graph") ) return (wctype_t) iswgraph;
-	if ( !strcmp(name, "lower") ) return (wctype_t) iswlower;
-	if ( !strcmp(name, "print") ) return (wctype_t) iswprint;
-	if ( !strcmp(name, "punct") ) return (wctype_t) iswpunct;
-	if ( !strcmp(name, "space") ) return (wctype_t) iswspace;
-	if ( !strcmp(name, "upper") ) return (wctype_t) iswupper;
-	if ( !strcmp(name, "xdigit") ) return (wctype_t) iswxdigit;
-	return (wctype_t) NULL;
+	return L'!' <= c && c <= L'~';
 }

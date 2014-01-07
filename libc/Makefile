@@ -228,6 +228,21 @@ wchar/wmemcmp.o \
 wchar/wmemcpy.o \
 wchar/wmemmove.o \
 wchar/wmemset.o \
+wctype/iswalnum.o \
+wctype/iswalpha.o \
+wctype/iswblank.o \
+wctype/iswcntrl.o \
+wctype/iswctype.o \
+wctype/iswdigit.o \
+wctype/iswgraph.o \
+wctype/iswlower.o \
+wctype/iswprint.o \
+wctype/iswpunct.o \
+wctype/iswspace.o \
+wctype/iswupper.o \
+wctype/iswxdigit.o \
+wctype/towlower.o \
+wctype/towupper.o \
 wctype/wctype.o \
 
 HOSTEDOBJS=\
