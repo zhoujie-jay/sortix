@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -20,9 +20,8 @@
 
 *******************************************************************************/
 
-#include <sys/kernelinfo.h>
+#include <sys/utsname.h>
 
-#include <brand.h>
 #include <errno.h>
 #include <error.h>
 #include <limits.h>
@@ -43,66 +42,6 @@ const unsigned long PRINT_MACHINE = 1UL << 4UL;
 const unsigned long PRINT_PROCESSOR = 1UL << 5UL;
 const unsigned long PRINT_HWPLATFORM = 1UL << 6UL;
 const unsigned long PRINT_OPSYS = 1UL << 7UL;
-
-const size_t INFOBUFSIZE = 256UL;
-char infobuf[INFOBUFSIZE];
-
-const char* GetProcessorArchitecture()
-{
-#if defined(__x86_64__)
-	return "x86_64";
-#elif defined(__i386__)
-	return "i386";
-#else
-	return "unknown";
-#endif
-}
-
-const char* GetKernelName()
-{
-	if ( kernelinfo("name", infobuf, INFOBUFSIZE) )
-		return "unknown";
-	return infobuf;
-}
-
-const char* GetNodeName()
-{
-	return "sortix";
-}
-
-const char* GetKernelRelease()
-{
-	if ( kernelinfo("version", infobuf, INFOBUFSIZE) )
-		return "unknown";
-	return infobuf;
-}
-
-const char* GetKernelVersion()
-{
-	if ( kernelinfo("builddate", infobuf, INFOBUFSIZE) )
-		return "unknown";
-	return infobuf;
-}
-
-const char* GetMachine()
-{
-	return GetProcessorArchitecture();
-}
-
-const char* GetProcessor()
-{
-	return GetProcessorArchitecture();
-}
-
-const char* GetHardwarePlatform()
-{
-	return GetProcessorArchitecture();
-}
-
-const char* GetOperatingSystem()
-{
-	return BRAND_OPERATING_SYSTEM_NAME;
-}
 
 bool has_printed = false;
 
@@ -191,24 +130,28 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	static struct utsname utsname;
+	if ( uname(&utsname) < 0 )
+		error(1, errno, "uname");
+
 	if ( !flags )
 		flags = PRINT_KERNELNAME;
 	if ( flags & PRINT_KERNELNAME )
-		DoPrint(GetKernelName());
+		DoPrint(utsname.sysname);
 	if ( flags & PRINT_NODENAME )
-		DoPrint(GetNodeName());
+		DoPrint(utsname.nodename);
 	if ( flags & PRINT_KERNELREL )
-		DoPrint(GetKernelRelease());
+		DoPrint(utsname.release);
 	if ( flags & PRINT_KERNELVER )
-		DoPrint(GetKernelVersion());
+		DoPrint(utsname.version);
 	if ( flags & PRINT_MACHINE )
-		DoPrint(GetMachine());
+		DoPrint(utsname.machine);
 	if ( flags & PRINT_PROCESSOR )
-		DoPrint(GetProcessor());
+		DoPrint(utsname.processor);
 	if ( flags & PRINT_HWPLATFORM )
-		DoPrint(GetHardwarePlatform());
+		DoPrint(utsname.hwplatform);
 	if ( flags & PRINT_OPSYS )
-		DoPrint(GetOperatingSystem());
+		DoPrint(utsname.opsysname);
 	printf("\n");
 	return 0;
 }

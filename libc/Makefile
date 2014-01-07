@@ -433,6 +433,7 @@ sys/uio/preadv.o \
 sys/uio/pwritev.o \
 sys/uio/readv.o \
 sys/uio/writev.o \
+sys/utsname/uname.o \
 sys/wait/wait.o \
 sys/wait/waitpid.o \
 termios/tcgetwincurpos.o \
