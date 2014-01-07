@@ -51,6 +51,14 @@ static size_t noop_callback(void*, const char*, size_t amount)
 	return amount;
 }
 
+static
+size_t callback_character(size_t (*callback)(void*, const char*, size_t),
+                          void* user,
+                          char c)
+{
+	return callback(user, &c, 1);
+}
+
 extern "C"
 size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
                         void* user,
@@ -74,6 +82,7 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 			if ( callback(user, format, amount) != amount )
 				return SIZE_MAX;
 			format += amount;
+			written += amount;
 			continue;
 		}
 
@@ -102,17 +111,21 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 		(void) group_thousands;
 		(void) alternate_output_digits;
 
-		do switch ( *format++ )
+		while ( true )
 		{
-		case '#': alternate = true; continue;
-		case '0': zero_pad = true; continue;
-		case '-': field_width_is_negative = true; continue;
-		case ' ': prepend_blank_if_positive = true; continue;
-		case '+': prepend_plus_if_positive = true; continue;
-		case '\'': group_thousands = true; continue;
-		case 'I': alternate_output_digits = true; continue;
-		default: format--; break;
-		} while ( false );
+			switch ( *format++ )
+			{
+			case '#': alternate = true; continue;
+			case '0': zero_pad = true; continue;
+			case '-': field_width_is_negative = true; continue;
+			case ' ': prepend_blank_if_positive = true; continue;
+			case '+': prepend_plus_if_positive = true; continue;
+			case '\'': group_thousands = true; continue;
+			case 'I': alternate_output_digits = true; continue;
+			default: format--; break;
+			}
+			break;
+		}
 
 		int field_width = 0;
 		if ( *format == '*' && (format++, true) )
@@ -205,6 +218,8 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 				value = (uintmax_t) va_arg(parameters, void*);
 				conversion = 'x';
 				alternate = !alternate;
+				prepend_blank_if_positive = false;
+				prepend_plus_if_positive = false;
 			}
 			else if ( conversion == 'i' || conversion == 'd' )
 			{
@@ -250,6 +265,8 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 					value = (uintmax_t) va_arg(parameters, ptrdiff_t);
 				else
 					goto incomprehensible_conversion;
+				prepend_blank_if_positive = false;
+				prepend_plus_if_positive = false;
 			}
 
 			const char* digits = conversion == 'X' ? "0123456789ABCDEF" :
@@ -258,25 +275,32 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 			                 conversion == 'o' ? 8 : 10;
 			char prefix[3];
 			size_t prefix_length = 0;
+			size_t prefix_digits_length = 0;
 			if ( negative_value )
 				prefix[prefix_length++] = '-';
 			else if ( prepend_plus_if_positive )
 				prefix[prefix_length++] = '+';
 			else if ( prepend_blank_if_positive )
 				prefix[prefix_length++] = ' ';
-			if ( alternate && (conversion == 'x' || conversion == 'X') )
-				prefix[prefix_length++] = '0',
-				prefix[prefix_length++] = conversion;
+			if ( alternate && (conversion == 'x' || conversion == 'X') && value != 0 )
+				prefix[prefix_digits_length++, prefix_length++] = '0',
+				prefix[prefix_digits_length++, prefix_length++] = conversion;
 			if ( alternate && conversion == 'o' && value != 0 )
-				prefix[prefix_length++] = '0';
+				prefix[prefix_digits_length++, prefix_length++] = '0';
 
 			char output[sizeof(uintmax_t) * 3];
 			size_t output_length = convert_integer(output, value, base, digits);
+			if ( !precision && output_length == 1 && output[0] == '0' )
+			{
+				output_length = 0;
+				output[0] = '\0';
+			}
 			size_t output_length_with_precision =
 				precision != SIZE_MAX && output_length < precision ?
 				precision :
 			    output_length;
 
+			size_t digits_length = prefix_digits_length + output_length;
 			size_t normal_length = prefix_length + output_length;
 			size_t length_with_precision = prefix_length + output_length_with_precision;
 
@@ -285,10 +309,9 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 			bool use_left_pad = !use_zero_pad && 0 <= field_width;
 			bool use_right_pad = !use_zero_pad && field_width < 0;
 
-			char c;
 			if ( use_left_pad )
 				for ( size_t i = length_with_precision; i < abs_field_width; i++ )
-					if ( callback(user, &(c = ' '), 1) != 1 )
+					if ( callback_character(callback, user, ' ') != 1 )
 						return SIZE_MAX;
 					else
 						written++;
@@ -297,13 +320,13 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 			written += prefix_length;
 			if ( use_zero_pad )
 				for ( size_t i = normal_length; i < abs_field_width; i++ )
-					if ( callback(user, &(c = '0'), 1) != 1 )
+					if ( callback_character(callback, user, '0') != 1 )
 						return SIZE_MAX;
 					else
 						written++;
 			if ( use_precision )
-				for ( size_t i = normal_length; i < precision; i++ )
-					if ( callback(user, &(c = '0'), 1) != 1 )
+				for ( size_t i = digits_length; i < precision; i++ )
+					if ( callback_character(callback, user, '0') != 1 )
 						return SIZE_MAX;
 					else
 						written++;
@@ -312,7 +335,7 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 			written += output_length;
 			if ( use_right_pad )
 				for ( size_t i = length_with_precision; i < abs_field_width; i++ )
-					if ( callback(user, &(c = ' '), 1) != 1 )
+					if ( callback_character(callback, user, ' ') != 1 )
 						return SIZE_MAX;
 					else
 						written++;
@@ -352,9 +375,23 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 			else
 				goto incomprehensible_conversion;
 
+			if ( !field_width_is_negative && 1 < abs_field_width )
+				for ( size_t i = 1; i < abs_field_width; i++ )
+					if ( callback_character(callback, user, ' ') != 1 )
+						return SIZE_MAX;
+					else
+						written++;
+
 			if ( callback(user, &c, 1) != 1 )
 				return SIZE_MAX;
 			written++;
+
+			if ( field_width_is_negative && 1 < abs_field_width )
+				for ( size_t i = 1; i < abs_field_width; i++ )
+					if ( callback_character(callback, user, ' ') != 1 )
+						return SIZE_MAX;
+					else
+						written++;
 		}
 		else if ( *format == 's' && (format++, true) )
 		{
@@ -374,9 +411,23 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 			for ( size_t i = 0; i < precision && string[i]; i++ )
 				string_length++;
 
+			if ( !field_width_is_negative && string_length < abs_field_width )
+				for ( size_t i = string_length; i < abs_field_width; i++ )
+					if ( callback_character(callback, user, ' ') != 1 )
+						return SIZE_MAX;
+					else
+						written++;
+
 			if ( callback(user, string, string_length) != string_length )
 				return SIZE_MAX;
 			written += string_length;
+
+			if ( field_width_is_negative && string_length < abs_field_width )
+				for ( size_t i = string_length; i < abs_field_width; i++ )
+					if ( callback_character(callback, user, ' ') != 1 )
+						return SIZE_MAX;
+					else
+						written++;
 
 		}
 		else if ( *format == 'n' && (format++, true) )
