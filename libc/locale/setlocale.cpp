@@ -23,28 +23,28 @@
 *******************************************************************************/
 
 #define __SORTIX_STDLIB_REDIRECTS 0
+#include <errno.h>
+#include <locale.h>
 #include <stdlib.h>
 #include <string.h>
-#include <locale.h>
-#include <errno.h>
 
 static char* current_locales[LC_NUM_CATEGORIES] = { NULL };
 
 extern "C" const char* sortix_setlocale(int category, const char* locale)
 {
-	if ( category < 0 || LC_ALL < category ) { errno = EINVAL; return NULL; }
+	if ( category < 0 || LC_ALL < category )
+		return errno = EINVAL, (const char*) NULL;
 	char* new_strings[LC_NUM_CATEGORIES];
-	int from = category;
-	int to = category;
+	int from = category != LC_ALL ? category : 0;
+	int to = category != LC_ALL ? category : LC_NUM_CATEGORIES - 1;
 	if ( !locale )
 		return current_locales[to] ? current_locales[to] : "C";
-	if ( category == LC_ALL ) { from = 0; to = LC_NUM_CATEGORIES-1; }
 	for ( int i = from; i <= to; i++ )
 	{
-		new_strings[i] = strdup(locale);
-		if ( !new_strings[i] )
+		if ( !(new_strings[i] = strdup(locale)) )
 		{
-			for ( int n = from; n < i; n++ ) { free(new_strings[n]); }
+			for ( int n = from; n < i; n++ )
+				free(new_strings[n]);
 			return NULL;
 		}
 	}
