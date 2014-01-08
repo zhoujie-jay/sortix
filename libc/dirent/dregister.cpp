@@ -24,6 +24,9 @@
 
 #include <dirent.h>
 #include <DIR.h>
+#include <pthread.h>
+
+extern "C" pthread_mutex_t __dirname_lock;
 
 extern "C" void dregister(DIR* dir)
 {

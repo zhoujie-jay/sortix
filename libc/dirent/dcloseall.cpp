@@ -31,6 +31,8 @@ extern "C" { DIR* __firstdir = NULL; }
 extern "C" int dcloseall(void)
 {
 	int result = 0;
+	// We do not lock __firstdir_lock here because this function is called on
+	// process termination and only one thread can call exit(3).
 	while ( __firstdir )
 		result |= closedir(__firstdir);
 	return result ? EOF : 0;
