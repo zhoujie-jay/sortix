@@ -22,9 +22,11 @@
 
 *******************************************************************************/
 
+#include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
 
+static pthread_mutex_t rand_mutex = PTHREAD_MUTEX_INITIALIZER;
 static uint32_t m_w = 1337;
 static uint32_t m_z = 37;
 
@@ -37,11 +39,16 @@ static uint32_t random_32_bits()
 
 extern "C" int rand()
 {
-	return (int) (random_32_bits() % ((uint32_t) RAND_MAX + 1));
+	pthread_mutex_lock(&rand_mutex);
+	int result = (int) (random_32_bits() % ((uint32_t) RAND_MAX + 1));
+	pthread_mutex_unlock(&rand_mutex);
+	return result;
 }
 
 extern "C" void srand(unsigned int seed)
 {
+	pthread_mutex_lock(&rand_mutex);
 	m_w = seed >> 16 & 0xFFFF;
 	m_z = seed >>  0 & 0xFFFF;
+	pthread_mutex_unlock(&rand_mutex);
 }
