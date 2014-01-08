@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,23 +22,22 @@
 
 *******************************************************************************/
 
+#include <stdint.h>
 #include <stdlib.h>
 
-#if 1
+static uint32_t m_w = 1337;
+static uint32_t m_z = 37;
 
-static unsigned int m_w = 1337;
-static unsigned int m_z = 37;
-
-static unsigned int RandomUnsignedInt()
+static uint32_t random_32_bits()
 {
-	m_z = 36969 * (m_z & 65535) + (m_z >> 16);
-	m_w = 18000 * (m_w & 65535) + (m_w >> 16);
-	return (m_z << 16) + m_w;  /* 32-bit result */
+	m_z = 36969 * (m_z >> 0 & 0xFFFF) + (m_z >> 16 & 0xFFFF);
+	m_w = 18000 * (m_w >> 0 & 0xFFFF) + (m_w >> 16 & 0xFFFF);
+	return (m_z << 16) + m_w;
 }
 
 extern "C" int rand()
 {
-	return RandomUnsignedInt() % 32768;
+	return (int) (random_32_bits() % ((uint32_t) RAND_MAX + 1));
 }
 
 extern "C" void srand(unsigned int seed)
@@ -46,20 +45,3 @@ extern "C" void srand(unsigned int seed)
 	m_w = seed >> 16 & 0xFFFF;
 	m_z = seed >>  0 & 0xFFFF;
 }
-
-#else
-
-static unsigned random_seed = 1337;
-
-extern "C" int rand()
-{
-	random_seed = random_seed + 37 * 1103515245 + 12345;
-	return random_seed >> 16;
-}
-
-extern "C" void srand(unsigned int seed)
-{
-	random_seed = seed;
-}
-
-#endif
