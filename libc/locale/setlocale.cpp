@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -25,9 +25,11 @@
 #define __SORTIX_STDLIB_REDIRECTS 0
 #include <errno.h>
 #include <locale.h>
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 
+static pthread_mutex_t locale_lock = PTHREAD_MUTEX_INITIALIZER;
 static char* current_locales[LC_NUM_CATEGORIES] = { NULL };
 
 extern "C" const char* sortix_setlocale(int category, const char* locale)
@@ -48,11 +50,13 @@ extern "C" const char* sortix_setlocale(int category, const char* locale)
 			return NULL;
 		}
 	}
+	pthread_mutex_lock(&locale_lock);
 	for ( int i = from; i <= to; i++ )
 	{
 		free(current_locales[i]);
 		current_locales[i] = new_strings[i];
 	}
+	pthread_mutex_unlock(&locale_lock);
 	return locale;
 }
 
