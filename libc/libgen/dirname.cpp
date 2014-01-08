@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -25,15 +25,12 @@
 #include <libgen.h>
 #include <string.h>
 
+static const char current_directory[2] = ".";
+
 extern "C" char* dirname(char* path)
 {
-	static char static_stuff[2];
 	if ( !path || !*path )
-	{
-		static_stuff[0] = '.';
-		static_stuff[1] = '\0';
-		return static_stuff;
-	}
+		return (char*) current_directory;
 	size_t path_len = strlen(path);
 	while ( 2 <= path_len && path[path_len-1] == '/' )
 		path[--path_len] = '\0';
