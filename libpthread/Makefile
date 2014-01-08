@@ -14,7 +14,9 @@ OBJS=\
 pthread_equal.o \
 pthread_initialize.o \
 pthread_mutexattr_destroy.o \
+pthread_mutexattr_gettype.o \
 pthread_mutexattr_init.o \
+pthread_mutexattr_settype.o \
 pthread_mutex_destroy.o \
 pthread_mutex_init.o \
 pthread_mutex_lock.o \

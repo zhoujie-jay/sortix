@@ -218,13 +218,13 @@ int pthread_mutexattr_destroy(pthread_mutexattr_t*);
 /* TODO: pthread_mutexattr_getprotocol */
 /* TODO: pthread_mutexattr_getpshared */
 /* TODO: pthread_mutexattr_getrobust */
-/* TODO: pthread_mutexattr_gettype */
+int pthread_mutexattr_gettype(pthread_mutexattr_t* __restrict, int* __restrict);
 int pthread_mutexattr_init(pthread_mutexattr_t*);
 /* TODO: pthread_mutexattr_setprioceiling */
 /* TODO: pthread_mutexattr_setprotocol */
 /* TODO: pthread_mutexattr_setpshared */
 /* TODO: pthread_mutexattr_setrobust */
-/* TODO: pthread_mutexattr_settype */
+int pthread_mutexattr_settype(pthread_mutexattr_t*, int);
 /* TODO: pthread_once */
 /* TODO: pthread_rwlock_destroy */
 /* TODO: pthread_rwlock_init */

@@ -28,5 +28,6 @@
 extern "C" int pthread_mutexattr_init(pthread_mutexattr_t* attr)
 {
 	memset(attr, 0, sizeof(*attr));
+	attr->type = PTHREAD_MUTEX_DEFAULT;
 	return 0;
 }

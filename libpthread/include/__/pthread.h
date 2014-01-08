@@ -66,10 +66,12 @@ typedef struct
 #if defined(__is_sortix_libpthread)
 typedef struct
 {
+	int type;
 } __pthread_mutexattr_t;
 #else
 typedef struct
 {
+	int __pthread_type;
 } __pthread_mutexattr_t;
 #endif
 

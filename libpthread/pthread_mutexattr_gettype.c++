@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of Sortix libpthread.
 
@@ -17,28 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with Sortix libpthread. If not, see <http://www.gnu.org/licenses/>.
 
-    pthread_mutex_init.c++
-    Initializes a mutex.
+    pthread_mutexattr_gettype.c++
+    Gets the requested mutex type in a mutex attribute object.
 
 *******************************************************************************/
 
 #include <pthread.h>
 
 extern "C"
-int pthread_mutex_init(pthread_mutex_t* restrict mutex,
-                       const pthread_mutexattr_t* restrict attr)
+int pthread_mutexattr_gettype(pthread_mutexattr_t* restrict attr,
+                              int* restrict type)
 {
-	pthread_mutexattr_t default_attr;
-	if ( !attr )
-	{
-		pthread_mutexattr_init(&default_attr);
-		attr = &default_attr;
-	}
-
-	mutex->lock = 0;
-	mutex->type = attr->type;
-	mutex->owner = 0;
-	mutex->recursion = 0;
-
-	return 0;
+	return *type = attr->type, 0;
 }
