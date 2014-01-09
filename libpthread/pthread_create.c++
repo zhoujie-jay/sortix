@@ -203,6 +203,10 @@ int pthread_create(pthread_t* restrict thread_ptr,
 	thread->uthread.tls_size = tls_size;
 	thread->uthread.arg_mmap = self->uthread.arg_mmap;
 	thread->uthread.arg_size = self->uthread.arg_size;
+	thread->join_lock = PTHREAD_NORMAL_MUTEX_INITIALIZER_NP;
+	thread->join_lock.lock = 1 /* LOCKED_VALUE */;
+	thread->join_lock.type = PTHREAD_MUTEX_NORMAL;
+	thread->join_lock.owner = (unsigned long) thread;
 	thread->entry_function = entry_function;
 	thread->entry_cookie = entry_cookie;
 

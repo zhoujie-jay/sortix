@@ -30,6 +30,7 @@ pthread_equal.o \
 pthread_exit.o \
 pthread_getspecific.o \
 pthread_initialize.o \
+pthread_join.o \
 pthread_key_create.o \
 pthread_key_delete.o \
 pthread_mutexattr_destroy.o \

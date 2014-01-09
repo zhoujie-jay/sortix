@@ -31,7 +31,7 @@
 
 extern "C"
 __attribute__((__noreturn__))
-void pthread_exit(void* /*return_value*/)
+void pthread_exit(void* return_value)
 {
 	struct pthread* thread = pthread_self();
 
@@ -61,10 +61,13 @@ void pthread_exit(void* /*return_value*/)
 	pthread_mutex_unlock(&__pthread_num_threads_lock);
 	if ( num_threads == 1 )
 		exit(0);
+	thread->exit_result = return_value;
 	struct exit_thread extended;
 	memset(&extended, 0, sizeof(extended));
 	extended.unmap_from = thread->uthread.stack_mmap;
 	extended.unmap_size = thread->uthread.stack_size;
-	exit_thread(0, EXIT_THREAD_UNMAP, &extended);
+	extended.zero_from = &thread->join_lock.lock;
+	extended.zero_size = sizeof(thread->join_lock.lock);
+	exit_thread(0, EXIT_THREAD_UNMAP | EXIT_THREAD_ZERO, &extended);
 	__builtin_unreachable();
 }

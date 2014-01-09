@@ -72,4 +72,10 @@ static void elf_note_sortix_pthread_size()
 
 extern "C" void pthread_initialize(void)
 {
+	struct pthread* self = pthread_self();
+
+	self->join_lock = PTHREAD_NORMAL_MUTEX_INITIALIZER_NP;
+	self->join_lock.lock = 1 /* LOCKED_VALUE */;
+	self->join_lock.type = PTHREAD_MUTEX_NORMAL;
+	self->join_lock.owner = (unsigned long) self;
 }

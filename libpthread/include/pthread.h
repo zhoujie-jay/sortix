@@ -138,8 +138,10 @@ typedef __pthread_t pthread_t;
 struct pthread
 {
 	struct uthread uthread;
+	pthread_mutex_t join_lock;
 	void* (*entry_function)(void*);
 	void* entry_cookie;
+	void* exit_result;
 	void** keys;
 	size_t keys_length;
 };
@@ -242,7 +244,7 @@ void pthread_exit(void*);
 /* TODO: pthread_getcpuclockid */
 /* TODO: pthread_getschedparam */
 void* pthread_getspecific(pthread_key_t);
-/* TODO: pthread_join */
+int pthread_join(pthread_t, void**);
 int pthread_key_create(pthread_key_t*, void (*)(void*));
 int pthread_key_delete(pthread_key_t);
 /* TODO: pthread_mutex_consistent */
