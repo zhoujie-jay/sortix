@@ -66,8 +66,17 @@ void pthread_exit(void* return_value)
 	memset(&extended, 0, sizeof(extended));
 	extended.unmap_from = thread->uthread.stack_mmap;
 	extended.unmap_size = thread->uthread.stack_size;
-	extended.zero_from = &thread->join_lock.lock;
-	extended.zero_size = sizeof(thread->join_lock.lock);
-	exit_thread(0, EXIT_THREAD_UNMAP | EXIT_THREAD_ZERO, &extended);
-	__builtin_unreachable();
+	if ( thread->detach_state == PTHREAD_CREATE_JOINABLE )
+	{
+		extended.zero_from = &thread->join_lock.lock;
+		extended.zero_size = sizeof(thread->join_lock.lock);
+		exit_thread(0, EXIT_THREAD_UNMAP | EXIT_THREAD_ZERO, &extended);
+		__builtin_unreachable();
+	}
+	else
+	{
+		munmap(thread->uthread.tls_mmap, thread->uthread.tls_size);
+		exit_thread(0, EXIT_THREAD_UNMAP, &extended);
+		__builtin_unreachable();
+	}
 }

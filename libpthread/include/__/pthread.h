@@ -37,11 +37,13 @@ __BEGIN_DECLS
 typedef struct
 {
 	__SIZE_TYPE__ stack_size;
+	int detach_state;
 } __pthread_attr_t;
 #else
 typedef struct
 {
 	__SIZE_TYPE__ __pthread_stack_size;
+	int __pthread_detached_state;
 } __pthread_attr_t;
 #endif
 

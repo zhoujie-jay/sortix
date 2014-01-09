@@ -78,4 +78,5 @@ extern "C" void pthread_initialize(void)
 	self->join_lock.lock = 1 /* LOCKED_VALUE */;
 	self->join_lock.type = PTHREAD_MUTEX_NORMAL;
 	self->join_lock.owner = (unsigned long) self;
+	self->detach_state = PTHREAD_CREATE_JOINABLE;
 }

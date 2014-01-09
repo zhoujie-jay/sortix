@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of Sortix libpthread.
 
@@ -17,20 +17,15 @@
     You should have received a copy of the GNU Lesser General Public License
     along with Sortix libpthread. If not, see <http://www.gnu.org/licenses/>.
 
-    pthread_attr_init.c++
-    Initialize a thread attributes object.
+    pthread_attr_getdetachstate.c++
+    Gets the requested detach state in a thread attribute object.
 
 *******************************************************************************/
 
 #include <pthread.h>
-#include <string.h>
 
-static const unsigned long DEFAULT_STACK_SIZE = 64 * 1024;
-
-extern "C" int pthread_attr_init(pthread_attr_t* attr)
+extern "C"
+int pthread_attr_getdetachstate(const pthread_attr_t* attr, int* detach_state)
 {
-	memset(attr, 0, sizeof(*attr));
-	attr->stack_size = DEFAULT_STACK_SIZE;
-	attr->detach_state = PTHREAD_CREATE_JOINABLE;
-	return 0;
+	return *detach_state = attr->detach_state, 0;
 }

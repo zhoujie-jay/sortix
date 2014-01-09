@@ -51,8 +51,8 @@ __BEGIN_DECLS
 /* TODO: #define PTHREAD_CANCEL_DEFERRED */
 /* TODO: #define PTHREAD_CANCEL_DISABLE */
 /* TODO: #define PTHREAD_CANCELED */
-/* TODO: #define PTHREAD_CREATE_DETACHED */
-/* TODO: #define PTHREAD_CREATE_JOINABLE */
+#define PTHREAD_CREATE_DETACHED 1
+#define PTHREAD_CREATE_JOINABLE 0
 /* TODO: #define PTHREAD_EXPLICIT_SCHED */
 /* TODO: #define PTHREAD_INHERIT_SCHED */
 #define PTHREAD_MUTEX_DEFAULT PTHREAD_MUTEX_NORMAL
@@ -144,6 +144,7 @@ struct pthread
 	void* exit_result;
 	void** keys;
 	size_t keys_length;
+	int detach_state;
 };
 #endif
 
@@ -188,7 +189,7 @@ struct pthread* pthread_allocate_tls(void);
 
 /* TODO: pthread_atfork */
 int pthread_attr_destroy(pthread_attr_t*);
-/* TODO: pthread_attr_getdetachstate */
+int pthread_attr_getdetachstate(const pthread_attr_t*, int*);
 /* TODO: pthread_attr_getguardsize */
 /* TODO: pthread_attr_getinheritsched */
 /* TODO: pthread_attr_getschedparam */
@@ -198,7 +199,7 @@ int pthread_attr_destroy(pthread_attr_t*);
 int pthread_attr_getstacksize(const pthread_attr_t* __restrict,
                               size_t* __restrict);
 int pthread_attr_init(pthread_attr_t*);
-/* TODO: pthread_attr_setdetachstate */
+int pthread_attr_setdetachstate(pthread_attr_t*, int);
 /* TODO: pthread_attr_setguardsize */
 /* TODO: pthread_attr_setinheritsched */
 /* TODO: pthread_attr_setschedparam */
