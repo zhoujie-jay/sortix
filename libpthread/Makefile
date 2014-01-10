@@ -36,6 +36,7 @@ pthread_mutex_init.o \
 pthread_mutex_lock.o \
 pthread_mutex_trylock.o \
 pthread_mutex_unlock.o \
+pthread_once.o \
 pthread_rwlock_destroy.o \
 pthread_rwlock_init.o \
 pthread_rwlock_rdlock.o \

@@ -61,7 +61,6 @@ __BEGIN_DECLS
 #define PTHREAD_MUTEX_RECURSIVE 1
 /* TODO: #define PTHREAD_MUTEX_ROBUST */
 /* TODO: #define PTHREAD_MUTEX_STALLED */
-/* TODO: #define PTHREAD_ONCE_INIT */
 /* TODO: #define PTHREAD_PRIO_INHERIT */
 /* TODO: #define PTHREAD_PRIO_NONE */
 /* TODO: #define PTHREAD_PRIO_PROTECT */
@@ -161,6 +160,8 @@ struct pthread_cond_elem
 #define PTHREAD_NORMAL_MUTEX_INITIALIZER_NP { 0, PTHREAD_MUTEX_NORMAL, 0, 0 }
 #define PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP { 0, PTHREAD_MUTEX_RECURSIVE, 0, 0 }
 
+#define PTHREAD_ONCE_INIT { PTHREAD_NORMAL_MUTEX_INITIALIZER_NP, 0 }
+
 void pthread_initialize(void);
 
 #if defined(__is_sortix_libpthread)
@@ -256,7 +257,7 @@ int pthread_mutexattr_init(pthread_mutexattr_t*);
 /* TODO: pthread_mutexattr_setpshared */
 /* TODO: pthread_mutexattr_setrobust */
 int pthread_mutexattr_settype(pthread_mutexattr_t*, int);
-/* TODO: pthread_once */
+int pthread_once(pthread_once_t*, void (*)(void));
 int pthread_rwlock_destroy(pthread_rwlock_t*);
 int pthread_rwlock_init(pthread_rwlock_t* __restrict,
                         const pthread_rwlockattr_t* __restrict);

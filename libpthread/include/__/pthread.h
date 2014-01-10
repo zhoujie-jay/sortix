@@ -99,7 +99,19 @@ typedef struct
 } __pthread_mutexattr_t;
 #endif
 
-typedef int __pthread_once_t;
+#if defined(__is_sortix_libpthread)
+typedef struct
+{
+	__pthread_mutex_t lock;
+	int executed;
+} __pthread_once_t;
+#else
+typedef struct
+{
+	__pthread_mutex_t __pthread_lock;
+	int __pthread_executed;
+} __pthread_once_t;
+#endif
 
 #if defined(__is_sortix_libpthread)
 typedef struct
