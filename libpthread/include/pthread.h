@@ -139,6 +139,7 @@ struct pthread
 {
 	struct uthread uthread;
 	pthread_mutex_t join_lock;
+	pthread_mutex_t detach_lock;
 	void* (*entry_function)(void*);
 	void* entry_cookie;
 	void* exit_result;
@@ -237,7 +238,7 @@ int pthread_create(pthread_t* __restrict,
                    const pthread_attr_t* __restrict,
                    void* (*)(void*),
                    void* __restrict);
-/* TODO: pthread_detach */
+int pthread_detach(pthread_t);
 int pthread_equal(pthread_t, pthread_t);
 __attribute__((__noreturn__))
 void pthread_exit(void*);

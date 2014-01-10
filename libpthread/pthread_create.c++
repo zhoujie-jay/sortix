@@ -207,6 +207,7 @@ int pthread_create(pthread_t* restrict thread_ptr,
 	thread->join_lock.lock = 1 /* LOCKED_VALUE */;
 	thread->join_lock.type = PTHREAD_MUTEX_NORMAL;
 	thread->join_lock.owner = (unsigned long) thread;
+	thread->detach_lock = PTHREAD_NORMAL_MUTEX_INITIALIZER_NP;
 	thread->detach_state = attr->detach_state;
 	thread->entry_function = entry_function;
 	thread->entry_cookie = entry_cookie;

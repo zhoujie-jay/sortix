@@ -61,6 +61,7 @@ void pthread_exit(void* return_value)
 	pthread_mutex_unlock(&__pthread_num_threads_lock);
 	if ( num_threads == 1 )
 		exit(0);
+	pthread_mutex_lock(&thread->detach_lock);
 	thread->exit_result = return_value;
 	struct exit_thread extended;
 	memset(&extended, 0, sizeof(extended));
