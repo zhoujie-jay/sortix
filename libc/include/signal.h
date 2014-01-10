@@ -207,7 +207,7 @@ int killpg(pid_t, int);
 void psiginfo(const siginfo_t*, const char*);
 void psignal(int, const char*);
 /* TODO: int pthread_kill(pthread_t, int); */
-/* TODO: int pthread_sigmask(int, const sigset_t* __restrict, sigset_t* __restrict); */
+int pthread_sigmask(int, const sigset_t* __restrict, sigset_t* __restrict);
 int raise(int sig);
 int sigaction(int, const struct sigaction* __restrict, struct sigaction* __restrict);
 int sigaddset(sigset_t*, int);

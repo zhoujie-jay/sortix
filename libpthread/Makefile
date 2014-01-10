@@ -46,6 +46,7 @@ pthread_rwlock_unlock.o \
 pthread_rwlock_wrlock.o \
 pthread_self.o \
 pthread_setspecific.o \
+pthread_sigmask.o \
 
 BINS:=libpthread.a
 
