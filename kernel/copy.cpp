@@ -17,7 +17,7 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    copy.h
+    copy.cpp
     The context for io operations: who made it, how should data be copied, etc.
 
 *******************************************************************************/
@@ -41,7 +41,6 @@ bool CopyToUser(void* userdst, const void* ksrc, size_t count)
 
 bool CopyFromUser(void* kdst, const void* usersrc, size_t count)
 {
-	//Log::PrintF("[copy.cpp] Copying %zu bytes from 0x%zx to 0x%zx\n", count, usersrc, kdst);
 	memcpy(kdst, usersrc, count);
 	return true;
 }
