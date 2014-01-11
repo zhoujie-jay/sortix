@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of Sortix.
 
@@ -33,6 +33,8 @@ bool CopyToUser(void* userdst, const void* ksrc, size_t count);
 bool CopyFromUser(void* kdst, const void* usersrc, size_t count);
 bool CopyToKernel(void* kdst, const void* ksrc, size_t count);
 bool CopyFromKernel(void* kdst, const void* ksrc, size_t count);
+bool ZeroKernel(void* kdst, size_t count);
+bool ZeroUser(void* userdst, size_t count);
 char* GetStringFromUser(const char* str);
 
 } // namespace Sortix

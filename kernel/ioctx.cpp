@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -37,6 +37,7 @@ void SetupUserIOCtx(ioctx_t* ctx)
 	ctx->gid = ctx->auth_gid = process->gid;
 	ctx->copy_to_dest = CopyToUser;
 	ctx->copy_from_src = CopyFromUser;
+	ctx->zero_dest = ZeroUser;
 	ctx->dflags = 0;
 }
 
@@ -48,6 +49,7 @@ void SetupKernelIOCtx(ioctx_t* ctx)
 	ctx->gid = ctx->auth_gid = process->gid;
 	ctx->copy_to_dest = CopyToKernel;
 	ctx->copy_from_src = CopyFromKernel;
+	ctx->zero_dest = ZeroKernel;
 	ctx->dflags = 0;
 }
 

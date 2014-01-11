@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of Sortix.
 
@@ -70,18 +70,8 @@ off_t Full::lseek(ioctx_t* /*ctx*/, off_t offset, int /*whence*/)
 
 ssize_t Full::read(ioctx_t* ctx, uint8_t* buf, size_t count)
 {
-	const size_t ZERO_MEM_SIZE = 128;
-	uint8_t zero_mem[ZERO_MEM_SIZE];
-	memset(zero_mem, 0, ZERO_MEM_SIZE);
-	size_t sofar = 0;
-	while ( sofar < count )
-	{
-		size_t left = count - sofar;
-		size_t amount = left < ZERO_MEM_SIZE ? left : ZERO_MEM_SIZE;
-		ctx->copy_to_dest(buf + sofar, zero_mem, amount);
-		sofar += amount;
-	}
-	return (ssize_t) sofar;
+	ctx->zero_dest(buf, count);
+	return (ssize_t) count;
 }
 
 ssize_t Full::pread(ioctx_t* ctx, uint8_t* buf, size_t count, off_t /*off*/)

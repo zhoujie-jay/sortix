@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of Sortix.
 
@@ -37,6 +37,7 @@ struct ioctx_struct
 	gid_t gid, auth_gid;
 	bool (*copy_to_dest)(void* dest, const void* src, size_t n);
 	bool (*copy_from_src)(void* dest, const void* src, size_t n);
+	bool (*zero_dest)(void* dest, size_t n);
 	int dflags;
 };
 
