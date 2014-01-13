@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of Sortix libpthread.
 
@@ -17,52 +17,42 @@
     You should have received a copy of the GNU Lesser General Public License
     along with Sortix libpthread. If not, see <http://www.gnu.org/licenses/>.
 
-    pthread_exit.c++
-    Exits the current thread.
+    pthread_setspecific.c++
+    Thread-specific data management.
 
 *******************************************************************************/
 
-#include <sys/mman.h>
-
+#include <assert.h>
+#include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
-extern "C"
-__attribute__((__noreturn__))
-void pthread_exit(void* /*return_value*/)
+extern "C" int pthread_setspecific(pthread_key_t key, const void* value_const)
 {
+	void* value = (void*) value_const;
+
 	struct pthread* thread = pthread_self();
 
+	if ( key < thread->keys_length )
+		return thread->keys[key] = value, 0;
+
 	pthread_mutex_lock(&__pthread_keys_lock);
-	bool keys_left = true;
-	while ( keys_left )
-	{
-		keys_left = false;
-		for ( pthread_key_t key = 0; key < thread->keys_length; key++ )
-		{
-			void* key_value = thread->keys[key];
-			if ( !key_value )
-				continue;
-			thread->keys[key] = NULL;
-			if ( __pthread_keys[key].destructor )
-				__pthread_keys[key].destructor(key_value);
-			keys_left = true;
-		}
-	}
-	free(thread->keys);
-	thread->keys = NULL;
-	thread->keys_length = 0;
+
+	assert(key < __pthread_keys_length);
+	assert(__pthread_keys[key].destructor);
+
 	pthread_mutex_unlock(&__pthread_keys_lock);
 
-	size_t num_threads = 1;
-	if ( num_threads == 1 )
-		exit(0);
-	struct exit_thread extended;
-	memset(&extended, 0, sizeof(extended));
-	extended.unmap_from = thread->uthread.stack_mmap;
-	extended.unmap_size = thread->uthread.stack_size;
-	exit_thread(0, EXIT_THREAD_UNMAP, &extended);
-	__builtin_unreachable();
+	size_t old_length = thread->keys_length;
+	size_t new_length = __pthread_keys_length;
+	size_t new_size = new_length * sizeof(void*);
+	void** new_keys = (void**) realloc(thread->keys, new_size);
+	if ( !new_keys )
+		return errno;
+	thread->keys = new_keys;
+	thread->keys_length = new_length;
+	for ( size_t i = old_length; i < new_length; i++ )
+		new_keys[i] = NULL;
+
+	return thread->keys[key] = value, 0;
 }

@@ -139,6 +139,8 @@ typedef __pthread_t pthread_t;
 struct pthread
 {
 	struct uthread uthread;
+	void** keys;
+	size_t keys_length;
 };
 #endif
 
@@ -228,7 +230,7 @@ void pthread_exit(void*);
 /* TODO: pthread_getconcurrency */
 /* TODO: pthread_getcpuclockid */
 /* TODO: pthread_getschedparam */
-/* TODO: pthread_getspecific */
+void* pthread_getspecific(pthread_key_t);
 /* TODO: pthread_join */
 int pthread_key_create(pthread_key_t*, void (*)(void*));
 int pthread_key_delete(pthread_key_t);
@@ -275,7 +277,7 @@ pthread_t pthread_self(void);
 /* TODO: pthread_setconcurrency */
 /* TODO: pthread_setschedparam */
 /* TODO: pthread_setschedprio */
-/* TODO: pthread_setspecific */
+int pthread_setspecific(pthread_key_t, const void*);
 /* TODO: pthread_spin_destroy */
 /* TODO: pthread_spin_init */
 /* TODO: pthread_spin_lock */

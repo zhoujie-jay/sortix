@@ -23,6 +23,7 @@ pthread_cond_timedwait.o \
 pthread_cond_wait.o \
 pthread_equal.o \
 pthread_exit.o \
+pthread_getspecific.o \
 pthread_initialize.o \
 pthread_key_create.o \
 pthread_key_delete.o \
@@ -43,6 +44,7 @@ pthread_rwlock_trywrlock.o \
 pthread_rwlock_unlock.o \
 pthread_rwlock_wrlock.o \
 pthread_self.o \
+pthread_setspecific.o \
 
 BINS:=libpthread.a
 
