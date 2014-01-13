@@ -33,6 +33,12 @@
 
 #include <sortix/elf-note.h>
 
+extern "C" { pthread_mutex_t __pthread_keys_lock =
+                 PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; }
+extern "C" { struct pthread_key* __pthread_keys = NULL; }
+extern "C" { size_t __pthread_keys_used = 0; }
+extern "C" { size_t __pthread_keys_length = 0; }
+
 // Emit an ELF note containing the size and alignment of struct pthread.
 __attribute__((used))
 static void elf_note_sortix_pthread_size()

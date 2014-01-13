@@ -67,7 +67,7 @@ typedef struct
 } __pthread_condattr_t;
 #endif
 
-typedef int __pthread_key_t;
+typedef __SIZE_TYPE__ __pthread_key_t;
 
 #if defined(__is_sortix_libpthread)
 typedef struct

@@ -161,6 +161,20 @@ struct pthread_cond_elem
 
 void pthread_initialize(void);
 
+#if defined(__is_sortix_libpthread)
+
+struct pthread_key
+{
+	void (*destructor)(void*);
+};
+
+extern pthread_mutex_t __pthread_keys_lock;
+extern struct pthread_key* __pthread_keys;
+extern size_t __pthread_keys_used;
+extern size_t __pthread_keys_length;
+
+#endif
+
 /* TODO: pthread_atfork */
 /* TODO: pthread_attr_destroy */
 /* TODO: pthread_attr_getdetachstate */
@@ -216,8 +230,8 @@ void pthread_exit(void*);
 /* TODO: pthread_getschedparam */
 /* TODO: pthread_getspecific */
 /* TODO: pthread_join */
-/* TODO: pthread_key_create */
-/* TODO: pthread_key_delete */
+int pthread_key_create(pthread_key_t*, void (*)(void*));
+int pthread_key_delete(pthread_key_t);
 /* TODO: pthread_mutex_consistent */
 int pthread_mutex_destroy(pthread_mutex_t*);
 /* TODO: pthread_mutex_getprioceiling */
