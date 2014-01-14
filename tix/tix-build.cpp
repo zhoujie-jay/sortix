@@ -541,6 +541,7 @@ void PurifyMakeflags()
 		return;
 	string_array_t makeflags = string_array_make();
 	string_array_append_token_string(&makeflags, makeflags_environment);
+	// Discard all the environmental variables in MAKEFLAGS.
 	for ( size_t i = 0; i < makeflags.length; i++ )
 	{
 		char* flag = makeflags.strings[i];
@@ -553,6 +554,7 @@ void PurifyMakeflags()
 		for ( size_t n = i + 1; n < makeflags.length; n++ )
 			makeflags.strings[n-1] = makeflags.strings[n];
 		makeflags.length--;
+		i--;
 	}
 	char* new_makeflags_environment = token_string_of_string_array(&makeflags);
 	assert(new_makeflags_environment);
@@ -579,6 +581,8 @@ void Version(FILE* fp, const char* argv0)
 
 int main(int argc, char* argv[])
 {
+	PurifyMakeflags();
+
 	metainfo_t minfo;
 	minfo.build = NULL;
 	minfo.destination = strdup(getenv_def("TIX_BUILD_DESTINATION", "."));
@@ -656,8 +660,6 @@ int main(int argc, char* argv[])
 	}
 
 	CompactArguments(&argc, &argv);
-
-	PurifyMakeflags();
 
 	if ( minfo.prefix && !strcmp(minfo.prefix, "/") )
 		minfo.prefix[0] = '\0';
