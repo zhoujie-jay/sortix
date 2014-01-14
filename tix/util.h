@@ -968,6 +968,7 @@ retry_ask_recovery_method:
 		fprintf(output, "2. Try again\n");
 		fprintf(output, "3. Pretend command was successful\n");
 		fprintf(output, "4. Run $SHELL -i to investigate\n");
+		fprintf(output, "5. Dump environment\n");
 		fprintf(output, "\n");
 		fprintf(output, "Please choose one: [%i] ", default_selection);
 		fflush(output);
@@ -992,7 +993,7 @@ retry_ask_recovery_method:
 				goto retry_ask_recovery_method;
 			}
 
-			if ( 4 < selection )
+			if ( 5 < selection )
 			{
 				error(0, 0, "error: `%i' is not an allowed choice\n", selection);
 				goto retry_ask_recovery_method;
@@ -1022,6 +1023,13 @@ retry_ask_recovery_method:
 			                "when you are done.\n\n");
 			if ( recovery_run_shell() )
 				return true;
+		}
+
+		if ( selection == 5 )
+		{
+			for ( size_t i = 0; environ[i]; i++ )
+				fprintf(output, "%s\n", environ[i]);
+			goto retry_ask_recovery_method;
 		}
 
 		default_selection = 2;
