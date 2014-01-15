@@ -134,6 +134,7 @@ void emit_pkg_config_wrapper(metainfo_t* minfo)
 	fprint_shell_variable_assignment(pkg_config_for_build, "PKG_CONFIG_PATH", getenv("PKG_CONFIG_PATH"));
 	fprint_shell_variable_assignment(pkg_config_for_build, "PKG_CONFIG_SYSROOT_DIR", getenv("PKG_CONFIG_SYSROOT_DIR"));
 	fprint_shell_variable_assignment(pkg_config_for_build, "PKG_CONFIG_FOR_BUILD", getenv("PKG_CONFIG_FOR_BUILD"));
+	fprint_shell_variable_assignment(pkg_config_for_build, "PKG_CONFIG_LIBDIR", getenv("PKG_CONFIG_LIBDIR"));
 	fprintf(pkg_config_for_build, "exec ${PKG_CONFIG:-pkg-config} \"$@\"\n");
 	fflush(pkg_config_for_build);
 	fchmod_plus_x(fileno(pkg_config_for_build));
