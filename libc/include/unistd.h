@@ -369,6 +369,7 @@ int linkat(int, const char*, int, const char*, int);
 off_t lseek(int, off_t, int);
 long pathconf(const char*, int);
 int pipe(int [2]);
+int pipe2(int [2], int);
 ssize_t pread(int, void*, size_t, off_t);
 ssize_t pwrite(int, const void*, size_t, off_t);
 ssize_t readlink(const char* __restrict, char* __restrict, size_t);

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,14 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    unistd/pipe.cpp
+    unistd/pipe2.cpp
     Creates a pair of file descriptors with a reading and writing end.
 
 *******************************************************************************/
 
+#include <sys/syscall.h>
+
 #include <unistd.h>
 
-extern "C" int pipe(int pipefd[2])
+DEFN_SYSCALL2(int, sys_pipe2, SYSCALL_PIPE2, int*, int);
+
+extern "C" int pipe2(int pipefd[2], int flags)
 {
-	return pipe2(pipefd, 0);
+	return sys_pipe2(pipefd, flags);
 }

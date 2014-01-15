@@ -318,8 +318,16 @@ int PipeNode::poll(ioctx_t* ctx, PollNode* node)
 
 namespace Pipe {
 
-static int sys_pipe(int pipefd[2])
+static int sys_pipe2(int pipefd[2], int flags)
 {
+	int fdflags = 0;
+	if ( flags & O_CLOEXEC ) fdflags |= FD_CLOEXEC;
+	if ( flags & O_CLOFORK ) fdflags |= FD_CLOFORK;
+	flags &= ~(O_CLOEXEC | O_CLOFORK);
+
+	if ( flags & ~(O_NONBLOCK) )
+		return errno = EINVAL, -1;
+
 	Process* process = CurrentProcess();
 	uid_t uid = process->uid;
 	uid_t gid = process->gid;
@@ -344,9 +352,9 @@ static int sys_pipe(int pipefd[2])
 	Ref<DescriptorTable> dtable = process->GetDTable();
 
 	int recv_index, send_index;
-	if ( 0 <= (recv_index = dtable->Allocate(recv_desc, 0)) )
+	if ( 0 <= (recv_index = dtable->Allocate(recv_desc, fdflags)) )
 	{
-		if ( 0 <= (send_index = dtable->Allocate(send_desc, 0)) )
+		if ( 0 <= (send_index = dtable->Allocate(send_desc, fdflags)) )
 		{
 			int ret[2] = { recv_index, send_index };
 			if ( CopyToUser(pipefd, ret, sizeof(ret)) )
@@ -360,9 +368,16 @@ static int sys_pipe(int pipefd[2])
 	return -1;
 }
 
+// TODO: This system call is replaced by pipe2, will be removed soon.
+static int sys_pipe(int pipefd[2])
+{
+	return sys_pipe2(pipefd, 0);
+}
+
 void Init()
 {
 	Syscall::Register(SYSCALL_PIPE, (void*) sys_pipe);
+	Syscall::Register(SYSCALL_PIPE2, (void*) sys_pipe2);
 }
 
 } // namespace Pipe
