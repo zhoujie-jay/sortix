@@ -36,9 +36,10 @@ extern "C" int accept4(int fd, struct sockaddr* restrict addr,
 	// that type is designed to be size_t-sized anyway, the compiler should be
 	// able to optimize all this type safety away, but this function will work
 	// should the assumption sizeof(size_t) == sizeof(socklen_t) change.
-	size_t addrlen_size_t;
+	size_t addrlen_size_t = addrlen ? *addrlen : 0;
 	size_t* addrlen_size_t_ptr = addrlen ? &addrlen_size_t : NULL;
 	int retfd = sys_accept4(fd, addr, addrlen_size_t_ptr, flags);
-	if ( addrlen ) *addrlen = addrlen_size_t;
+	if ( addrlen )
+		*addrlen = addrlen_size_t;
 	return retfd;
 }
