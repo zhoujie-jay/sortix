@@ -22,6 +22,7 @@
 
 *******************************************************************************/
 
+#include <sys/socket.h>
 #include <sys/types.h>
 
 #include <assert.h>
@@ -968,6 +969,47 @@ static int sys_mkpartition(int fd, off_t start, off_t length, int flags)
 	return CurrentProcess()->GetDTable()->Allocate(partition_desc, fdflags);
 }
 
+static ssize_t sys_sendmsg(int fd, const struct msghdr* user_msg, int flags)
+{
+	struct msghdr msg;
+	if ( !CopyFromUser(&msg, user_msg, sizeof(msg)) )
+		return -1;
+	// TODO: MSG_DONTWAIT and MSG_NOSIGNAL aren't actually supported here!
+	if ( flags & ~(MSG_EOR | MSG_DONTWAIT | MSG_NOSIGNAL) )
+		return errno = EINVAL, -1;
+	if ( msg.msg_name )
+		return errno = EINVAL, -1;
+	if ( msg.msg_control && msg.msg_controllen )
+		return errno = EINVAL, -1;
+	return sys_writev(fd, msg.msg_iov, msg.msg_iovlen);
+}
+
+static ssize_t sys_recvmsg(int fd, struct msghdr* user_msg, int flags)
+{
+	struct msghdr msg;
+	if ( !CopyFromUser(&msg, user_msg, sizeof(msg)) )
+		return -1;
+	if ( flags & ~(MSG_CMSG_CLOEXEC | MSG_DONTWAIT) )
+		return errno = EINVAL, -1;
+	if ( msg.msg_name )
+		return errno = EINVAL, -1;
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+
+	// TODO: This is not atomic.
+	int old_flags = desc->GetFlags();
+	desc->SetFlags(old_flags | O_NONBLOCK);
+	ssize_t result = sys_readv(fd, msg.msg_iov, msg.msg_iovlen);
+	desc->SetFlags(old_flags);
+
+	msg.msg_flags = 0;
+	if ( !CopyToUser(&user_msg->msg_flags, &msg.msg_flags, sizeof(msg.msg_flags)) )
+		return -1;
+
+	return result;
+}
+
 void Init()
 {
 	Syscall::Register(SYSCALL_ACCEPT4, (void*) sys_accept4);
@@ -1011,8 +1053,10 @@ void Init()
 	Syscall::Register(SYSCALL_READLINKAT, (void*) sys_readlinkat);
 	Syscall::Register(SYSCALL_READ, (void*) sys_read);
 	Syscall::Register(SYSCALL_READV, (void*) sys_readv);
+	Syscall::Register(SYSCALL_RECVMSG, (void*) sys_recvmsg);
 	Syscall::Register(SYSCALL_RECV, (void*) sys_recv);
 	Syscall::Register(SYSCALL_RENAMEAT, (void*) sys_renameat);
+	Syscall::Register(SYSCALL_SENDMSG, (void*) sys_sendmsg);
 	Syscall::Register(SYSCALL_SEND, (void*) sys_send);
 	Syscall::Register(SYSCALL_SETTERMMODE, (void*) sys_settermmode);
 	Syscall::Register(SYSCALL_SYMLINKAT, (void*) sys_symlinkat);

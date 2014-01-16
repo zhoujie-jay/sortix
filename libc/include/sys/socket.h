@@ -137,6 +137,8 @@ struct linger
 #define MSG_PEEK (1<<5)
 #define MSG_TRUNC (1<<6)
 #define MSG_WAITALL (1<<7)
+#define MSG_DONTWAIT (1<<8)
+#define MSG_CMSG_CLOEXEC (1<<9)
 
 #define AF_UNSPEC 0
 #define AF_INET 1

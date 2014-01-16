@@ -163,6 +163,8 @@
 #define SYSCALL_SIGPENDING 135
 #define SYSCALL_SIGPROCMASK 136
 #define SYSCALL_SIGSUSPEND 137
-#define SYSCALL_MAX_NUM 138 /* index of highest constant + 1 */
+#define SYSCALL_SENDMSG 138
+#define SYSCALL_RECVMSG 139
+#define SYSCALL_MAX_NUM 140 /* index of highest constant + 1 */
 
 #endif

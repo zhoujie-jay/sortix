@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -18,17 +18,19 @@
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
     sys/socket/recvmsg.cpp
-    Receive a message from a socket.
+    Receive a message on a socket.
 
 *******************************************************************************/
 
 #include <sys/socket.h>
+#include <sys/syscall.h>
 
 #include <errno.h>
 #include <stdio.h>
 
-extern "C" ssize_t recvmsg(int, struct msghdr*, int)
+DEFN_SYSCALL3(ssize_t, sys_recvmsg, SYSCALL_RECVMSG, int, struct msghdr*, int);
+
+extern "C" ssize_t recvmsg(int fd, struct msghdr* msg, int flags)
 {
-	fprintf(stderr, "%s is not implemented yet.\n", __func__);
-	return errno = ENOSYS, -1;
+	return sys_recvmsg(fd, msg, flags);
 }

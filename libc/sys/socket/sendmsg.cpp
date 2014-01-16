@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -23,12 +23,14 @@
 *******************************************************************************/
 
 #include <sys/socket.h>
+#include <sys/syscall.h>
 
 #include <errno.h>
 #include <stdio.h>
 
-extern "C" ssize_t sendmsg(int, const struct msghdr*, int)
+DEFN_SYSCALL3(ssize_t, sys_sendmsg, SYSCALL_SENDMSG, int, const struct msghdr*, int);
+
+extern "C" ssize_t sendmsg(int fd, const struct msghdr* msg, int flags)
 {
-	fprintf(stderr, "%s is not implemented yet.\n", __func__);
-	return errno = ENOSYS, -1;
+	return sys_sendmsg(fd, msg, flags);
 }
