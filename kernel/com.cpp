@@ -24,6 +24,7 @@
 
 #include <errno.h>
 
+#include <sortix/fcntl.h>
 #include <sortix/stat.h>
 
 #include <sortix/kernel/descriptor.h>
@@ -259,54 +260,60 @@ int DevCOMPort::sync(ioctx_t* /*ctx*/)
 
 ssize_t DevCOMPort::read(ioctx_t* ctx, uint8_t* dest, size_t count)
 {
-	if ( !count ) { return 0; }
-	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
 	ScopedLock lock(&portlock);
 
-	while ( !(CPU::InPortB(port + LSR) & LSR_READY) )
-		if ( Signal::IsPending() )
+	for ( size_t i = 0; i < count; i++ )
+	{
+		int tries = 0;
+		while ( !IsLineReady(port) )
 		{
-			errno = EINTR;
-			return -1;
+			if ( ++tries < 10 )
+				continue;
+			if ( i )
+				return (ssize_t) i;
+			if ( ctx->dflags & O_NONBLOCK )
+				return errno = EWOULDBLOCK, -1;
+			if ( Signal::IsPending() )
+				return errno = EINTR, -1;
 		}
 
-	size_t sofar = 0;
-	do
-	{
-		if ( count <= sofar ) { break; }
 		uint8_t val = CPU::InPortB(port + RXR);
-		if ( !ctx->copy_to_dest(dest + sofar++, &val, sizeof(val)) )
-			return -1;
-	} while ( CPU::InPortB(port + LSR) & LSR_READY);
+		if ( !ctx->copy_to_dest(dest + i, &val, sizeof(val)) )
+		{
+			// TODO: The byte is lost in this case!
+			return i ? (ssize_t) i : -1;
+		}
+	}
 
-	return sofar;
+	return (ssize_t) count;
 }
 
 ssize_t DevCOMPort::write(ioctx_t* ctx, const uint8_t* src, size_t count)
 {
-	if ( !count ) { return 0; }
-	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; };
-
 	ScopedLock lock(&portlock);
 
-	while ( !(CPU::InPortB(port + LSR) & LSR_THRE) )
-		if ( Signal::IsPending() )
+	for ( size_t i = 0; i < count; i++ )
+	{
+		int tries = 0;
+		while ( !CanWriteByte(port) )
 		{
-			errno = EINTR;
-			return -1;
+			if ( ++tries < 10 )
+				continue;
+			if ( i )
+				return (ssize_t) i;
+			if ( ctx->dflags & O_NONBLOCK )
+				return errno = EWOULDBLOCK, -1;
+			if ( Signal::IsPending() )
+				return errno = EINTR, -1;
 		}
 
-	size_t sofar = 0;
-	do
-	{
-		if ( count <= sofar ) { break; }
 		uint8_t val;
-		if ( !ctx->copy_from_src(&val, src + sofar++, sizeof(val)) )
-			return -1;
+		if ( !ctx->copy_from_src(&val, src + i, sizeof(val)) )
+			return i ? (ssize_t) i : -1;
 		CPU::OutPortB(port + TXR, val);
-	} while ( CPU::InPortB(port + LSR) & LSR_THRE );
+	}
 
-	return sofar;
+	return (ssize_t) count;
 }
 
 #else
