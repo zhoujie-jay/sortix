@@ -122,7 +122,7 @@ bool Descriptor::SetFlags(int new_dflags)
 	//       would kinda prevent concurrency on the same file descriptor. Since
 	//       the chances of this becoming a problem is rather slim (but could
 	//       happen!), we'll do the unsafe thing for now. (See below also)
-	dflags = (dflags & ~DESCRIPTOR_FLAGS) & (new_dflags & DESCRIPTOR_FLAGS);
+	dflags = (dflags & ~DESCRIPTOR_FLAGS) | (new_dflags & DESCRIPTOR_FLAGS);
 	return true;
 }
 
