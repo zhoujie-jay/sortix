@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -393,10 +393,14 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 					else
 						written++;
 		}
-		else if ( *format == 's' && (format++, true) )
+		else if ( *format == 'm' || *format == 's' )
 		{
+			char conversion = *format++;
+
 			const char* string;
-			if ( length == LENGTH_DEFAULT )
+			if ( conversion == 'm' )
+				string = strerror(errno), conversion = 's';
+			else if ( length == LENGTH_DEFAULT )
 				string = va_arg(parameters, const char*);
 			else if ( length == LENGTH_LONG )
 			{
