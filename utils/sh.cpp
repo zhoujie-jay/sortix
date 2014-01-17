@@ -341,10 +341,8 @@ readcmd:
 
 	if ( !strcmp(argv[0], "env") )
 	{
-		for ( size_t i = 0; i < envlength(); i++ )
-		{
-			printf("%s\n", getenvindexed(i));
-		}
+		for ( size_t i = 0; environ[i]; i++ )
+			printf("%s\n", environ[i]);
 		exit(0);
 	}
 
@@ -481,8 +479,12 @@ int get_and_run_command(FILE* fp, const char* fpname, bool interactive,
 
 	if ( strchr(command, '=') && !strchr(command, ' ') && !strchr(command, '\t') )
 	{
-		if ( putenv(strdup(command)) )
-			error(1, errno, "putenv");
+		const char* key = command;
+		char* equal = strchr(command, '=');
+		*equal = '\0';
+		const char* value = equal + 1;
+		if ( setenv(key, value, 1) < 0 )
+			error(1, errno, "setenv");
 		return status = 0;
 	}
 

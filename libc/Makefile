@@ -371,15 +371,18 @@ stdio/vscanf.o \
 stdlib/atexit.o \
 stdlib/canonicalize_file_name_at.o \
 stdlib/canonicalize_file_name.o \
-stdlib/env.o \
+stdlib/clearenv.o \
 stdlib/_Exit.o \
 stdlib/exit.o \
+stdlib/getenv.o \
 stdlib/mkstemp.o \
 stdlib/mktemp.o \
 stdlib/on_exit.o \
 stdlib/rand.o \
 stdlib/realpath.o \
+stdlib/setenv.o \
 stdlib/system.o \
+stdlib/unsetenv.o \
 sys/display/dispmsg_issue.o \
 sys/ioctl/ioctl.o \
 sys/kernelinfo/kernelinfo.o \
@@ -470,6 +473,7 @@ unistd/confstr.o \
 unistd/dup2.o \
 unistd/dup3.o \
 unistd/dup.o \
+unistd/environ.o \
 unistd/execle.o \
 unistd/execl.o \
 unistd/execlp.o \

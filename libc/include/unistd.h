@@ -295,8 +295,11 @@ typedef __pid_t pid_t;
 typedef __useconds_t useconds_t;
 #endif
 
-#if defined(_WANT_ENVIRON)
 extern char** environ;
+#if defined(__is_sortix_libc)
+extern char** __environ_malloced;
+extern size_t __environ_used;
+extern size_t __environ_length;
 #endif
 
 /* TODO: These are not implemented in sortix libc yet. */

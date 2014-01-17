@@ -88,10 +88,12 @@ void* bsearch(const void*, const void*, size_t, size_t, int (*)(const void*, con
 void* calloc(size_t, size_t);
 char* canonicalize_file_name(const char* path);
 char* canonicalize_file_name_at(int dirfd, const char* path);
+int clearenv(void);
 div_t div(int, int);
 void exit(int)  __attribute__ ((__noreturn__));
 void _Exit(int status)  __attribute__ ((__noreturn__));
 void free(void*);
+char* getenv(const char*);
 long labs(long);
 ldiv_t ldiv(long, long);
 long long llabs(long long);
@@ -105,7 +107,6 @@ int mkstemp(char*);
 char* mktemp(char* templ);
 #endif
 int on_exit(void (*function)(int, void*), void* arg);
-int putenv(char*);
 void qsort(void*, size_t, size_t, int (*)(const void*, const void*));
 int rand(void);
 void* realloc(void*, size_t);
@@ -123,23 +124,6 @@ int system(const char*);
 int unsetenv(const char*);
 size_t wcstombs(char* __restrict, const wchar_t *__restrict, size_t);
 int wctomb(char*, wchar_t);
-
-#if defined(_SORTIX_SOURCE) || defined(_WANT_SORTIX_ENV)
-const char* const* getenviron(void);
-size_t envlength(void);
-const char* getenvindexed(size_t index);
-const char* sortix_getenv(const char* name);
-#endif
-#if (defined(_SOURCE_SOURCE) && __SORTIX_STDLIB_REDIRECTS) || \
-    defined(_WANT_SORTIX_ENV)
-const char* getenv(const char* name) asm ("sortix_getenv");
-#else
-char* getenv(const char*);
-#endif
-#if defined(_SORTIX_SOURCE) || defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE) \
-    || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
-int clearenv(void);
-#endif
 
 #if defined(__is_sortix_libc)
 struct exit_handler

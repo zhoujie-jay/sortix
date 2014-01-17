@@ -127,6 +127,25 @@ If there is ever going to be a path limit, it'll probably be either this value
 or higher. Ideally, your programs ought to work with paths of any reasonable
 length.
 
+putenv
+------
+
+This is a poorly designed interface for manipulating the environment which
+interacts quite badly with interfaces such as setenv and unsetenv. The major
+problem is that putenv makes the input string itself part of the environment,
+but setenv makes a copy of the input string part of the environment. This means
+that unsetenv (as well as putenv and setenv when changing an existing variable)
+has to somehow know whether the a given entry in environ was allocated by setenv
+and whether to free it. This isn't helped by the fact that the environ symbol
+is publicly accessible and callers of putenv can change the environment by
+editing the string the caller inserted. This means that the implementations of
+setenv and unsetenv must do a considerable amount of book-keeping behind the
+scenes to figure out whether a string was allocated by setenv or face memory
+leaks when environment variables are changed or unset. The solution to get rid
+of all the needless complexity putenv forces upon the other functions is simply:
+Don't provide putenv in the first place and fix any software that uses putenv to
+just call setenv instead.
+
 sdl-config
 ----------
 
