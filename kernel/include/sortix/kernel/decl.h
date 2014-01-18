@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -23,8 +23,8 @@
 
 *******************************************************************************/
 
-#ifndef SORTIX_DECL_H
-#define SORTIX_DECL_H
+#ifndef INCLUDE_SORTIX_KERNEL_DECL_H
+#define INCLUDE_SORTIX_KERNEL_DECL_H
 
 #include <stdint.h>
 
@@ -32,7 +32,6 @@ typedef uintptr_t addr_t;
 
 #define likely(x) __builtin_expect((x),1)
 #define unlikely(x) __builtin_expect((x),0)
-#define STATIC_ASSERT(condition) static_assert(condition, #condition)
 
 #if !defined(CPU) && defined(__i386__)
 	#define CPU X86

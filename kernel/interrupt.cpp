@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -336,14 +336,14 @@ struct Package
 	size_t size;
 	size_t payloadoffset;
 	size_t payloadsize;
-	WorkHandler handler; // TODO: May not be correctly aligned on some systems.
+	WorkHandler handler;
 	uint8_t payload[0];
 };
 
 void InitWorker()
 {
 	const size_t QUEUE_SIZE = 4UL*1024UL;
-	STATIC_ASSERT(QUEUE_SIZE % sizeof(Package) == 0);
+	static_assert(QUEUE_SIZE % sizeof(Package) == 0, "QUEUE_SIZE must be a multiple of the package size");
 	queue = new uint8_t[QUEUE_SIZE];
 	if ( !queue )
 		Panic("Can't allocate interrupt worker queue");
