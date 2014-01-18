@@ -709,10 +709,24 @@ static void InitThread(void* /*user*/)
 
 	Process* process = CurrentProcess();
 
-	const char* initpath = "/" CPUTYPE_STR "/bin/init";
-
 	ioctx_t ctx; SetupKernelIOCtx(&ctx);
 	Ref<Descriptor> root = CurrentProcess()->GetRoot();
+
+	Ref<DescriptorTable> dtable = process->GetDTable();
+
+	Ref<Descriptor> tty_stdin = root->open(&ctx, "/dev/tty", O_READ);
+	if ( !tty_stdin || dtable->Allocate(tty_stdin, 0) != 0 )
+		Panic("Could not prepare stdin for initialization process");
+	Ref<Descriptor> tty_stdout = root->open(&ctx, "/dev/tty", O_WRITE);
+	if ( !tty_stdout || dtable->Allocate(tty_stdout, 0) != 1 )
+		Panic("Could not prepare stdout for initialization process");
+	Ref<Descriptor> tty_stderr = root->open(&ctx, "/dev/tty", O_WRITE);
+	if ( !tty_stderr || dtable->Allocate(tty_stderr, 0) != 2 )
+		Panic("Could not prepare stderr for initialization process");
+
+	dtable.Reset();
+
+	const char* initpath = "/" CPUTYPE_STR "/bin/init";
 	Ref<Descriptor> init = root->open(&ctx, initpath, O_EXEC | O_READ);
 	if ( !init )
 		PanicF("Could not open %s in early kernel RAM filesystem:\n%s",

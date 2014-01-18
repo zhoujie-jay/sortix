@@ -471,13 +471,6 @@ retry_ask_root_block_device:
 
 int main(int /*argc*/, char* /*argv*/[])
 {
-	if ( !has_descriptor(0) && open("/dev/tty", O_RDONLY) != 0 )
-		return 2;
-	if ( !has_descriptor(1) && open("/dev/tty", O_WRONLY | O_APPEND) != 1 )
-		return 2;
-	if ( !has_descriptor(2) && open("/dev/tty", O_WRONLY | O_APPEND) != 2 )
-		return 2;
-
 	// Reset the terminal's color and the rest of it.
 	printf(BRAND_INIT_BOOT_MESSAGE);
 	fflush(stdout);
