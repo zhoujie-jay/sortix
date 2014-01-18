@@ -36,6 +36,11 @@ __BEGIN_DECLS
 #define __ASSERT_VOID_CAST(x) (void) x
 #endif
 
+/* The C11 static_assert macro expands to the _Static_assert keyword. */
+#if defined(__STDC_VERSION__) && 201112L <= __STDC_VERSION__
+#define static_assert _Static_assert
+#endif
+
 /* The actual implementation of assert. */
 __attribute__((noreturn))
 void __assert(const char*, unsigned long, const char*, const char*);
