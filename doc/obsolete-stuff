@@ -170,6 +170,18 @@ settimeofday
 
 Use clock_settime instead.
 
+select
+------
+
+The fd_set system is poorly designed and the FD_SETSIZE is considerably smaller
+than INT_MIN on most systems, which violates that the value of the file
+descriptor shouldn't matter as long as it is between 0 and INT_MAX. It would be
+better to use poll instead. There is also the problem that select uses struct
+timeval instead of the superior struct timespec, though pselect solves tha
+particular problem.
+
+Sortix currently provides this function for compatibility reasons.
+
 strings.h
 ---------
 
