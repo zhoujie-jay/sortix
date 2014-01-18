@@ -6,6 +6,7 @@ DOCUMENTS:=\
 cross-development \
 obsolete-stuff \
 porting-guide \
+posix-divergence \
 user-guide \
 welcome \
 

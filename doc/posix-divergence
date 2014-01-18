@@ -1,0 +1,60 @@
+POSIX Divergence
+================
+
+The Sortix operating system cares about compatibility with existing software and
+maintaining such software by purging obsolete stuff from the system. Sortix
+recognizes the POSIX standard as valuable and embraces it rather than fighting
+it. Nonetheless, we don't implement standards for the sake of standards, but for
+the benefits we get from complying. Sometimes the standard mandates something
+that is broken or we can do considerably better. In those cases it's best to
+diverge and fix the design mistakes properly - but we must not forget there is
+a considerable compatibility cost we must pay. Don't diverge unless there is a
+good reason to and compatibility and an upgrade path must be considered.
+
+That said, Sortix has diverged from full POSIX compliance in the hope such
+decisions would be for the better. This document attempts to list where Sortix
+has intentionally diverged from POSIX 2008. See doc/obsolete-stuff for a more
+detailed rationale of why the interfaces are absent or scheduled for removal.
+Mind that Sortix doesn't fully intend to implement the XSI option and violations
+of that isn't listed here.
+
+It is worth noting that some particular interfaces scheduled for removal will
+likely take a very long time to phase out and wholly remove.
+
+Mandated by POSIX but not implemented in Sortix
+----
+* getpgrp is not implemented.
+* <strings.h> has been merged into <string.h>.
+* Numerous namespace violations (will be fixed or documented here).
+* Numerous missing features (will be fixed or documented here).
+
+Obsolescent in POSIX but not implemented in Sortix
+----
+* gets is not implemented (obsolescent in POSIX).
+* tmpnam is not implemented (obsolescent in POSIX).
+
+Mandated by POSIX and scheduled for Sortix removal
+----
+* select is scheduled for removal.
+* struct timeval is scheduled for removal.
+* times, <sys/times.h> is scheduled for removal.
+
+Obsolescent in POSIX and scheduled for Sortix removal
+---
+* asctime and asctime_r are scheduled for removal (obsolescent in POSIX).
+* ctime, ctime_r are scheduled for removal (obsolescent in POSIX).
+* utime, <utime.h> are scheduled for removal (obsolescent in POSIX).
+
+Timestamps
+----------
+
+The time_t values given by clock_gettime(CLOCK_REALTIME, ...) (and other system
+interfaces built upon that) are the number of actual seconds that has passed
+since 1970-01-01 00:00:00 UTC. This includes leap seconds, unlike the timestamps
+mandated by POSIX. This has the advantage that time_t values are unambiguously
+translate to a particular date and time and back and that the values are
+continuous and adding an internal to a time_t value actually delays by that
+interval. This has the unfortunate consequence that translating to and from
+POSIX time requires subtracting the number of leap seconds that has occured for
+that time value. The standard library needs to get some utility functions for
+doing such conversion.
