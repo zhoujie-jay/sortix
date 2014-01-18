@@ -47,7 +47,7 @@ extern "C" int fsetdefaultbuf(FILE* fp)
 
 	// Determine the buffering semantics depending on whether the destination is
 	// an interactive device or not.
-#ifdef __is_sortix_kernel
+#if defined(__is_sortix_kernel)
 	int mode = _IOLBF; // TODO: Detect this?
 #else
 	int mode = fp->buffer_mode != -1 ? fp->buffer_mode

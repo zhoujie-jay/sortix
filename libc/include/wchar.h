@@ -29,7 +29,7 @@
 
 #include <sys/__/types.h>
 
-#if __is_sortix_libc
+#if defined(__is_sortix_libc)
 #include <FILE.h>
 #endif
 

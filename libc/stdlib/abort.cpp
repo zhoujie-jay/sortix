@@ -37,7 +37,7 @@ extern "C" void abort(void)
 	Sortix::PanicF("abort()");
 }
 
-#else
+#elif __STDC_HOSTED__
 
 extern "C" void abort(void)
 {
@@ -48,6 +48,14 @@ extern "C" void abort(void)
 		while ( true );
 	// TODO: Send SIGABRT instead!
 	_Exit(128 + 6);
+}
+
+#else
+
+extern "C" void abort(void)
+{
+	while ( true ) { };
+	__builtin_unreachable();
 }
 
 #endif

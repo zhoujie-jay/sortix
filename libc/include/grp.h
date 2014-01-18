@@ -43,7 +43,7 @@ struct group
 	char* gr_passwd;
 };
 
-#if __is_sortix_libc
+#if defined(__is_sortix_libc)
 extern FILE* __grp_file;
 #endif
 

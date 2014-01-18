@@ -25,14 +25,14 @@
 #define __SORTIX_STDLIB_REDIRECTS 0
 #include <errno.h>
 #include <stddef.h>
-#ifndef __is_sortix_kernel
+#if !defined(__is_sortix_kernel)
 #include <stdio.h>
 #endif
 
 extern "C" { int global_errno = 0; }
 extern "C" { errno_location_func_t errno_location_func = NULL; }
 
-#ifndef __is_sortix_kernel
+#if !defined(__is_sortix_kernel)
 extern "C" void init_error_functions()
 {
 	global_errno = 0;

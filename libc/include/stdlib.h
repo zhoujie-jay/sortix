@@ -128,7 +128,7 @@ char* getenv(const char*);
 int clearenv(void);
 #endif
 
-#if __is_sortix_libc
+#if defined(__is_sortix_libc)
 struct exit_handler
 {
 	void (*hook)(int, void*);

@@ -35,7 +35,7 @@
 #endif
 #include <stdarg.h>
 
-#if __is_sortix_libc
+#if defined(__is_sortix_libc)
 #include <FILE.h>
 #endif
 

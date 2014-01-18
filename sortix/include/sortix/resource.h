@@ -56,7 +56,7 @@ struct rlimit
 #define RLIMIT_STACK 6
 #define __RLIMIT_NUM_DECLARED 7 /* index of highest constant plus 1. */
 
-#if !__STDC_HOSTED__ && defined(__is_sortix_kernel)
+#if defined(__is_sortix_kernel)
 #define RLIMIT_NUM_DECLARED __RLIMIT_NUM_DECLARED
 #endif
 

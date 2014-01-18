@@ -28,16 +28,16 @@
 #define __sortix_libc__ 1
 
 /* Detect whether we are a core system library. */
-#if __is_sortix_libc || __is_sortix_libm
+#if defined(__is_sortix_libc) || defined(__is_sortix_libm)
 #if !defined(__is_sortix_system_library)
-#define __is_sortix_system_library 1
+#define __is_sortix_system_library
 #endif
 #endif
 
 /* Detect whether we are a core system component. */
-#if __is_sortix_kernel || __is_sortix_system_library
+#if defined(__is_sortix_kernel) || defined(__is_sortix_system_library)
 #if !defined(__is_sortix_system_component)
-#define __is_sortix_system_component 1
+#define __is_sortix_system_component
 #endif
 #endif
 
@@ -47,7 +47,7 @@
 	 ((gcc_major) < __GNUC__))
 
 /* Sortix system components implicitly use the native API. */
-#if __is_sortix_system_component
+#if defined(__is_sortix_system_component)
 #define _SORTIX_SOURCE 1
 #endif
 
@@ -72,7 +72,7 @@
 #endif
 
 /* Provide the restrict keyword when building system components. */
-#if __is_sortix_system_component && !defined(__want_restrict)
+#if defined(__is_sortix_system_component) && !defined(__want_restrict)
 #define __want_restrict 1
 #endif
 
@@ -82,7 +82,7 @@
 #endif
 
 /* Provide the full <stdint.h> in all system components. */
-#if __is_sortix_system_component
+#if defined(__is_sortix_system_component)
 #undef __STDC_CONSTANT_MACROS
 #undef __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS

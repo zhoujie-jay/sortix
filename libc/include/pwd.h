@@ -47,7 +47,7 @@ struct passwd
 	char* pw_shell;
 };
 
-#if __is_sortix_libc
+#if defined(__is_sortix_libc)
 extern FILE* __pwd_file;
 #endif
 

@@ -10,7 +10,7 @@ endif
 CPUDIR:=$(CPU)
 
 CPPINCLUDES=-I preproc
-CPPFLAGS=-D__is_sortix_libc=1 $(CPPINCLUDES)
+CPPFLAGS=-D__is_sortix_libc $(CPPINCLUDES)
 FLAGS=-Wall -Wextra $(OPTLEVEL)
 CFLAGS=-std=gnu99
 CXXFLAGS=-std=gnu++11 -fno-exceptions -fno-rtti
@@ -517,7 +517,7 @@ INSTALLHEADERDIRS:=$(addprefix $(DESTDIR)$(INCLUDEDIR),$(patsubst preproc%,%,$(H
 INSTALLHEADERS:=$(addprefix $(DESTDIR)$(INCLUDEDIR),$(patsubst preproc%,%,$(HEADERS)))
 
 SORTIXOBJS:=$(addprefix sortix/,$(FREEOBJS))
-SORTIXCPPFLAGS:=$(CPPFLAGS) -D__is_sortix_kernel=1
+SORTIXCPPFLAGS:=$(CPPFLAGS) -D__is_sortix_kernel
 SORTIXFLAGS:=$(FLAGS) -ffreestanding
 SORTIXCFLAGS:=$(CFLAGS)
 SORTIXCXXFLAGS:=$(CXXFLAGS)
