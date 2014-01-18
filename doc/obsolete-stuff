@@ -212,6 +212,18 @@ sys/timeb.h
 This is a header that contains the ftime function that has been replaced, this
 header has been removed as well.
 
+times
+-----
+
+This function is badly designed and the whole clock_t and sysconf(_SC_CLK_TCK)
+business is insane. It doesn't help there is problem with potential overflowing
+and the accuracy of the function varies between systems. You should avoid this
+function in favor of clock_gettime and the Sortix extension clocks that provide
+the same information as struct timespecs. If you need the atomic semantics of
+times, you can use the Sortix extension timens.
+
+Sortix currently provides this function for compatibility reasons.
+
 tmpnam
 ------
 
