@@ -930,8 +930,12 @@ cleanup_done:
 	return result;
 }
 
-static pid_t sys_tfork(int flags, tforkregs_t* regs)
+static pid_t sys_tfork(int flags, tforkregs_t* user_regs)
 {
+	tforkregs_t regs;
+	if ( !CopyFromUser(&regs, user_regs, sizeof(regs)) )
+		return -1;
+
 	if ( Signal::IsPending() )
 		return errno = EINTR, -1;
 
@@ -940,7 +944,7 @@ static pid_t sys_tfork(int flags, tforkregs_t* regs)
 		return errno = ENOSYS, -1;
 
 	CPU::InterruptRegisters cpuregs;
-	InitializeThreadRegisters(&cpuregs, regs);
+	InitializeThreadRegisters(&cpuregs, &regs);
 
 	// TODO: Is it a hack to create a new kernel stack here?
 	Thread* curthread = CurrentThread();
