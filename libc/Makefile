@@ -429,6 +429,7 @@ sys/stat/fchmod.o \
 sys/stat/fstatat.o \
 sys/stat/fstat.o \
 sys/stat/futimens.o \
+sys/stat/getumask.o \
 sys/stat/lstat.o \
 sys/stat/mkdirat.o \
 sys/stat/mkdir.o \

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -1208,6 +1208,13 @@ static mode_t sys_umask(mode_t newmask)
 	return oldmask;
 }
 
+static mode_t sys_getumask(void)
+{
+	Process* process = CurrentProcess();
+	ScopedLock lock(&process->idlock);
+	return process->umask;
+}
+
 void Process::Init()
 {
 	Syscall::Register(SYSCALL_EXEC, (void*) sys_execve);
@@ -1216,6 +1223,7 @@ void Process::Init()
 	Syscall::Register(SYSCALL_GETPGID, (void*) sys_getpgid);
 	Syscall::Register(SYSCALL_GETPID, (void*) sys_getpid);
 	Syscall::Register(SYSCALL_GETPPID, (void*) sys_getppid);
+	Syscall::Register(SYSCALL_GETUMASK, (void*) sys_getumask);
 	Syscall::Register(SYSCALL_SBRK, (void*) sys_sbrk);
 	Syscall::Register(SYSCALL_SETPGID, (void*) sys_setpgid);
 	Syscall::Register(SYSCALL_TFORK, (void*) sys_tfork);

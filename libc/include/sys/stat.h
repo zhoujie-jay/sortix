@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -105,6 +105,7 @@ int fstat(int fd, struct stat* st);
 int fstatat(int dirfd, const char* path, struct stat* buf, int flags);
 int futimens(int fd, const struct timespec times[2]);
 int lstat(const char* __restrict path, struct stat* __restrict st);
+mode_t getumask(void);
 int mkdir(const char* path, mode_t mode);
 int mkdirat(int dirfd, const char* path, mode_t mode);
 /* TODO: mkfifo */

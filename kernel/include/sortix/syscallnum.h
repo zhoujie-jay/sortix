@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -147,6 +147,7 @@
 #define SYSCALL_SYMLINKAT 123
 #define SYSCALL_TCGETWINCURPOS 124
 #define SYSCALL_PIPE2 125
-#define SYSCALL_MAX_NUM 126 /* index of highest constant + 1 */
+#define SYSCALL_GETUMASK 126
+#define SYSCALL_MAX_NUM 127 /* index of highest constant + 1 */
 
 #endif
