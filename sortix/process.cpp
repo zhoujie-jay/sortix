@@ -413,7 +413,7 @@ void Process::NotifyNewZombies()
 		kthread_cond_broadcast(&zombiecond);
 }
 
-pid_t Process::Wait(pid_t thepid, int* status, int options)
+pid_t Process::Wait(pid_t thepid, int* user_status, int options)
 {
 	// TODO: Process groups are not supported yet.
 	if ( thepid < -1 || thepid == 0 ) { errno = ENOSYS; return -1; }
@@ -474,13 +474,9 @@ pid_t Process::Wait(pid_t thepid, int* status, int options)
 	child_execute_clock.Advance(zombie->child_execute_clock.current_time);
 	child_system_clock.Advance(zombie->child_system_clock.current_time);
 
-	int exitstatus = zombie->exitstatus;
-	if ( exitstatus < 0 )
-		exitstatus = W_EXITCODE(128 + SIGKILL, SIGKILL);
-
-	// TODO: Validate that status is a valid user-space int!
-	if ( status )
-		*status = exitstatus;
+	int status = zombie->exitstatus;
+	if ( status < 0 )
+		status = W_EXITCODE(128 + SIGKILL, SIGKILL);
 
 	kthread_mutex_lock(&zombie->groupparentlock);
 	bool in_limbo = zombie->groupfirst || (zombie->grouplimbo = true);
@@ -490,12 +486,15 @@ pid_t Process::Wait(pid_t thepid, int* status, int options)
 	if ( !in_limbo )
 		delete zombie;
 
+	if ( user_status && !CopyToUser(user_status, &status, sizeof(status)) )
+		return -1;
+
 	return thepid;
 }
 
-static pid_t sys_waitpid(pid_t pid, int* status, int options)
+static pid_t sys_waitpid(pid_t pid, int* user_status, int options)
 {
-	return CurrentProcess()->Wait(pid, status, options);
+	return CurrentProcess()->Wait(pid, user_status, options);
 }
 
 void Process::Exit(int status)
