@@ -25,6 +25,7 @@
 #include <brand.h>
 #include <errno.h>
 
+#include <sortix/kernel/copy.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/syscall.h>
 
@@ -54,7 +55,8 @@ static ssize_t sys_kernelinfo(const char* req, char* resp, size_t resplen)
 	size_t stringlen = strlen(str);
 	if ( resplen < stringlen + 1 )
 		return errno = ERANGE, (ssize_t) stringlen;
-	strcpy(resp, str);
+	if ( !CopyToUser(resp, str, sizeof(char) * (stringlen + 1)) )
+		return -1;
 	return 0;
 }
 
