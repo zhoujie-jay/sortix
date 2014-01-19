@@ -387,6 +387,12 @@ stdlib/unsetenv.o \
 sys/display/dispmsg_issue.o \
 sys/ioctl/ioctl.o \
 sys/kernelinfo/kernelinfo.o \
+syslog/closelog.o \
+syslog/connectlog.o \
+syslog/openlog.o \
+syslog/setlogmask.o \
+syslog/syslog.o \
+syslog/vsyslog.o \
 sys/mman/mmap.o \
 sys/mman/mprotect.o \
 sys/mman/munmap.o \
