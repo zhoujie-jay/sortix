@@ -50,11 +50,10 @@ static int sys_memstat(size_t* memused, size_t* memtotal)
 	size_t used;
 	size_t total;
 	Statistics(&used, &total);
-	// TODO: Check if legal user-space buffers!
-	if ( memused )
-		*memused = used;
-	if ( memtotal )
-		*memtotal = total;
+	if ( memused && !CopyToUser(memused, &used, sizeof(used)) )
+		return -1;
+	if ( memtotal && !CopyToUser(memtotal, &total, sizeof(used)) )
+		return -1;
 	return 0;
 }
 
