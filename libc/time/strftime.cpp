@@ -250,7 +250,7 @@ size_t strftime(char* s, size_t max, const char* format, const struct tm* tm)
 		case 'R': OUTPUT_STRFTIME("%H:%M"); break;
 		case 'S': OUTPUT_INT_PADDED(tm->tm_sec, 2, '0'); break; /*O*/
 		case 't': OUTPUT_CHAR('\t'); break;
-		case 'T': OUTPUT_STRFTIME("H:%M:%S"); break;
+		case 'T': OUTPUT_STRFTIME("%H:%M:%S"); break;
 		case 'u': OUTPUT_INT(tm->tm_yday); break; /*O*/
 		case 'U': /*O*/
 			// TODO: These require a bit of intelligence.
