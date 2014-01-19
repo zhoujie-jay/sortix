@@ -115,6 +115,7 @@ stdio/ungetc.o \
 stdio/vdprintf.o \
 stdio/vfscanf.o \
 stdio/vprintf_callback.o \
+stdio/vscanf_callback.o \
 stdio/vsnprintf.o \
 stdio/vsprintf.o \
 stdio/vsscanf.o \

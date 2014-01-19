@@ -207,6 +207,11 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
                         void* user,
                         const char* __restrict format,
                         __gnuc_va_list ap);
+int vscanf_callback(void* fp,
+                    int (*fgetc)(void*),
+                    int (*ungetc)(int, void*),
+                    const char* __restrict format,
+                    __gnuc_va_list ap);
 #endif
 
 __END_DECLS
