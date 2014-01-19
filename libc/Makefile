@@ -494,6 +494,7 @@ unistd/fork.o \
 unistd/fsync.o \
 unistd/ftruncate.o \
 unistd/getcwd.o \
+unistd/getdomainname.o \
 unistd/getegid.o \
 unistd/geteuid.o \
 unistd/getgid.o \

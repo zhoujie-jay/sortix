@@ -354,6 +354,7 @@ int fsync(int);
 int ftruncate(int, off_t);
 char* getcwd(char*, size_t);
 char* get_current_dir_name(void);
+int getdomainname(char*, size_t);
 gid_t getegid(void);
 uid_t geteuid(void);
 int gethostname(char*, size_t);
