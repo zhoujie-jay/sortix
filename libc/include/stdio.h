@@ -98,6 +98,7 @@ extern FILE* stderr;
 #define stdout stdout
 #define stderr stderr
 
+int asprintf(char** __restrict, const char* __restrict, ...);
 void clearerr(FILE* stream);
 int dprintf(int fildes, const char* __restrict format, ...);
 int fclose(FILE* stream);
@@ -152,6 +153,7 @@ int sscanf(const char* __restrict s, const char* __restrict format, ...);
 FILE* tmpfile(void);
 char* tmpnam(char* s);
 int ungetc(int c, FILE* stream);
+int vasprintf(char** __restrict, const char* __restrict, __gnuc_va_list);
 int vdprintf(int fildes, const char* __restrict format, __gnuc_va_list ap);
 int vfprintf(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list ap);
 int vfscanf(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list arg);

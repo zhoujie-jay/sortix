@@ -64,6 +64,7 @@ signal/sigisemptyset.o \
 signal/sigismember.o \
 signal/signotset.o \
 signal/sigorset.o \
+stdio/asprintf.o \
 stdio/clearerr.o \
 stdio/dprintf.o \
 stdio/fbufsize.o \
@@ -112,6 +113,7 @@ stdio/snprintf.o \
 stdio/sprintf.o \
 stdio/sscanf.o \
 stdio/ungetc.o \
+stdio/vasprintf.o \
 stdio/vdprintf.o \
 stdio/vfscanf.o \
 stdio/vprintf_callback.o \
