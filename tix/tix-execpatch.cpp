@@ -118,6 +118,7 @@ bool execpatch(FILE* input, const char* input_path, bool check)
 		default:
 			error(1, errno, "%s:%zu:%zu: parse error, expected '-' or '+'",
 			      input_path, line, column);
+			__builtin_unreachable();
 		}
 		parse_fixed("x -- '", input, input_path, &line, &column);
 		while ( true )
