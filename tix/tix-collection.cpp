@@ -34,6 +34,7 @@
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
