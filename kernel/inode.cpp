@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -23,10 +23,12 @@
 *******************************************************************************/
 
 #include <errno.h>
+#include <limits.h>
 #include <string.h>
 
 #include <sortix/clock.h>
 #include <sortix/stat.h>
+#include <sortix/statvfs.h>
 
 #include <sortix/kernel/inode.h>
 #include <sortix/kernel/interlock.h>
@@ -92,6 +94,30 @@ int AbstractInode::stat(ioctx_t* ctx, struct stat* st)
 	retst.st_blksize = stat_blksize;
 	retst.st_blocks = stat_size / 512;
 	if ( !ctx->copy_to_dest(st, &retst, sizeof(retst)) )
+		return -1;
+	return 0;
+}
+
+// TODO: Provide an easier mechanism for letting subclasses give this
+//       information than overriding this method. Additionally, what should be
+//       done in abstract kernel objects where this call doesn't make that much
+//       sense?
+int AbstractInode::statvfs(ioctx_t* ctx, struct statvfs* stvfs)
+{
+	struct statvfs retstvfs;
+	ScopedLock lock(&metalock);
+	memset(&retstvfs, 0, sizeof(retstvfs));
+	retstvfs.f_bsize = 0;
+	retstvfs.f_frsize = 0;
+	retstvfs.f_blocks = 0;
+	retstvfs.f_bfree = 0;
+	retstvfs.f_bavail = 0;
+	retstvfs.f_files = 0;
+	retstvfs.f_ffree = 0;
+	retstvfs.f_fsid = (dev_t) dev;
+	retstvfs.f_flag = ST_NOSUID;
+	retstvfs.f_namemax = ULONG_MAX;
+	if ( !ctx->copy_to_dest(stvfs, &retstvfs, sizeof(retstvfs)) )
 		return -1;
 	return 0;
 }

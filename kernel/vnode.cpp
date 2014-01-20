@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -114,6 +114,11 @@ int Vnode::sync(ioctx_t* ctx)
 int Vnode::stat(ioctx_t* ctx, struct stat* st)
 {
 	return inode->stat(ctx, st);
+}
+
+int Vnode::statvfs(ioctx_t* ctx, struct statvfs* stvfs)
+{
+	return inode->statvfs(ctx, stvfs);
 }
 
 int Vnode::chmod(ioctx_t* ctx, mode_t mode)

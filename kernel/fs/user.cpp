@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -184,6 +184,7 @@ public:
 	virtual void unlinked();
 	virtual int sync(ioctx_t* ctx);
 	virtual int stat(ioctx_t* ctx, struct stat* st);
+	virtual int statvfs(ioctx_t* ctx, struct statvfs* stvfs);
 	virtual int chmod(ioctx_t* ctx, mode_t mode);
 	virtual int chown(ioctx_t* ctx, uid_t owner, gid_t group);
 	virtual int truncate(ioctx_t* ctx, off_t length);
@@ -701,6 +702,25 @@ int Unode::stat(ioctx_t* ctx, struct stat* st)
 	     RecvMessage(channel, FSM_RESP_STAT, &resp, sizeof(resp)) &&
 	     (resp.st.st_dev = (dev_t) server, true) &&
 	     ctx->copy_to_dest(st, &resp.st, sizeof(*st)) )
+		ret = 0;
+	channel->KernelClose();
+	return ret;
+}
+
+int Unode::statvfs(ioctx_t* ctx, struct statvfs* stvfs)
+{
+	Channel* channel = server->Connect();
+	if ( !channel )
+		return -1;
+	int ret = -1;
+	struct fsm_req_statvfs msg;
+	struct fsm_resp_statvfs resp;
+	msg.ino = ino;
+	if ( SendMessage(channel, FSM_REQ_STATVFS, &msg, sizeof(msg)) &&
+	     RecvMessage(channel, FSM_RESP_STATVFS, &resp, sizeof(resp)) &&
+	     (resp.stvfs.f_fsid = (dev_t) server, true) &&
+	     (resp.stvfs.f_flag |= ST_NOSUID, true) &&
+	     ctx->copy_to_dest(stvfs, &resp.stvfs, sizeof(*stvfs)) )
 		ret = 0;
 	channel->KernelClose();
 	return ret;

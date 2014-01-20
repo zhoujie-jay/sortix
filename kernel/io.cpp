@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -34,6 +34,7 @@
 #include <sortix/seek.h>
 #include <sortix/socket.h>
 #include <sortix/stat.h>
+#include <sortix/statvfs.h>
 #include <sortix/uio.h>
 
 #include <sortix/kernel/copy.h>
@@ -322,6 +323,34 @@ static int sys_fstat(int fd, struct stat* st)
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
 	return desc->stat(&ctx, st);
+}
+
+static int sys_fstatvfs(int fd, struct statvfs* stvfs)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->statvfs(&ctx, stvfs);
+}
+
+static int sys_fstatvfsat(int dirfd, const char* path, struct statvfs* stvfs, int flags)
+{
+	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
+		return errno = EINVAL;
+	char* pathcopy = GetStringFromUser(path);
+	if ( !pathcopy )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	const char* relpath = pathcopy;
+	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	if ( !from ) { delete[] pathcopy; return -1; }
+	int open_flags = O_READ | (flags & AT_SYMLINK_NOFOLLOW ? O_SYMLINK_NOFOLLOW : 0);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, open_flags);
+	delete[] pathcopy;
+	if ( !desc )
+		return -1;
+	return desc->statvfs(&ctx, stvfs);
 }
 
 static int sys_fcntl(int fd, int cmd, uintptr_t arg)
@@ -1029,6 +1058,8 @@ void Init()
 	Syscall::Register(SYSCALL_FCHROOT, (void*) sys_fchroot);
 	Syscall::Register(SYSCALL_FCNTL, (void*) sys_fcntl);
 	Syscall::Register(SYSCALL_FSTATAT, (void*) sys_fstatat);
+	Syscall::Register(SYSCALL_FSTATVFSAT, (void*) sys_fstatvfsat);
+	Syscall::Register(SYSCALL_FSTATVFS, (void*) sys_fstatvfs);
 	Syscall::Register(SYSCALL_FSTAT, (void*) sys_fstat);
 	Syscall::Register(SYSCALL_FSYNC, (void*) sys_fsync);
 	Syscall::Register(SYSCALL_FTRUNCATE, (void*) sys_ftruncate);

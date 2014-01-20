@@ -148,6 +148,8 @@
 #define SYSCALL_TCGETWINCURPOS 124
 #define SYSCALL_PIPE2 125
 #define SYSCALL_GETUMASK 126
-#define SYSCALL_MAX_NUM 127 /* index of highest constant + 1 */
+#define SYSCALL_FSTATVFS 127
+#define SYSCALL_FSTATVFSAT 128
+#define SYSCALL_MAX_NUM 129 /* index of highest constant + 1 */
 
 #endif

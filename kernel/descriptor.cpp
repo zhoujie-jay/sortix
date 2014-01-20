@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -168,6 +168,13 @@ int Descriptor::stat(ioctx_t* ctx, struct stat* st)
 	// TODO: Possible information leak if not O_READ | O_WRITE and the caller
 	//       is told about the file size.
 	return vnode->stat(ctx, st);
+}
+
+int Descriptor::statvfs(ioctx_t* ctx, struct statvfs* stvfs)
+{
+	// TODO: Possible information leak if not O_READ | O_WRITE and the caller
+	//       is told about the file size.
+	return vnode->statvfs(ctx, stvfs);
 }
 
 int Descriptor::chmod(ioctx_t* ctx, mode_t mode)

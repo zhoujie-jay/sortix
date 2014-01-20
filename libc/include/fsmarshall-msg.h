@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -28,6 +28,7 @@
 #include <stddef.h>
 
 #include <sortix/stat.h>
+#include <sortix/statvfs.h>
 #include <sortix/termios.h>
 #include <sortix/timespec.h>
 
@@ -353,6 +354,18 @@ struct fsm_req_tcgetwincurpos
 struct fsm_resp_tcgetwincurpos
 {
 	struct wincurpos pos;
+};
+
+#define FSM_REQ_STATVFS 44
+struct fsm_req_statvfs
+{
+	ino_t ino;
+};
+
+#define FSM_RESP_STATVFS 45
+struct fsm_resp_statvfs
+{
+	struct statvfs stvfs;
 };
 
 #define FSM_MSG_NUM 45

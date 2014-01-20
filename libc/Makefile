@@ -439,6 +439,9 @@ sys/stat/stat.o \
 sys/stat/umask.o \
 sys/stat/utimensat.o \
 sys/stat/utimens.o \
+sys/statvfs/fstatvfsat.o \
+sys/statvfs/fstatvfs.o \
+sys/statvfs/statvfs.o \
 sys/termmode/gettermmode.o \
 sys/termmode/settermmode.o \
 sys/time/gettimeofday.o \

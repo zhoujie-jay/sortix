@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -34,6 +34,7 @@
 #include <sortix/kernel/refcount.h>
 
 struct stat;
+struct statvfs;
 struct wincurpos;
 struct winsize;
 struct kernel_dirent;
@@ -58,6 +59,7 @@ public:
 	virtual ~Vnode();
 	int sync(ioctx_t* ctx);
 	int stat(ioctx_t* ctx, struct stat* st);
+	int statvfs(ioctx_t* ctx, struct statvfs* stvfs);
 	int chmod(ioctx_t* ctx, mode_t mode);
 	int chown(ioctx_t* ctx, uid_t owner, gid_t group);
 	int truncate(ioctx_t* ctx, off_t length);
