@@ -46,6 +46,7 @@ __BEGIN_DECLS
 #define O_NOFOLLOW (1<<12)
 #define O_SYMLINK_NOFOLLOW (1<<13)
 #define O_NOCTTY (1<<14)
+#define O_TTY_INIT (1<<15)
 
 #define FD_CLOEXEC (1<<0)
 #define FD_CLOFORK (1<<1)
