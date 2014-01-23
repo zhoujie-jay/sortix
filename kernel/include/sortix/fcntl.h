@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -45,6 +45,7 @@ __BEGIN_DECLS
 #define O_NONBLOCK (1<<11)
 #define O_NOFOLLOW (1<<12)
 #define O_SYMLINK_NOFOLLOW (1<<13)
+#define O_NOCTTY (1<<14)
 
 #define FD_CLOEXEC (1<<0)
 #define FD_CLOFORK (1<<1)

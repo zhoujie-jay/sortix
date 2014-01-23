@@ -52,7 +52,7 @@ const int ACCESS_FLAGS = O_READ | O_WRITE | O_EXEC | O_SEARCH;
 
 // Flags that only make sense at open time.
 const int OPEN_FLAGS = O_CREATE | O_DIRECTORY | O_EXCL | O_TRUNC | O_NOFOLLOW |
-                       O_SYMLINK_NOFOLLOW;
+                       O_SYMLINK_NOFOLLOW | O_NOCTTY;
 
 // Flags that only make sense for descriptors.
 const int DESCRIPTOR_FLAGS = O_APPEND | O_NONBLOCK;
