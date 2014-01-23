@@ -93,6 +93,15 @@ named host, but don't care much about the low-level details. If you use these
 modern networking interfaces, then your program can use without modification
 IPv4, IPv6, or whatever new protocol is used in the future.
 
+gethostid, sethostid
+--------------------
+
+These functions are built on the assumption that 32-bits are enough such that
+each computer has an unique identity. It isn't. These functions are usually
+implemented by using the IPv4 address, which already creates conflicts because
+multiple systems can have the same LAN address. The functions are silly and any
+use of them probably is silly too.
+
 getpgrp
 -------
 

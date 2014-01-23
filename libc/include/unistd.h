@@ -311,7 +311,6 @@ int fdatasync(int);
 int fexecve(int, char* const [], char* const []);
 long fpathconf(int, int);
 int getgroups(int, gid_t []);
-long gethostid(void);
 
 pid_t getpgrp(void);
 pid_t getsid(pid_t);
