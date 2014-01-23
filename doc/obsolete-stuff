@@ -61,6 +61,23 @@ will need to be removed as well.
 
 Sortix currently implement these functions for compatibility reasons.
 
+F_GETLK, F_SETLK, F_SETLKW
+--------------------------
+
+These fcntl commands implement POSIX advisory file locking. Unfortunately, this
+standard interface is very poorly designed. In particular, if a process closes
+a file descriptor, then all locks the process has for that file is unlocked,
+even though there might not be a lock associated with that file descriptor in
+the first place. This means that if the main program locks /foo/bar and runs
+a library routine that also happen to open /foo/bar, then the advsisory lock set
+up by the main program is silently gone when when the library routine closes the
+file and returns to the main program. Additionally, the locks are attached to
+processes, rather than file descriptors. This complicates using them for threads
+and passing file locks onto child processes.
+
+Use the flock (not to be confused with lockf) call instead as it works at a file
+descriptor level.
+
 ftime
 -----
 
@@ -108,6 +125,16 @@ isascii
 This function is rather pointless. If we use a character encoding that wasn't
 ascii compatible, then it doesn't make sense. If we use a sane character
 encoding such as UTF-8, then you can simply check if the value is at most 127.
+
+lockf
+-----
+
+This function implements POSIX advisory locks. It suffers from the same basic
+design mistakes that the fnctl advistory lock commands (F_GETLK, F_SETLK,
+F_SETLKW) do and should be avoided for the same reasons (see above).
+
+Use the flock (not to be confused with lockf) call instead as it works at a file
+descriptor level.
 
 PATH_MAX
 --------

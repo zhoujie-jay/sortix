@@ -23,6 +23,7 @@ likely take a very long time to phase out and wholly remove.
 
 Mandated by POSIX but not implemented in Sortix
 ----
+* POSIX advisory locks (fcntl, lockf) are not implemented.
 * getpgrp is not implemented.
 * <strings.h> has been merged into <string.h>.
 * Numerous namespace violations (will be fixed or documented here).

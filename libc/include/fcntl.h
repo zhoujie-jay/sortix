@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,8 +22,6 @@
 
 *******************************************************************************/
 
-/* TODO: POSIX-1.2008 compliance is only partial */
-
 #ifndef INCLUDE_FCNTL_H
 #define INCLUDE_FCNTL_H
 
@@ -31,9 +29,10 @@
 
 #include <sys/__/types.h>
 
+#include <sys/stat.h>
+
 #include <sortix/fcntl.h>
 #include <sortix/seek.h>
-#include <sys/stat.h>
 
 __BEGIN_DECLS
 
@@ -51,27 +50,12 @@ __BEGIN_DECLS
 /* Compatibility with Linux and other systems that have this. */
 #define O_ACCMODE (O_READ | O_WRITE | O_EXEC | O_SEARCH)
 
-/* TODO: F_* missing here */
-
-/* TODO: F_RDLCK, F_UNLCK, F_WRLCK missing here */
-
-/* TODO: AT_SYMLINK_FOLLOW missing here */
-
 /* TODO: POSIX_FADV_* missing here */
 
 #ifndef __pid_t_defined
 #define __pid_t_defined
 typedef __pid_t pid_t;
 #endif
-
-struct flock
-{
-	short l_type; /* Type of lock; F_RDLCK, F_WRLCK, F_UNLCK. */
-	short l_whence; /* Type of lock; F_RDLCK, F_WRLCK, F_UNLCK. */
-	off_t l_start; /* Relative offset in bytes. */
-	off_t l_len; /* Size; if 0 then until EOF. */
-	pid_t l_pid; /* Process ID of the process holding the lock; returned with F_GETLK. */
-};
 
 int creat(const char* path, mode_t mode);
 int fcntl(int fd, int cmd, ...);

@@ -315,7 +315,6 @@ long gethostid(void);
 
 pid_t getpgrp(void);
 pid_t getsid(pid_t);
-int lockf(int, int, off_t);
 int nice(int);
 int pause(void);
 int setregid(gid_t, gid_t);
