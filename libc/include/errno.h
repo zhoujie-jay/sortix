@@ -104,6 +104,7 @@ __BEGIN_DECLS
 #define ENOLCK 84
 #define ENOUSER 85
 #define ENOGROUP 86
+#define ESIGPENDING 87
 
 #define EOPNOTSUPP ENOTSUP
 

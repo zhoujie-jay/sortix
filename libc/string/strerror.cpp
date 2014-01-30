@@ -105,6 +105,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ENOLCK: return "No locks available";
 	case ENOUSER: return "No such user";
 	case ENOGROUP: return "No such group";
+	case ESIGPENDING: return "Signal is already pending";
 	default: return "Unknown error condition";
 	}
 }
