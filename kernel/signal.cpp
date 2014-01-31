@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -127,10 +127,6 @@ void Return(CPU::InterruptRegisters* regs, void* /*user*/)
 
 void Init()
 {
-	Interrupt::RegisterRawHandler(130, isr130, true);
-	Interrupt::RegisterHandler(130, Dispatch, NULL);
-	Interrupt::RegisterRawHandler(131, isr131, true);
-	Interrupt::RegisterHandler(131, Return, NULL);
 }
 
 } // namespace Signal

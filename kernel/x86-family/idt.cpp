@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -30,51 +30,48 @@
 namespace Sortix {
 namespace IDT {
 
-struct idt_entry
-{
-	uint16_t handler_low;
-	uint16_t sel;
-	uint8_t reserved0;
-	uint8_t flags;
-	uint16_t handler_high;
-#if defined(__x86_64__)
-	uint32_t handler_highest;
-	uint32_t reserved1;
-#endif
-};
-
-struct idt_ptr
-{
-	uint16_t limit;
-#if defined(__x86_64__)
-	uint64_t idt_ptr;
-#else
-	uint32_t idt_ptr;
-#endif
-} __attribute__((packed));
-
 static struct idt_entry idt_entries[256];
 
 void Init()
 {
-	volatile struct idt_ptr ptr;
-	ptr.limit = sizeof(idt_entries) - 1;
-	ptr.idt_ptr = (unsigned long) &idt_entries;
-	asm volatile ("lidt (%0)" : : "r"(&ptr));
 	memset(&idt_entries, 0, sizeof(idt_entries));
+	Set(idt_entries, 256);
 }
 
-void SetEntry(uint8_t num, uintptr_t handler, uint16_t sel, uint8_t flags)
+void Set(struct idt_entry* table, size_t length)
 {
-	idt_entries[num].flags = flags;
-	idt_entries[num].reserved0 = 0;
-	idt_entries[num].sel = sel;
-	idt_entries[num].handler_low = handler >> 0 & 0xFFFF;
-	idt_entries[num].handler_high = handler >> 16 & 0xFFFF;
+	size_t limit = sizeof(idt_entry) * length - 1;
 #if defined(__x86_64__)
-	idt_entries[num].handler_highest = handler >> 32 & 0xFFFFFFFFU;
-	idt_entries[num].reserved1 = 0;
+	asm volatile ("subq $10, %%rsp\n\t"
+	              "movw %w0, 0(%%rsp)\n\t"
+	              "movq %1, 2(%%rsp)\n\t"
+	              "lidt (%%rsp)\n\t"
+	              "addq $10, %%rsp" : : "rN"(limit), "r"(table));
+#else
+	asm volatile ("subl $6, %%esp\n\t"
+	              "movw %w0, 0(%%esp)\n\t"
+	              "movl %1, 2(%%esp)\n\t"
+	              "lidt (%%esp)\n\t"
+	              "addl $6, %%esp" : : "rN"(limit), "r"(table));
 #endif
+}
+
+void SetEntry(struct idt_entry* entry, uintptr_t handler, uint16_t selector, uint8_t flags, uint8_t ist)
+{
+	entry->flags = flags;
+	entry->ist = ist;
+	entry->selector = selector;
+	entry->handler_low = handler >> 0 & 0xFFFF;
+	entry->handler_high = handler >> 16 & 0xFFFF;
+#if defined(__x86_64__)
+	entry->handler_highest = handler >> 32 & 0xFFFFFFFFU;
+	entry->reserved1 = 0;
+#endif
+}
+
+void SetEntry(uint8_t num, uintptr_t handler, uint16_t selector, uint8_t flags, uint8_t ist)
+{
+	SetEntry(idt_entries + num, handler, selector, flags, ist);
 }
 
 } // namespace IDT

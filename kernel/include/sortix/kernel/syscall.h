@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -37,7 +37,5 @@ void Register(size_t index, void* funcptr);
 
 } // namespace Syscall
 } // namespace Sortix
-
-extern "C" void syscall_handler();
 
 #endif

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -27,11 +27,6 @@
 .section .text
 .type syscall_handler, @function
 syscall_handler:
-	# The processor disabled interrupts during the int $0x80 instruction,
-	# however Sortix system calls runs with interrupts enabled such that they
-	# can be pre-empted.
-	sti
-
 	movl $0, global_errno # Reset errno
 
 	pushl %ebp

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -28,20 +28,26 @@
 #include <sortix/kernel/decl.h>
 
 namespace Sortix {
-
 class Process;
 class Thread;
+} // namespace Sortix
 
+namespace Sortix {
 namespace CPU {
 struct InterruptRegisters;
 } // namespace CPU
+} // namespace Sortix
 
+namespace Sortix {
 enum ThreadState { NONE, RUNNABLE, BLOCKING, DEAD };
+} // namespace Sortix
 
+namespace Sortix {
 namespace Scheduler {
 
 void Init();
 void Switch(CPU::InterruptRegisters* regs);
+#if defined(__i386__) || defined(__x86_64__)
 inline static void Yield() { asm volatile ("int $129"); }
 __attribute__ ((noreturn))
 inline static void ExitThread()
@@ -49,6 +55,7 @@ inline static void ExitThread()
 	asm volatile ("int $132");
 	__builtin_unreachable();
 }
+#endif
 void SetThreadState(Thread* thread, ThreadState state);
 ThreadState GetThreadState(Thread* thread);
 void SetIdleThread(Thread* thread);
@@ -56,9 +63,10 @@ void SetDummyThreadOwner(Process* process);
 void SetInitProcess(Process* init);
 Process* GetInitProcess();
 Process* GetKernelProcess();
+void InterruptYieldCPU(CPU::InterruptRegisters* regs, void* user);
+void ThreadExitCPU(CPU::InterruptRegisters* regs, void* user);
 
 } // namespace Scheduler
-
 } // namespace Sortix
 
 #endif

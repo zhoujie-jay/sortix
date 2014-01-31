@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -187,12 +187,12 @@ void LogEndSwitch(Thread* current, const CPU::InterruptRegisters* regs)
 	}
 }
 
-static void InterruptYieldCPU(CPU::InterruptRegisters* regs, void* /*user*/)
+void InterruptYieldCPU(CPU::InterruptRegisters* regs, void* /*user*/)
 {
 	Switch(regs);
 }
 
-static void ThreadExitCPU(CPU::InterruptRegisters* regs, void* /*user*/)
+void ThreadExitCPU(CPU::InterruptRegisters* regs, void* /*user*/)
 {
 	// Can't use floating point instructions from now.
 	Float::NofityTaskExit(currentthread);
@@ -298,9 +298,6 @@ static int sys_usleep(size_t usecs)
 	return 0;
 }
 
-extern "C" void yield_cpu_handler();
-extern "C" void thread_exit_handler();
-
 void Init()
 {
 	premagic = postmagic = SCHED_MAGIC;
@@ -316,13 +313,6 @@ void Init()
 	firstrunnablethread = NULL;
 	firstsleepingthread = NULL;
 	idlethread = NULL;
-
-	// Register our raw handler with user-space access. It calls our real
-	// handler after common interrupt preparation stuff has occured.
-	Interrupt::RegisterRawHandler(129, yield_cpu_handler, true);
-	Interrupt::RegisterHandler(129, InterruptYieldCPU, NULL);
-	Interrupt::RegisterRawHandler(132, thread_exit_handler, true);
-	Interrupt::RegisterHandler(132, ThreadExitCPU, NULL);
 
 	Syscall::Register(SYSCALL_SLEEP, (void*) sys_sleep);
 	Syscall::Register(SYSCALL_USLEEP, (void*) sys_usleep);

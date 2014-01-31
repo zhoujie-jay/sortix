@@ -45,6 +45,8 @@ ifdef X86FAMILY
              $(CPU)/memorymanagement.o \
              x86-family/memorymanagement.o \
              $(CPU)/interrupt.o \
+             x86-family/interrupt.o \
+             x86-family/pic.o \
              x86-family/gdt.o \
              x86-family/idt.o \
              $(CPU)/syscall.o \
