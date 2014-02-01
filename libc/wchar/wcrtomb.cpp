@@ -60,6 +60,7 @@ size_t wcrtomb(char* restrict s, wchar_t wc, mbstate_t* restrict /*ps*/)
 	case 4: prefixavai = 3; prefix = 0b11110U << prefixavai; break;
 	case 5: prefixavai = 2; prefix = 0b111110U << prefixavai; break;
 	case 6: prefixavai = 1; prefix = 0b1111110U << prefixavai; break;
+	default: __builtin_unreachable();
 	}
 
 	// Put the first bits in the unused area of the prefix.
