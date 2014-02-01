@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -29,7 +29,7 @@
 extern "C" int sigismember(const sigset_t* set, int signum)
 {
 	int max_signals = sizeof(set->__val) * 8;
-	if ( max_signals <= signum )
+	if ( signum < 0 || max_signals <= signum )
 		return errno = EINVAL, -1;
 	size_t which_byte = signum / 8;
 	size_t which_bit  = signum % 8;
