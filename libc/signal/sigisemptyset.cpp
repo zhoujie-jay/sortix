@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -29,6 +29,6 @@ extern "C" int sigisemptyset(const sigset_t* set)
 {
 	for ( size_t i = 0; i < sizeof(set->__val) / sizeof(set->__val[0]); i++ )
 		if ( set->__val[i] != 0 )
-			return 1;
-	return 0;
+			return 0;
+	return 1;
 }
