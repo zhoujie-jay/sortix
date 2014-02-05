@@ -39,7 +39,7 @@ extern "C" int getlogin_r(char* buf, size_t size)
 	do
 	{
 		size_t new_pwdbuflen = pwdbuflen ? 2 * pwdbuflen : 64;
-		char* new_pwdbuf = pwdbuf = (char*) realloc(pwdbuf, new_pwdbuflen);
+		char* new_pwdbuf = (char*) realloc(pwdbuf, new_pwdbuflen);
 		if ( !new_pwdbuf )
 			return free(pwdbuf), -1;
 		pwdbuf = new_pwdbuf;
