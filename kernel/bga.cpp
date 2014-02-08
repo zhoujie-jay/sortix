@@ -84,6 +84,12 @@ const uint16_t VBE_MAX_POS_VERSION = 0xB0CF;
 const size_t VBE_BANK_SIZE = 64UL * 1024UL;
 volatile uint8_t* const VBE_VIDEO_MEM = (volatile uint8_t*) 0xA0000;
 
+static addr_t ParseDevBar0(uint32_t devaddr)
+{
+	pcibar_t bar = PCI::GetBAR(devaddr, 0);
+	return bar.addr();
+}
+
 addr_t DetectBGAFramebuffer()
 {
 	uint32_t devaddr;
@@ -94,7 +100,7 @@ addr_t DetectBGAFramebuffer()
 	pcifind.vendorid = 0x1234;
 	pcifind.deviceid = 0x1111;
 	if ( (devaddr = PCI::SearchForDevice(pcifind)) )
-		return PCI::ParseDevBar0(devaddr);
+		return ParseDevBar0(devaddr);
 
 	// Search for a generic VGA compatible device.
 	memset(&pcifind, 255, sizeof(pcifind));
@@ -102,7 +108,7 @@ addr_t DetectBGAFramebuffer()
 	pcifind.subclassid = 0x00;
 	pcifind.progif = 0x00;
 	if ( (devaddr = PCI::SearchForDevice(pcifind)) )
-		return PCI::ParseDevBar0(devaddr);
+		return ParseDevBar0(devaddr);
 
 	return 0;
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -24,6 +24,9 @@
 
 #ifndef SORTIX_PCI_H
 #define SORTIX_PCI_H
+
+#include <endian.h>
+#include <stdint.h>
 
 namespace Sortix {
 
@@ -52,6 +55,30 @@ typedef struct
 	uint8_t revid;
 } pcifind_t;
 
+const uint8_t PCIBAR_TYPE_IOSPACE = 0x0 << 1 | 0x1 << 0;
+const uint8_t PCIBAR_TYPE_16BIT = 0x1 << 1 | 0x0 << 0;
+const uint8_t PCIBAR_TYPE_32BIT = 0x0 << 1 | 0x0 << 0;
+const uint8_t PCIBAR_TYPE_64BIT = 0x2 << 1 | 0x0 << 0;
+
+typedef struct
+{
+public:
+	uint64_t addr_raw;
+	uint64_t size_raw;
+
+public:
+	uint64_t addr() const { return addr_raw & 0xFFFFFFFFFFFFFFF0; }
+	uint64_t size() const { return size_raw & 0xFFFFFFFFFFFFFFFF; }
+	uint8_t type() const { return addr_raw & 0x7;  }
+	uint32_t ioaddr() const { return addr_raw & 0xFFFFFFFC; };
+	bool is_prefetchable() const { return addr_raw & 0x8; }
+	bool is_iospace() const { return type() == PCIBAR_TYPE_IOSPACE; }
+	bool is_16bit() const { return type() == PCIBAR_TYPE_16BIT; }
+	bool is_32bit() const { return type() == PCIBAR_TYPE_32BIT; }
+	bool is_64bit() const { return type() == PCIBAR_TYPE_64BIT; }
+	bool is_mmio() const { return is_16bit() || is_32bit() || is_64bit(); }
+} pcibar_t;
+
 namespace PCI {
 
 void Init();
@@ -66,10 +93,11 @@ void WriteRaw32(uint32_t devaddr, uint8_t off, uint32_t val); // PCI endian
 pciid_t GetDeviceId(uint32_t devaddr);
 pcitype_t GetDeviceType(uint32_t devaddr);
 uint32_t SearchForDevice(pcifind_t pcifind);
-addr_t ParseDevBar0(uint32_t devaddr);
-bool IsIOSpaceBar(uint32_t devaddr, uint8_t bar);
-bool Is64BitBar(uint32_t devaddr, uint8_t bar);
-uint64_t GetPCIBAR(uint32_t devaddr, uint8_t bar);
+pcibar_t GetBAR(uint32_t devaddr, uint8_t bar);
+pcibar_t GetExpansionROM(uint32_t devaddr);
+void EnableExpansionROM(uint32_t devaddr);
+void DisableExpansionROM(uint32_t devaddr);
+bool IsExpansionROMEnabled(uint32_t devaddr);
 
 } // namespace PCI
 } // namespace Sortix

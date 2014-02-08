@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -27,10 +27,13 @@
 
 #include <sortix/kernel/cpu.h>
 #include <sortix/kernel/kernel.h>
+#include <sortix/kernel/kthread.h>
 #include <sortix/kernel/pci.h>
 
 namespace Sortix {
 namespace PCI {
+
+static kthread_mutex_t pci_lock = KTHREAD_MUTEX_INITIALIZER;
 
 const uint16_t CONFIG_ADDRESS = 0xCF8;
 const uint16_t CONFIG_DATA = 0xCFC;
@@ -166,45 +169,85 @@ uint32_t SearchForDevice(pcifind_t pcifind)
 	return SearchForDeviceOnBus(0, pcifind);
 }
 
-// TODO: This is just a hack but will do for now.
-addr_t ParseDevBar0(uint32_t devaddr)
+pcibar_t GetBAR(uint32_t devaddr, uint8_t bar)
 {
-	uint32_t bar0 = Read32(devaddr, 0x10);
-	if ( bar0 & 0x1 ) // IO Space
-		return bar0 & ~0x7UL;
-	else // Memory Space
+	ScopedLock lock(&pci_lock);
+
+	uint32_t low = PCI::Read32(devaddr, 0x10 + 4 * (bar+0));
+
+	pcibar_t result;
+	result.addr_raw = low;
+	result.size_raw = 0;
+	if ( result.is_64bit() )
 	{
-		//uint32_t type = bar0 >> 1 & 0x3;
-		//uint32_t prefetchable = bar0 >> 3 & 0x1;
-		//if ( type == 0x01 )
-		//	// TODO: Support 16-bit addresses here.
-		//if ( type == 0x02 )
-		//	// TODO: Support 64-bit addresses here.
-		return bar0 & ~0xFUL;
+		uint32_t high = PCI::Read32(devaddr, 0x10 + 4 * (bar+1));
+		result.addr_raw |= (uint64_t) high << 32;
+		PCI::Write32(devaddr, 0x10 + 4 * (bar+0), 0xFFFFFFFF);
+		PCI::Write32(devaddr, 0x10 + 4 * (bar+1), 0xFFFFFFFF);
+		uint32_t size_low = PCI::Read32(devaddr, 0x10 + 4 * (bar+0));
+		uint32_t size_high = PCI::Read32(devaddr, 0x10 + 4 * (bar+1));
+		PCI::Write32(devaddr, 0x10 + 4 * (bar+0), low);
+		PCI::Write32(devaddr, 0x10 + 4 * (bar+1), high);
+		result.size_raw = (uint64_t) size_high << 32 | (uint64_t) size_low << 0;
+		result.size_raw = ~(result.size_raw & 0xFFFFFFFFFFFFFFF0) + 1;
 	}
+	else if ( result.is_32bit() )
+	{
+		PCI::Write32(devaddr, 0x10 + 4 * (bar+0), 0xFFFFFFFF);
+		uint32_t size_low = PCI::Read32(devaddr, 0x10 + 4 * (bar+0));
+		PCI::Write32(devaddr, 0x10 + 4 * (bar+0), low);
+		result.size_raw = (uint64_t) size_low << 0;
+		result.size_raw = ~(result.size_raw & 0xFFFFFFF0) + 1;
+	}
+	else if ( result.is_iospace() )
+	{
+		PCI::Write32(devaddr, 0x10 + 4 * (bar+0), 0xFFFFFFFF);
+		uint32_t size_low = PCI::Read32(devaddr, 0x10 + 4 * (bar+0));
+		PCI::Write32(devaddr, 0x10 + 4 * (bar+0), low);
+		result.size_raw = (uint64_t) size_low << 0;
+		result.size_raw = ~(result.size_raw & 0xFFFFFFFC) + 1;
+	}
+
+	return result;
 }
 
-bool IsIOSpaceBar(uint32_t devaddr, uint8_t bar)
+pcibar_t GetExpansionROM(uint32_t devaddr)
 {
-	uint32_t val = PCI::Read32(devaddr, 0x10 + 4 * bar);
-	return val & 0x1;
+	const uint32_t ROM_ADDRESS_MASK = ~UINT32_C(0x7FF);
+
+	ScopedLock lock(&pci_lock);
+
+	uint32_t low = PCI::Read32(devaddr, 0x30);
+	PCI::Write32(devaddr, 0x30, ROM_ADDRESS_MASK | low);
+	uint32_t size_low = PCI::Read32(devaddr, 0x30);
+	PCI::Write32(devaddr, 0x30, low);
+
+	pcibar_t result;
+	result.addr_raw = (low & ROM_ADDRESS_MASK) | PCIBAR_TYPE_32BIT;
+	result.size_raw = ~(size_low & ROM_ADDRESS_MASK) + 1;
+	return result;
 }
 
-bool Is64BitBar(uint32_t devaddr, uint8_t bar)
+void EnableExpansionROM(uint32_t devaddr)
 {
-	uint32_t val = PCI::Read32(devaddr, 0x10 + 4 * bar);
-	return (val & 0x3 << 1) == 0x2 << 1;
+	ScopedLock lock(&pci_lock);
+
+	PCI::Write32(devaddr, 0x30, PCI::Read32(devaddr, 0x30) | 0x1);
 }
 
-uint64_t GetPCIBAR(uint32_t devaddr, uint8_t bar)
+void DisableExpansionROM(uint32_t devaddr)
 {
-	uint64_t low = PCI::Read32(devaddr, 0x10 + 4 * (bar+0));
-	if ( (low & (0x3 << 1)) != (0x2 << 1) )
-		return low & 0xFFFFFFF0ULL;
-	uint64_t high = PCI::Read32(devaddr, 0x10 + 4 * (bar+1));
-	return (low & 0xFFFFFFF0ULL) | high << 32ULL;
+	ScopedLock lock(&pci_lock);
+
+	PCI::Write32(devaddr, 0x30, PCI::Read32(devaddr, 0x30) & ~UINT32_C(0x1));
 }
 
+bool IsExpansionROMEnabled(uint32_t devaddr)
+{
+	ScopedLock lock(&pci_lock);
+
+	return PCI::Read32(devaddr, 0x30) & 0x1;
+}
 
 void Init()
 {
