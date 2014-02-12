@@ -7,7 +7,6 @@ include ../dirs.mak
 OPTLEVEL?=-g -O2
 CALLTRACE?=0
 DISKWRITE?=1
-ASLFAGS?=
 CPPFLAGS?=
 CXXFLAGS?=$(OPTLEVEL)
 
