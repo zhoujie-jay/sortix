@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -78,9 +78,9 @@ struct InterruptRegisters
 {
 	uint32_t signal_pending, kerrno, cr2;
 	uint32_t ds; // Data segment selector
-	uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax; // Pushed by pusha.
+	uint32_t edi, esi, ebp, not_esp, ebx, edx, ecx, eax; // Pushed by pusha.
 	uint32_t int_no, err_code; // Interrupt number and error code (if applicable)
-	uint32_t eip, cs, eflags, useresp, ss; // Pushed by the processor automatically.
+	uint32_t eip, cs, eflags, esp, ss; // Pushed by the processor automatically.
 
 public:
 	void LogRegisters() const;
@@ -97,10 +97,10 @@ struct InterruptRegisters
 {
 	uint64_t signal_pending, kerrno, cr2;
 	uint64_t ds; // Data segment selector
-	uint64_t rdi, rsi, rbp, rsp, rbx, rdx, rcx, rax;
+	uint64_t rdi, rsi, rbp, not_rsp, rbx, rdx, rcx, rax;
 	uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
 	uint64_t int_no, err_code; // Interrupt number and error code (if applicable)
-	uint64_t rip, cs, rflags, userrsp, ss; // Pushed by the processor automatically.
+	uint64_t rip, cs, rflags, rsp, ss; // Pushed by the processor automatically.
 
 public:
 	void LogRegisters() const;

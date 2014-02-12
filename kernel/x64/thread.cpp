@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of Sortix.
 
@@ -33,7 +33,7 @@ namespace Sortix {
 void Thread::SaveRegisters(const CPU::InterruptRegisters* src)
 {
 	registers.rip = src->rip;
-	registers.userrsp = src->userrsp;
+	registers.rsp = src->rsp;
 	registers.rax = src->rax;
 	registers.rbx = src->rbx;
 	registers.rcx = src->rcx;
@@ -60,7 +60,7 @@ void Thread::SaveRegisters(const CPU::InterruptRegisters* src)
 void Thread::LoadRegisters(CPU::InterruptRegisters* dest)
 {
 	dest->rip = registers.rip;
-	dest->userrsp = registers.userrsp;
+	dest->rsp = registers.rsp;
 	dest->rax = registers.rax;
 	dest->rbx = registers.rbx;
 	dest->rcx = registers.rcx;
@@ -92,8 +92,8 @@ void SetupKernelThreadRegs(CPU::InterruptRegisters* regs, ThreadEntry entry,
 	// the entry function returns. Note that since we use a register based
 	// calling convention, we call BootstrapKernelThread directly.
 	regs->rip = (addr_t) BootstrapKernelThread;
-	regs->userrsp = stack + stacksize - sizeof(size_t);
-	*((size_t*) regs->userrsp) = 0; /* back tracing stops at NULL rip */
+	regs->rsp = stack + stacksize - sizeof(size_t);
+	*((size_t*) regs->rsp) = 0; /* back tracing stops at NULL rip */
 	regs->rax = 0;
 	regs->rbx = 0;
 	regs->rcx = 0;
@@ -123,7 +123,7 @@ void Thread::HandleSignalFixupRegsCPU(CPU::InterruptRegisters* regs)
 		return;
 	regs->rip = regs->rdi;
 	regs->rflags = regs->rsi;
-	regs->userrsp = regs->r8;
+	regs->rsp = regs->r8;
 	regs->cs = UCS | URPL;
 	regs->ds = UDS | URPL;
 	regs->ss = UDS | URPL;
@@ -133,9 +133,9 @@ void Thread::HandleSignalCPU(CPU::InterruptRegisters* regs)
 {
 	const size_t STACK_ALIGNMENT = 16UL;
 	const size_t RED_ZONE_SIZE = 128UL;
-	regs->userrsp -= RED_ZONE_SIZE;
-	regs->userrsp &= ~(STACK_ALIGNMENT-1UL);
-	regs->rbp = regs->userrsp;
+	regs->rsp -= RED_ZONE_SIZE;
+	regs->rsp &= ~(STACK_ALIGNMENT-1UL);
+	regs->rbp = regs->rsp;
 	regs->rdi = currentsignal;
 	regs->rip = (size_t) sighandler;
 	regs->rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
@@ -147,7 +147,7 @@ void Thread::GotoOnSigKill(CPU::InterruptRegisters* regs)
 {
 	regs->rip = (unsigned long) Thread__OnSigKill;
 	regs->rdi = (unsigned long) this;
-	regs->userrsp = regs->rbp = kernelstackpos + kernelstacksize;
+	regs->rsp = regs->rbp = kernelstackpos + kernelstacksize;
 	regs->rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
 	regs->cs = KCS | KRPL;
 	regs->ds = KDS | KRPL;

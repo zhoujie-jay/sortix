@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
 
     This file is part of Sortix.
 
@@ -32,13 +32,13 @@ namespace X86 {
 void InterruptRegisters::LogRegisters() const
 {
 	Log::PrintF("[cr2=0x%zx,ds=0x%zx,edi=0x%zx,esi=0x%zx,ebp=0x%zx,"
-	            "esp=0x%zx,ebx=0x%zx,edx=0x%zx,ecx=0x%zx,eax=0x%zx,"
+	            "ebx=0x%zx,edx=0x%zx,ecx=0x%zx,eax=0x%zx,"
 	            "int_no=0x%zx,err_code=0x%zx,eip=0x%zx,cs=0x%zx,"
-	            "eflags=0x%zx,useresp=0x%zx,ss=0x%zx]",
+	            "eflags=0x%zx,esp=0x%zx,ss=0x%zx]",
 	            cr2, ds, edi, esi, ebp,
-	            esp, ebx, edx, ecx, eax,
+	            ebx, edx, ecx, eax,
 	            int_no, err_code, eip, cs,
-	            eflags, useresp, ss);
+	            eflags, esp, ss);
 }
 
 } // namespace X86

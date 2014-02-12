@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of Sortix.
 
@@ -33,7 +33,7 @@ namespace Sortix {
 void Thread::SaveRegisters(const CPU::InterruptRegisters* src)
 {
 	registers.eip = src->eip;
-	registers.useresp = src->useresp;
+	registers.esp = src->esp;
 	registers.eax = src->eax;
 	registers.ebx = src->ebx;
 	registers.ecx = src->ecx;
@@ -52,7 +52,7 @@ void Thread::SaveRegisters(const CPU::InterruptRegisters* src)
 void Thread::LoadRegisters(CPU::InterruptRegisters* dest)
 {
 	dest->eip = registers.eip;
-	dest->useresp = registers.useresp;
+	dest->esp = registers.esp;
 	dest->eax = registers.eax;
 	dest->ebx = registers.ebx;
 	dest->ecx = registers.ecx;
@@ -79,8 +79,8 @@ void SetupKernelThreadRegs(CPU::InterruptRegisters* regs, ThreadEntry entry,
 	// calling convention, we go through a proxy that uses %edi and %esi
 	// as parameters and pushes them to the stack and then does the call.
 	regs->eip = (addr_t) asm_call_BootstrapKernelThread;
-	regs->useresp = stack + stacksize - sizeof(size_t);
-	*((size_t*) regs->useresp) = 0; /* back tracing stops at NULL rip */
+	regs->esp = stack + stacksize - sizeof(size_t);
+	*((size_t*) regs->esp) = 0; /* back tracing stops at NULL rip */
 	regs->eax = 0;
 	regs->ebx = 0;
 	regs->ecx = 0;
@@ -103,7 +103,7 @@ void Thread::HandleSignalFixupRegsCPU(CPU::InterruptRegisters* regs)
 	uint32_t* params = (uint32_t*) regs->ebx;
 	regs->eip = params[0];
 	regs->eflags = params[2];
-	regs->useresp = params[3];
+	regs->esp = params[3];
 	regs->cs = UCS | URPL;
 	regs->ds = UDS | URPL;
 	regs->ss = UDS | URPL;
@@ -113,9 +113,9 @@ void Thread::HandleSignalCPU(CPU::InterruptRegisters* regs)
 {
 	const size_t STACK_ALIGNMENT = 16UL;
 	const size_t RED_ZONE_SIZE = 128UL;
-	regs->useresp -= RED_ZONE_SIZE;
-	regs->useresp &= ~(STACK_ALIGNMENT-1UL);
-	regs->ebp = regs->useresp;
+	regs->esp -= RED_ZONE_SIZE;
+	regs->esp &= ~(STACK_ALIGNMENT-1UL);
+	regs->ebp = regs->esp;
 	regs->edi = currentsignal;
 	regs->eip = (size_t) sighandler;
 	regs->eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
@@ -133,7 +133,7 @@ void Thread::GotoOnSigKill(CPU::InterruptRegisters* regs)
 	// we currently are on, this may not be fully supported by interrupt.s
 	// that is quite aware of this (but isn't perfect). If our destination
 	// is further down the stack, then we are probably safe.
-	regs->useresp = regs->ebp = kernelstackpos + kernelstacksize - 256;
+	regs->esp = regs->ebp = kernelstackpos + kernelstacksize - 256;
 	regs->eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
 	regs->cs = KCS | KRPL;
 	regs->ds = KDS | KRPL;

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of Sortix.
 
@@ -463,7 +463,7 @@ int main_rs(int /*argc*/, char* /*argv*/[])
 	Print("rdx=0x%lx, ", regs.rdx);
 	Print("rdi=0x%lx, ", regs.rdi);
 	Print("rsi=0x%lx, ", regs.rsi);
-	Print("rsp=0x%lx, ", regs.userrsp);
+	Print("rsp=0x%lx, ", regs.rsp);
 	Print("rbp=0x%lx, ", regs.rbp);
 	Print("r8=0x%lx, ", regs.r8);
 	Print("r9=0x%lx, ", regs.r9);
@@ -490,7 +490,7 @@ int main_rs(int /*argc*/, char* /*argv*/[])
 	Print("edx=0x%lx, ", regs.edx);
 	Print("edi=0x%lx, ", regs.edi);
 	Print("esi=0x%lx, ", regs.esi);
-	Print("esp=0x%lx, ", regs.useresp);
+	Print("esp=0x%lx, ", regs.esp);
 	Print("ebp=0x%lx, ", regs.ebp);
 	Print("eip=0x%lx, ", regs.eip);
 	Print("eflags=0x%lx, ", regs.eflags);

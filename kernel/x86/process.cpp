@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of Sortix.
 
@@ -43,8 +43,8 @@ void Process::ExecuteCPU(int argc, char** argv, int envc, char** envp,
 	regs->edx = envc;
 	regs->ecx = (size_t) envp;
 	regs->eip = entry;
-	regs->useresp = stackpos & ~(15UL);
-	regs->ebp = regs->useresp;
+	regs->esp = stackpos & ~(15UL);
+	regs->ebp = regs->esp;
 	regs->cs = UCS | URPL;
 	regs->ds = UDS | URPL;
 	regs->ss = UDS | URPL;
@@ -56,7 +56,7 @@ void InitializeThreadRegisters(CPU::InterruptRegisters* regs,
 {
 	memset(regs, 0, sizeof(*regs));
 	regs->eip = requested->eip;
-	regs->useresp = requested->esp;
+	regs->esp = requested->esp;
 	regs->eax = requested->eax;
 	regs->ebx = requested->ebx;
 	regs->ecx = requested->ecx;
