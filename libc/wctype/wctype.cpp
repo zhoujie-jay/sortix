@@ -90,13 +90,13 @@ extern "C" int iswxdigit(wint_t c)
 	return 0;
 }
 
-extern "C" int towlower(wint_t c)
+extern "C" wint_t towlower(wint_t c)
 {
 	if ( L'A' <= c && c <= L'Z' ) { return L'a' + c - L'A'; }
 	return c;
 }
 
-extern "C" int towupper(wint_t c)
+extern "C" wint_t towupper(wint_t c)
 {
 	if ( L'a' <= c && c <= L'z' ) { return L'A' + c - L'a'; }
 	return c;
