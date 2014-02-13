@@ -475,6 +475,7 @@ time/timer_getoverrun.o \
 time/timer_gettime.o \
 time/timer_settime.o \
 time/times.o \
+time/tzset.o \
 unistd/access.o \
 unistd/alarmns.o \
 unistd/alarm.o \

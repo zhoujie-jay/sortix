@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -150,9 +150,7 @@ int clock_settimeres(clockid_t, const struct timespec*, const struct timespec*);
 int timens(struct tmns* tmns);
 #endif
 
-extern int daylight;
-extern long timezone;
-extern char* tzname[];
+extern char* tzname[2];
 
 __END_DECLS
 
