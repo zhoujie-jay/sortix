@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -23,18 +23,19 @@
 #include <sys/keycodes.h>
 #include <sys/termmode.h>
 
-#include <stdint.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <fcntl.h>
+#include <assert.h>
 #include <errno.h>
 #include <error.h>
+#include <fcntl.h>
 #include <math.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <timespec.h>
+#include <unistd.h>
 
 #include <dispd.h>
 
@@ -84,12 +85,36 @@ void GenerateStarfield(uint32_t* bitmap, size_t width, size_t height)
 
 const size_t MAXKEYNUM = 512UL;
 bool keysdown[MAXKEYNUM] = { false };
+bool keyspending[MAXKEYNUM] = { false };
+struct timespec key_handled_last[MAXKEYNUM];
+
+bool pop_is_key_just_down(int abskbkey)
+{
+	assert(0 <= abskbkey);
+	if ( MAXKEYNUM <= (size_t) abskbkey )
+		return false;
+	if ( keyspending[abskbkey] )
+	{
+		keyspending[abskbkey] = false;
+		clock_gettime(CLOCK_MONOTONIC, &key_handled_last[abskbkey]);
+		return true;
+	}
+	if ( !keysdown[abskbkey] )
+		return false;
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	struct timespec elapsed = timespec_sub(now, key_handled_last[abskbkey]);
+	struct timespec repress_delay = timespec_make(0, 100 * 1000 * 1000);
+	if ( timespec_lt(elapsed, repress_delay) )
+		return false;
+	clock_gettime(CLOCK_MONOTONIC, &key_handled_last[abskbkey]);
+	return true;
+}
 
 void FetchKeyboardInput()
 {
 	// Read the keyboard input from the user.
 	const unsigned termmode = TERMMODE_KBKEY
-	                        | TERMMODE_UNICODE
 	                        | TERMMODE_SIGNAL
 	                        | TERMMODE_NONBLOCK;
 	if ( settermmode(0, termmode) ) { error(1, errno, "settermmode"); }
@@ -98,9 +123,15 @@ void FetchKeyboardInput()
 	while ( 0 < (numbytes = read(0, &codepoint, sizeof(codepoint))) )
 	{
 		int kbkey = KBKEY_DECODE(codepoint);
+		if( !kbkey )
+			continue;
 		int abskbkey = (kbkey < 0) ? -kbkey : kbkey;
-		if ( MAXKEYNUM <= (size_t) abskbkey ) { continue; }
-		keysdown[abskbkey] = 0 < kbkey;
+		if ( MAXKEYNUM <= (size_t) abskbkey )
+			continue;
+		bool is_key_down_event = 0 < kbkey;
+		if ( !keysdown[abskbkey] && is_key_down_event )
+			keyspending[abskbkey] = true;
+		keysdown[abskbkey] = is_key_down_event;
 	}
 }
 
@@ -999,14 +1030,14 @@ void GameLogic()
 	Object* first = firstobject;
 	Object* obj;
 	for ( obj = first; obj; obj = obj->NextObj() ) { obj->GCBirth(); }
+	bool key_a = pop_is_key_just_down(KBKEY_A);
+	bool key_b = pop_is_key_just_down(KBKEY_B);
+	bool key_space = pop_is_key_just_down(KBKEY_SPACE);
+	bool key_lctrl = pop_is_key_just_down(KBKEY_LCTRL);
 	playership->SetThrust(keysdown[KBKEY_UP], keysdown[KBKEY_DOWN]);
 	playership->SetTurn(keysdown[KBKEY_LEFT], keysdown[KBKEY_RIGHT]);
-	playership->SetFiring(keysdown[KBKEY_SPACE], keysdown[KBKEY_LCTRL], keysdown[KBKEY_A]);
-	bool makebot = keysdown[KBKEY_B];
-	keysdown[KBKEY_A] = false;
-	keysdown[KBKEY_B] = false;
-	keysdown[KBKEY_SPACE] = false;
-	keysdown[KBKEY_LCTRL] = false;
+	playership->SetFiring(key_space, key_lctrl, key_a);
+	bool makebot = key_b;
 	if ( makebot )
 		new Botship(RandomAngle(), playership->pos, playership->vel);
 	for ( obj = first; obj; obj = obj->NextObj() )
