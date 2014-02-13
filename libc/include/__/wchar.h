@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,14 +17,28 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    wctype/iswcntrl.cpp
-    Returns whether the wide character is a control character.
+    __/wchar.h
+    Wide character support.
 
 *******************************************************************************/
 
-#include <wctype.h>
+#ifndef INCLUDE____WCHAR_H
+#define INCLUDE____WCHAR_H
 
-extern "C" int iswcntrl(wint_t c)
-{
-	return c < 32;
-}
+#include <sys/cdefs.h>
+
+__BEGIN_DECLS
+
+typedef __WCHAR_TYPE__ __wchar_t;
+#define __WCHAR_MIN __WCHAR_MIN__
+#define __WCHAR_MAX __WCHAR_MAX__
+
+typedef __WINT_TYPE__ __wint_t;
+#define __WINT_MIN __WINT_MIN__
+#define __WINT_MAX __WINT_MAX__
+
+#define __WEOF __WINT_MAX
+
+__END_DECLS
+
+#endif

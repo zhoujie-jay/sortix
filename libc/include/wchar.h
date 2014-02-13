@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -29,6 +29,8 @@
 
 #include <sys/__/types.h>
 
+#include <__/wchar.h>
+
 #include <stdarg.h>
 
 #if defined(__is_sortix_libc)
@@ -37,9 +39,20 @@
 
 __BEGIN_DECLS
 
+#ifndef NULL
+#define __need_NULL
+#include <stddef.h>
+#endif
+
 #ifndef __size_t_defined
 #define __size_t_defined
 #define __need_size_t
+#include <stddef.h>
+#endif
+
+#ifndef __wchar_t_defined
+#define __wchar_t_defined
+#define __need_wchar_t
 #include <stddef.h>
 #endif
 
@@ -62,47 +75,35 @@ typedef int __locale_t;
 typedef __locale_t locale_t;
 #endif
 
-#ifndef __wchar_t_defined
-#define __wchar_t_defined
-#define __need_wchar_t
-#include <stddef.h>
-#endif
-
 #ifndef __wint_t_defined
 #define __wint_t_defined
-typedef int __wint_t;
 typedef __wint_t wint_t;
-#endif
-
-#ifndef WCHAR_MAX
-#define WCHAR_MAX __WCHAR_MAX
 #endif
 
 #ifndef WCHAR_MIN
 #define WCHAR_MIN __WCHAR_MIN
 #endif
 
-#ifndef WEOF
-#define WEOF (-1)
+#ifndef WCHAR_MAX
+#define WCHAR_MAX __WCHAR_MAX
 #endif
 
-#ifndef NULL
-#define __need_NULL
-#include <stddef.h>
+#ifndef WEOF
+#define WEOF __WEOF
 #endif
 
 #ifndef __mbstate_t_defined
-	/* Conversion state information. */
-	typedef struct
+/* Conversion state information. */
+typedef struct
+{
+	int __count;
+	union
 	{
-		int __count;
-		union
-		{
-			wint_t __wch;
-			char __wchb[4];
-		} __value;		/* Value so far. */
-	} mbstate_t;
-	#define __mbstate_t_defined 1
+		wint_t __wch;
+		char __wchb[4];
+	} __value;		/* Value so far. */
+} mbstate_t;
+#define __mbstate_t_defined 1
 #endif
 
 struct tm;

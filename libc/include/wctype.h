@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -29,25 +29,13 @@
 
 #include <sys/__/types.h>
 
+#include <__/wchar.h>
+
 __BEGIN_DECLS
 
 #ifndef __wint_t_defined
 #define __wint_t_defined
-typedef int __wint_t;
 typedef __wint_t wint_t;
-#endif
-
-#ifndef __wctrans_t_defined
-#define __wctrans_t_defined
-/* TODO: figure out what this does and typedef it properly. This is just a
-         temporary assignment. */
-typedef unsigned int __wctrans_t;
-typedef __wctrans_t wctrans_t;
-#endif
-
-#ifndef __wctype_t_defined
-#define __wctype_t_defined
-typedef int (*wctype_t)(wint_t);
 #endif
 
 #ifndef __locale_t_defined
@@ -59,8 +47,14 @@ typedef __locale_t locale_t;
 #endif
 
 #ifndef WEOF
-#define WEOF (-1)
+#define WEOF __WEOF
 #endif
+
+/* TODO: Figure out what this does and typedef it properly. This is just a
+         temporary assignment. */
+typedef unsigned int wctrans_t;
+
+typedef int (*wctype_t)(wint_t);
 
 int iswalnum(wint_t);
 int iswalpha(wint_t);

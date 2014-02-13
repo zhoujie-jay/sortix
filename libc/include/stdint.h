@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -28,6 +28,7 @@
 #include <sys/cdefs.h>
 
 #include <__/stdint.h>
+#include <__/wchar.h>
 
 __BEGIN_DECLS
 
@@ -116,7 +117,21 @@ __BEGIN_DECLS
 #define SSIZE_MIN __SSIZE_MIN
 #define SSIZE_MAX __SSIZE_MAX
 
-/* TODO: wchar_t related stuff is missing here. */
+#ifndef WCHAR_MIN
+#define WCHAR_MIN __WCHAR_MIN
+#endif
+
+#ifndef WCHAR_MAX
+#define WCHAR_MAX __WCHAR_MAX
+#endif
+
+#ifndef WINT_MIN
+#define WINT_MIN __WINT_MIN
+#endif
+
+#ifndef WINT_MAX
+#define WINT_MAX __WINT_MAX
+#endif
 
 #endif
 
