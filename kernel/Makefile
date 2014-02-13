@@ -68,7 +68,7 @@ CRTN_OBJ:=$(CPU)/crtn.o
 
 LIBS=\
 -nostdlib \
--lc-sortix \
+-lk \
 -lgcc \
 
 OBJS=\

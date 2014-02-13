@@ -550,17 +550,17 @@ $(CRTOBJ) \
 
 HEADERS:=$(shell find include -type d)
 
-SORTIXOBJS:=$(addprefix sortix/,$(FREEOBJS))
-SORTIXCPPFLAGS:=$(CPPFLAGS) -D__is_sortix_kernel
-SORTIXFLAGS:=$(FLAGS) -ffreestanding
-SORTIXCFLAGS:=$(CFLAGS)
-SORTIXCXXFLAGS:=$(CXXFLAGS)
+LIBK_OBJS:=$(FREEOBJS:.o=.libk.o)
+LIBK_CPPFLAGS:=$(CPPFLAGS) -D__is_sortix_kernel
+LIBK_FLAGS:=$(FLAGS) -ffreestanding
+LIBK_CFLAGS:=$(CFLAGS)
+LIBK_CXXFLAGS:=$(CXXFLAGS)
 ifeq ($(HOST),x86_64-sortix)
-    SORTIXFLAGS:=$(SORTIXFLAGS) -mno-red-zone
+    LIBK_FLAGS:=$(LIBK_FLAGS) -mno-red-zone
 endif
 
 BINS=libc.a libdl.a libg.a libpthread.a librt.a $(CRTOBJ)
-BINSKERNEL=libc-sortix.a
+BINSKERNEL=libk.a
 INSTALLLIBS:=$(addprefix $(DESTDIR)$(LIBDIR)/,$(BINS))
 INSTALLLIBSKERNEL:=$(addprefix $(DESTDIR)$(LIBDIR)/,$(BINSKERNEL))
 
@@ -578,14 +578,14 @@ FORCE:
 libc.a: $(OBJS)
 	$(HOSTAR) rcs $@ $(OBJS)
 
-libc-sortix.a: $(SORTIXOBJS)
-	$(HOSTAR) rcs $@ $(SORTIXOBJS)
-
 libdl.a:
 	$(HOSTAR) rcs $@
 
 libg.a:
 	$(HOSTAR) rcs $@
+
+libk.a: $(LIBK_OBJS)
+	$(HOSTAR) rcs $@ $(LIBK_OBJS)
 
 libpthread.a:
 	$(HOSTAR) rcs $@
@@ -603,7 +603,7 @@ crtn.o: $(CPUDIR)/crtn.o
 	ln -f $< $@
 
 # header preprocessing
-$(OBJS) $(SORTIXOBJS): $(HEADERS)
+$(OBJS) $(LIBK_OBJS): $(HEADERS)
 
 headers:
 
@@ -617,12 +617,12 @@ headers:
 %.o: %.S
 	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CFLAGS)
 
-# libc-sortix
-sortix/%.o: %.c
-	$(HOSTCC) -c $< -o $@ $(SORTIXCPPFLAGS) $(SORTIXFLAGS) $(SORTIXCFLAGS)
+# libk
+%.libk.o: %.c
+	$(HOSTCC) -c $< -o $@ $(LIBK_CPPFLAGS) $(LIBK_FLAGS) $(LIBK_CFLAGS)
 
-sortix/%.o: %.cpp
-	$(HOSTCXX) -c $< -o $@ $(SORTIXCPPFLAGS) $(SORTIXFLAGS) $(SORTIXCXXFLAGS)
+%.libk.o: %.cpp
+	$(HOSTCXX) -c $< -o $@ $(LIBK_CPPFLAGS) $(LIBK_FLAGS) $(LIBK_CXXFLAGS)
 
 clean:
 	rm -f $(wildcard *.o) $(wildcard */*.o) $(wildcard */*/*.o) $(wildcard *.a)
