@@ -331,7 +331,7 @@ static int sys_fcntl(int fd, int cmd, uintptr_t arg)
 
 	// Operations on the file descriptior.
 	if ( cmd == F_SETFD )
-		return dtable->SetFlags(fd, (int) arg) ? 0 : -1;;
+		return dtable->SetFlags(fd, (int) arg) ? 0 : -1;
 	if ( cmd == F_GETFD )
 		return dtable->GetFlags(fd);
 
@@ -345,7 +345,7 @@ static int sys_fcntl(int fd, int cmd, uintptr_t arg)
 	if ( !desc )
 		return -1;
 	if ( cmd == F_SETFL )
-		return desc->SetFlags((int) arg);
+		return desc->SetFlags((int) arg) ? 0 : -1;
 	if ( cmd == F_GETFL )
 		return desc->GetFlags();
 
