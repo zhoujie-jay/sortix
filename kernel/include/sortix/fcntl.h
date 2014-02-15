@@ -48,6 +48,8 @@ __BEGIN_DECLS
 #define O_NOCTTY (1<<14)
 #define O_TTY_INIT (1<<15)
 
+#define O_ACCMODE (O_READ | O_WRITE | O_EXEC | O_SEARCH)
+
 #define FD_CLOEXEC (1<<0)
 #define FD_CLOFORK (1<<1)
 

@@ -47,9 +47,6 @@ __BEGIN_DECLS
 /* Backwards compatibility with existing systems that call it O_CREAT. */
 #define O_CREAT O_CREATE
 
-/* Compatibility with Linux and other systems that have this. */
-#define O_ACCMODE (O_READ | O_WRITE | O_EXEC | O_SEARCH)
-
 /* TODO: POSIX_FADV_* missing here */
 
 #ifndef __pid_t_defined
