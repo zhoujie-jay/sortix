@@ -163,6 +163,13 @@ everything: most-things iso.xz
 
 # Targets that build multiple architectures.
 
+.PHONY: sysroot-base-headers-all-archs
+sysroot-base-headers-all-archs:
+	$(MAKE) clean
+	$(MAKE) sysroot-base-headers HOST=i486-sortix
+	$(MAKE) clean
+	$(MAKE) sysroot-base-headers HOST=x86_64-sortix
+
 .PHONY: all-archs
 all-archs:
 	$(MAKE) clean
