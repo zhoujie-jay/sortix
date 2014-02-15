@@ -207,8 +207,10 @@ extern "C" int fdio_install_fd(FILE* fp, int fd, const char* mode)
 	fp->error_func = fdio_error;
 	fp->fileno_func = fdio_fileno;
 	fp->close_func = fdio_close;
+	int preserved_errno = errno;
 	if ( lseek(fd, 0, SEEK_CUR) < 0 && errno == ESPIPE )
 		fp->flags |= _FILE_STREAM;
+	errno = preserved_errno;
 	return 1;
 }
 
