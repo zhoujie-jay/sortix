@@ -33,7 +33,7 @@ static inline bool IsDotOrDotDot(const char* path)
 	                          (path[1] == '.' && path[2] == '\0'));
 }
 
-bool ModeToDT(mode_t mode);
+unsigned char ModeToDT(mode_t mode);
 bool SplitFinalElem(const char* path, char** dir, char** final);
 
 } // namespace Sortix

@@ -38,7 +38,7 @@
 
 namespace Sortix {
 
-bool ModeToDT(mode_t mode)
+unsigned char ModeToDT(mode_t mode)
 {
 	if ( S_ISSOCK(mode) )
 		return DT_SOCK;
