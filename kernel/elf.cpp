@@ -116,8 +116,11 @@ addr_t Construct32(Process* process, const uint8_t* file, size_t filelen,
 				uintptr_t desc = note + 12 + namesz_aligned;
 				if ( strcmp(name, "Sortix") == 0 )
 				{
-					(void) desc;
-					(void) type;
+					if ( type == ELF_NOTE_SORTIX_UTHREAD_SIZE )
+					{
+						aux->uthread_size = *(uint32_t*) (desc + 0);
+						aux->uthread_align = *(uint32_t*) (desc + 4);
+					}
 				}
 			}
 			continue;
@@ -318,8 +321,15 @@ addr_t Construct64(Process* process, const uint8_t* file, size_t filelen,
 				uintptr_t desc = note + 12 + namesz_aligned;
 				if ( strcmp(name, "Sortix") == 0 )
 				{
-					(void) desc;
-					(void) type;
+					if ( type == ELF_NOTE_SORTIX_UTHREAD_SIZE )
+					{
+						uint64_t size_low = *((uint32_t*) (desc + 0));
+						uint64_t size_high = *((uint32_t*) (desc + 4));
+						aux->uthread_size = size_low << 0 | size_high << 32;
+						uint64_t align_low = *((uint32_t*) (desc + 8));
+						uint64_t align_high = *((uint32_t*) (desc + 12));
+						aux->uthread_align = align_low << 0 | align_high << 32;
+					}
 				}
 			}
 			continue;

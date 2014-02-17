@@ -50,6 +50,7 @@ struct ProcessSegment;
 struct ProcessTimer;
 struct ioctx_struct;
 typedef struct ioctx_struct ioctx_t;
+struct segment;
 struct Symbol;
 
 class Process
@@ -168,6 +169,8 @@ public:
 	void AddChildProcess(Process* child);
 	void ScheduleDeath();
 	void AbortConstruction();
+	bool MapSegment(struct segment* result, void* hint, size_t size, int flags,
+	                int prot);
 
 public:
 	Process* Fork();

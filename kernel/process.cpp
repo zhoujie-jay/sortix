@@ -25,6 +25,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
+#include <msr.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +38,7 @@
 #include <sortix/signal.h>
 #include <sortix/stat.h>
 #include <sortix/unistd.h>
+#include <sortix/uthread.h>
 #include <sortix/wait.h>
 
 #include <sortix/kernel/copy.h>
@@ -60,6 +62,10 @@
 
 #include "elf.h"
 #include "initrd.h"
+
+#if defined(__i386__) || defined(__x86_64__)
+#include "x86-family/gdt.h"
+#endif
 
 namespace Sortix {
 
@@ -736,11 +742,38 @@ void Process::ResetForExecute()
 	ResetAddressSpace();
 }
 
+bool Process::MapSegment(struct segment* result, void* hint, size_t size,
+                         int flags, int prot)
+{
+	// process->segment_lock is held at this point.
+
+	if ( !size )
+	{
+		result->addr = 0x0;
+		result->size = 0x0;
+		result->prot = prot;
+		return true;
+	}
+
+	if ( !PlaceSegment(result, this, hint, size, flags) )
+		return false;
+	if ( !Memory::MapMemory(this, result->addr, result->size, result->prot = prot) )
+	{
+		// The caller is expected to self-destruct in this case, so the
+		// segment just created is not removed.
+		return false;
+	}
+	Memory::Flush();
+	return true;
+}
+
 int Process::Execute(const char* programname, const uint8_t* program,
                      size_t programsize, int argc, const char* const* argv,
                      int envc, const char* const* envp,
                      CPU::InterruptRegisters* regs)
 {
+	assert(argc != INT_MAX);
+	assert(envc != INT_MAX);
 	assert(CurrentProcess() == this);
 
 	char* programname_clone = String::Clone(programname);
@@ -759,70 +792,142 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	size_t userspace_size;
 	Memory::GetUserVirtualArea(&userspace_addr, &userspace_size);
 
-	const size_t DEFAULT_STACK_SIZE = 512UL * 1024UL;
-	void* const PREFERRED_STACK_LOCATION =
-		(void*) (userspace_addr + userspace_size - DEFAULT_STACK_SIZE);
-	const int STACK_PROTECTION = PROT_READ | PROT_WRITE | PROT_KREAD |
-	                             PROT_KWRITE | PROT_FORK;
+	const size_t stack_size = 512UL * 1024UL;
+	void* stack_hint = (void*) (userspace_addr + userspace_size - stack_size);
+	const int stack_prot = PROT_READ | PROT_WRITE | PROT_KREAD | PROT_KWRITE | PROT_FORK;
 
-	// Attempt to allocate a stack for the new process.
-	kthread_mutex_lock(&segment_lock);
+	if ( !aux.tls_mem_align )
+		aux.tls_mem_align = 1;
+	if ( Page::Size() < aux.tls_mem_align )
+		return errno = EINVAL, -1;
+	if ( !aux.uthread_align )
+		aux.uthread_align = 1;
+	if ( Page::Size() < aux.uthread_align )
+		return errno = EINVAL, -1;
+	if ( aux.uthread_size < sizeof(struct uthread) )
+		aux.uthread_size = sizeof(struct uthread);
+
+	size_t raw_tls_size = aux.tls_mem_size;
+	size_t raw_tls_size_aligned = -(-raw_tls_size & ~(aux.tls_mem_align-1));
+	if ( raw_tls_size && raw_tls_size_aligned == 0 /* overflow */ )
+		return errno = EINVAL, -1;
+	int raw_tls_prot = PROT_READ | PROT_KREAD | PROT_KWRITE | PROT_FORK;
+	void* raw_tls_hint = stack_hint;
+
+	size_t tls_size = raw_tls_size_aligned + aux.uthread_size;
+	size_t tls_offset_tls = 0;
+	size_t tls_offset_uthread = raw_tls_size_aligned;
+	if ( aux.tls_mem_align < aux.uthread_align )
+	{
+		size_t more_aligned = -(-raw_tls_size_aligned & ~(aux.uthread_align-1));
+		if ( raw_tls_size_aligned && more_aligned == 0 /* overflow */ )
+			return errno = EINVAL, -1;
+		size_t difference = more_aligned - raw_tls_size_aligned;
+		tls_size += difference;
+		tls_offset_tls += difference;
+		tls_offset_uthread += difference;
+	}
+	assert((tls_offset_tls & (aux.tls_mem_align-1)) == 0);
+	assert((tls_offset_uthread & (aux.uthread_align-1)) == 0);
+	int tls_prot = PROT_READ | PROT_WRITE | PROT_KREAD | PROT_KWRITE | PROT_FORK;
+	void* tls_hint = stack_hint;
+
+	size_t arg_size = 0;
+
+	size_t argv_size = sizeof(char*) * (argc + 1);
+	size_t envp_size = sizeof(char*) * (envc + 1);
+
+	arg_size += argv_size;
+	arg_size += envp_size;
+
+	for ( int i = 0; i < argc; i++ )
+		arg_size += strlen(argv[i]) + 1;
+	for ( int i = 0; i < envc; i++ )
+		arg_size += strlen(envp[i]) + 1;
+
+	struct segment arg_segment;
 	struct segment stack_segment;
-	if ( !PlaceSegment(&stack_segment, this, PREFERRED_STACK_LOCATION, DEFAULT_STACK_SIZE, 0) ||
-	     !Memory::MapMemory(this, stack_segment.addr, stack_segment.size, stack_segment.prot = STACK_PROTECTION) )
+	struct segment raw_tls_segment;
+	struct segment tls_segment;
+
+	kthread_mutex_lock(&segment_lock);
+
+	if ( !(MapSegment(&arg_segment, stack_hint, arg_size, 0, stack_prot) &&
+	       MapSegment(&stack_segment, stack_hint, stack_size, 0, stack_prot) &&
+	       MapSegment(&raw_tls_segment, raw_tls_hint, raw_tls_size, 0, raw_tls_prot) &&
+	       MapSegment(&tls_segment, tls_hint, tls_size, 0, tls_prot)) )
 	{
 		kthread_mutex_unlock(&segment_lock);
 		ResetForExecute();
 		return errno = ENOMEM, -1;
 	}
+
 	kthread_mutex_unlock(&segment_lock);
 
-	addr_t stackpos = stack_segment.addr + stack_segment.size;
+	char** target_argv = (char**) (arg_segment.addr + 0);
+	char** target_envp = (char**) (arg_segment.addr + argv_size);
+	char* target_strings = (char*) (arg_segment.addr + argv_size + envp_size);
+	size_t target_strings_offset = 0;
 
-	// Alright, move argv onto the new stack! First figure out exactly how
-	// big argv actually is.
-	addr_t argvpos = stackpos - sizeof(char*) * (argc+1);
-	char** stackargv = (char**) argvpos;
-
-	size_t argvsize = 0;
 	for ( int i = 0; i < argc; i++ )
 	{
-		size_t len = strlen(argv[i]) + 1;
-		argvsize += len;
-		char* dest = ((char*) argvpos) - argvsize;
-		stackargv[i] = dest;
-		memcpy(dest, argv[i], len);
+		const char* arg = argv[i];
+		size_t arg_len = strlen(arg);
+		char* target_arg = target_strings + target_strings_offset;
+		strcpy(target_arg, arg);
+		target_argv[i] = target_arg;
+		target_strings_offset += arg_len + 1;
 	}
+	target_argv[argc] = (char*) NULL;
 
-	stackargv[argc] = NULL;
-
-	if ( argvsize % 16UL )
-		argvsize += 16 - argvsize % 16UL;
-
-	// And then move envp onto the stack.
-	addr_t envppos = argvpos - argvsize - sizeof(char*) * (envc+1);
-	char** stackenvp = (char**) envppos;
-
-	size_t envpsize = 0;
 	for ( int i = 0; i < envc; i++ )
 	{
-		size_t len = strlen(envp[i]) + 1;
-		envpsize += len;
-		char* dest = ((char*) envppos) - envpsize;
-		stackenvp[i] = dest;
-		memcpy(dest, envp[i], len);
+		const char* env = envp[i];
+		size_t env_len = strlen(env);
+		char* target_env = target_strings + target_strings_offset;
+		strcpy(target_env, env);
+		target_envp[i] = target_env;
+		target_strings_offset += env_len + 1;
 	}
+	target_envp[envc] = (char*) NULL;
 
-	stackenvp[envc] = NULL;
+	const uint8_t* file_raw_tls = program + aux.tls_file_offset;
 
-	if ( envpsize % 16UL )
-		envpsize += 16 - envpsize % 16UL;
+	uint8_t* target_raw_tls = (uint8_t*) raw_tls_segment.addr;
+	memcpy(target_raw_tls, file_raw_tls, aux.tls_file_size);
+	memset(target_raw_tls + aux.tls_file_size, 0, aux.tls_mem_size - aux.tls_file_size);
 
-	stackpos = envppos - envpsize;
+	uint8_t* target_tls = (uint8_t*) (tls_segment.addr + tls_offset_tls);
+	assert((((uintptr_t) target_tls) & (aux.tls_mem_align-1)) == 0);
+	memcpy(target_tls, file_raw_tls, aux.tls_file_size);
+	memset(target_tls + aux.tls_file_size, 0, aux.tls_mem_size - aux.tls_file_size);
+
+	struct uthread* uthread = (struct uthread*) (tls_segment.addr + tls_offset_uthread);
+	assert((((uintptr_t) uthread) & (aux.uthread_align-1)) == 0);
+	memset(uthread, 0, sizeof(*uthread));
+	uthread->uthread_pointer = uthread;
+	uthread->uthread_size = aux.uthread_size;
+	uthread->uthread_flags = UTHREAD_FLAG_INITIAL;
+	uthread->tls_master_mmap = (void*) raw_tls_segment.addr;
+	uthread->tls_master_size = aux.tls_mem_size;
+	uthread->tls_master_align = aux.tls_mem_align;
+	uthread->tls_mmap = (void*) tls_segment.addr;
+	uthread->tls_size = tls_size;
+	uthread->stack_mmap = (void*) stack_segment.addr;
+	uthread->stack_size = stack_segment.size;
+	uthread->arg_mmap = (void*) arg_segment.addr;
+	uthread->arg_size = arg_segment.size;
+	memset(uthread + 1, 0, aux.uthread_size - sizeof(struct uthread));
+
+#if defined(__i386__)
+	GDT::SetGSBase((uint32_t) uthread);
+#elif defined(__x86_64__)
+	wrmsr(MSRID_FSBASE, (uint64_t) uthread);
+#endif
 
 	dtable->OnExecute();
 
-	ExecuteCPU(argc, stackargv, envc, stackenvp, stackpos, entry, regs);
+	ExecuteCPU(argc, target_argv, envc, target_envp, stack_segment.addr + stack_segment.size, entry, regs);
 
 	return 0;
 }

@@ -210,9 +210,11 @@ bool PlaceSegment(struct segment* solution, Process* process, void* addr_ptr,
 {
 	// process->segment_lock is held at this point.
 
+	assert(size);
 	assert(!(flags & MAP_FIXED));
 
 	uintptr_t addr = (uintptr_t) addr_ptr;
+	size = Page::AlignUp(size);
 	bool found_any = false;
 	size_t best_distance = 0;
 	struct segment best;

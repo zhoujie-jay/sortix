@@ -40,6 +40,8 @@ struct Auxiliary
 	size_t tls_file_size;
 	size_t tls_mem_size;
 	size_t tls_mem_align;
+	size_t uthread_size;
+	size_t uthread_align;
 };
 
 struct Header
