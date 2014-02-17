@@ -747,7 +747,9 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	if ( !programname_clone )
 		return -1;
 
-	addr_t entry = ELF::Construct(CurrentProcess(), program, programsize);
+	ELF::Auxiliary aux;
+
+	addr_t entry = ELF::Construct(CurrentProcess(), program, programsize, &aux);
 	if ( !entry ) { delete[] programname_clone; return -1; }
 
 	delete[] program_image_path;

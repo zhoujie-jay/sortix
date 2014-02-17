@@ -25,11 +25,22 @@
 #ifndef SORTIX_ELF_H
 #define SORTIX_ELF_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 namespace Sortix {
 
 class Process;
 
 namespace ELF {
+
+struct Auxiliary
+{
+	size_t tls_file_offset;
+	size_t tls_file_size;
+	size_t tls_mem_size;
+	size_t tls_mem_align;
+};
 
 struct Header
 {
@@ -159,6 +170,7 @@ const uint32_t PT_INTERP = 3;
 const uint32_t PT_NOTE = 4;
 const uint32_t PT_SHLIB = 5;
 const uint32_t PT_PHDR = 6;
+const uint32_t PT_TLS = 7;
 const uint32_t PT_LOPROC = 0x70000000;
 const uint32_t PT_HIPROC = 0x7FFFFFFF;
 
@@ -188,7 +200,8 @@ struct Symbol64
 
 // Reads the elf file into the current address space and returns the entry
 // address of the program, or 0 upon failure.
-addr_t Construct(Process* process, const void* file, size_t filelen);
+addr_t Construct(Process* process, const void* file, size_t filelen,
+                 Auxiliary* aux);
 
 } // namespace ELF
 } // namespace Sortix

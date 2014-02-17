@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sortix/elf-note.h>
 #include <sortix/mman.h>
 
 #include <sortix/kernel/kernel.h>
@@ -48,7 +49,8 @@ namespace ELF {
 //       headers may vary depending on the ELF header and that using a simple
 //       table indexation isn't enough.
 
-addr_t Construct32(Process* process, const uint8_t* file, size_t filelen)
+addr_t Construct32(Process* process, const uint8_t* file, size_t filelen,
+                   Auxiliary* aux)
 {
 	if ( filelen < sizeof(Header32) )
 		return 0;
@@ -88,6 +90,38 @@ addr_t Construct32(Process* process, const uint8_t* file, size_t filelen)
 	for ( uint16_t i = 0; i < numprogheaders; i++ )
 	{
 		const ProgramHeader32* pht = &(phtbl[i]);
+		if ( pht->type == PT_TLS )
+		{
+			aux->tls_file_offset = pht->offset;
+			aux->tls_file_size = pht->filesize;
+			aux->tls_mem_size = pht->memorysize;
+			aux->tls_mem_align = pht->align;
+			continue;
+		}
+		if ( pht->type == PT_NOTE )
+		{
+			uintptr_t notes_addr = (uintptr_t) file + pht->offset;
+			size_t notes_offset = 0;
+			while ( notes_offset < pht->filesize )
+			{
+				uintptr_t note = notes_addr + notes_offset;
+				uint32_t namesz = *(uint32_t*) (note + 0);
+				uint32_t descsz = *(uint32_t*) (note + 4);
+				uint32_t type = *(uint32_t*) (note + 8);
+				uint32_t namesz_aligned = -(-namesz & ~(4U - 1));
+				uint32_t descsz_aligned = -(-descsz & ~(4U - 1));
+				size_t note_size = 12 + namesz_aligned + descsz_aligned;
+				notes_offset += note_size;
+				const char* name = (const char*) (note + 12);
+				uintptr_t desc = note + 12 + namesz_aligned;
+				if ( strcmp(name, "Sortix") == 0 )
+				{
+					(void) desc;
+					(void) type;
+				}
+			}
+			continue;
+		}
 		if ( pht->type != PT_LOAD )
 			continue;
 		addr_t virtualaddr = pht->virtualaddr;
@@ -210,12 +244,14 @@ addr_t Construct32(Process* process, const uint8_t* file, size_t filelen)
 	return entry;
 }
 
-addr_t Construct64(Process* process, const uint8_t* file, size_t filelen)
+addr_t Construct64(Process* process, const uint8_t* file, size_t filelen,
+                   Auxiliary* aux)
 {
 #if !defined(__x86_64__)
 	(void) process;
 	(void) file;
 	(void) filelen;
+	(void) aux;
 	return errno = ENOEXEC, 0;
 #else
 	if ( filelen < sizeof(Header64) )
@@ -256,6 +292,38 @@ addr_t Construct64(Process* process, const uint8_t* file, size_t filelen)
 	for ( uint16_t i = 0; i < numprogheaders; i++ )
 	{
 		const ProgramHeader64* pht = &(phtbl[i]);
+		if ( pht->type == PT_TLS )
+		{
+			aux->tls_file_offset = pht->offset;
+			aux->tls_file_size = pht->filesize;
+			aux->tls_mem_size = pht->memorysize;
+			aux->tls_mem_align = pht->align;
+			continue;
+		}
+		if ( pht->type == PT_NOTE )
+		{
+			uintptr_t notes_addr = (uintptr_t) file + pht->offset;
+			size_t notes_offset = 0;
+			while ( notes_offset < pht->filesize )
+			{
+				uintptr_t note = notes_addr + notes_offset;
+				uint32_t namesz = *(uint32_t*) (note + 0);
+				uint32_t descsz = *(uint32_t*) (note + 4);
+				uint32_t type = *(uint32_t*) (note + 8);
+				uint32_t namesz_aligned = -(-namesz & ~(4U - 1));
+				uint32_t descsz_aligned = -(-descsz & ~(4U - 1));
+				size_t note_size = 12 + namesz_aligned + descsz_aligned;
+				notes_offset += note_size;
+				const char* name = (const char*) (note + 12);
+				uintptr_t desc = note + 12 + namesz_aligned;
+				if ( strcmp(name, "Sortix") == 0 )
+				{
+					(void) desc;
+					(void) type;
+				}
+			}
+			continue;
+		}
 		if ( pht->type != PT_LOAD )
 			continue;
 		addr_t virtualaddr = pht->virtualaddr;
@@ -379,7 +447,8 @@ addr_t Construct64(Process* process, const uint8_t* file, size_t filelen)
 #endif
 }
 
-addr_t Construct(Process* process, const void* file, size_t filelen)
+addr_t Construct(Process* process, const void* file, size_t filelen,
+                 Auxiliary* aux)
 {
 	if ( filelen < sizeof(Header) )
 		return errno = ENOEXEC, 0;
@@ -390,10 +459,12 @@ addr_t Construct(Process* process, const void* file, size_t filelen)
            header->magic[2] == 'L'  && header->magic[3] == 'F'  ) )
 		return errno = ENOEXEC, 0;
 
+	memset(aux, 0, sizeof(*aux));
+
 	switch ( header->fileclass )
 	{
-		case CLASS32: return Construct32(process, (const uint8_t*) file, filelen);
-		case CLASS64: return Construct64(process, (const uint8_t*) file, filelen);
+		case CLASS32: return Construct32(process, (const uint8_t*) file, filelen, aux);
+		case CLASS64: return Construct64(process, (const uint8_t*) file, filelen, aux);
 		default:
 			return 0;
 	}
