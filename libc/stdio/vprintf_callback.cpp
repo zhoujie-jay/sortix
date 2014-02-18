@@ -411,6 +411,9 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 			else
 				goto incomprehensible_conversion;
 
+			if ( conversion == 's' && !string )
+				string = "(null)";
+
 			size_t string_length = 0;
 			for ( size_t i = 0; i < precision && string[i]; i++ )
 				string_length++;
