@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -30,7 +30,6 @@
 extern "C" { char* program_invocation_name; }
 extern "C" { char* program_invocation_short_name; }
 
-extern "C" void init_error_functions();
 extern "C" void init_stdio();
 extern "C" void init_signal();
 
@@ -53,9 +52,6 @@ extern "C" void initialize_standard_library(int argc, char* argv[])
 	const char* argv0 = argc ? argv[0] : "";
 	program_invocation_name = (char*) argv0;
 	program_invocation_short_name = find_last_elem((char*) argv0);
-
-	// Initialize stuff such as errno.
-	init_error_functions();
 
 	// It's probably best to initialize the Unix signals early on.
 	init_signal();

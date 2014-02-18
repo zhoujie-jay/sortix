@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -49,13 +49,8 @@ asm_syscall: /* syscall num in %eax. */
 	int $0x80
 	test %ecx, %ecx # ret_errno & ret_errno
 	jz 1f # if ( !(ret_errno & ret_errno) )
-	mov %eax, %ebx # preserve: ret_low
-	mov %edx, %edi # preserve: ret_high
-	mov %ecx, %esi # preserve: ret_errno
-	call get_errno_location # get_errno_location()
-	mov %esi, (%eax) # *get_errno_location() = ret_errno
-	mov %ebx, %eax # restore: ret_low
-	mov %edi, %edx # restore: ret_high
+	mov %gs:0, %ebx
+	mov %ecx, errno@ntpoff(%ebx)
 1:
 	pop %esi
 	pop %edi

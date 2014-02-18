@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -25,19 +25,15 @@
 #define __SORTIX_STDLIB_REDIRECTS 0
 #include <errno.h>
 #include <stddef.h>
-#if !defined(__is_sortix_kernel)
-#include <stdio.h>
-#endif
+
+#if __STDC_HOSTED__
+
+extern "C" { int __thread errno = 0; }
+
+#else
 
 extern "C" { int global_errno = 0; }
 extern "C" { errno_location_func_t errno_location_func = NULL; }
-
-#if !defined(__is_sortix_kernel)
-extern "C" void init_error_functions()
-{
-	global_errno = 0;
-}
-#endif
 
 extern "C" int* get_errno_location(void)
 {
@@ -49,3 +45,5 @@ extern "C" void set_errno_location_func(errno_location_func_t func)
 {
 	errno_location_func = func;
 }
+
+#endif

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -107,6 +107,13 @@ __BEGIN_DECLS
 
 #define EOPNOTSUPP ENOTSUP
 
+#if __STDC_HOSTED__
+
+extern __thread int errno;
+#define errno errno
+
+#else
+
 /* Returns the address of the errno variable for this thread. */
 int* get_errno_location(void);
 
@@ -116,6 +123,8 @@ typedef int* (*errno_location_func_t)(void);
 void set_errno_location_func(errno_location_func_t func);
 
 #define errno (*get_errno_location())
+
+#endif
 
 extern char* program_invocation_name;
 extern char* program_invocation_short_name;
