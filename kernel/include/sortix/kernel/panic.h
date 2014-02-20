@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -29,7 +29,7 @@ namespace Sortix {
 
 extern "C" __attribute__((noreturn)) void HaltKernel();
 extern "C" __attribute__((noreturn)) void Panic(const char* error);
-extern "C" __attribute__((noreturn)) void PanicF(const char* format, ...);
+extern "C" __attribute__((noreturn, format(printf, 1, 2))) void PanicF(const char* format, ...);
 extern "C" void WaitForInterrupt();
 
 } // namespace Sortix

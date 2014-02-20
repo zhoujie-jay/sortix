@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -90,6 +90,7 @@ inline size_t PrintData(const void* ptr, size_t size)
 	return device_callback(device_pointer, (const char*) ptr, size);
 }
 
+__attribute__((format(printf, 1, 2)))
 inline size_t PrintF(const char* format, ...)
 {
 	va_list list;
@@ -99,6 +100,7 @@ inline size_t PrintF(const char* format, ...)
 	return result;
 }
 
+__attribute__((format(printf, 1, 0)))
 inline size_t PrintFV(const char* format, va_list list)
 {
 	return vprintf_callback(device_callback, device_pointer, format, list);
