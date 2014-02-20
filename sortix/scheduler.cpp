@@ -95,10 +95,10 @@ static Thread* ValidatedPopNextThread()
 	addr_t newaddrspace = nextthread->process->addrspace;
 	if ( !Page::IsAligned(newaddrspace) )
 	{
-		PanicF("Thread 0x%p, process %i (0x%p) (backup: %i), had bad "
+		PanicF("Thread 0x%p, process %ji (0x%p) (backup: %i), had bad "
 		       "address space variable: 0x%zx: not page-aligned "
 		       "(backup: 0x%zx)\n", nextthread,
-		       nextthread->process->pid, nextthread->process,
+		       (intmax_t) nextthread->process->pid, nextthread->process,
 		       -1/*nextthread->pidbackup*/, newaddrspace,
 		       (addr_t)-1 /*nextthread->addrspacebackup*/);
 	}
@@ -168,9 +168,9 @@ void LogSwitch(Thread* current, Thread* next)
 	bool dodebug = DEBUG_CTXSWITCH && different;
 	if ( alwaysdebug || dodebug )
 	{
-		Log::PrintF("switching from %u:%u (0x%p) to %u:%u (0x%p) \n",
-		            current->process->pid, 0, current,
-		            next->process->pid, 0, next);
+		Log::PrintF("switching from %ji:%u (0x%p) to %ji:%u (0x%p) \n",
+		            (intmax_t) current->process->pid, 0, current,
+		            (intmax_t) next->process->pid, 0, next);
 	}
 }
 
