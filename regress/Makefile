@@ -18,6 +18,7 @@ test-pthread-basic \
 test-pthread-once \
 test-pthread-self \
 test-pthread-tls \
+test-signal-raise \
 
 all: $(BINARIES) $(TESTS)
 
