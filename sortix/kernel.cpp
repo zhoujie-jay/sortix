@@ -669,7 +669,7 @@ static void BootThread(void* /*user*/)
 	int status;
 	pid_t pid = CurrentProcess()->Wait(init->pid, &status, 0);
 	if ( pid != init->pid )
-		PanicF("Waiting for init to exit returned %i (errno=%i)", pid, errno);
+		PanicF("Waiting for init to exit returned %ji (errno=%i)", (intmax_t) pid, errno);
 
 	status = WEXITSTATUS(status);
 
