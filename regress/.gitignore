@@ -1,0 +1,3 @@
+regress
+test-*
+!test-*.c++

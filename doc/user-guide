@@ -177,6 +177,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `pager` - display file page by page
 * `pong` - remake of the classic pong game
 * `pwd` - print current directory path
+* `regress` - run system tests
 * `rm` - remove file
 * `rmdir` - remove empty directory
 * `sh` - alias for the shell
@@ -529,6 +530,15 @@ This program produces a Sortix compatible initrd, the file that contains the
 initial filesystem used to bootstrap the real root filesystem.
 
     cd /src/mkinitrd
+    make
+    make install
+
+### Building regress ###
+
+This is a collection of operating system test cases run using the `regress`
+driver program.
+
+    cd /src/regress
     make
     make install
 

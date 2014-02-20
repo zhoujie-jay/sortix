@@ -14,6 +14,7 @@ ext \
 games \
 mbr \
 mkinitrd \
+regress \
 utils \
 kernel
 
