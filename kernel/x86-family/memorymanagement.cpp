@@ -201,7 +201,7 @@ void InitCPU(multiboot_info_t* bootinfo)
 	// until the pebibyte era of RAM.
 	if ( 0 < Page::pagesnotonstack )
 		Log::PrintF("%zu bytes of RAM aren't used due to technical "
-		            "restrictions.\n", Page::pagesnotonstack * 0x1000UL);
+		            "restrictions.\n", (size_t) (Page::pagesnotonstack * 0x1000UL));
 
 	Memory::Unmap(0x0); // Remove NULL.
 
@@ -652,9 +652,9 @@ addr_t Unmap(addr_t mapto)
 		addr_t& entry = pml->entry[childid];
 
 		if ( !(entry & PML_PRESENT) )
-			PanicF("Attempted to unmap virtual page %p, but the virtual"
+			PanicF("Attempted to unmap virtual page 0x%jX, but the virtual"
 			       " page was wasn't mapped. This is a bug in the code "
-			       "code calling this function", mapto);
+			       "code calling this function", (uintmax_t) mapto);
 
 		// Find the index of the next PML in the fractal mapped memory.
 		offset = offset * ENTRIES + childid;
