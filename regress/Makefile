@@ -14,6 +14,7 @@ BINARIES:=\
 regress \
 
 TESTS:=\
+test-pthread-basic \
 
 all: $(BINARIES) $(TESTS)
 
