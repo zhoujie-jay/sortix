@@ -15,6 +15,7 @@ regress \
 
 TESTS:=\
 test-pthread-basic \
+test-pthread-self \
 test-pthread-tls \
 
 all: $(BINARIES) $(TESTS)
