@@ -259,8 +259,8 @@ void CrashHandler(CPU::InterruptRegisters* regs)
 
 	Interrupt::Enable();
 
-	Log::PrintF("The current program (pid %i %s) has crashed and was terminated:\n",
-	            CurrentProcess()->pid, CurrentProcess()->program_image_path);
+	Log::PrintF("The current program (pid %ji %s) has crashed and was terminated:\n",
+	            (intmax_t) CurrentProcess()->pid, CurrentProcess()->program_image_path);
 	Log::PrintF("%s exception at ip=0x%zx (cr2=0x%p, err_code=0x%p)\n",
 	            message, ip, regs->cr2, regs->err_code);
 
