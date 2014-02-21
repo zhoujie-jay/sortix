@@ -52,8 +52,8 @@ Thread::Thread()
 	process = NULL;
 	prevsibling = NULL;
 	nextsibling = NULL;
-	schedulerlistprev = NULL;
-	schedulerlistnext = NULL;
+	scheduler_list_prev = NULL;
+	scheduler_list_next = NULL;
 	state = NONE;
 	memset(&registers, 0, sizeof(registers));
 	fsbase = 0;
@@ -62,7 +62,6 @@ Thread::Thread()
 	kernelstacksize = 0;
 	kernelstackmalloced = false;
 	pledged_destruction = false;
-	terminated = false;
 	fpuinitialized = false;
 	// If malloc isn't 16-byte aligned, then we can't rely on offsets in
 	// our own class, so we'll just fix ourselves nicely up.
@@ -81,7 +80,6 @@ Thread::~Thread()
 	assert(CurrentThread() != this);
 	if ( kernelstackmalloced )
 		delete[] (uint8_t*) kernelstackpos;
-	terminated = true;
 }
 
 addr_t Thread::SwitchAddressSpace(addr_t newaddrspace)
@@ -231,8 +229,6 @@ static int sys_exit_thread(int requested_exit_code,
 		if ( iter == thread )
 			continue;
 		if ( iter->pledged_destruction )
-			continue;
-		if ( iter->terminated )
 			continue;
 		is_others = true;
 	}

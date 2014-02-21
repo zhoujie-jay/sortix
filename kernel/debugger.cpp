@@ -318,8 +318,8 @@ Process* FindProcess(pid_t least_pid, pid_t max_pid)
 	if ( least_pid <= current_process->pid && current_process->pid <= max_pid )
 		best = current_process;
 	Thread* first_thread = current_thread;
-	for ( Thread* iter = first_thread->schedulerlistnext;
-	      iter != first_thread; iter = iter->schedulerlistnext )
+	for ( Thread* iter = first_thread->scheduler_list_next;
+	      iter != first_thread; iter = iter->scheduler_list_next )
 		if ( least_pid <= iter->process->pid && iter->process->pid <= max_pid &&
 		     (!best || iter->process->pid < best->pid) )
 			best = iter->process;

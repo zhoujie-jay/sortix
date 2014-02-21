@@ -92,15 +92,12 @@ public:
 public:
 	size_t id;
 	Process* process;
-	bool terminated;
 	Thread* prevsibling;
 	Thread* nextsibling;
 
-// These are some things used internally by the scheduler and should not be
-// touched by anything but it. Consider it private.
 public:
-	Thread* schedulerlistprev;
-	Thread* schedulerlistnext;
+	Thread* scheduler_list_prev;
+	Thread* scheduler_list_next;
 	volatile ThreadState state;
 	uint8_t fpuenv[512UL + 16UL];
 	uint8_t* fpuenvaligned;

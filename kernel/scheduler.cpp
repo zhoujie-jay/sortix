@@ -27,12 +27,12 @@
 #include <assert.h>
 #include <msr.h>
 #include <string.h>
-
 #include <timespec.h>
 
 #include <sortix/clock.h>
 #include <sortix/timespec.h>
 
+#include <sortix/kernel/decl.h>
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/memorymanagement.h>
@@ -43,163 +43,73 @@
 #include <sortix/kernel/thread.h>
 #include <sortix/kernel/time.h>
 
+#if defined(__i386__) || defined(__x86_64__)
 #include "x86-family/gdt.h"
 #include "x86-family/float.h"
+#endif
 
 namespace Sortix {
 namespace Scheduler {
 
-const uint32_t SCHED_MAGIC = 0x1234567;
-
-volatile unsigned long premagic;
-static Thread* currentthread;
-} // namespace Scheduler
-Thread* CurrentThread() { return Scheduler::currentthread; }
-Process* CurrentProcess() { return CurrentThread()->process; }
-namespace Scheduler {
-
-uint8_t dummythreaddata[sizeof(Thread)] __attribute__ ((aligned (8)));
-Thread* dummythread;
-Thread* idlethread;
-Thread* firstrunnablethread;
-Thread* firstsleepingthread;
-Process* initprocess;
-volatile unsigned long postmagic;
-
-static inline void SetCurrentThread(Thread* newcurrentthread)
-{
-	currentthread = newcurrentthread;
-}
-
-void LogBeginSwitch(Thread* current, const CPU::InterruptRegisters* regs);
-void LogSwitch(Thread* current, Thread* next);
-void LogEndSwitch(Thread* current, const CPU::InterruptRegisters* regs);
+static Thread* current_thread;
+static Thread* idle_thread;
+static Thread* first_runnable_thread;
+static Thread* first_sleeping_thread;
+static Process* init_process;
 
 static Thread* PopNextThread()
 {
-	if ( !firstrunnablethread ) { return idlethread; }
-	Thread* result = firstrunnablethread;
-	firstrunnablethread = firstrunnablethread->schedulerlistnext;
-	return result;
-}
+	if ( first_runnable_thread )
+	{
+		Thread* result = first_runnable_thread;
+		first_runnable_thread = first_runnable_thread->scheduler_list_next;
+		return result;
+	}
 
-static Thread* ValidatedPopNextThread()
-{
-	assert(premagic == SCHED_MAGIC);
-	assert(postmagic == SCHED_MAGIC);
-	Thread* nextthread = PopNextThread();
-	if ( !nextthread ) { Panic("Had no thread to switch to."); }
-	if ( nextthread->terminated )
-	{
-		PanicF("Running a terminated thread 0x%p", nextthread);
-	}
-	addr_t newaddrspace = nextthread->process->addrspace;
-	if ( !Page::IsAligned(newaddrspace) )
-	{
-		PanicF("Thread 0x%p, process %ji (0x%p) (backup: %i), had bad "
-		       "address space variable: 0x%zx: not page-aligned "
-		       "(backup: 0x%zx)\n", nextthread,
-		       (intmax_t) nextthread->process->pid, nextthread->process,
-		       -1/*nextthread->pidbackup*/, newaddrspace,
-		       (addr_t)-1 /*nextthread->addrspacebackup*/);
-	}
-	return nextthread;
+	return idle_thread;
 }
 
 static void DoActualSwitch(CPU::InterruptRegisters* regs)
 {
-	Thread* current = CurrentThread();
-	LogBeginSwitch(current, regs);
+	Thread* prev = CurrentThread();
+	Thread* next = PopNextThread();
 
-	Thread* next = ValidatedPopNextThread();
-	LogSwitch(current, next);
+	if ( prev == next )
+		return;
 
-	if ( current == next ) { return; }
-
-	current->SaveRegisters(regs);
+	prev->SaveRegisters(regs);
 	next->LoadRegisters(regs);
 
+	Memory::SwitchAddressSpace(next->addrspace);
+	current_thread = next;
+
+#if defined(__i386__) || defined(__x86_64__)
 	Float::NotityTaskSwitch();
-
-	addr_t newaddrspace = next->addrspace;
-	Memory::SwitchAddressSpace(newaddrspace);
-	SetCurrentThread(next);
-
-	addr_t stacklower = next->kernelstackpos;
-	size_t stacksize = next->kernelstacksize;
-	addr_t stackhigher = stacklower + stacksize;
-	assert(stacklower && stacksize && stackhigher);
-	GDT::SetKernelStack(stacklower, stacksize, stackhigher);
-
-#if defined(__x86_64__)
-	current->fsbase = (unsigned long) rdmsr(MSRID_FSBASE);
-	current->gsbase = (unsigned long) rdmsr(MSRID_GSBASE);
-	wrmsr(MSRID_FSBASE, (uint64_t) next->fsbase);
-	wrmsr(MSRID_GSBASE, (uint64_t) next->gsbase);
-#elif defined(__i386__)
-	current->fsbase = (unsigned long) GDT::GetFSBase();
-	current->gsbase = (unsigned long) GDT::GetGSBase();
-	GDT::SetFSBase((uint32_t) next->fsbase);
-	GDT::SetGSBase((uint32_t) next->gsbase);
+	GDT::SetKernelStack(next->kernelstackpos, next->kernelstacksize,
+	                    next->kernelstackpos + next->kernelstacksize);
 #endif
 
-	LogEndSwitch(next, regs);
+#if defined(__i386__)
+	prev->fsbase = (unsigned long) GDT::GetFSBase();
+	prev->gsbase = (unsigned long) GDT::GetGSBase();
+	GDT::SetFSBase((uint32_t) next->fsbase);
+	GDT::SetGSBase((uint32_t) next->gsbase);
+#elif defined(__x86_64__)
+	prev->fsbase = (unsigned long) rdmsr(MSRID_FSBASE);
+	prev->gsbase = (unsigned long) rdmsr(MSRID_GSBASE);
+	wrmsr(MSRID_FSBASE, (uint64_t) next->fsbase);
+	wrmsr(MSRID_GSBASE, (uint64_t) next->gsbase);
+#endif
 }
 
 void Switch(CPU::InterruptRegisters* regs)
 {
-	assert(premagic == SCHED_MAGIC);
-	assert(postmagic == SCHED_MAGIC);
 	DoActualSwitch(regs);
-	assert(premagic == SCHED_MAGIC);
-	assert(postmagic == SCHED_MAGIC);
+
 	if ( regs->signal_pending && regs->InUserspace() )
 	{
 		Interrupt::Enable();
 		Signal::DispatchHandler(regs, NULL);
-	}
-}
-
-const bool DEBUG_BEGINCTXSWITCH = false;
-const bool DEBUG_CTXSWITCH = false;
-const bool DEBUG_ENDCTXSWITCH = false;
-
-void LogBeginSwitch(Thread* current, const CPU::InterruptRegisters* regs)
-{
-	bool alwaysdebug = false;
-	bool isidlethread = current == idlethread;
-	bool dodebug = DEBUG_BEGINCTXSWITCH && !isidlethread;
-	if ( alwaysdebug || dodebug )
-	{
-		Log::PrintF("Switching from 0x%p", current);
-		regs->LogRegisters();
-		Log::Print("\n");
-	}
-}
-
-void LogSwitch(Thread* current, Thread* next)
-{
-	bool alwaysdebug = false;
-	bool different = current == idlethread;
-	bool dodebug = DEBUG_CTXSWITCH && different;
-	if ( alwaysdebug || dodebug )
-	{
-		Log::PrintF("switching from %ji:%u (0x%p) to %ji:%u (0x%p) \n",
-		            (intmax_t) current->process->pid, 0, current,
-		            (intmax_t) next->process->pid, 0, next);
-	}
-}
-
-void LogEndSwitch(Thread* current, const CPU::InterruptRegisters* regs)
-{
-	bool alwaysdebug = false;
-	bool isidlethread = current == idlethread;
-	bool dodebug = DEBUG_BEGINCTXSWITCH && !isidlethread;
-	if ( alwaysdebug || dodebug )
-	{
-		Log::PrintF("Switched to 0x%p", current);
-		regs->LogRegisters();
-		Log::Print("\n");
 	}
 }
 
@@ -210,9 +120,11 @@ void InterruptYieldCPU(CPU::InterruptRegisters* regs, void* /*user*/)
 
 void ThreadExitCPU(CPU::InterruptRegisters* regs, void* /*user*/)
 {
+#if defined(__i386__) || defined(__x86_64__)
 	// Can't use floating point instructions from now.
-	Float::NofityTaskExit(currentthread);
-	SetThreadState(currentthread, ThreadState::DEAD);
+	Float::NofityTaskExit(current_thread);
+#endif
+	SetThreadState(current_thread, ThreadState::DEAD);
 	InterruptYieldCPU(regs, NULL);
 }
 
@@ -220,30 +132,25 @@ void ThreadExitCPU(CPU::InterruptRegisters* regs, void* /*user*/)
 // nothing, which is only run when the system has nothing to do.
 void SetIdleThread(Thread* thread)
 {
-	assert(!idlethread);
-	idlethread = thread;
+	assert(!idle_thread);
+	idle_thread = thread;
 	SetThreadState(thread, ThreadState::NONE);
-	SetCurrentThread(thread);
-}
-
-void SetDummyThreadOwner(Process* process)
-{
-	dummythread->process = process;
+	current_thread = thread;
 }
 
 void SetInitProcess(Process* init)
 {
-	initprocess = init;
+	init_process = init;
 }
 
 Process* GetInitProcess()
 {
-	return initprocess;
+	return init_process;
 }
 
 Process* GetKernelProcess()
 {
-	return idlethread->process;
+	return idle_thread->process;
 }
 
 void SetThreadState(Thread* thread, ThreadState state)
@@ -254,31 +161,34 @@ void SetThreadState(Thread* thread, ThreadState state)
 	if ( thread->state == ThreadState::RUNNABLE &&
 	     state != ThreadState::RUNNABLE )
 	{
-		if ( thread == firstrunnablethread ) { firstrunnablethread = thread->schedulerlistnext; }
-		if ( thread == firstrunnablethread ) { firstrunnablethread = NULL; }
-		assert(thread->schedulerlistprev);
-		assert(thread->schedulerlistnext);
-		thread->schedulerlistprev->schedulerlistnext = thread->schedulerlistnext;
-		thread->schedulerlistnext->schedulerlistprev = thread->schedulerlistprev;
-		thread->schedulerlistprev = NULL;
-		thread->schedulerlistnext = NULL;
+		if ( thread == first_runnable_thread )
+			first_runnable_thread = thread->scheduler_list_next;
+		if ( thread == first_runnable_thread )
+			first_runnable_thread = NULL;
+		assert(thread->scheduler_list_prev);
+		assert(thread->scheduler_list_next);
+		thread->scheduler_list_prev->scheduler_list_next = thread->scheduler_list_next;
+		thread->scheduler_list_next->scheduler_list_prev = thread->scheduler_list_prev;
+		thread->scheduler_list_prev = NULL;
+		thread->scheduler_list_next = NULL;
 	}
 
 	// Insert the thread into the scheduler's carousel linked list.
 	if ( thread->state != ThreadState::RUNNABLE &&
 	     state == ThreadState::RUNNABLE )
 	{
-		if ( firstrunnablethread == NULL ) { firstrunnablethread = thread; }
-		thread->schedulerlistprev = firstrunnablethread->schedulerlistprev;
-		thread->schedulerlistnext = firstrunnablethread;
-		firstrunnablethread->schedulerlistprev = thread;
-		thread->schedulerlistprev->schedulerlistnext = thread;
+		if ( first_runnable_thread == NULL )
+			first_runnable_thread = thread;
+		thread->scheduler_list_prev = first_runnable_thread->scheduler_list_prev;
+		thread->scheduler_list_next = first_runnable_thread;
+		first_runnable_thread->scheduler_list_prev = thread;
+		thread->scheduler_list_prev->scheduler_list_next = thread;
 	}
 
 	thread->state = state;
 
-	assert(thread->state != ThreadState::RUNNABLE || thread->schedulerlistprev);
-	assert(thread->state != ThreadState::RUNNABLE || thread->schedulerlistnext);
+	assert(thread->state != ThreadState::RUNNABLE || thread->scheduler_list_prev);
+	assert(thread->state != ThreadState::RUNNABLE || thread->scheduler_list_next);
 
 	Interrupt::SetEnabled(wasenabled);
 }
@@ -321,19 +231,9 @@ static int sys_sched_yield(void)
 
 void Init()
 {
-	premagic = postmagic = SCHED_MAGIC;
-
-	// We use a dummy so that the first context switch won't crash when the
-	// current thread is accessed. This lets us avoid checking whether it is
-	// NULL (which it only will be once), which gives simpler code.
-	dummythread = (Thread*) &dummythreaddata;
-	memset(dummythread, 0, sizeof(*dummythread));
-	dummythread->schedulerlistprev = dummythread;
-	dummythread->schedulerlistnext = dummythread;
-	currentthread = dummythread;
-	firstrunnablethread = NULL;
-	firstsleepingthread = NULL;
-	idlethread = NULL;
+	first_runnable_thread = NULL;
+	first_sleeping_thread = NULL;
+	idle_thread = NULL;
 
 	Syscall::Register(SYSCALL_SLEEP, (void*) sys_sleep);
 	Syscall::Register(SYSCALL_USLEEP, (void*) sys_usleep);
@@ -341,4 +241,18 @@ void Init()
 }
 
 } // namespace Scheduler
+} // namespace Sortix
+
+namespace Sortix {
+
+Thread* CurrentThread()
+{
+	return Scheduler::current_thread;
+}
+
+Process* CurrentProcess()
+{
+	return CurrentThread()->process;
+}
+
 } // namespace Sortix

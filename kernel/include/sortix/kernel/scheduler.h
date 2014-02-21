@@ -45,21 +45,24 @@ enum ThreadState { NONE, RUNNABLE, BLOCKING, DEAD };
 namespace Sortix {
 namespace Scheduler {
 
-void Init();
-void Switch(CPU::InterruptRegisters* regs);
 #if defined(__i386__) || defined(__x86_64__)
-inline static void Yield() { asm volatile ("int $129"); }
+static inline void Yield()
+{
+	asm volatile ("int $129");
+}
 __attribute__ ((noreturn))
-inline static void ExitThread()
+static inline void ExitThread()
 {
 	asm volatile ("int $132");
 	__builtin_unreachable();
 }
 #endif
+
+void Init();
+void Switch(CPU::InterruptRegisters* regs);
 void SetThreadState(Thread* thread, ThreadState state);
 ThreadState GetThreadState(Thread* thread);
 void SetIdleThread(Thread* thread);
-void SetDummyThreadOwner(Process* process);
 void SetInitProcess(Process* init);
 Process* GetInitProcess();
 Process* GetKernelProcess();
