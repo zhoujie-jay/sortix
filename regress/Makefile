@@ -15,6 +15,7 @@ regress \
 
 TESTS:=\
 test-pthread-basic \
+test-pthread-main-join \
 test-pthread-once \
 test-pthread-self \
 test-pthread-tls \
