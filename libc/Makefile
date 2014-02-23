@@ -528,6 +528,7 @@ unistd/dup.o \
 unistd/environ.o \
 unistd/execle.o \
 unistd/execl.o \
+unistd/execlpe.o \
 unistd/execlp.o \
 unistd/execve.o \
 unistd/execv.o \
