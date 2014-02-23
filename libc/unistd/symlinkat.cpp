@@ -27,7 +27,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-DEFN_SYSCALL3(int, sys_symlinkat, SYSCALL_LINKAT, const char*, int, const char*);
+DEFN_SYSCALL3(int, sys_symlinkat, SYSCALL_SYMLINKAT, const char*, int, const char*);
 
 extern "C" int symlinkat(const char* oldpath, int newdirfd, const char* newpath)
 {
