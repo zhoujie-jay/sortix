@@ -59,6 +59,11 @@
 /* Create a function that selects the right system call and jumps into the
    generic implementation of system calls. */
 #define SYSCALL_FUNCTION(syscall_name, syscall_index) \
+__attribute__((unused)) \
+static void __verify_index_expression_##syscall_name(void) \
+{ \
+	(void) syscall_index; \
+} \
 __asm__("\n" \
 ".pushsection .text\n" \
 ".type " #syscall_name ", @function\n" \
