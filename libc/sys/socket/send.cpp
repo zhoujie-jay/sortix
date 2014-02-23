@@ -25,7 +25,7 @@
 #include <sys/socket.h>
 #include <sys/syscall.h>
 
-DEFN_SYSCALL4(ssize_t, sys_send, SYSCALL_RECV, int, const void*, size_t, int);
+DEFN_SYSCALL4(ssize_t, sys_send, SYSCALL_SEND, int, const void*, size_t, int);
 
 extern "C" ssize_t send(int fd, const void* buf, size_t count, int flags)
 {
