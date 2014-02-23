@@ -27,7 +27,7 @@
 
 #include <unistd.h>
 
-DEFN_SYSCALL1(uid_t, sys_setuid, SYSCALL_GETUID, uid_t);
+DEFN_SYSCALL1(uid_t, sys_setuid, SYSCALL_SETUID, uid_t);
 
 extern "C" int setuid(uid_t uid)
 {
