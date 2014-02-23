@@ -30,42 +30,30 @@
 
 extern "C" struct dirent* readdir(DIR* dir)
 {
+	int old_errno = errno;
+
 	if ( !dir->read_func )
-	{
-		dir->flags |= _DIR_ERROR;
-		errno = EBADF;
-		return NULL;
-	}
+		return dir->flags |= _DIR_ERROR, errno = EBADF, (struct dirent*) NULL;
 
 	size_t size = dir->entrysize;
-	int status = dir->read_func(dir->user, dir->entry, &size);
-	if ( status < 0 )
-	{
-		dir->flags |= _DIR_ERROR;
-		return NULL;
-	}
-
-	if ( 0 < status )
+	int status;
+	while ( 0 < (status = dir->read_func(dir->user, dir->entry, &size)) )
 	{
 		struct dirent* biggerdir = (struct dirent*) malloc(size);
 		if ( !biggerdir )
-		{
-			dir->flags |= _DIR_ERROR;
-			return NULL;
-		}
+			return dir->flags |= _DIR_ERROR, (struct dirent*) NULL;
 		free(dir->entry);
 		dir->entry = biggerdir;
 		dir->entrysize = size;
-		return readdir(dir);
 	}
+
+	if ( status < 0 )
+		return dir->flags |= _DIR_ERROR, (struct dirent*) NULL;
 
 	dir->flags &= ~_DIR_ERROR;
 
 	if ( !dir->entry->d_name[0] )
-	{
-		dir->flags |= _DIR_EOF;
-		return NULL;
-	}
+		return dir->flags |= _DIR_EOF, errno = old_errno, (struct dirent*) NULL;
 
 	return dir->entry;
 }
