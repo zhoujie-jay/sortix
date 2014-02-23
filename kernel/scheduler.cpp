@@ -198,32 +198,6 @@ ThreadState GetThreadState(Thread* thread)
 	return thread->state;
 }
 
-static void SleepUntil(struct timespec wakeat)
-{
-	while ( timespec_lt(Time::Get(CLOCK_BOOT), wakeat) )
-		Yield();
-}
-
-// TODO: This function has been obsoleted by the clock_nanosleep system call.
-static int sys_sleep(size_t secs)
-{
-	struct timespec delay = timespec_make(secs, 0);
-	struct timespec now = Time::Get(CLOCK_BOOT);
-	SleepUntil(timespec_add(now, delay));
-	return 0;
-}
-
-// TODO: This function has been obsoleted by the clock_nanosleep system call.
-static int sys_usleep(size_t usecs)
-{
-	size_t secs = usecs / 1000000;
-	size_t nsecs = (usecs % 1000000) * 1000;
-	struct timespec delay = timespec_make(secs, nsecs);
-	struct timespec now = Time::Get(CLOCK_BOOT);
-	SleepUntil(timespec_add(now, delay));
-	return 0;
-}
-
 static int sys_sched_yield(void)
 {
 	return kthread_yield(), 0;
@@ -235,8 +209,6 @@ void Init()
 	first_sleeping_thread = NULL;
 	idle_thread = NULL;
 
-	Syscall::Register(SYSCALL_SLEEP, (void*) sys_sleep);
-	Syscall::Register(SYSCALL_USLEEP, (void*) sys_usleep);
 	Syscall::Register(SYSCALL_SCHED_YIELD, (void*) sys_sched_yield);
 }
 

@@ -268,20 +268,6 @@ static int sys_clock_nanosleep(clockid_t clockid, int flags,
 	return timespec_eq(time, timespec_nul()) ? 0 : (errno = EINTR, -1);
 }
 
-// TODO: Made obsolete by cloc_gettimeres.
-static int sys_uptime(uintmax_t* usecssinceboot)
-{
-	struct timespec now;
-	Clock* clock = Time::GetClock(CLOCK_BOOT);
-	clock->Get(&now, NULL);
-
-	uintmax_t seconds = now.tv_sec;
-	uintmax_t nano_seconds = now.tv_nsec;
-	uintmax_t ret = seconds * 1000000 + nano_seconds / 1000;
-
-	return CopyToUser(usecssinceboot, &ret, sizeof(ret)) ? 0 : -1;
-}
-
 static int sys_timens(struct tmns* user_tmns)
 {
 	Clock* execute_clock = Time::GetClock(CLOCK_PROCESS_CPUTIME_ID);
@@ -314,7 +300,6 @@ void UserTimer::Init()
 	Syscall::Register(SYSCALL_TIMER_GETOVERRUN, (void*) sys_timer_getoverrun);
 	Syscall::Register(SYSCALL_TIMER_GETTIME, (void*) sys_timer_gettime);
 	Syscall::Register(SYSCALL_TIMER_SETTIME, (void*) sys_timer_settime);
-	Syscall::Register(SYSCALL_UPTIME, (void*) sys_uptime);
 }
 
 } // namespace Sortix

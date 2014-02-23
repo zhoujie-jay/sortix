@@ -418,15 +418,8 @@ static int sys_pipe2(int pipefd[2], int flags)
 	return -1;
 }
 
-// TODO: This system call is replaced by pipe2, will be removed soon.
-static int sys_pipe(int pipefd[2])
-{
-	return sys_pipe2(pipefd, 0);
-}
-
 void Init()
 {
-	Syscall::Register(SYSCALL_PIPE, (void*) sys_pipe);
 	Syscall::Register(SYSCALL_PIPE2, (void*) sys_pipe2);
 }
 

@@ -178,12 +178,6 @@ static int sys_openat(int dirfd, const char* path, int flags, mode_t mode)
 	return dtable->Allocate(desc, fdflags);
 }
 
-// TODO: This system call is replaced by openat, will be removed soon.
-static int sys_open(const char* path, int flags, mode_t mode)
-{
-	return sys_openat(AT_FDCWD, path, flags, mode);
-}
-
 // TODO: This is a hack! Stat the file in some manner and check permissions.
 static int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
 {
@@ -200,12 +194,6 @@ static int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
 	Ref<Descriptor> desc = from->open(&ctx, relpath, open_flags);
 	delete[] pathcopy;
 	return desc ? 0 : -1;
-}
-
-// TODO: This system call is replaced by faccessat, will be removed soon.
-static int sys_access(const char* path, int mode)
-{
-	return sys_faccessat(AT_FDCWD, path, mode, 0);
 }
 
 static int sys_unlinkat(int dirfd, const char* path, int flags)
@@ -228,12 +216,6 @@ static int sys_unlinkat(int dirfd, const char* path, int flags)
 	return ret;
 }
 
-// TODO: This system call is replaced by unlinkat, will be removed soon.
-static int sys_unlink(const char* path)
-{
-	return sys_unlinkat(AT_FDCWD, path, 0);
-}
-
 static int sys_mkdirat(int dirfd, const char* path, mode_t mode)
 {
 	char* pathcopy = GetStringFromUser(path);
@@ -246,18 +228,6 @@ static int sys_mkdirat(int dirfd, const char* path, mode_t mode)
 	int ret = from->mkdir(&ctx, relpath, mode);
 	delete[] pathcopy;
 	return ret;
-}
-
-// TODO: This system call is replaced by mkdirat, will be removed soon.
-static int sys_mkdir(const char* path, mode_t mode)
-{
-	return sys_mkdirat(AT_FDCWD, path, mode);
-}
-
-// TODO: This system call is replaced by unlinkat, will be removed soon.
-static int sys_rmdir(const char* path)
-{
-	return sys_unlinkat(AT_FDCWD, path, AT_REMOVEDIR);
 }
 
 static int sys_truncateat(int dirfd, const char* path, off_t length)
@@ -274,12 +244,6 @@ static int sys_truncateat(int dirfd, const char* path, off_t length)
 	if ( !desc )
 		return -1;
 	return desc->truncate(&ctx, length);
-}
-
-// TODO: This system call is replaced by truncateat, will be removed soon.
-static int sys_truncate(const char* path, off_t length)
-{
-	return sys_truncateat(AT_FDCWD, path, length);
 }
 
 static int sys_ftruncate(int fd, off_t length)
@@ -308,12 +272,6 @@ static int sys_fstatat(int dirfd, const char* path, struct stat* st, int flags)
 	if ( !desc )
 		return -1;
 	return desc->stat(&ctx, st);
-}
-
-// TODO: This system call is replaced by fstatat, will be removed soon.
-static int sys_stat(const char* path, struct stat* st)
-{
-	return sys_fstatat(AT_FDCWD, path, st, 0);
 }
 
 static int sys_fstat(int fd, struct stat* st)
@@ -438,12 +396,6 @@ static int sys_fchdirat(int dirfd, const char* path)
 	return 0;
 }
 
-// TODO: This system call is replaced by sys_fchownat, will be removed soon.
-static int sys_chdir(const char* path)
-{
-	return sys_fchdirat(AT_FDCWD, path);
-}
-
 static int sys_fchroot(int fd)
 {
 	Process* process = CurrentProcess();
@@ -502,12 +454,6 @@ static int sys_fchownat(int dirfd, const char* path, uid_t owner, gid_t group, i
 	return desc->chown(&ctx, owner, group);
 }
 
-// TODO: This system call is replaced by fchownat, will be removed soon.
-static int sys_chown(const char* path, uid_t owner, gid_t group)
-{
-	return sys_fchownat(AT_FDCWD, path, owner, group, 0);
-}
-
 static int sys_fchmod(int fd, mode_t mode)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
@@ -535,12 +481,6 @@ static int sys_fchmodat(int dirfd, const char* path, mode_t mode, int flags)
 	if ( !desc )
 		return -1;
 	return desc->chmod(&ctx, mode);
-}
-
-// TODO: This system call is replaced by fchmodat, will be removed soon.
-static int sys_chmod(const char* path, mode_t mode)
-{
-	return sys_fchmodat(AT_FDCWD, path, mode, 0);
 }
 
 static int sys_futimens(int fd, const struct timespec user_times[2])
@@ -616,12 +556,6 @@ static int sys_linkat(int olddirfd, const char* oldpath,
 	int ret = dir->link(&ctx, final_elem, file);
 	delete[] final_elem;
 	return ret;
-}
-
-// TODO: This system call is replaced by linkat, will be removed soon.
-static int sys_link(const char* oldpath, const char* newpath)
-{
-	return sys_linkat(AT_FDCWD, oldpath, AT_FDCWD, newpath, 0);
 }
 
 static int sys_symlinkat(const char* oldpath, int newdirfd, const char* newpath)
@@ -1037,11 +971,7 @@ static int sys_mkpartition(int fd, off_t start, off_t length, int flags)
 void Init()
 {
 	Syscall::Register(SYSCALL_ACCEPT4, (void*) sys_accept4);
-	Syscall::Register(SYSCALL_ACCESS, (void*) sys_access);
 	Syscall::Register(SYSCALL_BIND, (void*) sys_bind);
-	Syscall::Register(SYSCALL_CHDIR, (void*) sys_chdir);
-	Syscall::Register(SYSCALL_CHMOD, (void*) sys_chmod);
-	Syscall::Register(SYSCALL_CHOWN, (void*) sys_chown);
 	Syscall::Register(SYSCALL_CLOSE, (void*) sys_close);
 	Syscall::Register(SYSCALL_CONNECT, (void*) sys_connect);
 	Syscall::Register(SYSCALL_DUP2, (void*) sys_dup2);
@@ -1068,14 +998,11 @@ void Init()
 	Syscall::Register(SYSCALL_IOCTL, (void*) sys_ioctl);
 	Syscall::Register(SYSCALL_ISATTY, (void*) sys_isatty);
 	Syscall::Register(SYSCALL_LINKAT, (void*) sys_linkat);
-	Syscall::Register(SYSCALL_LINK, (void*) sys_link);
 	Syscall::Register(SYSCALL_LISTEN, (void*) sys_listen);
 	Syscall::Register(SYSCALL_LSEEK, (void*) sys_lseek);
 	Syscall::Register(SYSCALL_MKDIRAT, (void*) sys_mkdirat);
-	Syscall::Register(SYSCALL_MKDIR, (void*) sys_mkdir);
 	Syscall::Register(SYSCALL_MKPARTITION, (void*) sys_mkpartition);
 	Syscall::Register(SYSCALL_OPENAT, (void*) sys_openat);
-	Syscall::Register(SYSCALL_OPEN, (void*) sys_open);
 	Syscall::Register(SYSCALL_PREAD, (void*) sys_pread);
 	Syscall::Register(SYSCALL_PREADV, (void*) sys_preadv);
 	Syscall::Register(SYSCALL_PWRITE, (void*) sys_pwrite);
@@ -1086,19 +1013,15 @@ void Init()
 	Syscall::Register(SYSCALL_READV, (void*) sys_readv);
 	Syscall::Register(SYSCALL_RECV, (void*) sys_recv);
 	Syscall::Register(SYSCALL_RENAMEAT, (void*) sys_renameat);
-	Syscall::Register(SYSCALL_RMDIR, (void*) sys_rmdir);
 	Syscall::Register(SYSCALL_SEND, (void*) sys_send);
 	Syscall::Register(SYSCALL_SETTERMMODE, (void*) sys_settermmode);
-	Syscall::Register(SYSCALL_STAT, (void*) sys_stat);
 	Syscall::Register(SYSCALL_SYMLINKAT, (void*) sys_symlinkat);
 	Syscall::Register(SYSCALL_TCGETPGRP, (void*) sys_tcgetpgrp);
 	Syscall::Register(SYSCALL_TCGETWINCURPOS, (void*) sys_tcgetwincurpos);
 	Syscall::Register(SYSCALL_TCGETWINSIZE, (void*) sys_tcgetwinsize);
 	Syscall::Register(SYSCALL_TCSETPGRP, (void*) sys_tcsetpgrp);
 	Syscall::Register(SYSCALL_TRUNCATEAT, (void*) sys_truncateat);
-	Syscall::Register(SYSCALL_TRUNCATE, (void*) sys_truncate);
 	Syscall::Register(SYSCALL_UNLINKAT, (void*) sys_unlinkat);
-	Syscall::Register(SYSCALL_UNLINK, (void*) sys_unlink);
 	Syscall::Register(SYSCALL_UTIMENSAT, (void*) sys_utimensat);
 	Syscall::Register(SYSCALL_WRITE, (void*) sys_write);
 	Syscall::Register(SYSCALL_WRITEV, (void*) sys_writev);
