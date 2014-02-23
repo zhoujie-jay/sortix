@@ -27,7 +27,7 @@
 
 #include <unistd.h>
 
-DEFN_SYSCALL1(gid_t, sys_setegid, SYSCALL_GETEGID, gid_t);
+DEFN_SYSCALL1(gid_t, sys_setegid, SYSCALL_SETEGID, gid_t);
 
 extern "C" int setegid(gid_t egid)
 {
