@@ -119,6 +119,7 @@ int fgetpos(FILE* __restrict stream, fpos_t* __restrict pos);
 char* fgets(char* __restrict s, int n, FILE* __restrict stream);
 char* fgets_unlocked(char* __restrict, int, FILE* __restrict);
 void flockfile(FILE* file);
+FILE* fmemopen(void* __restrict, size_t, const char* __restrict);
 FILE* fopen(const char* __restrict filename, const char* __restrict mode);
 int fprintf(FILE* __restrict stream, const char* __restrict format, ...)
 	__attribute__((__format__ (printf, 2, 3)));
@@ -210,7 +211,6 @@ int vsscanf(const char* __restrict s, const char* __restrict format, __gnuc_va_l
 /* TODO: These are not implemented in sortix libc yet. */
 #if 0
 char* ctermid(char* s);
-FILE *fmemopen(void* __restrict buf, size_t size, const char* __restrict mode);
 FILE* open_memstream(char** bufp, size_t* sizep);
 #endif
 

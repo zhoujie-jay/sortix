@@ -91,6 +91,7 @@ stdio/flbf.o \
 stdio/flbf_unlocked.o \
 stdio/flockfile.o \
 stdio/flushlbf.o \
+stdio/fmemopen.o \
 stdio/fnewfile.o \
 stdio/fparsemode.o \
 stdio/fpending.o \
