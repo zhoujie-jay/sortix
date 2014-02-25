@@ -14,6 +14,7 @@ BINARIES:=\
 regress \
 
 TESTS:=\
+test-fmemopen \
 test-pthread-argv \
 test-pthread-basic \
 test-pthread-main-join \
