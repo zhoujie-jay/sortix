@@ -25,6 +25,8 @@
 #ifndef INCLUDE_SORTIX_INITRD_H
 #define INCLUDE_SORTIX_INITRD_H
 
+#include <stdint.h>
+
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
