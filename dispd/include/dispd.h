@@ -28,6 +28,8 @@
 #if !defined(__cplusplus)
 #include <stdbool.h>
 #endif
+#include <stddef.h>
+#include <stdint.h>
 
 #if defined(__cplusplus)
 extern "C" {
