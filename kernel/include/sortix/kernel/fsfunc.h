@@ -25,6 +25,8 @@
 #ifndef SORTIX_FSFUNC_H
 #define SORTIX_FSFUNC_H
 
+#include <sys/types.h>
+
 namespace Sortix {
 
 static inline bool IsDotOrDotDot(const char* path)

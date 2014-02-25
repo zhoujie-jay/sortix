@@ -25,6 +25,8 @@
 #ifndef SORTIX_STRING_H
 #define SORTIX_STRING_H
 
+#include <stddef.h>
+
 namespace Sortix {
 namespace String {
 

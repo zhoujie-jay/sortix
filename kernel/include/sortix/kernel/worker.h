@@ -25,6 +25,8 @@
 #ifndef SORTIX_WORKER_H
 #define SORTIX_WORKER_H
 
+#include <stddef.h>
+
 namespace Sortix {
 namespace Worker {
 

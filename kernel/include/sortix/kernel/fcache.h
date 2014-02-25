@@ -25,6 +25,11 @@
 #ifndef INCLUDE_SORTIX_KERNEL_FCACHE_H
 #define INCLUDE_SORTIX_KERNEL_FCACHE_H
 
+#include <sys/types.h>
+
+#include <stddef.h>
+#include <stdint.h>
+
 #include <sortix/kernel/addralloc.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/memorymanagement.h>

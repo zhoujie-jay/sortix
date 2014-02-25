@@ -25,6 +25,8 @@
 #ifndef SORTIX_MTABLE_H
 #define SORTIX_MTABLE_H
 
+#include <sys/types.h>
+
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/refcount.h>
 

@@ -25,6 +25,8 @@
 #ifndef SORTIX_VIDEO_H
 #define SORTIX_VIDEO_H
 
+#include <sys/types.h>
+
 #include <sortix/kernel/refcount.h>
 
 namespace Sortix {

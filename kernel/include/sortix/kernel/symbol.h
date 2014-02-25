@@ -25,6 +25,9 @@
 #ifndef INCLUDE_SORTIX_KERNEL_SYMBOL_H
 #define INCLUDE_SORTIX_KERNEL_SYMBOL_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 namespace Sortix {
 
 struct Symbol

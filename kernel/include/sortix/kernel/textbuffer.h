@@ -25,6 +25,10 @@
 #ifndef SORTIX_TEXTBUFFER_H
 #define SORTIX_TEXTBUFFER_H
 
+#include <sys/types.h>
+
+#include <stdint.h>
+
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/refcount.h>
 

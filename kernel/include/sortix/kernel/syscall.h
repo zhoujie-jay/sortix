@@ -25,6 +25,8 @@
 #ifndef INCLUDE_SORTIX_KERNEL_SYSCALL_H
 #define INCLUDE_SORTIX_KERNEL_SYSCALL_H
 
+#include <stddef.h>
+
 #include <sortix/syscallnum.h>
 
 namespace Sortix {

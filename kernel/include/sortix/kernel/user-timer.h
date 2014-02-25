@@ -25,6 +25,8 @@
 #ifndef INCLUDE_SORTIX_KERNEL_USER_TIMER_H
 #define INCLUDE_SORTIX_KERNEL_USER_TIMER_H
 
+#include <sys/types.h>
+
 #include <sortix/sigevent.h>
 
 #include <sortix/kernel/timer.h>

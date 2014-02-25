@@ -27,6 +27,7 @@
 #define INCLUDE_SORTIX_KERNEL_SORTEDLIST_H
 
 #include <assert.h>
+#include <stddef.h>
 #include <stdint.h>
 
 namespace Sortix {

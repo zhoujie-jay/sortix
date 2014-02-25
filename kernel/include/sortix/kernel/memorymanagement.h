@@ -25,6 +25,11 @@
 #ifndef INCLUDE_SORTIX_KERNEL_MEMORYMANAGEMENT_H
 #define INCLUDE_SORTIX_KERNEL_MEMORYMANAGEMENT_H
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include <sortix/kernel/decl.h>
+
 typedef struct multiboot_info multiboot_info_t;
 
 namespace Sortix {
