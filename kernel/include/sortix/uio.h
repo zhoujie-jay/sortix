@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of Sortix.
 
@@ -27,7 +27,15 @@
 
 #include <sys/cdefs.h>
 
+#include <sys/__/types.h>
+
 __BEGIN_DECLS
+
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
 
 struct iovec
 {
