@@ -27,6 +27,8 @@
 
 #include <sys/cdefs.h>
 
+#include <sortix/timespec.h>
+
 __BEGIN_DECLS
 
 struct itimerspec
