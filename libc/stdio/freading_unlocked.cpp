@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -26,9 +26,9 @@
 
 extern "C" int freading_unlocked(FILE* fp)
 {
-	if ( fp->read_func )
-		return 1;
 	if ( fp->flags & _FILE_LAST_READ )
+		return 1;
+	if ( (fp->flags & _FILE_READABLE) && !(fp->flags & _FILE_WRITABLE) )
 		return 1;
 	return 0;
 }

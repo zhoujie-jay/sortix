@@ -17,17 +17,21 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/fileno_unlocked.cpp
-    Returns the underlying file descriptor of a FILE if applicable.
+    stdio/fopen.cpp
+    Opens a FILE from a path.
 
 *******************************************************************************/
 
 #include <stdio.h>
-#include <errno.h>
 
-extern "C" int fileno_unlocked(FILE* fp)
+#include "fdio.h"
+
+extern "C" FILE* fopen(const char* path, const char* mode)
 {
-	if ( !fp->fileno_func )
-		return errno = EBADF, -1;
-	return fp->fileno_func(fp->user);
+	FILE* fp = fnewfile();
+	if ( !fp )
+		return NULL;
+	if ( !fdio_install_path(fp, path, mode) )
+		return fclose(fp), (FILE*) NULL;
+	return fp;
 }

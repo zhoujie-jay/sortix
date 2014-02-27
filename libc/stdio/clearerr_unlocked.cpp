@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -26,6 +26,5 @@
 
 extern "C" void clearerr_unlocked(FILE* fp)
 {
-	if ( fp->clearerr_func )
-		fp->clearerr_func(fp->user);
+	fp->flags &= ~_FILE_STATUS_ERROR;
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,6 +22,7 @@
 
 *******************************************************************************/
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -47,21 +48,23 @@ extern "C" int fsetdefaultbuf_unlocked(FILE* fp)
 
 	// Determine the buffering semantics depending on whether the destination is
 	// an interactive device or not.
-#if defined(__is_sortix_kernel)
-	int mode = _IOLBF; // TODO: Detect this?
-#else
-	int mode = fp->buffer_mode != -1 ? fp->buffer_mode
-	                                 : isatty(fileno_unlocked(fp)) ? _IOLBF
-	                                                               : _IOFBF;
-#endif
-	int ret = setvbuf_unlocked(fp, buf, mode, BUFSIZ);
-	if ( ret )
+	int mode = fp->buffer_mode;
+	if ( mode == -1 )
 	{
-		free(buf);
-		return -1;
+#if defined(__is_sortix_kernel)
+		mode = _IOLBF;
+#else
+		mode = _IOFBF;
+		int saved_errno = errno;
+		if ( isatty(fileno_unlocked(fp)) )
+			mode = _IOLBF;
+		errno = saved_errno;
+#endif
 	}
+	if ( setvbuf_unlocked(fp, buf, mode, BUFSIZ) )
+		return fp->flags |= _FILE_STATUS_ERROR, free(buf), -1;
 
 	// The buffer now belongs to the FILE.
 	fp->flags |= _FILE_BUFFER_OWNED;
-	return ret;
+	return 0;
 }

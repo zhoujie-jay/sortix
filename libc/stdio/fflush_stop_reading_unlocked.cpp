@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -18,41 +18,43 @@
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
     stdio/fflush_stop_reading_unlocked.cpp
-    Resets the FILE to a consistent state so it is ready for writing.
+    Resets the FILE to a consistent state ready for writing.
 
 *******************************************************************************/
 
 #include <sys/types.h>
 
 #include <assert.h>
+#include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 
 extern "C" int fflush_stop_reading_unlocked(FILE* fp)
 {
 	if ( !(fp->flags & _FILE_LAST_READ) )
 		return 0;
+
+	if ( !(fp->flags & _FILE_READABLE) )
+		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
+
+	int saved_errno = errno;
+	off_t my_pos = -1;
+	if ( fp->seek_func )
+		my_pos = fp->seek_func(fp->user, 0, SEEK_CUR);
+	errno = saved_errno;
+
 	int ret = 0;
-	size_t bufferahead = fp->amount_input_buffered - fp->offset_input_buffer;
-	if ( (fp->flags & _FILE_STREAM) )
+	if ( 0 <= my_pos )
 	{
-		if ( bufferahead )
-			/* TODO: Data loss!*/{}
+		size_t buffer_ahead = fp->amount_input_buffered - fp->offset_input_buffer;
+		off_t expected_pos = (uintmax_t) my_pos < (uintmax_t) buffer_ahead ? 0 :
+		                     my_pos - buffer_ahead;
+		if ( 0 <= my_pos && fp->seek_func(fp->user, expected_pos, SEEK_SET) < 0 )
+			fp->flags |= _FILE_STATUS_ERROR, ret = EOF;
 	}
-	if ( !(fp->flags & _FILE_STREAM) )
-	{
-		off_t rewind_amount = -((off_t) bufferahead);
-		off_t my_pos = fp->tell_func(fp->user);
-		off_t expected_pos = my_pos + rewind_amount;
-#if 1
-		if ( fp->seek_func && fp->seek_func(fp->user, expected_pos, SEEK_SET) != 0 )
-#else
-		if ( fp->seek_func && fp->seek_func(fp->user, rewind_amount, SEEK_CUR) != 0 )
-#endif
-			ret = EOF;
-		off_t newpos = fp->tell_func(fp->user);
-		assert(ret == EOF || expected_pos == newpos);
-	}
+
 	fp->amount_input_buffered = fp->offset_input_buffer = 0;
 	fp->flags &= ~_FILE_LAST_READ;
+
 	return ret;
 }

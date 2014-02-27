@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -29,15 +29,14 @@
 
 extern "C" off_t ftello_unlocked(FILE* fp)
 {
-	if ( !fp->tell_func )
-		return errno = EBADF, -1;
-	off_t offset = fp->tell_func(fp->user);
+	if ( !fp->seek_func )
+		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, -1;
+	off_t offset = fp->seek_func(fp->user, 0, SEEK_CUR);
 	if ( offset < 0 )
 		return -1;
-	off_t readahead = fp->amount_input_buffered - fp->offset_input_buffer;
-	off_t writebehind = fp->amount_output_buffered;
-	off_t result = offset - readahead + writebehind;
-	if ( result < 0 ) // Too much ungetc'ing.
+	off_t read_ahead = fp->amount_input_buffered - fp->offset_input_buffer;
+	off_t write_behind = fp->amount_output_buffered;
+	if ( offset < read_ahead + write_behind ) // Too much ungetc'ing.
 		return 0;
-	return result;
+	return offset - read_ahead + write_behind;
 }

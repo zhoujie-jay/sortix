@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -29,16 +29,27 @@
 
 extern "C" int ungetc_unlocked(int c, FILE* fp)
 {
+	if ( !(fp->flags & _FILE_READABLE) )
+		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
+
 	if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
 		if ( fsetdefaultbuf_unlocked(fp) != 0 )
-			return EOF; // TODO: ferror doesn't report error!
-
-	if ( !fp->read_func || fp->buffer_mode == _IONBF )
-		return EOF;
+			return EOF;
 
 	if ( fp->flags & _FILE_LAST_WRITE )
 		fflush_stop_writing_unlocked(fp);
+
 	fp->flags |= _FILE_LAST_READ;
+
+	if ( c == EOF )
+	{
+		fp->flags &= ~_FILE_STATUS_EOF;
+		return EOF;
+	}
+
+	// TODO: Is this a bug that ungetc doesn't work for unbuffered files?
+	if ( fp->buffer_mode == _IONBF )
+		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
 
 	if ( fp->offset_input_buffer == 0 )
 	{
@@ -52,5 +63,8 @@ extern "C" int ungetc_unlocked(int c, FILE* fp)
 	}
 
 	fp->buffer[--fp->offset_input_buffer] = c;
+
+	fp->flags &= ~_FILE_STATUS_EOF;
+
 	return c;
 }

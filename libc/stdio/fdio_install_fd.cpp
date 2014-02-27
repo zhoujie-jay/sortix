@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,34 +17,48 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/stdio.cpp
-    Sets up stdin, stdout, stderr.
+    stdio/fdio_install_fd.cpp
+    Opens a FILE from a file descriptor.
 
 *******************************************************************************/
 
+#include <sys/stat.h>
+
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "fdio.h"
 
-static struct fdio_state stdin_fdio = { NULL, 0 };
-static struct fdio_state stdout_fdio = { NULL, 1 };
-static struct fdio_state stderr_fdio = { NULL, 2 };
-
-static FILE stdin_file;
-static FILE stdout_file;
-static FILE stderr_file;
-
-extern "C" { FILE* stdin = &stdin_file; }
-extern "C" { FILE* stdout = &stdout_file; }
-extern "C" { FILE* stderr = &stderr_file; }
-
-static void bootstrap_stdio(FILE* fp, struct fdio_state* fdio, int file_flags)
+extern "C" bool fdio_install_fd(FILE* fp, int fd, const char* mode)
 {
-	fresetfile(fp);
+	int mode_flags = fparsemode(mode);
+	if ( mode_flags < 0 )
+		return false;
 
-	fp->flags |= file_flags;
+	if ( !(mode_flags & (FILE_MODE_READ | FILE_MODE_WRITE)) )
+		return errno = EINVAL, false;
+
+	struct stat st;
+	if ( fstat(fd, &st) == 0 &&
+	     (mode_flags & FILE_MODE_WRITE) &&
+	     S_ISDIR(st.st_mode) )
+		return errno = EISDIR, false;
+
+	struct fdio_state* fdio = (struct fdio_state*) malloc(sizeof(struct fdio_state));
+	if ( !fdio )
+		return false;
+
+	fdio->free_indirect = free;
+	fdio->fd = fd;
+
+	if ( mode_flags & FILE_MODE_READ )
+		fp->flags |= _FILE_READABLE;
+	if ( mode_flags & FILE_MODE_WRITE )
+		fp->flags |= _FILE_WRITABLE;
+
 	fp->user = fdio;
 	fp->reopen_func = fdio_reopen;
 	fp->read_func = fdio_read;
@@ -53,14 +67,5 @@ static void bootstrap_stdio(FILE* fp, struct fdio_state* fdio, int file_flags)
 	fp->fileno_func = fdio_fileno;
 	fp->close_func = fdio_close;
 
-	fregister(fp);
-}
-
-extern "C" void init_stdio()
-{
-	bootstrap_stdio(stdin, &stdin_fdio, _FILE_READABLE);
-	bootstrap_stdio(stdout, &stdout_fdio, _FILE_WRITABLE);
-	bootstrap_stdio(stderr, &stderr_fdio, _FILE_WRITABLE);
-
-	stderr->buffer_mode = _IONBF;
+	return true;
 }

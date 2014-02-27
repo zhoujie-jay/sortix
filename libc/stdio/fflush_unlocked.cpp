@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -26,11 +26,9 @@
 
 extern "C" int fflush_unlocked(FILE* fp)
 {
-	int mode = fp->flags & (_FILE_LAST_READ | _FILE_LAST_WRITE);
-	if ( (mode & _FILE_LAST_READ) && fflush_stop_reading_unlocked(fp) == EOF )
+	if ( (fp->flags & _FILE_LAST_READ) && fflush_stop_reading_unlocked(fp) == EOF )
 		return EOF;
-	if ( (mode & _FILE_LAST_WRITE) && fflush_stop_writing_unlocked(fp) == EOF )
+	if ( (fp->flags & _FILE_LAST_WRITE) && fflush_stop_writing_unlocked(fp) == EOF )
 		return EOF;
-	fp->flags |= mode;
 	return 0;
 }

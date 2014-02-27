@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,17 +17,14 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/fileno_unlocked.cpp
-    Returns the underlying file descriptor of a FILE if applicable.
+    stdio/puts.cpp
+    Write a string and newline to stdout.
 
 *******************************************************************************/
 
 #include <stdio.h>
-#include <errno.h>
 
-extern "C" int fileno_unlocked(FILE* fp)
+extern "C" int puts(const char* str)
 {
-	if ( !fp->fileno_func )
-		return errno = EBADF, -1;
-	return fp->fileno_func(fp->user);
+	return printf("%s\n", str) < 0 ? EOF : 1;
 }

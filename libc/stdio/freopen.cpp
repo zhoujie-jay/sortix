@@ -47,7 +47,7 @@ extern "C" FILE* freopen(const char* path, const char* mode, FILE* fp)
 	fshutdown(fp);
 
 	// Attempt to open the new path and install that into our FILE object.
-	if ( fdio_install_path(fp, path, mode) != 0 )
+	if ( !fdio_install_path(fp, path, mode) )
 	{
 		fclose(fp);
 		return NULL;

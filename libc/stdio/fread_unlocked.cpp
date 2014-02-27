@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,37 +22,60 @@
 
 *******************************************************************************/
 
+#include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 
 extern "C"
-size_t fread_unlocked(void* ptr, size_t size, size_t nmemb, FILE* fp)
+size_t fread_unlocked(void* ptr,
+                      size_t element_size,
+                      size_t num_elements,
+                      FILE* fp)
 {
+	if ( !(fp->flags & _FILE_READABLE) )
+		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
+
+	unsigned char* buf = (unsigned char*) ptr;
+	size_t count = element_size * num_elements;
+
 	if ( fp->buffer_mode == _IONBF )
 	{
 		if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
 			if ( fsetdefaultbuf_unlocked(fp) != 0 )
-				return EOF; // TODO: ferror doesn't report error!
+				return EOF;
 		if ( !fp->read_func )
-			return 0; // TODO: ferror doesn't report error!
+			return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, 0;
 		if ( fp->flags & _FILE_LAST_WRITE )
 			fflush_stop_writing_unlocked(fp);
 		fp->flags |= _FILE_LAST_READ;
-		return fp->read_func(ptr, size, nmemb, fp->user);
+		fp->flags &= ~_FILE_STATUS_EOF;
+		size_t sofar = 0;
+		while ( sofar < count )
+		{
+			size_t request = count - sofar;
+			if ( (size_t) SSIZE_MAX < request )
+				request = SSIZE_MAX;
+			ssize_t amount = fp->read_func(fp->user, buf + sofar, request);
+			if ( amount < 0 )
+				return fp->flags |= _FILE_STATUS_ERROR, sofar / num_elements;
+			if ( amount == 0 )
+				return fp->flags |= _FILE_STATUS_EOF, sofar / num_elements;
+			sofar += amount;
+		}
+		return sofar / element_size;
 	}
 
-	unsigned char* buf = (unsigned char*) ptr;
-	for ( size_t n = 0; n < nmemb; n++ )
+	for ( size_t n = 0; n < num_elements; n++ )
 	{
-		size_t offset = n * size;
-		for ( size_t i = 0; i < size; i++ )
+		size_t offset = n * element_size;
+		for ( size_t i = 0; i < element_size; i++ )
 		{
 			int c = fgetc_unlocked(fp);
 			if ( c == EOF )
 				return n;
-			size_t index = i + offset;
-			buf[index] = c;
+			buf[offset + i] = (unsigned char) c;
 		}
 	}
 
-	return nmemb;
+	return num_elements;
 }

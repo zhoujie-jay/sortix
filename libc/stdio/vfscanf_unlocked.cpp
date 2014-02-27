@@ -22,6 +22,7 @@
 
 *******************************************************************************/
 
+#include <errno.h>
 #include <stdio.h>
 
 static int wrap_fgetc(void* fp)
@@ -36,5 +37,8 @@ static int wrap_ungetc(int c, void* fp)
 
 extern "C" int vfscanf_unlocked(FILE* fp, const char* format, va_list ap)
 {
+	if ( !(fp->flags & _FILE_READABLE) )
+		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
+
 	return vscanf_callback(fp, wrap_fgetc, wrap_ungetc, format, ap);
 }

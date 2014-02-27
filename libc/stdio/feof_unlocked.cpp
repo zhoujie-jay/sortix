@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -26,10 +26,5 @@
 
 extern "C" int feof_unlocked(FILE* fp)
 {
-	size_t input_buffered = fp->amount_input_buffered - fp->offset_input_buffer;
-	if ( input_buffered )
-		return 0;
-	if ( fp->eof_func )
-		return fp->eof_func(fp->user);
-	return 0;
+	return fp->flags & _FILE_STATUS_EOF ? 1 : 0;
 }

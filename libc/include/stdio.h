@@ -215,6 +215,16 @@ FILE* open_memstream(char** bufp, size_t* sizep);
 #endif
 
 #if defined(_SORTIX_SOURCE)
+
+#define FILE_MODE_READ (1 << 0)
+#define FILE_MODE_WRITE (1 << 1)
+#define FILE_MODE_APPEND (1 << 2)
+#define FILE_MODE_CREATE (1 << 3)
+#define FILE_MODE_TRUNCATE (1 << 4)
+#define FILE_MODE_BINARY (1 << 5)
+#define FILE_MODE_EXCL (1 << 6)
+#define FILE_MODE_CLOEXEC (1 << 7)
+
 #include <stdio_ext.h>
 #define fbufsize __fbufsize
 size_t fbufsize_unlocked(FILE* fp);
@@ -251,6 +261,7 @@ int fsetdefaultbuf_unlocked(FILE* fp);
 int fcloseall(void);
 int fshutdown(FILE* fp);
 int fpipe(FILE* pipes[2]);
+int fparsemode(const char*);
 #endif
 
 #if defined(_SORTIX_SOURCE) || defined(_WANT_SORTIX_VPRINTF_CALLBACK)

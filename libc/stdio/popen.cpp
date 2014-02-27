@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -32,12 +32,6 @@
 #include <stdint.h>
 #include <unistd.h>
 
-const int POPEN_WRITING = 1 << 0;
-const int POPEN_READING = 1 << 1;
-const int POPEN_CLOEXEC = 1 << 2;
-const int POPEN_ERROR = 1 << 3;
-const int POPEN_EOF = 1 << 4;
-
 typedef struct popen_struct
 {
 	int flags;
@@ -45,75 +39,21 @@ typedef struct popen_struct
 	pid_t pid;
 } popen_t;
 
-static size_t popen_read(void* ptr, size_t size, size_t nmemb, void* user)
+static ssize_t popen_read(void* user, void* ptr, size_t size)
 {
-	uint8_t* buf = (uint8_t*) ptr;
 	popen_t* info = (popen_t*) user;
-	if ( !(info->flags & POPEN_READING) )
-		return errno = EBADF, 0;
-	size_t sofar = 0;
-	size_t total = size * nmemb;
-	while ( sofar < total )
-	{
-		ssize_t numbytes = read(info->fd, buf + sofar, total - sofar);
-		if ( numbytes < 0 ) { info->flags |= POPEN_ERROR; break; }
-		if ( numbytes == 0 ) { info->flags |= POPEN_EOF; break; }
-		return numbytes / size;
-		sofar += numbytes;
-	}
-	return sofar / size;
+	return read(info->fd, ptr, size);
 }
 
-static size_t popen_write(const void* ptr, size_t size, size_t nmemb, void* user)
+static ssize_t popen_write(void* user, const void* ptr, size_t size)
 {
-	const uint8_t* buf = (const uint8_t*) ptr;
 	popen_t* info = (popen_t*) user;
-	if ( !(info->flags & POPEN_WRITING) )
-		return errno = EBADF, 0;
-	size_t sofar = 0;
-	size_t total = size * nmemb;
-	while ( sofar < total )
-	{
-		ssize_t numbytes = write(info->fd, buf + sofar, total - sofar);
-		if ( numbytes < 0 ) { info->flags |= POPEN_ERROR; break; }
-		if ( numbytes == 0 ) { info->flags |= POPEN_EOF; break; }
-		sofar += numbytes;
-	}
-	return sofar / size;
+	return write(info->fd, ptr, size);
 }
 
-static int popen_seek(void* /*user*/, off_t /*offset*/, int /*whence*/)
+static off_t popen_seek(void* /*user*/, off_t /*offset*/, int /*whence*/)
 {
 	return errno = ESPIPE, -1;
-}
-
-static off_t popen_tell(void* /*user*/)
-{
-	return errno = ESPIPE, -1;
-}
-
-static void popen_seterr(void* user)
-{
-	popen_t* info = (popen_t*) user;
-	info->flags |= POPEN_ERROR;
-}
-
-static void popen_clearerr(void* user)
-{
-	popen_t* info = (popen_t*) user;
-	info->flags &= ~POPEN_ERROR;
-}
-
-static int popen_eof(void* user)
-{
-	popen_t* info = (popen_t*) user;
-	return info->flags & POPEN_EOF;
-}
-
-static int popen_error(void* user)
-{
-	popen_t* info = (popen_t*) user;
-	return info->flags & POPEN_ERROR;
 }
 
 static int popen_fileno(void* user)
@@ -125,9 +65,9 @@ static int popen_fileno(void* user)
 static int popen_close(void* user)
 {
 	popen_t* info = (popen_t*) user;
-	if ( close(info->fd) )
+	if ( close(info->fd) < 0 )
 	{
-		/* TODO: Should this return value be discarded? */;
+		// TODO: Should this return value be discarded?
 	}
 	int status;
 	if ( waitpid(info->pid, &status, 0) < 0 )
@@ -136,50 +76,37 @@ static int popen_close(void* user)
 	return status;
 }
 
-static int parse_popen_type(const char* type)
-{
-	int ret = 0;
-	switch ( *type++ )
-	{
-		case 'r': ret = POPEN_READING; break;
-		case 'w': ret = POPEN_WRITING; break;
-		default: return errno = -EINVAL, -1;
-	}
-	while ( char c = *type++ )
-		switch ( c )
-		{
-			case 'e': ret |= POPEN_CLOEXEC; break;
-			default: return errno = -EINVAL, -1;
-		}
-	return ret;
-}
-
 void popen_install(FILE* fp, popen_t* info)
 {
 	fp->user = info;
 	fp->read_func = popen_read;
 	fp->write_func = popen_write;
 	fp->seek_func = popen_seek;
-	fp->tell_func = popen_tell;
-	fp->seterr_func = popen_seterr;
-	fp->clearerr_func = popen_clearerr;
-	fp->eof_func = popen_eof;
-	fp->error_func = popen_error;
 	fp->fileno_func = popen_fileno;
 	fp->close_func = popen_close;
-	fp->flags |= _FILE_STREAM;
 }
 
 extern "C" FILE* popen(const char* command, const char* type)
 {
-	int flags, used_end, unused_end, redirect_what;
+	int mode_flags = fparsemode(type);
+	if ( mode_flags < 0 )
+		return (FILE*) NULL;
+
+	if ( mode_flags & ~(FILE_MODE_READ | FILE_MODE_WRITE | FILE_MODE_CLOEXEC |
+	                    FILE_MODE_CREATE | FILE_MODE_BINARY | FILE_MODE_TRUNCATE) )
+		return errno = EINVAL, (FILE*) NULL;
+
+	bool reading = mode_flags & FILE_MODE_READ;
+	bool writing = mode_flags & FILE_MODE_WRITE;
+	if ( reading == writing )
+		return errno = EINVAL, (FILE*) NULL;
+
+	int used_end, unused_end, redirect_what;
 	int pipefds[2];
 	popen_t* info;
 	FILE* fp;
 	pid_t childpid;
 
-	if ( (flags = parse_popen_type(type)) < 0 )
-		goto cleanup_out;
 	if ( !(info = (popen_t*) calloc(1, sizeof(popen_t))) )
 		goto cleanup_out;
 	if ( !(fp = fnewfile()) )
@@ -191,21 +118,21 @@ extern "C" FILE* popen(const char* command, const char* type)
 
 	if ( childpid )
 	{
-		used_end   = flags & POPEN_WRITING ? 1 /*writing*/ : 0 /*reading*/;
-		unused_end = flags & POPEN_WRITING ? 0 /*reading*/ : 1 /*writing*/;
+		used_end   = writing ? 1 /*writing*/ : 0 /*reading*/;
+		unused_end = writing ? 0 /*reading*/ : 1 /*writing*/;
 		close(pipefds[unused_end]);
-		if ( flags & POPEN_CLOEXEC )
+		if ( mode_flags & FILE_MODE_CLOEXEC )
 			fcntl(pipefds[used_end], F_SETFL, FD_CLOEXEC);
 		info->fd = pipefds[used_end];
-		info->flags = flags;
 		info->pid = childpid;
 		popen_install(fp, info);
+		fp->flags |= writing ? _FILE_WRITABLE : _FILE_READABLE;
 		return fp;
 	}
 
-	redirect_what = flags & POPEN_WRITING ? 0 /*stdin*/   : 1 /*stdout*/;
-	used_end      = flags & POPEN_WRITING ? 0 /*reading*/ : 1 /*writing*/;
-	unused_end    = flags & POPEN_WRITING ? 1 /*writing*/ : 0 /*reading*/;
+	redirect_what = writing ? 0 /*stdin*/   : 1 /*stdout*/;
+	used_end      = writing ? 0 /*reading*/ : 1 /*writing*/;
+	unused_end    = writing ? 1 /*writing*/ : 0 /*reading*/;
 	if ( dup2(pipefds[used_end], redirect_what) < 0 ||
         close(pipefds[used_end]) ||
         close(pipefds[unused_end]) )

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,17 +17,38 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/fileno_unlocked.cpp
-    Returns the underlying file descriptor of a FILE if applicable.
+    stdio/fparsemode.cpp
+    Parses the mode argument of functions like fopen().
 
 *******************************************************************************/
 
-#include <stdio.h>
 #include <errno.h>
+#include <stdio.h>
 
-extern "C" int fileno_unlocked(FILE* fp)
+extern "C" int fparsemode(const char* mode)
 {
-	if ( !fp->fileno_func )
-		return errno = EBADF, -1;
-	return fp->fileno_func(fp->user);
+	int result;
+
+	switch ( *mode++ )
+	{
+	case 'r': result = FILE_MODE_READ; break;
+	case 'w': result = FILE_MODE_WRITE | FILE_MODE_CREATE | FILE_MODE_TRUNCATE; break;
+	case 'a': result = FILE_MODE_WRITE | FILE_MODE_CREATE | FILE_MODE_APPEND; break;
+	default: return errno = EINVAL, -1;
+	};
+
+	while ( *mode )
+	{
+		switch ( *mode++ )
+		{
+		case 'b': result |= FILE_MODE_BINARY; break;
+		case 'e': result |= FILE_MODE_CLOEXEC; break;
+		case 't': result &= ~FILE_MODE_BINARY; break;
+		case 'x': result |= FILE_MODE_EXCL; break;
+		case '+': result |= FILE_MODE_READ | FILE_MODE_WRITE; break;
+		default: return errno = EINVAL, -1;
+		};
+	}
+
+	return result;
 }

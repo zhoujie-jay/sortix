@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -44,6 +44,11 @@ typedef __off_t off_t;
 #include <stddef.h>
 #endif
 
+#ifndef __ssize_t_defined
+#define __ssize_t_defined
+typedef __ssize_t ssize_t;
+#endif
+
 #ifndef __FILE_defined
 #define __FILE_defined
 typedef struct FILE FILE;
@@ -54,8 +59,12 @@ typedef struct FILE FILE;
 #define _FILE_LAST_WRITE (1<<2)
 #define _FILE_LAST_READ (1<<3)
 #define _FILE_AUTO_LOCK (1<<4)
-#define _FILE_STREAM (1<<5)
-#define _FILE_BUFFER_OWNED (1<<6)
+#define _FILE_BUFFER_OWNED (1<<5)
+#define _FILE_STATUS_ERROR (1<<6)
+#define _FILE_STATUS_EOF (1<<7)
+#define _FILE_READABLE (1<<8)
+#define _FILE_WRITABLE (1<<9)
+
 #define _FILE_MAX_PUSHBACK 8
 
 struct FILE
@@ -69,14 +78,9 @@ struct FILE
 	void* user;
 	void* free_user;
 	int (*reopen_func)(void* user, const char* mode);
-	size_t (*read_func)(void* ptr, size_t size, size_t nmemb, void* user);
-	size_t (*write_func)(const void* ptr, size_t size, size_t nmemb, void* user);
-	int (*seek_func)(void* user, off_t offset, int whence);
-	off_t (*tell_func)(void* user);
-	void (*seterr_func)(void* user);
-	void (*clearerr_func)(void* user);
-	int (*eof_func)(void* user);
-	int (*error_func)(void* user);
+	ssize_t (*read_func)(void* user, void* ptr, size_t size);
+	ssize_t (*write_func)(void* user, const void* ptr, size_t size);
+	off_t (*seek_func)(void* user, off_t offset, int whence);
 	int (*fileno_func)(void* user);
 	int (*close_func)(void* user);
 	void (*free_func)(void* free_user, struct FILE* fp);

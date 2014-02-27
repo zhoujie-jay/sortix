@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -23,51 +23,57 @@
 *******************************************************************************/
 
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <errno.h>
 #include <string.h>
 #include <unistd.h>
 
 extern "C" int fgetc_unlocked(FILE* fp)
 {
+	if ( !(fp->flags & _FILE_READABLE) )
+		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
+
 	if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
 		if ( fsetdefaultbuf_unlocked(fp) != 0 )
-			return EOF; // TODO: ferror doesn't report error!
+			return EOF;
 
 	if ( fp->buffer_mode == _IONBF )
 	{
 		unsigned char c;
 		if ( fread_unlocked(&c, sizeof(c), 1, fp) != 1 )
 			return EOF;
-		return c;
+		return (int) c;
 	}
 
 	if ( !fp->read_func )
-		return EOF; // TODO: ferror doesn't report error!
+		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
 
 	if ( fp->flags & _FILE_LAST_WRITE )
 		fflush_stop_writing_unlocked(fp);
+
 	fp->flags |= _FILE_LAST_READ;
+	fp->flags &= ~_FILE_STATUS_EOF;
 
-	if ( fp->offset_input_buffer < fp->amount_input_buffered )
-retry:
-		return fp->buffer[fp->offset_input_buffer++];
+	if ( !(fp->offset_input_buffer < fp->amount_input_buffered) )
+	{
+		assert(fp->buffer && fp->buffersize);
 
-	assert(fp->buffer && fp->buffersize);
+		size_t pushback = _FILE_MAX_PUSHBACK;
+		if ( fp->buffersize <= pushback )
+			pushback = 0;
+		size_t count = fp->buffersize - pushback;
+		if ( (size_t) SSIZE_MAX < count )
+			count = SSIZE_MAX;
+		ssize_t numread = fp->read_func(fp->user, fp->buffer + pushback, count);
+		if ( numread < 0 )
+			return fp->flags |= _FILE_STATUS_ERROR, EOF;
+		if ( numread == 0 )
+			return fp->flags |= _FILE_STATUS_EOF, EOF;
 
-	size_t pushback = _FILE_MAX_PUSHBACK;
-	if ( fp->buffersize <= pushback )
-		pushback = 0;
-	size_t count = fp->buffersize - pushback;
-	size_t size = sizeof(unsigned char);
-	size_t numread = fp->read_func(fp->buffer + pushback, size, count, fp->user);
-	if ( !numread )
-		return EOF;
+		fp->offset_input_buffer = pushback;
+		fp->amount_input_buffered = pushback + numread;
+	}
 
-	fp->offset_input_buffer = pushback;
-	fp->amount_input_buffered = pushback + numread;
-
-	goto retry;
+	return fp->buffer[fp->offset_input_buffer++];
 }

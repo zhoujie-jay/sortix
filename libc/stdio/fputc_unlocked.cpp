@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,13 +22,17 @@
 
 *******************************************************************************/
 
+#include <errno.h>
 #include <stdio.h>
 
 extern "C" int fputc_unlocked(int c, FILE* fp)
 {
+	if ( !(fp->flags & _FILE_WRITABLE) )
+		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
+
 	if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
 		if ( fsetdefaultbuf_unlocked(fp) != 0 )
-			return EOF; // TODO: ferror doesn't report error!
+			return EOF;
 
 	if ( fp->buffer_mode == _IONBF )
 	{
@@ -39,18 +43,27 @@ extern "C" int fputc_unlocked(int c, FILE* fp)
 	}
 
 	if ( !fp->write_func )
-		return EOF; // TODO: ferror doesn't report error!
+		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
 
 	if ( fp->flags & _FILE_LAST_READ )
 		fflush_stop_reading_unlocked(fp);
-	fp->flags |= _FILE_LAST_WRITE;
 
-	if ( fp->amount_output_buffered == fp->buffersize && fflush_unlocked(fp) != 0 )
-		return EOF;
+	fp->flags |= _FILE_LAST_WRITE;
+	fp->flags &= ~_FILE_STATUS_EOF;
+
+	if ( fp->amount_output_buffered == fp->buffersize )
+	{
+		if ( !fflush_unlocked(fp) == EOF )
+			return EOF;
+	}
 
 	fp->buffer[fp->amount_output_buffered++] = c;
-	if ( fp->buffer_mode == _IOLBF && c == '\n' && fflush_unlocked(fp) != 0 )
-		return EOF;
+
+	if ( fp->buffer_mode == _IOLBF && c == '\n' )
+	{
+		if ( fflush_unlocked(fp) == EOF )
+			return EOF;
+	}
 
 	return c;
 }

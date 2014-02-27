@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -23,20 +23,47 @@
 *******************************************************************************/
 
 #include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 
 extern "C" int fflush_stop_writing_unlocked(FILE* fp)
 {
 	if ( !(fp->flags & _FILE_LAST_WRITE) )
 		return 0;
+
+	if ( !(fp->flags & _FILE_WRITABLE) )
+		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
+
 	if ( !fp->write_func )
-		return errno = EBADF, EOF;
-	size_t size = sizeof(unsigned char);
+		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
+
+	int result = 0;
+
 	size_t count = fp->amount_output_buffered;
-	int ret = 0;
-	if ( fp->write_func(fp->buffer, size, count, fp->user) != count )
-		ret = EOF; // TODO: Set errno!
+	size_t sofar = 0;
+	while ( sofar < count )
+	{
+		size_t request = count - sofar;
+		if ( (size_t) SSIZE_MAX < request )
+			request = SSIZE_MAX;
+		ssize_t amount = fp->write_func(fp->user, fp->buffer + sofar, request);
+		if ( amount < 0 )
+		{
+			fp->flags |= _FILE_STATUS_ERROR;
+			result = EOF;
+			break;
+		}
+		if ( amount == 0 )
+		{
+			fp->flags |= _FILE_STATUS_EOF;
+			result = EOF;
+			break;
+		}
+		sofar += amount;
+	}
+
 	fp->amount_output_buffered = 0;
 	fp->flags &= ~_FILE_LAST_WRITE;
-	return ret;
+
+	return result;
 }

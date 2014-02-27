@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -27,10 +27,12 @@
 
 extern "C" int fseeko_unlocked(FILE* fp, off_t offset, int whence)
 {
-	if ( fflush_unlocked(fp) != 0 )
-		return -1;
 	if ( !fp->seek_func )
 		return errno = EBADF, -1;
-	int ret = fp->seek_func(fp->user, offset, whence);
-	return ret;
+	if ( fflush_unlocked(fp) != 0 )
+		return -1;
+	if ( fp->seek_func(fp->user, offset, whence) < 0 )
+		return -1;
+	fp->flags &= ~_FILE_STATUS_EOF;
+	return 0;
 }
