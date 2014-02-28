@@ -262,10 +262,10 @@ void help(FILE* fp, const char* argv0)
 int main(int argc, char* argv[])
 {
 	const char* argv0 = argv[0];
-	for ( int i = 0; i < argc; i++ )
+	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' || !argv[1] ) { continue; }
+		if ( arg[0] != '-' || !arg[1] ) { continue; }
 		argv[i] = NULL;
 		if ( !strcmp(arg, "--") ) { break; }
 		if ( arg[1] != '-' )
