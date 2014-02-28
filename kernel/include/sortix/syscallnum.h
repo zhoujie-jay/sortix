@@ -165,6 +165,8 @@
 #define SYSCALL_SIGSUSPEND 137
 #define SYSCALL_SENDMSG 138
 #define SYSCALL_RECVMSG 139
-#define SYSCALL_MAX_NUM 140 /* index of highest constant + 1 */
+#define SYSCALL_GETSOCKOPT 140
+#define SYSCALL_SETSOCKOPT 141
+#define SYSCALL_MAX_NUM 142 /* index of highest constant + 1 */
 
 #endif

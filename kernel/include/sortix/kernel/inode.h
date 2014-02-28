@@ -106,6 +106,10 @@ public:
 	virtual ssize_t recv(ioctx_t* ctx, uint8_t* buf, size_t count, int flags) = 0;
 	virtual ssize_t send(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	                     int flags) = 0;
+	virtual int getsockopt(ioctx_t* ctx, int level, int option_name,
+	                       void* option_value, size_t* option_size_ptr) = 0;
+	virtual int setsockopt(ioctx_t* ctx, int level, int option_name,
+	                       const void* option_value, size_t option_size) = 0;
 
 };
 
@@ -186,6 +190,10 @@ public:
 	virtual ssize_t recv(ioctx_t* ctx, uint8_t* buf, size_t count, int flags);
 	virtual ssize_t send(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	                     int flags);
+	virtual int getsockopt(ioctx_t* ctx, int level, int option_name,
+	                       void* option_value, size_t* option_size_ptr);
+	virtual int setsockopt(ioctx_t* ctx, int level, int option_name,
+	                       const void* option_value, size_t option_size);
 
 };
 

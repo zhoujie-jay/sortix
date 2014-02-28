@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -23,12 +23,13 @@
 *******************************************************************************/
 
 #include <sys/socket.h>
+#include <sys/syscall.h>
 
-#include <errno.h>
-#include <stdio.h>
+DEFN_SYSCALL5(int, sys_setsockopt, SYSCALL_SETSOCKOPT, int, int, int, const void*, size_t);
 
-extern "C" int setsockopt(int, int, int, const void*, socklen_t)
+extern "C"
+int setsockopt(int fd, int level, int option_name, const void* option_value,
+               socklen_t option_size)
 {
-	fprintf(stderr, "%s is not implemented yet.\n", __func__);
-	return errno = ENOSYS, -1;
+	return sys_setsockopt(fd, level, option_name, option_value, option_size);
 }

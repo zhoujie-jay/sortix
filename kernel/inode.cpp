@@ -384,4 +384,16 @@ ssize_t AbstractInode::send(ioctx_t* /*ctx*/, const uint8_t* /*buf*/,
 	return errno = ENOTSOCK, -1;
 }
 
+int AbstractInode::getsockopt(ioctx_t* /*ctx*/, int /*level*/, int /*option_name*/,
+                              void* /*option_value*/, size_t* /*option_size_ptr*/)
+{
+	return errno = ENOTSOCK, -1;
+}
+
+int AbstractInode::setsockopt(ioctx_t* /*ctx*/, int /*level*/, int /*option_name*/,
+                              const void* /*option_value*/, size_t /*option_size*/)
+{
+	return errno = ENOTSOCK, -1;
+}
+
 } // namespace Sortix

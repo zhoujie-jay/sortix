@@ -1010,6 +1010,28 @@ static ssize_t sys_recvmsg(int fd, struct msghdr* user_msg, int flags)
 	return result;
 }
 
+static int sys_getsockopt(int fd, int level, int option_name,
+                          void* option_value, size_t* option_size_ptr)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->getsockopt(&ctx, level, option_name, option_value, option_size_ptr);
+}
+
+static int sys_setsockopt(int fd, int level, int option_name,
+                          const void* option_value, size_t option_size)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->setsockopt(&ctx, level, option_name, option_value, option_size);
+}
+
 void Init()
 {
 	Syscall::Register(SYSCALL_ACCEPT4, (void*) sys_accept4);
@@ -1036,6 +1058,7 @@ void Init()
 	Syscall::Register(SYSCALL_FSYNC, (void*) sys_fsync);
 	Syscall::Register(SYSCALL_FTRUNCATE, (void*) sys_ftruncate);
 	Syscall::Register(SYSCALL_FUTIMENS, (void*) sys_futimens);
+	Syscall::Register(SYSCALL_GETSOCKOPT, (void*) sys_getsockopt);
 	Syscall::Register(SYSCALL_GETTERMMODE, (void*) sys_gettermmode);
 	Syscall::Register(SYSCALL_IOCTL, (void*) sys_ioctl);
 	Syscall::Register(SYSCALL_ISATTY, (void*) sys_isatty);
@@ -1058,6 +1081,7 @@ void Init()
 	Syscall::Register(SYSCALL_RENAMEAT, (void*) sys_renameat);
 	Syscall::Register(SYSCALL_SENDMSG, (void*) sys_sendmsg);
 	Syscall::Register(SYSCALL_SEND, (void*) sys_send);
+	Syscall::Register(SYSCALL_SETSOCKOPT, (void*) sys_setsockopt);
 	Syscall::Register(SYSCALL_SETTERMMODE, (void*) sys_settermmode);
 	Syscall::Register(SYSCALL_SYMLINKAT, (void*) sys_symlinkat);
 	Syscall::Register(SYSCALL_TCGETPGRP, (void*) sys_tcgetpgrp);

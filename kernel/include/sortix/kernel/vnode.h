@@ -96,6 +96,10 @@ public:
 	int listen(ioctx_t* ctx, int backlog);
 	ssize_t recv(ioctx_t* ctx, uint8_t* buf, size_t count, int flags);
 	ssize_t send(ioctx_t* ctx, const uint8_t* buf, size_t count, int flags);
+	int getsockopt(ioctx_t* ctx, int level, int option_name,
+	               void* option_value, size_t* option_size_ptr);
+	int setsockopt(ioctx_t* ctx, int level, int option_name,
+	               const void* option_value, size_t option_size);
 
 public /*TODO: private*/:
 	Ref<Inode> inode;

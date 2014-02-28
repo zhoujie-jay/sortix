@@ -232,6 +232,10 @@ public:
 	virtual ssize_t recv(ioctx_t* ctx, uint8_t* buf, size_t count, int flags);
 	virtual ssize_t send(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	                     int flags);
+	virtual int getsockopt(ioctx_t* ctx, int level, int option_name,
+	                       void* option_value, size_t* option_size_ptr);
+	virtual int setsockopt(ioctx_t* ctx, int level, int option_name,
+	                       const void* option_value, size_t option_size);
 
 private:
 	bool SendMessage(Channel* channel, size_t type, void* ptr, size_t size,
@@ -1292,6 +1296,56 @@ ssize_t Unode::send(ioctx_t* /*ctx*/, const uint8_t* /*buf*/, size_t /*count*/,
                     int /*flags*/)
 {
 	return errno = ENOTSOCK, -1;
+}
+
+int Unode::getsockopt(ioctx_t* ctx, int level, int option_name,
+                      void* option_value, size_t* option_size_ptr)
+{
+	size_t option_size;
+	if ( !ctx->copy_from_src(&option_size, option_size_ptr, sizeof(option_size)) )
+		return -1;
+	Channel* channel = server->Connect();
+	if ( !channel )
+		return -1;
+	int ret = -1;
+	struct fsm_req_getsockopt msg;
+	struct fsm_resp_getsockopt resp;
+	msg.ino = ino;
+	msg.level = level;
+	msg.option_name = option_name;
+	msg.max_option_size = option_size;
+	if ( SendMessage(channel, FSM_REQ_GETSOCKOPT, &msg, sizeof(msg)) &&
+	     RecvMessage(channel, FSM_RESP_GETSOCKOPT, &resp, sizeof(resp)) )
+	{
+		if ( resp.option_size < option_size )
+			option_size = resp.option_size;
+		if ( channel->KernelRecv(ctx, option_value, option_size) )
+			ret = 0;
+		if ( !ctx->copy_to_dest(option_size_ptr, &option_size, sizeof(option_size)) )
+			ret = -1;
+	}
+	channel->KernelClose();
+	return ret;
+}
+
+int Unode::setsockopt(ioctx_t* ctx, int level, int option_name,
+                      const void* option_value, size_t option_size)
+{
+	Channel* channel = server->Connect();
+	if ( !channel )
+		return -1;
+	int ret = -1;
+	struct fsm_req_setsockopt msg;
+	msg.ino = ino;
+	msg.level = level;
+	msg.option_name = option_name;
+	msg.option_size = option_size;
+	if ( SendMessage(channel, FSM_REQ_SETSOCKOPT, &msg, sizeof(msg)) &&
+	     channel->KernelSend(ctx, option_value, option_size) &&
+	     RecvMessage(channel, FSM_RESP_SUCCESS, NULL, 0) )
+		ret = 0;
+	channel->KernelClose();
+	return ret;
 }
 
 //

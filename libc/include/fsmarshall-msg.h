@@ -368,7 +368,33 @@ struct fsm_resp_statvfs
 	struct statvfs stvfs;
 };
 
-#define FSM_MSG_NUM 45
+#define FSM_REQ_SETSOCKOPT 46
+struct fsm_req_setsockopt
+{
+	ino_t ino;
+	int level;
+	int option_name;
+	size_t option_size;
+	/*uint8_t option[option_size];*/
+};
+
+#define FSM_REQ_GETSOCKOPT 47
+struct fsm_req_getsockopt
+{
+	ino_t ino;
+	int level;
+	int option_name;
+	size_t max_option_size;
+};
+
+#define FSM_RESP_GETSOCKOPT 48
+struct fsm_resp_getsockopt
+{
+	size_t option_size;
+	/*uint8_t option[option_size];*/
+};
+
+#define FSM_MSG_NUM 49
 
 #if defined(__cplusplus)
 } /* extern "C" */

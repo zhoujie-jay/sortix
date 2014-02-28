@@ -294,4 +294,16 @@ ssize_t Vnode::send(ioctx_t* ctx, const uint8_t* buf, size_t count, int flags)
 	return inode->send(ctx, buf, count, flags);
 }
 
+int Vnode::getsockopt(ioctx_t* ctx, int level, int option_name,
+                      void* option_value, size_t* option_size_ptr)
+{
+	return inode->getsockopt(ctx, level, option_name, option_value, option_size_ptr);
+}
+
+int Vnode::setsockopt(ioctx_t* ctx, int level, int option_name,
+                      const void* option_value, size_t option_size)
+{
+	return inode->setsockopt(ctx, level, option_name, option_value, option_size);
+}
+
 } // namespace Sortix
