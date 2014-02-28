@@ -37,6 +37,7 @@ extern "C" long sysconf(int name)
 	case _SC_OPEN_MAX: return 0x10000;
 	case _SC_RTSIG_MAX: return (SIGRTMAX+1) - SIGRTMIN;
 	case _SC_GETGR_R_SIZE_MAX: return -1;
+	case _SC_GETPW_R_SIZE_MAX: return -1;
 	default:
 		fprintf(stderr, "%s:%u warning: %s(%i) is unsupported\n",
 		        __FILE__, __LINE__, __func__, name);
