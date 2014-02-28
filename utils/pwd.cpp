@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 {
 	const char* argv0 = argv[0];
 	bool physical = false;
-	for ( int i = 0; i < argc; i++ )
+	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
 		if ( arg[0] != '-' || !arg[1] )
