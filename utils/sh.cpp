@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -20,13 +20,14 @@
 
 *******************************************************************************/
 
-#include <sys/wait.h>
 #include <sys/termmode.h>
+#include <sys/wait.h>
 
 #include <dirent.h>
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -410,34 +411,47 @@ int get_and_run_command(FILE* fp, const char* fpname, bool interactive,
 	while (true)
 	{
 		char c;
-		ssize_t bytesread = read(fd, &c, sizeof(c));
-		if ( bytesread < 0 && errno == EINTR )
-			return status;
-		if ( bytesread < 0 )
-			error(64, errno, "read %s", fpname);
-		if ( !bytesread )
+		if ( fd < 0 )
 		{
-			if ( !interactive )
+			int ic = fgetc(fp);
+			if ( ic == EOF )
 			{
-				*exitexec = true;
-				return status;
+				if ( ferror(fp) )
+					error(64, errno, "fgetc %s", fpname);
+				if ( commandused )
+					break;
+				return *exitexec = true, status;
 			}
-			const char* init_pid_str = getenv("INIT_PID");
-			if ( !init_pid_str)
-				init_pid_str = "1";
-			pid_t init_pid = (pid_t) atol(init_pid_str);
-			if ( !init_pid )
-				init_pid = 1;
-			if ( getppid() == init_pid )
-			{
-				printf("\nType exit to shutdown the system.\n");
-				return status;
-			}
-			printf("exit\n");
-			*exitexec = true;
-			return status;
+			c = (char) (unsigned char) ic;
 		}
-		if ( !c ) { continue; }
+		else
+		{
+			ssize_t bytesread = read(fd, &c, sizeof(c));
+			if ( bytesread < 0 && errno == EINTR )
+				return status;
+			if ( bytesread < 0 )
+				error(64, errno, "read %s", fpname);
+			if ( !bytesread && !interactive )
+				return *exitexec = true, status;
+			if ( !bytesread && interactive )
+			{
+				const char* init_pid_str = getenv("INIT_PID");
+				if ( !init_pid_str )
+					init_pid_str = "1";
+				pid_t init_pid = (pid_t) strtoimax(init_pid_str, NULL, 10);
+				if ( !init_pid )
+					init_pid = 1;
+				if ( getppid() == init_pid )
+				{
+					printf("\nType exit to shutdown the system.\n");
+					return status;
+				}
+				printf("exit\n");
+				return *exitexec = true, status;
+			}
+		}
+		if ( !c )
+			continue;
 		if ( c == '\n' && !escaped )
 			break;
 		if ( commented )
@@ -575,16 +589,8 @@ int run_stdin(int argc, char* argv[], bool exit_on_error)
 
 int run_string(int argc, char* argv[], const char* str, bool exit_on_error)
 {
-	// TODO: Implement fmemopen and open_memstream.
-	char unique_ish[64];
-	snprintf(unique_ish, sizeof(unique_ish), "/tmp/shinput.%ji", (intmax_t) getpid());
-	FILE* fp = fopen(unique_ish, "w");
-	if ( !fp ) { error(0, errno, "write-open: %s", unique_ish); return 1; }
-	if ( fputs(str, fp) == EOF ) { fclose(fp); error(0, errno, "write: %s", unique_ish); return 1; }
-	if ( fputs("\n", fp) == EOF ) { fclose(fp); error(0, errno, "write: %s", unique_ish); return 1; }
-	fclose(fp);
-	fp = fopen(unique_ish, "r");
-	if ( !fp ) { error(0, errno, "read-open: %s", unique_ish); return 1; }
+	FILE* fp = fmemopen((void*) str, strlen(str), "r");
+	if ( !fp ) { error(0, errno, "fmemopen"); return 1; }
 	int ret = run(fp, argc, argv, "<command-line>", false, exit_on_error);
 	fclose(fp);
 	return ret;
