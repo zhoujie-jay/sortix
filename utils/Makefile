@@ -28,6 +28,7 @@ date \
 du \
 echo \
 editor \
+env \
 false \
 find \
 head \

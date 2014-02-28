@@ -339,13 +339,6 @@ readcmd:
 		}
 	}
 
-	if ( !strcmp(argv[0], "env") )
-	{
-		for ( size_t i = 0; environ[i]; i++ )
-			printf("%s\n", environ[i]);
-		exit(0);
-	}
-
 	execvp(argv[0], argv);
 	if ( interactive )
 	{
