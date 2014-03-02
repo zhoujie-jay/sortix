@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of Sortix.
 
@@ -42,7 +42,7 @@ static void kthread_do_kill_thread(void* user)
 	delete thread;
 }
 
-extern "C" void kthread_exit(void* /*param*/)
+extern "C" void kthread_exit()
 {
 	Worker::Schedule(kthread_do_kill_thread, CurrentThread());
 	Scheduler::ExitThread();

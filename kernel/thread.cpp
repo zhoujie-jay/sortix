@@ -82,6 +82,100 @@ Thread::~Thread()
 		delete[] (uint8_t*) kernelstackpos;
 }
 
+void Thread::SaveRegisters(const CPU::InterruptRegisters* src)
+{
+#if defined(__i386__)
+	registers.eip = src->eip;
+	registers.esp = src->esp;
+	registers.eax = src->eax;
+	registers.ebx = src->ebx;
+	registers.ecx = src->ecx;
+	registers.edx = src->edx;
+	registers.edi = src->edi;
+	registers.esi = src->esi;
+	registers.ebp = src->ebp;
+	registers.cs = src->cs;
+	registers.ds = src->ds;
+	registers.ss = src->ss;
+	registers.eflags = src->eflags;
+	registers.kerrno = src->kerrno;
+	registers.signal_pending = src->signal_pending;
+#elif defined(__x86_64__)
+	registers.rip = src->rip;
+	registers.rsp = src->rsp;
+	registers.rax = src->rax;
+	registers.rbx = src->rbx;
+	registers.rcx = src->rcx;
+	registers.rdx = src->rdx;
+	registers.rdi = src->rdi;
+	registers.rsi = src->rsi;
+	registers.rbp = src->rbp;
+	registers.r8 = src->r8;
+	registers.r9 = src->r9;
+	registers.r10 = src->r10;
+	registers.r11 = src->r11;
+	registers.r12 = src->r12;
+	registers.r13 = src->r13;
+	registers.r14 = src->r14;
+	registers.r15 = src->r15;
+	registers.cs = src->cs;
+	registers.ds = src->ds;
+	registers.ss = src->ss;
+	registers.rflags = src->rflags;
+	registers.kerrno = src->kerrno;
+	registers.signal_pending = src->signal_pending;
+#else
+#warning "You need to add register saving support"
+#endif
+}
+
+void Thread::LoadRegisters(CPU::InterruptRegisters* dest)
+{
+#if defined(__i386__)
+	dest->eip = registers.eip;
+	dest->esp = registers.esp;
+	dest->eax = registers.eax;
+	dest->ebx = registers.ebx;
+	dest->ecx = registers.ecx;
+	dest->edx = registers.edx;
+	dest->edi = registers.edi;
+	dest->esi = registers.esi;
+	dest->ebp = registers.ebp;
+	dest->cs = registers.cs;
+	dest->ds = registers.ds;
+	dest->ss = registers.ss;
+	dest->eflags = registers.eflags;
+	dest->kerrno = registers.kerrno;
+	dest->signal_pending = registers.signal_pending;
+#elif defined(__x86_64__)
+	dest->rip = registers.rip;
+	dest->rsp = registers.rsp;
+	dest->rax = registers.rax;
+	dest->rbx = registers.rbx;
+	dest->rcx = registers.rcx;
+	dest->rdx = registers.rdx;
+	dest->rdi = registers.rdi;
+	dest->rsi = registers.rsi;
+	dest->rbp = registers.rbp;
+	dest->r8 = registers.r8;
+	dest->r9 = registers.r9;
+	dest->r10 = registers.r10;
+	dest->r11 = registers.r11;
+	dest->r12 = registers.r12;
+	dest->r13 = registers.r13;
+	dest->r14 = registers.r14;
+	dest->r15 = registers.r15;
+	dest->cs = registers.cs;
+	dest->ds = registers.ds;
+	dest->ss = registers.ss;
+	dest->rflags = registers.rflags;
+	dest->kerrno = registers.kerrno;
+	dest->signal_pending = registers.signal_pending;
+#else
+#warning "You need to add register loading support"
+#endif
+}
+
 addr_t Thread::SwitchAddressSpace(addr_t newaddrspace)
 {
 	bool wasenabled = Interrupt::SetEnabled(false);
@@ -90,12 +184,6 @@ addr_t Thread::SwitchAddressSpace(addr_t newaddrspace)
 	Memory::SwitchAddressSpace(newaddrspace);
 	Interrupt::SetEnabled(wasenabled);
 	return result;
-}
-
-extern "C" void BootstrapKernelThread(void* user, ThreadEntry entry)
-{
-	entry(user);
-	kthread_exit();
 }
 
 Thread* CreateKernelThread(Process* process, CPU::InterruptRegisters* regs,
@@ -133,7 +221,83 @@ Thread* CreateKernelThread(Process* process, CPU::InterruptRegisters* regs,
 	return thread;
 }
 
-Thread* CreateKernelThread(Process* process, ThreadEntry entry, void* user,
+static void SetupKernelThreadRegs(CPU::InterruptRegisters* regs,
+                                  void (*entry)(void*),
+                                  void* user,
+                                  uintptr_t stack,
+                                  size_t stack_size)
+{
+#if defined(__i386__)
+	uintptr_t* stack_values = (uintptr_t*) (stack + stack_size);
+
+	assert(!((uintptr_t) stack_values & 3UL));
+	assert(4 * sizeof(uintptr_t) <= stack_size);
+
+	stack_values[-1] = (uintptr_t) 0; /* null eip */
+	stack_values[-2] = (uintptr_t) 0; /* null ebp */
+	stack_values[-3] = (uintptr_t) user; /* thread parameter */
+	stack_values[-4] = (uintptr_t) kthread_exit; /* return to kthread_exit */
+
+	regs->eip = (uintptr_t) entry;
+	regs->esp = (uintptr_t) (stack_values - 4);
+	regs->eax = 0;
+	regs->ebx = 0;
+	regs->ecx = 0;
+	regs->edx = 0;
+	regs->edi = 0;
+	regs->esi = 0;
+	regs->ebp = (uintptr_t) (stack_values - 2);
+	regs->cs = KCS | KRPL;
+	regs->ds = KDS | KRPL;
+	regs->ss = KDS | KRPL;
+	regs->eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+	regs->kerrno = 0;
+	regs->signal_pending = 0;
+#elif defined(__x86_64__)
+	if ( (stack & 15UL) == 8 && 8 <= stack_size )
+	{
+		stack += 8;
+		stack_size -= 8;
+	}
+
+	uintptr_t* stack_values = (uintptr_t*) (stack + stack_size);
+
+	assert(!((uintptr_t) stack_values & 15UL));
+	assert(3 * sizeof(uintptr_t) <= stack_size);
+
+	stack_values[-1] = (uintptr_t) 0; /* null rip */
+	stack_values[-2] = (uintptr_t) 0; /* null rbp */
+	stack_values[-3] = (uintptr_t) kthread_exit; /* return to kthread_exit */
+
+	regs->rip = (uintptr_t) entry;
+	regs->rsp = (uintptr_t) (stack_values - 3);
+	regs->rax = 0;
+	regs->rbx = 0;
+	regs->rcx = 0;
+	regs->rdx = 0;
+	regs->rdi = (uintptr_t) user;
+	regs->rsi = 0;
+	regs->rbp = 0;
+	regs->r8  = 0;
+	regs->r9  = 0;
+	regs->r10 = 0;
+	regs->r11 = 0;
+	regs->r12 = 0;
+	regs->r13 = 0;
+	regs->r14 = 0;
+	regs->r15 = 0;
+	regs->cs = KCS | KRPL;
+	regs->ds = KDS | KRPL;
+	regs->ss = KDS | KRPL;
+	regs->rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+	regs->kerrno = 0;
+	regs->signal_pending = 0;
+#else
+#warning "You need to add thread register initialization support"
+#endif
+}
+
+Thread* CreateKernelThread(Process* process, void (*entry)(void*), void* user,
                            size_t stacksize)
 {
 	const size_t DEFAULT_KERNEL_STACK_SIZE = 8 * 1024UL;
@@ -144,19 +308,19 @@ Thread* CreateKernelThread(Process* process, ThreadEntry entry, void* user,
 		return NULL;
 
 	CPU::InterruptRegisters regs;
-	SetupKernelThreadRegs(&regs, entry, user, (addr_t) stack, stacksize);
+	SetupKernelThreadRegs(&regs, entry, user, (uintptr_t) stack, stacksize);
 
 	Thread* thread = CreateKernelThread(process, &regs, 0, 0);
 	if ( !thread ) { delete[] stack; return NULL; }
 
-	thread->kernelstackpos = (addr_t) stack;
+	thread->kernelstackpos = (uintptr_t) stack;
 	thread->kernelstacksize = stacksize;
 	thread->kernelstackmalloced = true;
 
 	return thread;
 }
 
-Thread* CreateKernelThread(ThreadEntry entry, void* user, size_t stacksize)
+Thread* CreateKernelThread(void (*entry)(void*), void* user, size_t stacksize)
 {
 	return CreateKernelThread(CurrentProcess(), entry, user, stacksize);
 }
@@ -175,7 +339,7 @@ Thread* RunKernelThread(Process* process, CPU::InterruptRegisters* regs)
 	return thread;
 }
 
-Thread* RunKernelThread(Process* process, ThreadEntry entry, void* user,
+Thread* RunKernelThread(Process* process, void (*entry)(void*), void* user,
                         size_t stacksize)
 {
 	Thread* thread = CreateKernelThread(process, entry, user, stacksize);
@@ -185,7 +349,7 @@ Thread* RunKernelThread(Process* process, ThreadEntry entry, void* user,
 	return thread;
 }
 
-Thread* RunKernelThread(ThreadEntry entry, void* user, size_t stacksize)
+Thread* RunKernelThread(void (*entry)(void*), void* user, size_t stacksize)
 {
 	Thread* thread = CreateKernelThread(entry, user, stacksize);
 	if ( !thread )

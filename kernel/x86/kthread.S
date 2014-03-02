@@ -90,12 +90,3 @@ kthread_mutex_unlock:
 	leavel
 	retl
 .size kthread_mutex_lock_signal, . - kthread_mutex_lock_signal
-
-.global asm_call_BootstrapKernelThread
-.type asm_call_BootstrapKernelThread, @function
-asm_call_BootstrapKernelThread:
-	pushl %esi
-	pushl %edi
-	call BootstrapKernelThread
-	# BootstrapKernelThread is noreturn, no need for code here.
-.size asm_call_BootstrapKernelThread, . - asm_call_BootstrapKernelThread

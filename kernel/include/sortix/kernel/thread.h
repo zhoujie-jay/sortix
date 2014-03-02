@@ -34,59 +34,39 @@
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
 
-typedef struct multiboot_info multiboot_info_t;
-
 namespace Sortix {
 
 class Process;
 class Thread;
 
-extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo);
-
-typedef void (*ThreadEntry)(void* user);
-
-// Simply exits the kernel thread.
-__attribute__((noreturn)) void KernelThreadExit();
-
-// Internally used as a kernel thread entry point that exits the thread
-// upon the actual thread entry returning.
-extern "C" __attribute__((noreturn))
-void BootstrapKernelThread(void* user, ThreadEntry entry);
-
 // These functions create a new kernel process but doesn't start it.
 Thread* CreateKernelThread(Process* process, CPU::InterruptRegisters* regs,
                            unsigned long fsbase, unsigned long gsbase);
-Thread* CreateKernelThread(Process* process, ThreadEntry entry, void* user,
+Thread* CreateKernelThread(Process* process, void (*entry)(void*), void* user,
                            size_t stacksize = 0);
-Thread* CreateKernelThread(ThreadEntry entry, void* user, size_t stacksize = 0);
+Thread* CreateKernelThread(void (*entry)(void*), void* user, size_t stacksize = 0);
 
 // This function can be used to start a thread from the above functions.
 void StartKernelThread(Thread* thread);
 
 // Alternatively, these functions both create and start the thread.
 Thread* RunKernelThread(Process* process, CPU::InterruptRegisters* regs);
-Thread* RunKernelThread(Process* process, ThreadEntry entry, void* user,
+Thread* RunKernelThread(Process* process, void (*entry)(void*), void* user,
                         size_t stacksize = 0);
-Thread* RunKernelThread(ThreadEntry entry, void* user, size_t stacksize = 0);
-
-void SetupKernelThreadRegs(CPU::InterruptRegisters* regs, ThreadEntry entry,
-                           void* user, addr_t stack, size_t stacksize);
+Thread* RunKernelThread(void (*entry)(void*), void* user, size_t stacksize = 0);
 
 class Thread
 {
 friend Thread* CreateKernelThread(Process* process,
                                   CPU::InterruptRegisters* regs,
                                   unsigned long fsbase, unsigned long gsbase);
-friend void KernelInit(unsigned long magic, multiboot_info_t* bootinfo);
 friend void UpdatePendingSignals(Thread* thread);
 
 public:
 	static void Init();
 
-private:
-	Thread();
-
 public:
+	Thread();
 	~Thread();
 
 public:

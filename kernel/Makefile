@@ -50,7 +50,6 @@ ifdef X86FAMILY
              x86-family/gdt.o \
              x86-family/idt.o \
              $(CPU)/syscall.o \
-             $(CPU)/thread.o \
              $(CPU)/process.o \
              x86-family/cmos.o \
              x86-family/time.o \
