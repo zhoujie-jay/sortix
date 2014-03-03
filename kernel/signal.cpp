@@ -44,10 +44,6 @@
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/thread.h>
 
-#if defined(__i386__) || defined(__x86_64__)
-#include "x86-family/float.h"
-#endif
-
 namespace Sortix {
 
 sigset_t default_ignored_signals;
@@ -57,6 +53,7 @@ sigset_t unblockable_signals;
 // A per-cpu value whether a signal is pending in the running task.
 extern "C" { volatile unsigned long asm_signal_is_pending = 0; }
 
+static
 void UpdatePendingSignals(Thread* thread) // thread->process->signal_lock held
 {
 	struct sigaction* signal_actions = thread->process->signal_actions;
@@ -400,7 +397,9 @@ static int PickImportantSignal(const sigset_t* set)
 	return 0;
 }
 
-static void EncodeMachineContext(mcontext_t* mctx, CPU::InterruptRegisters* regs)
+static void EncodeMachineContext(mcontext_t* mctx,
+                                 const struct thread_registers* regs,
+                                 const struct interrupt_context* intctx)
 {
 	memset(mctx, 0, sizeof(*mctx));
 #if defined(__i386__)
@@ -419,10 +418,9 @@ static void EncodeMachineContext(mcontext_t* mctx, CPU::InterruptRegisters* regs
 	mctx->gregs[REG_EIP] = regs->eip;
 	// TODO: REG_CS
 	mctx->gregs[REG_EFL] = regs->eflags & 0x0000FFFF;
-	mctx->gregs[REG_CR2] = regs->cr2;
+	mctx->gregs[REG_CR2] = intctx->cr2;
 	// TODO: REG_SS
-	Float::Yield();
-	memcpy(mctx->fpuenv, CurrentThread()->fpuenvaligned, 512);
+	memcpy(mctx->fpuenv, regs->fpuenv, 512);
 #elif defined(__x86_64__)
 	mctx->gregs[REG_R8] = regs->r8;
 	mctx->gregs[REG_R9] = regs->r9;
@@ -443,17 +441,17 @@ static void EncodeMachineContext(mcontext_t* mctx, CPU::InterruptRegisters* regs
 	mctx->gregs[REG_RIP] = regs->rip;
 	mctx->gregs[REG_EFL] = regs->rflags & 0x000000000000FFFF;
 	// TODO: REG_CSGSFS.
-	mctx->gregs[REG_CR2] = regs->cr2;
+	mctx->gregs[REG_CR2] = intctx->cr2;
 	mctx->gregs[REG_FSBASE] = 0x0;
 	mctx->gregs[REG_GSBASE] = 0x0;
-	Float::Yield();
-	memcpy(mctx->fpuenv, CurrentThread()->fpuenvaligned, 512);
+	memcpy(mctx->fpuenv, regs->fpuenv, 512);
 #else
 #error "You need to implement conversion to mcontext"
 #endif
 }
 
-static void DecodeMachineContext(mcontext_t* mctx, CPU::InterruptRegisters* regs)
+static void DecodeMachineContext(const mcontext_t* mctx,
+                                 struct thread_registers* regs)
 {
 #if defined(__i386__) || defined(__x86_64__)
 	unsigned long user_flags = FLAGS_CARRY | FLAGS_PARITY | FLAGS_AUX
@@ -472,9 +470,7 @@ static void DecodeMachineContext(mcontext_t* mctx, CPU::InterruptRegisters* regs
 	regs->eip = mctx->gregs[REG_EIP];
 	regs->eflags &= ~user_flags;
 	regs->eflags |= mctx->gregs[REG_EFL] & user_flags;
-	regs->cr2 = mctx->gregs[REG_CR2];
-	Float::Yield();
-	memcpy(CurrentThread()->fpuenvaligned, mctx->fpuenv, 512);
+	memcpy(regs->fpuenv, mctx->fpuenv, 512);
 #elif defined(__x86_64__)
 	regs->r8 = mctx->gregs[REG_R8];
 	regs->r9 = mctx->gregs[REG_R9];
@@ -495,9 +491,7 @@ static void DecodeMachineContext(mcontext_t* mctx, CPU::InterruptRegisters* regs
 	regs->rip = mctx->gregs[REG_RIP];
 	regs->rflags &= ~user_flags;
 	regs->rflags |= mctx->gregs[REG_EFL] & user_flags;
-	regs->cr2 = mctx->gregs[REG_CR2];
-	Float::Yield();
-	memcpy(CurrentThread()->fpuenvaligned, mctx->fpuenv, 512);
+	memcpy(regs->fpuenv, mctx->fpuenv, 512);
 #else
 #error "You need to implement conversion to mcontext"
 #endif
@@ -525,7 +519,7 @@ struct stack_frame
 #error "You need to implement struct stack_frame"
 #endif
 
-void Thread::HandleSignal(CPU::InterruptRegisters* regs)
+void Thread::HandleSignal(struct interrupt_context* intctx)
 {
 	assert(Interrupt::IsEnabled());
 	assert(this == CurrentThread());
@@ -553,7 +547,7 @@ retry_another_signal:
 	// Unmark the selected signal as pending.
 	sigdelset(&signal_pending, signum);
 	UpdatePendingSignals(this);
-	regs->signal_pending = asm_signal_is_pending;
+	intctx->signal_pending = asm_signal_is_pending;
 
 	// Destroy the current thread if the signal is critical.
 	if ( signum == SIGKILL )
@@ -614,27 +608,30 @@ retry_another_signal:
 	// threads in the kernel cannot be delivered signals except when returning
 	// from a system call, so we'll simply save the state that would have been
 	// returned to user-space had no signal occured.
-	if ( !regs->InUserspace() )
+	if ( !InUserspace(intctx) )
 	{
 #if defined(__i386__)
-		uint32_t* params = (uint32_t*) regs->ebx;
-		regs->eip = params[0];
-		regs->eflags = params[2];
-		regs->esp = params[3];
-		regs->cs = UCS | URPL;
-		regs->ds = UDS | URPL;
-		regs->ss = UDS | URPL;
+		uint32_t* params = (uint32_t*) intctx->ebx;
+		intctx->eip = params[0];
+		intctx->eflags = params[2];
+		intctx->esp = params[3];
+		intctx->cs = UCS | URPL;
+		intctx->ds = UDS | URPL;
+		intctx->ss = UDS | URPL;
 #elif defined(__x86_64__)
-		regs->rip = regs->rdi;
-		regs->rflags = regs->rsi;
-		regs->rsp = regs->r8;
-		regs->cs = UCS | URPL;
-		regs->ds = UDS | URPL;
-		regs->ss = UDS | URPL;
+		intctx->rip = intctx->rdi;
+		intctx->rflags = intctx->rsi;
+		intctx->rsp = intctx->r8;
+		intctx->cs = UCS | URPL;
+		intctx->ds = UDS | URPL;
+		intctx->ss = UDS | URPL;
 #else
 #error "You may need to fix the registers"
 #endif
 	}
+
+	struct thread_registers stopped_regs;
+	Scheduler::SaveInterruptedContext(intctx, &stopped_regs);
 
 	sigset_t new_signal_mask;
 	memcpy(&new_signal_mask, &action->sa_mask, sizeof(sigset_t));
@@ -670,15 +667,16 @@ retry_another_signal:
 		old_signal_stack.ss_size = 0;
 		new_signal_stack = signal_stack;
 #if defined(__i386__)
-		stack_location = (uintptr_t) regs->esp;
+		stack_location = (uintptr_t) stopped_regs.esp;
 #elif defined(__x86_64__)
-		stack_location = (uintptr_t) regs->rsp;
+		stack_location = (uintptr_t) stopped_regs.rsp;
 #else
 #error "You need to implement getting the user-space stack pointer"
 #endif
 	}
 
-	CPU::InterruptRegisters new_regs = *regs;
+	struct thread_registers handler_regs;
+	memcpy(&handler_regs, &stopped_regs, sizeof(handler_regs));
 
 	struct stack_frame stack_frame;
 	memset(&stack_frame, 0, sizeof(stack_frame));
@@ -700,9 +698,9 @@ retry_another_signal:
 	stack_frame.ucontext_param = &stack->ucontext;
 	stack_frame.cookie_param = action->sa_cookie;
 
-	new_regs.esp = (unsigned long) stack;
-	new_regs.eip = (unsigned long) handler_ptr;
-	new_regs.eflags &= ~FLAGS_DIRECTION;
+	handler_regs.esp = (unsigned long) stack;
+	handler_regs.eip = (unsigned long) handler_ptr;
+	handler_regs.eflags &= ~FLAGS_DIRECTION;
 #elif defined(__x86_64__)
 	stack_location -= 128; /* Red zone. */
 	stack_location -= sizeof(stack_frame);
@@ -710,14 +708,14 @@ retry_another_signal:
 	struct stack_frame* stack = (struct stack_frame*) stack_location;
 
 	stack_frame.sigreturn = (unsigned long) process->sigreturn;
-	new_regs.rdi = (unsigned long) signum;
-	new_regs.rsi = (unsigned long) &stack->siginfo;
-	new_regs.rdx = (unsigned long) &stack->ucontext;
-	new_regs.rcx = (unsigned long) action->sa_cookie;
+	handler_regs.rdi = (unsigned long) signum;
+	handler_regs.rsi = (unsigned long) &stack->siginfo;
+	handler_regs.rdx = (unsigned long) &stack->ucontext;
+	handler_regs.rcx = (unsigned long) action->sa_cookie;
 
-	new_regs.rsp = (unsigned long) stack;
-	new_regs.rip = (unsigned long) handler_ptr;
-	new_regs.rflags &= ~FLAGS_DIRECTION;
+	handler_regs.rsp = (unsigned long) stack;
+	handler_regs.rip = (unsigned long) handler_ptr;
+	handler_regs.rflags &= ~FLAGS_DIRECTION;
 #else
 #error "You need to format the stack frame"
 #endif
@@ -727,7 +725,7 @@ retry_another_signal:
 #if defined(__i386__) || defined(__x86_64__)
 	// TODO: Is this cr2 value trustworthy? I don't think it is.
 	if ( signum == SIGSEGV )
-		stack_frame.siginfo.si_addr = (void*) regs->cr2;
+		stack_frame.siginfo.si_addr = (void*) intctx->cr2;
 #else
 #warning "You need to tell user-space where it crashed"
 #endif
@@ -736,7 +734,7 @@ retry_another_signal:
 	stack_frame.ucontext.uc_link = NULL;
 	memcpy(&stack_frame.ucontext.uc_sigmask, &signal_mask, sizeof(signal_mask));
 	memcpy(&stack_frame.ucontext.uc_stack, &signal_stack, sizeof(signal_stack));
-	EncodeMachineContext(&stack_frame.ucontext.uc_mcontext, regs);
+	EncodeMachineContext(&stack_frame.ucontext.uc_mcontext, &stopped_regs, intctx);
 
 	if ( !CopyToUser(stack, &stack_frame, sizeof(stack_frame)) )
 	{
@@ -764,7 +762,7 @@ retry_another_signal:
 	signal_stack = new_signal_stack;
 
 	// Update the current registers.
-	*regs = new_regs;
+	Scheduler::LoadInterruptedContext(intctx, &handler_regs);
 
 	// TODO: SA_RESETHAND:
 	//       "If set, the disposition of the signal shall be reset to SIG_DFL
@@ -776,7 +774,7 @@ retry_another_signal:
 	return;
 }
 
-void Thread::HandleSigreturn(CPU::InterruptRegisters* regs)
+void Thread::HandleSigreturn(struct interrupt_context* intctx)
 {
 	assert(Interrupt::IsEnabled());
 	assert(this == CurrentThread());
@@ -786,9 +784,9 @@ void Thread::HandleSigreturn(CPU::InterruptRegisters* regs)
 	struct stack_frame stack_frame;
 	const struct stack_frame* user_stack_frame;
 #if defined(__i386__)
-	user_stack_frame = (const struct stack_frame*) (regs->esp - 4);
+	user_stack_frame = (const struct stack_frame*) (intctx->esp - 4);
 #elif defined(__x86_64__)
-	user_stack_frame = (const struct stack_frame*) (regs->rsp - 8);
+	user_stack_frame = (const struct stack_frame*) (intctx->rsp - 8);
 #else
 #error "You need to locate the stack we passed the signal handler"
 #endif
@@ -798,27 +796,30 @@ void Thread::HandleSigreturn(CPU::InterruptRegisters* regs)
 		memcpy(&signal_mask, &stack_frame.ucontext.uc_sigmask, sizeof(signal_mask));
 		memcpy(&signal_stack, &stack_frame.ucontext.uc_stack, sizeof(signal_stack));
 		signal_stack.ss_flags &= __SS_SUPPORTED_FLAGS;
-		DecodeMachineContext(&stack_frame.ucontext.uc_mcontext, regs);
+		struct thread_registers resume_regs;
+		Scheduler::SaveInterruptedContext(intctx, &resume_regs);
+		DecodeMachineContext(&stack_frame.ucontext.uc_mcontext, &resume_regs);
+		Scheduler::LoadInterruptedContext(intctx, &resume_regs);
 	}
 
 	UpdatePendingSignals(this);
-	regs->signal_pending = asm_signal_is_pending;
+	intctx->signal_pending = asm_signal_is_pending;
 
 	lock.Reset();
 
-	HandleSignal(regs);
+	HandleSignal(intctx);
 }
 
 namespace Signal {
 
-void DispatchHandler(CPU::InterruptRegisters* regs, void* /*user*/)
+void DispatchHandler(struct interrupt_context* intctx, void* /*user*/)
 {
-	return CurrentThread()->HandleSignal(regs);
+	return CurrentThread()->HandleSignal(intctx);
 }
 
-void ReturnHandler(CPU::InterruptRegisters* regs, void* /*user*/)
+void ReturnHandler(struct interrupt_context* intctx, void* /*user*/)
 {
-	return CurrentThread()->HandleSigreturn(regs);
+	return CurrentThread()->HandleSigreturn(intctx);
 }
 
 void Init()

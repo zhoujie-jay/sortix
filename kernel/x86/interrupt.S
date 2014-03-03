@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of Sortix.
 
@@ -382,9 +382,12 @@ fixup_relocate_stack_complete:
 	pushl %ebp
 
 	# Now call the interrupt handler.
-	pushl %esp
+	movl %esp, %ebx
+	subl $4, %esp
+	andl $0xFFFFFFF0, %esp
+	movl %ebx, (%esp)
 	call interrupt_handler
-	addl $4, %esp
+	movl %ebx, %esp
 
 load_interrupted_registers:
 	# Restore whether signals are pending.

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -22,10 +22,12 @@
 
 *******************************************************************************/
 
+#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <sortix/kernel/cpu.h>
+#include <sortix/kernel/registers.h>
 
 #include "gdt.h"
 
@@ -254,16 +256,22 @@ void WriteTSS(int32_t num, uint16_t ss0, uintptr_t stack0)
 #endif
 }
 
-void SetKernelStack(uintptr_t stacklower, size_t stacksize, uintptr_t stackhigher)
+uintptr_t GetKernelStack()
 {
 #if defined(__i386__)
-	(void) stacklower;
-	(void) stacksize;
-	tss_entry.esp0 = (uint32_t) stackhigher;
+	return tss_entry.esp0;
 #elif defined(__x86_64__)
-	(void) stacklower;
-	(void) stacksize;
-	tss_entry.stack0 = (uint64_t) stackhigher;
+	return tss_entry.stack0;
+#endif
+}
+
+void SetKernelStack(uintptr_t stack_pointer)
+{
+	assert((stack_pointer & 0xF) == 0);
+#if defined(__i386__)
+	tss_entry.esp0 = (uint32_t) stack_pointer;
+#elif defined(__x86_64__)
+	tss_entry.stack0 = (uint64_t) stack_pointer;
 #endif
 }
 

@@ -104,7 +104,7 @@
 
 // Keep the stack size aligned with $CPU/base.s
 const size_t STACK_SIZE = 64*1024;
-extern "C" { size_t stack[STACK_SIZE / sizeof(size_t)] = {0}; }
+extern "C" { __attribute__((aligned(16))) size_t stack[STACK_SIZE / sizeof(size_t)]; }
 
 namespace Sortix {
 
@@ -290,6 +290,7 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	// Initialize the GDT and TSS structures.
 	GDT::Init();
+	GDT::SetKernelStack((uintptr_t) stack + STACK_SIZE);
 
 	// Initialize the interrupt handler table and enable interrupts.
 	Interrupt::Init();
@@ -436,9 +437,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Now that the base system has been loaded, it's time to go threaded. First
 	// we create an object that represents this thread.
 	Process* system = new Process;
-	if ( !system ) { Panic("Could not allocate the system process"); }
-	addr_t systemaddrspace = Memory::GetAddressSpace();
-	system->addrspace = systemaddrspace;
+	if ( !system )
+		Panic("Could not allocate the system process");
+	system->addrspace = Memory::GetAddressSpace();
 	system->group = system;
 	system->groupprev = NULL;
 	system->groupnext = NULL;
@@ -451,13 +452,11 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// create a kernel thread that is the current thread and isn't put into the
 	// scheduler's set of runnable threads, but rather run whenever there is
 	// _nothing_ else to run on this CPU.
-	Thread* idlethread = new Thread;
+	Thread* idlethread = AllocateThread();
 	idlethread->process = system;
-	idlethread->addrspace = idlethread->process->addrspace;
 	idlethread->kernelstackpos = (addr_t) stack;
 	idlethread->kernelstacksize = STACK_SIZE;
 	idlethread->kernelstackmalloced = false;
-	idlethread->fpuinitialized = true;
 	system->firstthread = idlethread;
 	Scheduler::SetIdleThread(idlethread);
 
@@ -466,9 +465,6 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// and this thread isn't runnable, then there is nothing to run. Therefore
 	// we must become the system idle thread.
 	RunKernelThread(BootThread, NULL);
-
-	// Set up such that floating point registers are lazily switched.
-	Float::Init();
 
 	// The time driver will run the scheduler on the next timer interrupt.
 	Time::Start();
@@ -766,7 +762,8 @@ static void InitThread(void* /*user*/)
 	const char* cputype = "cputype=" CPUTYPE_STR;
 	int envc = 1;
 	const char* envp[] = { cputype, NULL };
-	CPU::InterruptRegisters regs;
+	struct thread_registers regs;
+	assert((((uintptr_t) &regs) & (alignof(regs)-1)) == 0);
 
 	if ( process->Execute(initpath, program, programsize, argc, argv, envc,
 	                       envp, &regs) )
@@ -775,7 +772,7 @@ static void InitThread(void* /*user*/)
 	delete[] program;
 
 	// Now become the init process and the operation system shall run.
-	CPU::LoadRegisters(&regs);
+	LoadRegisters(&regs);
 }
 
 } // namespace Sortix

@@ -26,16 +26,11 @@
 #define INCLUDE_SORTIX_KERNEL_SCHEDULER_H
 
 #include <sortix/kernel/decl.h>
+#include <sortix/kernel/registers.h>
 
 namespace Sortix {
 class Process;
 class Thread;
-} // namespace Sortix
-
-namespace Sortix {
-namespace CPU {
-struct InterruptRegisters;
-} // namespace CPU
 } // namespace Sortix
 
 namespace Sortix {
@@ -59,15 +54,19 @@ static inline void ExitThread()
 #endif
 
 void Init();
-void Switch(CPU::InterruptRegisters* regs);
+void Switch(struct interrupt_context* intctx);
 void SetThreadState(Thread* thread, ThreadState state);
 ThreadState GetThreadState(Thread* thread);
 void SetIdleThread(Thread* thread);
 void SetInitProcess(Process* init);
 Process* GetInitProcess();
 Process* GetKernelProcess();
-void InterruptYieldCPU(CPU::InterruptRegisters* regs, void* user);
-void ThreadExitCPU(CPU::InterruptRegisters* regs, void* user);
+void InterruptYieldCPU(struct interrupt_context* intctx, void* user);
+void ThreadExitCPU(struct interrupt_context* intctx, void* user);
+void SaveInterruptedContext(const struct interrupt_context* intctx,
+                            struct thread_registers* registers);
+void LoadInterruptedContext(struct interrupt_context* intctx,
+                            const struct thread_registers* registers);
 
 } // namespace Scheduler
 } // namespace Sortix

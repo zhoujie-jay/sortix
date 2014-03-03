@@ -244,49 +244,41 @@ void Init()
 	Interrupt::Enable();
 }
 
-const char* ExceptionName(const CPU::InterruptRegisters* regs)
+const char* ExceptionName(const struct interrupt_context* intctx)
 {
-	if ( regs->int_no < NUM_KNOWN_EXCEPTIONS )
-		return exception_names[regs->int_no];
+	if ( intctx->int_no < NUM_KNOWN_EXCEPTIONS )
+		return exception_names[intctx->int_no];
 	return "Unknown";
 }
 
-uintptr_t ExceptionLocation(const CPU::InterruptRegisters* regs)
+uintptr_t ExceptionLocation(const struct interrupt_context* intctx)
 {
 #if defined(__x86_64__)
-	return regs->rip;
+	return intctx->rip;
 #elif defined(__i386__)
-	return regs->eip;
+	return intctx->eip;
 #endif
 }
 
-void CrashCalltrace(const CPU::InterruptRegisters* regs)
+void CrashCalltrace(const struct interrupt_context* intctx)
 {
 #if defined(__x86_64__)
-	Calltrace::Perform(regs->rbp);
+	Calltrace::Perform(intctx->rbp);
 #elif defined(__i386__)
-	Calltrace::Perform(regs->ebp);
+	Calltrace::Perform(intctx->ebp);
 #else
 	#warning "Please provide a calltrace implementation for your CPU."
 #endif
 }
 
 __attribute__((noreturn))
-void KernelCrashHandler(CPU::InterruptRegisters* regs)
+void KernelCrashHandler(struct interrupt_context* intctx)
 {
-	Thread* thread = CurrentThread();
-#if defined(__i386__)
-	thread->fsbase = (unsigned long) GDT::GetFSBase();
-	thread->gsbase = (unsigned long) GDT::GetGSBase();
-#elif defined(__x86_64__)
-	thread->fsbase = (unsigned long) rdmsr(MSRID_FSBASE);
-	thread->gsbase = (unsigned long) rdmsr(MSRID_GSBASE);
-#endif
-	thread->SaveRegisters(regs);
+	Scheduler::SaveInterruptedContext(intctx, &CurrentThread()->registers);
 
 	// Walk and print the stack frames if this is a debug build.
 	if ( CALLTRACE_KERNEL )
-		CrashCalltrace(regs);
+		CrashCalltrace(intctx);
 
 	// Possibly switch to the kernel debugger in event of a crash.
 	if ( RUN_DEBUGGER_ON_KERNEL_CRASH )
@@ -294,27 +286,19 @@ void KernelCrashHandler(CPU::InterruptRegisters* regs)
 
 	// Panic the kernel with a diagnostic message.
 	PanicF("Unhandled CPU Exception id %zu `%s' at ip=0x%zx (cr2=0x%zx, "
-	       "err_code=0x%zx)", regs->int_no, ExceptionName(regs),
-	       ExceptionLocation(regs), regs->cr2, regs->err_code);
+	       "err_code=0x%zx)", intctx->int_no, ExceptionName(intctx),
+	       ExceptionLocation(intctx), intctx->cr2, intctx->err_code);
 }
 
-void UserCrashHandler(CPU::InterruptRegisters* regs)
+void UserCrashHandler(struct interrupt_context* intctx)
 {
-	Thread* thread = CurrentThread();
-#if defined(__i386__)
-	thread->fsbase = (unsigned long) GDT::GetFSBase();
-	thread->gsbase = (unsigned long) GDT::GetGSBase();
-#elif defined(__x86_64__)
-	thread->fsbase = (unsigned long) rdmsr(MSRID_FSBASE);
-	thread->gsbase = (unsigned long) rdmsr(MSRID_GSBASE);
-#endif
-	thread->SaveRegisters(regs);
+	Scheduler::SaveInterruptedContext(intctx, &CurrentThread()->registers);
 
 	// Execute this crash handler with preemption on.
 	Interrupt::Enable();
 
 	// TODO: Also send signals for other types of user-space crashes.
-	if ( regs->int_no == 14 /* Page fault */ )
+	if ( intctx->int_no == 14 /* Page fault */ )
 	{
 		struct sigaction* act = &CurrentProcess()->signal_actions[SIGSEGV];
 		kthread_mutex_lock(&CurrentProcess()->signal_lock);
@@ -323,12 +307,12 @@ void UserCrashHandler(CPU::InterruptRegisters* regs)
 			CurrentThread()->DeliverSignalUnlocked(SIGSEGV);
 		kthread_mutex_unlock(&CurrentProcess()->signal_lock);
 		if ( handled )
-			return Signal::DispatchHandler(regs, NULL);
+			return Signal::DispatchHandler(intctx, NULL);
 	}
 
 	// Walk and print the stack frames if this is a debug build.
 	if ( CALLTRACE_USER )
-		CrashCalltrace(regs);
+		CrashCalltrace(intctx);
 
 	// Possibly switch to the kernel debugger in event of a crash.
 	if ( RUN_DEBUGGER_ON_USER_CRASH )
@@ -338,20 +322,20 @@ void UserCrashHandler(CPU::InterruptRegisters* regs)
 	Log::PrintF("The current process (pid %ji `%s') crashed and was terminated:\n",
 	            (intmax_t) CurrentProcess()->pid, CurrentProcess()->program_image_path);
 	Log::PrintF("%s exception at ip=0x%zx (cr2=0x%zx, err_code=0x%zx)\n",
-	            ExceptionName(regs), ExceptionLocation(regs), regs->cr2,
-	            regs->err_code);
+	            ExceptionName(intctx), ExceptionLocation(intctx), intctx->cr2,
+	            intctx->err_code);
 
 	// Exit the process with the right error code.
 	// TODO: Send a SIGINT, SIGBUS, or whatever instead.
 	CurrentProcess()->ExitThroughSignal(SIGSEGV);
 
 	// Deliver signals to this thread so it can exit correctly.
-	Signal::DispatchHandler(regs, NULL);
+	Signal::DispatchHandler(intctx, NULL);
 }
 
-extern "C" void interrupt_handler(CPU::InterruptRegisters* regs)
+extern "C" void interrupt_handler(struct interrupt_context* intctx)
 {
-	unsigned int int_no = regs->int_no;
+	unsigned int int_no = intctx->int_no;
 
 	// IRQ 7 and 15 might be spurious and might need to be ignored.
 	if ( int_no == IRQ7 && !(PIC::ReadISR() & (1 << 7)) )
@@ -362,17 +346,17 @@ extern "C" void interrupt_handler(CPU::InterruptRegisters* regs)
 		return;
 	}
 
-	bool is_in_kernel = (regs->cs & 0x3) == KRPL;
+	bool is_in_kernel = (intctx->cs & 0x3) == KRPL;
 	bool is_in_user = !is_in_kernel;
 	bool is_crash = int_no < 32 && int_no != 7;
 
 	// Invoke the appropriate interrupt handler.
 	if ( is_crash && is_in_kernel )
-		KernelCrashHandler(regs);
+		KernelCrashHandler(intctx);
 	else if ( is_crash && is_in_user )
-		UserCrashHandler(regs);
+		UserCrashHandler(intctx);
 	else if ( interrupt_handlers[int_no] )
-		interrupt_handlers[int_no](regs, interrupt_handler_context[int_no]);
+		interrupt_handlers[int_no](intctx, interrupt_handler_context[int_no]);
 
 	// Send an end of interrupt signal to the PICs if we got an IRQ.
 	if ( IRQ0 <= int_no && int_no <= IRQ15 )

@@ -31,6 +31,7 @@
 #include <sortix/stack.h>
 
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/registers.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
 
@@ -40,8 +41,7 @@ class Process;
 class Thread;
 
 // These functions create a new kernel process but doesn't start it.
-Thread* CreateKernelThread(Process* process, CPU::InterruptRegisters* regs,
-                           unsigned long fsbase, unsigned long gsbase);
+Thread* CreateKernelThread(Process* process, struct thread_registers* regs);
 Thread* CreateKernelThread(Process* process, void (*entry)(void*), void* user,
                            size_t stacksize = 0);
 Thread* CreateKernelThread(void (*entry)(void*), void* user, size_t stacksize = 0);
@@ -50,18 +50,13 @@ Thread* CreateKernelThread(void (*entry)(void*), void* user, size_t stacksize = 
 void StartKernelThread(Thread* thread);
 
 // Alternatively, these functions both create and start the thread.
-Thread* RunKernelThread(Process* process, CPU::InterruptRegisters* regs);
+Thread* RunKernelThread(Process* process, struct thread_registers* regs);
 Thread* RunKernelThread(Process* process, void (*entry)(void*), void* user,
                         size_t stacksize = 0);
 Thread* RunKernelThread(void (*entry)(void*), void* user, size_t stacksize = 0);
 
 class Thread
 {
-friend Thread* CreateKernelThread(Process* process,
-                                  CPU::InterruptRegisters* regs,
-                                  unsigned long fsbase, unsigned long gsbase);
-friend void UpdatePendingSignals(Thread* thread);
-
 public:
 	static void Init();
 
@@ -70,48 +65,33 @@ public:
 	~Thread();
 
 public:
+	struct thread_registers registers;
+	uint8_t* self_allocation;
 	size_t id;
 	Process* process;
 	Thread* prevsibling;
 	Thread* nextsibling;
-
-public:
 	Thread* scheduler_list_prev;
 	Thread* scheduler_list_next;
 	volatile ThreadState state;
-	uint8_t fpuenv[512UL + 16UL];
-	uint8_t* fpuenvaligned;
-	bool fpuinitialized;
-
-public:
 	sigset_t signal_pending;
 	sigset_t signal_mask;
 	stack_t signal_stack;
-	addr_t addrspace;
 	addr_t kernelstackpos;
 	size_t kernelstacksize;
 	bool kernelstackmalloced;
 	bool pledged_destruction;
 
-#if defined(__i386__) || defined(__x86_64__)
 public:
-	unsigned long fsbase;
-	unsigned long gsbase;
-#endif
-
-private:
-	CPU::InterruptRegisters registers;
-
-public:
-	void SaveRegisters(const CPU::InterruptRegisters* src);
-	void LoadRegisters(CPU::InterruptRegisters* dest);
-	void HandleSignal(CPU::InterruptRegisters* regs);
-	void HandleSigreturn(CPU::InterruptRegisters* regs);
+	void HandleSignal(struct interrupt_context* intctx);
+	void HandleSigreturn(struct interrupt_context* intctx);
 	bool DeliverSignal(int signum);
 	bool DeliverSignalUnlocked(int signum);
-	addr_t SwitchAddressSpace(addr_t newaddrspace);
 
 };
+
+Thread* AllocateThread();
+void FreeThread(Thread* thread);
 
 Thread* CurrentThread();
 

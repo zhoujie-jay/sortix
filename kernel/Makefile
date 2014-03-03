@@ -31,13 +31,13 @@ BOOTOBJS:=
 
 ifeq ($(CPU),x86)
     X86FAMILY:=1
-    CPUOBJS:=$(CPU)/boot.o $(CPU)/base.o $(CPU)/x86.o
+    CPUOBJS:=$(CPU)/boot.o $(CPU)/base.o
 endif
 
 ifeq ($(CPU),x64)
     X86FAMILY:=1
     CXXFLAGS:=$(CXXFLAGS) -mno-red-zone -mno-mmx -mno-sse -mno-sse2
-    CPUOBJS:=$(CPU)/boot.o $(CPU)/base.o $(CPU)/x64.o
+    CPUOBJS:=$(CPU)/boot.o $(CPU)/base.o
 endif
 
 ifdef X86FAMILY
@@ -50,7 +50,6 @@ ifdef X86FAMILY
              x86-family/gdt.o \
              x86-family/idt.o \
              $(CPU)/syscall.o \
-             $(CPU)/process.o \
              x86-family/cmos.o \
              x86-family/time.o \
              x86-family/mtrr.o \
@@ -124,6 +123,7 @@ pipe.o \
 poll.o \
 process.o \
 refcount.o \
+registers.o \
 resource.o \
 scheduler.o \
 segment.o \

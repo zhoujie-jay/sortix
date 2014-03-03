@@ -62,8 +62,6 @@ kthread_mutex_t pagelock;
 namespace Sortix {
 namespace Memory {
 
-addr_t currentdir = 0;
-
 void InitCPU();
 void AllocateKernelPMLs();
 int SysMemStat(size_t* memused, size_t* memtotal);
@@ -485,40 +483,28 @@ void InvalidatePage(addr_t /*addr*/)
 	Flush();
 }
 
-// Flushes the Translation Lookaside Buffer (TLB).
-void Flush()
-{
-	asm volatile("mov %0, %%cr3":: "r"(currentdir));
-}
 
 addr_t GetAddressSpace()
 {
-	return currentdir;
+	addr_t result;
+	asm ( "mov %%cr3, %0" : "=r"(result) );
+	return result;
 }
 
 addr_t SwitchAddressSpace(addr_t addrspace)
 {
-	// Have fun debugging this.
-	if ( currentdir != Page::AlignDown(currentdir) )
-		PanicF("The variable containing the current address space "
-		       "contains garbage all of sudden: it isn't page-aligned. "
-		        "It contains the value 0x%zx.", currentdir);
+	assert(Page::IsAligned(addrspace));
 
-	// Don't switch if we are already there.
-	if ( addrspace == currentdir )
-		return currentdir;
-
-	if ( addrspace & 0xFFFUL )
-		PanicF("addrspace 0x%zx was not page-aligned!", addrspace);
-
-	addr_t previous = currentdir;
-
-	// Switch and flush the TLB.
-	asm volatile("mov %0, %%cr3":: "r"(addrspace));
-
-	currentdir = addrspace;
-
+	addr_t previous = GetAddressSpace();
+	asm volatile ( "mov %0, %%cr3" : : "r"(addrspace) );
 	return previous;
+}
+
+void Flush()
+{
+	addr_t previous;
+	asm ( "mov %%cr3, %0" : "=r"(previous) );
+	asm volatile ( "mov %0, %%cr3" : : "r"(previous) );
 }
 
 bool MapRange(addr_t where, size_t bytes, int protection)

@@ -337,14 +337,12 @@ int ThreadId(Thread* thread)
 
 int main_bt(int /*argc*/, char* /*argv*/[])
 {
-	CPU::InterruptRegisters regs;
-	current_thread->LoadRegisters(&regs);
 #if defined(__x86_64__)
-	unsigned long ip = regs.rip;
-	unsigned long bp = regs.rbp;
+	unsigned long ip = current_thread->registers.rip;
+	unsigned long bp = current_thread->registers.rbp;
 #elif defined(__i386__)
-	unsigned long ip = regs.eip;
-	unsigned long bp = regs.ebp;
+	unsigned long ip = current_thread->registers.eip;
+	unsigned long bp = current_thread->registers.ebp;
 #endif
 
 	bool userspace = false;
@@ -434,7 +432,7 @@ int main_pid(int argc, char* argv[])
 			return 1;
 		}
 		current_thread = process->firstthread;
-		Memory::SwitchAddressSpace(current_thread->addrspace);
+		Memory::SwitchAddressSpace(current_thread->registers.cr3);
 	}
 	Print("%c %i\t`%s'\n", '*', (int) current_process->pid,
 	                            current_process->program_image_path);
@@ -455,54 +453,48 @@ int main_ps(int /*argc*/, char* /*argv*/[])
 
 int main_rs(int /*argc*/, char* /*argv*/[])
 {
-	CPU::InterruptRegisters regs;
-	current_thread->LoadRegisters(&regs);
 #if defined(__x86_64__)
-	Print("rax=0x%lx, ", regs.rax);
-	Print("rbx=0x%lx, ", regs.rbx);
-	Print("rcx=0x%lx, ", regs.rcx);
-	Print("rdx=0x%lx, ", regs.rdx);
-	Print("rdi=0x%lx, ", regs.rdi);
-	Print("rsi=0x%lx, ", regs.rsi);
-	Print("rsp=0x%lx, ", regs.rsp);
-	Print("rbp=0x%lx, ", regs.rbp);
-	Print("r8=0x%lx, ", regs.r8);
-	Print("r9=0x%lx, ", regs.r9);
-	Print("r10=0x%lx, ", regs.r10);
-	Print("r11=0x%lx, ", regs.r11);
-	Print("r12=0x%lx, ", regs.r12);
-	Print("r13=0x%lx, ", regs.r13);
-	Print("r14=0x%lx, ", regs.r14);
-	Print("r15=0x%lx, ", regs.r15);
-	Print("rip=0x%lx, ", regs.rip);
-	Print("rflags=0x%lx, ", regs.rflags);
-	Print("int_no=%lu, ", regs.int_no);
-	Print("err_code=0x%lx, ", regs.err_code);
-	Print("cs=0x%lx, ", regs.cs);
-	Print("ds=0x%lx, ", regs.ds);
-	Print("ss=0x%lx, ", regs.ss);
-	Print("kerrno=%lu, ", regs.kerrno);
-	Print("cr2=%lx, ", regs.cr2);
-	Print("signal_pending=%lu.", regs.signal_pending);
+	Print("rax=0x%lX, ", current_thread->registers.rax);
+	Print("rbx=0x%lX, ", current_thread->registers.rbx);
+	Print("rcx=0x%lX, ", current_thread->registers.rcx);
+	Print("rdx=0x%lX, ", current_thread->registers.rdx);
+	Print("rdi=0x%lX, ", current_thread->registers.rdi);
+	Print("rsi=0x%lX, ", current_thread->registers.rsi);
+	Print("rsp=0x%lX, ", current_thread->registers.rsp);
+	Print("rbp=0x%lX, ", current_thread->registers.rbp);
+	Print("r8=0x%lX, ", current_thread->registers.r8);
+	Print("r9=0x%lX, ", current_thread->registers.r9);
+	Print("r10=0x%lX, ", current_thread->registers.r10);
+	Print("r11=0x%lX, ", current_thread->registers.r11);
+	Print("r12=0x%lX, ", current_thread->registers.r12);
+	Print("r13=0x%lX, ", current_thread->registers.r13);
+	Print("r14=0x%lX, ", current_thread->registers.r14);
+	Print("r15=0x%lX, ", current_thread->registers.r15);
+	Print("rip=0x%lX, ", current_thread->registers.rip);
+	Print("rflags=0x%lX, ", current_thread->registers.rflags);
+	Print("fsbase=0x%lX, ", current_thread->registers.fsbase);
+	Print("gsbase=0x%lX, ", current_thread->registers.gsbase);
+	Print("cr3=0x%lX, ", current_thread->registers.cr3);
+	Print("kernel_stack=0x%lX, ", current_thread->registers.kernel_stack);
+	Print("kerrno=%lu, ", current_thread->registers.kerrno);
+	Print("signal_pending=%lu.", current_thread->registers.signal_pending);
 #elif defined(__i386__)
-	Print("eax=0x%lx, ", regs.eax);
-	Print("ebx=0x%lx, ", regs.ebx);
-	Print("ecx=0x%lx, ", regs.ecx);
-	Print("edx=0x%lx, ", regs.edx);
-	Print("edi=0x%lx, ", regs.edi);
-	Print("esi=0x%lx, ", regs.esi);
-	Print("esp=0x%lx, ", regs.esp);
-	Print("ebp=0x%lx, ", regs.ebp);
-	Print("eip=0x%lx, ", regs.eip);
-	Print("eflags=0x%lx, ", regs.eflags);
-	Print("int_no=%lu, ", regs.int_no);
-	Print("err_code=0x%lx, ", regs.err_code);
-	Print("cs=0x%lx, ", regs.cs);
-	Print("ds=0x%lx, ", regs.ds);
-	Print("ss=0x%lx, ", regs.ss);
-	Print("kerrno=%lu, ", regs.kerrno);
-	Print("cr2=%lx, ", regs.cr2);
-	Print("signal_pending=%lu.", regs.signal_pending);
+	Print("eax=0x%lX, ", current_thread->registers.eax);
+	Print("ebx=0x%lX, ", current_thread->registers.ebx);
+	Print("ecx=0x%lX, ", current_thread->registers.ecx);
+	Print("edx=0x%lX, ", current_thread->registers.edx);
+	Print("edi=0x%lX, ", current_thread->registers.edi);
+	Print("esi=0x%lX, ", current_thread->registers.esi);
+	Print("esp=0x%lX, ", current_thread->registers.esp);
+	Print("ebp=0x%lX, ", current_thread->registers.ebp);
+	Print("eip=0x%lX, ", current_thread->registers.eip);
+	Print("eflags=0x%lX, ", current_thread->registers.eflags);
+	Print("fsbase=0x%lX, ", current_thread->registers.fsbase);
+	Print("gsbase=0x%lX, ", current_thread->registers.gsbase);
+	Print("cr3=0x%lX, ", current_thread->registers.cr3);
+	Print("kernel_stack=0x%lX, ", current_thread->registers.kernel_stack);
+	Print("kerrno=%lX, ", current_thread->registers.kerrno);
+	Print("signal_pending=%lu.", current_thread->registers.signal_pending);
 #endif
 	Print("\n");
 	return 0;
@@ -510,12 +502,10 @@ int main_rs(int /*argc*/, char* /*argv*/[])
 
 static void DescribeThread(int tid, Thread* thread)
 {
-	CPU::InterruptRegisters regs;
-	thread->LoadRegisters(&regs);
 #if defined(__x86_64__)
-	unsigned long ip = regs.rip;
+	unsigned long ip = thread->registers.rip;
 #elif defined(__i386__)
-	unsigned long ip = regs.eip;
+	unsigned long ip = thread->registers.eip;
 #endif
 
 	Print("%c ", thread == current_thread ? '*' : ' ');
@@ -538,7 +528,7 @@ int main_tid(int argc, char* argv[])
 			return 1;
 		}
 		current_thread = thread;
-		Memory::SwitchAddressSpace(current_thread->addrspace);
+		Memory::SwitchAddressSpace(current_thread->registers.cr3);
 	}
 	DescribeThread(ThreadId(current_thread), current_thread);
 	return 0;
@@ -624,7 +614,7 @@ void Run()
 
 	first_f10 = true;
 
-	addr_t saved_addrspace = current_thread->addrspace;
+	addr_t saved_addrspace = current_thread->registers.cr3;
 
 	memcpy(saved_video_memory, VIDEO_MEMORY, sizeof(saved_video_memory));
 	int saved_x, saved_y;

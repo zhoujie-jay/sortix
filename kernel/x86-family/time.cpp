@@ -78,10 +78,10 @@ static struct timespec tick_period;
 static long tick_frequency;
 static uint16_t tick_divisor;
 
-static void OnIRQ0(CPU::InterruptRegisters* regs, void* /*user*/)
+static void OnIRQ0(struct interrupt_context* intctx, void* /*user*/)
 {
-	OnTick(tick_period, !regs->InUserspace());
-	Scheduler::Switch(regs);
+	OnTick(tick_period, !InUserspace(intctx));
+	Scheduler::Switch(intctx);
 
 	// TODO: There is a horrible bug that causes Sortix to only receive
 	//       one IRQ0 on my laptop, but it works in virtual machines. But

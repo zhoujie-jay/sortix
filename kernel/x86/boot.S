@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
 
     This file is part of Sortix.
 
@@ -61,5 +61,8 @@ prepare_kernel_execution:
 	or $0x600, %eax
 	mov %eax, %cr4
 	mov 0x100000, %eax
+
+	# Store a copy of the initialial floating point registers.
+	fxsave fpu_initialized_regs
 
 	jmp beginkernel

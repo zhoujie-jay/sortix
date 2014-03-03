@@ -25,39 +25,14 @@
 #ifndef SORTIX_FLOAT_H
 #define SORTIX_FLOAT_H
 
+#include <stdint.h>
+
 namespace Sortix {
-
-class Thread;
-
 namespace Float {
 
-extern bool fpu_is_enabled;
-
-void Init();
-void NofityTaskExit(Thread* thread);
-void Yield();
-
-static inline void EnableFPU()
-{
-	asm volatile ("clts");
-	fpu_is_enabled = true;
-}
-
-static inline void DisableFPU()
-{
-	fpu_is_enabled = false;
-	unsigned long cr0;
-	asm volatile ("mov %%cr0, %0" : "=r"(cr0));
-	cr0 |= 1UL<<3UL;
-	asm volatile ("mov %0, %%cr0" : : "r"(cr0));
-}
-
-static inline void NotityTaskSwitch()
-{
-	DisableFPU();
-}
+extern "C" uint8_t fpu_initialized_regs[512];
 
 } // namespace Float
-
 } // namespace Sortix
+
 #endif

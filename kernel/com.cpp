@@ -406,7 +406,7 @@ void DevCOMPort::OnInterrupt()
 
 Ref<DevCOMPort> comdevices[1+NUMCOMPORTS];
 
-static void UARTIRQHandler(CPU::InterruptRegisters* /*regs*/, void* /*user*/)
+static void UARTIRQHandler(struct interrupt_context* /*intctx*/, void* /*user*/)
 {
 	for ( size_t i = 1; i <= NUMCOMPORTS; i++ )
 	{

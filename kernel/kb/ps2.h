@@ -44,7 +44,7 @@ public:
 	virtual void SetOwner(KeyboardOwner* owner, void* user);
 
 public:
-	void OnInterrupt(CPU::InterruptRegisters* regs);
+	void OnInterrupt(struct interrupt_context* intctx);
 	void InterruptWork(uint8_t scancode);
 
 private:

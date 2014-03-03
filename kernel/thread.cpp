@@ -27,6 +27,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <sortix/exit.h>
@@ -44,10 +45,39 @@
 #include <sortix/kernel/thread.h>
 #include <sortix/kernel/time.h>
 
+void* operator new (size_t /*size*/, void* address) throw()
+{
+	return address;
+}
+
 namespace Sortix {
+
+Thread* AllocateThread()
+{
+	uint8_t* allocation = (uint8_t*) malloc(sizeof(class Thread) + 16);
+	if ( !allocation )
+		return NULL;
+
+	uint8_t* aligned = allocation;
+	if ( ((uintptr_t) aligned & 0xFUL) )
+		aligned = (uint8_t*) (((uintptr_t) aligned + 16) & ~0xFUL);
+
+	assert(!((uintptr_t) aligned & 0xFUL));
+	Thread* thread = new (aligned) Thread;
+	assert(!((uintptr_t) thread->registers.fpuenv & 0xFUL));
+	return thread->self_allocation = allocation, thread;
+}
+
+void FreeThread(Thread* thread)
+{
+	uint8_t* allocation = thread->self_allocation;
+	thread->~Thread();
+	free(allocation);
+}
 
 Thread::Thread()
 {
+	assert(!((uintptr_t) registers.fpuenv & 0xFUL));
 	id = 0; // TODO: Make a thread id.
 	process = NULL;
 	prevsibling = NULL;
@@ -56,17 +86,10 @@ Thread::Thread()
 	scheduler_list_next = NULL;
 	state = NONE;
 	memset(&registers, 0, sizeof(registers));
-	fsbase = 0;
-	gsbase = 0;
 	kernelstackpos = 0;
 	kernelstacksize = 0;
 	kernelstackmalloced = false;
 	pledged_destruction = false;
-	fpuinitialized = false;
-	// If malloc isn't 16-byte aligned, then we can't rely on offsets in
-	// our own class, so we'll just fix ourselves nicely up.
-	unsigned long fpuaddr = ((unsigned long) fpuenv+16UL) & ~(16UL-1UL);
-	fpuenvaligned = (uint8_t*) fpuaddr;
 	sigemptyset(&signal_pending);
 	sigemptyset(&signal_mask);
 	memset(&signal_stack, 0, sizeof(signal_stack));
@@ -82,129 +105,22 @@ Thread::~Thread()
 		delete[] (uint8_t*) kernelstackpos;
 }
 
-void Thread::SaveRegisters(const CPU::InterruptRegisters* src)
+Thread* CreateKernelThread(Process* process, struct thread_registers* regs)
 {
-#if defined(__i386__)
-	registers.eip = src->eip;
-	registers.esp = src->esp;
-	registers.eax = src->eax;
-	registers.ebx = src->ebx;
-	registers.ecx = src->ecx;
-	registers.edx = src->edx;
-	registers.edi = src->edi;
-	registers.esi = src->esi;
-	registers.ebp = src->ebp;
-	registers.cs = src->cs;
-	registers.ds = src->ds;
-	registers.ss = src->ss;
-	registers.eflags = src->eflags;
-	registers.kerrno = src->kerrno;
-	registers.signal_pending = src->signal_pending;
-#elif defined(__x86_64__)
-	registers.rip = src->rip;
-	registers.rsp = src->rsp;
-	registers.rax = src->rax;
-	registers.rbx = src->rbx;
-	registers.rcx = src->rcx;
-	registers.rdx = src->rdx;
-	registers.rdi = src->rdi;
-	registers.rsi = src->rsi;
-	registers.rbp = src->rbp;
-	registers.r8 = src->r8;
-	registers.r9 = src->r9;
-	registers.r10 = src->r10;
-	registers.r11 = src->r11;
-	registers.r12 = src->r12;
-	registers.r13 = src->r13;
-	registers.r14 = src->r14;
-	registers.r15 = src->r15;
-	registers.cs = src->cs;
-	registers.ds = src->ds;
-	registers.ss = src->ss;
-	registers.rflags = src->rflags;
-	registers.kerrno = src->kerrno;
-	registers.signal_pending = src->signal_pending;
-#else
-#warning "You need to add register saving support"
-#endif
-}
-
-void Thread::LoadRegisters(CPU::InterruptRegisters* dest)
-{
-#if defined(__i386__)
-	dest->eip = registers.eip;
-	dest->esp = registers.esp;
-	dest->eax = registers.eax;
-	dest->ebx = registers.ebx;
-	dest->ecx = registers.ecx;
-	dest->edx = registers.edx;
-	dest->edi = registers.edi;
-	dest->esi = registers.esi;
-	dest->ebp = registers.ebp;
-	dest->cs = registers.cs;
-	dest->ds = registers.ds;
-	dest->ss = registers.ss;
-	dest->eflags = registers.eflags;
-	dest->kerrno = registers.kerrno;
-	dest->signal_pending = registers.signal_pending;
-#elif defined(__x86_64__)
-	dest->rip = registers.rip;
-	dest->rsp = registers.rsp;
-	dest->rax = registers.rax;
-	dest->rbx = registers.rbx;
-	dest->rcx = registers.rcx;
-	dest->rdx = registers.rdx;
-	dest->rdi = registers.rdi;
-	dest->rsi = registers.rsi;
-	dest->rbp = registers.rbp;
-	dest->r8 = registers.r8;
-	dest->r9 = registers.r9;
-	dest->r10 = registers.r10;
-	dest->r11 = registers.r11;
-	dest->r12 = registers.r12;
-	dest->r13 = registers.r13;
-	dest->r14 = registers.r14;
-	dest->r15 = registers.r15;
-	dest->cs = registers.cs;
-	dest->ds = registers.ds;
-	dest->ss = registers.ss;
-	dest->rflags = registers.rflags;
-	dest->kerrno = registers.kerrno;
-	dest->signal_pending = registers.signal_pending;
-#else
-#warning "You need to add register loading support"
-#endif
-}
-
-addr_t Thread::SwitchAddressSpace(addr_t newaddrspace)
-{
-	bool wasenabled = Interrupt::SetEnabled(false);
-	addr_t result = addrspace;
-	addrspace = newaddrspace;
-	Memory::SwitchAddressSpace(newaddrspace);
-	Interrupt::SetEnabled(wasenabled);
-	return result;
-}
-
-Thread* CreateKernelThread(Process* process, CPU::InterruptRegisters* regs,
-                           unsigned long fsbase, unsigned long gsbase)
-{
-#if defined(__x86_64__)
-	if ( fsbase >> 48 != 0x0000 && fsbase >> 48 != 0xFFFF )
-		return errno = EINVAL, (Thread*) NULL;
-	if ( gsbase >> 48 != 0x0000 && gsbase >> 48 != 0xFFFF )
-		return errno = EINVAL, (Thread*) NULL;
-#endif
-
 	assert(process && regs && process->addrspace);
-	Thread* thread = new Thread;
+
+#if defined(__x86_64__)
+	if ( regs->fsbase >> 48 != 0x0000 && regs->fsbase >> 48 != 0xFFFF )
+		return errno = EINVAL, (Thread*) NULL;
+	if ( regs->gsbase >> 48 != 0x0000 && regs->gsbase >> 48 != 0xFFFF )
+		return errno = EINVAL, (Thread*) NULL;
+#endif
+
+	Thread* thread = AllocateThread();
 	if ( !thread )
 		return NULL;
 
-	thread->addrspace = process->addrspace;
-	thread->SaveRegisters(regs);
-	thread->fsbase = fsbase;
-	thread->gsbase = gsbase;
+	memcpy(&thread->registers, regs, sizeof(struct thread_registers));
 
 	kthread_mutex_lock(&process->threadlock);
 
@@ -221,48 +137,62 @@ Thread* CreateKernelThread(Process* process, CPU::InterruptRegisters* regs,
 	return thread;
 }
 
-static void SetupKernelThreadRegs(CPU::InterruptRegisters* regs,
+static void SetupKernelThreadRegs(struct thread_registers* regs,
+                                  Process* process,
                                   void (*entry)(void*),
                                   void* user,
                                   uintptr_t stack,
                                   size_t stack_size)
 {
+	memset(regs, 0, sizeof(*regs));
+
+	size_t stack_alignment = 16;
+	while ( stack & (stack_alignment-1) )
+	{
+		assert(stack_size);
+		stack++;
+		stack_size--;
+	}
+
+	stack_size &= ~(stack_alignment-1);
+
 #if defined(__i386__)
 	uintptr_t* stack_values = (uintptr_t*) (stack + stack_size);
 
-	assert(!((uintptr_t) stack_values & 3UL));
-	assert(4 * sizeof(uintptr_t) <= stack_size);
+	assert(5 * sizeof(uintptr_t) <= stack_size);
 
-	stack_values[-1] = (uintptr_t) 0; /* null eip */
-	stack_values[-2] = (uintptr_t) 0; /* null ebp */
-	stack_values[-3] = (uintptr_t) user; /* thread parameter */
-	stack_values[-4] = (uintptr_t) kthread_exit; /* return to kthread_exit */
+	/* -- 16-byte aligned -- */
+	/* -1 padding */
+	stack_values[-2] = (uintptr_t) 0; /* null eip */
+	stack_values[-3] = (uintptr_t) 0; /* null ebp */
+	stack_values[-4] = (uintptr_t) user; /* thread parameter */
+	/* -- 16-byte aligned -- */
+	stack_values[-5] = (uintptr_t) kthread_exit; /* return to kthread_exit */
+	/* upcoming ebp */
+	/* -7 padding */
+	/* -8 padding */
+	/* -- 16-byte aligned -- */
 
 	regs->eip = (uintptr_t) entry;
-	regs->esp = (uintptr_t) (stack_values - 4);
+	regs->esp = (uintptr_t) (stack_values - 5);
 	regs->eax = 0;
 	regs->ebx = 0;
 	regs->ecx = 0;
 	regs->edx = 0;
 	regs->edi = 0;
 	regs->esi = 0;
-	regs->ebp = (uintptr_t) (stack_values - 2);
+	regs->ebp = (uintptr_t) (stack_values - 3);
 	regs->cs = KCS | KRPL;
 	regs->ds = KDS | KRPL;
 	regs->ss = KDS | KRPL;
 	regs->eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
 	regs->kerrno = 0;
 	regs->signal_pending = 0;
+	regs->kernel_stack = stack + stack_size;
+	regs->cr3 = process->addrspace;
 #elif defined(__x86_64__)
-	if ( (stack & 15UL) == 8 && 8 <= stack_size )
-	{
-		stack += 8;
-		stack_size -= 8;
-	}
-
 	uintptr_t* stack_values = (uintptr_t*) (stack + stack_size);
 
-	assert(!((uintptr_t) stack_values & 15UL));
 	assert(3 * sizeof(uintptr_t) <= stack_size);
 
 	stack_values[-1] = (uintptr_t) 0; /* null rip */
@@ -292,8 +222,10 @@ static void SetupKernelThreadRegs(CPU::InterruptRegisters* regs,
 	regs->rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
 	regs->kerrno = 0;
 	regs->signal_pending = 0;
+	regs->kernel_stack = stack + stack_size;
+	regs->cr3 = process->addrspace;
 #else
-#warning "You need to add thread register initialization support"
+#warning "You need to add kernel thread register initialization support"
 #endif
 }
 
@@ -307,10 +239,10 @@ Thread* CreateKernelThread(Process* process, void (*entry)(void*), void* user,
 	if ( !stack )
 		return NULL;
 
-	CPU::InterruptRegisters regs;
-	SetupKernelThreadRegs(&regs, entry, user, (uintptr_t) stack, stacksize);
+	struct thread_registers regs;
+	SetupKernelThreadRegs(&regs, process, entry, user, (uintptr_t) stack, stacksize);
 
-	Thread* thread = CreateKernelThread(process, &regs, 0, 0);
+	Thread* thread = CreateKernelThread(process, &regs);
 	if ( !thread ) { delete[] stack; return NULL; }
 
 	thread->kernelstackpos = (uintptr_t) stack;
@@ -330,9 +262,9 @@ void StartKernelThread(Thread* thread)
 	Scheduler::SetThreadState(thread, ThreadState::RUNNABLE);
 }
 
-Thread* RunKernelThread(Process* process, CPU::InterruptRegisters* regs)
+Thread* RunKernelThread(Process* process, struct thread_registers* regs)
 {
-	Thread* thread = CreateKernelThread(process, regs, 0, 0);
+	Thread* thread = CreateKernelThread(process, regs);
 	if ( !thread )
 		return NULL;
 	StartKernelThread(thread);

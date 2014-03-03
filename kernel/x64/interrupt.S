@@ -386,7 +386,10 @@ interrupt_handler_prepare:
 
 	# Now call the interrupt handler.
 	movq %rsp, %rdi
+	movq %rsp, %rbx
+	andq $0xFFFFFFFFFFFFFFF0, %rsp
 	call interrupt_handler
+	movq %rbx, %rsp
 
 load_interrupted_registers:
 	# Restore whether signals are pending.

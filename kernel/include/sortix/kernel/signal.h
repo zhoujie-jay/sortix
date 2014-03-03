@@ -29,6 +29,7 @@
 #include <sortix/sigset.h>
 
 #include <sortix/kernel/cpu.h>
+#include <sortix/kernel/registers.h>
 
 namespace Sortix {
 
@@ -38,8 +39,8 @@ namespace Signal {
 
 void Init();
 inline bool IsPending() { return asm_signal_is_pending != 0; }
-void DispatchHandler(CPU::InterruptRegisters* regs, void* user);
-void ReturnHandler(CPU::InterruptRegisters* regs, void* user);
+void DispatchHandler(struct interrupt_context* intctx, void* user);
+void ReturnHandler(struct interrupt_context* intctx, void* user);
 
 } // namespace Signal
 

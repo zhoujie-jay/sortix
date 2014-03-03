@@ -39,7 +39,7 @@ static void kthread_do_kill_thread(void* user)
 	Thread* thread = (Thread*) user;
 	while ( thread->state != ThreadState::DEAD )
 		kthread_yield();
-	delete thread;
+	FreeThread(thread);
 }
 
 extern "C" void kthread_exit()

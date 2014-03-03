@@ -67,6 +67,7 @@
 #include "initrd.h"
 
 #if defined(__i386__) || defined(__x86_64__)
+#include "x86-family/float.h"
 #include "x86-family/gdt.h"
 #endif
 
@@ -249,11 +250,6 @@ void Process::OnLastThreadExit()
 	LastPrayer();
 }
 
-static void SwitchCurrentAddrspace(addr_t addrspace, void* user)
-{
-	((Thread*) user)->SwitchAddressSpace(addrspace);
-}
-
 void Process::DeleteTimers()
 {
 	for ( timer_t i = 0; i < PROCESS_TIMER_NUM_MAX; i++ )
@@ -290,7 +286,7 @@ void Process::LastPrayer()
 
 	// We need to temporarily reload the correct addrese space of the dying
 	// process such that we can unmap and free its memory.
-	addr_t prevaddrspace = curthread->SwitchAddressSpace(addrspace);
+	addr_t prevaddrspace = Memory::SwitchAddressSpace(addrspace);
 
 	ResetAddressSpace();
 
@@ -301,9 +297,7 @@ void Process::LastPrayer()
 
 	// Destroy the address space and safely switch to the replacement
 	// address space before things get dangerous.
-	Memory::DestroyAddressSpace(prevaddrspace,
-                                SwitchCurrentAddrspace,
-                                curthread);
+	Memory::DestroyAddressSpace(prevaddrspace);
 	addrspace = 0;
 
 	// Unload the process symbol and string tables.
@@ -814,7 +808,7 @@ bool Process::MapSegment(struct segment* result, void* hint, size_t size,
 int Process::Execute(const char* programname, const uint8_t* program,
                      size_t programsize, int argc, const char* const* argv,
                      int envc, const char* const* envp,
-                     CPU::InterruptRegisters* regs)
+                     struct thread_registers* regs)
 {
 	assert(argc != INT_MAX);
 	assert(envc != INT_MAX);
@@ -969,10 +963,43 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	uthread->arg_size = arg_segment.size;
 	memset(uthread + 1, 0, aux.uthread_size - sizeof(struct uthread));
 
+	memset(regs, 0, sizeof(*regs));
 #if defined(__i386__)
-	GDT::SetGSBase((uint32_t) uthread);
+	regs->eax = argc;
+	regs->ebx = (size_t) target_argv;
+	regs->edx = envc;
+	regs->ecx = (size_t) target_envp;
+	regs->eip = entry;
+	regs->esp = (stack_segment.addr + stack_segment.size) & ~15UL;
+	regs->ebp = regs->esp;
+	regs->cs = UCS | URPL;
+	regs->ds = UDS | URPL;
+	regs->ss = UDS | URPL;
+	regs->eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+	regs->signal_pending = 0;
+	regs->gsbase = (uint32_t) uthread;
+	regs->cr3 = addrspace;
+	regs->kernel_stack = GDT::GetKernelStack();
+	memcpy(regs->fpuenv, Float::fpu_initialized_regs, 512);
 #elif defined(__x86_64__)
-	wrmsr(MSRID_FSBASE, (uint64_t) uthread);
+	regs->rdi = argc;
+	regs->rsi = (size_t) target_argv;
+	regs->rdx = envc;
+	regs->rcx = (size_t) target_envp;
+	regs->rip = entry;
+	regs->rsp = (stack_segment.addr + stack_segment.size) & ~15UL;
+	regs->rbp = regs->rsp;
+	regs->cs = UCS | URPL;
+	regs->ds = UDS | URPL;
+	regs->ss = UDS | URPL;
+	regs->rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+	regs->signal_pending = 0;
+	regs->fsbase = (uint64_t) uthread;
+	regs->cr3 = addrspace;
+	regs->kernel_stack = GDT::GetKernelStack();
+	memcpy(regs->fpuenv, Float::fpu_initialized_regs, 512);
+#else
+#warning "You need to implement initializing the first thread after execute"
 #endif
 
 	uint8_t* auxcode = (uint8_t*) auxcode_segment.addr;
@@ -991,8 +1018,6 @@ int Process::Execute(const char* programname, const uint8_t* program,
 
 	dtable->OnExecute();
 
-	ExecuteCPU(argc, target_argv, envc, target_envp, stack_segment.addr + stack_segment.size, entry, regs);
-
 	return 0;
 }
 
@@ -1002,7 +1027,7 @@ int sys_execve_kernel(const char* filename,
                       char* const argv[],
                       int envc,
                       char* const envp[],
-                      CPU::InterruptRegisters* regs)
+                      struct thread_registers* regs)
 {
 	Process* process = CurrentProcess();
 
@@ -1054,7 +1079,7 @@ int sys_execve(const char* user_filename,
 	char** argv;
 	char** envp;
 	int result = -1;
-	CPU::InterruptRegisters regs;
+	struct thread_registers regs;
 	memset(&regs, 0, sizeof(regs));
 
 	if ( !user_filename || !user_argv || !user_envp )
@@ -1135,7 +1160,7 @@ cleanup_filename:
 	delete[] filename;
 cleanup_done:
 	if ( result == 0 )
-		CPU::LoadRegisters(&regs);
+		LoadRegisters(&regs);
 	return result;
 }
 
@@ -1158,14 +1183,21 @@ static pid_t sys_tfork(int flags, struct tfork* user_regs)
 	if ( regs.altstack.ss_flags & ~__SS_SUPPORTED_FLAGS )
 		return errno = EINVAL, -1;
 
-	CPU::InterruptRegisters cpuregs;
-	InitializeThreadRegisters(&cpuregs, &regs);
+	size_t stack_alignment = 16;
 
 	// TODO: Is it a hack to create a new kernel stack here?
 	Thread* curthread = CurrentThread();
-	uint8_t* newkernelstack = new uint8_t[curthread->kernelstacksize];
+	size_t newkernelstacksize = curthread->kernelstacksize;
+	uint8_t* newkernelstack = new uint8_t[newkernelstacksize + stack_alignment];
 	if ( !newkernelstack )
 		return -1;
+
+	uintptr_t stack_aligned = (uintptr_t) newkernelstack;
+	size_t stack_aligned_size = newkernelstacksize;
+
+	if ( ((uintptr_t) stack_aligned) & (stack_alignment-1) )
+		stack_aligned = (stack_aligned + 16) & ~(stack_alignment-1);
+	stack_aligned_size &= 0xFFFFFFF0;
 
 	Process* child_process;
 	if ( making_thread )
@@ -1176,10 +1208,59 @@ static pid_t sys_tfork(int flags, struct tfork* user_regs)
 		return -1;
 	}
 
+	struct thread_registers cpuregs;
+	memset(&cpuregs, 0, sizeof(cpuregs));
+#if defined(__i386__)
+	cpuregs.eip = regs.eip;
+	cpuregs.esp = regs.esp;
+	cpuregs.eax = regs.eax;
+	cpuregs.ebx = regs.ebx;
+	cpuregs.ecx = regs.ecx;
+	cpuregs.edx = regs.edx;
+	cpuregs.edi = regs.edi;
+	cpuregs.esi = regs.esi;
+	cpuregs.ebp = regs.ebp;
+	cpuregs.cs = UCS | URPL;
+	cpuregs.ds = UDS | URPL;
+	cpuregs.ss = UDS | URPL;
+	cpuregs.eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+	cpuregs.fsbase = regs.fsbase;
+	cpuregs.gsbase = regs.gsbase;
+	cpuregs.cr3 = child_process->addrspace;
+	cpuregs.kernel_stack = stack_aligned + stack_aligned_size;
+#elif defined(__x86_64__)
+	cpuregs.rip = regs.rip;
+	cpuregs.rsp = regs.rsp;
+	cpuregs.rax = regs.rax;
+	cpuregs.rbx = regs.rbx;
+	cpuregs.rcx = regs.rcx;
+	cpuregs.rdx = regs.rdx;
+	cpuregs.rdi = regs.rdi;
+	cpuregs.rsi = regs.rsi;
+	cpuregs.rbp = regs.rbp;
+	cpuregs.r8  = regs.r8;
+	cpuregs.r9  = regs.r9;
+	cpuregs.r10 = regs.r10;
+	cpuregs.r11 = regs.r11;
+	cpuregs.r12 = regs.r12;
+	cpuregs.r13 = regs.r13;
+	cpuregs.r14 = regs.r14;
+	cpuregs.r15 = regs.r15;
+	cpuregs.cs = UCS | URPL;
+	cpuregs.ds = UDS | URPL;
+	cpuregs.ss = UDS | URPL;
+	cpuregs.rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+	cpuregs.fsbase = regs.fsbase;
+	cpuregs.gsbase = regs.gsbase;
+	cpuregs.cr3 = child_process->addrspace;
+	cpuregs.kernel_stack = stack_aligned + stack_aligned_size;
+#else
+#warning "You need to implement initializing the registers of the new thread"
+#endif
+
 	// If the thread could not be created, make the process commit suicide
 	// in a manner such that we don't wait for its zombie.
-	Thread* thread = CreateKernelThread(child_process, &cpuregs, regs.fsbase,
-	                                    regs.gsbase);
+	Thread* thread = CreateKernelThread(child_process, &cpuregs);
 	if ( !thread )
 	{
 		if ( making_process )
@@ -1188,7 +1269,7 @@ static pid_t sys_tfork(int flags, struct tfork* user_regs)
 	}
 
 	thread->kernelstackpos = (addr_t) newkernelstack;
-	thread->kernelstacksize = curthread->kernelstacksize;
+	thread->kernelstacksize = newkernelstacksize;
 	thread->kernelstackmalloced = true;
 	memcpy(&thread->signal_mask, &regs.sigmask, sizeof(sigset_t));
 	memcpy(&thread->signal_stack, &regs.altstack, sizeof(stack_t));

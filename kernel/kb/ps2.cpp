@@ -39,6 +39,7 @@
 #include <sortix/kernel/ioport.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/keyboard.h>
+#include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/thread.h>
 
 #if defined(__i386__)
@@ -57,9 +58,9 @@ const uint8_t LED_SCRLCK = 1 << 0;
 const uint8_t LED_NUMLCK = 1 << 1;
 const uint8_t LED_CAPSLCK = 1 << 2;
 
-void PS2Keyboard__OnInterrupt(CPU::InterruptRegisters* regs, void* user)
+void PS2Keyboard__OnInterrupt(struct interrupt_context* intctx, void* user)
 {
-	((PS2Keyboard*) user)->OnInterrupt(regs);
+	((PS2Keyboard*) user)->OnInterrupt(intctx);
 }
 
 PS2Keyboard::PS2Keyboard(uint16_t iobase, uint8_t interrupt)
@@ -100,20 +101,12 @@ static void PS2Keyboard__InterruptWork(void* kb_ptr, void* payload, size_t size)
 	((PS2Keyboard*) kb_ptr)->InterruptWork(work->scancode);
 }
 
-void PS2Keyboard::OnInterrupt(CPU::InterruptRegisters* regs)
+void PS2Keyboard::OnInterrupt(struct interrupt_context* intctx)
 {
 	uint8_t scancode = PopScancode();
 	if ( scancode == KBKEY_F10 )
 	{
-		Thread* thread = CurrentThread();
-#if defined(__i386__)
-		thread->fsbase = (unsigned long) GDT::GetFSBase();
-		thread->gsbase = (unsigned long) GDT::GetGSBase();
-#elif defined(__x86_64__)
-		thread->fsbase = (unsigned long) rdmsr(MSRID_FSBASE);
-		thread->gsbase = (unsigned long) rdmsr(MSRID_GSBASE);
-#endif
-		thread->SaveRegisters(regs);
+		Scheduler::SaveInterruptedContext(intctx, &CurrentThread()->registers);
 		Debugger::Run();
 	}
 	PS2KeyboardWork work;

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
 
     This file is part of Sortix.
 
@@ -140,6 +140,9 @@ Realm64:
 	mov %cr4, %rax
 	or $0x600, %rax
 	mov %rax, %cr4
+
+	# Store a copy of the initialial floating point registers.
+	fxsave fpu_initialized_regs
 
 	# Alright, that was the bootstrap code. Now begin preparing to run the
 	# actual 64-bit kernel.

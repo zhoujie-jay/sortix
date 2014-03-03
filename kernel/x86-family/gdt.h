@@ -32,7 +32,8 @@ namespace GDT {
 
 void Init();
 void WriteTSS(int32_t num, uint16_t ss0, uintptr_t stack0);
-void SetKernelStack(uintptr_t stacklower, size_t stacksize, uintptr_t stackhigher);
+uintptr_t GetKernelStack();
+void SetKernelStack(uintptr_t stack_pointer);
 #if defined(__i386__)
 uint32_t GetFSBase();
 uint32_t GetGSBase();

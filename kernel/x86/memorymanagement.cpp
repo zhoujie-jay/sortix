@@ -45,8 +45,6 @@ void ExtendStack();
 namespace Sortix {
 namespace Memory {
 
-extern addr_t currentdir;
-
 void InitCPU()
 {
 	PML* const BOOTPML2 = (PML* const) 0x11000UL;
@@ -132,14 +130,14 @@ void RecursiveFreeUserspacePages(size_t level, size_t offset)
 	}
 }
 
-void DestroyAddressSpace(addr_t fallback, void (*func)(addr_t, void*), void* user)
+void DestroyAddressSpace(addr_t fallback)
 {
 	// Look up the last few entries used for the fractal mapping. These
 	// cannot be unmapped as that would destroy the world. Instead, we
 	// will remember them, switch to another adress space, and safely
 	// mark them as unused. Also handling the forking related pages.
 	addr_t fractal1 = PMLS[2]->entry[1022];
-	addr_t dir = currentdir;
+	addr_t dir = GetAddressSpace();
 
 	// We want to free the pages, but we are still using them ourselves,
 	// so lock the page allocation structure until we are done.
@@ -156,10 +154,7 @@ void DestroyAddressSpace(addr_t fallback, void (*func)(addr_t, void*), void* use
 	if ( !fallback )
 		fallback = (addr_t) BOOTPML2;
 
-	if ( func )
-		func(fallback, user);
-	else
-		SwitchAddressSpace(fallback);
+	SwitchAddressSpace(fallback);
 
 	// Ok, now we got marked everything left behind as unused, we can
 	// now safely let another thread use the pages.

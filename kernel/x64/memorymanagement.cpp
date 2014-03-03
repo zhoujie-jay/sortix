@@ -44,8 +44,6 @@ void ExtendStack();
 namespace Sortix {
 namespace Memory {
 
-extern addr_t currentdir;
-
 void InitCPU()
 {
 	// The x64 boot code already set up virtual memory and identity
@@ -86,8 +84,6 @@ void InitCPU()
 
 	BOOTPML3->entry[0] = (addr_t) FORKPML2 | flags | PML_FORK;
 	FORKPML2->entry[0] = (addr_t) FORKPML1 | flags | PML_FORK;
-
-	currentdir = (addr_t) BOOTPML4;
 
 	// The virtual memory structures are now available on the predefined
 	// locations. This means the virtual memory code is bootstrapped. Of
@@ -139,7 +135,7 @@ void RecursiveFreeUserspacePages(size_t level, size_t offset)
 	}
 }
 
-void DestroyAddressSpace(addr_t fallback, void (*func)(addr_t, void*), void* user)
+void DestroyAddressSpace(addr_t fallback)
 {
 	// Look up the last few entries used for the fractal mapping. These
 	// cannot be unmapped as that would destroy the world. Instead, we
@@ -150,7 +146,7 @@ void DestroyAddressSpace(addr_t fallback, void (*func)(addr_t, void*), void* use
 	addr_t fractal2 = (PMLS[3] + 510UL)->entry[510];
 	addr_t fork1 = (PMLS[2] + 510UL * 512UL + 0)->entry[0];
 	addr_t fractal1 = (PMLS[2] + 510UL * 512UL + 510UL)->entry[510];
-	addr_t dir = currentdir;
+	addr_t dir = GetAddressSpace();
 
 	// We want to free the pages, but we are still using them ourselves,
 	// so lock the page allocation structure until we are done.
@@ -167,10 +163,7 @@ void DestroyAddressSpace(addr_t fallback, void (*func)(addr_t, void*), void* use
 	if ( !fallback )
 		fallback = (addr_t) BOOTPML4;
 
-	if ( func )
-		func(fallback, user);
-	else
-		SwitchAddressSpace(fallback);
+	SwitchAddressSpace(fallback);
 
 	// Ok, now we got marked everything left behind as unused, we can
 	// now safely let another thread use the pages.

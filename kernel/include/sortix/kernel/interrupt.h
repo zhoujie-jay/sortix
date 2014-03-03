@@ -28,14 +28,7 @@
 #include <stddef.h>
 
 #include <sortix/kernel/decl.h>
-
-namespace Sortix {
-namespace CPU {
-
-struct InterruptRegisters;
-
-} // namespace CPU
-} // namespace Sortix
+#include <sortix/kernel/registers.h>
 
 namespace Sortix {
 namespace Interrupt {
@@ -108,7 +101,7 @@ inline bool SetEnabled(bool is_enabled)
 }
 
 
-typedef void (*Handler)(CPU::InterruptRegisters* regs, void* user);
+typedef void (*Handler)(struct interrupt_context* intctx, void* user);
 void RegisterHandler(unsigned int index, Handler handler, void* user);
 
 void Init();

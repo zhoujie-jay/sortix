@@ -27,13 +27,16 @@
 .section .text
 .type syscall_handler, @function
 syscall_handler:
+	/* -- stack is 12 bytes from being 16-byte aligned -- */
 	movl $0, global_errno # Reset errno
 
 	pushl %ebp
+	/* -- stack is 8 bytes from being 16-byte aligned -- */
 
 	# Grant ourselves kernel permissions to the data segment.
 	movl %ds, %ebp
 	pushl %ebp
+	/* -- stack is 4 bytes from being 16-byte aligned -- */
 	movw $0x10, %bp
 	movl %ebp, %ds
 	movl %ebp, %es
@@ -53,10 +56,12 @@ valid_syscall:
 
 	# Call the system call.
 	pushl %esi
+	/* -- stack is 16-byte aligned -- */
 	pushl %edi
 	pushl %edx
 	pushl %ecx
 	pushl %ebx
+	/* -- stack is 16-byte aligned -- */
 	calll *%eax
 	addl $20, %esp
 

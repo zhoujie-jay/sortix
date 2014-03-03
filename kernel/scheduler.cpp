@@ -25,9 +25,12 @@
 #include <sys/types.h>
 
 #include <assert.h>
-#include <msr.h>
 #include <string.h>
 #include <timespec.h>
+
+#if defined(__x86_64__)
+#include <msr.h>
+#endif
 
 #include <sortix/clock.h>
 #include <sortix/timespec.h>
@@ -37,6 +40,7 @@
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/process.h>
+#include <sortix/kernel/registers.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
 #include <sortix/kernel/syscall.h>
@@ -52,9 +56,143 @@ namespace Sortix {
 namespace Scheduler {
 
 static Thread* current_thread;
+
+void SaveInterruptedContext(const struct interrupt_context* intctx,
+                            struct thread_registers* registers)
+{
+#if defined(__i386__)
+	registers->signal_pending = intctx->signal_pending;
+	registers->kerrno = intctx->kerrno;
+	registers->eax = intctx->eax;
+	registers->ebx = intctx->ebx;
+	registers->ecx = intctx->ecx;
+	registers->edx = intctx->edx;
+	registers->edi = intctx->edi;
+	registers->esi = intctx->esi;
+	registers->esp = intctx->esp;
+	registers->ebp = intctx->ebp;
+	registers->eip = intctx->eip;
+	registers->eflags = intctx->eflags;
+	registers->fsbase = (unsigned long) GDT::GetFSBase();
+	registers->gsbase = (unsigned long) GDT::GetGSBase();
+	asm ( "mov %%cr3, %0" : "=r"(registers->cr3) );
+	registers->kernel_stack = GDT::GetKernelStack();
+	registers->cs = intctx->cs;
+	registers->ds = intctx->ds;
+	registers->ss = intctx->ss;
+	asm volatile ("fxsave (%0)" : : "r"(registers->fpuenv));
+#elif defined(__x86_64__)
+	registers->signal_pending = intctx->signal_pending;
+	registers->kerrno = intctx->kerrno;
+	registers->rax = intctx->rax;
+	registers->rbx = intctx->rbx;
+	registers->rcx = intctx->rcx;
+	registers->rdx = intctx->rdx;
+	registers->rdi = intctx->rdi;
+	registers->rsi = intctx->rsi;
+	registers->rsp = intctx->rsp;
+	registers->rbp = intctx->rbp;
+	registers->r8 = intctx->r8;
+	registers->r9 = intctx->r9;
+	registers->r10 = intctx->r10;
+	registers->r11 = intctx->r11;
+	registers->r12 = intctx->r12;
+	registers->r13 = intctx->r13;
+	registers->r14 = intctx->r14;
+	registers->r15 = intctx->r15;
+	registers->r15 = intctx->r15;
+	registers->rip = intctx->rip;
+	registers->rflags = intctx->rflags;
+	registers->fsbase = (unsigned long) rdmsr(MSRID_FSBASE);
+	registers->gsbase = (unsigned long) rdmsr(MSRID_GSBASE);
+	asm ( "mov %%cr3, %0" : "=r"(registers->cr3) );
+	registers->kernel_stack = GDT::GetKernelStack();
+	registers->cs = intctx->cs;
+	registers->ds = intctx->ds;
+	registers->ss = intctx->ss;
+	asm volatile ("fxsave (%0)" : : "r"(registers->fpuenv));
+#else
+#warning "You need to implement register saving"
+#endif
+}
+
+void LoadInterruptedContext(struct interrupt_context* intctx,
+                            const struct thread_registers* registers)
+{
+#if defined(__i386__)
+	intctx->signal_pending = registers->signal_pending;
+	intctx->kerrno = registers->kerrno;
+	intctx->eax = registers->eax;
+	intctx->ebx = registers->ebx;
+	intctx->ecx = registers->ecx;
+	intctx->edx = registers->edx;
+	intctx->edi = registers->edi;
+	intctx->esi = registers->esi;
+	intctx->esp = registers->esp;
+	intctx->ebp = registers->ebp;
+	intctx->eip = registers->eip;
+	intctx->eflags = registers->eflags;
+	GDT::SetFSBase(registers->fsbase);
+	GDT::SetGSBase(registers->gsbase);
+	asm volatile ( "mov %0, %%cr3" : : "r"(registers->cr3) );
+	GDT::SetKernelStack(registers->kernel_stack);
+	intctx->cs = registers->cs;
+	intctx->ds = registers->ds;
+	intctx->ss = registers->ss;
+	asm volatile ("fxrstor (%0)" : : "r"(registers->fpuenv));
+#elif defined(__x86_64__)
+	intctx->signal_pending = registers->signal_pending;
+	intctx->kerrno = registers->kerrno;
+	intctx->rax = registers->rax;
+	intctx->rbx = registers->rbx;
+	intctx->rcx = registers->rcx;
+	intctx->rdx = registers->rdx;
+	intctx->rdi = registers->rdi;
+	intctx->rsi = registers->rsi;
+	intctx->rsp = registers->rsp;
+	intctx->rbp = registers->rbp;
+	intctx->r8 = registers->r8;
+	intctx->r9 = registers->r9;
+	intctx->r10 = registers->r10;
+	intctx->r11 = registers->r11;
+	intctx->r12 = registers->r12;
+	intctx->r13 = registers->r13;
+	intctx->r14 = registers->r14;
+	intctx->r15 = registers->r15;
+	intctx->r15 = registers->r15;
+	intctx->rip = registers->rip;
+	intctx->rflags = registers->rflags;
+	wrmsr(MSRID_FSBASE, registers->fsbase);
+	wrmsr(MSRID_GSBASE, registers->gsbase);
+	asm volatile ( "mov %0, %%cr3" : : "r"(registers->cr3) );
+	GDT::SetKernelStack(registers->kernel_stack);
+	intctx->cs = registers->cs;
+	intctx->ds = registers->ds;
+	intctx->ss = registers->ss;
+	asm volatile ("fxrstor (%0)" : : "r"(registers->fpuenv));
+#else
+#warning "You need to implement register loading"
+#endif
+}
+
+static
+void SwitchThread(struct interrupt_context* intctx, Thread* prev, Thread* next)
+{
+	if ( prev == next )
+		return;
+
+	SaveInterruptedContext(intctx, &prev->registers);
+	if ( !prev->registers.cr3 )
+		Log::PrintF("Thread %p had cr3=0x%zx\n", prev, prev->registers.cr3);
+	if ( !next->registers.cr3 )
+		Log::PrintF("Thread %p has cr3=0x%zx\n", next, next->registers.cr3);
+	LoadInterruptedContext(intctx, &next->registers);
+
+	current_thread = next;
+}
+
 static Thread* idle_thread;
 static Thread* first_runnable_thread;
-static Thread* first_sleeping_thread;
 static Process* init_process;
 
 static Thread* PopNextThread()
@@ -69,63 +207,26 @@ static Thread* PopNextThread()
 	return idle_thread;
 }
 
-static void DoActualSwitch(CPU::InterruptRegisters* regs)
+void Switch(struct interrupt_context* intctx)
 {
-	Thread* prev = CurrentThread();
-	Thread* next = PopNextThread();
+	SwitchThread(intctx, CurrentThread(), PopNextThread());
 
-	if ( prev == next )
-		return;
-
-	prev->SaveRegisters(regs);
-	next->LoadRegisters(regs);
-
-	Memory::SwitchAddressSpace(next->addrspace);
-	current_thread = next;
-
-#if defined(__i386__) || defined(__x86_64__)
-	Float::NotityTaskSwitch();
-	GDT::SetKernelStack(next->kernelstackpos, next->kernelstacksize,
-	                    next->kernelstackpos + next->kernelstacksize);
-#endif
-
-#if defined(__i386__)
-	prev->fsbase = (unsigned long) GDT::GetFSBase();
-	prev->gsbase = (unsigned long) GDT::GetGSBase();
-	GDT::SetFSBase((uint32_t) next->fsbase);
-	GDT::SetGSBase((uint32_t) next->gsbase);
-#elif defined(__x86_64__)
-	prev->fsbase = (unsigned long) rdmsr(MSRID_FSBASE);
-	prev->gsbase = (unsigned long) rdmsr(MSRID_GSBASE);
-	wrmsr(MSRID_FSBASE, (uint64_t) next->fsbase);
-	wrmsr(MSRID_GSBASE, (uint64_t) next->gsbase);
-#endif
-}
-
-void Switch(CPU::InterruptRegisters* regs)
-{
-	DoActualSwitch(regs);
-
-	if ( regs->signal_pending && regs->InUserspace() )
+	if ( intctx->signal_pending && InUserspace(intctx) )
 	{
 		Interrupt::Enable();
-		Signal::DispatchHandler(regs, NULL);
+		Signal::DispatchHandler(intctx, NULL);
 	}
 }
 
-void InterruptYieldCPU(CPU::InterruptRegisters* regs, void* /*user*/)
+void InterruptYieldCPU(struct interrupt_context* intctx, void* /*user*/)
 {
-	Switch(regs);
+	Switch(intctx);
 }
 
-void ThreadExitCPU(CPU::InterruptRegisters* regs, void* /*user*/)
+void ThreadExitCPU(struct interrupt_context* intctx, void* /*user*/)
 {
-#if defined(__i386__) || defined(__x86_64__)
-	// Can't use floating point instructions from now.
-	Float::NofityTaskExit(current_thread);
-#endif
 	SetThreadState(current_thread, ThreadState::DEAD);
-	InterruptYieldCPU(regs, NULL);
+	InterruptYieldCPU(intctx, NULL);
 }
 
 // The idle thread serves no purpose except being an infinite loop that does
@@ -206,7 +307,6 @@ static int sys_sched_yield(void)
 void Init()
 {
 	first_runnable_thread = NULL;
-	first_sleeping_thread = NULL;
 	idle_thread = NULL;
 
 	Syscall::Register(SYSCALL_SCHED_YIELD, (void*) sys_sched_yield);

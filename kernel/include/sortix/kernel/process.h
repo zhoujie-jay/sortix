@@ -34,6 +34,7 @@
 #include <sortix/kernel/clock.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/refcount.h>
+#include <sortix/kernel/registers.h>
 #include <sortix/kernel/segment.h>
 #include <sortix/kernel/time.h>
 #include <sortix/kernel/timer.h>
@@ -168,7 +169,7 @@ public:
 	int Execute(const char* programname, const uint8_t* program,
 	            size_t programsize, int argc, const char* const* argv,
 	            int envc, const char* const* envp,
-	            CPU::InterruptRegisters* regs);
+	            struct thread_registers* regs);
 	void ResetAddressSpace();
 	void ExitThroughSignal(int signal);
 	void ExitWithCode(int exit_code);
@@ -187,9 +188,6 @@ public:
 	Process* Fork();
 
 private:
-	void ExecuteCPU(int argc, char** argv, int envc, char** envp,
-	                addr_t stackpos, addr_t entry,
-	                CPU::InterruptRegisters* regs);
 	void OnLastThreadExit();
 	void LastPrayer();
 	void NotifyMemberExit(Process* child);
@@ -212,8 +210,6 @@ private:
 
 };
 
-void InitializeThreadRegisters(CPU::InterruptRegisters* regs,
-                               const struct tfork* requested);
 Process* CurrentProcess();
 
 } // namespace Sortix
