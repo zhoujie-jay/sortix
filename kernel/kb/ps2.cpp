@@ -36,6 +36,7 @@
 #include <sortix/kernel/cpu.h>
 #include <sortix/kernel/debugger.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/ioport.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/keyboard.h>
 #include <sortix/kernel/thread.h>
@@ -184,15 +185,15 @@ int PS2Keyboard::DecodeScancode(uint8_t scancode)
 
 uint8_t PS2Keyboard::PopScancode()
 {
-	return CPU::InPortB(iobase + DATA);
+	return inport8(iobase + DATA);
 }
 
 void PS2Keyboard::UpdateLEDs(int ledval)
 {
-	while ( (CPU::InPortB(iobase + STATUS) & (1<<1)) );
-	CPU::OutPortB(iobase + COMMAND, CMD_SETLED);
-	while ( (CPU::InPortB(iobase + STATUS) & (1<<1)) );
-	CPU::OutPortB(iobase + COMMAND, ledval);
+	while ( (inport8(iobase + STATUS) & (1<<1)) );
+	outport8(iobase + COMMAND, CMD_SETLED);
+	while ( (inport8(iobase + STATUS) & (1<<1)) );
+	outport8(iobase + COMMAND, ledval);
 }
 
 void PS2Keyboard::SetOwner(KeyboardOwner* owner, void* user)

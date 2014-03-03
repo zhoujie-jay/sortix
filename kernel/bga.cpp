@@ -32,6 +32,7 @@
 
 #include <sortix/kernel/addralloc.h>
 #include <sortix/kernel/cpu.h>
+#include <sortix/kernel/ioport.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/pci.h>
@@ -127,14 +128,14 @@ addr_t bgaframebuffer;
 
 void WriteRegister(uint16_t index, uint16_t value)
 {
-    CPU::OutPortW(VBE_DISPI_IOPORT_INDEX, index);
-    CPU::OutPortW(VBE_DISPI_IOPORT_DATA, value);
+    outport16(VBE_DISPI_IOPORT_INDEX, index);
+    outport16(VBE_DISPI_IOPORT_DATA, value);
 }
 
 uint16_t ReadRegister(uint16_t index)
 {
-    CPU::OutPortW(VBE_DISPI_IOPORT_INDEX, index);
-    return CPU::InPortW(VBE_DISPI_IOPORT_DATA);
+    outport16(VBE_DISPI_IOPORT_INDEX, index);
+    return inport16(VBE_DISPI_IOPORT_DATA);
 }
 
 uint16_t GetCapability(uint16_t index)

@@ -35,12 +35,6 @@ namespace Sortix {
 // Functions for 32-bit and 64-bit x86.
 #if defined(__i386__) || defined(__x86_64__)
 namespace CPU {
-void OutPortB(uint16_t Port, uint8_t Value);
-void OutPortW(uint16_t Port, uint16_t Value);
-void OutPortL(uint16_t Port, uint32_t Value);
-uint8_t InPortB(uint16_t Port);
-uint16_t InPortW(uint16_t Port);
-uint32_t InPortL(uint16_t Port);
 void Reboot();
 void ShutDown();
 } // namespace CPU

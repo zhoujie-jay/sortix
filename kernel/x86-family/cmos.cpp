@@ -32,6 +32,7 @@
 
 #include <sortix/kernel/clock.h>
 #include <sortix/kernel/cpu.h>
+#include <sortix/kernel/ioport.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/time.h>
 
@@ -43,8 +44,8 @@ const uint16_t CMOS_DATA_REG = 0x71;
 
 uint8_t ReadRTC(uint8_t reg)
 {
-	CPU::OutPortB(CMOS_ADDRESS_REG, reg);
-	return CPU::InPortB(CMOS_DATA_REG);
+	outport8(CMOS_ADDRESS_REG, reg);
+	return inport8(CMOS_DATA_REG);
 }
 
 bool IsRTCUpdateInProgress()

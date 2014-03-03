@@ -26,6 +26,7 @@
 #include <msr.h>
 #include <stdint.h>
 
+#include <sortix/kernel/ioport.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/syscall.h>
 
@@ -33,42 +34,6 @@
 
 namespace Sortix {
 namespace CPU {
-
-void OutPortB(uint16_t port, uint8_t value)
-{
-	asm volatile ("outb %1, %0" : : "dN" (port), "a" (value));
-}
-
-void OutPortW(uint16_t port, uint16_t value)
-{
-	asm volatile ("outw %1, %0" : : "dN" (port), "a" (value));
-}
-
-void OutPortL(uint16_t port, uint32_t value)
-{
-	asm volatile ("outl %1, %0" : : "dN" (port), "a" (value));
-}
-
-uint8_t InPortB(uint16_t port)
-{
-	uint8_t result;
-	asm volatile("inb %1, %0" : "=a" (result) : "dN" (port));
-	return result;
-}
-
-uint16_t InPortW(uint16_t port)
-{
-	uint16_t result;
-	asm volatile("inw %1, %0" : "=a" (result) : "dN" (port));
-	return result;
-}
-
-uint32_t InPortL(uint16_t port)
-{
-	uint32_t result;
-	asm volatile("inl %1, %0" : "=a" (result) : "dN" (port));
-	return result;
-}
 
 void Reboot()
 {
@@ -91,16 +56,16 @@ void Reboot()
 	uint8_t byte;
 	do
 	{
-		byte = InPortB(KEYBOARD_INTERFACE);
+		byte = inport8(KEYBOARD_INTERFACE);
 		if ( byte & KEYBOARD_DATA )
-			InPortB(KEYBOARD_IO);
+			inport8(KEYBOARD_IO);
 	} while ( byte & USER_DATA );
 
 	// CPU reset command.
 	uint8_t KEYBOARD_RESET_CPU = 0xFE;
 
 	// Now pulse the CPU reset line and reset.
-	OutPortB(KEYBOARD_INTERFACE, KEYBOARD_RESET_CPU);
+	outport8(KEYBOARD_INTERFACE, KEYBOARD_RESET_CPU);
 
 	// If that didn't work, just halt.
 	asm volatile("hlt");

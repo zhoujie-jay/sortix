@@ -22,19 +22,20 @@
 
 *******************************************************************************/
 
+#include <errno.h>
+#include <string.h>
+
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/inode.h>
 #include <sortix/kernel/interlock.h>
 #include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/ioport.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/syscall.h>
-
-#include <errno.h>
-#include <string.h>
 
 #include "fs/util.h"
 #include "vga.h"
@@ -53,14 +54,14 @@ uint8_t* vgafont;
 
 static void WriteIndex(uint16_t port, uint8_t index, uint8_t value)
 {
-	CPU::OutPortB(port, index);
-	CPU::OutPortB(port+1, value);
+	outport8(port, index);
+	outport8(port+1, value);
 }
 
 static uint8_t ReadIndex(uint16_t port, uint8_t index)
 {
-	CPU::OutPortB(port, index);
-	return CPU::InPortB(port+1);
+	outport8(port, index);
+	return inport8(port+1);
 }
 
 static uint8_t ReplaceIndex(uint16_t port, uint8_t index, uint8_t value)
@@ -165,10 +166,10 @@ void SetCursor(unsigned x, unsigned y)
 	// CRT Control Register of the VGA controller. These
 	// are the high and low bytes of the index that show
 	// where the hardware cursor is to be 'blinking'.
-	CPU::OutPortB(0x3D4, 14);
-	CPU::OutPortB(0x3D5, (value >> 8) & 0xFF);
-	CPU::OutPortB(0x3D4, 15);
-	CPU::OutPortB(0x3D5, (value >> 0) & 0xFF);
+	outport8(0x3D4, 14);
+	outport8(0x3D5, (value >> 8) & 0xFF);
+	outport8(0x3D4, 15);
+	outport8(0x3D5, (value >> 0) & 0xFF);
 }
 
 } // namespace VGA

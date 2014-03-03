@@ -25,8 +25,9 @@
 #include <stdint.h>
 
 #include <sortix/kernel/cpu.h>
-#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/ioport.h>
+#include <sortix/kernel/kernel.h>
 
 #include "pic.h"
 
@@ -53,10 +54,10 @@ const uint8_t PIC_READ_ISR = 0x0B;
 
 static uint16_t ReadRegister(uint8_t ocw3)
 {
-	CPU::OutPortB(PIC_MASTER + PIC_COMMAND, ocw3);
-	CPU::OutPortB(PIC_SLAVE + PIC_COMMAND, ocw3);
-	return CPU::InPortB(PIC_MASTER + PIC_COMMAND) << 0 |
-	       CPU::InPortB(PIC_SLAVE  + PIC_COMMAND) << 8;
+	outport8(PIC_MASTER + PIC_COMMAND, ocw3);
+	outport8(PIC_SLAVE + PIC_COMMAND, ocw3);
+	return inport8(PIC_MASTER + PIC_COMMAND) << 0 |
+	       inport8(PIC_SLAVE  + PIC_COMMAND) << 8;
 }
 
 uint16_t ReadIRR()
@@ -73,42 +74,42 @@ extern "C" void ReprogramPIC()
 {
 	uint8_t master_mask = 0;
 	uint8_t slave_mask = 0;
-	CPU::OutPortB(PIC_MASTER + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
-	CPU::OutPortB(PIC_SLAVE + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
-	CPU::OutPortB(PIC_MASTER + PIC_DATA, Interrupt::IRQ0);
-	CPU::OutPortB(PIC_SLAVE + PIC_DATA, Interrupt::IRQ8);
-	CPU::OutPortB(PIC_MASTER + PIC_DATA, 0x04); // Slave PIC at IRQ2
-	CPU::OutPortB(PIC_SLAVE + PIC_DATA, 0x02); // Cascade Identity
-	CPU::OutPortB(PIC_MASTER + PIC_DATA, PIC_MODE_8086);
-	CPU::OutPortB(PIC_SLAVE + PIC_DATA, PIC_MODE_8086);
-	CPU::OutPortB(PIC_MASTER + PIC_DATA, master_mask);
-	CPU::OutPortB(PIC_SLAVE + PIC_DATA, slave_mask);
+	outport8(PIC_MASTER + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
+	outport8(PIC_SLAVE + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
+	outport8(PIC_MASTER + PIC_DATA, Interrupt::IRQ0);
+	outport8(PIC_SLAVE + PIC_DATA, Interrupt::IRQ8);
+	outport8(PIC_MASTER + PIC_DATA, 0x04); // Slave PIC at IRQ2
+	outport8(PIC_SLAVE + PIC_DATA, 0x02); // Cascade Identity
+	outport8(PIC_MASTER + PIC_DATA, PIC_MODE_8086);
+	outport8(PIC_SLAVE + PIC_DATA, PIC_MODE_8086);
+	outport8(PIC_MASTER + PIC_DATA, master_mask);
+	outport8(PIC_SLAVE + PIC_DATA, slave_mask);
 }
 
 extern "C" void DeprogramPIC()
 {
 	uint8_t master_mask = 0;
 	uint8_t slave_mask = 0;
-	CPU::OutPortB(PIC_MASTER + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
-	CPU::OutPortB(PIC_SLAVE + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
-	CPU::OutPortB(PIC_MASTER + PIC_DATA, 0x08);
-	CPU::OutPortB(PIC_SLAVE + PIC_DATA, 0x70);
-	CPU::OutPortB(PIC_MASTER + PIC_DATA, 0x04); // Slave PIC at IRQ2
-	CPU::OutPortB(PIC_SLAVE + PIC_DATA, 0x02); // Cascade Identity
-	CPU::OutPortB(PIC_MASTER + PIC_DATA, PIC_MODE_8086);
-	CPU::OutPortB(PIC_SLAVE + PIC_DATA, PIC_MODE_8086);
-	CPU::OutPortB(PIC_MASTER + PIC_DATA, master_mask);
-	CPU::OutPortB(PIC_SLAVE + PIC_DATA, slave_mask);
+	outport8(PIC_MASTER + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
+	outport8(PIC_SLAVE + PIC_COMMAND, PIC_CMD_INIT | PIC_ICW1_ICW4);
+	outport8(PIC_MASTER + PIC_DATA, 0x08);
+	outport8(PIC_SLAVE + PIC_DATA, 0x70);
+	outport8(PIC_MASTER + PIC_DATA, 0x04); // Slave PIC at IRQ2
+	outport8(PIC_SLAVE + PIC_DATA, 0x02); // Cascade Identity
+	outport8(PIC_MASTER + PIC_DATA, PIC_MODE_8086);
+	outport8(PIC_SLAVE + PIC_DATA, PIC_MODE_8086);
+	outport8(PIC_MASTER + PIC_DATA, master_mask);
+	outport8(PIC_SLAVE + PIC_DATA, slave_mask);
 }
 
 void SendMasterEOI()
 {
-	CPU::OutPortB(PIC_MASTER, PIC_CMD_ENDINTR);
+	outport8(PIC_MASTER, PIC_CMD_ENDINTR);
 }
 
 void SendSlaveEOI()
 {
-	CPU::OutPortB(PIC_SLAVE, PIC_CMD_ENDINTR);
+	outport8(PIC_SLAVE, PIC_CMD_ENDINTR);
 }
 
 void SendEOI(unsigned int irq)

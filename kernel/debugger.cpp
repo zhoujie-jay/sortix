@@ -36,6 +36,7 @@
 #include <sortix/kernel/cpu.h>
 #include <sortix/kernel/debugger.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/ioport.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/keyboard.h>
 #include <sortix/kernel/memorymanagement.h>
@@ -65,18 +66,18 @@ void SetCursor(int x, int y)
 	// CRT Control Register of the VGA controller. These
 	// are the high and low bytes of the index that show
 	// where the hardware cursor is to be 'blinking'.
-	CPU::OutPortB(0x3D4, 14);
-	CPU::OutPortB(0x3D5, (value >> 8) & 0xFF);
-	CPU::OutPortB(0x3D4, 15);
-	CPU::OutPortB(0x3D5, (value >> 0) & 0xFF);
+	outport8(0x3D4, 14);
+	outport8(0x3D5, (value >> 8) & 0xFF);
+	outport8(0x3D4, 15);
+	outport8(0x3D5, (value >> 0) & 0xFF);
 }
 
 void GetCursor(int* x, int* y)
 {
-	CPU::OutPortB(0x3D4, 14);
-	uint8_t high = CPU::InPortB(0x3D5);
-	CPU::OutPortB(0x3D4, 15);
-	uint8_t low = CPU::InPortB(0x3D5);
+	outport8(0x3D4, 14);
+	uint8_t high = inport8(0x3D5);
+	outport8(0x3D4, 15);
+	uint8_t low = inport8(0x3D5);
 	unsigned value = high << 8 | low;
 	*x = value % 80;
 	*y = value / 80;
@@ -241,8 +242,8 @@ void ReadCommand(char* buffer, size_t buffer_length)
 		const uint16_t DATA = 0x0;
 		//const uint16_t COMMAND = 0x0;
 		const uint16_t STATUS = 0x4;
-		while ( (CPU::InPortB(iobase + STATUS) & (1<<0)) == 0 );
-		uint8_t scancode = CPU::InPortB(iobase + DATA);
+		while ( (inport8(iobase + STATUS) & (1<<0)) == 0 );
+		uint8_t scancode = inport8(iobase + DATA);
 
 		// Handle escaped scancodes.
 		const uint8_t SCANCODE_ESCAPE = 0xE0;

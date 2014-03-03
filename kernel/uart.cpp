@@ -27,6 +27,7 @@
 #include <string.h>
 
 #include <sortix/kernel/cpu.h>
+#include <sortix/kernel/ioport.h>
 #include <sortix/kernel/kernel.h>
 
 #include "vga.h"
@@ -67,11 +68,11 @@ const unsigned BOTH_EMPTY = LSR_TEMT | LSR_THRE;
 
 unsigned ProbeBaud(unsigned port)
 {
-	uint8_t lcr = CPU::InPortB(port + LCR);
-	CPU::OutPortB(port + LCR, lcr | LCR_DLAB);
-	uint8_t dll = CPU::InPortB(port + DLL);
-	uint8_t dlm = CPU::InPortB(port + DLM);
-	CPU::OutPortB(port + LCR, lcr);
+	uint8_t lcr = inport8(port + LCR);
+	outport8(port + LCR, lcr | LCR_DLAB);
+	uint8_t dll = inport8(port + DLL);
+	uint8_t dlm = inport8(port + DLM);
+	outport8(port + LCR, lcr);
 	unsigned quot = dlm << 8 | dll;
 
 	return BASE_BAUD / quot;
@@ -79,7 +80,7 @@ unsigned ProbeBaud(unsigned port)
 
 void WaitForEmptyBuffers(unsigned port)
 {
-	while ( (CPU::InPortB(port + LSR) & BOTH_EMPTY) != BOTH_EMPTY );
+	while ( (inport8(port + LSR) & BOTH_EMPTY) != BOTH_EMPTY );
 }
 
 const unsigned PORT = 0x3F8;
@@ -88,34 +89,34 @@ void Init()
 {
 	unsigned baud = ProbeBaud(PORT);
 
-	CPU::OutPortB(PORT + LCR, 0x3); // 8n1
-	CPU::OutPortB(PORT + IER, 0); // No interrupt
-	CPU::OutPortB(PORT + FCR, 0); // No FIFO
-	CPU::OutPortB(PORT + MCR, 0x3); // DTR + RTS
+	outport8(PORT + LCR, 0x3); // 8n1
+	outport8(PORT + IER, 0); // No interrupt
+	outport8(PORT + FCR, 0); // No FIFO
+	outport8(PORT + MCR, 0x3); // DTR + RTS
 
 	unsigned divisor = 115200 / baud;
-	uint8_t c = CPU::InPortB(PORT + LCR);
-	CPU::OutPortB(PORT + LCR, c | LCR_DLAB);
-	CPU::OutPortB(PORT + DLL, divisor >> 0 & 0xFF);
-	CPU::OutPortB(PORT + DLM, divisor >> 8 & 0xFF);
-	CPU::OutPortB(PORT + LCR, c & ~LCR_DLAB);
+	uint8_t c = inport8(PORT + LCR);
+	outport8(PORT + LCR, c | LCR_DLAB);
+	outport8(PORT + DLL, divisor >> 0 & 0xFF);
+	outport8(PORT + DLM, divisor >> 8 & 0xFF);
+	outport8(PORT + LCR, c & ~LCR_DLAB);
 }
 
 void Read(uint8_t* buffer, size_t size)
 {
 	// Save the IER and disable interrupts.
-	unsigned ier = CPU::InPortB(PORT + IER);
-	CPU::OutPortB(PORT + IER, 0);
+	unsigned ier = inport8(PORT + IER);
+	outport8(PORT + IER, 0);
 
 	for ( size_t i = 0; i < size; i++ )
 	{
-		while ( !(CPU::InPortB(PORT + LSR) & LSR_READY) );
-		buffer[i] = CPU::InPortB(PORT);
+		while ( !(inport8(PORT + LSR) & LSR_READY) );
+		buffer[i] = inport8(PORT);
 	}
 
 	// Wait for transmitter to become empty and restore the IER.
 	WaitForEmptyBuffers(PORT);
-	CPU::OutPortB(PORT + IER, ier);
+	outport8(PORT + IER, ier);
 }
 
 void Write(const void* b, size_t size)
@@ -123,49 +124,49 @@ void Write(const void* b, size_t size)
 	const uint8_t* buffer = (const uint8_t*) b;
 
 	// Save the IER and disable interrupts.
-	unsigned ier = CPU::InPortB(PORT + IER);
-	CPU::OutPortB(PORT + IER, 0);
+	unsigned ier = inport8(PORT + IER);
+	outport8(PORT + IER, 0);
 
 	for ( size_t i = 0; i < size; i++ )
 	{
 		WaitForEmptyBuffers(PORT);
-		CPU::OutPortB(PORT, buffer[i]);
+		outport8(PORT, buffer[i]);
 	}
 
 	// Wait for transmitter to become empty and restore the IER.
 	WaitForEmptyBuffers(PORT);
-	CPU::OutPortB(PORT + IER, ier);
+	outport8(PORT + IER, ier);
 }
 
 void WriteChar(char c)
 {
 	// Save the IER and disable interrupts.
-	unsigned ier = CPU::InPortB(PORT + IER);
-	CPU::OutPortB(PORT + IER, 0);
+	unsigned ier = inport8(PORT + IER);
+	outport8(PORT + IER, 0);
 
 	WaitForEmptyBuffers(PORT);
 
-	CPU::OutPortB(PORT, c);
+	outport8(PORT, c);
 
 	// Wait for transmitter to become empty and restore the IER.
 	WaitForEmptyBuffers(PORT);
-	CPU::OutPortB(PORT + IER, ier);
+	outport8(PORT + IER, ier);
 }
 
 int TryPopChar()
 {
 	// Save the IER and disable interrupts.
-	unsigned ier = CPU::InPortB(PORT + IER);
-	CPU::OutPortB(PORT + IER, 0);
+	unsigned ier = inport8(PORT + IER);
+	outport8(PORT + IER, 0);
 
 	int result = -1;
 
-	if ( CPU::InPortB(PORT + LSR) & LSR_READY )
-		result = CPU::InPortB(PORT);
+	if ( inport8(PORT + LSR) & LSR_READY )
+		result = inport8(PORT);
 
 	// Wait for transmitter to become empty and restore the IER.
 	WaitForEmptyBuffers(PORT);
-	CPU::OutPortB(PORT + IER, ier);
+	outport8(PORT + IER, ier);
 
 	return result;
 }

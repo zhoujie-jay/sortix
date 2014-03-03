@@ -31,6 +31,7 @@
 #include <sortix/kernel/clock.h>
 #include <sortix/kernel/cpu.h>
 #include <sortix/kernel/interrupt.h>
+#include <sortix/kernel/ioport.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/scheduler.h>
@@ -65,9 +66,9 @@ static struct timespec PeriodOfFrequency(long frequency)
 
 static void RequestIRQ0(uint16_t divisor)
 {
-	CPU::OutPortB(0x43, 0x36);
-	CPU::OutPortB(0x40, divisor >> 0 & 0xFF);
-	CPU::OutPortB(0x40, divisor >> 8 & 0xFF);
+	outport8(0x43, 0x36);
+	outport8(0x40, divisor >> 0 & 0xFF);
+	outport8(0x40, divisor >> 8 & 0xFF);
 }
 
 extern Clock* realtime_clock;

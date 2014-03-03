@@ -33,6 +33,7 @@
 #include <sortix/kernel/inode.h>
 #include <sortix/kernel/interlock.h>
 #include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/ioport.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/refcount.h>
@@ -195,7 +196,7 @@ void Init(const char* devpath, Ref<Descriptor> slashdev)
 
 ATABus* CreateBus(uint16_t portoffset, uint16_t altport)
 {
-	unsigned status = CPU::InPortB(portoffset + STATUS);
+	unsigned status = inport8(portoffset + STATUS);
 	// Detect if there is no such bus.
 	if ( status == 0xFF )
 	{
@@ -210,7 +211,7 @@ ATABus* CreateBus(uint16_t portoffset, uint16_t altport)
 void Wait400NSecs(uint16_t iobase)
 {
 	// Now wait 400 ns for the drive to be ready.
-	for ( unsigned i = 0; i < 4; i++ ) { CPU::InPortB(iobase + STATUS); }
+	for ( unsigned i = 0; i < 4; i++ ) { inport8(iobase + STATUS); }
 }
 
 ATABus::ATABus(uint16_t portoffset, uint16_t altport)
@@ -231,30 +232,30 @@ ATADrive* ATABus::Instatiate(unsigned driveid)
 	curdriveid = 0;
 
 	uint8_t drivemagic = 0xA0 | (driveid << 4);
-	CPU::OutPortB(iobase + DRIVE_SELECT, drivemagic);
-	CPU::OutPortB(iobase + SECTOR_COUNT, 0);
-	CPU::OutPortB(iobase + LBA_LOW, 0);
-	CPU::OutPortB(iobase + LBA_MID, 0);
-	CPU::OutPortB(iobase + LBA_HIGH, 0);
-	CPU::OutPortB(iobase + COMMAND, CMD_IDENTIFY);
+	outport8(iobase + DRIVE_SELECT, drivemagic);
+	outport8(iobase + SECTOR_COUNT, 0);
+	outport8(iobase + LBA_LOW, 0);
+	outport8(iobase + LBA_MID, 0);
+	outport8(iobase + LBA_HIGH, 0);
+	outport8(iobase + COMMAND, CMD_IDENTIFY);
 	uint8_t status;
 	while ( true )
 	{
-		status = CPU::InPortB(iobase + STATUS);
+		status = inport8(iobase + STATUS);
 		if ( !status || status == 0xFF )
 			return errno = ENODEV, (ATADrive*) NULL;
 		if ( !(status & STATUS_BUSY) )
 			break;
 	}
 	// Check for ATAPI device not following spec.
-	if ( CPU::InPortB(iobase + LBA_MID) || CPU::InPortB(iobase + LBA_MID) )
+	if ( inport8(iobase + LBA_MID) || inport8(iobase + LBA_MID) )
 		return errno = ENODEV, (ATADrive*) NULL;
 	while ( (status & STATUS_BUSY) || (!(status & STATUS_DATAREADY) && !(status & STATUS_ERROR)) )
-		status = CPU::InPortB(iobase + STATUS);
+		status = inport8(iobase + STATUS);
 	if ( status & STATUS_ERROR )
 	{
-		unsigned mid = CPU::InPortB(iobase + LBA_MID);
-		unsigned high = CPU::InPortB(iobase + LBA_HIGH);
+		unsigned mid = inport8(iobase + LBA_MID);
+		unsigned high = inport8(iobase + LBA_HIGH);
 		if ( mid == 0x14 && high == 0xEB )
 		{
 			//Log::PrintF("Found ATAPI device instead of ATA\n");
@@ -283,7 +284,7 @@ bool ATABus::SelectDrive(unsigned driveid)
 	if ( 1 < driveid ) { errno = EINVAL; return false; }
 
 	uint8_t drivemagic = 0xA0 | (driveid << 4);
-	CPU::OutPortB(iobase + DRIVE_SELECT, drivemagic);
+	outport8(iobase + DRIVE_SELECT, drivemagic);
 	Wait400NSecs(iobase);
 	return true;
 }
@@ -301,7 +302,7 @@ ATADrive::ATADrive(ATABus* bus, unsigned driveid, uint16_t portoffset, uint16_t 
 	this->iobase = portoffset;
 	this->altport = altport;
 	for ( size_t i = 0; i < 256; i++ )
-		meta[i] = CPU::InPortW(iobase + DATA);
+		meta[i] = inport16(iobase + DATA);
 	lba48 = meta[META_FLAGS] & FLAG_LBA48;
 	numsectors = 0;
 	if ( lba48 )
@@ -346,27 +347,27 @@ bool ATADrive::PrepareIO(bool write, off_t sector)
 	uint8_t mode = (lba48) ? 0x40 : 0xE0;
 	mode |= driveid << 4;
 	mode |= (lba48) ? 0 : (sector >> 24) & 0x0F;
-	CPU::OutPortB(iobase + DRIVE_SELECT, mode);
+	outport8(iobase + DRIVE_SELECT, mode);
 	uint16_t sectorcount = 1;
 	uint8_t sectorcountlow = sectorcount & 0xFF;
 	uint8_t sectorcounthigh = (sectorcount >> 8) & 0xFF;
 	if ( lba48 )
 	{
-		CPU::OutPortB(iobase + SECTOR_COUNT, sectorcounthigh);
-		CPU::OutPortB(iobase + LBA_LOW, (sector >> 24) & 0xFF);
-		CPU::OutPortB(iobase + LBA_MID, (sector >> 32) & 0xFF);
-		CPU::OutPortB(iobase + LBA_HIGH, (sector >> 40) & 0xFF);
+		outport8(iobase + SECTOR_COUNT, sectorcounthigh);
+		outport8(iobase + LBA_LOW, (sector >> 24) & 0xFF);
+		outport8(iobase + LBA_MID, (sector >> 32) & 0xFF);
+		outport8(iobase + LBA_HIGH, (sector >> 40) & 0xFF);
 	}
-	CPU::OutPortB(iobase + SECTOR_COUNT, sectorcountlow);
-	CPU::OutPortB(iobase + LBA_LOW, sector & 0xFF);
-	CPU::OutPortB(iobase + LBA_MID, (sector >> 8) & 0xFF);
-	CPU::OutPortB(iobase + LBA_HIGH, (sector >> 16) & 0xFF);
+	outport8(iobase + SECTOR_COUNT, sectorcountlow);
+	outport8(iobase + LBA_LOW, sector & 0xFF);
+	outport8(iobase + LBA_MID, (sector >> 8) & 0xFF);
+	outport8(iobase + LBA_HIGH, (sector >> 16) & 0xFF);
 	uint8_t command = (write) ? CMD_WRITE : CMD_READ;
 	if ( lba48 ) { command = (write) ? CMD_WRITE_EXT : CMD_READ_EXT; }
-	CPU::OutPortB(iobase + COMMAND, command);
+	outport8(iobase + COMMAND, command);
 	while ( true )
 	{
-		uint8_t status = CPU::InPortB(iobase + STATUS);
+		uint8_t status = inport8(iobase + STATUS);
 		if ( status & STATUS_BUSY ) { continue; }
 		if ( status & STATUS_DATAREADY ) { break; }
 		if ( status & STATUS_ERROR ) { errno = EIO; return false; }
@@ -382,10 +383,10 @@ bool ATADrive::ReadSector(off_t sector, uint8_t* dest)
 	uint16_t* destword = (uint16_t*) dest;
 	for ( size_t i = 0; i < sectorsize/2; i++ )
 	{
-		destword[i] = CPU::InPortW(iobase + DATA);
+		destword[i] = inport16(iobase + DATA);
 	}
 	Wait400NSecs(iobase);
-	CPU::InPortB(iobase + STATUS);
+	inport8(iobase + STATUS);
 	return true;
 }
 
@@ -396,13 +397,13 @@ bool ATADrive::WriteSector(off_t sector, const uint8_t* src)
 	const uint16_t* srcword = (const uint16_t*) src;
 	for ( size_t i = 0; i < sectorsize/2; i++ )
 	{
-		CPU::OutPortW(iobase + DATA, srcword[i]);
+		outport16(iobase + DATA, srcword[i]);
 	}
 	Wait400NSecs(iobase);
-	CPU::OutPortB(iobase + COMMAND, CMD_FLUSH_CACHE);
+	outport8(iobase + COMMAND, CMD_FLUSH_CACHE);
 	while ( true )
 	{
-		uint8_t status = CPU::InPortB(iobase + STATUS);
+		uint8_t status = inport8(iobase + STATUS);
 		if ( status & STATUS_ERROR ) { errno = EIO; return false; }
 		if ( status & STATUS_DRIVEFAULT ) { errno = EIO; return false; }
 		if ( !(status & STATUS_BUSY) ) { break; }
@@ -470,7 +471,7 @@ size_t ATADrive::Write(off_t byteoffset, const uint8_t* src, size_t numbytes)
 void ATADrive::Initialize()
 {
 	bus->SelectDrive(driveid);
-	CPU::OutPortB(iobase + COMMAND, CTL_NO_INTERRUPT);
+	outport8(iobase + COMMAND, CTL_NO_INTERRUPT);
 }
 
 } // namespace Sortix

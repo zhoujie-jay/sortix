@@ -32,6 +32,7 @@
 #include <sortix/kernel/interlock.h>
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/ioctx.h>
+#include <sortix/kernel/ioport.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/process.h>
@@ -130,8 +131,8 @@ unsigned hwversion[1+NUMCOMPORTS];
 static unsigned HardwareProbe(uint16_t port)
 {
 	// Set the value "0xE7" to the FCR to test the status of the FIFO flags.
-	CPU::OutPortB(port + FCR, 0xE7);
-	uint8_t iir = CPU::InPortB(port + IIR);
+	outport8(port + FCR, 0xE7);
+	uint8_t iir = inport8(port + IIR);
 	if ( iir & (1U<<6U) )
 	{
 		if ( iir & (1<<7U) )
@@ -145,40 +146,40 @@ static unsigned HardwareProbe(uint16_t port)
 	// doesn't do it. This is technically undefined behavior, but it is useful
 	// to detect hardware versions.
 	uint16_t anyvalue = 0x2A;
-	CPU::OutPortB(port + SCR, anyvalue);
-	return CPU::InPortB(port + SCR) == anyvalue ? UART16450 : UART8250;
+	outport8(port + SCR, anyvalue);
+	return inport8(port + SCR) == anyvalue ? UART16450 : UART8250;
 }
 
 static inline void WaitForEmptyBuffers(uint16_t port)
 {
-	while ( (CPU::InPortB(port + LSR) & LSR_BOTH_EMPTY) != LSR_BOTH_EMPTY ) { }
+	while ( (inport8(port + LSR) & LSR_BOTH_EMPTY) != LSR_BOTH_EMPTY ) { }
 }
 
 static inline bool IsLineReady(uint16_t port)
 {
-	return CPU::InPortB(port + LSR) & LSR_READY;
+	return inport8(port + LSR) & LSR_READY;
 }
 
 static inline bool CanWriteByte(uint16_t port)
 {
-	return CPU::InPortB(port + LSR) & LSR_THRE;
+	return inport8(port + LSR) & LSR_THRE;
 }
 
 ssize_t ReadBlocking(uint16_t port, void* buf, size_t size)
 {
 	if ( SSIZE_MAX < size ) { size = SSIZE_MAX; }
 	uint8_t* buffer = (uint8_t*) buf;
-	uint8_t interruptsenabled = CPU::InPortB(port + IER);
-	CPU::OutPortB(port + IER, 0);
+	uint8_t interruptsenabled = inport8(port + IER);
+	outport8(port + IER, 0);
 
 	for ( size_t i = 0; i < size; i++ )
 	{
 		while ( !IsLineReady(port) ) { }
-		buffer[i] = CPU::InPortB(port + RXR);
+		buffer[i] = inport8(port + RXR);
 	}
 
 	WaitForEmptyBuffers(port);
-	CPU::OutPortB(port + IER, interruptsenabled);
+	outport8(port + IER, interruptsenabled);
 	return size;
 }
 
@@ -186,17 +187,17 @@ ssize_t WriteBlocking(uint16_t port, const void* buf, size_t size)
 {
 	if ( SSIZE_MAX < size ) { size = SSIZE_MAX; }
 	const uint8_t* buffer = (const uint8_t*) buf;
-	uint8_t interruptsenabled = CPU::InPortB(port + IER);
-	CPU::OutPortB(port + IER, 0);
+	uint8_t interruptsenabled = inport8(port + IER);
+	outport8(port + IER, 0);
 
 	for ( size_t i = 0; i < size; i++ )
 	{
 		while ( !CanWriteByte(port) ) { }
-		CPU::OutPortB(port + TXR, buffer[i]);
+		outport8(port + TXR, buffer[i]);
 	}
 
 	WaitForEmptyBuffers(port);
-	CPU::OutPortB(port + IER, interruptsenabled);
+	outport8(port + IER, interruptsenabled);
 	return size;
 }
 
@@ -210,7 +211,7 @@ void EarlyInit()
 		comports[i] = bioscomports[i-1];
 		if ( !comports[i] ) { continue; }
 		hwversion[i] = HardwareProbe(comports[i]);
-		CPU::OutPortB(comports[i] + IER, 0x0);
+		outport8(comports[i] + IER, 0x0);
 	}
 }
 
@@ -277,7 +278,7 @@ ssize_t DevCOMPort::read(ioctx_t* ctx, uint8_t* dest, size_t count)
 				return errno = EINTR, -1;
 		}
 
-		uint8_t val = CPU::InPortB(port + RXR);
+		uint8_t val = inport8(port + RXR);
 		if ( !ctx->copy_to_dest(dest + i, &val, sizeof(val)) )
 		{
 			// TODO: The byte is lost in this case!
@@ -310,7 +311,7 @@ ssize_t DevCOMPort::write(ioctx_t* ctx, const uint8_t* src, size_t count)
 		uint8_t val;
 		if ( !ctx->copy_from_src(&val, src + i, sizeof(val)) )
 			return i ? (ssize_t) i : -1;
-		CPU::OutPortB(port + TXR, val);
+		outport8(port + TXR, val);
 	}
 
 	return (ssize_t) count;
@@ -327,7 +328,7 @@ ssize_t DevCOMPort::Read(byte* dest, size_t count)
 #if POLL_BLOCKING
 	return ReadBlocking(port, dest, 1);
 #endif
-	uint8_t lsr = CPU::InPortB(port + LSR);
+	uint8_t lsr = inport8(port + LSR);
 	if ( !(lsr & LSR_READY) )
 	{
 		Panic("Can't wait for com data receive event");
@@ -339,8 +340,8 @@ ssize_t DevCOMPort::Read(byte* dest, size_t count)
 	do
 	{
 		if ( count <= sofar ) { break; }
-		dest[sofar++] = CPU::InPortB(port + RXR);
-	} while ( CPU::InPortB(port + LSR) & LSR_READY);
+		dest[sofar++] = inport8(port + RXR);
+	} while ( inport8(port + LSR) & LSR_READY);
 
 	return sofar;
 }
@@ -352,7 +353,7 @@ ssize_t DevCOMPort::Write(const uint8_t* src, size_t count)
 #if POLL_BLOCKING
 	return WriteBlocking(port, src, 1);
 #endif
-	uint8_t lsr = CPU::InPortB(port + LSR);
+	uint8_t lsr = inport8(port + LSR);
 	if ( !(lsr & LSR_THRE) )
 	{
 		Panic("Can't wait for com data sent event");
@@ -364,8 +365,8 @@ ssize_t DevCOMPort::Write(const uint8_t* src, size_t count)
 	do
 	{
 		if ( count <= sofar ) { break; }
-		CPU::OutPortB(port + TXR, src[sofar++]);
-	} while ( CPU::InPortB(port + LSR) & LSR_THRE );
+		outport8(port + TXR, src[sofar++]);
+	} while ( inport8(port + LSR) & LSR_THRE );
 
 	return sofar;
 }
@@ -378,27 +379,27 @@ void DevCOMPort::OnInterrupt()
 	return;
 #endif
 
-	uint8_t iir = CPU::InPortB(port + IIR);
+	uint8_t iir = inport8(port + IIR);
 	if ( iir & IIR_NO_INTERRUPT ) { return; }
 	uint8_t intrtype = iir & IIR_INTERRUPT_TYPE;
 	switch ( intrtype )
 	{
 	case IIR_TIMEOUT:
-		CPU::InPortB(port + RXR);
+		inport8(port + RXR);
 		break;
 	case IIR_RECV_LINE_STATUS:
 		// TODO: Proper error handling!
-		CPU::InPortB(port + LSR);
+		inport8(port + LSR);
 		break;
 	case IIR_RECV_DATA:
 		Panic("Can't wait for com data sent event");
 		break;
 	case IIR_SENT_DATA:
 		Panic("Can't wait for com data sent event");
-		CPU::InPortB(port + IIR);
+		inport8(port + IIR);
 		break;
 	case IIR_MODEM_STATUS:
-		CPU::InPortB(port + MSR);
+		inport8(port + MSR);
 		break;
 	}
 }
@@ -449,13 +450,13 @@ void Init(const char* devpath, Ref<Descriptor> slashdev)
 		                   | IER_LINE_STATUS
 		                   | IER_MODEM_STATUS;
 #endif
-		CPU::OutPortB(port + FCR, 0);
-		CPU::OutPortB(port + LCR, 0x80);
-		CPU::OutPortB(port + DLL, 0xC);
-		CPU::OutPortB(port + DLM, 0x0);
-		CPU::OutPortB(port + LCR, 0x3); // 8n1
-		CPU::OutPortB(port + MCR, 0x3); // DTR + RTS
-		CPU::OutPortB(port + IER, interrupts);
+		outport8(port + FCR, 0);
+		outport8(port + LCR, 0x80);
+		outport8(port + DLL, 0xC);
+		outport8(port + DLM, 0x0);
+		outport8(port + LCR, 0x3); // 8n1
+		outport8(port + MCR, 0x3); // DTR + RTS
+		outport8(port + IER, interrupts);
 	}
 }
 

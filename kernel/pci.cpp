@@ -26,6 +26,7 @@
 #include <endian.h>
 
 #include <sortix/kernel/cpu.h>
+#include <sortix/kernel/ioport.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/pci.h>
@@ -55,14 +56,14 @@ void SplitDevAddr(uint32_t devaddr, uint8_t* vals /* bus, slot, func */)
 
 uint32_t ReadRaw32(uint32_t devaddr, uint8_t off)
 {
-	CPU::OutPortL(CONFIG_ADDRESS, devaddr + off);
-	return CPU::InPortL(CONFIG_DATA);
+	outport32(CONFIG_ADDRESS, devaddr + off);
+	return inport32(CONFIG_DATA);
 }
 
 void WriteRaw32(uint32_t devaddr, uint8_t off, uint32_t val)
 {
-	CPU::OutPortL(CONFIG_ADDRESS, devaddr + off);
-	CPU::OutPortL(CONFIG_DATA, val);
+	outport32(CONFIG_ADDRESS, devaddr + off);
+	outport32(CONFIG_DATA, val);
 }
 
 uint32_t Read32(uint32_t devaddr, uint8_t off)
