@@ -147,7 +147,7 @@ int LogTerminal::tcsetpgrp(ioctx_t* /*ctx*/, pid_t pgid)
 pid_t LogTerminal::tcgetpgrp(ioctx_t* /*ctx*/)
 {
 	ScopedLock lock(&termlock);
-	return foreground_pgid = 0;
+	return foreground_pgid;
 }
 
 int LogTerminal::sync(ioctx_t* /*ctx*/)
