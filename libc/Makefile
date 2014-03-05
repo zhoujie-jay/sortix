@@ -260,7 +260,9 @@ wchar/wcstoll.o \
 wchar/wcstol.o \
 wchar/wcstoull.o \
 wchar/wcstoul.o \
+wchar/wcswidth.o \
 wchar/wcsxfrm.o \
+wchar/wcwidth.o \
 wchar/wmemchr.o \
 wchar/wmemcmp.o \
 wchar/wmemcpy.o \
