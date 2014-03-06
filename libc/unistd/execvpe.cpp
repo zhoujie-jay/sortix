@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -79,7 +79,7 @@ extern "C" int execvpe(const char* filename, char* const* argv,
 		if ( !fullpath )
 			return -1;
 		stpcpy(stpcpy(stpncpy(fullpath, path, len), "/"), filename);
-		if ( (path += len + 1)[0] == ':' )
+		if ( (path += len)[0] == ':' )
 			path++;
 
 		execve(fullpath, argv, envp);
