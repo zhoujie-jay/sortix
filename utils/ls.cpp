@@ -48,6 +48,7 @@ bool inode = false;
 bool longformat = false;
 bool showdotdot = false;
 bool showdotfiles = false;
+bool time_modified = false;
 bool colors = false;
 
 pid_t childpid;
@@ -97,10 +98,57 @@ void ls_error(int status, int errnum, const char* format, ...)
 		exit(status);
 }
 
+int argv_mtim_compare(const void* a_void, const void* b_void)
+{
+	const char* a = *(const char**) a_void;
+	const char* b = *(const char**) b_void;
+
+	if ( !a && b )
+		return 1;
+	if ( a && !b )
+		return -1;
+	if ( !a && !b )
+		return 0;
+
+	struct stat a_st;
+	struct stat b_st;
+	if ( stat(a, &a_st) == 0 && stat(b, &b_st) == 0 )
+	{
+		if ( a_st.st_mtim.tv_sec < b_st.st_mtim.tv_sec )
+			return 1;
+		if ( a_st.st_mtim.tv_sec > b_st.st_mtim.tv_sec )
+			return -1;
+		if ( a_st.st_mtim.tv_nsec < b_st.st_mtim.tv_nsec )
+			return 1;
+		if ( a_st.st_mtim.tv_nsec > b_st.st_mtim.tv_nsec )
+			return -1;
+		return 0;
+	}
+	return strcmp(a, b);
+}
+
+int sort_dirents_dirfd;
+
 int sort_dirents(const void* a_void, const void* b_void)
 {
 	struct dirent* a = *(struct dirent**) a_void;
 	struct dirent* b = *(struct dirent**) b_void;
+	struct stat a_st;
+	struct stat b_st;
+	if ( time_modified &&
+	     fstatat(sort_dirents_dirfd, a->d_name, &a_st, 0) == 0 &&
+	     fstatat(sort_dirents_dirfd, b->d_name, &b_st, 0) == 0 )
+	{
+		if ( a_st.st_mtim.tv_sec < b_st.st_mtim.tv_sec )
+			return 1;
+		if ( a_st.st_mtim.tv_sec > b_st.st_mtim.tv_sec )
+			return -1;
+		if ( a_st.st_mtim.tv_nsec < b_st.st_mtim.tv_nsec )
+			return 1;
+		if ( a_st.st_mtim.tv_nsec > b_st.st_mtim.tv_nsec )
+			return -1;
+		return 0;
+	}
 	return strcmp(a->d_name, b->d_name);
 }
 
@@ -240,6 +288,7 @@ int ls(const char* path)
 	if ( derror(dir) ) { perror(path); goto cleanup_dir; }
 #endif
 
+	sort_dirents_dirfd = dirfd(dir);
 	qsort(entries, entriesused, sizeof(*entries), sort_dirents);
 
 	for ( size_t i = 0; i < entriesused; i++ )
@@ -278,7 +327,7 @@ void help(FILE* fp, const char* argv0)
 	return usage(fp, argv0);
 }
 
-int main(int argc, char* argv[])
+int main(int argc, char** argv)
 {
 	const char* argv0 = argv[0];
 	for ( int i = 1; i < argc; i++ )
@@ -302,6 +351,9 @@ int main(int argc, char* argv[])
 					break;
 				case 'l':
 					longformat = true;
+					break;
+				case 't':
+					time_modified = true;
 					break;
 				case 'a':
 					showdotdot = true;
@@ -368,6 +420,10 @@ int main(int argc, char* argv[])
 			error(127, errno, "%s", columner);
 		}
 	}
+
+	// TODO: This isn't the strictly correct semantics:
+	if ( time_modified )
+		qsort(argv + 1, argc - 1, sizeof(char*), argv_mtim_compare);
 
 	int result = 0;
 	bool anyargs = false;
