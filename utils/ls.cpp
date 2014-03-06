@@ -44,6 +44,7 @@ int current_year;
 #endif
 
 bool directory = false;
+bool inode = false;
 bool longformat = false;
 bool showdotdot = false;
 bool showdotfiles = false;
@@ -130,6 +131,8 @@ int handleentry_internal(const char* fullpath, const char* name)
 	const char* colorpre;
 	const char* colorpost;
 	getentrycolor(&colorpre, &colorpost, st.st_mode);
+	if ( inode )
+		printf("%ju ", (uintmax_t) st.st_ino);
 	if ( !longformat )
 	{
 		printf("%s%s%s\n", colorpre, name, colorpost);
@@ -293,6 +296,9 @@ int main(int argc, char* argv[])
 				{
 				case 'd':
 					directory = true;
+					break;
+				case 'i':
+					inode = true;
 					break;
 				case 'l':
 					longformat = true;
