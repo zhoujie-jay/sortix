@@ -159,6 +159,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `echo` - print command line arguments
 * `editor` - text editor
 * `env` - run a program in a modified environment
+* `expr` - evaluate expressions
 * `extfs` - ext2 filesystem server
 * `false` - exit with an error status
 * `find` - recursively list files

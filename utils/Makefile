@@ -30,6 +30,7 @@ du \
 echo \
 editor \
 env \
+expr \
 false \
 find \
 head \
