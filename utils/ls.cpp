@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -43,6 +43,7 @@ int current_year;
 #define VERSIONSTR "unknown version"
 #endif
 
+bool directory = false;
 bool longformat = false;
 bool showdotdot = false;
 bool showdotfiles = false;
@@ -116,26 +117,16 @@ void getentrycolor(const char** pre, const char** post, mode_t mode)
 		*post = "\e[37m";
 }
 
-int handleentry(const char* path, const char* name)
+int handleentry_internal(const char* fullpath, const char* name)
 {
-	bool isdotdot = strcmp(name, ".") == 0 || strcmp(name, "..") == 0;
-	bool isdotfile = !isdotdot && name[0] == '.';
-	if ( isdotdot && !showdotdot ) { return 0; }
-	if ( isdotfile && !showdotfiles ) { return 0; }
 	// TODO: Use openat and fstat.
-	char* fullpath = new char[strlen(path) + 1 + strlen(name) + 1];
-	strcpy(fullpath, path);
-	strcat(fullpath, "/");
-	strcat(fullpath, name);
 	struct stat st;
 	if ( stat(fullpath, &st) )
 	{
 		finishoutput();
 		error(0, errno, "stat: %s", fullpath);
-		delete[] fullpath;
 		return 2;
 	}
-	delete[] fullpath;
 	const char* colorpre;
 	const char* colorpost;
 	getentrycolor(&colorpre, &colorpost, st.st_mode);
@@ -178,6 +169,21 @@ int handleentry(const char* path, const char* name)
 	return 0;
 }
 
+int handleentry(const char* path, const char* name)
+{
+	bool isdotdot = strcmp(name, ".") == 0 || strcmp(name, "..") == 0;
+	bool isdotfile = !isdotdot && name[0] == '.';
+	if ( isdotdot && !showdotdot && !directory ) { return 0; }
+	if ( isdotfile && !showdotfiles && !directory ) { return 0; }
+	char* fullpath = new char[strlen(path) + 1 + strlen(name) + 1];
+	strcpy(fullpath, path);
+	strcat(fullpath, "/");
+	strcat(fullpath, name);
+	int result = handleentry_internal(fullpath, name);
+	delete[] fullpath;
+	return result;
+}
+
 int ls(const char* path)
 {
 	time_t current_time;
@@ -185,6 +191,9 @@ int ls(const char* path)
 	time(&current_time);
 	localtime_r(&current_time, &current_year_tm);
 	current_year = current_year_tm.tm_year;
+
+	if ( directory )
+		return handleentry_internal(path, path);
 
 	int ret = 1;
 	DIR* dir;
@@ -196,7 +205,14 @@ int ls(const char* path)
 	if ( !entries ) { ls_perror("malloc"); goto cleanup_done; }
 
 	dir = opendir(path);
-	if ( !dir ) { perror(path); ret = 2; goto cleanup_entries; }
+	if ( !dir )
+	{
+		if ( errno == ENOTDIR )
+			return handleentry_internal(path, path);
+		perror(path);
+		ret = 2;
+		goto cleanup_entries;
+	}
 
 	struct dirent* entry;
 	while ( (entry = readdir(dir)) )
@@ -275,6 +291,9 @@ int main(int argc, char* argv[])
 			{
 				switch ( c )
 				{
+				case 'd':
+					directory = true;
+					break;
 				case 'l':
 					longformat = true;
 					break;
