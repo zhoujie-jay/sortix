@@ -108,7 +108,10 @@ int vscanf_callback(void* fp,
 		{
 		case MODE_INIT:
 			if ( !*format )
+			{
+				ungetc(ic, fp);
 				goto break_loop;
+			}
 			if ( isspace(*formatuc) )
 			{
 				if ( isspace(ic) )
