@@ -185,6 +185,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `rmdir` - remove empty directory
 * `sh` - alias for the shell
 * `snake` - remake of the classic snake game
+* `sort` - sort lines of text files
 * `tail` - display end of file
 * `time` - measure program running time
 * `true` - exit with a success status

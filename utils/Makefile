@@ -49,6 +49,7 @@ pwd \
 rm \
 rmdir \
 sh \
+sort \
 tail \
 time \
 true \
