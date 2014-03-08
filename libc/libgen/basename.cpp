@@ -36,7 +36,7 @@ extern "C" char* basename(char* path)
 		path[--path_len] = '\0';
 	if ( strcmp(path, "/") == 0 )
 		return path;
-	char* last_slash = strchr(path, '/');
+	char* last_slash = strrchr(path, '/');
 	if ( !last_slash )
 		return path;
 	return last_slash + 1;

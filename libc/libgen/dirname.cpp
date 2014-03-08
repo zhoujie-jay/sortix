@@ -36,9 +36,13 @@ extern "C" char* dirname(char* path)
 		path[--path_len] = '\0';
 	if ( strcmp(path, "/") == 0 )
 		return path;
-	char* last_slash = strchr(path, '/');
-	if ( !last_slash )
-		return dirname(NULL);
-	*last_slash = '\0';
+	if ( !strchr(path, '/') )
+		return (char*) current_directory;
+	while ( 1 <= path_len && path[path_len-1] != '/' )
+		path[--path_len] = '\0';
+	while ( 1 <= path_len && path[path_len-1] == '/' )
+		path[--path_len] = '\0';
+	if ( !path[0] )
+		strcpy(path, "/");
 	return path;
 }
