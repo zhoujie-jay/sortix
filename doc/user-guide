@@ -141,6 +141,7 @@ Included Programs
 Sortix comes with a number of home-made programs. Here is an overview:
 
 * `asteroids` - remake of the classic asteroids game
+* `basename` - strip directory from filenames
 * `benchctxswitch` - useless benchmark
 * `benchsyscall` - slightly less useless benchmark
 * `calc` - reverse polish calculator
