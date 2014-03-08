@@ -155,6 +155,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `conway` - game of life simulator
 * `cp` - copy file
 * `date` - display current time and date
+* `dirname` - strip last component from file name
 * `dispd` - non-existent display server
 * `du` - report file and directory disk usage
 * `echo` - print command line arguments

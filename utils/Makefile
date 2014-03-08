@@ -15,6 +15,7 @@ CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\"
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 BINARIES:=\
+basename \
 calc \
 cat \
 chmod \
@@ -26,6 +27,7 @@ column \
 command-not-found \
 cp \
 date \
+dirname \
 du \
 echo \
 editor \
