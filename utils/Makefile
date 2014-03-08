@@ -55,6 +55,7 @@ time \
 true \
 type \
 uname \
+uniq \
 uptime \
 wc \
 which \
