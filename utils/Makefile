@@ -54,6 +54,7 @@ sh \
 sort \
 tail \
 time \
+tr \
 true \
 type \
 uname \

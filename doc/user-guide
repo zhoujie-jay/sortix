@@ -190,6 +190,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `sort` - sort lines of text files
 * `tail` - display end of file
 * `time` - measure program running time
+* `tr` - translate, squeeze and/or delete characters
 * `true` - exit with a success status
 * `type` - type raw characters directly into the terminal
 * `uname` - system information
