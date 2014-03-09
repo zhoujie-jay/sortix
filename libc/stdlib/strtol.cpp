@@ -144,7 +144,7 @@ STRTOL_INT STRTOL(const STRTOL_CHAR* restrict str,
 	// Handle a leading sign character.
 	if ( c == STRTOL_L('-') )
 		str++, negative = true;
-	if ( c == STRTOL_L('+') )
+	else if ( c == STRTOL_L('+') )
 		str++, negative = false;
 
 	// Autodetect base 8 or base 16.
@@ -194,7 +194,8 @@ STRTOL_INT STRTOL(const STRTOL_CHAR* restrict str,
 		else
 		{
 			STRTOL_INT new_result = result * (STRTOL_INT) base;
-			assert(result <= new_result);
+			assert( negative || result <= new_result);
+			assert(!negative || result >= new_result);
 			result = new_result;
 		}
 
@@ -205,7 +206,7 @@ STRTOL_INT STRTOL(const STRTOL_CHAR* restrict str,
 
 		// Attempt to subtract the latest digit to the accumulator (negative).
 		else if ( (!STRTOL_INT_IS_UNSIGNED && negative) &&
-		          (STRTOL_INT) val <= (STRTOL_INT) (result - STRTOL_INT_MIN) )
+		          (STRTOL_UNSIGNED_INT) val < ((STRTOL_UNSIGNED_INT) result - (STRTOL_UNSIGNED_INT) STRTOL_INT_MIN) )
 			result -= (STRTOL_INT) val;
 
 		// Handle the case where the addition/subtract would overflow/underflow.
