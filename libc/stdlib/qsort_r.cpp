@@ -17,7 +17,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdlib/qsort.cpp
+    stdlib/qsort_r.cpp
     Sort an array.
 
 *******************************************************************************/
@@ -26,16 +26,39 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int compare_wrapper(const void* a, const void* b, void* arg)
+static void memswap(uint8_t* a, uint8_t* b, size_t size)
 {
-	return ((int (*)(const void*, const void*)) arg)(a, b);
+	uint8_t tmp;
+	for ( size_t i = 0; i < size; i++ )
+	{
+		tmp = a[i];
+		a[i] = b[i];
+		b[i] = tmp;
+	}
 }
 
+// TODO: This is just a quick and dirty insertion sort. It'd be nice to have a
+//       good old quick sort here soon.
 extern "C"
-void qsort(void* base_ptr,
-           size_t num_elements,
-           size_t element_size,
-           int (*compare)(const void*, const void*))
+void qsort_r(void* base_ptr,
+             size_t num_elements,
+             size_t element_size,
+             int (*compare)(const void*, const void*, void*),
+             void* arg)
 {
-	qsort_r(base_ptr, num_elements, element_size, compare_wrapper, (void*) compare);
+	uint8_t* base = (uint8_t*) base_ptr;
+	for ( size_t i = 0; i < num_elements; i++ )
+	{
+		for ( size_t c = i; c; c-- )
+		{
+			size_t currentoff = c * element_size;
+			uint8_t* current = base + currentoff;
+			size_t p = c-1;
+			size_t prevoff = p * element_size;
+			uint8_t* prev = base + prevoff;
+			int cmp = compare(prev, current, arg);
+			if ( cmp <= 0 ) { break; }
+			memswap(prev, current, element_size);
+		}
+	}
 }

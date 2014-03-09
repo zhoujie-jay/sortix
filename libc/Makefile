@@ -171,6 +171,7 @@ stdlib/mblen.o \
 stdlib/mbstowcs.o \
 stdlib/mbtowc.o \
 stdlib/qsort.o \
+stdlib/qsort_r.o \
 stdlib/strtod.o \
 stdlib/strtof.o \
 stdlib/strtold.o \

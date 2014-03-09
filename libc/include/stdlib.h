@@ -106,6 +106,7 @@ int mkstemp(char*);
 char* mktemp(char* templ);
 int on_exit(void (*function)(int, void*), void* arg);
 void qsort(void*, size_t, size_t, int (*)(const void*, const void*));
+void qsort_r(void*, size_t, size_t, int (*)(const void*, const void*, void*), void*);
 int rand(void);
 void* realloc(void*, size_t);
 char* realpath(const char* __restrict, char* __restrict);
