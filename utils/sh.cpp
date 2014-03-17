@@ -344,7 +344,7 @@ readcmd:
 	}
 
 	execvp(argv[0], argv);
-	if ( interactive )
+	if ( interactive && errno == ENOENT )
 	{
 		int errno_saved = errno;
 		execlp("command-not-found", "command-not-found", argv[0], NULL);
