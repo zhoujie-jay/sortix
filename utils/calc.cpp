@@ -288,11 +288,11 @@ void printAll(Stack<long> &stack) {
 /* MODIFIES: standard output.
  * EFFECTS: Prints usage information and returns 0.
  */
-int printUsage(const char* argv0) {
-	printf("Usage: %s [--help] [--usage] COMMAND ...\n", argv0);
+int printHelp(const char* argv0) {
+	printf("Usage: %s [--help] COMMAND ...\n", argv0);
 	printf("%s is a Reverse Polish Notation integer calculator.\n", argv0);
 	printf("\n");
-	printf("  --help, --usage    Display this help and exit\n");
+	printf("  --help             Display this help and exit\n");
 	printf("\n");
 	printf("%s supports the following commands:\n", argv0);
 	printf("Any integers supplied are pushed onto the stack and can be given in decimal\n");
@@ -315,11 +315,10 @@ int printUsage(const char* argv0) {
 }
 
 int main(int argc, char *argv[]) {
-	//If no arguments, --usage, or --help.
+	//If no arguments, --help.
 	if (argc == 1 ||
-	    (argc > 1 && (!strcmp(argv[1], "--usage") ||
-	                  !strcmp(argv[1], "--help"))))
-		return printUsage(argv[0]);
+	    (argc > 1 && !strcmp(argv[1], "--help")))
+		return printHelp(argv[0]);
 
 	Stack<long> stack;
 	bool printedAnything = false;

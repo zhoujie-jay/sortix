@@ -103,22 +103,16 @@ static void compact_arguments(int* argc, char*** argv)
 		}
 }
 
-static void usage(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION]... [FILE]...\n", argv0);
 	fprintf(fp, "Concatenate FILE(s), or standard input, to standard output.\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "  -u                       (ignored)\n");
 	fprintf(fp, "      --help               display this help and exit\n");
-	fprintf(fp, "      --usage              display this help and exit\n");
 	fprintf(fp, "      --version            output version information and exit\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "With no FILE, or when FILE is -, read standard input.\n");
-}
-
-static void help(FILE* fp, const char* argv0)
-{
-	usage(fp, argv0);
 }
 
 static void version(FILE* fp, const char* argv0)
@@ -147,20 +141,18 @@ int main(int argc, char* argv[])
 			case 'u': /* Ignored, POSIX compatibility. */ break;
 			default:
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
-				usage(stderr, argv0);
+				help(stderr, argv0);
 				exit(1);
 			}
 		}
 		else if ( !strcmp(arg, "--help") )
 			help(stdout, argv0), exit(0);
-		else if ( !strcmp(arg, "--usage") )
-			usage(stdout, argv0), exit(0);
 		else if ( !strcmp(arg, "--version") )
 			version(stdout, argv0), exit(0);
 		else
 		{
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
-			usage(stderr, argv0);
+			help(stderr, argv0);
 			exit(1);
 		}
 	}

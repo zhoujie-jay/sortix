@@ -268,7 +268,7 @@ bool disk_usage_file_at(int relfd,
 	return success;
 }
 
-static void usage(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION]... [FILE]...\n", argv0);
 	fprintf(fp, "Summarize disk usage of each FILE, recursively for directories.\n");
@@ -297,7 +297,6 @@ static void usage(FILE* fp, const char* argv0)
 	fprintf(fp, "  -s, --summarize       display only a total for each argument\n");
 	fprintf(fp, "  -x, --one-file-system skip directories on different file systems\n");
 	fprintf(fp, "      --help            display this help and exit\n");
-	fprintf(fp, "      --usage           display this help and exit\n");
 	fprintf(fp, "      --version         output version information and exit\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "Display values are in units of the first available SIZE from --block-size,\n");
@@ -306,11 +305,6 @@ static void usage(FILE* fp, const char* argv0)
 	fprintf(fp, "\n");
 	fprintf(fp, "SIZE may be (or may be an integer optionally followed by) one of following:\n");
 	fprintf(fp, "KB 1000, K 1024, MB 1000*1000, M 1024*1024, and so on for G, T, P, E, Z, Y.\n");
-}
-
-static void help(FILE* fp, const char* argv0)
-{
-	usage(fp, argv0);
 }
 
 static void version(FILE* fp, const char* argv0)
@@ -422,14 +416,12 @@ int main(int argc, char* argv[])
 			case 'x': flags |= FLAG_SAME_DEVICE; break;
 			default:
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
-				usage(stderr, argv0);
+				help(stderr, argv0);
 				exit(1);
 			}
 		}
 		else if ( !strcmp(arg, "--help") )
 			help(stdout, argv0), exit(0);
-		else if ( !strcmp(arg, "--usage") )
-			usage(stdout, argv0), exit(0);
 		else if ( !strcmp(arg, "--version") )
 			version(stdout, argv0), exit(0);
 		else if ( !strcmp(arg, "--all") )
@@ -475,7 +467,7 @@ int main(int argc, char* argv[])
 		else
 		{
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
-			usage(stderr, argv0);
+			help(stderr, argv0);
 			exit(1);
 		}
 	}

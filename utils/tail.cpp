@@ -109,20 +109,15 @@ bool processfp(const char* inputname, FILE* fp)
 	return true;
 }
 
-void usage(const char* argv0)
+void help(const char* argv0)
 {
 	printf("usage: %s [-n <numlines>] [-q | -v] [<FILE> ...]\n", argv0);
 }
 
 void errusage(const char* argv0)
 {
-	usage(argv0);
+	help(argv0);
 	exit(1);
-}
-
-void help(const char* argv0)
-{
-	usage(argv0);
 }
 
 void version(const char* argv0)
@@ -145,7 +140,6 @@ int main(int argc, char* argv[])
 		argv[i] = NULL;
 		if ( strcmp(arg, "--") == 0 ) { break; }
 		const char* nlinesstr = NULL;
-		if ( strcmp(arg, "--usage") == 0 ) { usage(argv0); return 0; }
 		if ( strcmp(arg, "--help") == 0 ) { help(argv0); return 0; }
 		if ( strcmp(arg, "--version") == 0 ) { version(argv0); return 0; }
 		if ( strcmp(arg, "-q") == 0 ||

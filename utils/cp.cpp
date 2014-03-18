@@ -333,7 +333,7 @@ bool CopyAmbigious(int srcdirfd, const char* srcrel, const char* srcpath,
 		                  dstdirfd, dstrel, dstpath, flags);
 }
 
-void Usage(FILE* fp, const char* argv0)
+void Help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION]... [-T] SOURCE DEST\n", argv0);
 	fprintf(fp, "  or:  %s [OPTION]... SOURCE... DIRECTORY\n", argv0);
@@ -343,11 +343,6 @@ void Usage(FILE* fp, const char* argv0)
 #else
 	fprintf(fp, "Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY.\n");
 #endif
-}
-
-void Help(FILE* fp, const char* argv0)
-{
-	Usage(fp, argv0);
 }
 
 void Version(FILE* fp, const char* argv0)
@@ -387,12 +382,11 @@ int main(int argc, char* argv[])
 				continue;
 #endif
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
-				Usage(stderr, argv0);
+				Help(stderr, argv0);
 				exit(1);
 			}
 		}
 		else if ( !strcmp(arg, "--help") ) { Help(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--usage") ) { Usage(stdout, argv0); exit(0); }
 		else if ( !strcmp(arg, "--version") ) { Version(stdout, argv0); exit(0); }
 		else if ( !strcmp(arg, "--recursive") )
 			flags |= FLAG_RECURSIVE;
@@ -413,7 +407,7 @@ int main(int argc, char* argv[])
 			continue;
 #endif
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
-			Usage(stderr, argv0);
+			Help(stderr, argv0);
 			exit(1);
 		}
 	}

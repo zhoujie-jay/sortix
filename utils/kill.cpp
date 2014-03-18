@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int usage()
+int help()
 {
 	printf("usage: kill [-n] pid ...\n");
 	return 0;
@@ -36,14 +36,14 @@ int usage()
 
 int main(int argc, char* argv[])
 {
-	if ( argc < 2 ) { return usage(); }
+	if ( argc < 2 ) { return help(); }
 
 	int first = 1;
 	int signum = SIGTERM;
 	if ( argv[1][0] == '-' )
 	{
 		signum = atoi(argv[first++]);
-		if ( argc < 3 ) { return usage(); }
+		if ( argc < 3 ) { return help(); }
 	}
 
 	int result = 0;

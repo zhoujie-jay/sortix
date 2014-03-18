@@ -124,15 +124,10 @@ bool RemoveRecursively(int dirfd, const char* full, const char* rel,
 	return ret;
 }
 
-void Usage(FILE* fp, const char* argv0)
+void Help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION]... FILE...\n", argv0);
 	fprintf(fp, "Remove files by unlinking their directory entries.\n");
-}
-
-void Help(FILE* fp, const char* argv0)
-{
-	Usage(fp, argv0);
 }
 
 void Version(FILE* fp, const char* argv0)
@@ -167,7 +162,7 @@ int main(int argc, char* argv[])
 				case 'v': verbose = true; break;
 				default:
 					fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, arg[i]);
-					Usage(stderr, argv0);
+					Help(stderr, argv0);
 					exit(1);
 				}
 		else if ( !strcmp(arg, "--force") )
@@ -177,12 +172,11 @@ int main(int argc, char* argv[])
 		else if ( !strcmp(arg, "--verbose") )
 			verbose = true;
 		else if ( !strcmp(arg, "--help") ) { Help(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--usage") ) { Usage(stdout, argv0); exit(0); }
 		else if ( !strcmp(arg, "--version") ) { Version(stdout, argv0); exit(0); }
 		else
 		{
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
-			Usage(stderr, argv0);
+			Help(stderr, argv0);
 			exit(1);
 		}
 	}

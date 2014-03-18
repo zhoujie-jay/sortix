@@ -309,11 +309,6 @@ cleanup_done:
 	return ret;
 }
 
-void usage(FILE* fp, const char* argv0)
-{
-	fprintf(fp, "usage: %s [-l] [-a | -A] [<DIR> ...]\n", argv0);
-}
-
 void version(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
@@ -324,7 +319,7 @@ void version(FILE* fp, const char* argv0)
 
 void help(FILE* fp, const char* argv0)
 {
-	return usage(fp, argv0);
+	fprintf(fp, "usage: %s [-l] [-a | -A] [<DIR> ...]\n", argv0);
 }
 
 int main(int argc, char** argv)
@@ -365,7 +360,7 @@ int main(int argc, char** argv)
 					break;
 				default:
 					fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
-					usage(stderr, argv0);
+					help(stderr, argv0);
 					exit(2);
 				}
 			}
@@ -374,10 +369,6 @@ int main(int argc, char** argv)
 		{
 			version(stdout, argv0); exit(0);
 		}
-		else if ( !strcmp(arg, "--usage") )
-		{
-			usage(stdout, argv0); exit(0);
-		}
 		else if ( !strcmp(arg, "--help") )
 		{
 			help(stdout, argv0); exit(0);
@@ -385,7 +376,7 @@ int main(int argc, char** argv)
 		else
 		{
 			fprintf(stderr, "%s: unrecognized option: %s\n", argv0, arg);
-			usage(stderr, argv0);
+			help(stderr, argv0);
 			exit(2);
 		}
 	}

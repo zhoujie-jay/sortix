@@ -133,7 +133,7 @@ void print_stats(struct word_count stats, FILE* fp, int flags, const char* path)
 	fprintf(fp, "\n");
 }
 
-static void usage(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION]...\n", argv0);
 	fprintf(fp, "Print newline, word, and byte counts for each FILE, and a total line if\n");
@@ -148,13 +148,7 @@ static void usage(FILE* fp, const char* argv0)
 	fprintf(fp, "  -l, --lines     print the newline counts\n");
 	fprintf(fp, "  -w, --words     print the word counts\n");
 	fprintf(fp, "      --help      display this help and exit\n");
-	fprintf(fp, "      --usage     display this help and exit\n");
 	fprintf(fp, "      --version   output version information and exit\n");
-}
-
-static void help(FILE* fp, const char* argv0)
-{
-	usage(fp, argv0);
 }
 
 static void version(FILE* fp, const char* argv0)
@@ -273,14 +267,12 @@ int main(int argc, char* argv[])
 			case 'w': flags |= FLAG_PRINT_NUM_WORDS; break;
 			default:
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
-				usage(stderr, argv0);
+				help(stderr, argv0);
 				exit(1);
 			}
 		}
 		else if ( !strcmp(arg, "--help") )
 			help(stdout, argv0), exit(0);
-		else if ( !strcmp(arg, "--usage") )
-			usage(stdout, argv0), exit(0);
 		else if ( !strcmp(arg, "--version") )
 			version(stdout, argv0), exit(0);
 		else if ( !strcmp(arg, "--bytes") )
@@ -294,7 +286,7 @@ int main(int argc, char* argv[])
 		else
 		{
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
-			usage(stderr, argv0);
+			help(stderr, argv0);
 			exit(1);
 		}
 	}

@@ -33,15 +33,10 @@
 #define VERSIONSTR "unknown version"
 #endif
 
-void usage(FILE* fp, const char* argv0)
-{
-	fprintf(fp, "usage: %s [--usage | --help | --version]\n", argv0);
-	fprintf(fp, "Lets you type freely onto the tty.\n");
-}
-
 void help(FILE* fp, const char* argv0)
 {
-	return usage(fp, argv0);
+	fprintf(fp, "usage: %s [--help | --version]\n", argv0);
+	fprintf(fp, "Lets you type freely onto the tty.\n");
 }
 
 void version(FILE* fp, const char* argv0)
@@ -63,10 +58,9 @@ int main(int argc, char* argv[])
 		argv[i] = NULL;
 		if ( !strcmp(arg, "--") ) { break; }
 		if ( !strcmp(arg, "--help") ) { help(stdout, argv0); exit(0); }
-		if ( !strcmp(arg, "--usage") ) { usage(stdout, argv0); exit(0); }
 		if ( !strcmp(arg, "--version") ) { version(stdout, argv0); exit(0); }
 		error(0, 0, "unrecognized option: %s", arg);
-		usage(stderr, argv0);
+		help(stderr, argv0);
 		exit(1);
 	}
 

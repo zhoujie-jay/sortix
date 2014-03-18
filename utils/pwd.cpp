@@ -59,7 +59,7 @@ static bool is_path_absolute(const char* path)
 	return true;
 }
 
-static void usage(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION]...\n", argv0);
 	fprintf(fp, "Print the full filename of the current working directory.\n");
@@ -67,13 +67,7 @@ static void usage(FILE* fp, const char* argv0)
 	fprintf(fp, "  -L, --logical   use PWD from environment, even if it contains symlinks\n");
 	fprintf(fp, "  -P, --physical  avoid all symlinks\n");
 	fprintf(fp, "      --help      display this help and exit\n");
-	fprintf(fp, "      --usage     display this help and exit\n");
 	fprintf(fp, "      --version   output version information and exit\n");
-}
-
-static void help(FILE* fp, const char* argv0)
-{
-	usage(fp, argv0);
 }
 
 static void version(FILE* fp, const char* argv0)
@@ -104,14 +98,12 @@ int main(int argc, char* argv[])
 			case 'P': physical = true; break;
 			default:
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
-				usage(stderr, argv0);
+				help(stderr, argv0);
 				exit(1);
 			}
 		}
 		else if ( !strcmp(arg, "--help") )
 			help(stdout, argv0), exit(0);
-		else if ( !strcmp(arg, "--usage") )
-			usage(stdout, argv0), exit(0);
 		else if ( !strcmp(arg, "--version") )
 			version(stdout, argv0), exit(0);
 		else if ( !strcmp(arg, "--logical") )
@@ -121,7 +113,7 @@ int main(int argc, char* argv[])
 		else
 		{
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
-			usage(stderr, argv0);
+			help(stderr, argv0);
 			exit(1);
 		}
 	}

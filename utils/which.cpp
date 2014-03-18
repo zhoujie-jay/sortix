@@ -86,15 +86,10 @@ bool Which(const char* cmd, const char* path, bool all)
 	return found;
 }
 
-void Usage(FILE* fp, const char* argv0)
+void Help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [-a] FILENAME...\n", argv0);
 	fprintf(fp, "Locate a program in the PATH.\n");
-}
-
-void Help(FILE* fp, const char* argv0)
-{
-	Usage(fp, argv0);
 }
 
 void Version(FILE* fp, const char* argv0)
@@ -124,16 +119,15 @@ int main(int argc, char* argv[])
 				case 'a': all = true; break;
 				default:
 					fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, arg[i]);
-					Usage(stderr, argv0);
+					Help(stderr, argv0);
 					exit(1);
 				}
 		else if ( !strcmp(arg, "--help") ) { Help(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--usage") ) { Usage(stdout, argv0); exit(0); }
 		else if ( !strcmp(arg, "--version") ) { Version(stdout, argv0); exit(0); }
 		else
 		{
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
-			Usage(stderr, argv0);
+			Help(stderr, argv0);
 			exit(1);
 		}
 	}

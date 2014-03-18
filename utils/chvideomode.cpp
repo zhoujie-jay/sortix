@@ -310,13 +310,13 @@ void FilterModes(struct dispmsg_crtc_mode* modes, size_t* nummodesptr, Filter* f
 	*nummodesptr = outnum;
 }
 
-void Usage(FILE* fp, const char* argv0)
+void Help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION ...] [PROGRAM-TO-RUN [ARG ...]]\n", argv0);
 	fprintf(fp, "Changes the video mode and optionally runs a program\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "Options supported by %s:\n", argv0);
-	fprintf(fp, "  --help, --usage    Display this help and exit\n");
+	fprintf(fp, "  --help             Display this help and exit\n");
 	fprintf(fp, "  --version          Output version information and exit\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "Options for filtering modes:\n");
@@ -327,12 +327,6 @@ void Usage(FILE* fp, const char* argv0)
 	fprintf(fp, "  --bpp BPP, --min-bpp BPP, --max-bpp BPP\n");
 	fprintf(fp, "  --width NUM, --min-width NUM, --max-width NUM\n");
 	fprintf(fp, "  --height NUM, --min-height NUM, --max-height NUM\n");
-	fprintf(fp, "\n");
-}
-
-void Help(FILE* fp, const char* argv0)
-{
-	Usage(fp, argv0);
 }
 
 void Version(FILE* fp, const char* argv0)
@@ -400,12 +394,11 @@ int main(int argc, char* argv[])
 		if ( arg[0] != '-' ) { break; }
 		if ( !strcmp(arg, "--") ) { break; }
 		if ( !strcmp(arg, "--help") ) { Help(stdout, argv0); exit(0); }
-		if ( !strcmp(arg, "--usage") ) { Usage(stdout, argv0); exit(0); }
 		if ( !strcmp(arg, "--version") ) { Version(stdout, argv0); exit(0); }
 		if ( i == argc-1 )
 		{
 			fprintf(stderr, "%s: missing parameter to %s\n", argv0, arg);
-			Usage(stderr, argv0);
+			Help(stderr, argv0);
 			exit(1);
 		}
 		const char* p = argv[++i]; argv[i] = NULL;
@@ -422,7 +415,7 @@ int main(int argc, char* argv[])
 		if ( !handled )
 		{
 			fprintf(stderr, "%s: no such option: %s\n", argv0, arg);
-			Usage(stderr, argv0);
+			Help(stderr, argv0);
 			exit(1);
 		}
 	}

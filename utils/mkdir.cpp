@@ -66,15 +66,10 @@ void CreateDirectory(const char* path, bool parents, bool verbose)
 		fprintf(stderr, "%s: created directory `%s'\n", program_invocation_name, path);
 }
 
-void Usage(FILE* fp, const char* argv0)
+void Help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION]... DIRECTORY...\n", argv0);
 	fprintf(fp, "Create directories if they don't already exist.\n");
-}
-
-void Help(FILE* fp, const char* argv0)
-{
-	Usage(fp, argv0);
 }
 
 void Version(FILE* fp, const char* argv0)
@@ -106,7 +101,7 @@ int main(int argc, char* argv[])
 				case 'v': verbose = true; break;
 				default:
 					fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, arg[i]);
-					Usage(stderr, argv0);
+					Help(stderr, argv0);
 					exit(1);
 				}
 		else if ( !strcmp(arg, "--parents") )
@@ -114,12 +109,11 @@ int main(int argc, char* argv[])
 		else if ( !strcmp(arg, "--verbose") )
 			verbose = true;
 		else if ( !strcmp(arg, "--help") ) { Help(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--usage") ) { Usage(stdout, argv0); exit(0); }
 		else if ( !strcmp(arg, "--version") ) { Version(stdout, argv0); exit(0); }
 		else
 		{
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
-			Usage(stderr, argv0);
+			Help(stderr, argv0);
 			exit(1);
 		}
 	}

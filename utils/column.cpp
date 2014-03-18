@@ -125,14 +125,9 @@ bool doformat()
 	return true;
 }
 
-void usage(const char* argv0)
-{
-	printf("usage: %s [--help | --version | --usage] [-c width]  [<FILE> ...]\n", argv0);
-}
-
 void help(const char* argv0)
 {
-	usage(argv0);
+	printf("usage: %s [--help | --version] [-c width]  [<FILE> ...]\n", argv0);
 }
 
 void version(const char* argv0)
@@ -168,17 +163,16 @@ int main(int argc, char* argv[])
 		if ( strcmp(arg, "-") == 0 ) { continue; }
 		argv[i] = NULL;
 		if ( strcmp(arg, "--") == 0 ) { break; }
-		if ( strcmp(arg, "--usage") == 0 ) { usage(argv0); exit(0); }
 		if ( strcmp(arg, "--help") == 0 ) { help(argv0); exit(0); }
 		if ( strcmp(arg, "--version") == 0 ) { version(argv0); exit(0); }
 		if ( strcmp(arg, "-c") == 0 )
 		{
-			if ( i+1 == argc ) { usage(argv0); exit(1); }
+			if ( i+1 == argc ) { help(argv0); exit(1); }
 			termwidth = atoi(argv[++i]); argv[i] = NULL;
 			continue;
 		}
 		error(0, 0, "unknown option %s", arg);
-		usage(argv0);
+		help(argv0);
 		return 1;
 	}
 
