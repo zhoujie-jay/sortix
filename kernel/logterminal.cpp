@@ -46,6 +46,7 @@
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/poll.h>
 #include <sortix/kernel/process.h>
+#include <sortix/kernel/ptable.h>
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/scheduler.h>
 
@@ -145,7 +146,7 @@ int LogTerminal::tcgetwinsize(ioctx_t* ctx, struct winsize* ws)
 int LogTerminal::tcsetpgrp(ioctx_t* /*ctx*/, pid_t pgid)
 {
 	ScopedLock lock(&termlock);
-	Process* process = Process::Get(pgid);
+	Process* process = CurrentProcess()->GetPTable()->Get(pgid);
 	if ( !pgid || !process )
 		return errno = ESRCH, -1;
 	kthread_mutex_lock(&process->groupchildlock);
@@ -187,7 +188,7 @@ void LogTerminal::ProcessKeystroke(int kbkey)
 	{
 		while ( linebuffer.CanBackspace() )
 			linebuffer.Backspace();
-		if ( Process* process = Process::Get(foreground_pgid) )
+		if ( Process* process = CurrentProcess()->GetPTable()->Get(foreground_pgid) )
 			process->DeliverGroupSignal(SIGINT);
 		return;
 	}

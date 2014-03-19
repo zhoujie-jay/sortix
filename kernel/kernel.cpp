@@ -53,6 +53,7 @@
 #include <sortix/kernel/panic.h>
 #include <sortix/kernel/pci.h>
 #include <sortix/kernel/process.h>
+#include <sortix/kernel/ptable.h>
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
@@ -435,10 +436,16 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	DisplayMessage::Init();
 
 	// Now that the base system has been loaded, it's time to go threaded. First
-	// we create an object that represents this thread.
+	// we create an object that represents this process.
+	Ref<ProcessTable> ptable(new ProcessTable());
+	if ( !ptable )
+		Panic("Could not allocate the process table");
 	Process* system = new Process;
 	if ( !system )
 		Panic("Could not allocate the system process");
+	if ( (system->pid = (system->ptable = ptable)->Allocate(system)) < 0 )
+		Panic("Could not allocate the system process a pid");
+	ptable.Reset();
 	system->addrspace = Memory::GetAddressSpace();
 	system->group = system;
 	system->groupprev = NULL;
@@ -658,7 +665,10 @@ static void BootThread(void* /*user*/)
 	if ( !initaddrspace ) { Panic("Could not create init's address space"); }
 
 	Process* init = new Process;
-	if ( !init ) { Panic("Could not allocate init process"); }
+	if ( !init )
+		Panic("Could not allocate init process");
+	if ( (init->pid = (init->ptable = CurrentProcess()->ptable)->Allocate(init)) < 0 )
+		Panic("Could not allocate init a pid");
 	init->group = init;
 	init->groupprev = NULL;
 	init->groupnext = NULL;

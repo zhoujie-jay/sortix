@@ -89,8 +89,8 @@ dispmsg.o \
 dtable.o \
 elf.o \
 fcache.o \
-fsfunc.o \
 fs/full.o \
+fsfunc.o \
 fs/kram.o \
 fs/null.o \
 fs/user.o \
@@ -122,6 +122,7 @@ pci.o \
 pipe.o \
 poll.o \
 process.o \
+ptable.o \
 refcount.o \
 registers.o \
 resource.o \

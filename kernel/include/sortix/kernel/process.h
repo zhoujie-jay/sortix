@@ -50,6 +50,7 @@ class Process;
 class Descriptor;
 class DescriptorTable;
 class MountTable;
+class ProcessTable;
 struct ProcessSegment;
 struct ProcessTimer;
 struct ioctx_struct;
@@ -67,9 +68,6 @@ public:
 
 public:
 	static void Init();
-
-private:
-	static pid_t AllocatePID();
 
 public:
 	char* string_table;
@@ -98,6 +96,9 @@ private:
 	Ref<DescriptorTable> dtable;
 
 public:
+	Ref<ProcessTable> ptable;
+
+public:
 	kthread_mutex_t resource_limits_lock;
 	struct rlimit resource_limits[RLIMIT_NUM_DECLARED];
 
@@ -110,8 +111,9 @@ public:
 public:
 	void BootstrapTables(Ref<DescriptorTable> dtable, Ref<MountTable> mtable);
 	void BootstrapDirectories(Ref<Descriptor> root);
-	Ref<MountTable> GetMTable();
 	Ref<DescriptorTable> GetDTable();
+	Ref<MountTable> GetMTable();
+	Ref<ProcessTable> GetPTable();
 	Ref<Descriptor> GetRoot();
 	Ref<Descriptor> GetCWD();
 	Ref<Descriptor> GetDescriptor(int fd);
@@ -200,13 +202,6 @@ public:
 
 public:
 	void ResetForExecute();
-
-public:
-	static Process* Get(pid_t pid);
-
-private:
-	static bool Put(Process* process);
-	static void Remove(Process* process);
 
 };
 

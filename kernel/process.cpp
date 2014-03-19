@@ -53,6 +53,7 @@
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/mtable.h>
 #include <sortix/kernel/process.h>
+#include <sortix/kernel/ptable.h>
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/sortedlist.h>
@@ -81,7 +82,7 @@ Process::Process()
 	symbol_table_length = 0;
 	program_image_path = NULL;
 	addrspace = 0;
-	pid = AllocatePID();
+	pid = 0;
 
 	nicelock = KTHREAD_MUTEX_INITIALIZER;
 	nice = 0;
@@ -160,7 +161,6 @@ Process::Process()
 	// child_system_clock initialized in member constructor.
 	Time::InitializeProcessClocks(this);
 	alarm_timer.Attach(Time::GetClock(CLOCK_MONOTONIC));
-	Put(this);
 }
 
 Process::~Process()
@@ -179,7 +179,9 @@ Process::~Process()
 	assert(!cwd);
 	assert(!root);
 
-	Remove(this);
+	assert(ptable);
+	ptable->Free(pid);
+	ptable.Reset();
 }
 
 void Process::BootstrapTables(Ref<DescriptorTable> dtable, Ref<MountTable> mtable)
@@ -588,6 +590,13 @@ Ref<DescriptorTable> Process::GetDTable()
 	return dtable;
 }
 
+Ref<ProcessTable> Process::GetPTable()
+{
+	ScopedLock lock(&ptrlock);
+	assert(ptable);
+	return ptable;
+}
+
 Ref<Descriptor> Process::GetRoot()
 {
 	ScopedLock lock(&ptrlock);
@@ -633,6 +642,12 @@ Process* Process::Fork()
 	Process* clone = new Process;
 	if ( !clone )
 		return NULL;
+
+	if ( (clone->pid = (clone->ptable = ptable)->Allocate(clone)) < 0 )
+	{
+		delete clone;
+		return NULL;
+	}
 
 	struct segment* clone_segments = NULL;
 
@@ -1299,7 +1314,7 @@ static pid_t sys_getppid()
 
 static pid_t sys_getpgid(pid_t pid)
 {
-	Process* process = !pid ? CurrentProcess() : Process::Get(pid);
+	Process* process = !pid ? CurrentProcess() : CurrentProcess()->GetPTable()->Get(pid);
 	if ( !process )
 		return errno = ESRCH, -1;
 
@@ -1324,10 +1339,10 @@ static int sys_setpgid(pid_t pid, pid_t pgid)
 	//       group. This probably unlikely, but correctness over all!
 
 	// Find the processes in question.
-	Process* process = !pid ? CurrentProcess() : Process::Get(pid);
+	Process* process = !pid ? CurrentProcess() : CurrentProcess()->GetPTable()->Get(pid);
 	if ( !process )
 		return errno = ESRCH, -1;
-	Process* group = !pgid ? process : Process::Get(pgid);
+	Process* group = !pgid ? process : CurrentProcess()->GetPTable()->Get(pgid);
 	if ( !group )
 		return errno = ESRCH, -1;
 
@@ -1370,60 +1385,6 @@ static int sys_setpgid(pid_t pid, pid_t pgid)
 	kthread_mutex_unlock(&group->groupparentlock);
 
 	return 0;
-}
-
-pid_t nextpidtoallocate;
-kthread_mutex_t pidalloclock;
-
-pid_t Process::AllocatePID()
-{
-	ScopedLock lock(&pidalloclock);
-	return nextpidtoallocate++;
-}
-
-int ProcessCompare(Process* a, Process* b)
-{
-	if ( a->pid < b->pid )
-		return -1;
-	if ( a->pid > b->pid )
-		return 1;
-	return 0;
-}
-
-int ProcessPIDCompare(Process* a, pid_t pid)
-{
-	if ( a->pid < pid )
-		return -1;
-	if ( a->pid > pid )
-		return 1;
-	return 0;
-}
-
-SortedList<Process*>* pidlist;
-
-Process* Process::Get(pid_t pid)
-{
-	ScopedLock lock(&pidalloclock);
-	size_t index = pidlist->Search(ProcessPIDCompare, pid);
-	if ( index == SIZE_MAX )
-		return NULL;
-
-	return pidlist->Get(index);
-}
-
-bool Process::Put(Process* process)
-{
-	ScopedLock lock(&pidalloclock);
-	return pidlist->Add(process);
-}
-
-void Process::Remove(Process* process)
-{
-	ScopedLock lock(&pidalloclock);
-	size_t index = pidlist->Search(process);
-	assert(index != SIZE_MAX);
-
-	pidlist->Remove(index);
 }
 
 static void* sys_sbrk(intptr_t increment)
@@ -1516,13 +1477,6 @@ void Process::Init()
 	Syscall::Register(SYSCALL_TFORK, (void*) sys_tfork);
 	Syscall::Register(SYSCALL_UMASK, (void*) sys_umask);
 	Syscall::Register(SYSCALL_WAITPID, (void*) sys_waitpid);
-
-	pidalloclock = KTHREAD_MUTEX_INITIALIZER;
-	nextpidtoallocate = 0;
-
-	pidlist = new SortedList<Process*>(ProcessCompare);
-	if ( !pidlist )
-		Panic("could not allocate pidlist\n");
 }
 
 } // namespace Sortix

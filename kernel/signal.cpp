@@ -40,6 +40,7 @@
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/process.h>
+#include <sortix/kernel/ptable.h>
 #include <sortix/kernel/signal.h>
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/thread.h>
@@ -277,7 +278,7 @@ static int sys_kill(pid_t pid, int signum)
 	bool process_group = pid < 0 ? (pid = -pid, true) : false;
 
 	// TODO: Race condition: The process could be deleted while we use it.
-	Process* process = Process::Get(pid);
+	Process* process = CurrentProcess()->GetPTable()->Get(pid);
 	if ( !process )
 		return errno = ESRCH, -1;
 

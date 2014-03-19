@@ -32,6 +32,7 @@
 #include <sortix/kernel/copy.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/process.h>
+#include <sortix/kernel/ptable.h>
 #include <sortix/kernel/syscall.h>
 
 #include "resource.h"
@@ -45,7 +46,7 @@ static int GetProcessPriority(pid_t who)
 		return errno = EINVAL, -1;
 	// TODO: If who isn't the current process, then it could self-destruct at
 	//       any time while we use it; there is no safe way to do this yet.
-	Process* process = who ? Process::Get(who) : CurrentProcess();
+	Process* process = who ? CurrentProcess()->GetPTable()->Get(who) : CurrentProcess();
 	if ( !process )
 		return errno = ESRCH, -1;
 	ScopedLock lock(&process->nicelock);
@@ -58,7 +59,7 @@ static int SetProcessPriority(pid_t who, int prio)
 		return errno = EINVAL, -1;
 	// TODO: If who isn't the current process, then it could self-destruct at
 	//       any time while we use it; there is no safe way to do this yet.
-	Process* process = who ? Process::Get(who) : CurrentProcess();
+	Process* process = who ? CurrentProcess()->GetPTable()->Get(who) : CurrentProcess();
 	if ( !process )
 		return errno = ESRCH, -1;
 	ScopedLock lock(&process->nicelock);
@@ -81,7 +82,7 @@ static int GetProcessGroupPriority(pid_t who)
 		return errno = EINVAL, -1;
 	// TODO: If who isn't the current process, then it could self-destruct at
 	//       any time while we use it; there is no safe way to do this yet.
-	Process* group = who ? Process::Get(who) : CurrentProcessGroup();
+	Process* group = who ? CurrentProcess()->GetPTable()->Get(who) : CurrentProcessGroup();
 	if ( !group )
 		return errno = ESRCH, -1;
 	int lowest = INT_MAX;
@@ -101,7 +102,7 @@ static int SetProcessGroupPriority(pid_t who, int prio)
 		return errno = EINVAL, -1;
 	// TODO: If who isn't the current process, then it could self-destruct at
 	//       any time while we use it; there is no safe way to do this yet.
-	Process* group = who ? Process::Get(who) : CurrentProcessGroup();
+	Process* group = who ? CurrentProcess()->GetPTable()->Get(who) : CurrentProcessGroup();
 	if ( !group )
 		return errno = ESRCH, -1;
 	ScopedLock group_parent_lock(&group->groupparentlock);
@@ -161,7 +162,7 @@ int sys_prlimit(pid_t pid,
 		return errno = EINVAL, -1;
 	// TODO: If pid isn't the current process, then it could self-destruct at
 	//       any time while we use it; there is no safe way to do this yet.
-	Process* process = pid ? Process::Get(pid) : CurrentProcess();
+	Process* process = pid ? CurrentProcess()->GetPTable()->Get(pid) : CurrentProcess();
 	if ( !process )
 		return errno = ESRCH, -1;
 	ScopedLock lock(&process->resource_limits_lock);
