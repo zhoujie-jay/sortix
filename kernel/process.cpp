@@ -712,12 +712,6 @@ Process* Process::Fork()
 		clone->symbol_table_length = symbol_table_length;
 	}
 
-	if ( pid == 1)
-		assert(dtable->Get(1));
-
-	if ( pid == 1)
-		assert(clone->dtable->Get(1));
-
 	// If the proces creation failed, ask the process to commit suicide and
 	// not become a zombie, as we don't wait for it to exit. It will clean
 	// up all the above resources and delete itself.
