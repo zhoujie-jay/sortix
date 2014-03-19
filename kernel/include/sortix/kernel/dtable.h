@@ -41,7 +41,7 @@ class DescriptorTable : public Refcountable
 {
 public:
 	DescriptorTable();
-	~DescriptorTable();
+	virtual ~DescriptorTable();
 	Ref<DescriptorTable> Fork();
 	Ref<Descriptor> Get(int index);
 	int Allocate(Ref<Descriptor> desc, int flags, int min_index = 0);

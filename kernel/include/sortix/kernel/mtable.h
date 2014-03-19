@@ -45,7 +45,7 @@ class MountTable : public Refcountable
 {
 public:
 	MountTable();
-	~MountTable();
+	virtual ~MountTable();
 	Ref<MountTable> Fork();
 	bool AddMount(ino_t ino, dev_t dev, Ref<Inode> inode);
 
