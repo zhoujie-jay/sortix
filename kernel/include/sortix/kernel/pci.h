@@ -92,7 +92,7 @@ void Write32(uint32_t devaddr, uint8_t off, uint32_t val); // Host endian
 void WriteRaw32(uint32_t devaddr, uint8_t off, uint32_t val); // PCI endian
 pciid_t GetDeviceId(uint32_t devaddr);
 pcitype_t GetDeviceType(uint32_t devaddr);
-uint32_t SearchForDevice(pcifind_t pcifind);
+uint32_t SearchForDevices(pcifind_t pcifind, uint32_t last = 0);
 pcibar_t GetBAR(uint32_t devaddr, uint8_t bar);
 pcibar_t GetExpansionROM(uint32_t devaddr);
 void EnableExpansionROM(uint32_t devaddr);

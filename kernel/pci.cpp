@@ -139,35 +139,46 @@ static bool MatchesSearchCriteria(uint32_t devaddr, pcifind_t pcifind)
 	return true;
 }
 
-static uint32_t SearchForDeviceOnBus(uint8_t bus, pcifind_t pcifind)
+// TODO: This iterates the whole PCI device tree on each call!
+static uint32_t SearchForDevicesOnBus(uint8_t bus, pcifind_t pcifind, uint32_t last = 0)
 {
-	for ( unsigned slot = 0; slot < 32; slot++ )
+	bool found_any_device = false;
+	uint32_t next_device = 0;
+
+	for ( unsigned int slot = 0; slot < 32; slot++ )
 	{
-		unsigned numfuncs = 1;
-		for ( unsigned func = 0; func < numfuncs; func++ )
+		unsigned int num_functions = 1;
+		for ( unsigned int function = 0; function < num_functions; function++ )
 		{
-			uint32_t devaddr = MakeDevAddr(bus, slot, func);
-			if ( MatchesSearchCriteria(devaddr, pcifind) )
-				return devaddr;
+			uint32_t devaddr = MakeDevAddr(bus, slot, function);
+			if ( last < devaddr &&
+			     (!found_any_device || devaddr < next_device) &&
+			     MatchesSearchCriteria(devaddr, pcifind) )
+				next_device = devaddr, found_any_device = true;
 			uint8_t header = Read8(devaddr, 0x0D); // Secondary Bus Number.
 			if ( header & 0x80 ) // Multi function device.
-				numfuncs = 8;
+				num_functions = 8;
 			if ( (header & 0x7F) == 0x01 ) // PCI to PCI bus.
 			{
 				uint8_t subbusid = Read8(devaddr, 0x1A);
-				uint32_t recret = SearchForDeviceOnBus(subbusid, pcifind);
-				if ( recret )
-					return recret;
+				uint32_t recret = SearchForDevicesOnBus(subbusid, pcifind, last);
+				if ( last < recret &&
+				     (!found_any_device || recret < next_device) )
+					next_device = recret, found_any_device = true;
 			}
 		}
 	}
-	return 0;
+
+	if ( !found_any_device )
+		return 0;
+
+	return next_device;
 }
 
-uint32_t SearchForDevice(pcifind_t pcifind)
+uint32_t SearchForDevices(pcifind_t pcifind, uint32_t last)
 {
 	// Search on bus 0 and recurse on other detected busses.
-	return SearchForDeviceOnBus(0, pcifind);
+	return SearchForDevicesOnBus(0, pcifind, last);
 }
 
 pcibar_t GetBAR(uint32_t devaddr, uint8_t bar)

@@ -100,7 +100,7 @@ addr_t DetectBGAFramebuffer()
 	memset(&pcifind, 255, sizeof(pcifind));
 	pcifind.vendorid = 0x1234;
 	pcifind.deviceid = 0x1111;
-	if ( (devaddr = PCI::SearchForDevice(pcifind)) )
+	if ( (devaddr = PCI::SearchForDevices(pcifind, 0)) )
 		return ParseDevBar0(devaddr);
 
 	// Search for a generic VGA compatible device.
@@ -108,7 +108,7 @@ addr_t DetectBGAFramebuffer()
 	pcifind.classid = 0x03;
 	pcifind.subclassid = 0x00;
 	pcifind.progif = 0x00;
-	if ( (devaddr = PCI::SearchForDevice(pcifind)) )
+	if ( (devaddr = PCI::SearchForDevices(pcifind)) )
 		return ParseDevBar0(devaddr);
 
 	return 0;
