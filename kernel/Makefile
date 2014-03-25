@@ -118,6 +118,7 @@ net/fs.o \
 op-new.o \
 panic.o \
 partition.o \
+pci-mmio.o \
 pci.o \
 pipe.o \
 poll.o \
