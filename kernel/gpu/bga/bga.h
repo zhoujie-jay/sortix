@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of Sortix.
 
@@ -17,13 +17,13 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    bga.h
+    gpu/bga/bga.h
     Driver for the Bochs VBE Extensions.
 
 *******************************************************************************/
 
-#ifndef SORTIX_BGA_H
-#define SORTIX_BGA_H
+#ifndef SORTIX_GPU_BGA_BGA_H
+#define SORTIX_GPU_BGA_BGA_H
 
 namespace Sortix {
 namespace BGA {

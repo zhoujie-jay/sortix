@@ -75,7 +75,6 @@ $(CPUOBJS) \
 addralloc.o \
 alarm.o \
 ata.o \
-bga.o \
 calltrace.o \
 clock.o \
 com.o \
@@ -85,7 +84,6 @@ $(CPU)/kthread.o \
 crc32.o \
 debugger.o \
 descriptor.o \
-dispmsg.o \
 dtable.o \
 elf.o \
 fcache.o \
@@ -96,6 +94,7 @@ fs/null.o \
 fs/user.o \
 fs/util.o \
 fs/zero.o \
+gpu/bga/bga.o \
 identity.o \
 initrd.o \
 inode.o \

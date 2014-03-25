@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of Sortix.
 
@@ -22,11 +22,14 @@
 
 *******************************************************************************/
 
-#ifndef SORTIX_VIDEO_H
-#define SORTIX_VIDEO_H
+#ifndef INCLUDE_SORTIX_KERNEL_VIDEO_H
+#define INCLUDE_SORTIX_KERNEL_VIDEO_H
 
 #include <sys/types.h>
 
+#include <sortix/display.h>
+
+#include <sortix/kernel/ioctx.h>
 #include <sortix/kernel/refcount.h>
 
 namespace Sortix {
@@ -34,43 +37,30 @@ namespace Sortix {
 class TextBuffer;
 class TextBufferHandle;
 
-bool ReadParamString(const char* str, ...);
-
-class VideoDriver
+class VideoDevice
 {
 public:
-	virtual ~VideoDriver() { }
-	virtual bool StartUp() = 0;
-	virtual bool ShutDown() = 0;
-	virtual char* GetCurrentMode() const = 0;
-	virtual bool SwitchMode(const char* mode) = 0;
-	virtual bool Supports(const char* mode) const = 0;
-	virtual char** GetModes(size_t* nummodes) const = 0;
+	virtual ~VideoDevice() { }
+	virtual struct dispmsg_crtc_mode GetCurrentMode(uint64_t connector) const = 0;
+	virtual bool SwitchMode(uint64_t connector, struct dispmsg_crtc_mode mode) = 0;
+	virtual bool Supports(uint64_t connector, struct dispmsg_crtc_mode mode) const = 0;
+	virtual struct dispmsg_crtc_mode* GetModes(uint64_t connector, size_t* nummodes) const = 0;
 	virtual off_t FrameSize() const = 0;
-	virtual ssize_t WriteAt(off_t off, const void* buf, size_t count) = 0;
-	virtual ssize_t ReadAt(off_t off, void* buf, size_t count) = 0;
-	virtual TextBuffer* CreateTextBuffer() = 0;
+	virtual ssize_t WriteAt(ioctx_t* ctx, off_t off, const void* buf, size_t count) = 0;
+	virtual ssize_t ReadAt(ioctx_t* ctx, off_t off, void* buf, size_t count) = 0;
+	virtual TextBuffer* CreateTextBuffer(uint64_t connector) = 0;
 
 };
 
+} // namespace Sortix
+
+namespace Sortix {
 namespace Video {
 
 void Init(Ref<TextBufferHandle> textbufhandle);
-bool RegisterDriver(const char* name, VideoDriver* driver);
-char* GetCurrentMode();
-char* GetDriverName(size_t index);
-size_t GetCurrentDriverIndex();
-size_t GetNumDrivers();
-size_t LookupDriverIndexOfMode(const char* mode);
-bool Supports(const char* mode);
-bool SwitchMode(const char* mode);
-char** GetModes(size_t* modesnum);
-off_t FrameSize();
-ssize_t WriteAt(off_t off, const void* buf, size_t count);
-ssize_t ReadAt(off_t off, void* buf, size_t count);
+bool RegisterDevice(const char* name, VideoDevice* device);
 
 } // namespace Video
-
 } // namespace Sortix
 
 #endif

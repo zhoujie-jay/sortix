@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of Sortix.
 
@@ -26,459 +26,406 @@
 #include <errno.h>
 #include <string.h>
 
+#include <sortix/kernel/copy.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/string.h>
+#include <sortix/kernel/syscall.h>
 #include <sortix/kernel/textbuffer.h>
 #include <sortix/kernel/video.h>
 
 namespace Sortix {
-
-bool ReadParamString(const char* str, ...)
-{
-	if ( strchr(str, '\n') ) { errno = EINVAL; }
-	const char* keyname;
-	va_list args;
-	while ( *str )
-	{
-		size_t varlen = strcspn(str, ",");
-		if ( !varlen ) { str++; continue; }
-		size_t namelen = strcspn(str, "=");
-		if ( !namelen ) { errno = EINVAL; goto cleanup; }
-		if ( !str[namelen] ) { errno = EINVAL; goto cleanup; }
-		if ( varlen < namelen ) { errno = EINVAL; goto cleanup; }
-		size_t valuelen = varlen - 1 /*=*/ - namelen;
-		char* name = String::Substring(str, 0, namelen);
-		if ( !name ) { goto cleanup; }
-		char* value = String::Substring(str, namelen+1, valuelen);
-		if ( !value ) { delete[] name; goto cleanup; }
-		va_start(args, str);
-		while ( (keyname = va_arg(args, const char*)) )
-		{
-			if ( strcmp(keyname, "STOP") == 0 )
-				break;
-			char** nameptr = va_arg(args, char**);
-			if ( strcmp(keyname, name) ) { continue; }
-			*nameptr = value;
-			break;
-		}
-		va_end(args);
-		if ( !keyname ) { delete[] value; }
-		delete[] name;
-		str += varlen;
-		str += strspn(str, ",");
-	}
-	return true;
-
-cleanup:
-	va_start(args, str);
-	while ( (keyname = va_arg(args, const char*)) )
-	{
-		char** nameptr = va_arg(args, char**);
-		delete[] *nameptr; *nameptr = NULL;
-	}
-	va_end(args);
-	return false;
-}
-
 namespace Video {
 
-const unsigned long DRIVER_GOT_MODES = (1UL<<0UL);
+const uint64_t ONE_AND_ONLY_DEVICE = 0;
+const uint64_t ONE_AND_ONLY_CONNECTOR = 0;
 
-struct DriverEntry
+kthread_mutex_t video_lock = KTHREAD_MUTEX_INITIALIZER;
+
+struct DeviceEntry
 {
 	char* name;
-	VideoDriver* driver;
-	unsigned long flags;
-	size_t id;
+	VideoDevice* device;
 };
 
-size_t numdrivers;
-size_t driverslen;
-DriverEntry* drivers;
+size_t num_devices = 0;
+size_t devices_length = 0;
+DeviceEntry* devices = NULL;
 
-size_t nummodes;
-size_t modeslen;
-char** modes;
-
-char* currentmode;
-size_t currentdrvid;
-bool newdrivers;
-
-kthread_mutex_t videolock;
 Ref<TextBufferHandle> textbufhandle;
 
-void Init(Ref<TextBufferHandle> thetextbufhandle)
+bool RegisterDevice(const char* name, VideoDevice* device)
 {
-	videolock = KTHREAD_MUTEX_INITIALIZER;
-	textbufhandle = thetextbufhandle;
-	numdrivers = driverslen = 0;
-	drivers = NULL;
-	nummodes = modeslen = 0;
-	modes = NULL;
-	currentdrvid = SIZE_MAX;
-	newdrivers = false;
-	currentmode = NULL;
-}
-
-size_t GetCurrentDriverIndex()
-{
-	ScopedLock lock(&videolock);
-	return currentdrvid;
-}
-
-size_t GetNumDrivers()
-{
-	ScopedLock lock(&videolock);
-	return numdrivers;
-}
-
-char* GetDriverName(size_t index)
-{
-	ScopedLock lock(&videolock);
-	if ( numdrivers <= index || !drivers[index].name )
-		return String::Clone("none");
-	return String::Clone(drivers[index].name);
-}
-
-static DriverEntry* CurrentDriverEntry()
-{
-	if ( currentdrvid == SIZE_MAX ) { return NULL; }
-	return drivers + currentdrvid;
-}
-
-bool RegisterDriver(const char* name, VideoDriver* driver)
-{
-	ScopedLock lock(&videolock);
-	if ( numdrivers == driverslen )
+	ScopedLock lock(&video_lock);
+	if ( num_devices == devices_length )
 	{
-		size_t newdriverslen = driverslen ? 2 * driverslen : 8UL;
-		DriverEntry* newdrivers = new DriverEntry[newdriverslen];
-		if ( !newdrivers ) { return false; }
-		memcpy(newdrivers, drivers, sizeof(*drivers) * numdrivers);
-		delete[] drivers; drivers = newdrivers;
-		driverslen = driverslen;
+		size_t newdevices_length = devices_length ? 2 * devices_length : 8UL;
+		DeviceEntry* newdevices = new DeviceEntry[newdevices_length];
+		if ( !newdevices )
+			return false;
+		memcpy(newdevices, devices, sizeof(*devices) * num_devices);
+		delete[] devices; devices = newdevices;
+		devices_length = devices_length;
 	}
 
 	char* drivername = String::Clone(name);
-	if ( !drivername ) { return false; }
-
-	size_t index = numdrivers++;
-	drivers[index].name = drivername;
-	drivers[index].driver = driver;
-	drivers[index].flags = 0;
-	drivers[index].id = index;
-	newdrivers = true;
-	return true;
-}
-
-static bool ExpandModesArray(size_t needed)
-{
-	size_t modesneeded = nummodes + needed;
-	if ( modesneeded <= modeslen ) { return true; }
-	size_t newmodeslen = 2 * modeslen;
-	if ( newmodeslen < modesneeded ) { newmodeslen = modesneeded; }
-	char** newmodes = new char*[newmodeslen];
-	if ( !newmodes ) { return false; }
-	memcpy(newmodes, modes, sizeof(char*) * nummodes);
-	delete[] modes; modes = newmodes;
-	modeslen = newmodeslen;
-	return true;
-}
-
-static void UpdateModes()
-{
-	if ( !newdrivers ) { return; }
-	bool allsuccess = true;
-	for ( size_t i = 0; i < numdrivers; i++ )
-	{
-		bool success = false;
-		if ( drivers[i].flags & DRIVER_GOT_MODES ) { continue; }
-		const char* drivername = drivers[i].name;
-		VideoDriver* driver = drivers[i].driver;
-		size_t prevnummodes = nummodes;
-		size_t drvnummodes = 0;
-		char** drvmodes = driver->GetModes(&drvnummodes);
-		if ( !drvmodes ) { goto cleanup_error; }
-		if ( !ExpandModesArray(drvnummodes) ) { goto cleanup_drvmodes; }
-		for ( size_t n = 0; n < drvnummodes; n++ )
-		{
-			char* modestr = String::Combine(4, "driver=", drivername,
-			                                   ",", drvmodes[n]);
-			if ( !modestr ) { goto cleanup_newmodes; }
-			modes[nummodes++] = modestr;
-		}
-		success = true;
-		drivers[i].flags |= DRIVER_GOT_MODES;
-cleanup_newmodes:
-		for ( size_t i = prevnummodes; !success && i < nummodes; i++ )
-			delete[] modes[i];
-		if ( !success ) { nummodes = prevnummodes; }
-cleanup_drvmodes:
-		for ( size_t n = 0; n < drvnummodes; n++ ) { delete[] drvmodes[n]; }
-		delete[] drvmodes;
-cleanup_error:
-		allsuccess &= success;
-	}
-	newdrivers = !allsuccess;
-}
-
-static DriverEntry* GetDriverEntry(const char* drivername)
-{
-	for ( size_t i = 0; i < numdrivers; i++ )
-	{
-		if ( !strcmp(drivername, drivers[i].name) )
-		{
-			return drivers + i;
-		}
-	}
-	errno = ENODRV;
-	return NULL;
-}
-
-static bool StartUpDriver(VideoDriver* driver, const char* drivername)
-{
-	if ( !driver->StartUp() )
-	{
-		int errnum = errno;
-		Log::PrintF("Error: Video driver '%s' was unable to startup\n",
-		            drivername);
-		errno = errnum;
+	if ( !drivername )
 		return false;
-	}
+
+	size_t index = num_devices++;
+	devices[index].name = drivername;
+	devices[index].device = device;
 	return true;
 }
 
-static bool ShutDownDriver(VideoDriver* driver, const char* drivername)
+__attribute__((unused))
+static bool TransmitString(struct dispmsg_string* dest, const char* str)
 {
-	textbufhandle->Replace(NULL);
-	if ( !driver->ShutDown() )
-	{
-		int errnum = errno;
-		Log::PrintF("Warning: Video driver '%s' did not shutdown cleanly\n",
-		            drivername);
-		errno = errnum;
-		return false;
-	}
-	return true;
+	size_t size = strlen(str) + 1;
+	size_t dest_size = dest->byte_size;
+	dest->byte_size = size;
+	if ( dest_size < size )
+		return errno = ERANGE, false;
+	return CopyToUser(dest->str, str, size);
 }
 
-static bool DriverModeAction(VideoDriver* driver, const char* drivername,
-                             const char* mode, const char* action)
+__attribute__((unused))
+static char* ReceiveString(struct dispmsg_string* src)
 {
-	textbufhandle->Replace(NULL);
-	if ( !driver->SwitchMode(mode) )
+	if ( !src->byte_size )
+		return errno = EINVAL, (char*) NULL;
+	char* ret = new char[src->byte_size];
+	if ( !ret )
+		return NULL;
+	if ( !CopyFromUser(ret, src->str, src->byte_size) )
+		return NULL;
+	if ( ret[src->byte_size-1] != '\0' )
 	{
-		int errnum = errno;
-		Log::PrintF("Error: Video driver '%s' could not %s mode '%s'\n",
-		            drivername, action, mode);
-		errno = errnum;
-		return false;
+		delete[] ret;
+		return errno = EINVAL, (char*) NULL;
 	}
-	textbufhandle->Replace(driver->CreateTextBuffer());
-	return true;
+	return ret;
 }
 
-static bool SwitchDriverMode(VideoDriver* driver, const char* drivername,
-                             const char* mode)
+static int EnumerateDevices(void* ptr, size_t size)
 {
-	return DriverModeAction(driver, drivername, mode, "switch to");
+	struct dispmsg_enumerate_devices msg;
+	if ( size != sizeof(msg) )
+		return errno = EINVAL, -1;
+	if ( !CopyFromUser(&msg, ptr, sizeof(msg)) )
+		return -1;
+
+	ScopedLock lock(&video_lock);
+
+	size_t requested_num_devices = msg.devices_length;
+	msg.devices_length = num_devices;
+
+	if ( !CopyToUser(ptr, &msg, sizeof(msg)) )
+		return -1;
+
+	if ( requested_num_devices < num_devices )
+		return errno = ERANGE, -1;
+
+	for ( uint64_t i = 0; i < num_devices; i++ )
+		if ( !CopyToUser(&msg.devices[i], &i, sizeof(i)) )
+			return -1;
+
+	return 0;
 }
 
-
-static bool RestoreDriverMode(VideoDriver* driver, const char* drivername,
-                             const char* mode)
+static int GetDriverCount(void* ptr, size_t size)
 {
-	return DriverModeAction(driver, drivername, mode, "restore");
+	struct dispmsg_get_driver_count msg;
+	if ( size != sizeof(msg) )
+		return errno = EINVAL, -1;
+	if ( !CopyFromUser(&msg, ptr, sizeof(msg)) )
+		return -1;
+
+	ScopedLock lock(&video_lock);
+
+	if ( num_devices <= msg.device )
+		return errno = ENODEV, -1;
+
+	msg.driver_count = 1;
+
+	if ( !CopyToUser(ptr, &msg, sizeof(msg)) )
+		return -1;
+
+	return 0;
 }
 
-// Attempts to use the specific driver and mode, if an error occurs, it will
-// attempt to reload the previous driver and mode. If that fails, we are kinda
-// screwed and the video adapter is left in an undefined state.
-static bool DoSwitchMode(DriverEntry* newdrvent, const char* newmode)
+static int GetDriverName(void* ptr, size_t size)
 {
-	DriverEntry* prevdrvent = CurrentDriverEntry();
-	VideoDriver* prevdriver = prevdrvent ? prevdrvent->driver : NULL;
-	const char* prevdrivername = prevdrvent ? prevdrvent->name : NULL;
+	struct dispmsg_get_driver_name msg;
+	if ( size != sizeof(msg) )
+		return errno = EINVAL, -1;
+	if ( !CopyFromUser(&msg, ptr, sizeof(msg)) )
+		return -1;
 
-	VideoDriver* newdriver = newdrvent->driver;
-	const char* newdrivername = newdrvent->name;
+	ScopedLock lock(&video_lock);
 
-	char* newcurrentmode = String::Clone(newmode);
-	if ( !newcurrentmode ) { return false; }
+	if ( num_devices <= msg.device )
+		return errno = ENODEV, -1;
 
-	if ( prevdriver == newdriver )
-	{
-		if ( !SwitchDriverMode(newdriver, newdrivername, newmode) )
-		{
-			delete[] newcurrentmode;
-			return false;
-		}
-		delete[] currentmode;
-		currentmode = newcurrentmode;
-		return true;
-	}
+	DeviceEntry* device_entry = &devices[msg.device];
+	if ( !TransmitString(&msg.name, device_entry->name) )
+		return -1;
 
-	int errnum = 0;
+	if ( !CopyToUser(ptr, &msg, sizeof(msg)) )
+		return -1;
 
-	if ( prevdriver ) { ShutDownDriver(prevdriver, prevdrivername); }
-
-	char* prevmode = currentmode; currentmode = NULL;
-	currentdrvid = SIZE_MAX;
-
-	if ( !StartUpDriver(newdriver, newdrivername) )
-	{
-		errnum = errno;
-		goto restore_prev_driver;
-	}
-
-	currentdrvid = newdrvent->id;
-
-	if ( !SwitchDriverMode(newdriver, newdrivername, newmode) )
-	{
-		errnum = errno;
-		ShutDownDriver(newdriver, newdrivername);
-		currentdrvid = SIZE_MAX;
-		goto restore_prev_driver;
-	}
-
-	currentmode = newcurrentmode;
-	delete[] prevmode;
-
-	return true;
-
-restore_prev_driver:
-	delete[] newcurrentmode;
-	if ( !prevdriver ) { goto error_out; }
-	if ( !StartUpDriver(prevdriver, prevdrivername) ) { goto error_out; }
-
-	currentdrvid = prevdrvent->id;
-
-	if ( !RestoreDriverMode(prevdriver, prevdrivername, prevmode) )
-	{
-		ShutDownDriver(prevdriver, prevdrivername);
-		currentdrvid = SIZE_MAX;
-		goto error_out;
-	}
-
-	Log::PrintF("Successfully restored video driver '%s' mode '%s'\n",
-	            prevdrivername, prevmode);
-
-error_out:
-	if ( currentdrvid == SIZE_MAX )
-		Log::PrintF("Warning: Could not fall back upon a video driver\n");
-	errno = errnum; // Return the original error, not the last one.
-	return false;
+	return 0;
 }
 
-char* GetCurrentMode()
+static int GetDriver(void* ptr, size_t size)
 {
-	ScopedLock lock(&videolock);
-	UpdateModes();
-	return String::Clone(currentmode ? currentmode : "driver=none");
+	struct dispmsg_get_driver msg;
+	if ( size != sizeof(msg) )
+		return errno = EINVAL, -1;
+	if ( !CopyFromUser(&msg, ptr, sizeof(msg)) )
+		return -1;
+
+	ScopedLock lock(&video_lock);
+
+	if ( num_devices <= msg.device )
+		return errno = ENODEV, -1;
+
+	msg.driver_index = 0;
+
+	if ( !CopyToUser(ptr, &msg, sizeof(msg)) )
+		return -1;
+
+	return 0;
 }
 
-char** GetModes(size_t* modesnum)
+static int SetDriver(void* ptr, size_t size)
 {
-	ScopedLock lock(&videolock);
-	UpdateModes();
-	char** result = new char*[nummodes];
-	if ( !result ) { return NULL; }
+	struct dispmsg_set_driver msg;
+	if ( size != sizeof(msg) )
+		return errno = EINVAL, -1;
+	if ( !CopyFromUser(&msg, ptr, sizeof(msg)) )
+		return -1;
+
+	ScopedLock lock(&video_lock);
+
+	if ( num_devices <= msg.device )
+		return errno = ENODEV, -1;
+
+	if ( msg.driver_index != 0 )
+		return errno = EINVAL, -1;
+
+	if ( !CopyToUser(ptr, &msg, sizeof(msg)) )
+		return -1;
+
+	return 0;
+}
+
+static int SetCrtcMode(void* ptr, size_t size)
+{
+	struct dispmsg_set_crtc_mode msg;
+	if ( size != sizeof(msg) )
+		return errno = EINVAL, -1;
+	if ( !CopyFromUser(&msg, ptr, sizeof(msg)) )
+		return -1;
+
+	ScopedLock lock(&video_lock);
+
+	if ( num_devices <= msg.device )
+		return errno = ENODEV, -1;
+
+	DeviceEntry* device_entry = &devices[msg.device];
+	VideoDevice* device = device_entry->device;
+	if ( !device->SwitchMode(msg.connector, msg.mode) )
+		return -1;
+
+	// TODO: This could potentially fail.
+	if ( msg.device == ONE_AND_ONLY_DEVICE &&
+	     msg.connector == ONE_AND_ONLY_CONNECTOR )
+		textbufhandle->Replace(device->CreateTextBuffer(msg.connector));
+
+	// No need to respond.
+
+	return 0;
+}
+
+static int GetCrtcMode(void* ptr, size_t size)
+{
+	struct dispmsg_get_crtc_mode msg;
+	if ( size != sizeof(msg) )
+		return errno = EINVAL, -1;
+	if ( !CopyFromUser(&msg, ptr, sizeof(msg)) )
+		return -1;
+
+	ScopedLock lock(&video_lock);
+
+	if ( num_devices <= msg.device )
+		return errno = ENODEV, -1;
+
+	DeviceEntry* device_entry = &devices[msg.device];
+	VideoDevice* device = device_entry->device;
+
+	// TODO: There is no real way to detect failure here.
+	errno = 0;
+	struct dispmsg_crtc_mode mode = device->GetCurrentMode(msg.connector);
+	if ( !(mode.control & DISPMSG_CONTROL_VALID) && errno != 0 )
+		return -1;
+
+	msg.mode = mode;
+
+	if ( !CopyToUser(ptr, &msg, sizeof(msg)) )
+		return -1;
+
+	return 0;
+}
+
+static int GetCrtcModes(void* ptr, size_t size)
+{
+	struct dispmsg_get_crtc_modes msg;
+	if ( size != sizeof(msg) )
+		return errno = EINVAL, -1;
+	if ( !CopyFromUser(&msg, ptr, sizeof(msg)) )
+		return -1;
+
+	ScopedLock lock(&video_lock);
+
+	if ( num_devices <= msg.device )
+		return errno = ENODEV, -1;
+
+	DeviceEntry* device_entry = &devices[msg.device];
+	VideoDevice* device = device_entry->device;
+
+	size_t nummodes;
+	struct dispmsg_crtc_mode* modes = device->GetModes(msg.connector, &nummodes);
+	if ( !modes )
+		return -1;
+
+	size_t requested_modes = msg.modes_length;
+	msg.modes_length = nummodes;
+
+	if ( !CopyToUser(ptr, &msg, sizeof(msg)) )
+		return -1;
+
+	if ( requested_modes < nummodes )
+	{
+		delete[] modes;
+		return errno = ERANGE, -1;
+	}
+
 	for ( size_t i = 0; i < nummodes; i++ )
 	{
-		result[i] = String::Clone(modes[i]);
-		if ( !result[i] )
+		if ( !CopyToUser(&msg.modes[i], &modes[i], sizeof(modes[i])) )
 		{
-			for ( size_t j = 0; j < i; j++ )
-			{
-				delete[] result[j];
-			}
-			delete[] result;
-			return NULL;
+			delete[] modes;
+			return -1;
 		}
 	}
-	*modesnum = nummodes;
-	return result;
+
+	delete[] modes;
+
+
+	return 0;
 }
 
-bool SwitchMode(const char* mode)
+static int GetMemorySize(void* ptr, size_t size)
 {
-	ScopedLock lock(&videolock);
-	UpdateModes();
-	char* drivername = NULL;
-	if ( !ReadParamString(mode, "driver", &drivername, NULL) ) { return false; }
-	if ( !strcmp(drivername, "none") )
+	struct dispmsg_get_memory_size msg;
+	if ( size != sizeof(msg) )
+		return errno = EINVAL, -1;
+	if ( !CopyFromUser(&msg, ptr, sizeof(msg)) )
+		return -1;
+
+	ScopedLock lock(&video_lock);
+
+	if ( num_devices <= msg.device )
+		return errno = ENODEV, -1;
+
+	DeviceEntry* device_entry = &devices[msg.device];
+	VideoDevice* device = device_entry->device;
+
+	msg.memory_size = device->FrameSize();
+
+	if ( !CopyToUser(ptr, &msg, sizeof(msg)) )
+		return -1;
+
+	return 0;
+}
+
+static int WriteMemory(void* ptr, size_t size)
+{
+	struct dispmsg_write_memory msg;
+	if ( size != sizeof(msg) )
+		return errno = EINVAL, -1;
+	if ( !CopyFromUser(&msg, ptr, sizeof(msg)) )
+		return -1;
+
+	ScopedLock lock(&video_lock);
+
+	if ( num_devices <= msg.device )
+		return errno = ENODEV, -1;
+
+	DeviceEntry* device_entry = &devices[msg.device];
+	VideoDevice* device = device_entry->device;
+
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	if ( device->WriteAt(&ctx, msg.offset, msg.src, msg.size) < 0 )
+		return -1;
+
+	return 0;
+}
+
+static int ReadMemory(void* ptr, size_t size)
+{
+	struct dispmsg_read_memory msg;
+	if ( size != sizeof(msg) )
+		return errno = EINVAL, -1;
+	if ( !CopyFromUser(&msg, ptr, sizeof(msg)) )
+		return -1;
+
+	ScopedLock lock(&video_lock);
+
+	if ( num_devices <= msg.device )
+		return errno = ENODEV, -1;
+
+	DeviceEntry* device_entry = &devices[msg.device];
+	VideoDevice* device = device_entry->device;
+
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	if ( device->ReadAt(&ctx, msg.offset, msg.dst, msg.size) < 0 )
+		return -1;
+
+	return 0;
+}
+
+static int sys_dispmsg_issue(void* ptr, size_t size)
+{
+	struct dispmsg_header hdr;
+	if ( size < sizeof(hdr) )
+		return errno = EINVAL, -1;
+	if ( !CopyFromUser(&hdr, ptr, sizeof(hdr)) )
+		return -1;
+	switch ( hdr.msgid )
 	{
-		DriverEntry* driverentry = CurrentDriverEntry();
-		if ( !driverentry )
-			return true;
-		ShutDownDriver(driverentry->driver, driverentry->name);
-		currentdrvid = SIZE_MAX;
-		return true;
+	case DISPMSG_ENUMERATE_DEVICES: return EnumerateDevices(ptr, size);
+	case DISPMSG_GET_DRIVER_COUNT: return GetDriverCount(ptr, size);
+	case DISPMSG_GET_DRIVER_NAME: return GetDriverName(ptr, size);
+	case DISPMSG_GET_DRIVER: return GetDriver(ptr, size);
+	case DISPMSG_SET_DRIVER: return SetDriver(ptr, size);
+	case DISPMSG_SET_CRTC_MODE: return SetCrtcMode(ptr, size);
+	case DISPMSG_GET_CRTC_MODE: return GetCrtcMode(ptr, size);
+	case DISPMSG_GET_CRTC_MODES: return GetCrtcModes(ptr, size);
+	case DISPMSG_GET_MEMORY_SIZE: return GetMemorySize(ptr, size);
+	case DISPMSG_WRITE_MEMORY: return WriteMemory(ptr, size);
+	case DISPMSG_READ_MEMORY: return ReadMemory(ptr, size);
+	default:
+		return errno = ENOSYS, -1;
 	}
-	DriverEntry* drvent = GetDriverEntry(drivername);
-	delete[] drivername;
-	if ( !drvent ) { return false; }
-	return DoSwitchMode(drvent, mode);
 }
 
-bool Supports(const char* mode)
+void Init(Ref<TextBufferHandle> thetextbufhandle)
 {
-	ScopedLock lock(&videolock);
-	UpdateModes();
-	char* drivername = NULL;
-	if ( !ReadParamString(mode, "driver", &drivername, NULL) ) { return false; }
-	DriverEntry* drvent = GetDriverEntry(drivername);
-	delete[] drivername;
-	if ( !drvent ) { return false; }
-	return drvent->driver->Supports(mode);
-}
-
-size_t LookupDriverIndexOfMode(const char* mode)
-{
-	const char* needle = "driver=";
-	size_t needlelen = strlen(needle);
-	while ( *mode )
-	{
-		if ( !strncmp(mode, needle, needlelen) )
-		{
-			const char* name = mode + needlelen;
-			size_t namelen = strcspn(name, ",");
-			ScopedLock lock(&videolock);
-			for ( size_t i = 0; i < numdrivers; i++ )
-				if ( !strncmp(drivers[i].name, name, namelen) )
-					return i;
-			return SIZE_MAX;
-		}
-		mode += strcspn(mode, ",") + 1;
-	}
-	return SIZE_MAX;
-}
-
-off_t FrameSize()
-{
-	ScopedLock lock(&videolock);
-	DriverEntry* drvent = CurrentDriverEntry();
-	if ( !drvent ) { errno = EINVAL; return -1; }
-	return drvent->driver->FrameSize();
-}
-
-ssize_t WriteAt(off_t off, const void* buf, size_t count)
-{
-	ScopedLock lock(&videolock);
-	DriverEntry* drvent = CurrentDriverEntry();
-	if ( !drvent ) { errno = EINVAL; return -1; }
-	return drvent->driver->WriteAt(off, buf, count);
-}
-
-ssize_t ReadAt(off_t off, void* buf, size_t count)
-{
-	ScopedLock lock(&videolock);
-	DriverEntry* drvent = CurrentDriverEntry();
-	if ( !drvent ) { errno = EINVAL; return -1; }
-	return drvent->driver->ReadAt(off, buf, count);
+	textbufhandle = thetextbufhandle;
+	Syscall::Register(SYSCALL_DISPMSG_ISSUE, (void*) sys_dispmsg_issue);
 }
 
 } // namespace Video
-
 } // namespace Sortix

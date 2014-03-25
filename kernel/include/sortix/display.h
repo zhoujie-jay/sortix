@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of Sortix.
 
@@ -31,6 +31,10 @@
 #include <stdint.h>
 
 __BEGIN_DECLS
+
+const uint32_t DISPMSG_CONTROL_VALID = 1 << 0;
+const uint32_t DISPMSG_CONTROL_VGA = 1 << 1;
+const uint32_t DISPMSG_CONTROL_OTHER_RESOLUTIONS = 1 << 2;
 
 struct dispmsg_string
 {

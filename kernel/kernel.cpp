@@ -70,15 +70,14 @@
 
 #include "alarm.h"
 #include "ata.h"
-#include "bga.h"
 #include "com.h"
-#include "dispmsg.h"
 #include "elf.h"
 #include "fs/full.h"
 #include "fs/kram.h"
 #include "fs/null.h"
 #include "fs/user.h"
 #include "fs/zero.h"
+#include "gpu/bga/bga.h"
 #include "identity.h"
 #include "initrd.h"
 #include "io.h"
@@ -431,9 +430,6 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	// Initialize the scheduler.
 	Scheduler::Init();
-
-	// Initialize the Display Message framework.
-	DisplayMessage::Init();
 
 	// Now that the base system has been loaded, it's time to go threaded. First
 	// we create an object that represents this process.
