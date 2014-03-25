@@ -198,6 +198,7 @@ pcibar_t GetBAR(uint32_t devaddr, uint8_t bar)
 		PCI::Write32(devaddr, 0x10 + 4 * (bar+0), low);
 		result.size_raw = (uint64_t) size_low << 0;
 		result.size_raw = ~(result.size_raw & 0xFFFFFFF0) + 1;
+		result.size_raw &= 0xFFFFFFFF;
 	}
 	else if ( result.is_iospace() )
 	{
@@ -206,6 +207,7 @@ pcibar_t GetBAR(uint32_t devaddr, uint8_t bar)
 		PCI::Write32(devaddr, 0x10 + 4 * (bar+0), low);
 		result.size_raw = (uint64_t) size_low << 0;
 		result.size_raw = ~(result.size_raw & 0xFFFFFFFC) + 1;
+		result.size_raw &= 0xFFFFFFFF;
 	}
 
 	return result;
