@@ -197,9 +197,9 @@ struct Chunk;
 struct Trailer;
 
 #if __STDC_HOSTED__
-pthread_mutex_t heaplock;
+pthread_mutex_t heaplock = PTHREAD_MUTEX_INITIALIZER;
 #elif defined(__is_sortix_kernel)
-Sortix::kthread_mutex_t heaplock;
+Sortix::kthread_mutex_t heaplock = Sortix::KTHREAD_MUTEX_INITIALIZER;
 #endif
 
 // The location where the heap originally grows from.
@@ -212,14 +212,14 @@ static uintptr_t wilderness;
 #endif
 
 // How many bytes remain in the wilderness.
-size_t wildernesssize;
+size_t wildernesssize = 0;
 
 // How many bytes are the heap allow to grow to (including wilderness).
-size_t heapmaxsize;
+size_t heapmaxsize = SIZE_MAX;
 
 // How many bytes are currently used for chunks in the heap, which
 // excludes the wilderness.
-size_t heapsize;
+size_t heapsize = 0;
 
 // bins[N] contain a linked list of chunks that are at least 2^(N+1)
 // bytes, but less than 2^(N+2) bytes. By selecting the proper bin in
@@ -227,7 +227,7 @@ size_t heapsize;
 Chunk* bins[NUMBINS];
 
 // Bit N is set if bin[N] contains a chunk.
-size_t bincontainschunks;
+size_t bincontainschunks = 0;
 
 static bool IsGoodHeapPointer(void* ptr, size_t size)
 {
@@ -397,32 +397,16 @@ static bool ValidateHeap()
 	return true;
 }
 
-//
-// This is where the actual memory allocation algorithm starts.
-//
-
-extern "C" void _init_heap()
-{
-	heapstart = GetHeapStart();
-	heapmaxsize = SIZE_MAX;
-	heapsize = 0;
-	wilderness = heapstart;
-	wildernesssize = 0;
-	for ( size_t i = 0; i < NUMBINS; i++ ) { bins[i] = NULL; }
-	bincontainschunks = 0;
-#if __STDC_HOSTED__
-	heaplock = PTHREAD_MUTEX_INITIALIZER;
-#elif defined(__is_sortix_kernel)
-	heaplock = Sortix::KTHREAD_MUTEX_INITIALIZER;
-#endif
-}
-
 // Attempts to expand the wilderness such that it contains at least
 // bytesneeded bytes. This is done by mapping new pages onto into the
 // virtual address-space.
 static bool ExpandWilderness(size_t bytesneeded)
 {
 	if ( bytesneeded <= wildernesssize ) { return true; }
+
+	// Delayed initialization of the heap.
+	if ( heapstart == 0 && wilderness == 0 && !heapsize )
+		heapstart = wilderness = GetHeapStart();
 
 	bytesneeded -= wildernesssize;
 

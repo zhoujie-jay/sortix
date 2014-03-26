@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -28,8 +28,6 @@
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-
-void _init_heap();
 
 __END_DECLS
 

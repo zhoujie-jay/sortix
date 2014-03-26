@@ -295,9 +295,6 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Initialize the interrupt handler table and enable interrupts.
 	Interrupt::Init();
 
-	// Initialize the kernel heap.
-	_init_heap();
-
 	// Load the kernel symbols if provided by the bootloader.
 	do if ( bootinfo->flags & MULTIBOOT_INFO_ELF_SHDR )
 	{

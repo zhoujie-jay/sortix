@@ -55,9 +55,6 @@ extern "C" void initialize_standard_library(int argc, char* argv[])
 	// Initialize pthreads and stuff like thread-local storage.
 	pthread_initialize();
 
-	// Initialize the dynamic heap.
-	_init_heap();
-
 	// Initialize stdio.
 	init_stdio();
 
