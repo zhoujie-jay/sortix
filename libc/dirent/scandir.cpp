@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -28,6 +28,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+static int wrap_filter(const struct dirent* dirent, void* function)
+{
+	return ((int (*)(const struct dirent*)) function)(dirent);
+}
+
+static int wrap_compare(const struct dirent** dirent_a,
+                        const struct dirent** dirent_b, void* function)
+{
+	return ((int (*)(const struct dirent**, const struct dirent**)) function)(dirent_a, dirent_b);
+}
+
 extern "C"
 int scandir(const char* path, struct dirent*** namelist_ptr,
             int (*filter)(const struct dirent*),
@@ -36,52 +47,14 @@ int scandir(const char* path, struct dirent*** namelist_ptr,
 	DIR* dir = opendir(path);
 	if ( !dir )
 		return -1;
-
-	size_t namelist_used = 0;
-	size_t namelist_length = 0;
-	struct dirent** namelist = NULL;
-
-	if ( false )
-	{
-	out_error:
-		for ( size_t i = 0; i < namelist_used; i++ )
-			free(namelist[i]);
-		free(namelist);
-		closedir(dir);
-		return errno = EOVERFLOW, -1;
-	}
-
-	while ( struct dirent* entry = readdir(dir) )
-	{
-		if ( filter && !filter(entry) )
-			continue;
-		if ( (size_t) INT_MAX <= namelist_used )
-			goto out_error;
-		if ( namelist_used == namelist_length )
-		{
-			size_t new_length = namelist_length ? 2 * namelist_length : 8;
-			size_t new_size = new_length * sizeof(struct dirent*);
-			struct dirent** list = (struct dirent**) realloc(namelist, new_size);
-			if ( !list )
-				goto out_error;
-			namelist = list;
-			namelist_length = new_length;
-		}
-		size_t name_length = strlen(entry->d_name);
-		size_t dirent_size = sizeof(struct dirent) + name_length + 1;
-		struct dirent* dirent = (struct dirent*) malloc(dirent_size);
-		if ( !dirent )
-			goto out_error;
-		memcpy(dirent, entry, sizeof(*entry));
-		strcpy(dirent->d_name, entry->d_name);
-		namelist[namelist_used++] = dirent;
-	}
-
-	if ( compare )
-		qsort(namelist, namelist_used, sizeof(struct dirent*),
-		      (int (*)(const void*, const void*)) compare);
-
+	int (*used_filter)(const struct dirent*,
+	                   void*) = filter ? wrap_filter : NULL;
+	int (*used_compare)(const struct dirent**,
+	                    const struct dirent**,
+	                    void*) = compare ? wrap_compare : NULL;
+	int result = dscandir_r(dir, namelist_ptr,
+	                        used_filter, (void*) filter,
+	                        used_compare, (void*) compare);
 	closedir(dir);
-
-	return *namelist_ptr = namelist, (int) namelist_used;
+	return result;
 }

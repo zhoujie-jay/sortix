@@ -296,6 +296,7 @@ $(CPUDIR)/fork.o \
 $(CPUDIR)/setjmp.o \
 $(CPUDIR)/signal.o \
 $(CPUDIR)/syscall.o \
+dirent/dscandir_r.o \
 dirent/fdopendir.o \
 dirent/opendir.o \
 dirent/scandir.o \

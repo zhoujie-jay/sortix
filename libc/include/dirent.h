@@ -89,6 +89,11 @@ struct dirent
 int alphasort(const struct dirent**, const struct dirent**);
 int closedir(DIR* dir);
 int dirfd(DIR* dir);
+int dscandir_r(DIR*, struct dirent***,
+               int (*)(const struct dirent*, void*),
+               void*,
+               int (*)(const struct dirent**, const struct dirent**, void*),
+               void*);
 DIR* fdopendir(int fd);
 DIR* opendir(const char* path);
 struct dirent* readdir(DIR* dir);
