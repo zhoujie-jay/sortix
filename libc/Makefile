@@ -35,6 +35,7 @@ ctype/isxdigit.o \
 ctype/tolower.o \
 ctype/toupper.o \
 dirent/alphasort.o \
+dirent/alphasort_r.o \
 dirent/closedir.o \
 dirent/dclearerr.o \
 dirent/dcloseall.o \

@@ -87,6 +87,7 @@ struct dirent
 #define _D_ALLOC_NAMLEN(d) (_D_EXACT_NAMLEN(d) + 1)
 
 int alphasort(const struct dirent**, const struct dirent**);
+int alphasort_r(const struct dirent**, const struct dirent**, void*);
 int closedir(DIR* dir);
 int dirfd(DIR* dir);
 int dscandir_r(DIR*, struct dirent***,
