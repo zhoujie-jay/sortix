@@ -105,6 +105,7 @@ int scandir(const char*, struct dirent***, int (*)(const struct dirent*),
 /* TODO: seekdir */
 /* TODO: telldir */
 int versionsort(const struct dirent**, const struct dirent**);
+int versionsort_r(const struct dirent**, const struct dirent**, void*);
 
 #if defined(_SORTIX_SOURCE)
 void dregister(DIR* dir);

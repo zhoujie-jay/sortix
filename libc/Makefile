@@ -48,6 +48,7 @@ dirent/dunregister.o \
 dirent/readdir.o \
 dirent/rewinddir.o \
 dirent/versionsort.o \
+dirent/versionsort_r.o \
 errno/errno.o \
 fnmatch/fnmatch.o \
 inttypes/imaxabs.o \
