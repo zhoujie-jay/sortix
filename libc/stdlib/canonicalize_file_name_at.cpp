@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -112,7 +112,7 @@ extern "C" char* canonicalize_file_name_at(int dirfd, const char* path)
 		// The ideal case is if it's a directory (case 1). We follow symbolic
 		// links to directories as that's also okay (case 3).
 		int fd = openat(dirfd, path, O_RDONLY | O_DIRECTORY);
-		if ( fd )
+		if ( 0 <= fd )
 		{
 			char* ret = canonicalize_file_name_at(fd, NULL);
 			close(fd);
@@ -151,7 +151,8 @@ extern "C" char* canonicalize_file_name_at(int dirfd, const char* path)
 
 	if ( path )
 	{
-		if ( !(ret = (char*) malloc(sizeof(char) * (1 + strlen(path) + 1))) )
+		retlen = 1 + strlen(path);
+		if ( !(ret = (char*) malloc(sizeof(char) * (retlen + 1))) )
 			return NULL;
 		stpcpy(stpcpy(ret, "/"), path);
 	}
