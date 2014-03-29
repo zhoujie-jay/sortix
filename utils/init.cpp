@@ -189,7 +189,7 @@ int child()
 	{
 		setenv("USERNAME", passwd->pw_name, 1);
 		home = passwd->pw_dir[0] ? passwd->pw_dir : default_home;
-		setenv("HOME", default_home, 1);
+		setenv("HOME", home, 1);
 		shell = passwd->pw_shell[0] ? passwd->pw_shell : default_shell;
 		setenv("SHELL", shell, 1);
 		setenv("DEFAULT_STUFF", "NO", 1);
