@@ -70,7 +70,7 @@ int scandir(const char* path, struct dirent*** namelist_ptr,
 		size_t name_length = strlen(entry->d_name);
 		size_t dirent_size = sizeof(struct dirent) + name_length + 1;
 		struct dirent* dirent = (struct dirent*) malloc(dirent_size);
-		if ( !dirent_size )
+		if ( !dirent )
 			goto out_error;
 		memcpy(dirent, entry, sizeof(*entry));
 		strcpy(dirent->d_name, entry->d_name);
