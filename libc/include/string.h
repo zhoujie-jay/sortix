@@ -29,8 +29,6 @@
 
 #include <sys/__/types.h>
 
-#include <strings.h>
-
 __BEGIN_DECLS
 
 #ifndef NULL
