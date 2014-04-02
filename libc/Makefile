@@ -22,6 +22,7 @@ aux/c++.o \
 aux/op-new.o \
 ctype/isalnum.o \
 ctype/isalpha.o \
+ctype/isascii.o \
 ctype/isblank.o \
 ctype/iscntrl.o \
 ctype/isdigit.o \
