@@ -33,7 +33,7 @@
 #include <sys/__/types.h>
 #include <__/stdint.h>
 
-#if defined(_SORTIX_SOURCE)
+#if __USE_SORTIX
 #include <stdarg.h>
 #include <stdint.h>
 #include <sortix/exit.h>
@@ -49,8 +49,6 @@ __END_DECLS
 #endif
 #include <sortix/seek.h>
 #include <sortix/unistd.h>
-
-#define _SORTIX_ALWAYS_SBRK
 
 __BEGIN_DECLS
 
@@ -379,6 +377,7 @@ ssize_t readlink(const char* __restrict, char* __restrict, size_t);
 ssize_t readlinkat(int, const char* __restrict, char* __restrict, size_t);
 ssize_t read(int, void*, size_t);
 int rmdir(const char*);
+void* sbrk(__intptr_t increment);
 int setegid(gid_t);
 int seteuid(uid_t);
 int setgid(gid_t);
@@ -399,7 +398,7 @@ int unlinkat(int, const char*, int);
 int unlink(const char*);
 ssize_t write(int, const void*, size_t);
 
-#if defined(_SORTIX_SOURCE)
+#if __USE_SORTIX
 int alarmns(const struct timespec* delay, struct timespec* odelay);
 int execvpe(const char*, char* const [], char* const []);
 int exit_thread(int, int, const struct exit_thread*);
@@ -410,12 +409,9 @@ pid_t tfork(int flags, struct tfork* regs);
 size_t writeall(int fd, const void* buf, size_t count);
 size_t writeleast(int fd, const void* buf, size_t least, size_t max);
 #endif
-#if defined(_SORTIX_SOURCE) || defined(_SORTIX_ALWAYS_SBRK)
-void* sbrk(__intptr_t increment);
-#endif
 
 /* For compatibility with POSIX, declare getopt(3) here. */
-#if !defined(_SORTIX_SOURCE)
+#if __USE_POSIX
 /* These declarations are repeated in <getopt.h>. */
 #ifndef __getopt_unistd_shared_declared
 #define __getopt_unistd_shared_declared

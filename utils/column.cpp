@@ -20,8 +20,6 @@
 
 *******************************************************************************/
 
-#define _SORTIX_SOURCE
-
 #include <sys/ioctl.h>
 
 #include <ctype.h>

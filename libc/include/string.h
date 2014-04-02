@@ -64,6 +64,7 @@ char* stpncpy(char* __restrict, const char* __restrict, size_t);
 int strcasecmp(const char* a, const char* b);
 char* strcat(char* __restrict, const char* __restrict);
 char* strchr(const char*, int);
+char* strchrnul(const char* str, int c);
 int strcmp(const char*, const char*);
 int strcoll(const char*, const char*);
 int strcoll_l(const char*, const char*, locale_t);
@@ -90,16 +91,12 @@ int strverscmp(const char*, const char*);
 size_t strxfrm(char* __restrict, const char* __restrict, size_t);
 size_t strxfrm_l(char* __restrict, const char* __restrict, size_t, locale_t);
 
-#if defined(_SORTIX_SOURCE) || defined(_GNU_SOURCE)
-char* strchrnul(const char* str, int c);
-#endif
-
-#if defined(_SORTIX_SOURCE)
+#if __USE_SORTIX
 const char* sortix_strerror(int errnum);
 const char* sortix_strerror_l(int, locale_t);
 const char* sortix_strsignal(int signum);
 #endif
-#if defined(_SOURCE_SOURCE) && __SORTIX_STDLIB_REDIRECTS
+#if __USE_SORTIX && __SORTIX_STDLIB_REDIRECTS
 const char* strerror(int errnum) __asm__ ("sortix_strerror");
 const char* strerror_l(int, locale_t) __asm__ ("sortix_strerror_l");
 const char* strsignal(int signum) __asm__ ("sortix_strsignal");

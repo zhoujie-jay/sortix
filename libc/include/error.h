@@ -31,10 +31,8 @@ __BEGIN_DECLS
 
 void gnu_error(int status, int errnum, const char* format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
-#if __SORTIX_STDLIB_REDIRECTS
 void error(int status, int errnum, const char* format, ...) __asm__ ("gnu_error")
 	__attribute__((__format__(__printf__, 3, 4)));
-#endif
 
 __END_DECLS
 

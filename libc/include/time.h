@@ -88,7 +88,7 @@ struct tm
 __END_DECLS
 #include <sortix/timespec.h>
 #include <sortix/itimerspec.h>
-#if defined(_SORTIX_SOURCE)
+#if __USE_SORTIX
 #include <sortix/tmns.h>
 #endif
 __BEGIN_DECLS
@@ -144,7 +144,7 @@ void tzset(void);
 /* TODO: This is some _MISC_SOURCE thing according to GNU, but I like it. */
 time_t timegm(struct tm*);
 
-#if defined(_SORTIX_SOURCE)
+#if __USE_SORTIX
 int clock_gettimeres(clockid_t, struct timespec*, struct timespec*);
 int clock_settimeres(clockid_t, const struct timespec*, const struct timespec*);
 int timens(struct tmns* tmns);

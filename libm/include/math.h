@@ -55,7 +55,7 @@ __BEGIN_DECLS
 #define HUGE_VAL __builtin_huge_val()
 
 /* C99 macros */
-#if __ISO_C_VISIBLE >= 1999 || 1 /* TODO: HACK: Visibility */
+#if __USE_SORTIX || 1999 <= __USE_C
 
 #define FP_ILOGB0 (-__INT_MAX)
 #define FP_ILOGBNAN __INT_MAX
@@ -106,10 +106,10 @@ __BEGIN_DECLS
 typedef __double_t double_t;
 typedef __float_t float_t;
 
-#endif /* __ISO_C_VISIBLE >= 1999 */
+#endif /* __USE_SORTIX || 1999 <= __USE_C */
 
 /* XOPEN/SVID macros */
-#if __BSD_VISIBLE || __XSI_VISIBLE || 1 /* TODO: HACK: Support visibility! */
+#if __USE_SORTIX || __USE_XOPEN
 #define M_E             2.7182818284590452354   /* e */
 #define M_LOG2E         1.4426950408889634074   /* log 2e */
 #define M_LOG10E        0.43429448190325182765  /* log 10e */
@@ -128,11 +128,11 @@ typedef __float_t float_t;
 #define MAXFLOAT        ((float)3.40282346638528860e+38)
 
 extern int signgam;
-#endif /* __BSD_VISIBLE || __XSI_VISIBLE */
+#endif /* __USE_SORTIX || __USE_XOPEN */
 
 /* Various extensions inherited from NetBSD libm. Perhaps we should get rid of
    some of them or make them private to libm itself, or just rename them. */
-#if defined(_NETBSD_SOURCE) || defined(_SORTIX_SOURCE) || 1 /* TODO: HACK: Visibility */
+#if __USE_SORTIX
 enum fdversion {fdlibm_ieee = -1, fdlibm_svid, fdlibm_xopen, fdlibm_posix};
 
 #define _LIB_VERSION_TYPE enum fdversion
@@ -179,7 +179,7 @@ struct exception
 #define TLOSS           5
 #define PLOSS           6
 
-#endif /* _NETBSD_SOURCE */
+#endif /* __USE_SORTIX */
 
 /*
  * Most of these functions depend on the rounding mode and have the side
@@ -219,7 +219,7 @@ double fabs(double);
 double floor(double);
 double fmod(double, double);
 
-#if defined(_XOPEN_SOURCE) || defined(_NETBSD_SOURCE) || 1 /* TODO: HACK: Visibility */
+#if __USE_SORTIX || __USE_XOPEN
 double erf(double);
 double erfc(double);
 double gamma(double);
@@ -232,8 +232,9 @@ double lgamma(double);
 double y0(double);
 double y1(double);
 double yn(int, double);
+#endif  /* __USE_SORTIX || __USE_XOPEN */
 
-#if (_XOPEN_SOURCE - 0) >= 500 || defined(_NETBSD_SOURCE) || 1 /* TODO: HACK: Visibility */
+#if __USE_SORTIX || 500 <= __USE_XOPEN
 double acosh(double);
 double asinh(double);
 double atanh(double);
@@ -246,18 +247,12 @@ double nextafter(double, double);
 double remainder(double, double);
 double rint(double);
 double scalb(double, double);
-#endif /* (_XOPEN_SOURCE - 0) >= 500 || defined(_NETBSD_SOURCE)*/
-#endif /* _XOPEN_SOURCE || _NETBSD_SOURCE */
+#endif /* __USE_SORTIX || 500 <= __USE_XOPEN */
 
 /*
  * ISO C99
  */
-#if !defined(_ANSI_SOURCE) && !defined(_POSIX_C_SOURCE) && \
-    !defined(_XOPEN_SOURCE) || \
-    ((__STDC_VERSION__ - 0) >= 199901L) || \
-    ((_POSIX_C_SOURCE - 0) >= 200112L) || \
-    ((_XOPEN_SOURCE  - 0) >= 600) || \
-    defined(_ISOC99_SOURCE) || defined(_NETBSD_SOURCE) || 1 /* TODO: HACK: Visibility */
+#if __USE_SORTIX || 1999 <= __USE_C
 /* 7.12.3.1 int fpclassify(real-floating x) */
 #define fpclassify(__x) __fpmacro_unary_floating(fpclassify, __x)
 
@@ -379,21 +374,15 @@ long double fdiml(long double, long double);
 long double fmaxl(long double, long double);
 long double fminl(long double, long double);
 
-#endif /* !_ANSI_SOURCE && ... */
-
-#if !defined(_ANSI_SOURCE) && !defined(_POSIX_C_SOURCE) || \
-    !defined(_XOPEN_SOURCE) || \
-    ((__STDC_VERSION__ - 0) >= 199901L) || \
-    ((_POSIX_C_SOURCE - 0) >= 200112L) || \
-    defined(_ISOC99_SOURCE) || defined(_NETBSD_SOURCE) || 1 /* TODO: HACK: Visibility */
 /* 7.12.3.3 int isinf(real-floating x) */
 #define isinf(__x)      __fpmacro_unary_floating(isinf, __x)
 
 /* 7.12.3.4 int isnan(real-floating x) */
 #define isnan(__x)      __fpmacro_unary_floating(isnan, __x)
-#endif /* !_ANSI_SOURCE && ... */
 
-#if defined(_NETBSD_SOURCE) || 1 /* TODO: HACK: Visibility */
+#endif /* __USE_SORTIX || 1999 <= __USE_C */
+
+#if __USE_SORTIX
 #ifndef __cplusplus
 int matherr(struct exception*);
 #endif
@@ -414,19 +403,19 @@ double scalbn(double, int);
  */
 double drem(double, double);
 
-#endif /* _NETBSD_SOURCE */
+#endif /* __USE_SORTIX */
 
-#if defined(_NETBSD_SOURCE) || defined(_REENTRANT) || 1 /* TODO: HACK: Visibility */
+#if __USE_SORTIX /* or _REENTRANT */
 /*
  * Reentrant version of gamma & lgamma; passes signgam back by reference
  * as the second argument; user must allocate space for signgam.
  */
 double gamma_r(double, int*);
 double lgamma_r(double, int*);
-#endif /* _NETBSD_SOURCE || _REENTRANT */
+#endif /* __USE_SORTIX */
 
 
-#if defined(_NETBSD_SOURCE) || 1 /* TODO: HACK: Visibility */
+#if __USE_SORTIX
 
 /* float versions of ANSI/POSIX functions */
 
@@ -452,9 +441,9 @@ float significandf(float);
  * float versions of BSD math library entry points
  */
 float dremf(float, float);
-#endif /* _NETBSD_SOURCE */
+#endif /* __USE_SORTIX */
 
-#if defined(_NETBSD_SOURCE) || defined(_REENTRANT) || 1 /* TODO: HACK: Visibility */
+#if __USE_SORTIX /* or _REENTRANT */
 /*
  * Float versions of reentrant version of gamma & lgamma; passes
  * signgam back by reference as the second argument; user must
@@ -462,7 +451,7 @@ float dremf(float, float);
  */
 float gammaf_r(float, int*);
 float lgammaf_r(float, int*);
-#endif /* !... || _REENTRANT */
+#endif /* __USE_SORTIX */
 
 /*
  * Library implementation

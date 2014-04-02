@@ -214,7 +214,7 @@ char* ctermid(char* s);
 FILE* open_memstream(char** bufp, size_t* sizep);
 #endif
 
-#if defined(_SORTIX_SOURCE)
+#if __USE_SORTIX
 
 #define FILE_MODE_READ (1 << 0)
 #define FILE_MODE_WRITE (1 << 1)
@@ -264,7 +264,7 @@ int fpipe(FILE* pipes[2]);
 int fparsemode(const char*);
 #endif
 
-#if defined(_SORTIX_SOURCE) || defined(_WANT_SORTIX_VPRINTF_CALLBACK)
+#if __USE_SORTIX
 size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
                         void* user,
                         const char* __restrict format,

@@ -51,13 +51,13 @@ int feholdexcept(fenv_t *);
 int fesetenv(const fenv_t *);
 int feupdateenv(const fenv_t *);
 
-#if defined(_NETBSD_SOURCE) || defined(_GNU_SOURCE) || defined(_SORTIX_SOURCE)
+#if __USE_SORTIX
 
 int feenableexcept(int mask);
 int fedisableexcept(int mask);
 int fegetexcept(void);
 
-#endif /* _NETBDS_SOURCE || _GNU_SOURCE */
+#endif /* __USE_SORTIX */
 
 __END_DECLS
 

@@ -69,7 +69,7 @@ struct lconv
 #define LC_NUM_CATEGORIES LC_ALL
 
 const char* sortix_setlocale(int category, const char* locale);
-#if defined(_SORTIX_SOURCE) && __SORTIX_STDLIB_REDIRECTS
+#if __USE_SORTIX && __SORTIX_STDLIB_REDIRECTS
 const char* setlocale(int category, const char* locale) __asm__ ("sortix_setlocale");
 #else
 char* setlocale(int category, const char* locale);
