@@ -165,14 +165,12 @@ int child()
 		setenv("HOME", home, 1);
 		shell = passwd->pw_shell[0] ? passwd->pw_shell : default_shell;
 		setenv("SHELL", shell, 1);
-		setenv("DEFAULT_STUFF", "NO", 1);
 	}
 	else
 	{
 		setenv("USERNAME", "root", 1);
 		setenv("HOME", home = default_home, 1);
 		setenv("SHELL", shell = default_shell, 1);
-		setenv("DEFAULT_STUFF", "YES", 1);
 	}
 
 	chdir(home);
