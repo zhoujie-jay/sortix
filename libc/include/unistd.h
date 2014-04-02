@@ -358,6 +358,7 @@ uid_t geteuid(void);
 int gethostname(char*, size_t);
 char* getlogin(void);
 int getlogin_r(char*, size_t);
+size_t getpagesize(void);
 pid_t getpgid(pid_t);
 pid_t getpid(void);
 pid_t getppid(void);
@@ -400,7 +401,6 @@ ssize_t write(int, const void*, size_t);
 #if defined(_SORTIX_SOURCE)
 int alarmns(const struct timespec* delay, struct timespec* odelay);
 int execvpe(const char*, char* const [], char* const []);
-size_t getpagesize(void);
 int memstat(size_t* memused, size_t* memtotal);
 int mkpartition(int fd, off_t start, off_t length);
 pid_t sfork(int flags);
