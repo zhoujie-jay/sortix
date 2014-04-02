@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -42,6 +42,7 @@ __BEGIN_DECLS
 #include <stddef.h>
 #endif
 
+#if __USE_SORTIX || 2008 <= __USE_POSIX
 #ifndef __locale_t_defined
 #define __locale_t_defined
 /* TODO: figure out what this does and typedef it properly. This is just a
@@ -49,63 +50,98 @@ __BEGIN_DECLS
 typedef int __locale_t;
 typedef __locale_t locale_t;
 #endif
+#endif
 
-int ffs(int);
-int ffsl(long int);
-int ffsll(long long int);
-void* memccpy(void* __restrict, const void* __restrict, int, size_t);
 void* memchr(const void*, int, size_t);
 int memcmp(const void*, const void*, size_t);
 void* memcpy(void* __restrict, const void* __restrict, size_t);
 void* memmove(void*, const void*, size_t);
 void* memset(void*, int, size_t);
-char* stpcpy(char* __restrict, const char* __restrict);
-char* stpncpy(char* __restrict, const char* __restrict, size_t);
-int strcasecmp(const char* a, const char* b);
 char* strcat(char* __restrict, const char* __restrict);
 char* strchr(const char*, int);
-char* strchrnul(const char* str, int c);
 int strcmp(const char*, const char*);
 int strcoll(const char*, const char*);
-int strcoll_l(const char*, const char*, locale_t);
-size_t strcspn(const char*, const char*);
 char* strcpy(char* __restrict, const char* __restrict);
-char* strdup(const char*);
-int strerror_r(int, char*, size_t);
-size_t strlcat(char* __restrict, const char* __restrict, size_t);
-size_t strlcpy(char* __restrict, const char* __restrict, size_t);
+size_t strcspn(const char*, const char*);
+#if __USE_SORTIX && __SORTIX_STDLIB_REDIRECTS
+const char* strerror(int errnum) __asm__ ("sortix_strerror");
+#else
+char* strerror(int errnum);
+#endif
 size_t strlen(const char*);
-int strncasecmp(const char* a, const char* b, size_t n);
 char* strncat(char* __restrict, const char* __restrict, size_t);
 int strncmp(const char*, const char*, size_t);
 char* strncpy(char* __restrict, const char* __restrict, size_t);
-char* strndup(const char*, size_t);
-size_t strnlen(const char*, size_t);
 char* strpbrk(const char*, const char*);
 char* strrchr(const char*, int);
 size_t strspn(const char*, const char*);
 char* strstr(const char*, const char*);
 char* strtok(char* __restrict, const char* __restrict);
-char* strtok_r(char* __restrict, const char* __restrict, char** __restrict);
-int strverscmp(const char*, const char*);
 size_t strxfrm(char* __restrict, const char* __restrict, size_t);
-size_t strxfrm_l(char* __restrict, const char* __restrict, size_t, locale_t);
 
+/* Functions from early POSIX. */
+#if __USE_SORTIX || __USE_POSIX
+int strcasecmp(const char* a, const char* b);
+int strncasecmp(const char* a, const char* b, size_t n);
+#endif
+
+/* Functions from early XOPEN. */
+#if __USE_SORTIX || __USE_XOPEN
+void* memccpy(void* __restrict, const void* __restrict, int, size_t);
+#endif
+
+/* Functions from XOPEN 420 gone into POSIX 2008. */
+#if __USE_SORTIX || 420 <= __USE_XOPEN || 200809L <= __USE_POSIX
+char* strdup(const char*);
+#endif
+
+/* Functions from POSIX 2001. */
+#if __USE_SORTIX || 200112L <= __USE_POSIX
+int ffs(int);
+#if __USE_SORTIX && __SORTIX_STDLIB_REDIRECTS
+const char* strerror_l(int, locale_t) __asm__ ("sortix_strerror_l");
+#else
+char* strerror_l(int, locale_t);
+#endif
+int strerror_r(int, char*, size_t);
+char* strtok_r(char* __restrict, const char* __restrict, char** __restrict);
+#endif
+
+/* Functions from POSIX 2008. */
+#if __USE_SORTIX || 200809L <= __USE_POSIX
+char* stpcpy(char* __restrict, const char* __restrict);
+char* stpncpy(char* __restrict, const char* __restrict, size_t);
+int strcoll_l(const char*, const char*, locale_t);
+char* strndup(const char*, size_t);
+size_t strnlen(const char*, size_t);
+#if __USE_SORTIX && __SORTIX_STDLIB_REDIRECTS
+const char* strsignal(int signum) __asm__ ("sortix_strsignal");
+#else
+char* strsignal(int signum);
+#endif
+size_t strxfrm_l(char* __restrict, const char* __restrict, size_t, locale_t);
+#endif
+
+/* Functions copied from elsewhere. */
 #if __USE_SORTIX
+int ffsl(long int);
+/* TODO: strcasecmp_l */
+char* strchrnul(const char* str, int c);
+size_t strlcat(char* __restrict, const char* __restrict, size_t);
+size_t strlcpy(char* __restrict, const char* __restrict, size_t);
+/* TODO: strncasecmp_l */
+int strverscmp(const char*, const char*);
+#endif
+
+/* Functions that are Sortix extensions. */
+#if __USE_SORTIX
+int ffsll(long long int);
 const char* sortix_strerror(int errnum);
 const char* sortix_strerror_l(int, locale_t);
 const char* sortix_strsignal(int signum);
 #endif
-#if __USE_SORTIX && __SORTIX_STDLIB_REDIRECTS
-const char* strerror(int errnum) __asm__ ("sortix_strerror");
-const char* strerror_l(int, locale_t) __asm__ ("sortix_strerror_l");
-const char* strsignal(int signum) __asm__ ("sortix_strsignal");
-#else
-char* strerror(int errnum);
-char* strerror_l(int, locale_t);
-char* strsignal(int signum);
-#endif
 
+#if __USE_SORTIX
 /* Duplicate S, returning an identical alloca'd string.  */
 #define strdupa(s)                                                            \
   (__extension__                                                              \
@@ -126,6 +162,7 @@ char* strsignal(int signum);
       __new[__len] = '\0';                                                    \
       (char*) memcpy(__new, __old, __len);                                    \
     }))
+#endif
 
 __END_DECLS
 
