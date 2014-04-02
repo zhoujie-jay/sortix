@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -30,6 +30,8 @@
 #include <sys/__/types.h>
 
 #include <stdint.h>
+
+#if __USE_SORTIX || defined(__STDC_FORMAT_MACROS) || !defined(__cplusplus)
 
 #define PRId8 __PRId8
 #define PRIi8 __PRIi8
@@ -198,6 +200,8 @@
 #define SCNoMAX __SCNoMAX
 #define SCNuMAX __SCNuMAX
 #define SCNxMAX __SCNxMAX
+
+#endif
 
 __BEGIN_DECLS
 
