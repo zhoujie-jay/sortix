@@ -561,20 +561,20 @@ struct command_registration
 
 static const struct command_registration commands[] =
 {
-	"bt", main_bt,       "bt                  Stack trace",
-	"dump", main_dump,   "dump START [LEN]    Dump continuous memory",
-	"dump8", main_dump,  "dump8 START [LEN]   Dump 8-bit memory words",
-	"dump16", main_dump, "dump16 START [LEN]  Dump 16-bit memory words",
-	"dump32", main_dump, "dump32 START [LEN]  Dump 32-bit memory words",
-	"dump64", main_dump, "dump16 START [LEN]  Dump 64-bit memory words",
-	"echo", main_echo,   "echo [ARG...]       Echo string",
-	"exit", main_exit,   "exit                Quit debugger",
-	"pid", main_pid,     "pid [NEWPID]        Change current process",
-	"ps", main_ps,       "ps                  List processes",
-	"rs", main_rs,       "rs                  Print registers",
-	"tid", main_tid,     "tid [NEWTID]        Change current thread",
-	"ts", main_ts,       "ts                  List threads in current process",
-	NULL, NULL, NULL,
+	{ "bt", main_bt,       "bt                  Stack trace" },
+	{ "dump", main_dump,   "dump START [LEN]    Dump continuous memory" },
+	{ "dump8", main_dump,  "dump8 START [LEN]   Dump 8-bit memory words" },
+	{ "dump16", main_dump, "dump16 START [LEN]  Dump 16-bit memory words" },
+	{ "dump32", main_dump, "dump32 START [LEN]  Dump 32-bit memory words" },
+	{ "dump64", main_dump, "dump16 START [LEN]  Dump 64-bit memory words" },
+	{ "echo", main_echo,   "echo [ARG...]       Echo string" },
+	{ "exit", main_exit,   "exit                Quit debugger" },
+	{ "pid", main_pid,     "pid [NEWPID]        Change current process" },
+	{ "ps", main_ps,       "ps                  List processes" },
+	{ "rs", main_rs,       "rs                  Print registers" },
+	{ "tid", main_tid,     "tid [NEWTID]        Change current thread" },
+	{ "ts", main_ts,       "ts                  List threads in current process" },
+	{ NULL, NULL, NULL },
 };
 
 bool RunCommand()
