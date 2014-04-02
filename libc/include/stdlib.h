@@ -103,9 +103,7 @@ int mblen(const char*, size_t);
 size_t mbstowcs(wchar_t* __restrict, const char* __restrict, size_t);
 int mbtowc(wchar_t *__restrict, const char* __restrict, size_t);
 int mkstemp(char*);
-#if !defined(_SORTIX_SOURCE)
 char* mktemp(char* templ);
-#endif
 int on_exit(void (*function)(int, void*), void* arg);
 void qsort(void*, size_t, size_t, int (*)(const void*, const void*));
 int rand(void);
