@@ -32,6 +32,10 @@
 
 #include <__/wchar.h>
 
+#if !(__USE_SORTIX || __USE_POSIX)
+/* Intentional namespace pollution due to ISO C stupidity: */
+#endif
+/* TODO: This exposes more than just the required va_list. */
 #include <stdarg.h>
 
 #if defined(__is_sortix_libc)
@@ -64,15 +68,20 @@ typedef __off_t off_t;
 
 #ifndef __FILE_defined
 #define __FILE_defined
+#if !(__USE_SORTIX || __USE_POSIX)
+/* Intentional namespace pollution due to ISO C stupidity: */
+#endif
 typedef struct FILE FILE;
 #endif
 
+#if __USE_SORTIX || 200809L <= __USE_POSIX
 #ifndef __locale_t_defined
 #define __locale_t_defined
 /* TODO: figure out what this does and typedef it properly. This is just a
          temporary assignment. */
 typedef int __locale_t;
 typedef __locale_t locale_t;
+#endif
 #endif
 
 #ifndef __wint_t_defined
@@ -108,13 +117,24 @@ typedef struct
 
 struct tm;
 
-size_t mbsrtowcs(wchar_t* __restrict, const char** __restrict, size_t, mbstate_t* __restrict);
-size_t wcrtomb(char* __restrict, wchar_t, mbstate_t* __restrict);
+/* TODO: wint_t btowc(int); */
+/* TODO: wint_t fgetwc(FILE*); */
+/* TODO: wchar_t* fgetws(wchar_t* __restrict, int, FILE* __restrict); */
+/* TODO: wint_t fputwc(wchar_t, FILE*); */
+/* TODO: int fputws(const wchar_t* __restrict, FILE* __restrict); */
+/* TODO: wint_t getwc(FILE*); */
+/* TODO: wint_t getwchar(void); */
 size_t mbrlen(const char* __restrict, size_t, mbstate_t* __restrict);
 size_t mbrtowc(wchar_t* __restrict, const char* __restrict, size_t, mbstate_t* __restrict);
+/* TODO: int mbsinit(const mbstate_t*); */
+size_t mbsrtowcs(wchar_t* __restrict, const char** __restrict, size_t, mbstate_t* __restrict);
+/* TODO: wint_t putwc(wchar_t, FILE*); */
+/* TODO: wint_t putwchar(wchar_t); */
+/* TODO: wint_t ungetwc(wint_t, FILE*); */
+
+size_t wcrtomb(char* __restrict, wchar_t, mbstate_t* __restrict);
 wchar_t* wcscat(wchar_t* __restrict, const wchar_t* __restrict);
 wchar_t* wcschr(const wchar_t*, wchar_t);
-wchar_t* wcschrnul(const wchar_t*, wchar_t);
 int wcscmp(const wchar_t*, const wchar_t*);
 int wcscoll(const wchar_t*, const wchar_t*);
 wchar_t* wcscpy(wchar_t* __restrict, const wchar_t* __restrict);
@@ -128,52 +148,86 @@ wchar_t* wcsrchr(const wchar_t*, wchar_t);
 size_t wcsrtombs(char* __restrict, const wchar_t** __restrict, size_t, mbstate_t* __restrict);
 size_t wcsspn(const wchar_t*, const wchar_t*);
 wchar_t* wcsstr(const wchar_t* __restrict, const wchar_t* __restrict);
+/* TODO: double wcstod(const wchar_t* __restrict, wchar_t** __restrict); */
 wchar_t* wcstok(wchar_t* __restrict, const wchar_t* __restrict, wchar_t** __restrict);
-long long wcstoll(const wchar_t* __restrict, wchar_t** __restrict, int);
 long wcstol(const wchar_t* __restrict, wchar_t** __restrict, int);
-unsigned long long wcstoull(const wchar_t* __restrict, wchar_t** __restrict, int);
 unsigned long wcstoul(const wchar_t* __restrict, wchar_t** __restrict, int);
-int wcswidth(const wchar_t*, size_t);
 size_t wcsxfrm(wchar_t* __restrict, const wchar_t* __restrict, size_t);
-int wcwidth(wchar_t);
+/* TODO: int wctob(wint_t); */
 wchar_t* wmemchr(const wchar_t*, wchar_t, size_t);
 int wmemcmp(const wchar_t*, const wchar_t*, size_t);
 wchar_t* wmemcpy(wchar_t* __restrict, const wchar_t* __restrict, size_t);
 wchar_t* wmemmove(wchar_t*, const wchar_t*, size_t);
 wchar_t* wmemset(wchar_t*, wchar_t, size_t);
 
-/* TODO: These are not implemented in sortix libc yet. */
-#if 0
-double wcstod(const wchar_t* __restrict, wchar_t** __restrict);
-FILE* open_wmemstream(wchar_t** bufp, size_t* sizep);
-float wcstof(const wchar_t* __restrict, wchar_t** __restrict);
-int fputws(const wchar_t* __restrict, FILE* __restrict);
-int fwide(FILE*, int);
-int fwprintf(FILE* __restrict, const wchar_t* __restrict, ...);
-int fwscanf(FILE* __restrict, const wchar_t* __restrict, ...);
-int mbsinit(const mbstate_t*);
-int swprintf(wchar_t* __restrict, size_t, const wchar_t* __restrict, ...);
-int swscanf(const wchar_t* __restrict, const wchar_t* __restrict, ...);
-int vfwprintf(FILE* __restrict, const wchar_t* __restrict, va_list);
-int vfwscanf(FILE* __restrict, const wchar_t* __restrict, va_list);
-int vswprintf(wchar_t* __restrict, size_t, const wchar_t* __restrict, va_list);
-int vswscanf(const wchar_t* __restrict, const wchar_t* __restrict, va_list);
-int vwprintf(const wchar_t* __restrict, va_list);
-int vwscanf(const wchar_t* __restrict, va_list);
-int wctob(wint_t);
-int wprintf(const wchar_t* __restrict, ...);
-int wscanf(const wchar_t* __restrict, ...);
-long double wcstold(const wchar_t* __restrict, wchar_t** __restrict);
-size_t wcsftime(wchar_t* __restrict, size_t, const wchar_t* __restrict, const struct tm* __restrict);
-wchar_t* fgetws(wchar_t* __restrict, int, FILE* __restrict);
-wint_t btowc(int);
-wint_t fgetwc(FILE*);
-wint_t fputwc(wchar_t, FILE*);
-wint_t getwc(FILE*);
-wint_t getwchar(void);
-wint_t putwchar(wchar_t);
-wint_t putwc(wchar_t, FILE*);
-wint_t ungetwc(wint_t, FILE*);
+#if __USE_SORTIX || 1995 <= __USE_C || 500 <= __USE_XOPEN
+/* TODO: int fwide(FILE*, int); */
+/* TODO: int fwprintf(FILE* __restrict, const wchar_t* __restrict, ...); */
+/* TODO: int fwscanf(FILE* __restrict, const wchar_t* __restrict, ...); */
+/* TODO: int swprintf(wchar_t* __restrict, size_t, const wchar_t* __restrict, ...); */
+/* TODO: int swscanf(const wchar_t* __restrict, const wchar_t* __restrict, ...); */
+/* TODO: int vfwprintf(FILE* __restrict, const wchar_t* __restrict, va_list); */
+/* TODO: int vswprintf(wchar_t* __restrict, size_t, const wchar_t* __restrict, va_list); */
+/* TODO: int vwprintf(const wchar_t* __restrict, va_list); */
+/* TODO: int wprintf(const wchar_t* __restrict, ...); */
+/* TODO: int wscanf(const wchar_t* __restrict, ...); */
+#endif
+
+/* Functions from C99. */
+#if __USE_SORTIX || 1999 <= __USE_C
+/* TODO: int vfwscanf(FILE* __restrict, const wchar_t* __restrict, va_list); */
+/* TODO: int vswscanf(const wchar_t* __restrict, const wchar_t* __restrict, va_list); */
+/* TODO: float wcstof(const wchar_t* __restrict, wchar_t** __restrict); */
+/* TODO: long double wcstold(const wchar_t* __restrict, wchar_t** __restrict); */
+/* TODO: int vwscanf(const wchar_t* __restrict, va_list); */
+/* TODO: size_t wcsftime(wchar_t* __restrict, size_t, const wchar_t* __restrict, const struct tm* __restrict); */
+long long wcstoll(const wchar_t* __restrict, wchar_t** __restrict, int);
+unsigned long long wcstoull(const wchar_t* __restrict, wchar_t** __restrict, int);
+#endif
+
+/* Functions from X/Open. */
+#if __USE_SORTIX || __USE_XOPEN
+int wcswidth(const wchar_t*, size_t);
+int wcwidth(wchar_t);
+#endif
+
+/* Functions from POSIX 2008. */
+#if __USE_SORTIX || 200809L <= __USE_POSIX
+/* TODO: size_t mbsnrtowcs(wchar_t* __restrict, const char** __restrict, size_t, size_t, mbstate_t* __restrict); */
+/* TODO: FILE* open_wmemstream(wchar_t**, size_t*); */
+/* TODO: wchar_t* wcpcpy(wchar_t* __restrict, const wchar_t* __restrict); */
+/* TODO: wchar_t* wcpncpy(wchar_t* __restrict, const wchar_t* __restrict, size_t); */
+/* TODO: int wcscasecmp(const wchar_t*, const wchar_t*); */
+/* TODO: int wcscasecmp_l(const wchar_t*, const wchar_t*, locale_t); */
+/* TODO: int wcscoll_l(const wchar_t*, const wchar_t*, locale_t); */
+/* TODO: wchar_t* wcsdup(const wchar_t*); */
+/* TODO: int wcsncasecmp(const wchar_t*, const wchar_t *, size_t); */
+/* TODO: int wcsncasecmp_l(const wchar_t*, const wchar_t *, size_t, locale_t); */
+/* TODO: size_t wcsnlen(const wchar_t*, size_t); */
+/* TODO: size_t wcsnrtombs(char* __restrict, const wchar_t** __restrict, size_t, size_t, mbstate_t* __restrict); */
+/* TODO: size_t wcsxfrm_l(wchar_t* __restrict, const wchar_t* __restrict, size_t, locale_t); */
+#endif
+
+/* Functions copied from elsewhere. */
+#if __USE_SORTIX
+/* TODO: getwc_unlocked */
+/* TODO: getwchar_unlocked */
+/* TODO: fgetwc_unlocked */
+/* TODO: fputwc_unlocked */
+/* TODO: putwc_unlocked */
+/* TODO: putwchar_unlocked */
+/* TODO: fgetws_unlocked */
+/* TODO: fputws_unlocked */
+wchar_t* wcschrnul(const wchar_t*, wchar_t);
+/* TODO: wcsftime_l */
+/* TODO: wchar_t* wmempcpy(wchar_t* __restrict, const wchar_t* __restrict, size_t); */
+/* TODO: wcstod_l? */
+/* TODO: wcstof_l? */
+/* TODO: wcstof_ld? */
+/* TODO: wcstol_l? */
+/* TODO: wcstoll_l? */
+/* TODO: wcstoul_l? */
+/* TODO: wcstoull_l */
 #endif
 
 __END_DECLS
