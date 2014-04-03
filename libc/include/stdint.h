@@ -22,8 +22,8 @@
 
 *******************************************************************************/
 
-#ifndef _STDINT_H
-#define _STDINT_H 1
+#ifndef INCLUDE_STDINT_H
+#define INCLUDE_STDINT_H
 
 #include <sys/cdefs.h>
 
@@ -33,7 +33,7 @@
 __BEGIN_DECLS
 
 /* Only define these constant macros in C++ if requested. */
-#if !defined(__cplusplus) || defined(__STDC_CONSTANT_MACROS)
+#if __USE_SORTIX || defined(__STDC_CONSTANT_MACROS) || !defined(__cplusplus)
 
 #define INT8_C(c) __INT8_C(c)
 #define INT16_C(c) __INT16_C(c)
@@ -51,7 +51,7 @@ __BEGIN_DECLS
 #endif
 
 /* Only define these limit macros in C++ if requested. */
-#if !defined(__cplusplus) || defined(__STDC_LIMIT_MACROS)
+#if __USE_SORTIX || defined(__STDC_LIMIT_MACROS) || !defined(__cplusplus)
 
 #define INT8_MIN __INT8_MIN
 #define INT16_MIN __INT16_MIN
