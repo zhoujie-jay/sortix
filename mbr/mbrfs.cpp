@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
+#include <ioleast.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>

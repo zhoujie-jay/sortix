@@ -26,6 +26,7 @@
 #include <sys/display.h>
 
 #include <fcntl.h>
+#include <ioleast.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
