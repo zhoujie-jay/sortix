@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of Sortix.
 
@@ -28,7 +28,7 @@
 namespace Sortix {
 namespace Debugger {
 
-void Run();
+void Run(bool entered_through_keyboard);
 
 } // namespace Debugger
 } // namespace Sortix

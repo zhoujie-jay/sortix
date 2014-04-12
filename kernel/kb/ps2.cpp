@@ -107,7 +107,7 @@ void PS2Keyboard::OnInterrupt(struct interrupt_context* intctx)
 	if ( scancode == KBKEY_F10 )
 	{
 		Scheduler::SaveInterruptedContext(intctx, &CurrentThread()->registers);
-		Debugger::Run();
+		Debugger::Run(true);
 	}
 	PS2KeyboardWork work;
 	work.scancode = scancode;

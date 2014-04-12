@@ -51,7 +51,7 @@ namespace Debugger {
 
 uint16_t* const VIDEO_MEMORY = (uint16_t*) 0xB8000;
 
-bool first_f10;
+bool ignore_next_f10;
 static int column;
 static int row;
 static Thread* current_thread;
@@ -258,12 +258,12 @@ void ReadCommand(char* buffer, size_t buffer_length)
 
 		if ( !written && kbkey == -KBKEY_F10 )
 		{
-			if ( !first_f10 )
+			if ( !ignore_next_f10 )
 			{
 				strncpy(buffer, "exit", buffer_length);
 				break;
 			}
-			first_f10 = false;
+			ignore_next_f10 = false;
 		}
 
 		// Translate the keystroke into unicode.
@@ -604,7 +604,7 @@ bool RunCommand()
 	return true;
 }
 
-void Run()
+void Run(bool entered_through_keyboard)
 {
 	static uint16_t saved_video_memory[80*25];
 
@@ -612,7 +612,7 @@ void Run()
 
 	bool was_enabled = Interrupt::SetEnabled(false);
 
-	first_f10 = true;
+	ignore_next_f10 = entered_through_keyboard;
 
 	addr_t saved_addrspace = current_thread->registers.cr3;
 

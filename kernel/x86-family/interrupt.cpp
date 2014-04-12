@@ -282,7 +282,7 @@ void KernelCrashHandler(struct interrupt_context* intctx)
 
 	// Possibly switch to the kernel debugger in event of a crash.
 	if ( RUN_DEBUGGER_ON_KERNEL_CRASH )
-		Debugger::Run();
+		Debugger::Run(false);
 
 	// Panic the kernel with a diagnostic message.
 	PanicF("Unhandled CPU Exception id %zu `%s' at ip=0x%zx (cr2=0x%zx, "
@@ -316,7 +316,7 @@ void UserCrashHandler(struct interrupt_context* intctx)
 
 	// Possibly switch to the kernel debugger in event of a crash.
 	if ( RUN_DEBUGGER_ON_USER_CRASH )
-		Debugger::Run();
+		Debugger::Run(false);
 
 	// Issue a diagnostic message to the kernel log concerning the crash.
 	Log::PrintF("The current process (pid %ji `%s') crashed and was terminated:\n",
