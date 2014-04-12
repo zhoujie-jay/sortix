@@ -206,7 +206,7 @@ void WriteTSS(int32_t num, uint16_t ss0, uintptr_t stack0)
 {
 	// First, let's compute the base and limit of our entry in the GDT.
 	uintptr_t base = (uintptr_t) &tss_entry;
-	uint32_t limit = base + sizeof(tss_entry);
+	uint32_t limit = sizeof(tss_entry) - 1;
 
 	// Now, add our TSS descriptor's address to the GDT.
 #if defined(__i386__)
