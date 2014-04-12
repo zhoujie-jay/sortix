@@ -622,6 +622,7 @@ $(FREEOBJS) \
 $(HOSTEDOBJS) \
 
 CRTOBJ=\
+crt0.o \
 crt1.o \
 crti.o \
 crtn.o \
@@ -671,8 +672,11 @@ libk.a: $(LIBK_OBJS)
 librt.a:
 	$(HOSTAR) rcs $@
 
-crt1.o: $(CPUDIR)/crt1.o
+crt0.o: $(CPUDIR)/crt0.o
 	ln -f $< $@
+
+crt1.o: crt0.o
+	cp $< $@
 
 crti.o: $(CPUDIR)/crti.o
 	ln -f $< $@

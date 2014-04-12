@@ -17,7 +17,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    x86/crt1.S
+    x64/crt0.S
     Implement the _start symbol at which execution begins which performs the
     task of initializing the standard library and executing the main function.
 
@@ -30,27 +30,28 @@
 _start:
 	# Set up end of the stack frame linked list.
 	xorl %ebp, %ebp
-	pushl %ebp # rip=0
-	pushl %ebp # rbp=0
-	movl %esp, %ebp
+	pushq %rbp # rip=0
+	pushq %rbp # rbp=0
+	movq %rsp, %rbp
 
-	movl %ecx, environ # envp
-
-	# Arguments for main
-	push %ecx # envp
-	push %ebx # argv
-	push %eax # argc
+	movq %rcx, environ # envp
 
 	# Prepare signals, memory allocation, stdio and such.
+	pushq %rsi
+	pushq %rdi
+	pushq %rcx
 	call initialize_standard_library
 
 	# Run the global constructors.
 	call _init
 
 	# Run main
+	popq %rdx # Note! envp is now %rdx (previously %rcx)
+	popq %rdi
+	popq %rsi
 	call main
 
 	# Terminate the process with main's exit code.
-	push %eax
+	movl %eax, %edi
 	call exit
 .size _start, .-_start
