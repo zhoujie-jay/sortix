@@ -3,13 +3,8 @@ include ../compiler.mak
 include ../version.mak
 include ../dirs.mak
 
-ifndef OPTLEVEL
-  OPTLEVEL:=-g -O2
-endif
-
-ifndef CXXFLAGS
-  CXXFLAGS:=$(OPTLEVEL)
-endif
+OPTLEVEL?=$(DEFAULT_OPTLEVEL)
+CXXFLAGS?=$(OPTLEVEL)
 
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 CPPFLAGS:=$(CPPFLAGS) -I include
@@ -35,7 +30,7 @@ headers:
 client: client/libdispd.a
 
 client/libdispd.a: $(CLIENT_OBJS)
-	$(HOSTAR) rcs $@ $(CLIENT_OBJS)
+	$(AR) rcs $@ $(CLIENT_OBJS)
 
 server: server/dispd
 
@@ -48,7 +43,7 @@ clean:
 	rm -f *.o client/*.o server/*.o
 
 %.o: %.cpp
-	$(HOSTCXX) -std=gnu++11 -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
+	$(CXX) -std=gnu++11 -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 
 # Installation into sysroot
 install: install-headers install-client install-server

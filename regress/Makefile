@@ -3,7 +3,7 @@ include ../compiler.mak
 include ../version.mak
 include ../dirs.mak
 
-OPTLEVEL?=-O2 -g
+OPTLEVEL?=$(DEFAULT_OPTLEVEL)
 CXXFLAGS?=$(OPTLEVEL)
 TESTDIR?=$(LIBEXECDIR)/test
 

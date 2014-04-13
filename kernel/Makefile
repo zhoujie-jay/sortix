@@ -4,7 +4,7 @@ include ../version.mak
 include ../dirs.mak
 
 # Default values in case the user doesn't override these variables.
-OPTLEVEL?=-g -O2
+OPTLEVEL?=$(DEFAULT_HOST_OPTLEVEL)
 CALLTRACE?=0
 DISKWRITE?=1
 CPPFLAGS?=

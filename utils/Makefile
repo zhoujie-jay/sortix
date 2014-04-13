@@ -3,13 +3,8 @@ include ../compiler.mak
 include ../version.mak
 include ../dirs.mak
 
-ifndef OPTLEVEL
-  OPTLEVEL=-g -O2
-endif
-
-ifndef CXXFLAGS
-  CXXFLAGS:=$(OPTLEVEL)
-endif
+OPTLEVEL?=$(DEFAULT_OPTLEVEL)
+CXXFLAGS?=$(OPTLEVEL)
 
 CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\"
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti

@@ -2,7 +2,7 @@ include ../compiler.mak
 include ../version.mak
 include ../dirs.mak
 
-OPTLEVEL?=-g -O2
+OPTLEVEL?=$(DEFAULT_OPTLEVEL)
 CXXFLAGS?=$(OPTLEVEL)
 
 CPPFLAGS:=$(CPPFLAGS)

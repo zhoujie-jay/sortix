@@ -3,9 +3,7 @@ include ../compiler.mak
 include ../version.mak
 include ../dirs.mak
 
-ifndef OPTLEVEL
-    OPTLEVEL:=-g -O2 -fno-omit-frame-pointer
-endif
+OPTLEVEL?=$(DEFAULT_HOST_OPTLEVEL)
 
 CPUDIR:=$(CPU)
 
