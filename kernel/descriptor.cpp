@@ -108,6 +108,7 @@ Descriptor::Descriptor(Ref<Vnode> vnode, int dflags)
 	this->type = vnode->type;
 	this->dflags = dflags;
 	checked_seekable = false;
+	seekable = false /* unused */;
 	curoff = 0;
 }
 
