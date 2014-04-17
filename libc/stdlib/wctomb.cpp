@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -23,10 +23,19 @@
 *******************************************************************************/
 
 #include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 
 // TODO: This function is unpure and should be removed.
 extern "C" int wctomb(char* s, wchar_t wc)
 {
-	return wcrtomb(s, wc, NULL);
+	static mbstate_t ps;
+	size_t result = wcrtomb(s, wc, &ps);
+	if ( !s )
+		memset(&ps, 0, sizeof(ps));
+	if ( result == (size_t) -1 )
+		return -1;
+	if ( result == (size_t) -2 )
+		return -1;
+	return (int) result;
 }

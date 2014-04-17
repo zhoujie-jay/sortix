@@ -105,12 +105,15 @@ typedef __wint_t wint_t;
 /* Conversion state information. */
 typedef struct
 {
-	int __count;
-	union
-	{
-		wint_t __wch;
-		char __wchb[4];
-	} __value;		/* Value so far. */
+#if defined(__is_sortix_libc)
+	unsigned short count;
+	unsigned short length;
+	wint_t wch;
+#else
+	unsigned short __count;
+	unsigned short __length;
+	wint_t __wch;
+#endif
 } mbstate_t;
 #define __mbstate_t_defined 1
 #endif
@@ -126,12 +129,11 @@ struct tm;
 /* TODO: wint_t getwchar(void); */
 size_t mbrlen(const char* __restrict, size_t, mbstate_t* __restrict);
 size_t mbrtowc(wchar_t* __restrict, const char* __restrict, size_t, mbstate_t* __restrict);
-/* TODO: int mbsinit(const mbstate_t*); */
+int mbsinit(const mbstate_t*);
 size_t mbsrtowcs(wchar_t* __restrict, const char** __restrict, size_t, mbstate_t* __restrict);
 /* TODO: wint_t putwc(wchar_t, FILE*); */
 /* TODO: wint_t putwchar(wchar_t); */
 /* TODO: wint_t ungetwc(wint_t, FILE*); */
-
 size_t wcrtomb(char* __restrict, wchar_t, mbstate_t* __restrict);
 wchar_t* wcscat(wchar_t* __restrict, const wchar_t* __restrict);
 wchar_t* wcschr(const wchar_t*, wchar_t);
@@ -193,7 +195,7 @@ int wcwidth(wchar_t);
 
 /* Functions from POSIX 2008. */
 #if __USE_SORTIX || 200809L <= __USE_POSIX
-/* TODO: size_t mbsnrtowcs(wchar_t* __restrict, const char** __restrict, size_t, size_t, mbstate_t* __restrict); */
+size_t mbsnrtowcs(wchar_t* __restrict, const char** __restrict, size_t, size_t, mbstate_t* __restrict);
 /* TODO: FILE* open_wmemstream(wchar_t**, size_t*); */
 /* TODO: wchar_t* wcpcpy(wchar_t* __restrict, const wchar_t* __restrict); */
 /* TODO: wchar_t* wcpncpy(wchar_t* __restrict, const wchar_t* __restrict, size_t); */
@@ -204,7 +206,7 @@ int wcwidth(wchar_t);
 /* TODO: int wcsncasecmp(const wchar_t*, const wchar_t *, size_t); */
 /* TODO: int wcsncasecmp_l(const wchar_t*, const wchar_t *, size_t, locale_t); */
 /* TODO: size_t wcsnlen(const wchar_t*, size_t); */
-/* TODO: size_t wcsnrtombs(char* __restrict, const wchar_t** __restrict, size_t, size_t, mbstate_t* __restrict); */
+size_t wcsnrtombs(char* __restrict, const wchar_t** __restrict, size_t, size_t, mbstate_t* __restrict);
 /* TODO: size_t wcsxfrm_l(wchar_t* __restrict, const wchar_t* __restrict, size_t, locale_t); */
 #endif
 

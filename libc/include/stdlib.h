@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -39,8 +39,7 @@ __BEGIN_DECLS
 /* TODO: This random interface is stupid. What should a good value be? */
 #define RAND_MAX 32767
 
-/* TODO: This is just a value. It's not a compile time constant! */
-#define MB_CUR_MAX 16
+#define MB_CUR_MAX 6
 
 typedef struct
 {

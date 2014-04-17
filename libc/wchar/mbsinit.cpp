@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,23 +17,14 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    wchar/mbsrtowcs.cpp
-    Convert a multibyte string to a wide-character string.
+    wchar/mbsinit.cpp
+    Determine conversion object status.
 
 *******************************************************************************/
 
-#include <assert.h>
-#include <errno.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
 #include <wchar.h>
 
-extern "C"
-size_t mbsrtowcs(wchar_t* restrict dst,
-                 const char** restrict src_ptr,
-                 size_t dst_len,
-                 mbstate_t* restrict ps)
+extern "C" int mbsinit(const mbstate_t* ps)
 {
-	return mbsnrtowcs(dst, src_ptr, SIZE_MAX, dst_len, ps);
+	return !ps || !ps->count;
 }

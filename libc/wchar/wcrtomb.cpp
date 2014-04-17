@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -23,58 +23,87 @@
 *******************************************************************************/
 
 #include <errno.h>
-#include <stdint.h>
+#include <stdlib.h>
 #include <wchar.h>
 
-extern "C"
-size_t wcrtomb(char* restrict s, wchar_t wc, mbstate_t* restrict /*ps*/)
+static
+size_t utf8_wcrtomb(char* restrict s, wchar_t wc, mbstate_t* restrict /*ps*/)
 {
-	if ( !wc )
+	// The definition of UTF-8 prohibits encoding character numbers between
+	// U+D800 and U+DFFF, which are reserved for use with the UTF-16 encoding
+	// form (as surrogate pairs) and do not directly represent characters.
+	if ( 0xD800 <= wc && wc <= 0xDFFF )
+		return errno = EILSEQ, (size_t) -1;
+
+	// RFC 3629 limits UTF-8 to 0x0 through 0x10FFFF.
+	if ( 0x10FFFF <= wc )
+		return errno = EILSEQ, (size_t) -1;
+
+	size_t index = 0;
+
+	if ( wc < (1 << (7)) )  /* 0xxxxxxx */
 	{
-		if ( s )
-			*s = '\0';
-		return 1;
+		s[index++] = 0b00000000 | (wc >> 0 & 0b01111111);
+		return index;
 	}
 
-	uint32_t unicode = wc;
-	uint8_t* buf = (uint8_t*) s;
-	unsigned bytes = 1;
-	unsigned bits = 7;
-	if ( (1U<<7U) <= unicode ) { bytes = 2; bits = 11; }
-	if ( (1U<<11U) <= unicode ) { bytes = 3; bits = 16; }
-	if ( (1U<<16U) <= unicode ) { bytes = 4; bits = 21; }
-	if ( (1U<<21U) <= unicode ) { bytes = 5; bits = 26; }
-	if ( (1U<<26U) <= unicode ) { bytes = 6; bits = 31; }
-	if ( (1U<<31U) <= unicode ) { errno = EILSEQ; return (size_t) -1; }
+	if ( wc < (1 << (5 + 1 * 6)) )  /* 110xxxxx 10xxxxxx^1 */
+	{
+		s[index++] = 0b11000000 | (wc >> 6 & 0b00011111);
+		s[index++] = 0b10000000 | (wc >> 0 & 0b00111111);
+		return index;
+	}
 
+	if ( wc < (1 << (4 + 2 * 6)) )  /* 1110xxxx 10xxxxxx^2 */
+	{
+		s[index++] = 0b11100000 | (wc >> 2*6 & 0b00001111);
+		s[index++] = 0b10000000 | (wc >> 1*6 & 0b00111111);
+		s[index++] = 0b10000000 | (wc >> 0*6 & 0b00111111);
+		return index;
+	}
+
+	if ( wc < (1 << (3 + 3 * 6)) )  /* 11110xxx 10xxxxxx^3 */
+	{
+		s[index++] = 0b11110000 | (wc >> 3*6 & 0b00000111);
+		s[index++] = 0b10000000 | (wc >> 2*6 & 0b00111111);
+		s[index++] = 0b10000000 | (wc >> 1*6 & 0b00111111);
+		s[index++] = 0b10000000 | (wc >> 0*6 & 0b00111111);
+		return index;
+	}
+
+#if 0 /* 5-byte and 6-byte sequences are forbidden by RFC 3629 */
+	if ( wc < (1 << (2 + 4 * 6)) )  /* 111110xx 10xxxxxx^4 */
+	{
+		s[index++] = 0b11111000 | (wc >> 4*6 & 0b00000011);
+		s[index++] = 0b10000000 | (wc >> 3*6 & 0b00111111);
+		s[index++] = 0b10000000 | (wc >> 2*6 & 0b00111111);
+		s[index++] = 0b10000000 | (wc >> 1*6 & 0b00111111);
+		s[index++] = 0b10000000 | (wc >> 0*6 & 0b00111111);
+		return index;
+	}
+
+	if ( wc < (1 << (1 + 5 * 6)) )  /* 111110xx 10xxxxxx^5 */
+	{
+		s[index++] = 0b11111100 | (wc >> 5*6 & 0b00000001);
+		s[index++] = 0b10000000 | (wc >> 4*6 & 0b00111111);
+		s[index++] = 0b10000000 | (wc >> 3*6 & 0b00111111);
+		s[index++] = 0b10000000 | (wc >> 2*6 & 0b00111111);
+		s[index++] = 0b10000000 | (wc >> 1*6 & 0b00111111);
+		s[index++] = 0b10000000 | (wc >> 0*6 & 0b00111111);
+		return index;
+	}
+#endif
+
+	return errno = EILSEQ; return (size_t) -1;
+}
+
+extern "C"
+size_t wcrtomb(char* restrict s, wchar_t wc, mbstate_t* restrict ps)
+{
+	char internal_buffer[MB_CUR_MAX];
 	if ( !s )
-		return bytes;
+		wc = L'\0', s = internal_buffer;
 
-	uint8_t prefix;
-	unsigned prefixavai;
-	switch ( bytes )
-	{
-	case 1: prefixavai = 7; prefix = 0b0U << prefixavai; break;
-	case 2: prefixavai = 5; prefix = 0b110U << prefixavai; break;
-	case 3: prefixavai = 4; prefix = 0b1110U << prefixavai; break;
-	case 4: prefixavai = 3; prefix = 0b11110U << prefixavai; break;
-	case 5: prefixavai = 2; prefix = 0b111110U << prefixavai; break;
-	case 6: prefixavai = 1; prefix = 0b1111110U << prefixavai; break;
-	default: __builtin_unreachable();
-	}
-
-	// Put the first bits in the unused area of the prefix.
-	prefix |= unicode >> (bits - prefixavai);
-	*buf++ = prefix;
-	unsigned bitsleft = bits - prefixavai;
-
-	while ( bitsleft )
-	{
-		bitsleft -= 6;
-		uint8_t elembits = (unicode>>bitsleft) & ((1U<<6U)-1U);
-		uint8_t elem = (0b10U<<6U) | elembits;
-		*buf++ = elem;
-	}
-
-	return bytes;
+	// TODO: Verify whether the current locale is UTF-8.
+	return utf8_wcrtomb(s, wc, ps);
 }

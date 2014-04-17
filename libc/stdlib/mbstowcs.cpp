@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -23,16 +23,14 @@
 *******************************************************************************/
 
 #include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 
-extern "C" size_t mbstowcs(wchar_t* dst, const char* src, size_t n)
+// TODO: This function is unpure and should be removed.
+extern "C"
+size_t mbstowcs(wchar_t* restrict dst, const char* restrict src, size_t n)
 {
-	// Reset the secret conversion state variable in mbsrtowcs that is used when
-	// ps is NULL by successfully converting the empty string. As always, this
-	// is not multithread secure. For some reason, the standards don't mandate
-	// that the conversion state is reset when mbsrtowcs is called with ps=NULL,
-	// which arguably is a feature - but this function is supposed to do it.
-	const char* empty_string = "";
-	mbsrtowcs(NULL, &empty_string, 0, NULL);
-	return mbsrtowcs(dst, &src, n, NULL);
+	mbstate_t ps;
+	memset(&ps, 0, sizeof(ps));
+	return mbsrtowcs(dst, (const char**) &src, n, &ps);
 }

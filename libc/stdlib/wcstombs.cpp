@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -23,16 +23,13 @@
 *******************************************************************************/
 
 #include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 
+// TODO: This function is unpure and should be removed.
 extern "C" size_t wcstombs(char* dst, const wchar_t* src, size_t n)
 {
-	// Reset the secret conversion state variable in wcsrtombs that is used when
-	// ps is NULL by successfully converting the empty string. As always, this
-	// is not multithread secure. For some reason, the standards don't mandate
-	// that the conversion state is reset when wcsrtombs is called with ps=NULL,
-	// which arguably is a feature - but this function is supposed to do it.
-	const wchar_t* empty_string = L"";
-	wcsrtombs(NULL, &empty_string, 0, NULL);
-	return wcsrtombs(dst, &src, n, NULL);
+	mbstate_t ps;
+	memset(&ps, 0, sizeof(ps));
+	return wcsrtombs(dst, &src, n, &ps);
 }

@@ -238,6 +238,8 @@ time/strftime.o \
 time/timegm.o \
 wchar/mbrlen.o \
 wchar/mbrtowc.o \
+wchar/mbsinit.o \
+wchar/mbsnrtowcs.o \
 wchar/mbsrtowcs.o \
 wchar/wcrtomb.o \
 wchar/wcscat.o \
@@ -251,6 +253,7 @@ wchar/wcslen.o \
 wchar/wcsncat.o \
 wchar/wcsncmp.o \
 wchar/wcsncpy.o \
+wchar/wcsnrtombs.o \
 wchar/wcspbrk.o \
 wchar/wcsrchr.o \
 wchar/wcsrtombs.o \

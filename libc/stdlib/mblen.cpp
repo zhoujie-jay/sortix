@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -26,18 +26,18 @@
 #include <string.h>
 #include <wchar.h>
 
+// TODO: This function is unpure and should be removed.
 extern "C" int mblen(const char* s, size_t n)
 {
+	wchar_t wc;
 	static mbstate_t ps;
+	size_t result = mbrtowc(&wc, s, n, &ps);
 	if ( !s )
-	{
 		memset(&ps, 0, sizeof(ps));
-		return 0; // TODO: Give the correct return value depending on ps.
-	}
-	size_t ret = mbrlen(s, n, &ps);
-	if ( ret == (size_t) -2 )
+	if ( result == (size_t) -1 )
+		return memset(&ps, 0, sizeof(ps)), -1;
+	// TODO: Should ps be cleared to zero in this case?
+	if ( result == (size_t) -2 )
 		return -1;
-	if ( ret == (size_t) -1 )
-		return -1;
-	return (int) ret;
+	return (int) result;
 }

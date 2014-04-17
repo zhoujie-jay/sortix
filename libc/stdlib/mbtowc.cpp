@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -24,10 +24,20 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 
 // TODO: This function is unpure and should be removed.
-extern "C" int mbtowc(wchar_t* pwd, const char* s, size_t n)
+extern "C" int mbtowc(wchar_t* pwc, const char* s, size_t n)
 {
-	return mbrtowc(pwd, s, n, NULL);
+	static mbstate_t ps;
+	size_t result = mbrtowc(pwc, s, n, &ps);
+	if ( !s )
+		memset(&ps, 0, sizeof(ps));
+	if ( result == (size_t) -1 )
+		return memset(&ps, 0, sizeof(ps)), -1;
+	// TODO: Should ps be cleared to zero in this case?
+	if ( result == (size_t) -2 )
+		return -1;
+	return (int) result;
 }

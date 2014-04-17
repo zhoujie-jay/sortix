@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,55 +22,14 @@
 
 *******************************************************************************/
 
-#include <assert.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdint.h>
 #include <wchar.h>
 
-extern "C" size_t wcsrtombs(char* dst, const wchar_t** src_ptr, size_t dst_len,
-                            mbstate_t* ps)
+extern "C"
+size_t wcsrtombs(char* restrict dst,
+                 const wchar_t** restrict src_ptr,
+                 size_t dst_len,
+                 mbstate_t* ps)
 {
-	assert(src_ptr && *src_ptr);
-	// Avoid changing *src_ptr if dst is NULL.
-	const wchar_t* local_src_ptr = *src_ptr;
-	if ( !dst )
-		src_ptr = &local_src_ptr;
-	// For some reason, the standards don't mandate that the secret ps variable
-	// is reset when ps is NULL, unlike mbstowcs that always resets this
-	// variable. We'll avoid resetting the variable here in case any programs
-	// actually take advantage of this fact.
-	static mbstate_t static_ps;
-	if ( !ps )
-		ps = &static_ps;
-	size_t ret = 0;
-	size_t src_len = wcslen(*src_ptr);
-	char buf[MB_CUR_MAX];
-	while ( !dst || dst_len )
-	{
-		mbstate_t saved_ps = *ps;
-		size_t produced = wcrtomb(buf, **src_ptr, ps);
-		if ( produced == (size_t) -1 )
-			return (size_t) -1;
-		if ( dst && dst_len < produced )
-		{
-			*ps  = saved_ps;
-			break;
-		}
-		memcpy(dst, buf, produced);
-		if ( **src_ptr == L'\0' )
-		{
-			ret += produced - 1; // Don't count the '\0' byte.
-			*src_ptr = NULL;
-			break;
-		}
-		ret += produced;
-		(*src_ptr)++;
-		src_len--;
-		if ( dst )
-			dst += produced,
-			dst_len -= produced;
-		ret++;
-	}
-	return ret;
+	return wcsnrtombs(dst, src_ptr, SIZE_MAX, dst_len, ps);
 }

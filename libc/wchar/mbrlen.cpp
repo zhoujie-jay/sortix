@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,64 +22,11 @@
 
 *******************************************************************************/
 
-#include <errno.h>
-#include <string.h>
 #include <wchar.h>
 
-static size_t utf8_header_length(unsigned char uc)
-{
-	if ( (uc & 0b11000000) == 0b10000000 )
-		return 0;
-	if ( (uc & 0b10000000) == 0b00000000 )
-		return 1;
-	if ( (uc & 0b11100000) == 0b11000000 )
-		return 2;
-	if ( (uc & 0b11110000) == 0b11100000 )
-		return 3;
-	if ( (uc & 0b11111000) == 0b11110000 )
-		return 4;
-	if ( (uc & 0b11111100) == 0b11111000 )
-		return 5;
-	if ( (uc & 0b11111110) == 0b11111100 )
-		return 6;
-	return (size_t) -1;
-}
-
-// TODO: Use the shift state.
 extern "C"
 size_t mbrlen(const char* restrict s, size_t n, mbstate_t* restrict ps)
 {
-	size_t expected_length;
-
-	for ( size_t i = 0; i < n; i++ )
-	{
-		unsigned char uc = (unsigned char) s[i];
-
-		if ( i == 0 )
-		{
-			if ( !uc )
-			{
-				memset(ps, 0, sizeof(*ps));
-				return 0;
-			}
-
-			if ( (expected_length = utf8_header_length(uc)) == (size_t) -1 )
-				return errno = EILSEQ, (size_t) -1;
-
-			// Check if we encounted an unexpected character claiming to be in
-			// the middle of a UTF-8 multibyte sequence (10xxxxxx).
-			if ( expected_length == 0 )
-				// TODO: Should we play catch up with the partial sequence?
-				return errno = EILSEQ, (size_t) -1;
-		}
-
-		// All non-header bytes should be of the form 10xxxxxx.
-		if ( 0 < i && expected_length < n && (uc & 0b11000000) != 0b10000000 )
-			return errno = EILSEQ, (size_t) -1;
-
-		if ( i + 1 == expected_length )
-			return i + 1;
-	}
-
-	return (size_t) -2;
+	static mbstate_t static_ps;
+	return mbrtowc(NULL, s, n, ps ? ps : &static_ps);
 }
