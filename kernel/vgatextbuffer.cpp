@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -34,10 +34,11 @@
 
 namespace Sortix {
 
-VGATextBuffer::VGATextBuffer(uint16_t* vga, uint16_t* attr,
+VGATextBuffer::VGATextBuffer(uint16_t* vga, TextChar* chars, uint16_t* attr,
                              size_t width, size_t height)
 {
 	this->vga = vga;
+	this->chars = chars;
 	this->attr = attr;
 	this->width = width;
 	this->height = height;
@@ -50,17 +51,12 @@ VGATextBuffer::~VGATextBuffer()
 {
 }
 
-static TextChar EntryToTextChar(uint16_t entry)
-{
-	char c = entry & 0x00FF;
-	uint8_t vgacolor = entry >> 8U;
-	return TextChar{c, vgacolor};
-}
-
 static uint16_t CharToTextEntry(TextChar c)
 {
-	unsigned char uc = c.c;
-	return (uint16_t) uc | (uint16_t) c.vgacolor << 8U;
+	int remap = VGA::MapWideToVGAFont(c.c);
+	if ( remap < 0 )
+		return (uint16_t) '?' | (uint16_t) COLOR8_RED << 8U;
+	return (uint16_t) remap | (uint16_t) c.vgacolor << 8U;
 }
 
 bool VGATextBuffer::UsablePosition(TextPos pos) const
@@ -95,13 +91,14 @@ size_t VGATextBuffer::Height() const
 TextChar VGATextBuffer::GetChar(TextPos pos) const
 {
 	if ( UsablePosition(pos) )
-		return EntryToTextChar(vga[OffsetOfPos(pos)]);
+		return chars[OffsetOfPos(pos)];
 	return {0, 0};
 }
 
 void VGATextBuffer::SetChar(TextPos pos, TextChar c)
 {
 	if ( UsablePosition(pos) )
+		chars[OffsetOfPos(pos)] = c,
 		vga[OffsetOfPos(pos)] = CharToTextEntry(c);
 }
 
@@ -141,11 +138,13 @@ void VGATextBuffer::Move(TextPos to, TextPos from, size_t numchars)
 	size_t src = OffsetOfPos(CropPosition(from));
 	if ( dest < src )
 		for ( size_t i = 0; i < numchars; i++ )
-			vga[dest + i] = vga[src + i],
+			chars[dest + i] = chars[src + i],
+			vga[dest + i] = CharToTextEntry(chars[dest + i]),
 			attr[dest + i] = attr[src + i];
 	else if ( src < dest )
 		for ( size_t i = 0; i < numchars; i++ )
-			vga[dest + numchars-1 - i] = vga[src + numchars-1 - i],
+			chars[dest + numchars-1 - i] = chars[src + numchars-1 - i],
+			vga[dest + numchars-1 - i] = CharToTextEntry(chars[dest + numchars-1 - i]),
 			attr[dest + numchars-1 - i] = attr[src + numchars-1 - i];
 }
 
@@ -158,6 +157,7 @@ void VGATextBuffer::Fill(TextPos from, TextPos to, TextChar fillwith,
 	size_t end = OffsetOfPos(to);
 	size_t entry = CharToTextEntry(fillwith);
 	for ( size_t i = start; i <= end; i++ )
+		chars[i] = fillwith,
 		vga[i] = entry,
 		attr[i] = fillattr;
 }

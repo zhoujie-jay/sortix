@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -22,6 +22,10 @@
 
 *******************************************************************************/
 
+#include <stdio.h>
+#include <string.h>
+#include <wchar.h>
+
 #include <sortix/vga.h>
 
 #include <sortix/kernel/kernel.h>
@@ -37,6 +41,7 @@ const uint16_t ATTR_CHAR = 1U << 0U;
 
 TextTerminal::TextTerminal(Ref<TextBufferHandle> textbufhandle)
 {
+	memset(&ps, 0, sizeof(ps));
 	this->textbufhandle = textbufhandle;
 	this->termlock = KTHREAD_MUTEX_INITIALIZER;
 	Reset();
@@ -233,24 +238,39 @@ bool TextTerminal::EmergencySync()
 void TextTerminal::PutChar(TextBuffer* textbuf, char c)
 {
 	if ( ansimode )
-		PutAnsiEscaped(textbuf, c);
-	else switch ( c )
+		return PutAnsiEscaped(textbuf, c);
+
+	if ( mbsinit(&ps) )
 	{
-	case '\n': Newline(textbuf); break;
-	case '\r': column = 0; break;
-	case '\b': Backspace(textbuf); break;
-	case '\t': Tab(textbuf); break;
-	case '\e': AnsiReset(); break;
-	default:
-	{
-		if ( textbuf->Width() <= column )
-			Newline(textbuf);
-		TextPos pos(column++, line);
-		TextChar tc(c, vgacolor);
-		textbuf->SetChar(pos, tc);
-		textbuf->SetCharAttr(pos, ATTR_CHAR);
-	} break;
+		switch ( c )
+		{
+		case '\n': Newline(textbuf); return;
+		case '\r': column = 0; return;
+		case '\b': Backspace(textbuf); return;
+		case '\t': Tab(textbuf); return;
+		case '\e': AnsiReset(); return;
+		default: break;
+		}
 	}
+
+	wchar_t wc;
+	size_t result = mbrtowc(&wc, &c, 1, &ps);
+	if ( result == (size_t) -2 )
+		return;
+	if ( result == (size_t) -1 )
+	{
+		memset(&ps, 0, sizeof(ps));
+		wc = L'�';
+	}
+	if ( result == (size_t) 0 )
+		wc = L' ';
+
+	if ( textbuf->Width() <= column )
+		Newline(textbuf);
+	TextPos pos(column++, line);
+	TextChar tc(wc, vgacolor);
+	textbuf->SetChar(pos, tc);
+	textbuf->SetCharAttr(pos, ATTR_CHAR);
 }
 
 void TextTerminal::UpdateCursor(TextBuffer* textbuf)

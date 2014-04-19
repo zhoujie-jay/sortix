@@ -209,7 +209,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	const size_t VGA_WIDTH = 80;
 	const size_t VGA_HEIGHT = 25;
 	static uint16_t vga_attr_buffer[VGA_WIDTH*VGA_HEIGHT];
-	VGATextBuffer textbuf(VGAFB, vga_attr_buffer, VGA_WIDTH, VGA_HEIGHT);
+	static struct TextCharPOD vga_chars_pod_buffer[VGA_WIDTH*VGA_HEIGHT];
+	TextChar* vga_chars_buffer = (TextChar*) vga_chars_pod_buffer;
+	VGATextBuffer textbuf(VGAFB, vga_chars_buffer, vga_attr_buffer, VGA_WIDTH, VGA_HEIGHT);
 	TextBufferHandle textbufhandlestack(NULL, false, &textbuf, false);
 	textbufhandle = Ref<TextBufferHandle>(&textbufhandlestack);
 

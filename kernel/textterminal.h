@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -24,6 +24,8 @@
 
 #ifndef SORTIX_TEXTTERMINAL_H
 #define SORTIX_TEXTTERMINAL_H
+
+#include <wchar.h>
 
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/refcount.h>
@@ -63,6 +65,7 @@ private:
 	void Reset();
 
 private:
+	mbstate_t ps;
 	mutable Ref<TextBufferHandle> textbufhandle;
 	mutable kthread_mutex_t termlock;
 	uint8_t vgacolor;

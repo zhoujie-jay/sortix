@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -32,7 +32,7 @@ namespace Sortix {
 class VGATextBuffer : public TextBuffer
 {
 public:
-	VGATextBuffer(uint16_t* vga, uint16_t* attr, size_t width, size_t height);
+	VGATextBuffer(uint16_t* vga, TextChar* chars, uint16_t* attr, size_t width, size_t height);
 	virtual ~VGATextBuffer();
 	virtual size_t Width() const;
 	virtual size_t Height() const;
@@ -60,6 +60,7 @@ private:
 
 private:
 	uint16_t* vga;
+	TextChar* chars;
 	uint16_t* attr;
 	size_t width;
 	size_t height;

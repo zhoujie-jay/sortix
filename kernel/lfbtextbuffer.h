@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -54,7 +54,7 @@ struct TextBufferCmd
 	union
 	{
 		bool b;
-		struct { uint16_t c; uint16_t attr; };
+		struct { TextCharPOD c; uint16_t attr; };
 		size_t val;
 	};
 };
@@ -91,7 +91,7 @@ public:
 	virtual void RenderThread();
 
 private:
-	void RenderChar(uint16_t vgachar, size_t posx, size_t posy);
+	void RenderChar(TextChar textchar, size_t posx, size_t posy);
 	void RenderCharAt(TextPos pos);
 	void RenderRegion(size_t c1, size_t r1, size_t c2, size_t r2);
 	void RenderRange(TextPos from, TextPos to);
@@ -99,9 +99,9 @@ private:
 	size_t OffsetOfPos(TextPos pos) const;
 	TextPos CropPosition(TextPos pos) const;
 	TextPos AddToPosition(TextPos pos, size_t count);
-	void DoScroll(ssize_t off, uint16_t entry);
+	void DoScroll(ssize_t off, TextChar entry);
 	void DoMove(TextPos to, TextPos from, size_t numchars);
-	void DoFill(TextPos from, TextPos to, uint16_t fillwith, uint16_t fillattr);
+	void DoFill(TextPos from, TextPos to, TextChar fillwith, uint16_t fillattr);
 	void IssueCommand(TextBufferCmd* cmd);
 	void StopRendering();
 	void ResumeRendering();
@@ -131,7 +131,7 @@ private:
 	uint8_t* lfb;
 	uint8_t* backbuf;
 	uint8_t* font;
-	uint16_t* chars;
+	TextChar* chars;
 	uint16_t* attrs;
 	size_t columns;
 	size_t rows;

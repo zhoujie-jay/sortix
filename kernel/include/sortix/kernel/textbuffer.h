@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -27,6 +27,7 @@
 
 #include <sys/types.h>
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <sortix/kernel/kthread.h>
@@ -42,11 +43,19 @@ struct TextPos
 	size_t y;
 };
 
+struct TextCharPOD
+{
+	wchar_t c;
+	uint8_t vgacolor; // Format of <sortix/vga.h>
+};
+
 struct TextChar
 {
 	TextChar() { }
-	TextChar(char c, uint8_t vgacolor) : c(c), vgacolor(vgacolor) { }
-	char c;
+	TextChar(const TextCharPOD& o) : c(o.c), vgacolor(o.vgacolor)  { }
+	TextChar(wchar_t c, uint8_t vgacolor) : c(c), vgacolor(vgacolor) { }
+	operator TextCharPOD() { return TextCharPOD{c, vgacolor}; }
+	wchar_t c;
 	uint8_t vgacolor; // Format of <sortix/vga.h>
 };
 
