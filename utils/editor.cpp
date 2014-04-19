@@ -148,6 +148,7 @@ void update_terminal_cursor(FILE* fp, int x, int y,
 void update_terminal_entry(FILE* fp, uint16_t entry, int x, int y,
                            struct terminal_state* current)
 {
+	assert(entry & 0xFF);
 	size_t index = y * current->width + x;
 	uint16_t current_entry = current->data[index];
 	if ( entry == current_entry )
@@ -190,9 +191,9 @@ void make_terminal_state(FILE* fp, struct terminal_state* state)
 	tcgetwinsize(fileno(fp), &terminal_size);
 	state->width = (int) terminal_size.ws_col;
 	state->height = (int) terminal_size.ws_row;
-	size_t data_size = sizeof(uint16_t) * state->width * state->height;
-	state->data = (uint16_t*) malloc(data_size);
-	for ( size_t i = 0; i < data_size / sizeof(uint16_t); i++ )
+	size_t data_length = state->width * state->height;
+	state->data = (uint16_t*) malloc(sizeof(uint16_t) * data_length);
+	for ( size_t i = 0; i < data_length; i++ )
 		state->data[i] = 0x0000 | ' ';
 }
 
@@ -328,7 +329,7 @@ void render_editor(struct editor* editor, struct terminal_state* state)
 
 	// Create the header title bar.
 	for ( int x = 0; x < state->width; x++ )
-		state->data[0 * state->width + x] = 0x7000;
+		state->data[0 * state->width + x] = 0x7000 | ' ';
 
 	// Render the name of the program.
 	const char* header_start = editor->dirty ? "  editor          *"
