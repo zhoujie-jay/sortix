@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -31,6 +31,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <error.h>
+#include <locale.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -38,6 +39,148 @@
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
+#include <wchar.h>
+#include <wctype.h>
+
+wchar_t* convert_mbs_to_wcs(const char* mbs)
+{
+	if ( !mbs )
+		mbs = "";
+
+	size_t mbs_offset = 0;
+	size_t mbs_length = strlen(mbs) + 1;
+
+	mbstate_t ps;
+
+	// Determinal the length of the resulting string.
+	size_t wcs_length = 0;
+	memset(&ps, 0, sizeof(ps));
+	while ( true )
+	{
+		wchar_t wc;
+		size_t count = mbrtowc(&wc, mbs + mbs_offset, mbs_length - mbs_offset, &ps);
+		if ( count == (size_t) 0 )
+			break;
+		wcs_length++;
+		if ( count == (size_t) -1 )
+		{
+			memset(&ps, 0, sizeof(ps));
+			mbs_offset++; // Attempt to recover.
+			continue;
+		}
+		if ( count == (size_t) -2 )
+			break;
+		mbs_offset += count;
+	}
+
+	wchar_t* result = (wchar_t*) malloc(sizeof(wchar_t) * (wcs_length + 1));
+	if ( !result )
+		return NULL;
+
+	// Create the resulting string.
+	mbs_offset = 0;
+	size_t wcs_offset = 0;
+	memset(&ps, 0, sizeof(ps));
+	while ( true )
+	{
+		wchar_t wc;
+		size_t count = mbrtowc(&wc, mbs + mbs_offset, mbs_length - mbs_offset, &ps);
+		if ( count == (size_t) 0 )
+			break;
+		assert(mbs_offset < wcs_length);
+		if ( count == (size_t) -1 )
+		{
+			memset(&ps, 0, sizeof(ps));
+			result[wcs_offset++] = L'�';
+			mbs_offset++; // Attempt to recover.
+			continue;
+		}
+		if ( count == (size_t) -2 )
+		{
+			result[wcs_offset++] = L'�';
+			break;
+		}
+		result[wcs_offset++] = wc;
+		mbs_offset += count;
+	}
+
+	result[wcs_offset] = L'\0';
+
+	return result;
+}
+
+char* convert_wcs_to_mbs(const wchar_t* wcs)
+{
+	const char* replacement_mb = "�";
+	size_t replacement_mblen = strlen(replacement_mb);
+
+	if ( !wcs )
+		wcs = L"";
+
+	mbstate_t ps;
+
+	// Determinal the length of the resulting string.
+	size_t wcs_offset = 0;
+	size_t mbs_length = 0;
+	memset(&ps, 0, sizeof(ps));
+	while ( true )
+	{
+		wchar_t wc = wcs[wcs_offset++];
+		char mb[MB_CUR_MAX];
+		size_t count = wcrtomb(mb, wc, &ps);
+		if ( count == (size_t) -1 )
+		{
+			memset(&ps, 0, sizeof(ps));
+			mbs_length += replacement_mblen;
+			continue;
+		}
+		mbs_length += count;
+		if ( wc == L'\0' )
+			break;
+	}
+
+	char* result = (char*) malloc(sizeof(char) * mbs_length);
+	if ( !result )
+		return NULL;
+
+	// Create the resulting string.
+	wcs_offset = 0;
+	size_t mbs_offset = 0;
+	memset(&ps, 0, sizeof(ps));
+	while ( true )
+	{
+		wchar_t wc = wcs[wcs_offset++];
+		char mb[MB_CUR_MAX];
+		size_t count = wcrtomb(mb, wc, &ps);
+		if ( count == (size_t) -1 )
+		{
+			memset(&ps, 0, sizeof(ps));
+			assert(replacement_mblen <= mbs_length - mbs_offset);
+			memcpy(result + mbs_offset, replacement_mb, sizeof(char) * replacement_mblen);
+			mbs_offset += replacement_mblen;
+			continue;
+		}
+		assert(count <= mbs_length - mbs_offset);
+		memcpy(result + mbs_offset, mb, sizeof(char) * count);
+		mbs_offset += count;
+		if ( wc == L'\0' )
+			break;
+	}
+
+	return result;
+}
+
+struct terminal_datum
+{
+	wchar_t character;
+	uint8_t vgacolor;
+};
+
+static inline struct terminal_datum make_terminal_datum(wchar_t c, uint8_t cl)
+{
+	struct terminal_datum result = { c, cl };
+	return result;
+}
 
 struct terminal_state
 {
@@ -46,19 +189,14 @@ struct terminal_state
 	int cursor_x;
 	int cursor_y;
 	uint8_t color;
-	uint16_t* data;
+	struct terminal_datum* data;
 };
 
-char* strdup_safe(const char* str)
-{
-	return strdup(str ? str : "");
-}
-
-size_t displayed_string_length(const char* str, size_t len, size_t tabsize)
+size_t displayed_string_length(const wchar_t* str, size_t len, size_t tabsize)
 {
 	size_t ret_len = 0;
 	for ( size_t i = 0; i < len; i++ )
-		if ( str[i] == '\t' )
+		if ( str[i] == L'\t' )
 			do ret_len++;
 			while ( ret_len % tabsize );
 		else
@@ -68,11 +206,11 @@ size_t displayed_string_length(const char* str, size_t len, size_t tabsize)
 
 struct display_char
 {
-	char character;
+	wchar_t character;
 	uint8_t color;
 };
 
-struct display_char* expand_tabs(const char* str, size_t len, uint8_t* colors,
+struct display_char* expand_tabs(const wchar_t* str, size_t len, uint8_t* colors,
                                  size_t colors_len, size_t* ret_len_ptr,
                                  size_t tabsize)
 {
@@ -81,13 +219,13 @@ struct display_char* expand_tabs(const char* str, size_t len, uint8_t* colors,
 	for ( size_t i = 0, j = 0; i < len; i++ )
 	{
 		uint8_t color = i < colors_len ? colors[i] : 7;
-		if ( str[i] == '\t' )
-			do ret[j++] = { ' ', color};
+		if ( str[i] == L'\t' )
+			do ret[j++] = { L' ', color};
 			while ( j % tabsize );
 		else
 			ret[j++] = { str[i], color };
 	}
-	ret[ret_len] = { '\0', 0 };
+	ret[ret_len] = { L'\0', 0 };
 	if ( ret_len_ptr )
 		*ret_len_ptr = ret_len;
 	return ret;
@@ -145,18 +283,25 @@ void update_terminal_cursor(FILE* fp, int x, int y,
 	current->cursor_y = y;
 }
 
-void update_terminal_entry(FILE* fp, uint16_t entry, int x, int y,
+void update_terminal_entry(FILE* fp, struct terminal_datum entry, int x, int y,
                            struct terminal_state* current)
 {
-	assert(entry & 0xFF);
+	assert(entry.character != L'\0');
 	size_t index = y * current->width + x;
-	uint16_t current_entry = current->data[index];
-	if ( entry == current_entry )
+	struct terminal_datum current_entry = current->data[index];
+	if ( entry.character == current_entry.character &&
+	     entry.vgacolor == current_entry.vgacolor )
 		return;
 	update_terminal_cursor(fp, x, y, current);
-	uint8_t color = entry >> 8;
-	update_terminal_color(fp, color, current);
-	fputc((char) (entry & 0xFF), fp);
+	update_terminal_color(fp, entry.vgacolor, current);
+	mbstate_t ps;
+	memset(&ps, 0, sizeof(ps));
+	char mb[MB_CUR_MAX];
+	size_t count = wcrtomb(mb, entry.character, &ps);
+	if ( count == (size_t) -1 )
+		fputs("�", fp);
+	else for ( size_t i = 0; i < count; i++ )
+		fputc(mb[i], fp);
 	current->data[index] = entry;
 	if ( ++current->cursor_x == current->width )
 	{
@@ -175,7 +320,7 @@ void update_terminal(FILE* fp,
 		for ( int x = 0; x < current->width; x++ )
 		{
 			size_t index = y * desired->width + x;
-			uint16_t desired_entry = desired->data[index];
+			struct terminal_datum desired_entry = desired->data[index];
 			update_terminal_entry(fp, desired_entry, x, y, current);
 		}
 	}
@@ -192,9 +337,11 @@ void make_terminal_state(FILE* fp, struct terminal_state* state)
 	state->width = (int) terminal_size.ws_col;
 	state->height = (int) terminal_size.ws_row;
 	size_t data_length = state->width * state->height;
-	state->data = (uint16_t*) malloc(sizeof(uint16_t) * data_length);
+	size_t data_size = sizeof(struct terminal_datum) * data_length;
+	state->data = (struct terminal_datum*) malloc(data_size);
 	for ( size_t i = 0; i < data_length; i++ )
-		state->data[i] = 0x0000 | ' ';
+		state->data[i].character = L' ',
+		state->data[i].vgacolor = 0;
 }
 
 void free_terminal_state(struct terminal_state* state)
@@ -213,14 +360,14 @@ void reset_terminal_state(FILE* fp, struct terminal_state* state)
 	update_terminal_color(fp, 0x07, state);
 	for ( int y = 0; y < state->height; y++ )
 		for ( int x = 0; x < state->width; x++ )
-			update_terminal_entry(fp, 0x0700 | ' ', x, y, state);
+			update_terminal_entry(fp, make_terminal_datum(L' ', 0x07), x, y, state);
 
 	update_terminal_cursor(fp, 0, 0, state);
 }
 
 struct line
 {
-	char* data;
+	wchar_t* data;
 	size_t used;
 	size_t length;
 };
@@ -259,11 +406,11 @@ struct editor
 	size_t viewport_height;
 	size_t page_x_offset;
 	size_t page_y_offset;
-	char* modal;
+	wchar_t* modal;
 	size_t modal_used;
 	size_t modal_length;
 	size_t modal_cursor;
-	char* clipboard;
+	wchar_t* clipboard;
 	size_t tabsize;
 	size_t margin;
 	enum editor_mode mode;
@@ -331,26 +478,28 @@ void render_editor(struct editor* editor, struct terminal_state* state)
 
 	// Create the header title bar.
 	for ( int x = 0; x < state->width; x++ )
-		state->data[0 * state->width + x] = 0x7000 | ' ';
+		state->data[0 * state->width + x] = make_terminal_datum(L' ', 0x70);
 
 	// Render the name of the program.
-	const char* header_start = editor->dirty ? "  editor          *"
-	                                         : "  editor           ";
-	size_t header_start_len = strlen(header_start);
+	const wchar_t* header_start = editor->dirty ? L"  editor          *"
+	                                            : L"  editor           ";
+	size_t header_start_len = wcslen(header_start);
 
 	for ( size_t i = 0; i < header_start_len; i++ )
 		if ( i < (size_t) state->width)
-			state->data[i] |= (unsigned char) header_start[i];
+			state->data[i].character = header_start[i];
 
 	// Render the name of the currently open file.
 	const char* file_name = editor->current_file_name;
 	if ( !file_name )
 		file_name = "New File";
-	size_t file_name_len = strlen(file_name);
 
-	for ( size_t i = 0; i < file_name_len; i++ )
+	wchar_t* wcs_file_name = convert_mbs_to_wcs(file_name);
+	size_t wcs_file_name_len = wcslen(wcs_file_name);
+	for ( size_t i = 0; i < wcs_file_name_len; i++ )
 		if ( header_start_len+i < (size_t) state->width)
-			state->data[header_start_len+i] |= (unsigned char) file_name[i];
+			state->data[header_start_len+i].character = wcs_file_name[i];
+	free(wcs_file_name);
 
 	// Calculate the dimensions of the viewport.
 	size_t viewport_top = 1;
@@ -383,14 +532,14 @@ void render_editor(struct editor* editor, struct terminal_state* state)
 	for ( size_t y = 0; y < editor->viewport_height; y++ )
 	{
 		size_t line_index = page_y_offset + y;
-		uint16_t* data_line = state->data + (viewport_top + y) * state->width;
+		struct terminal_datum* data_line = state->data + (viewport_top + y) * state->width;
 		struct line* line = line_index < editor->lines_used ?
 		                    &editor->lines[line_index] : NULL;
 		struct color_line* color_line = line_index < editor->color_lines_used ?
 		                                &editor->color_lines[line_index] : NULL;
 		size_t expanded_len;
 		struct display_char* expanded
-			= expand_tabs(line ? line->data : "",
+			= expand_tabs(line ? line->data : L"",
 			              line ? line->used : 0,
 			              color_line ? color_line->data : NULL,
 			              color_line ? color_line->length : 0,
@@ -413,12 +562,12 @@ void render_editor(struct editor* editor, struct terminal_state* state)
 			                 is_row_column_lt(line_index, column_index, cursor_y, cursor_x));
 			bool at_margin = column_index == editor->margin;
 			bool is_blank = chars_length <= x;
-			char c = is_blank ? ' ' : chars[x].character;
+			wchar_t c = is_blank ? L' ' : chars[x].character;
 			uint8_t color = (is_blank ? 7 : chars[x].color);
-			data_line[x] = selected && is_blank && at_margin ? 0x4100 | '|' :
-                           selected ? 0x4700 | (unsigned char) c :
-			               is_blank && at_margin ? 0x0100 | '|' :
-			               color << 8 | (unsigned char) c;
+			data_line[x] = selected && is_blank && at_margin ? make_terminal_datum(L'|', 0x41) :
+                           selected ? make_terminal_datum(c, 0x47) :
+			               is_blank && at_margin ? make_terminal_datum(L'|', 0x01) :
+			               make_terminal_datum(c, color);
 		}
 		delete[] expanded;
 	}
@@ -444,24 +593,26 @@ void render_editor(struct editor* editor, struct terminal_state* state)
 		msg = "Go to line: ";
 	if ( editor->mode == MODE_COMMAND )
 		msg = "Enter miscellaneous command: ";
-	size_t msg_len = strlen(msg);
 
-	uint16_t* data_line = state->data + (state->height - 1) * state->width;
-	for ( size_t i = 0; i < msg_len; i++ )
+	struct terminal_datum* data_line = state->data + (state->height - 1) * state->width;
+	wchar_t* wcs_msg = convert_mbs_to_wcs(msg);
+	size_t wcs_msg_len = wcslen(wcs_msg);
+	for ( size_t i = 0; i < wcs_msg_len; i++ )
 		if ( i < (size_t) state->width)
-			data_line[i] = 0x7000 | (unsigned char) msg[i];
+			data_line[i] = make_terminal_datum(wcs_msg[i], 0x70);
+	free(wcs_msg);
 
-	if ( (size_t) state->width <= msg_len )
+	if ( (size_t) state->width <= wcs_msg_len )
 		return;
 
-	size_t modal_viewport_width = state->width - msg_len;
+	size_t modal_viewport_width = state->width - wcs_msg_len;
 	size_t modal_viewport_cursor = editor->modal_cursor % modal_viewport_width;
 	size_t modal_viewport_page = editor->modal_cursor / modal_viewport_width;
 	size_t modal_viewport_offset = modal_viewport_page * modal_viewport_width;
 
-	uint16_t* modal_viewport_data = data_line + msg_len;
+	struct terminal_datum* modal_viewport_data = data_line + wcs_msg_len;
 
-	const char* modal_chars = editor->modal;
+	const wchar_t* modal_chars = editor->modal;
 	size_t modal_chars_length = editor->modal_used;
 	if ( modal_chars_length < modal_viewport_offset )
 		modal_chars = NULL,
@@ -472,29 +623,29 @@ void render_editor(struct editor* editor, struct terminal_state* state)
 
 	for ( size_t x = 0; x < modal_viewport_width; x++ )
 	{
-		char c = x < modal_chars_length ? modal_chars[x] : ' ';
-		uint16_t color = editor->modal_error ? 0x1700 : 0x7000;
-		uint16_t tab_color = editor->modal_error ? 0x1200 : 0x7100;
-		if ( c == '\t' )
-			modal_viewport_data[x] = tab_color | (unsigned char) '>';
+		wchar_t c = x < modal_chars_length ? modal_chars[x] : L' ';
+		uint16_t color = editor->modal_error ? 0x17 : 0x70;
+		uint16_t tab_color = editor->modal_error ? 0x12 : 0x71;
+		if ( c == L'\t' )
+			modal_viewport_data[x] = make_terminal_datum(L'>', tab_color);
 		else
-			modal_viewport_data[x] = color | (unsigned char) c;
+			modal_viewport_data[x] = make_terminal_datum(c, color);
 	}
 
-	state->cursor_x = msg_len + modal_viewport_cursor;
+	state->cursor_x = wcs_msg_len + modal_viewport_cursor;
 	state->cursor_y = state->height - 1;
 	state->color = 0x70;
 }
 
-size_t recognize_constant(const char* string, size_t string_length)
+size_t recognize_constant(const wchar_t* string, size_t string_length)
 {
 	bool hex = false;
 	size_t result = 0;
-	if ( result < string_length && string[result] == '0' )
+	if ( result < string_length && string[result] == L'0' )
 	{
 		result++;
-		if ( result < string_length && (string[result] == 'x' ||
-		                                string[result] == 'X') )
+		if ( result < string_length && (string[result] == L'x' ||
+		                                string[result] == L'X') )
 		{
 			result++;
 			hex = true;
@@ -504,14 +655,14 @@ size_t recognize_constant(const char* string, size_t string_length)
 	bool exponent = false;
 	while ( result < string_length )
 	{
-		if ( ('0' <= string[result] && string[result] <= '9') ||
-		     (hex && 'a' <= string[result] && string[result] <= 'f') ||
-		     (hex && 'A' <= string[result] && string[result] <= 'F') )
+		if ( (L'0' <= string[result] && string[result] <= L'9') ||
+		     (hex && L'a' <= string[result] && string[result] <= L'f') ||
+		     (hex && L'A' <= string[result] && string[result] <= L'F') )
 		{
 			result++;
 			continue;
 		}
-		if ( string[result] == '.' )
+		if ( string[result] == L'.' )
 		{
 			if ( hex || floating )
 				return 0;
@@ -519,7 +670,7 @@ size_t recognize_constant(const char* string, size_t string_length)
 			result++;
 			continue;
 		}
-		if ( !hex && (string[result] == 'e' || string[result] == 'E') )
+		if ( !hex && (string[result] == L'e' || string[result] == L'E') )
 		{
 			if ( !result )
 				return 0;
@@ -535,23 +686,23 @@ size_t recognize_constant(const char* string, size_t string_length)
 		return 0;
 	if ( floating )
 	{
-		if ( result < string_length && (string[result] == 'l' ||
-			                            string[result] == 'L') )
+		if ( result < string_length && (string[result] == L'l' ||
+			                            string[result] == L'L') )
 			result++;
-		else if ( result < string_length && (string[result] == 'f' ||
-			                                 string[result] == 'F') )
+		else if ( result < string_length && (string[result] == L'f' ||
+			                                 string[result] == L'F') )
 			result++;
 	}
 	else
 	{
-		if ( result < string_length && (string[result] == 'u' ||
-			                            string[result] == 'U') )
+		if ( result < string_length && (string[result] == L'u' ||
+			                            string[result] == L'U') )
 			result++;
-		if ( result < string_length && (string[result] == 'l' ||
-			                            string[result] == 'L') )
+		if ( result < string_length && (string[result] == L'l' ||
+			                            string[result] == L'L') )
 			result++;
-		if ( result < string_length && (string[result] == 'l' ||
-			                            string[result] == 'L') )
+		if ( result < string_length && (string[result] == L'l' ||
+			                            string[result] == L'L') )
 			result++;
 	}
 	return result;
@@ -624,9 +775,9 @@ void editor_colorize(struct editor* editor)
 		struct line* line = &editor->lines[y];
 		for ( size_t x = 0; x < line->used; x++ )
 		{
-			char pc = x ? line->data[x-1] : '\0';
-			char c = line->data[x];
-			char nc = x+1 < line->used ? line->data[x+1] : '\0';
+			wchar_t pc = x ? line->data[x-1] : '\0';
+			wchar_t c = line->data[x];
+			wchar_t nc = x+1 < line->used ? line->data[x+1] : L'\0';
 			uint8_t color = 7;
 
 			// The character makes you leave this state.
@@ -638,13 +789,13 @@ void editor_colorize(struct editor* editor)
 
 			// The character makes you enter a new state.
 
-			if ( !fixed_state && state == STATE_INIT && c == '#' )
+			if ( !fixed_state && state == STATE_INIT && c == L'#' )
 				state = STATE_PREPROCESSOR;
 
 			// TODO: Detect NULL as a value.
 
 			if ( !fixed_state && state == STATE_INIT &&
-			     !(x && (isalnum(pc) || pc == '_')) )
+			     !(x && (iswalnum(pc) || pc == L'_')) )
 			{
 				size_t number_length = recognize_constant(line->data + x,
 				                                          line->used - x);
@@ -655,18 +806,18 @@ void editor_colorize(struct editor* editor)
 				}
 			}
 
-			if ( !fixed_state && state == STATE_INIT && c == '\'' )
+			if ( !fixed_state && state == STATE_INIT && c == L'\'' )
 				state = STATE_SINGLE_QUOTE, fixed_state = 1, escaped = false;
 
-			if ( !fixed_state && state == STATE_INIT && c == '"' )
+			if ( !fixed_state && state == STATE_INIT && c == L'"' )
 				state = STATE_DOUBLE_QUOTE, fixed_state = 1, escaped = false;
 
 			if ( !fixed_state && (state == STATE_INIT ||
 			                      state == STATE_PREPROCESSOR) )
 			{
-				if ( c == '/' && nc == '/' )
+				if ( c == L'/' && nc == L'/' )
 					state = STATE_LINE_COMMENT, fixed_state = 2;
-				else if ( c == '/' && nc == '*' )
+				else if ( c == L'/' && nc == L'*' )
 				{
 					prev_state = state;
 					multi_expiration = 0;
@@ -677,90 +828,90 @@ void editor_colorize(struct editor* editor)
 
 			if ( !fixed_state && state == STATE_INIT )
 			{
-				const char* keywords[] =
+				const wchar_t* keywords[] =
 				{
-					"alignas",
-					"alignof",
-					"and",
-					"and_eq",
-					"asm",
-					"bitand",
-					"bitor",
-					"break",
-					"case",
-					"catch",
-					"class",
-					"compl",
-					"const_cast",
-					"constexpr",
-					"continue",
-					"decltype",
-					"default",
-					"delete",
-					"do",
-					"dynamic_cast",
-					"else",
-					"enum",
-					"false",
-					"final",
-					"for",
-					"friend",
-					"goto",
-					"if",
-					"namespace",
-					"new",
-					"not",
-					"not_eq",
-					"nullptr",
-					"operator",
-					"or",
-					"or_eq",
-					"override",
-					"private",
-					"protected",
-					"public",
-					"reinterpret_cast",
-					"return",
-					"sizeof",
-					"static_assert",
-					"static_cast",
-					"struct",
-					"switch",
-					"template",
-					"this",
-					"thread_local",
-					"throw",
-					"true",
-					"try",
-					"typedef",
-					"typeid",
-					"typename",
-					"union",
-					"using",
-					"virtual",
-					"while",
-					"xor",
-					"xor_eq",
+					L"alignas",
+					L"alignof",
+					L"and",
+					L"and_eq",
+					L"asm",
+					L"bitand",
+					L"bitor",
+					L"break",
+					L"case",
+					L"catch",
+					L"class",
+					L"compl",
+					L"const_cast",
+					L"constexpr",
+					L"continue",
+					L"decltype",
+					L"default",
+					L"delete",
+					L"do",
+					L"dynamic_cast",
+					L"else",
+					L"enum",
+					L"false",
+					L"final",
+					L"for",
+					L"friend",
+					L"goto",
+					L"if",
+					L"namespace",
+					L"new",
+					L"not",
+					L"not_eq",
+					L"nullptr",
+					L"operator",
+					L"or",
+					L"or_eq",
+					L"override",
+					L"private",
+					L"protected",
+					L"public",
+					L"reinterpret_cast",
+					L"return",
+					L"sizeof",
+					L"static_assert",
+					L"static_cast",
+					L"struct",
+					L"switch",
+					L"template",
+					L"this",
+					L"thread_local",
+					L"throw",
+					L"true",
+					L"try",
+					L"typedef",
+					L"typeid",
+					L"typename",
+					L"union",
+					L"using",
+					L"virtual",
+					L"while",
+					L"xor",
+					L"xor_eq",
 				};
 
-				bool cannot_be_keyword = x && (isalnum(pc) || pc == '_');
+				bool cannot_be_keyword = x && (iswalnum(pc) || pc == L'_');
 				for ( size_t i = 0;
 				      !cannot_be_keyword && i < sizeof(keywords) / sizeof(keywords[0]);
 				      i++ )
 				{
-					const char* keyword = keywords[i];
+					const wchar_t* keyword = keywords[i];
 					if ( c != keyword[0] )
 						continue;
-					size_t keyword_length = strlen(keyword);
+					size_t keyword_length = wcslen(keyword);
 					if ( (x - line->used) < keyword_length )
 						continue;
-					if ( strncmp(line->data + x, keyword, keyword_length) != 0 )
+					if ( wcsncmp(line->data + x, keyword, keyword_length) != 0 )
 						continue;
 
 					if ( keyword_length < line->used - x )
 					{
-						char c = line->data[x + keyword_length];
-						if ( isalnum(c) || c == '_' )
+						wchar_t wc = line->data[x + keyword_length];
+						if ( iswalnum(wc) || wc == L'_' )
 							continue;
 					}
 
@@ -771,90 +922,90 @@ void editor_colorize(struct editor* editor)
 
 			if ( !fixed_state && state == STATE_INIT )
 			{
-				const char* types[] =
+				const wchar_t* types[] =
 				{
-					"auto",
-					"blkcnt_t",
-					"blksize_t",
-					"bool",
-					"char",
-					"char16_t",
-					"char32_t",
-					"clockid_t",
-					"clock_t",
-					"const",
-					"dev_t",
-					"double",
-					"explicit",
-					"extern",
-					"FILE",
-					"float",
-					"fpos_t",
-					"fsblkcnt_t",
-					"fsfilcnt_t",
-					"gid_t",
-					"id_t",
-					"inline",
-					"ino_t",
-					"int",
-					"int16_t",
-					"int32_t",
-					"int64_t",
-					"int8_t",
-					"intmax_t",
-					"intptr_t",
-					"locale_t",
-					"long",
-					"mode_t",
-					"mutable",
-					"nlink_t",
-					"noexcept",
-					"off_t",
-					"pid_t",
-					"ptrdiff_t",
-					"register",
-					"restrict",
-					"short",
-					"signed",
-					"size_t",
-					"ssize_t",
-					"static",
-					"suseconds_t",
-					"thread_local",
-					"timer_t",
-					"time_t",
-					"trace_t",
-					"uid_t",
-					"uint16_t",
-					"uint32_t",
-					"uint64_t",
-					"uint8_t",
-					"uintmax_t",
-					"uintptr_t",
-					"unsigned",
-					"useconds_t",
-					"va_list",
-					"void",
-					"volatile",
-					"wchar_t",
+					L"auto",
+					L"blkcnt_t",
+					L"blksize_t",
+					L"bool",
+					L"char",
+					L"char16_t",
+					L"char32_t",
+					L"clockid_t",
+					L"clock_t",
+					L"const",
+					L"dev_t",
+					L"double",
+					L"explicit",
+					L"extern",
+					L"FILE",
+					L"float",
+					L"fpos_t",
+					L"fsblkcnt_t",
+					L"fsfilcnt_t",
+					L"gid_t",
+					L"id_t",
+					L"inline",
+					L"ino_t",
+					L"int",
+					L"int16_t",
+					L"int32_t",
+					L"int64_t",
+					L"int8_t",
+					L"intmax_t",
+					L"intptr_t",
+					L"locale_t",
+					L"long",
+					L"mode_t",
+					L"mutable",
+					L"nlink_t",
+					L"noexcept",
+					L"off_t",
+					L"pid_t",
+					L"ptrdiff_t",
+					L"register",
+					L"restrict",
+					L"short",
+					L"signed",
+					L"size_t",
+					L"ssize_t",
+					L"static",
+					L"suseconds_t",
+					L"thread_local",
+					L"timer_t",
+					L"time_t",
+					L"trace_t",
+					L"uid_t",
+					L"uint16_t",
+					L"uint32_t",
+					L"uint64_t",
+					L"uint8_t",
+					L"uintmax_t",
+					L"uintptr_t",
+					L"unsigned",
+					L"useconds_t",
+					L"va_list",
+					L"void",
+					L"volatile",
+					L"wchar_t",
 				};
 
-				bool cannot_be_type = x && (isalnum(pc) || pc == '_');
+				bool cannot_be_type = x && (iswalnum(pc) || pc == L'_');
 				for ( size_t i = 0;
 				      !cannot_be_type && i < sizeof(types) / sizeof(types[0]);
 				      i++ )
 				{
-					const char* type = types[i];
+					const wchar_t* type = types[i];
 					if ( c != type[0] )
 						continue;
-					size_t type_length = strlen(type);
+					size_t type_length = wcslen(type);
 					if ( (x - line->used) < type_length )
 						continue;
-					if ( strncmp(line->data + x, type, type_length) != 0 )
+					if ( wcsncmp(line->data + x, type, type_length) != 0 )
 						continue;
 					if ( (x - line->used) != type_length &&
-					     (isalnum(line->data[x+type_length]) ||
-					      line->data[x+type_length] == '_') )
+					     (iswalnum(line->data[x+type_length]) ||
+					      line->data[x+type_length] == L'_') )
 						continue;
 					state = STATE_TYPE;
 					fixed_state = type_length;
@@ -885,15 +1036,15 @@ void editor_colorize(struct editor* editor)
 
 			if ( !fixed_state )
 			{
-				if ( state == STATE_SINGLE_QUOTE && !escaped && c == '\'' )
+				if ( state == STATE_SINGLE_QUOTE && !escaped && c == L'\'' )
 					state = STATE_INIT, fixed_state = 1;
-				if ( state == STATE_DOUBLE_QUOTE && !escaped && c == '"' )
+				if ( state == STATE_DOUBLE_QUOTE && !escaped && c == L'"' )
 					state = STATE_INIT, fixed_state = 1;
 			}
 
 			if ( (state == STATE_SINGLE_QUOTE || state == STATE_DOUBLE_QUOTE) )
 			{
-				if ( !escaped && c == '\\' )
+				if ( !escaped && c == L'\\' )
 					escaped = true;
 				else if ( escaped )
 					escaped = false;
@@ -903,12 +1054,12 @@ void editor_colorize(struct editor* editor)
 			{
 				if ( multi_expiration ==  1 )
 					state = prev_state, multi_expiration = 0;
-				else if ( c == '*' && nc == '/' )
+				else if ( c == L'*' && nc == L'/' )
 					multi_expiration = 1;
 			}
 
 			if ( state == STATE_PREPROCESSOR )
-				escaped = c == '\\' && !nc;
+				escaped = c == L'\\' && !nc;
 
 			editor->color_lines[y].data[x] = color;
 
@@ -1056,15 +1207,15 @@ void editor_type_newline(struct editor* editor)
 	struct line* keep_line = &editor->lines[editor->cursor_row];
 	struct line* move_line = &editor->lines[editor->cursor_row+1];
 
-	keep_line->data = new char[keep_length];
+	keep_line->data = new wchar_t[keep_length];
 	keep_line->used = keep_length;
 	keep_line->length = keep_length;
-	memcpy(keep_line->data, old_line.data + 0, keep_length);
+	memcpy(keep_line->data, old_line.data + 0, sizeof(wchar_t) * keep_length);
 
-	move_line->data = new char[move_length];
+	move_line->data = new wchar_t[move_length];
 	move_line->used = move_length;
 	move_line->length = move_length;
-	memcpy(move_line->data, old_line.data + keep_length, move_length);
+	memcpy(move_line->data, old_line.data + keep_length, sizeof(wchar_t) * move_length);
 
 	editor_cursor_set(editor, editor->cursor_row+1, 0);
 
@@ -1083,14 +1234,14 @@ void editor_type_combine_with_last(struct editor* editor)
 	struct line* keep_line = &editor->lines[editor->cursor_row-1];
 	struct line* gone_line = &editor->lines[editor->cursor_row];
 
-	char* keep_line_data = keep_line->data;
-	char* gone_line_data = gone_line->data;
+	wchar_t* keep_line_data = keep_line->data;
+	wchar_t* gone_line_data = gone_line->data;
 
 	size_t new_length = keep_line->used + gone_line->used;
-	char* new_data = new char[new_length];
+	wchar_t* new_data = new wchar_t[new_length];
 
-	memcpy(new_data, keep_line_data, keep_line->used);
-	memcpy(new_data + keep_line->used, gone_line_data, gone_line->used);
+	memcpy(new_data, keep_line_data, sizeof(wchar_t) * keep_line->used);
+	memcpy(new_data + keep_line->used, gone_line_data, sizeof(wchar_t) * gone_line->used);
 
 	editor_cursor_set(editor, editor->cursor_row-1, keep_line->used);
 
@@ -1140,14 +1291,14 @@ void editor_type_combine_with_next(struct editor* editor)
 	struct line* keep_line = &editor->lines[editor->cursor_row];
 	struct line* gone_line = &editor->lines[editor->cursor_row+1];
 
-	char* keep_line_data = keep_line->data;
-	char* gone_line_data = gone_line->data;
+	wchar_t* keep_line_data = keep_line->data;
+	wchar_t* gone_line_data = gone_line->data;
 
 	size_t new_length = keep_line->used + gone_line->used;
-	char* new_data = new char[new_length];
+	wchar_t* new_data = new wchar_t[new_length];
 
-	memcpy(new_data, keep_line_data, keep_line->used);
-	memcpy(new_data + keep_line->used, gone_line_data, gone_line->used);
+	memcpy(new_data, keep_line_data, sizeof(wchar_t) * keep_line->used);
+	memcpy(new_data + keep_line->used, gone_line_data, sizeof(wchar_t) * gone_line->used);
 
 	editor_cursor_column_set(editor, keep_line->used);
 
@@ -1342,7 +1493,7 @@ void editor_skip_leading(struct editor* editor)
 	for ( editor_cursor_column_set(editor, 0);
 	      editor->cursor_column < current_line->used;
 	      editor_cursor_column_inc(editor) )
-		if ( !isspace(current_line->data[editor->cursor_column]) )
+		if ( !iswspace(current_line->data[editor->cursor_column]) )
 			break;
 }
 
@@ -1352,7 +1503,7 @@ void editor_select_skip_leading(struct editor* editor)
 	for ( editor_select_column_set(editor, 0);
 	      editor->select_column < current_line->used;
 	      editor_select_column_inc(editor) )
-		if ( !isspace(current_line->data[editor->select_column]) )
+		if ( !iswspace(current_line->data[editor->select_column]) )
 			break;
 }
 
@@ -1390,7 +1541,7 @@ void editor_skip_ending(struct editor* editor)
 	for ( editor_cursor_column_set(editor, current_line->used);
 	      editor->cursor_column;
 	      editor_cursor_column_dec(editor) )
-		if ( !isspace(current_line->data[editor->cursor_column-1]) )
+		if ( !iswspace(current_line->data[editor->cursor_column-1]) )
 			break;
 }
 
@@ -1400,7 +1551,7 @@ void editor_select_skip_ending(struct editor* editor)
 	for ( editor_select_column_set(editor, current_line->used);
 	      editor->select_column;
 	      editor_select_column_dec(editor) )
-		if ( !isspace(current_line->data[editor->select_column-1]) )
+		if ( !iswspace(current_line->data[editor->select_column-1]) )
 			break;
 }
 
@@ -1526,8 +1677,8 @@ void editor_type_save(struct editor* editor)
 	editor->mode = MODE_SAVE;
 
 	free(editor->modal);
-	editor->modal = strdup_safe(editor->current_file_name);
-	editor->modal_used = strlen(editor->modal);
+	editor->modal = convert_mbs_to_wcs(editor->current_file_name);
+	editor->modal_used = wcslen(editor->modal);
 	editor->modal_length = editor->modal_used+1;
 	editor->modal_cursor = editor->modal_used;
 	editor->modal_error = false;
@@ -1554,8 +1705,8 @@ void editor_type_open_as(struct editor* editor)
 	editor->mode = MODE_LOAD;
 
 	free(editor->modal);
-	editor->modal = strdup_safe(editor->current_file_name);
-	editor->modal_used = strlen(editor->modal);
+	editor->modal = convert_mbs_to_wcs(editor->current_file_name);
+	editor->modal_used = wcslen(editor->modal);
 	editor->modal_length = editor->modal_used+1;
 	editor->modal_cursor = editor->modal_used;
 	editor->modal_error = false;
@@ -1577,14 +1728,14 @@ void editor_type_command(struct editor* editor)
 	editor->modal_error = false;
 }
 
-void editor_type_raw_character(struct editor* editor, char c)
+void editor_type_raw_character(struct editor* editor, wchar_t c)
 {
 	struct line* current_line = &editor->lines[editor->cursor_row];
 
 	if ( current_line->used == current_line->length )
 	{
 		size_t new_length = current_line->length ? 2 * current_line->length : 8;
-		char* new_data = new char[new_length];
+		wchar_t* new_data = new wchar_t[new_length];
 		for ( size_t i = 0; i < current_line->used; i++ )
 			new_data[i] = current_line->data[i];
 		delete[] current_line->data;
@@ -1645,7 +1796,7 @@ void editor_type_copy(struct editor* editor)
 		}
 	}
 
-	editor->clipboard = new char[length + 1];
+	editor->clipboard = new wchar_t[length + 1];
 	size_t offset = 0;
 	for ( size_t row = start_row, column = start_column;
 	      is_row_column_lt(row, column, end_row, end_column); )
@@ -1653,20 +1804,20 @@ void editor_type_copy(struct editor* editor)
 		struct line* line = &editor->lines[row];
 		if ( row == end_row )
 		{
-			memcpy(editor->clipboard + offset, line->data + column, end_column - column);
+			memcpy(editor->clipboard + offset, line->data + column, sizeof(wchar_t) * (end_column - column));
 			offset += end_column - column;
 			column = end_column;
 		}
 		else
 		{
-			memcpy(editor->clipboard + offset, line->data, line->used);
-			editor->clipboard[offset + line->used] = '\n';
+			memcpy(editor->clipboard + offset, line->data, sizeof(wchar_t) * line->used);
+			editor->clipboard[offset + line->used] = L'\n';
 			offset += line->used + 1 /*newline*/;
 			column = 0;
 			row++;
 		}
 	}
-	editor->clipboard[length] = '\0';
+	editor->clipboard[length] = L'\0';
 }
 
 void editor_type_cut(struct editor* editor)
@@ -1687,31 +1838,31 @@ void editor_type_paste(struct editor* editor)
 
 	for ( size_t i = 0; editor->clipboard && editor->clipboard[i]; i++ )
 	{
-		if ( editor->clipboard[i] == '\n' )
+		if ( editor->clipboard[i] == L'\n' )
 			editor_type_newline(editor);
 		else
 			editor_type_raw_character(editor, editor->clipboard[i]);
 	}
 }
 
-void editor_type_character(struct editor* editor, char c)
+void editor_type_character(struct editor* editor, wchar_t c)
 {
 	if ( editor->control )
 	{
-		switch ( tolower(c) )
+		switch ( towlower(c) )
 		{
-		case 'c': editor_type_copy(editor); break;
-		case 'i': editor_type_goto_line(editor); break;
-		case 'k': editor_type_cut(editor); break;
-		case 'o': editor->shift ?
-		          editor_type_open_as(editor) :
-		          editor_type_open(editor); break;
-		case 'q': editor_type_quit(editor); break;
-		case 's': editor->shift ?
-		          editor_type_save_as(editor) :
-		          editor_type_save(editor); break;
-		case 'v': editor_type_paste(editor); break;
-		case 'x': editor_type_cut(editor); break;
+		case L'c': editor_type_copy(editor); break;
+		case L'i': editor_type_goto_line(editor); break;
+		case L'k': editor_type_cut(editor); break;
+		case L'o': editor->shift ?
+		           editor_type_open_as(editor) :
+		           editor_type_open(editor); break;
+		case L'q': editor_type_quit(editor); break;
+		case L's': editor->shift ?
+		           editor_type_save_as(editor) :
+		           editor_type_save(editor); break;
+		case L'v': editor_type_paste(editor); break;
+		case L'x': editor_type_cut(editor); break;
 		}
 		return;
 	}
@@ -1719,7 +1870,7 @@ void editor_type_character(struct editor* editor, char c)
 	if ( editor_has_selection(editor) )
 		editor_type_delete_selection(editor);
 
-	if ( c == '\n' ) { editor_type_newline(editor); return; }
+	if ( c == L'\n' ) { editor_type_newline(editor); return; }
 
 	editor_type_raw_character(editor, c);
 }
@@ -1854,15 +2005,37 @@ bool editor_load_file_contents(struct editor* editor, FILE* fp)
 
 	editor_reset_contents(editor);
 
+	mbstate_t ps;
+	memset(&ps, 0, sizeof(ps));
 	bool last_newline = false;
 	int ic;
 	while ( (ic = fgetc(fp)) != EOF )
 	{
 		if ( last_newline )
+		{
 			editor_type_newline(editor);
-		if ( ic < 128 && !(last_newline = ic == '\n') )
-			editor_type_raw_character(editor, (char) ic);
+			last_newline = false;
+		}
+
+		char c = (char) ic;
+		wchar_t wc;
+		size_t count = mbrtowc(&wc, &c, 1, &ps);
+		if ( count == (size_t) 0 )
+			continue;
+		if ( count == (size_t) -1 )
+		{
+			memset(&ps, 0, sizeof(ps));
+			wc = L'�';
+		}
+		if ( count == (size_t) -2 )
+			continue;
+		assert(wc != L'\0');
+		if ( !(last_newline = wc == L'\n') )
+			editor_type_raw_character(editor, wc);
 	}
+
+	if ( !mbsinit(&ps) )
+		editor_type_raw_character(editor, L'�');
 
 	editor_cursor_set(editor, 0, 0);
 
@@ -1934,10 +2107,28 @@ bool editor_save_file(struct editor* editor, const char* path)
 	if ( !fp )
 		return false;
 
+	mbstate_t ps;
+	memset(&ps, 0, sizeof(ps));
 	for ( size_t i = 0; i < editor->lines_used; i++ )
 	{
-		fwrite(editor->lines[i].data, sizeof(char), editor->lines[i].used, fp);
-		fputc('\n', fp);
+		char mb[MB_CUR_MAX];
+		for ( size_t n = 0; n < editor->lines[i].used; n++ )
+		{
+			mbstate_t saved_ps = ps;
+			wchar_t wc = editor->lines[i].data[n];
+
+			size_t count = wcrtomb(mb, wc, &ps);
+			if ( count == (size_t) -1 )
+			{
+				ps = saved_ps;
+				count = wcrtomb(mb, L'�', &ps);
+				assert(count != (size_t) -1);
+			}
+			fwrite(mb, sizeof(char), count, fp);
+		}
+		size_t count = wcrtomb(mb, L'\n', &ps);
+		assert(count != (size_t) -1);
+		fwrite(mb, sizeof(char), count, fp);
 	}
 
 	editor->current_file_name = strdup(path);
@@ -2117,24 +2308,26 @@ void editor_modal_command(struct editor* editor, const char* cmd)
 		editor->modal_error = true;
 }
 
-void editor_modal_character(struct editor* editor, char c)
+void editor_modal_character(struct editor* editor, wchar_t c)
 {
 	if ( editor->control )
 	{
-		switch ( tolower(c) )
+		switch ( towlower(c) )
 		{
-		case 'c': editor_type_edit(editor); break;
+		case L'c': editor_type_edit(editor); break;
 		}
 		return;
 	}
 
 	editor->modal_error = false;
 
-	if ( c == '\n' )
+	if ( c == L'\n' )
 	{
-		char* param = new char[editor->modal_used+1];
-		memcpy(param, editor->modal, editor->modal_used);
-		param[editor->modal_used] = '\0';
+		if ( !editor->modal )
+			editor->modal = (wchar_t*) malloc(sizeof(wchar_t) * 1);
+
+		editor->modal[editor->modal_used] = L'\0';
+		char* param = convert_wcs_to_mbs(editor->modal);
 		switch ( editor->mode )
 		{
 		case MODE_LOAD: editor_modal_load(editor, param); break;
@@ -2151,10 +2344,10 @@ void editor_modal_character(struct editor* editor, char c)
 	if ( editor->modal_used == editor->modal_length )
 	{
 		size_t new_length = editor->modal_length ? 2 * editor->modal_length : 8;
-		char* new_data = new char[new_length];
+		wchar_t* new_data = (wchar_t*) malloc(sizeof(wchar_t) * (new_length + 1));
 		for ( size_t i = 0; i < editor->modal_used; i++ )
 			new_data[i] = editor->modal[i];
-		delete[] editor->modal;
+		free(editor->modal);
 		editor->modal = new_data;
 		editor->modal_length = new_length;
 	}
@@ -2187,12 +2380,9 @@ void editor_modal_kbkey(struct editor* editor, int kbkey)
 
 void editor_codepoint(struct editor* editor, uint32_t codepoint)
 {
-	if ( 128 <= codepoint )
-		return;
+	wchar_t c = (wchar_t) codepoint;
 
-	char c = (char) codepoint;
-
-	if ( c == '\b' || c == 127 )
+	if ( c == L'\b' || c == 127 /* delete */ )
 		return;
 
 	if ( editor->mode == MODE_EDIT )
@@ -2231,6 +2421,8 @@ void editor_kbkey(struct editor* editor, int kbkey)
 
 int main(int argc, char* argv[])
 {
+	setlocale(LC_ALL, "");
+
 	if ( !isatty(0) )
 		error(1, errno, "standard input");
 	if ( !isatty(1) )
