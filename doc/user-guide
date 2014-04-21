@@ -145,6 +145,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `benchctxswitch` - useless benchmark
 * `benchsyscall` - slightly less useless benchmark
 * `calc` - reverse polish calculator
+* `carray` -  convert a binary file to a C array
 * `cat` - display file on terminal
 * `chmod` - change file mode bits
 * `chroot` - change the root directory
@@ -547,6 +548,14 @@ This is a collection of operating system test cases run using the `regress`
 driver program.
 
     cd /src/regress
+    make
+    make install
+
+### Building carray ###
+
+This program converts a binary file to an C array.
+
+    cd /src/carray
     make
     make install
 

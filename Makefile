@@ -10,6 +10,7 @@ libm \
 libpthread \
 dispd \
 bench \
+carray \
 ext \
 games \
 mbr \
@@ -47,11 +48,13 @@ all: sysroot
 
 .PHONY: build-tools
 build-tools:
+	$(MAKE) -C carray
 	$(MAKE) -C mkinitrd
 	$(MAKE) -C tix
 
 .PHONY: install-build-tools
 install-build-tools:
+	$(MAKE) -C carray install
 	$(MAKE) -C mkinitrd install
 	$(MAKE) -C tix install
 

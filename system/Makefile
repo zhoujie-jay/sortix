@@ -22,6 +22,7 @@ clean:
 	$(MAKE) -B -C $(SRCDIR)/libpthread clean
 	$(MAKE) -B -C $(SRCDIR)/dispd clean
 	$(MAKE) -B -C $(SRCDIR)/bench clean
+	$(MAKE) -B -C $(SRCDIR)/carray clean
 	$(MAKE) -B -C $(SRCDIR)/games clean
 	$(MAKE) -B -C $(SRCDIR)/mkinitrd clean
 	$(MAKE) -B -C $(SRCDIR)/utils clean
@@ -71,6 +72,7 @@ system:
 	$(MAKE) -B -C $(SRCDIR)/libm install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
 	$(MAKE) -B -C $(SRCDIR)/libpthread install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
 	$(MAKE) -B -C $(SRCDIR)/dispd install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
+	$(MAKE) -B -C $(SRCDIR)/bench install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
 	$(MAKE) -B -C $(SRCDIR)/games install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
 	$(MAKE) -B -C $(SRCDIR)/mkinitrd install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
 	$(MAKE) -B -C $(SRCDIR)/utils install DESTDIR=$(ROOT) C_INCLUDE_PATH=$(ROOT)/include CPLUS_INCLUDE_PATH=$(ROOT)/include LIBRARY_PATH=$(ROOT)/$(cputype)/lib
