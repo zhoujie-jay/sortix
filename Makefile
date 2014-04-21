@@ -15,6 +15,7 @@ editor \
 ext \
 games \
 init \
+kblayout-compiler \
 mbr \
 mkinitrd \
 regress \
@@ -107,18 +108,21 @@ endif
 .PHONY: clean-build-tools
 clean-build-tools:
 	$(MAKE) -C carray clean
+	$(MAKE) -C kblayout-compiler clean
 	$(MAKE) -C mkinitrd clean
 	$(MAKE) -C tix clean
 
 .PHONY: build-tools
 build-tools:
 	$(MAKE) -C carray
+	$(MAKE) -C kblayout-compiler
 	$(MAKE) -C mkinitrd
 	$(MAKE) -C tix
 
 .PHONY: install-build-tools
 install-build-tools:
 	$(MAKE) -C carray install
+	$(MAKE) -C kblayout-compiler install
 	$(MAKE) -C mkinitrd install
 	$(MAKE) -C tix install
 
