@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of Sortix.
 
@@ -29,6 +29,9 @@
 #include <sortix/kernel/inode.h>
 #include <sortix/kernel/keyboard.h>
 #include <sortix/kernel/poll.h>
+
+#include "kb/kblayout.h"
+
 #include "linebuffer.h"
 
 namespace Sortix {
@@ -37,7 +40,7 @@ class LogTerminal : public AbstractInode, public KeyboardOwner
 {
 public:
 	LogTerminal(dev_t dev, mode_t mode, uid_t owner, gid_t group,
-	            Keyboard* keyboard, KeyboardLayout* kblayout);
+	            Keyboard* keyboard, KeyboardLayoutExecutor* kblayout);
 	virtual ~LogTerminal();
 
 public:
@@ -71,7 +74,7 @@ private:
 	size_t numwaiting;
 	size_t numeofs;
 	Keyboard* keyboard;
-	KeyboardLayout* kblayout;
+	KeyboardLayoutExecutor* kblayout;
 	LineBuffer linebuffer;
 	size_t partiallywritten;
 	unsigned termmode;

@@ -108,6 +108,7 @@ interlock.o \
 interrupt.o \
 ioctx.o \
 io.o \
+kb/kblayout.o \
 kb/layout/us.o \
 kb/ps2.o \
 kernelinfo.o \
@@ -193,6 +194,14 @@ sortix.bin: $(ALLOBJS)
 
 endif
 
+%: %.kblayout
+	kblayout-compiler --format=sortix-kblayout-1 --compression=none $< -o $@
+
+kb/default-kblayout.h: kb/default-kblayout
+	carray -cgis --uint8_t --guard=SORTIX_KB_DEFAULT_KBLAYOUT_H --identifier=default_kblayout $< -o $@
+
+*.cpp */*.cpp */*/*.cpp: | kb/default-kblayout.h
+
 %.o: %.cpp
 	$(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 
@@ -203,6 +212,7 @@ clean:
 	rm -f $(ALLOBJS) sortix.bin
 	rm -f *.bin *.out *.tmp
 	rm -f *.o */*.o */*/*.o
+	rm -f kb/default-kblayout kb/default-kblayout.h
 
 # Installation into sysroot
 install: install-headers install-kernel

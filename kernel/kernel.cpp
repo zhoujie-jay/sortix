@@ -81,7 +81,8 @@
 #include "fs/zero.h"
 #include "gpu/bga/bga.h"
 #include "initrd.h"
-#include "kb/layout/us.h"
+#include "kb/default-kblayout.h"
+#include "kb/kblayout.h"
 #include "kb/ps2.h"
 #include "logterminal.h"
 #include "multiboot.h"
@@ -554,9 +555,11 @@ static void BootThread(void* /*user*/)
 	Keyboard* keyboard = new PS2Keyboard(0x60, Interrupt::IRQ1);
 	if ( !keyboard )
 		Panic("Could not allocate PS2 Keyboard driver");
-	KeyboardLayout* kblayout = new KBLayoutUS;
+	KeyboardLayoutExecutor* kblayout = new KeyboardLayoutExecutor;
 	if ( !kblayout )
-		Panic("Could not allocate keyboard layout driver");
+		Panic("Could not allocate keyboard layout executor");
+	if ( !kblayout->Upload(default_kblayout, sizeof(default_kblayout)) )
+		Panic("Could not load the default keyboard layout into the executor");
 
 	// Register the kernel terminal as /dev/tty.
 	Ref<Inode> tty(new LogTerminal(slashdev->dev, 0666, 0, 0, keyboard, kblayout));

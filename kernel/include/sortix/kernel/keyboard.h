@@ -52,14 +52,6 @@ public:
 
 };
 
-class KeyboardLayout
-{
-public:
-	virtual ~KeyboardLayout() { }
-	virtual uint32_t Translate(int kbkey) = 0;
-
-};
-
 } // namespace Sortix
 
 #endif

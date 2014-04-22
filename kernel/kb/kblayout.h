@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of Sortix.
 
@@ -17,28 +17,41 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    kb/layout/us.h
-    The United States keyboard layout.
+    kb/kblayout.h
+    Engine that executes a keyboard layout program.
 
 *******************************************************************************/
 
-#ifndef SORTIX_KB_LAYOUT_US_H
-#define SORTIX_KB_LAYOUT_US_H
+#ifndef SORTIX_KB_KBLAYOUT_H
+#define SORTIX_KB_KBLAYOUT_H
 
+#include <stddef.h>
 #include <stdint.h>
+
+#include <sortix/kblayout.h>
 
 namespace Sortix {
 
-class KBLayoutUS
+class KeyboardLayoutExecutor
 {
 public:
-	KBLayoutUS();
-	~KBLayoutUS();
+	KeyboardLayoutExecutor();
+	~KeyboardLayoutExecutor();
+
+public:
+	bool Upload(const uint8_t* data, size_t data_size);
+	bool Download(const uint8_t** data, size_t* data_size);
 	uint32_t Translate(int kbkey);
-	bool ProcessModifier(int kbkey, int modkey, unsigned flag);
 
 private:
-	unsigned modifiers;
+	struct kblayout header;
+	struct kblayout_action* actions;
+	uint8_t* keys_down;
+	uint32_t modifier_counts[KBLAYOUT_MAX_NUM_MODIFIERS];
+	uint32_t modifiers;
+	bool loaded;
+	uint8_t* saved_data;
+	size_t saved_data_size;
 
 };
 

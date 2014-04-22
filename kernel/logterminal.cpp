@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -63,7 +63,7 @@ const unsigned SUPPORTED_MODES = TERMMODE_KBKEY
                                | TERMMODE_NONBLOCK;
 
 LogTerminal::LogTerminal(dev_t dev, mode_t mode, uid_t owner, gid_t group,
-                         Keyboard* keyboard, KeyboardLayout* kblayout)
+                         Keyboard* keyboard, KeyboardLayoutExecutor* kblayout)
 {
 	inode_type = INODE_TYPE_TTY;
 	this->dev = dev;
@@ -448,12 +448,26 @@ ssize_t LogTerminal::tcgetblob(ioctx_t* ctx, const char* name, void* buffer, siz
 {
 	if ( !name )
 	{
-		char index[] = "";
-		if ( buffer && count < sizeof(index) )
+		static const char index[] = "kblayout\0";
+		size_t index_size = sizeof(index) - 1;
+		if ( buffer && count < index_size )
 			return errno = ERANGE, -1;
-		if ( buffer && !ctx->copy_to_dest(buffer, &index, sizeof(index)) )
+		if ( buffer && !ctx->copy_to_dest(buffer, &index, index_size) )
 			return -1;
-		return (ssize_t) sizeof(index);
+		return (ssize_t) index_size;
+	}
+	else if ( !strcmp(name, "kblayout") )
+	{
+		ScopedLockSignal lock(&termlock);
+		const uint8_t* data;
+		size_t size;
+		if ( !kblayout->Download(&data, &size) )
+			return -1;
+		if ( buffer && count < size )
+			return errno = ERANGE, -1;
+		if ( buffer && !ctx->copy_to_dest(buffer, data, size) )
+			return -1;
+		return (ssize_t) size;
 	}
 	else
 		return errno = ENOENT, -1;
@@ -461,11 +475,21 @@ ssize_t LogTerminal::tcgetblob(ioctx_t* ctx, const char* name, void* buffer, siz
 
 ssize_t LogTerminal::tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count)
 {
-	(void) ctx;
-	(void) buffer;
-	(void) count;
 	if ( !name )
 		return errno = EPERM, -1;
+	else if ( !strcmp(name, "kblayout") )
+	{
+		uint8_t* data = new uint8_t[count];
+		if ( !data )
+			return -1;
+		if ( !ctx->copy_from_src(data, buffer, count) )
+			return -1;
+		ScopedLockSignal lock(&termlock);
+		if ( !kblayout->Upload(data, count) )
+			return -1;
+		delete[] data;
+		return (ssize_t) count;
+	}
 	else
 		return errno = ENOENT, -1;
 }

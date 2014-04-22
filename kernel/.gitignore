@@ -6,3 +6,5 @@
 *.a
 *.initrd
 *.out
+kb/default-kblayout
+kb/default-kblayout.h
