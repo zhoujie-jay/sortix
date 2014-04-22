@@ -204,7 +204,6 @@ bool VGATextBuffer::EmergencyRecoup()
 
 void VGATextBuffer::EmergencyReset()
 {
-	return;
 	Fill(TextPos{0, 0}, TextPos{width-1, height-1}, TextChar{0, 0}, 0);
 	SetCursorPos(TextPos{0, 0});
 }
