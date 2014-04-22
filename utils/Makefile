@@ -58,19 +58,14 @@ uptime \
 wc \
 which \
 
-INSTALLBINARIES:=$(addprefix $(DESTDIR)$(BINDIR)/,$(BINARIES))
-
 all: $(BINARIES)
 
-.PHONY: all install uninstall clean
+.PHONY: all install clean
 
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)
 	install $(BINARIES) $(DESTDIR)$(BINDIR)
 	install install-file $(DESTDIR)$(BINDIR)/install
-
-uninstall:
-	rm -f $(INSTALLBINARIES) $(DESTDIR)$(BINDIR)/install
 
 %: %.cpp
 	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@

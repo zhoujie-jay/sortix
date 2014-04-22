@@ -12,7 +12,7 @@ BINARY:=carray
 
 all: $(BINARY)
 
-.PHONY: all install uninstall clean
+.PHONY: all install clean
 
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)

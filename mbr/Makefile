@@ -8,24 +8,19 @@ CXXFLAGS?=$(OPTLEVEL)
 
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
-BINARIES:=mbrfs
+BINARY:=mbrfs
 
-INSTALLBINARIES:=$(addprefix $(DESTDIR)$(BINDIR)/,$(BINARIES))
+all: $(BINARY)
 
-all: $(BINARIES)
-
-.PHONY: all install uninstall clean
+.PHONY: all install clean
 
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)
-	install $(BINARIES) $(DESTDIR)$(BINDIR)
-
-uninstall:
-	rm -f $(INSTALLBINARIES)
+	install $(BINARY) $(DESTDIR)$(BINDIR)
 
 %: %.cpp
 	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@
 
 clean:
-	rm -f $(BINARIES) *.o
+	rm -f $(BINARY) *.o
 

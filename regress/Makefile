@@ -25,7 +25,7 @@ test-signal-raise \
 
 all: $(BINARIES) $(TESTS)
 
-.PHONY: all install uninstall clean
+.PHONY: all install clean
 
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)

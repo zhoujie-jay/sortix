@@ -12,18 +12,13 @@ BINARIES:=\
 benchsyscall \
 benchctxswitch \
 
-INSTALLBINARIES:=$(addprefix $(DESTDIR)$(BINDIR)/,$(BINARIES))
-
 all: $(BINARIES)
 
-.PHONY: all install uninstall clean
+.PHONY: all install clean
 
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)
 	install $(BINARIES) $(DESTDIR)$(BINDIR)
-
-uninstall:
-	rm -f $(INSTALLBINARIES)
 
 %: %.cpp
 	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@

@@ -14,20 +14,15 @@ conway \
 snake \
 asteroids \
 
-INSTALLBINARIES:=$(addprefix $(DESTDIR)$(BINDIR)/,$(BINARIES))
-
 LIBS:=-ldispd
 
 all: $(BINARIES)
 
-.PHONY: all install uninstall clean
+.PHONY: all install clean
 
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)
 	install $(BINARIES) $(DESTDIR)$(BINDIR)
-
-uninstall:
-	rm -f $(INSTALLBINARIES)
 
 %: %.cpp
 	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@ $(LIBS)

@@ -17,18 +17,13 @@ endif
 
 BINARIES:=extfs
 
-INSTALLBINARIES:=$(addprefix $(DESTDIR)$(BINDIR)/,$(BINARIES))
-
 all: $(BINARIES)
 
-.PHONY: all install uninstall clean
+.PHONY: all install clean
 
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)
 	install $(BINARIES) $(DESTDIR)$(BINDIR)
-
-uninstall:
-	rm -f $(DESTDIR)$(INSTALLBINARIES)
 
 extfs: *.cpp *.h
 	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $(wildcard *.cpp) -o $@ $(LIBS)
