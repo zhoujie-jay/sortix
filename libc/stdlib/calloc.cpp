@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,11 +22,15 @@
 
 *******************************************************************************/
 
+#include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 extern "C" void* calloc(size_t nmemb, size_t size)
 {
+	if ( size && nmemb && SIZE_MAX / size < nmemb )
+		return errno = ENOMEM, (void*) NULL;
 	size_t total = nmemb * size;
 	void* result = malloc(total);
 	if ( !result )
