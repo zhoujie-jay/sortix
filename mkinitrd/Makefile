@@ -7,7 +7,7 @@ CXXFLAGS?=$(OPTLEVEL)
 
 SORTIXKERNEL=../kernel
 
-CPPFLAGS:=$(CPPFLAGS) -I$(SORTIXKERNEL)/include -I.
+CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\" -I$(SORTIXKERNEL)/include -I.
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 BINARIES=mkinitrd initrdfs
