@@ -73,7 +73,7 @@ const struct option* find_long_option(char* arg,
                                       char** option_arg)
 {
 	char* argname = arg + 2;
-	size_t argname_length = strcspn(arg, "=");
+	size_t argname_length = strcspn(argname, "=");
 
 	for ( int i = 0; longopts && longopts[i].name; i++ )
 	{
@@ -147,7 +147,14 @@ int getopt_long(int argc, char* const* argv, const char* shortopts,
 
 		// Verify the long option is allowed.
 		if ( !option )
+		{
+			if ( !caller_handles_missing_argument && opterr )
+				error(0, 0, "unrecognized option `%s'", arg);
 			return '?';
+		}
+
+		if ( longindex )
+			*longindex = option_index;
 
 		// Check whether the next argument is the parameter to this option.
 		if ( !option_arg && option->has_arg != no_argument )
@@ -161,14 +168,13 @@ int getopt_long(int argc, char* const* argv, const char* shortopts,
 		if ( !option_arg && option->has_arg == required_argument )
 		{
 			if ( caller_handles_missing_argument )
-				return *longindex = option_index, ':';
+				return ':';
 			if ( opterr )
 				error(0, 0, "option requires an argument `--%s'", option->name);
 			return '?';
 		}
 
 		return optarg = option_arg,
-		       *longindex = option_index,
 		       option->flag ? (*option->flag = option->val, 0) : option->val;
 	}
 
@@ -198,12 +204,14 @@ int getopt_long(int argc, char* const* argv, const char* shortopts,
 	char* opt_decl = strchr(shortopts, short_option);
 	if ( !opt_decl )
 	{
+		if ( !caller_handles_missing_argument && opterr )
+				error(0, 0, "invalid option -- '%c'", short_option);
 		optopt = short_option;
 		short_option = '?';
 	}
 
 	// Check whether the short option requires an parameter.
-	if ( opt_decl[1] == ':' )
+	if ( opt_decl && opt_decl[1] == ':' )
 	{
 		// This argument cannot contain more short options after this.
 		optcurvalid = false;
