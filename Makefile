@@ -230,7 +230,7 @@ $(INITRD): sysroot
 	  echo "exclude /tix/$$OTHER_PLATFORM" >> $(INITRD).filter; \
 	done;
 	if ! which mkinitrd; then echo You need to install mkinitrd; fi
-	mkinitrd --filter $(INITRD).filter "$(SYSROOT)" -o $(INITRD)
+	mkinitrd --format=sortix-initrd-2 --filter=$(INITRD).filter "$(SYSROOT)" -o $(INITRD)
 	rm -f $(INITRD).filter
 
 .PHONY: initrd

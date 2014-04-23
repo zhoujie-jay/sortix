@@ -42,6 +42,8 @@
 #define VERSIONSTR "unknown version"
 #endif
 
+#define DEFAULT_FORMAT "sortix-initrd-2"
+
 #include "crc32.h"
 #include "rules.h"
 
@@ -517,6 +519,7 @@ static void help(FILE* fp, const char* argv0)
 	fprintf(fp, "\n");
 	fprintf(fp, "Mandatory arguments to long options are mandatory for short options too.\n");
 	fprintf(fp, "      --filter=FILE         import filter rules from FILE\n");
+	fprintf(fp, "      --format=FORMAT       format version [%s]\n", DEFAULT_FORMAT);
 	fprintf(fp, "  -o, --output=FILE         write result to FILE\n");
 	fprintf(fp, "      --help                display this help and exit\n");
 	fprintf(fp, "      --version             output version information and exit\n");
@@ -533,6 +536,7 @@ static void version(FILE* fp, const char* argv0)
 int main(int argc, char* argv[])
 {
 	char* arg_filter = NULL;
+	char* arg_format = strdup(DEFAULT_FORMAT);
 	char* arg_output = NULL;
 
 	const char* argv0 = argv[0];
@@ -587,6 +591,7 @@ int main(int argc, char* argv[])
 			free(arg_filter);
 			arg_filter = NULL;
 		}
+		else if ( GET_OPTION_VARIABLE("--format", &arg_format) ) { }
 		else if ( GET_OPTION_VARIABLE("--output", &arg_output) ) { }
 		else
 		{
@@ -622,6 +627,18 @@ int main(int argc, char* argv[])
 	{
 		fprintf(stderr, "%s: No output file specified\n", argv0),
 		help(stderr, argv0);
+		exit(1);
+	}
+
+	const char* format = arg_format;
+
+	if ( !strcmp(format, "default") )
+		format = DEFAULT_FORMAT;
+
+	if ( strcmp(format, "sortix-initrd-2") != 0 )
+	{
+		fprintf(stderr, "%s: Unsupported format `%s'\n", argv0, format);
+		fprintf(stderr, "Try `%s --help' for more information.\n", argv0);
 		exit(1);
 	}
 
