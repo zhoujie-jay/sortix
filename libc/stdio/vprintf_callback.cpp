@@ -243,7 +243,7 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 				else
 					goto incomprehensible_conversion;
 				value = (negative_value = signed_value < 0) ?
-				         - (uintmax_t) signed_value : signed_value;
+				         - (uintmax_t) signed_value : (uintmax_t) signed_value;
 			}
 			else
 			{
