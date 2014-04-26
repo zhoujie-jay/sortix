@@ -24,6 +24,7 @@
 
 #include <sys/syscall.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 DEFN_SYSCALL3(int, sys_unlinkat, SYSCALL_UNLINKAT, int, const char*, int);
 

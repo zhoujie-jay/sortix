@@ -22,7 +22,7 @@
 
 *******************************************************************************/
 
-#include <string.h>
+#include <wchar.h>
 
 extern "C" size_t wcslen(const wchar_t* str)
 {

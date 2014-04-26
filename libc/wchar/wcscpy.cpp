@@ -22,7 +22,7 @@
 
 *******************************************************************************/
 
-#include <string.h>
+#include <wchar.h>
 
 extern "C" wchar_t* wcscpy(wchar_t* dest, const wchar_t* src)
 {
