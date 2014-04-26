@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -50,5 +50,5 @@ int getpwuid_r(uid_t uid,
 		return *ret_ptr = *ret_ptr, 0;
 	}
 	fclose(fpasswd);
-	return *ret_ptr = NULL, errnum ? errnum : errno = ENOUSER;
+	return *ret_ptr = NULL, errnum ? errnum : (errno = ENOUSER);
 }

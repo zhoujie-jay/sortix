@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -50,5 +50,5 @@ int getgrgid_r(gid_t gid,
 		return *ret_ptr = *ret_ptr, 0;
 	}
 	fclose(fgroup);
-	return *ret_ptr = NULL, errnum ? errnum : errno = ENOGROUP;
+	return *ret_ptr = NULL, errnum ? errnum : (errno = ENOGROUP);
 }
