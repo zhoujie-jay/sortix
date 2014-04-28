@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,15 +22,13 @@
 
 *******************************************************************************/
 
-#include <stdint.h>
 #include <string.h>
 
 extern "C" void* memchr(const void* s, int c, size_t size)
 {
-	const uint8_t* buf = (const uint8_t*) s;
+	const unsigned char* buf = (const unsigned char*) s;
 	for ( size_t i = 0; i < size; i++ )
-	{
-		if ( buf[i] == c ) { return (void*) (buf + i); }
-	}
+		if ( buf[i] == (unsigned char) c )
+			return (void*) (buf + i);
 	return NULL;
 }
