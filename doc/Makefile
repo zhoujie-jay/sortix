@@ -3,6 +3,7 @@ include ../version.mak
 include ../dirs.mak
 
 DOCUMENTS:=\
+cross-compilation-sins \
 cross-development \
 obsolete-stuff \
 porting-guide \

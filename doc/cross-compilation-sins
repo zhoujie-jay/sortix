@@ -1,0 +1,268 @@
+Cross Compilation Sins
+======================
+
+Cross-compilation is the act of compiling a program for execution on another
+machine that is different from the current machine. The other machine can have
+another processor, another operating system, or just another directory structure
+with different programs and libraries installed. The important part is that the
+cross-compiled program is not meant to be executed on the build machine and
+cannot be assumed to execute correctly on the build machine.
+
+Cross-compilation works in concept simply by substituting the usual compiler
+with a special cross-compiler targeting the host machine rather than the build
+machine. The development headers and libraries would then already be installed
+in the system root used by the cross-compiler. The program will then be built
+normally and the result is a binary for the host machine.
+
+Unfortunately, a lot of software attempt to be too clever for their own good and
+rely on assumptions that are not valid in the face of cross-compilation. This is
+a list of such sins that software packages occasionally make that prevent proper
+cross-compilation. Almost all software ought to cross-compile cleanly.
+
+Not supporting cross-compilation
+--------------------------------
+
+Programs should use a build system that allows cross-compiler, or be stupid and
+just use the specified compiler without violating rules in this document. Build
+systems should not hard-code a particular compiler, but use a CC or CXX
+environmental variable that possibly default to reasonable values, or using the
+full ./configure machinery for detecting the correct compiler.
+
+Root is the empty prefix
+------------------------
+
+The build system must treat the empty prefix as distinct from the default prefix
+(which is usually /usr/local). A prefix is a string of characters that is added
+before the usual installation directories such as /bin and /lib. To install a
+program into the /bin directory (in the root filesystem), you need add no
+characters in front of /lib. Thus, the empty prefix is the root directory. The
+root directory is the prefix of /, as that would install the program into //bin.
+Indeed //bin is not only ugly, but it actually has a special alternate meaning
+than the root directory on some operating systems.
+
+Probing root filesystem
+-----------------------
+
+The actual root filesystem of the host machine is not available at build time.
+That means that probing system files are out of the question and should be
+recoded into a runtime check at program startup. For instance, checking special
+directories such as /dev or /proc, or system configuration in /etc, even
+manually locating headers in /usr/include and libraries in /usr/lib is not
+allowed (when though they would be there in the system root, potentially).
+
+Instead build systems should view things through the eyes of the cross-compiler
+that may use exotic strategies to locate the desired resources (perhaps the
+cross-compiler is an executable that wraps the real compiler and adds special
+-I and --sysroot options, for instance). To check whether a header is available,
+the build system should preprocess a file that #includes it. To check whether a
+library is available, the build system should try to link an executable against
+it.
+
+This discussion even covers looking at the configured prefix and other
+installation directories, even if prefixed with $DESTDIR, except for the purpose
+of installing files there.
+
+Executing cross-compiled programs
+---------------------------------
+
+It is not possible to run a cross-compiled program when cross-compiling. The
+results vary, maybe the program works, maybe the program loads but does
+something unexpected, maybe the program loads and enter an infinite loop, maybe
+the program loads and crashes, or maybe the program doesn't even load. The
+important part is that the build system should not even attempt to execute any
+programs it compiles. Some packages use special configure-time tests to compile
+test programs to check the behavior of the host machine, such as whether a
+standard function works.
+
+Such tests are fundamentally broken if they require executing the test program;
+usually it is sufficient to just check if the program links. This means that
+tests about the run-time behavior of programs are not possible on the build
+machine. If possible, such tests could be delayed until program startup.
+
+However, such tests are usually to detect broken systems. If testing is not
+possible, then the build system should assume that the system is not broken. It
+is often just a single operating system that has such a problem and it may be
+fixed in later releases. It is acceptable to inconvenience users of broken
+operarating systems by asking them to pass an --using-broken-os configure option
+or something similar, as long as it doesn't inconvenience honest users of good
+operating systems.
+
+$DESTDIR
+--------
+
+Programs must support the DESTDIR environmental variable at package installation
+time. It is an additional temporary prefix that is added to all the installation
+directory paths when installing files and directories. It is commonly used for
+package management that wishes to stage programs at a temporary location rather
+than installing into the final destination immediately. It is also used for
+cross-compilation where installation into the local machine's root directory
+would be disastrous, where you rather want to use the cross-compilation system
+root as DESTDIR.
+
+It is important to understand that the prefix set at configure time is the
+location where the program will end up on the host machine, not the installation
+directory on the build machine. The installation directory on the build machine
+would be the prefix given at configure time prefixed with DESTDIR being the
+system root.
+
+If packages do not support DESTDIR, it is possible to work-around the issue by
+adding the intended DESTDIR to the prefix given at configure time. This works
+only as long as the program doesn't remember the prefix or store it in system
+configuration files. The better solution is just to patch in $(DESTDIR) support.
+
+Cross-compiled Build Tools
+--------------------------
+
+Programs often need special-purpose build tools to compile some aspects of them
+or associated files or documentation. If such a program is local to the project
+and not a stand-alone tool on its own right, then it is not uncommon for the
+build system to build first the tool and then use the tool during the build of
+the real program.
+
+This presents a crucial problem for cross-compilation: Two compilers must be in
+play. Otherwise, the build system may helpfully use the cross-compiler to
+cross-compile the build tool and attempt to execute the cross-compiled build
+tool (which is intended to run on the host machine, not the build machine). This
+is a common problem that prevents otherwise cross-compilable programs from
+being cross-compilable.
+
+The solution is to detect and use two compilers: The compiler for the build
+machine and the compiler for the host machine. This introduces some new
+complexity, but autoconf generated ./configure scripts can deal rather easily
+with it. There is a problem, though, if the build tool itself has dependencies
+on external projects besides the standard library, as that would mean the build
+system would need to detect and handle dependencies for both the build and host
+machine. I'm not even sure the autoconf configure style --with-foo options are
+fine-grained enough to support --with-build-foo and with-host-foo options if
+they differ.
+
+A better solution is perhaps to promote the custom build tool to a general
+purpose or at least special purpose tool that is installed along with the
+program, while allowing the special purpose tool to be built separately and
+just that tool. This allows the user wishing to cross-compile to first build the
+custom build tool locally on his configure, install it on the build machine, and
+then have the tool in $PATH during the actual cross-compilation of the program.
+This way the build system doesn't need to have two compilers in play, but at the
+cost of essentially splitting the project into two subprojects: The real program
+and the custom build tool. This option is preferable if the custom build tool
+can be adapted so it is reusable by other projects.
+
+You can also change the implementation language of the build tool to an
+interpreted language, such as a shell script, python or anything suitable. It
+would be prudent to ensure such interpreted languages can also be cross-compiled
+cleanly.
+
+Degrading functionality of program
+----------------------------------
+
+Programs should not be partially cross-compilable, with optional parts of the
+program not available if cross-compiled. In the event that such optional parts
+cannot be cross-compiled, it might be because they are violating rules in this
+document or an external dependency does.
+
+Degrading quality of program
+----------------------------
+
+Programs that are cross-compiled should be as similar as possible to the case
+where they are not cross-compiled. However, it is acceptable if there is a
+performance loss if the program needs to do run-time checking when a test is not
+possible at compile time or other cases where the build system needs to make a
+decision and insufficient data is available and both solutions would work
+correctly.
+
+Custom Configure Scripts
+------------------------
+
+Some perhaps ship with a custom hand-written ./configure script as opposed to a
+script generated by tools such as autoconf. It doesn't matter in what language
+a configure script is written (as long as it can be correctly executed) or
+whether it is generated or hand-written. However, it is important that it
+correctly implement the standard semantics customary with GNU autoconf generated
+./configure scripts. In particular, for this discussion, it must support the
+--build, --host and --target options, as well as all the standard installation
+directory options (--prefix, --exec-prefix, ...). It is also important that it
+correctly locate a cross-compiler through the --host option by using it as a
+cross-tool prefix. For instance, --host=x86_64-sortix must correctly locate
+the x86-64_sortix-gcc compiler.
+
+Remembering the Compiler
+------------------------
+
+Unusually, some libraries remember the compiler executable and used compiler
+options and store them in special foo-config files or even installed system
+headers. This must never be done as the cross-compiler is a temporary tool. The
+library is meant to be used on the host system, it would be odd if programs
+depending on the library attempted to use a cross-compiler when building such
+programs on the host machine. It also violates the principle that which compiler
+is used is decided by the user, rather than secretly by the package.
+
+Making cross-compilation needlessly hard
+----------------------------------------
+
+Some build systems require the user to answer particular questions about the
+host machine, while is perfectly capable of automatically answering such
+questions about the build machine. This occasionally takes the form of autoconf
+generated ./configure scripts requiring the user to set autoconf cache values
+that answer runtime tests. The obvious solution is to do runtime tests at
+program startup instead or more careful tests that are possible at compile time.
+
+Other problems include all sorts of miscellaneous situations where the user is
+required to jump through hoops to cross-compile a program, when it could have
+been much simpler if the build system had followed standard patterns. This is
+often a symptom of projects where cross-compilation is considered unusual and
+special-purpose, rather than than a natural state of things if you don't assume
+particular runtime tests are possible at compile time.
+
+pkg-config
+----------
+
+Libraries should install pkg-config files rather than libtool .la files or
+foo-config scripts as neither of those approaches support cross-compilation or
+system roots, while pkg-config is perfectly aware of such use cases.
+
+Programs should never look for libtool .la files or use foo-config scripts for
+the same reasons. It is too possible that the program ends up finding a tool for
+the build machine instead, if the installed foo-config script wasn't in the
+user's PATH. Fortunately, the invocation of foo-config scripts and pkg-config
+are usually similar enough, so it is simple to adapt a build system to use the
+pkg-config variant exclusively instead.
+
+The user can build a special cross-pkg-config or wrap an existing pkg-config by
+setting special environmental variables. There are some ceveats if the program
+builds custom build tools that needs dependencies detected through pkg-config.
+In that case, the user may need to have a special pkg-config with a tool prefix
+or pass a configure option setting the name of the build machine pkg-config
+script.
+
+libtool .la files
+-----------------
+
+Libraries managed with libtool often install special .la files into the
+configured libdir. These files contain information on how to link against the
+library and what compiler options to use. Unfortunately they don't support
+cross-compilation and system roots. As such, too easily the compile process will
+begin attempting to link against files relative to the root directory on the
+build machine.
+
+The recommendation is to kill such files on sight and to never generate them in
+the first place, and certainly to never install them into the system root. It is
+usually safe to delete such files, especially if the library installs pkg-config
+files or if you install into well-known system directories.
+
+foo-config
+----------
+
+Libraries occasionally install special foo-config scripts into the configured
+bindir. These files are executable shell scripts that output the compiler
+options that should be used to link against the library. Unfortunately they
+don't support cross-compilation and system roots. As such, too easily the
+compile process will begin attempting to link against files relative to the root
+directory on the build machine.
+
+The recommendation is to kill such files on sight and to never generate them in
+the first place, and certainly to never install them into the system root. It is
+usually safe to delete such files, especially if the library installs pkg-config
+files or if you install into well-known system directories. Watch out for
+programs linking against the library that wrongly locate foo-config scripts in
+your $PATH (which potentially come from your distribution). Such programs needs
+to be patched to use pkg-config instead.
