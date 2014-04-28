@@ -31,7 +31,7 @@ __BEGIN_DECLS
 
 void gnu_error(int status, int errnum, const char* format, ...);
 #if __SORTIX_STDLIB_REDIRECTS
-void error(int status, int errnum, const char* format, ...) asm("gnu_error");
+void error(int status, int errnum, const char* format, ...) __asm__ ("gnu_error");
 #endif
 
 __END_DECLS

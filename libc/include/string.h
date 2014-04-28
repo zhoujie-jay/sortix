@@ -100,9 +100,9 @@ const char* sortix_strerror_l(int, locale_t);
 const char* sortix_strsignal(int signum);
 #endif
 #if defined(_SOURCE_SOURCE) && __SORTIX_STDLIB_REDIRECTS
-const char* strerror(int errnum) asm ("sortix_strerror");
-const char* strerror_l(int, locale_t) asm ("sortix_strerror_l");
-const char* strsignal(int signum) asm ("sortix_strsignal");
+const char* strerror(int errnum) __asm__ ("sortix_strerror");
+const char* strerror_l(int, locale_t) __asm__ ("sortix_strerror_l");
+const char* strsignal(int signum) __asm__ ("sortix_strsignal");
 #else
 char* strerror(int errnum);
 char* strerror_l(int, locale_t);

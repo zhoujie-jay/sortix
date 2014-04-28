@@ -59,7 +59,7 @@
 /* Create a function that selects the right system call and jumps into the
    generic implementation of system calls. */
 #define SYSCALL_FUNCTION(syscall_name, syscall_index) \
-asm("\n" \
+__asm__("\n" \
 ".pushsection .text\n" \
 ".type " #syscall_name ", @function\n" \
 #syscall_name ":\n" \

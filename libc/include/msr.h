@@ -35,25 +35,25 @@
 __BEGIN_DECLS
 
 __attribute__((unused))
-static inline uint64_t rdmsr(uint32_t msrid)
+static __inline uint64_t rdmsr(uint32_t msrid)
 {
 	uint32_t low;
 	uint32_t high;
-	asm volatile ("rdmsr" : "=a"(low), "=d"(high) : "c"(msrid));
+	__asm__ __volatile__ ("rdmsr" : "=a"(low), "=d"(high) : "c"(msrid));
 	return (uint64_t) low << 0 | (uint64_t) high << 32;
 }
 
 __attribute__((unused))
-static inline uint64_t wrmsr(uint32_t msrid, uint64_t value)
+static __inline uint64_t wrmsr(uint32_t msrid, uint64_t value)
 {
 	uint32_t low = value >> 0 & 0xFFFFFFFF;
 	uint32_t high = value >> 32 & 0xFFFFFFFF;;
-	asm volatile ("wrmsr" : : "a"(low), "d"(high), "c"(msrid) : "memory");
+	__asm__ __volatile__ ("wrmsr" : : "a"(low), "d"(high), "c"(msrid) : "memory");
 	return value;
 }
 
 __attribute__((unused))
-static inline void rdmsr_split(uint32_t msrid, uint32_t* low, uint32_t* high)
+static __inline void rdmsr_split(uint32_t msrid, uint32_t* low, uint32_t* high)
 {
 	uint64_t result = rdmsr(msrid);
 	*low = result >> 0 & 0xFFFFFFFF;
@@ -61,7 +61,7 @@ static inline void rdmsr_split(uint32_t msrid, uint32_t* low, uint32_t* high)
 }
 
 __attribute__((unused))
-static inline void wrmsr_split(uint32_t msrid, uint32_t low, uint32_t high)
+static __inline void wrmsr_split(uint32_t msrid, uint32_t low, uint32_t high)
 {
 	wrmsr(msrid, (uint64_t) low << 0 | (uint64_t) high << 32);
 }
