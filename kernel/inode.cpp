@@ -332,8 +332,9 @@ int AbstractInode::poll(ioctx_t* /*ctx*/, PollNode* /*node*/)
 	if ( inode_type == INODE_TYPE_FILE )
 	{
 		// TODO: Correct bits?
-		node->revents |= (POLLIN | POLLOUT) & node->events;
-		// TODO: What if not listening on events (POLLIN | POLLOUT)?
+		if ( !((POLLIN | POLLOUT) & node->events) )
+			return errno = EAGAIN, -1;
+		node->master->revents |= (POLLIN | POLLOUT) & node->events;
 		return 0;
 	}
 #endif

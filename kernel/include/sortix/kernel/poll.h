@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of Sortix.
 
@@ -57,7 +57,8 @@ class PollNode
 	friend class PollChannel;
 
 public:
-	PollNode() { next = NULL; prev = NULL; channel = NULL; }
+	PollNode() { next = NULL; prev = NULL; channel = NULL; master = this; slave = NULL; }
+	~PollNode() { delete slave; }
 
 private:
 	PollNode* next;
@@ -65,6 +66,8 @@ private:
 
 public:
 	PollChannel* channel;
+	PollNode* master;
+	PollNode* slave;
 
 public:
 	kthread_mutex_t* wake_mutex;
@@ -75,6 +78,7 @@ public:
 
 public:
 	void Cancel();
+	PollNode* CreateSlave();
 
 };
 

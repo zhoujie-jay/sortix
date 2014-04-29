@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of Sortix.
 
@@ -79,20 +79,24 @@ void PollChannel::Signal(short events)
 void PollChannel::SignalUnlocked(short events)
 {
 	for ( PollNode* node = first; node; node = node->next )
-		if ( node->revents |= events & (node->events | POLL__ONLY_REVENTS) )
+	{
+		PollNode* target = node->master;
+		if ( target->revents |= events & (target->events | POLL__ONLY_REVENTS) )
 		{
-			ScopedLock node_lock(node->wake_mutex);
-			if ( !*node->woken )
+			ScopedLock target_lock(target->wake_mutex);
+			if ( !*target->woken )
 			{
-				*node->woken = true;
-				kthread_cond_signal(node->wake_cond);
+				*target->woken = true;
+				kthread_cond_signal(target->wake_cond);
 			}
 		}
+	}
 }
 
 void PollChannel::Register(PollNode* node)
 {
 	ScopedLock lock(&channel_lock);
+	assert(!node->channel);
 	node->channel = this;
 	if ( !first )
 		first = last = node,
@@ -124,6 +128,23 @@ void PollNode::Cancel()
 {
 	if ( channel )
 		channel->Unregister(this);
+	if ( slave )
+		slave->Cancel();
+}
+
+PollNode* PollNode::CreateSlave()
+{
+	PollNode* new_slave = new PollNode();
+	if ( !new_slave )
+		return NULL;
+	new_slave->wake_mutex = wake_mutex;
+	new_slave->wake_cond = wake_cond;
+	new_slave->events = events;
+	new_slave->revents = revents;
+	new_slave->woken = woken;
+	new_slave->master = master;
+	new_slave->slave = slave;
+	return slave = new_slave;
 }
 
 namespace Poll {
@@ -191,7 +212,7 @@ static int sys_ppoll(struct pollfd* user_fds, nfds_t nfds,
 	bool unexpected_error = false;
 
 	nfds_t reqs = nfds;
-	for ( reqs = 0; !unexpected_error && reqs < nfds; reqs++ )
+	for ( reqs = 0; !unexpected_error && reqs < nfds; )
 	{
 		PollNode* node = nodes + reqs;
 		if ( fds[reqs].fd < 0 )
@@ -202,16 +223,18 @@ static int sys_ppoll(struct pollfd* user_fds, nfds_t nfds,
 			// user-space immediately? What if conditions are already true on
 			// some of the file descriptors (those we have processed so far?)?
 			node->revents = 0;
+			reqs++;
 			continue;
 		}
 		Ref<Descriptor> desc = process->GetDescriptor(fds[reqs].fd);
-		if ( !desc ) { unexpected_error = true; break; }
-		node->events = fds[reqs].events;
+		if ( !desc ) { self_woken = unexpected_error = true; break; }
+		node->events = fds[reqs].events | POLL__ONLY_REVENTS;
 		node->revents = 0;
 		node->wake_mutex = &wakeup_mutex;
 		node->wake_cond = &wakeup_cond;
 		node->woken = (bool*) &remote_woken;
-		// TODO: How should erors be handled?
+		reqs++;
+		// TODO: How should errors be handled?
 		if ( desc->poll(&ctx, node) == 0 )
 			self_woken = true;
 		else if ( errno != EAGAIN )
@@ -231,7 +254,8 @@ static int sys_ppoll(struct pollfd* user_fds, nfds_t nfds,
 	kthread_mutex_unlock(&wakeup_mutex);
 
 	for ( nfds_t i = 0; i < reqs; i++ )
-		nodes[i].Cancel();
+		if ( 0 <= fds[i].fd )
+			nodes[i].Cancel();
 
 	if ( !unexpected_error )
 	{

@@ -289,9 +289,14 @@ ssize_t StreamSocket::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 int StreamSocket::poll(ioctx_t* ctx, PollNode* node)
 {
 	if ( is_connected )
-		// TODO: The poll API is broken, can't provide multiple sources on a poll
-		//       node. For now, polling the read channel should be most useful.
-		return incoming.poll(ctx, node);
+	{
+		PollNode* slave = node->CreateSlave();
+		if ( !slave )
+			return -1;
+		int incoming_result = incoming.poll(ctx, node);
+		int outgoing_result = outgoing.poll(ctx, slave);
+		return incoming_result == 0 || outgoing_result == 0 ? 0 : -1;
+	}
 	if ( is_listening )
 		return manager->AcceptPoll(this, ctx, node);
 	return errno = ENOTCONN, -1;
@@ -360,8 +365,9 @@ void Manager::Unlisten(StreamSocket* socket)
 int Manager::AcceptPoll(StreamSocket* socket, ioctx_t* /*ctx*/, PollNode* node)
 {
 	ScopedLock lock(&manager_lock);
-	if ( socket->first_pending )
-		return (node->revents |= POLLIN | POLLRDNORM), 0;
+	if ( socket->first_pending &&
+	    ((POLLIN | POLLRDNORM) & node->events) )
+		return node->master->revents |= ((POLLIN | POLLRDNORM) & node->events), 0;
 	socket->accept_poll_channel.Register(node);
 	return errno = EAGAIN, -1;
 }

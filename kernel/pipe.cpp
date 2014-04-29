@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -62,13 +62,16 @@ public:
 	void PerhapsShutdown();
 	ssize_t read(ioctx_t* ctx, uint8_t* buf, size_t count);
 	ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
-	int poll(ioctx_t* ctx, PollNode* node);
+	int read_poll(ioctx_t* ctx, PollNode* node);
+	int write_poll(ioctx_t* ctx, PollNode* node);
 
 private:
-	short PollEventStatus();
+	short ReadPollEventStatus();
+	short WritePollEventStatus();
 
 private:
-	PollChannel poll_channel;
+	PollChannel read_poll_channel;
+	PollChannel write_poll_channel;
 	kthread_mutex_t pipelock;
 	kthread_cond_t readcond;
 	kthread_cond_t writecond;
@@ -114,7 +117,8 @@ void PipeChannel::CloseWriting()
 void PipeChannel::PerhapsShutdown()
 {
 	kthread_mutex_lock(&pipelock);
-	poll_channel.Signal(PollEventStatus());
+	read_poll_channel.Signal(ReadPollEventStatus());
+	write_poll_channel.Signal(WritePollEventStatus());
 	bool deleteme = !anyreading & !anywriting;
 	kthread_mutex_unlock(&pipelock);
 	if ( deleteme )
@@ -145,7 +149,8 @@ ssize_t PipeChannel::read(ioctx_t* ctx, uint8_t* buf, size_t count)
 	bufferoffset = (bufferoffset + amount) % buffersize;
 	bufferused -= amount;
 	kthread_cond_broadcast(&writecond);
-	poll_channel.Signal(PollEventStatus());
+	read_poll_channel.Signal(ReadPollEventStatus());
+	write_poll_channel.Signal(WritePollEventStatus());
 	return amount;
 }
 
@@ -178,34 +183,48 @@ ssize_t PipeChannel::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 	ctx->copy_from_src(buffer + writeoffset, buf, amount);
 	bufferused += amount;
 	kthread_cond_broadcast(&readcond);
-	poll_channel.Signal(PollEventStatus());
+	read_poll_channel.Signal(ReadPollEventStatus());
+	write_poll_channel.Signal(WritePollEventStatus());
 	return amount;
 }
 
-short PipeChannel::PollEventStatus()
+short PipeChannel::ReadPollEventStatus()
 {
 	short status = 0;
-	if ( !anywriting )
+	if ( !anywriting && !bufferused )
 		status |= POLLHUP;
-	if ( !anyreading )
-		status |= POLLERR;
 	if ( bufferused )
 		status |= POLLIN | POLLRDNORM;
-	if ( bufferused != buffersize )
+	return status;
+}
+
+short PipeChannel::WritePollEventStatus()
+{
+	short status = 0;
+	if ( !anyreading )
+		status |= POLLERR;
+	if ( anyreading && bufferused != buffersize )
 		status |= POLLOUT | POLLWRNORM;
 	return status;
 }
 
-int PipeChannel::poll(ioctx_t* /*ctx*/, PollNode* node)
+int PipeChannel::read_poll(ioctx_t* /*ctx*/, PollNode* node)
 {
 	ScopedLockSignal lock(&pipelock);
-	short ret_status = PollEventStatus() & node->events;
+	short ret_status = ReadPollEventStatus() & node->events;
 	if ( ret_status )
-	{
-		node->revents |= ret_status;
-		return 0;
-	}
-	poll_channel.Register(node);
+		return node->master->revents |= ret_status, 0;
+	read_poll_channel.Register(node);
+	return errno = EAGAIN, -1;
+}
+
+int PipeChannel::write_poll(ioctx_t* /*ctx*/, PollNode* node)
+{
+	ScopedLockSignal lock(&pipelock);
+	short ret_status = WritePollEventStatus() & node->events;
+	if ( ret_status )
+		return node->master->revents |= ret_status, 0;
+	write_poll_channel.Register(node);
 	return errno = EAGAIN, -1;
 }
 
@@ -263,7 +282,8 @@ ssize_t PipeEndpoint::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 
 int PipeEndpoint::poll(ioctx_t* ctx, PollNode* node)
 {
-	return channel->poll(ctx, node);
+	return reading ? channel->read_poll(ctx, node)
+	               : channel->write_poll(ctx, node);
 }
 
 class PipeNode : public AbstractInode

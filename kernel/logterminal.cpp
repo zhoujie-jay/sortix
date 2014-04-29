@@ -445,7 +445,7 @@ int LogTerminal::poll(ioctx_t* /*ctx*/, PollNode* node)
 	short ret_status = PollEventStatus() & node->events;
 	if ( ret_status )
 	{
-		node->revents |= ret_status;
+		node->master->revents |= ret_status;
 		return 0;
 	}
 	poll_channel.Register(node);
