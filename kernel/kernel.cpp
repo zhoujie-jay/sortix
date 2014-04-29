@@ -547,9 +547,6 @@ static void BootThread(void* /*user*/)
 		      "needs more memory to boot using this initrd, as a rule of thumb "
 		      "you need twice as much memory as the size of the initrd device.");
 
-	// We no longer need the initrd, so free its resources.
-	InitRD::Delete();
-
 	//
 	// Stage 5. Loading and Initializing Core Drivers.
 	//

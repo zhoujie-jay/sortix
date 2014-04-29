@@ -65,7 +65,6 @@
 #include <sortix/kernel/worker.h>
 
 #include "elf.h"
-#include "initrd.h"
 
 #if defined(__i386__) || defined(__x86_64__)
 #include "x86-family/float.h"

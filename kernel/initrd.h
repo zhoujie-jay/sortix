@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -33,9 +33,7 @@ class Descriptor;
 
 namespace InitRD {
 
-bool ExtractInto(Ref<Descriptor> desc);
 bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc);
-void Delete();
 
 } // namespace InitRD
 

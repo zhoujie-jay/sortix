@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -31,6 +31,7 @@
 #include <string.h>
 #include <timespec.h>
 
+#include <sortix/dirent.h>
 #include <sortix/fcntl.h>
 #include <sortix/initrd.h>
 #include <sortix/mman.h>
@@ -258,11 +259,11 @@ void Init(addr_t phys, size_t size)
 	CheckSum();
 }
 
-static bool ExtractDir(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> node);
+static bool ExtractDir(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> node, Ref<Descriptor> links);
 static bool ExtractFile(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> file);
-static bool ExtractNode(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> node);
+static bool ExtractNode(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> node, Ref<Descriptor> links);
 
-static bool ExtractDir(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> dir)
+static bool ExtractDir(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> dir, Ref<Descriptor> links)
 {
 	size_t numfiles = GetNumFiles(ino);
 	for ( size_t i = 0; i < numfiles; i++ )
@@ -275,7 +276,7 @@ static bool ExtractDir(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> dir)
 		uint32_t childino = Traverse(ino, name);
 		if ( !childino )
 			return false;
-		const initrd_inode_t* child = GetInode(childino);
+		initrd_inode_t* child = (initrd_inode_t*) GetInode(childino);
 		mode_t mode = InitRDModeToHost(child->mode);
 		if ( INITRD_S_ISDIR(child->mode) )
 		{
@@ -284,16 +285,41 @@ static bool ExtractDir(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> dir)
 			Ref<Descriptor> desc = dir->open(ctx, name, O_SEARCH | O_DIRECTORY, 0);
 			if ( !desc )
 				return false;
-			if ( !ExtractNode(ctx, childino, desc) )
+			if ( !ExtractNode(ctx, childino, desc, links) )
 				return false;
 		}
 		if ( INITRD_S_ISREG(child->mode) )
 		{
-			Ref<Descriptor> desc = dir->open(ctx, name, O_WRITE | O_CREATE, mode);
-			if ( !desc )
-				return false;
-			if ( !ExtractNode(ctx, childino, desc) )
-				return false;
+			assert(child->nlink != 0);
+			char link_path[sizeof(childino) * 3];
+			snprintf(link_path, sizeof(link_path), "%ju", (uintmax_t) childino);
+			Ref<Descriptor> existing(links->open(ctx, link_path, O_READ, 0));
+			if ( !existing || dir->link(ctx, name, existing) != 0 )
+			{
+				Ref<Descriptor> desc(dir->open(ctx, name, O_WRITE | O_CREATE, mode));
+				if ( !desc )
+					return false;
+				if ( !ExtractNode(ctx, childino, desc, links) )
+					return false;
+				if ( 2 <= child->nlink )
+					links->link(ctx, link_path, desc);
+			}
+			if ( --child->nlink == 0 && INITRD_S_ISREG(child->mode) )
+			{
+				size_t filesize;
+				const uint8_t* data = Open(childino, &filesize);
+				uintptr_t from = (uintptr_t) data;
+				uintptr_t size = filesize;
+				uintptr_t from_aligned = Page::AlignUp(from);
+				uintptr_t from_distance = from_aligned - from;
+				if ( from_distance <= size )
+				{
+					uintptr_t size_aligned = Page::AlignDown(size - from_distance);
+					for ( size_t i = 0; i < size_aligned; i += Page::Size() )
+						Page::Put(Memory::Unmap(from_aligned + i));
+					Memory::Flush();
+				}
+			}
 		}
 	}
 	return true;
@@ -318,7 +344,7 @@ static bool ExtractFile(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> file)
 	return true;
 }
 
-static bool ExtractNode(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> node)
+static bool ExtractNode(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> node, Ref<Descriptor> links)
 {
 	const initrd_inode_t* inode = GetInode(ino);
 	if ( !inode )
@@ -328,7 +354,7 @@ static bool ExtractNode(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> node)
 	if ( node->chown(ctx, inode->uid, inode->gid) < 0 )
 		return false;
 	if ( INITRD_S_ISDIR(inode->mode) )
-		if ( !ExtractDir(ctx, ino, node) )
+		if ( !ExtractDir(ctx, ino, node, links) )
 			return false;
 	if ( INITRD_S_ISREG(inode->mode) )
 		if ( !ExtractFile(ctx, ino, node) )
@@ -340,36 +366,55 @@ static bool ExtractNode(ioctx_t* ctx, uint32_t ino, Ref<Descriptor> node)
 	return true;
 }
 
-bool ExtractInto(Ref<Descriptor> desc)
-{
-	ioctx_t ctx; SetupKernelIOCtx(&ctx);
-	return ExtractNode(&ctx, sb->root, desc);
-}
-
 bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc)
 {
 	Init(physaddr, size);
-	return ExtractInto(desc);
-}
 
-void Delete()
-{
-	size_t size = initrdsize;
+	ioctx_t ctx; SetupKernelIOCtx(&ctx);
+	if ( desc->mkdir(&ctx, ".initrd-links", 0777) != 0 )
+		return false;
 
-	initrd = NULL;
-	initrdsize = 0;
+	Ref<Descriptor> links(desc->open(&ctx, ".initrd-links", O_READ | O_DIRECTORY, 0));
+	if ( !links )
+		return false;
+
+	if ( !ExtractNode(&ctx, sb->root, desc, links) )
+		return false;
+
+	union
+	{
+		struct kernel_dirent dirent;
+		uint8_t dirent_data[sizeof(struct kernel_dirent) + sizeof(uintmax_t) * 3];
+	};
+
+	while ( 0 < links->readdirents(&ctx, &dirent, sizeof(dirent_data), 1) &&
+	        ((const char*) dirent.d_name)[0] )
+	{
+		if ( ((const char*) dirent.d_name)[0] == '.' )
+			continue;
+		links->unlink(&ctx, dirent.d_name);
+		links->lseek(&ctx, 0, SEEK_SET);
+	}
+
+	desc->rmdir(&ctx, ".initrd-links");
 
 	// Unmap the pages and return the physical frames for reallocation.
 	addr_t mapat = initrd_addr_alloc.from;
-	for ( size_t i = 0; i < size; i += Page::Size() )
+	for ( size_t i = 0; i < initrdsize; i += Page::Size() )
 	{
+		if ( !Memory::LookUp(mapat + i, NULL, NULL) )
+			continue;
 		addr_t addr = Memory::Unmap(mapat + i);
 		Page::Put(addr);
 	}
 	Memory::Flush();
 
+	initrdsize = 0;
+
 	// Free the used virtual address space.
 	FreeKernelAddress(&initrd_addr_alloc);
+
+	return true;
 }
 
 } // namespace InitRD
