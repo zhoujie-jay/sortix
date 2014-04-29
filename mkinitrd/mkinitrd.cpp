@@ -161,11 +161,13 @@ Node* RecursiveSearch(const char* real_path, const char* virt_path,
 	if ( lstat(real_path, &st) ) { perror(real_path); return NULL; }
 
 	Node* cached = LookupCache(st.st_dev, st.st_ino);
-	if ( cached ) { cached->refcount++; return cached; }
+	if ( cached )
+		return cached->nlink++, cached->refcount++, cached;
 
 	Node* node = (Node*) calloc(1, sizeof(Node));
 	if ( !node ) { return NULL; }
 
+	node->nlink = 1;
 	node->refcount = 1;
 	node->mode = st.st_mode;
 	node->ino = (*ino)++;
