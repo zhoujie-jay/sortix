@@ -260,7 +260,7 @@ bool PipeEndpoint::Connect(PipeEndpoint* destination)
 {
 	assert(!channel);
 	assert(!destination->channel);
-	const size_t BUFFER_SIZE = 4096;
+	const size_t BUFFER_SIZE = 64 * 1024;
 	size_t size = BUFFER_SIZE;
 	uint8_t* buffer = new uint8_t[size];
 	if ( !buffer )
