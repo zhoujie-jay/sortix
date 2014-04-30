@@ -418,6 +418,9 @@ Ref<StreamSocket> Manager::Accept(StreamSocket* socket, ioctx_t* ctx,
 		return Ref<StreamSocket>(NULL);
 	}
 
+	client->outgoing.SetSIGPIPEDelivery(false);
+	server->outgoing.SetSIGPIPEDelivery(false);
+
 	client->is_connected = true;
 	server->is_connected = true;
 

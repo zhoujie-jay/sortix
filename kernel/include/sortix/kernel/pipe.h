@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -41,6 +41,10 @@ public:
 	~PipeEndpoint();
 	bool Connect(PipeEndpoint* destination);
 	void Disconnect();
+	bool GetSIGPIPEDelivery();
+	bool SetSIGPIPEDelivery(bool deliver_sigpipe);
+	size_t Size();
+	bool Resize(size_t new_size);
 	ssize_t read(ioctx_t* ctx, uint8_t* buf, size_t count);
 	ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
 	int poll(ioctx_t* ctx, PollNode* node);

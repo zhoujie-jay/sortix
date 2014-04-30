@@ -60,6 +60,8 @@ public:
 	void CloseReading();
 	void CloseWriting();
 	void PerhapsShutdown();
+	bool GetSIGPIPEDelivery();
+	void SetSIGPIPEDelivery(bool deliver_sigpipe);
 	ssize_t read(ioctx_t* ctx, uint8_t* buf, size_t count);
 	ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
 	int read_poll(ioctx_t* ctx, PollNode* node);
@@ -81,6 +83,7 @@ private:
 	size_t buffersize;
 	bool anyreading;
 	bool anywriting;
+	bool is_sigpipe_enabled;
 
 };
 
@@ -93,6 +96,7 @@ PipeChannel::PipeChannel(uint8_t* buffer, size_t buffersize)
 	this->buffersize = buffersize;
 	bufferoffset = bufferused = 0;
 	anyreading = anywriting = true;
+	is_sigpipe_enabled = true;
 }
 
 PipeChannel::~PipeChannel()
@@ -170,9 +174,9 @@ ssize_t PipeChannel::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 	}
 	if ( !anyreading )
 	{
-		CurrentThread()->DeliverSignal(SIGPIPE);
-		errno = EPIPE;
-		return -1;
+		if ( is_sigpipe_enabled )
+			CurrentThread()->DeliverSignal(SIGPIPE);
+		return errno = EPIPE, -1;
 	}
 	if ( buffersize - bufferused < count ) { count = buffersize - bufferused; }
 	size_t writeoffset = (bufferoffset + bufferused) % buffersize;
@@ -226,6 +230,18 @@ int PipeChannel::write_poll(ioctx_t* /*ctx*/, PollNode* node)
 		return node->master->revents |= ret_status, 0;
 	write_poll_channel.Register(node);
 	return errno = EAGAIN, -1;
+}
+
+bool PipeChannel::GetSIGPIPEDelivery()
+{
+	ScopedLockSignal lock(&pipelock);
+	return is_sigpipe_enabled;
+}
+
+void PipeChannel::SetSIGPIPEDelivery(bool deliver_sigpipe)
+{
+	ScopedLockSignal lock(&pipelock);
+	is_sigpipe_enabled = deliver_sigpipe;
 }
 
 PipeEndpoint::PipeEndpoint()
@@ -284,6 +300,20 @@ int PipeEndpoint::poll(ioctx_t* ctx, PollNode* node)
 {
 	return reading ? channel->read_poll(ctx, node)
 	               : channel->write_poll(ctx, node);
+}
+
+bool PipeEndpoint::GetSIGPIPEDelivery()
+{
+	return !reading ? channel->GetSIGPIPEDelivery() : false;
+}
+
+bool PipeEndpoint::SetSIGPIPEDelivery(bool deliver_sigpipe)
+{
+	if ( !reading )
+		channel->SetSIGPIPEDelivery(deliver_sigpipe);
+	else if ( reading && deliver_sigpipe != false )
+		return errno = EINVAL, false;
+	return true;
 }
 
 class PipeNode : public AbstractInode
