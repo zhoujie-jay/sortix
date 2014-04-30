@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of Sortix.
 
@@ -24,6 +24,7 @@
 
 // TODO: Should this be moved into user-space?
 
+#include <sys/socket.h>
 #include <sys/un.h>
 
 #include <assert.h>
@@ -47,14 +48,9 @@
 #include <sortix/kernel/poll.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/refcount.h>
+#include <sortix/kernel/sockopt.h>
 
 #include "fs.h"
-
-// TODO: This is declared in the <sys/socket.h> header that isn't ready for
-//       kernel usage, so we declare it here for now.
-#ifndef AF_UNIX
-#define AF_UNIX 3
-#endif
 
 namespace Sortix {
 namespace NetFS {
@@ -104,6 +100,10 @@ public:
 	virtual ssize_t read(ioctx_t* ctx, uint8_t* buf, size_t count);
 	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
 	virtual int poll(ioctx_t* ctx, PollNode* node);
+	virtual int getsockopt(ioctx_t* ctx, int level, int option_name,
+	                       void* option_value, size_t* option_size_ptr);
+	virtual int setsockopt(ioctx_t* ctx, int level, int option_name,
+	                       const void* option_value, size_t option_size);
 
 private:
 	int do_bind(ioctx_t* ctx, const uint8_t* addr, size_t addrsize);
@@ -300,6 +300,57 @@ int StreamSocket::poll(ioctx_t* ctx, PollNode* node)
 	if ( is_listening )
 		return manager->AcceptPoll(this, ctx, node);
 	return errno = ENOTCONN, -1;
+}
+
+int StreamSocket::getsockopt(ioctx_t* ctx, int level, int option_name,
+	                         void* option_value, size_t* option_size_ptr)
+{
+	if ( level != SOL_SOCKET )
+		return errno = EINVAL, -1;
+
+	uintmax_t result = 0;
+	switch ( option_name )
+	{
+	case SO_RCVBUF: result = incoming.Size(); break;
+	case SO_SNDBUF: result = outgoing.Size(); break;
+	default: return errno = ENOPROTOOPT, -1; break;
+	}
+
+	if ( !sockopt_return_uintmax(result, ctx, option_value, option_size_ptr) )
+		return -1;
+
+	return 0;
+}
+
+int StreamSocket::setsockopt(ioctx_t* ctx, int level, int option_name,
+	                         const void* option_value, size_t option_size)
+{
+	if ( level != SOL_SOCKET )
+		return errno = EINVAL, -1;
+
+	uintmax_t value;
+	if ( !sockopt_fetch_uintmax(&value, ctx, option_value, option_size) )
+		return -1;
+
+	switch ( option_name )
+	{
+	case SO_RCVBUF:
+		if ( SIZE_MAX < value )
+			return errno = EINVAL, -1;
+		if ( !incoming.Resize((size_t) value) )
+			return -1;
+		break;
+	case SO_SNDBUF:
+		if ( SIZE_MAX < value )
+			return errno = EINVAL, -1;
+		if ( !outgoing.Resize((size_t) value) )
+			return -1;
+		break;
+	default:
+		return errno = ENOPROTOOPT, -1;
+	}
+
+	return 0;
 }
 
 Manager::Manager(uid_t owner, gid_t group, mode_t mode)

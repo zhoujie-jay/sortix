@@ -129,6 +129,7 @@ resource.o \
 scheduler.o \
 segment.o \
 signal.o \
+sockopt.o \
 string.o \
 symbol.o \
 syscall.o \

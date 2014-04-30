@@ -62,6 +62,10 @@ public:
 	void PerhapsShutdown();
 	bool GetSIGPIPEDelivery();
 	void SetSIGPIPEDelivery(bool deliver_sigpipe);
+	size_t ReadSize();
+	size_t WriteSize();
+	bool ReadResize(size_t new_size);
+	bool WriteResize(size_t new_size);
 	ssize_t read(ioctx_t* ctx, uint8_t* buf, size_t count);
 	ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
 	int read_poll(ioctx_t* ctx, PollNode* node);
@@ -81,6 +85,7 @@ private:
 	size_t bufferoffset;
 	size_t bufferused;
 	size_t buffersize;
+	size_t pretended_read_buffer_size;
 	bool anyreading;
 	bool anywriting;
 	bool is_sigpipe_enabled;
@@ -244,6 +249,56 @@ void PipeChannel::SetSIGPIPEDelivery(bool deliver_sigpipe)
 	is_sigpipe_enabled = deliver_sigpipe;
 }
 
+size_t PipeChannel::ReadSize()
+{
+	ScopedLockSignal lock(&pipelock);
+	return pretended_read_buffer_size;
+}
+
+size_t PipeChannel::WriteSize()
+{
+	ScopedLockSignal lock(&pipelock);
+	return buffersize;
+}
+
+bool PipeChannel::ReadResize(size_t new_size)
+{
+	ScopedLockSignal lock(&pipelock);
+	if ( !new_size )
+		return errno = EINVAL, false;
+	// The read and write end share the same buffer, so let the write end decide
+	// how big a buffer it wants and pretend the read end can decide too.
+	pretended_read_buffer_size = new_size;
+	return true;
+}
+
+bool PipeChannel::WriteResize(size_t new_size)
+{
+	ScopedLockSignal lock(&pipelock);
+	if ( !new_size )
+		return errno = EINVAL, false;
+
+	size_t MAX_PIPE_SIZE = 2 * 1024 * 1024;
+	if ( MAX_PIPE_SIZE < new_size )
+		new_size = MAX_PIPE_SIZE;
+
+	// Refuse to lose data if the the new size would cause truncation.
+	if ( new_size < bufferused )
+		new_size = bufferused;
+
+	uint8_t* new_buffer = new uint8_t[new_size];
+	if ( !new_buffer )
+		return false;
+
+	for ( size_t i = 0; i < bufferused; i++ )
+		new_buffer[i] = buffer[(bufferoffset + i) % buffersize];
+	delete[] buffer;
+	buffer = new_buffer;
+	buffersize = new_size;
+
+	return true;
+}
+
 PipeEndpoint::PipeEndpoint()
 {
 	channel = NULL;
@@ -314,6 +369,18 @@ bool PipeEndpoint::SetSIGPIPEDelivery(bool deliver_sigpipe)
 	else if ( reading && deliver_sigpipe != false )
 		return errno = EINVAL, false;
 	return true;
+}
+
+size_t PipeEndpoint::Size()
+{
+	return reading ? channel->ReadSize()
+	               : channel->WriteSize();
+}
+
+bool PipeEndpoint::Resize(size_t new_size)
+{
+	return reading ? channel->ReadResize(new_size)
+	               : channel->WriteResize(new_size);
 }
 
 class PipeNode : public AbstractInode
