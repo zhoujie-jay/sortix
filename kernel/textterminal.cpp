@@ -560,6 +560,20 @@ void TextTerminal::RunAnsiCommand(TextBuffer* textbuf, char c)
 				vgacolor &= 0x0F;
 				vgacolor |= conversion[val] << 4;
 			}
+			// Set text color.
+			else if ( 90 <= cmd && cmd <= 97 )
+			{
+				unsigned val = cmd - 90;
+				vgacolor &= 0xF0;
+				vgacolor |= (0x8 | conversion[val]) << 0;
+			}
+			// Set background color.
+			else if ( 100 <= cmd && cmd <= 107 )
+			{
+				unsigned val = cmd - 100;
+				vgacolor &= 0x0F;
+				vgacolor |= (0x8 | conversion[val]) << 4;
+			}
 			// TODO: There are many other things we don't support.
 		}
 	} break;

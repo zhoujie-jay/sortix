@@ -112,9 +112,9 @@ LFBTextBuffer* CreateLFBTextBuffer(uint8_t* lfb, uint32_t lfbformat,
 	ret->attrs = attrs;
 	for ( size_t i = 0; i < 16UL; i++ )
 	{
-		uint8_t r = i & 0b0100 ? (i & 0b1000 ? 255 : 191) : 0;
-		uint8_t g = i & 0b0010 ? (i & 0b1000 ? 255 : 191) : 0;
-		uint8_t b = i & 0b0001 ? (i & 0b1000 ? 255 : 191) : 0;
+		uint8_t r = i & 0b0100 ? (i & 0b1000 ? 255 : 191) : (i & 0b1000 ? 63 : 0);
+		uint8_t g = i & 0b0010 ? (i & 0b1000 ? 255 : 191) : (i & 0b1000 ? 63 : 0);
+		uint8_t b = i & 0b0001 ? (i & 0b1000 ? 255 : 191) : (i & 0b1000 ? 63 : 0);
 		ret->colors[i] = ColorFromRGB(r, g, b);
 	}
 	ret->cursorenabled = true;
