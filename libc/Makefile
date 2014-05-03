@@ -236,6 +236,7 @@ timespec/timespec.o \
 time/strftime_l.o \
 time/strftime.o \
 time/timegm.o \
+wchar/btowc.o \
 wchar/mbrlen.o \
 wchar/mbrtowc.o \
 wchar/mbsinit.o \
@@ -266,6 +267,7 @@ wchar/wcstoull.o \
 wchar/wcstoul.o \
 wchar/wcswidth.o \
 wchar/wcsxfrm.o \
+wchar/wctob.o \
 wchar/wcwidth.o \
 wchar/wmemchr.o \
 wchar/wmemcmp.o \

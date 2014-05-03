@@ -120,7 +120,7 @@ typedef struct
 
 struct tm;
 
-/* TODO: wint_t btowc(int); */
+wint_t btowc(int);
 /* TODO: wint_t fgetwc(FILE*); */
 /* TODO: wchar_t* fgetws(wchar_t* __restrict, int, FILE* __restrict); */
 /* TODO: wint_t fputwc(wchar_t, FILE*); */
@@ -155,7 +155,7 @@ wchar_t* wcstok(wchar_t* __restrict, const wchar_t* __restrict, wchar_t** __rest
 long wcstol(const wchar_t* __restrict, wchar_t** __restrict, int);
 unsigned long wcstoul(const wchar_t* __restrict, wchar_t** __restrict, int);
 size_t wcsxfrm(wchar_t* __restrict, const wchar_t* __restrict, size_t);
-/* TODO: int wctob(wint_t); */
+int wctob(wint_t);
 wchar_t* wmemchr(const wchar_t*, wchar_t, size_t);
 int wmemcmp(const wchar_t*, const wchar_t*, size_t);
 wchar_t* wmemcpy(wchar_t* __restrict, const wchar_t* __restrict, size_t);
