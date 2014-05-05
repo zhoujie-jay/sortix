@@ -15,6 +15,7 @@ editor \
 ext \
 games \
 init \
+kblayout \
 kblayout-compiler \
 mbr \
 mkinitrd \

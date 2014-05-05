@@ -1,0 +1,246 @@
+name "Danish"
+
+modifier shift
+modifier caps
+modifier altgr
+modifier numlock
+
+KLSHIFT: modify shift
+KRSHIFT: modify shift
+KCAPSLOCK: toggle caps
+KRALT: modify altgr
+KNUMLOCK: toggle numlock
+
+KBKSPC: "\b"
+KTAB: "\t"
+KENTER: "\n"
+KSPACE: " "
+KPADENTER: "\n"
+
+KSYM12: "*"
+KSYM13: "-"
+KSYM14: "+"
+KSYM16: "/"
+
+-shift:
+	KSYM15: ","
+
+-shift & -altgr:
+	K1: "1"
+	K2: "2"
+	K3: "3"
+	K4: "4"
+	K5: "5"
+	K6: "6"
+	K7: "7"
+	K8: "8"
+	K9: "9"
+	K0: "0"
+	KSYM1: "+"
+	KSYM2: dead '
+	KSYM4: dead "
+	KSYM7: "½"
+	KSYM8: "'"
+	KSYM9: ","
+	KSYM10: "."
+	KSYM11: "-"
+	KNO_STANDARD_MEANING_2: "<"
+
++shift & -altgr:
+	K1: "!"
+	K2: "\""
+	K3: "#"
+	K4: "¤"
+	K5: "%"
+	K6: "&"
+	K7: "/"
+	K8: "("
+	K9: ")"
+	K0: "="
+	KSYM1: "?"
+	KSYM2: dead `
+	KSYM4: dead ^
+	KSYM7: "§"
+	KSYM8: "*"
+	KSYM9: ";"
+	KSYM10: ":"
+	KSYM11: "_"
+	KNO_STANDARD_MEANING_2: ">"
+
+-shift & +altgr:
+	K1: "¡"
+	K2: "@"
+	K3: "£"
+	K4: "$"
+	K5: "½"
+	K6: "¥"
+	K7: "{"
+	K8: "["
+	K9: "]"
+	K0: "}"
+	KSYM1: "±"
+	KSYM2: "|"
+	KSYM4: dead ~
+	KSYM7: "¾"
+	KSYM8: dead ˝
+	KSYM9: dead ¸
+	KSYM10: "·"
+	KSYM11: dead ̣
+	KNO_STANDARD_MEANING_2: "\\"
+
++shift & +altgr:
+	K1: "¹"
+	K2: "²""
+	K3: "³"
+	K4: "¼"
+	K5: "¢"
+	K6: "⅝"
+	K7: "÷"
+	K8: "«"
+	K9: "»"
+	K0: "°"
+	KSYM1: "¿"
+	KSYM2: "¦"
+	KSYM4: dead ˇ
+	KSYM7: "¶"
+	KSYM8: "×"
+	KSYM9: dead ˛
+	KSYM10: dead ˙
+	KSYM11: dead ˙
+	KNO_STANDARD_MEANING_2: "¬"
+
+shift = caps & -altgr:
+	KQ: "q"
+	KW: "w"
+	KE: "e"
+	KR: "r"
+	KT: "t"
+	KY: "y"
+	KU: "u"
+	KI: "i"
+	KO: "o"
+	KP: "p"
+	KSYM3: "å"
+	KA: "a"
+	KS: "s"
+	KD: "d"
+	KF: "f"
+	KG: "g"
+	KH: "h"
+	KJ: "j"
+	KK: "k"
+	KL: "l"
+	KSYM5: "æ"
+	KSYM6: "ø"
+	KZ: "z"
+	KX: "x"
+	KC: "c"
+	KV: "v"
+	KB: "b"
+	KN: "n"
+	KM: "m"
+
+shift ^ caps & -altgr:
+	KQ: "Q"
+	KW: "W"
+	KE: "E"
+	KR: "R"
+	KT: "T"
+	KY: "Y"
+	KU: "U"
+	KI: "I"
+	KO: "O"
+	KP: "P"
+	KSYM3: "Å"
+	KA: "A"
+	KS: "S"
+	KD: "D"
+	KF: "F"
+	KG: "G"
+	KH: "H"
+	KJ: "J"
+	KK: "K"
+	KL: "L"
+	KSYM5: "Æ"
+	KSYM6: "Ø"
+	KZ: "Z"
+	KX: "X"
+	KC: "C"
+	KV: "V"
+	KB: "B"
+	KN: "N"
+	KM: "M"
+
+-shift & +altgr:
+	KQ: "@"
+	KW: "ł"
+	KE: "€"
+	KR: "®"
+	KT: "þ"
+	KY: "←"
+	KU: "↓"
+	KI: "→"
+	KO: "œ"
+	KP: "þ"
+	KSYM3: dead "
+	KA: "ª"
+	KS: "ß"
+	KD: "ð"
+	KF: "đ"
+	KG: "ŋ"
+	KH: "ħ"
+	KJ: dead ̉
+	KK: "ĸ"
+	KL: "ł"
+	KSYM5: dead '
+	KSYM6: dead ^
+	KZ: "«"
+	KX: "»"
+	KC: "©"
+	KV: "“"
+	KB: "”"
+	KN: "="
+	KM: "µ"
+
++shift & +altgr:
+	KQ: "Ω"
+	KW: "Ł"
+	KE: "¢"
+	KR: "®"
+	KT: "Þ"
+	KY: "¥"
+	KU: "↑"
+	KI: "ı"
+	KO: "Œ"
+	KP: "Þ"
+	KSYM3: dead °
+	KA: "º"
+	KS: "§"
+	KD: "Ð"
+	KF: "ª"
+	KG: "Ŋ"
+	KH: "ħ"
+	KJ: dead ̛
+	KK: "&"
+	KL: "Ł"
+	KSYM5: dead ˝
+	KSYM6: dead ˇ
+	KZ: "<"
+	KX: ">"
+	KC: "©"
+	KV: "‘"
+	KB: "’"
+	KN: "N"
+	KM: "º"
+
++numlock:
+	KPAD7: "7"
+	KPAD8: "8"
+	KPAD9: "9"
+	KPAD4: "4"
+	KPAD5: "5"
+	KPAD6: "6"
+	KPAD1: "1"
+	KPAD2: "2"
+	KPAD3: "3"
+	KPAD0: "0"
