@@ -110,6 +110,8 @@ public:
 	                       void* option_value, size_t* option_size_ptr) = 0;
 	virtual int setsockopt(ioctx_t* ctx, int level, int option_name,
 	                       const void* option_value, size_t option_size) = 0;
+	virtual ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count) = 0;
+	virtual ssize_t tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count) = 0;
 
 };
 
@@ -194,6 +196,8 @@ public:
 	                       void* option_value, size_t* option_size_ptr);
 	virtual int setsockopt(ioctx_t* ctx, int level, int option_name,
 	                       const void* option_value, size_t option_size);
+	virtual ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count);
+	virtual ssize_t tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count);
 
 };
 

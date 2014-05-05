@@ -396,4 +396,14 @@ int AbstractInode::setsockopt(ioctx_t* /*ctx*/, int /*level*/, int /*option_name
 	return errno = ENOTSOCK, -1;
 }
 
+ssize_t AbstractInode::tcgetblob(ioctx_t* /*ctx*/, const char* /*name*/, void* /*buffer*/, size_t /*count*/)
+{
+	return errno = ENOTTY, -1;
+}
+
+ssize_t AbstractInode::tcsetblob(ioctx_t* /*ctx*/, const char* /*name*/, const void* /*buffer*/, size_t /*count*/)
+{
+	return errno = ENOTTY, -1;
+}
+
 } // namespace Sortix

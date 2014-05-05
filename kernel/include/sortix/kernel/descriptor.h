@@ -100,6 +100,8 @@ public:
 	               void* option_value, size_t* option_size_ptr);
 	int setsockopt(ioctx_t* ctx, int level, int option_name,
 	               const void* option_value, size_t option_size);
+	ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count);
+	ssize_t tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count);
 
 private:
 	Ref<Descriptor> open_elem(ioctx_t* ctx, const char* filename, int flags,

@@ -51,6 +51,9 @@ public:
 	virtual int settermmode(ioctx_t* ctx, unsigned termmode);
 	virtual int gettermmode(ioctx_t* ctx, unsigned* termmode);
 	virtual int poll(ioctx_t* ctx, PollNode* node);
+	virtual ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count);
+	virtual ssize_t tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count);
+
 
 public:
 	virtual void OnKeystroke(Keyboard* keyboard, void* user);

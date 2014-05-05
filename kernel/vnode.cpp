@@ -306,4 +306,14 @@ int Vnode::setsockopt(ioctx_t* ctx, int level, int option_name,
 	return inode->setsockopt(ctx, level, option_name, option_value, option_size);
 }
 
+ssize_t Vnode::tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count)
+{
+	return inode->tcgetblob(ctx, name, buffer, count);
+}
+
+ssize_t Vnode::tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count)
+{
+	return inode->tcsetblob(ctx, name, buffer, count);
+}
+
 } // namespace Sortix

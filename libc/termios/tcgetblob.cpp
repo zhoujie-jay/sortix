@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,36 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    termios.h
-    Defines values for termios.
+    termios/tcgetblob.cpp
+    Download a blob from a terminal.
 
 *******************************************************************************/
 
-/* TODO: POSIX-1.2008 compliance is only partial */
+#include <sys/syscall.h>
 
-#ifndef INCLUDE_TERMIOS_H
-#define INCLUDE_TERMIOS_H
+#include <termios.h>
 
-#include <sys/cdefs.h>
+DEFN_SYSCALL4(int, sys_tcgetblob, SYSCALL_TCGETBLOB, int, const char*, void*, size_t);
 
-#include <sys/__/types.h>
-
-#include <stddef.h>
-
-#include <sortix/termios.h>
-
-__BEGIN_DECLS
-
-#ifndef __ssize_t_defined
-#define __ssize_t_defined
-typedef __ssize_t ssize_t;
-#endif
-
-ssize_t tcgetblob(int fd, const char* name, void* buffer, size_t count);
-ssize_t tcsetblob(int fd, const char* name, const void* buffer, size_t count);
-int tcgetwincurpos(int fd, struct wincurpos* wcp);
-int tcgetwinsize(int fd, struct winsize* ws);
-
-__END_DECLS
-
-#endif
+extern "C" ssize_t tcgetblob(int fd, const char* name, void* buffer, size_t count)
+{
+	return sys_tcgetblob(fd, name, buffer, count);
+}

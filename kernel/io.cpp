@@ -1032,6 +1032,38 @@ static int sys_setsockopt(int fd, int level, int option_name,
 	return desc->setsockopt(&ctx, level, option_name, option_value, option_size);
 }
 
+static ssize_t sys_tcgetblob(int fd, const char* name, void* buffer, size_t count)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+
+	char* name_copy = NULL;
+	if ( name && !(name_copy = GetStringFromUser(name)) )
+		return -1;
+
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	ssize_t result = desc->tcgetblob(&ctx, name_copy, buffer, count);
+	delete[] name_copy;
+	return result;
+}
+
+static ssize_t sys_tcsetblob(int fd, const char* name, const void* buffer, size_t count)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+
+	char* name_copy = NULL;
+	if ( name && !(name_copy = GetStringFromUser(name)) )
+		return -1;
+
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	ssize_t result = desc->tcsetblob(&ctx, name_copy, buffer, count);
+	delete[] name_copy;
+	return result;
+}
+
 void Init()
 {
 	Syscall::Register(SYSCALL_ACCEPT4, (void*) sys_accept4);
@@ -1084,9 +1116,11 @@ void Init()
 	Syscall::Register(SYSCALL_SETSOCKOPT, (void*) sys_setsockopt);
 	Syscall::Register(SYSCALL_SETTERMMODE, (void*) sys_settermmode);
 	Syscall::Register(SYSCALL_SYMLINKAT, (void*) sys_symlinkat);
+	Syscall::Register(SYSCALL_TCGETBLOB, (void*) sys_tcgetblob);
 	Syscall::Register(SYSCALL_TCGETPGRP, (void*) sys_tcgetpgrp);
 	Syscall::Register(SYSCALL_TCGETWINCURPOS, (void*) sys_tcgetwincurpos);
 	Syscall::Register(SYSCALL_TCGETWINSIZE, (void*) sys_tcgetwinsize);
+	Syscall::Register(SYSCALL_TCSETBLOB, (void*) sys_tcsetblob);
 	Syscall::Register(SYSCALL_TCSETPGRP, (void*) sys_tcsetpgrp);
 	Syscall::Register(SYSCALL_TRUNCATEAT, (void*) sys_truncateat);
 	Syscall::Register(SYSCALL_UNLINKAT, (void*) sys_unlinkat);

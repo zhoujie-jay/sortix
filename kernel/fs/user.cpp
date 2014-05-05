@@ -236,6 +236,8 @@ public:
 	                       void* option_value, size_t* option_size_ptr);
 	virtual int setsockopt(ioctx_t* ctx, int level, int option_name,
 	                       const void* option_value, size_t option_size);
+	virtual ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count);
+	virtual ssize_t tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count);
 
 private:
 	bool SendMessage(Channel* channel, size_t type, void* ptr, size_t size,
@@ -1344,6 +1346,57 @@ int Unode::setsockopt(ioctx_t* ctx, int level, int option_name,
 	     channel->KernelSend(ctx, option_value, option_size) &&
 	     RecvMessage(channel, FSM_RESP_SUCCESS, NULL, 0) )
 		ret = 0;
+	channel->KernelClose();
+	return ret;
+}
+
+ssize_t Unode::tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count)
+{
+	Channel* channel = server->Connect();
+	if ( !channel )
+		return -1;
+	if ( !buffer )
+		count = SSIZE_MAX;
+	ssize_t ret = -1;
+	size_t namelen = name ? strlen(name) : 0;
+	struct fsm_req_tcgetblob msg;
+	struct fsm_resp_tcgetblob resp;
+	msg.ino = ino;
+	msg.namelen = namelen;
+	if ( SendMessage(channel, FSM_REQ_TCGETBLOB, &msg, sizeof(msg), namelen) &&
+	     channel->KernelSend(&kctx, name, namelen) &&
+	     RecvMessage(channel, FSM_RESP_TCGETBLOB, &resp, sizeof(resp)) )
+	{
+		if ( resp.count < count )
+			count = resp.count;
+		if ( count < resp.count )
+			errno = ERANGE;
+		else if ( !buffer || channel->KernelRecv(ctx, buffer, count) )
+			ret = (ssize_t) count;
+	}
+	channel->KernelClose();
+	return ret;
+}
+
+ssize_t Unode::tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count)
+{
+	Channel* channel = server->Connect();
+	if ( !channel )
+		return -1;
+	ssize_t ret = -1;
+	size_t namelen = name ? strlen(name) : 0;
+	if ( SIZE_MAX - count < namelen )
+		return errno = EOVERFLOW, -1;
+	struct fsm_req_tcsetblob msg;
+	struct fsm_resp_tcsetblob resp;
+	msg.ino = ino;
+	msg.namelen = namelen;
+	msg.count = count;
+	if ( SendMessage(channel, FSM_REQ_TCSETBLOB, &msg, sizeof(msg), namelen + count) &&
+	     channel->KernelSend(&kctx, name, namelen) &&
+	     channel->KernelSend(ctx, buffer, count) &&
+	     RecvMessage(channel, FSM_RESP_TCSETBLOB, &resp, sizeof(resp)) )
+		ret = (ssize_t) resp.count;
 	channel->KernelClose();
 	return ret;
 }

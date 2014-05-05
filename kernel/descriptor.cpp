@@ -640,4 +640,22 @@ int Descriptor::setsockopt(ioctx_t* ctx, int level, int option_name,
 	return vnode->setsockopt(ctx, level, option_name, option_value, option_size);
 }
 
+ssize_t Descriptor::tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count)
+{
+	if ( name && !name[0] )
+		name = NULL;
+	if ( (size_t) SSIZE_MAX < count )
+		count = (size_t) SSIZE_MAX;
+	return vnode->tcgetblob(ctx, name, buffer, count);
+}
+
+ssize_t Descriptor::tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count)
+{
+	if ( name && !name[0] )
+		name = NULL;
+	if ( (size_t) SSIZE_MAX < count )
+		return errno = EFBIG, -1;
+	return vnode->tcsetblob(ctx, name, buffer, count);
+}
+
 } // namespace Sortix

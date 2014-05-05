@@ -394,7 +394,38 @@ struct fsm_resp_getsockopt
 	/*uint8_t option[option_size];*/
 };
 
-#define FSM_MSG_NUM 49
+#define FSM_REQ_TCGETBLOB 49
+struct fsm_req_tcgetblob
+{
+	ino_t ino;
+	size_t namelen;
+	/*char name[namelen];*/
+};
+
+#define FSM_RESP_TCGETBLOB 50
+struct fsm_resp_tcgetblob
+{
+	size_t count;
+	/*uint8_t data[count];*/
+};
+
+#define FSM_REQ_TCSETBLOB 51
+struct fsm_req_tcsetblob
+{
+	ino_t ino;
+	size_t namelen;
+	size_t count;
+	/*char name[namelen];*/
+	/*uint8_t data[count];*/
+};
+
+#define FSM_RESP_TCSETBLOB 52
+struct fsm_resp_tcsetblob
+{
+	size_t count;
+};
+
+#define FSM_MSG_NUM 53
 
 #if defined(__cplusplus)
 } /* extern "C" */

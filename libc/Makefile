@@ -511,8 +511,10 @@ sys/uio/writev.o \
 sys/utsname/uname.o \
 sys/wait/wait.o \
 sys/wait/waitpid.o \
+termios/tcgetblob.o \
 termios/tcgetwincurpos.o \
 termios/tcgetwinsize.o \
+termios/tcsetblob.o \
 time/clock_getres.o \
 time/clock_gettime.o \
 time/clock_gettimeres.o \

@@ -167,6 +167,8 @@
 #define SYSCALL_RECVMSG 139
 #define SYSCALL_GETSOCKOPT 140
 #define SYSCALL_SETSOCKOPT 141
-#define SYSCALL_MAX_NUM 142 /* index of highest constant + 1 */
+#define SYSCALL_TCGETBLOB 142
+#define SYSCALL_TCSETBLOB 143
+#define SYSCALL_MAX_NUM 144 /* index of highest constant + 1 */
 
 #endif

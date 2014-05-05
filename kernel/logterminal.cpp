@@ -444,4 +444,29 @@ int LogTerminal::poll(ioctx_t* /*ctx*/, PollNode* node)
 	return errno = EAGAIN, -1;
 }
 
+ssize_t LogTerminal::tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count)
+{
+	if ( !name )
+	{
+		char index[] = "";
+		if ( buffer && count < sizeof(index) )
+			return errno = ERANGE, -1;
+		if ( buffer && !ctx->copy_to_dest(buffer, &index, sizeof(index)) )
+			return -1;
+		return (ssize_t) sizeof(index);
+	}
+	else
+		return errno = ENOENT, -1;
+}
+
+ssize_t LogTerminal::tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count)
+{
+	(void) ctx;
+	(void) buffer;
+	(void) count;
+	if ( !name )
+		return errno = EPERM, -1;
+	else
+		return errno = ENOENT, -1;
+}
 } // namespace Sortix
