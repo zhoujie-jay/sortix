@@ -13,6 +13,7 @@ CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 BINARIES_EXCEPT_INSTALL:=\
 basename \
 cat \
+chkblayout \
 chmod \
 chroot \
 chvideomode \

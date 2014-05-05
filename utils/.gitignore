@@ -1,6 +1,7 @@
 *.o
 basename
 cat
+chkblayout
 chmod
 chroot
 chvideomode

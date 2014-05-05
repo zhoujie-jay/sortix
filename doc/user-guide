@@ -22,10 +22,32 @@ to those of Unix systems and many common Unix commands are available.
 Keyboard Layout
 ---------------
 
-Only the US Keyboard layout is supported at this time. The whole system uses
-UTF-8 as the standard text encoding. However, the console has limited font data
-at this time and it is not possible to enter many characters. A full keyboard
-layout system has been implemented but was not merged in time for this release.
+The kernel translates the raw keyboard scancodes into unicode codepoints using
+the current keyboard layout table associated with the terminal. Such layout
+tables are compiled from a textual description into compressed binary tables
+using the `kblayout-compiler` program. The kernel has a default US keyboard
+layout integrated into it at compile time.
+
+You can change the current keyboard layout using the `chkblayout` program. It
+loads a keyboard layouts with the requested name from the `/share/kblayout`
+directory, or a user-supplied file if the path contains a slash. The system
+comes with a few existing keyboard layouts and more can be added if desired.
+
+* `dk'
+* `us'
+
+You can select a particular keyboard layout by typing something like:
+
+    chkblayout da_DK
+
+Mind that while the user-space programs and the kernel all handle text correctly
+as unicode, your console may not be able to render such code points. VGA text
+mode consoles, for instance, only has the VGA font available, which contains
+just codepage 437 characters. The console driver helpfully translates some
+unicode characters that look like codepage 437 characters into their lookalikes
+for rendering. The graphical kernel console reuses the VGA font internally, but
+has no hardware restrictions. In principle, support could be added such that
+user-space can upload font data to the kernel graphical console.
 
 Changing the Video Mode
 -----------------------
@@ -91,6 +113,7 @@ This as an incomplete list of the common top level directories in Sortix.
 * `/root` - Directory of the root user.
 * `/share` - Architecture independent files.
 * `/share/doc` - Documentation.
+* `/share/kblayout` - Keyboard layouts.
 * `/src` - System source code.
 * `/tmp` - Temporary files.
 
@@ -167,6 +190,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `benchsyscall` - slightly less useless benchmark
 * `carray` -  convert a binary file to a C array
 * `cat` - display file on terminal
+* `chkblayout` - change keyboard layout
 * `chmod` - change file mode bits
 * `chroot` - change the root directory
 * `chvideomode` - change display resolution
