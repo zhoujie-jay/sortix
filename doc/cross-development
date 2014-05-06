@@ -131,7 +131,7 @@ you can build binutils out-of-directory using these commands:
     --target=$SORTIX_PLATFORM \
     --with-sysroot="$SYSROOT" \
     --prefix="$CROSS_PREFIX" \
-    --program-prefix=$SORTIX_PLATFORM- &&
+    --disable-werror &&
   make &&
   make install
 
@@ -152,8 +152,7 @@ you can build gcc out-of-directory using these commands.
     --target=$SORTIX_PLATFORM \
     --with-sysroot=$SYSROOT \
     --prefix="$CROSS_PREFIX" \
-    --enable-languages=c,c++ \
-    --program-prefix=$SORTIX_PLATFORM- &&
+    --enable-languages=c,c++ &&
   make all-gcc all-target-libgcc &&
   make install-gcc install-target-libgcc
 
