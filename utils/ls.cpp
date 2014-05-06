@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
+#include <locale.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -37,37 +38,21 @@
 #include <time.h>
 #include <unistd.h>
 
-int current_year;
-
 #if !defined(VERSIONSTR)
 #define VERSIONSTR "unknown version"
 #endif
 
-bool directory = false;
-bool inode = false;
-bool longformat = false;
-bool showdotdot = false;
-bool showdotfiles = false;
-bool time_modified = false;
-bool colors = false;
+int current_year;
 
-pid_t childpid;
+bool option_colors = false;
+bool option_directory = false;
+bool option_inode = false;
+bool option_long_format = false;
+bool option_show_dotdot = false;
+bool option_show_dotfiles = false;
+bool option_time_modified = false;
 
-void finishoutput()
-{
-	int errnum = errno;
-	int status;
-	fflush(stdout);
-	if ( childpid ) { close(1); wait(&status); }
-	childpid = 0;
-	errno = errnum;
-}
-
-void ls_perror(const char* s)
-{
-	finishoutput();
-	perror(s);
-}
+pid_t child_pid;
 
 static struct dirent* dirent_dup(struct dirent* entry)
 {
@@ -78,9 +63,23 @@ static struct dirent* dirent_dup(struct dirent* entry)
 	return copy;
 }
 
+void finish_output()
+{
+	int errnum = errno;
+	fflush(stdout);
+	if ( child_pid )
+	{
+		int status;
+		close(1);
+		wait(&status);
+		child_pid = 0;
+	}
+	errno = errnum;
+}
+
 void ls_error(int status, int errnum, const char* format, ...)
 {
-	finishoutput();
+	finish_output();
 
 	// TODO: The rest is just plain generic gnu_error(3), how about a function
 	// called gnu_verror(3) that accepts a va_list.
@@ -135,7 +134,7 @@ int sort_dirents(const void* a_void, const void* b_void)
 	struct dirent* b = *(struct dirent**) b_void;
 	struct stat a_st;
 	struct stat b_st;
-	if ( time_modified &&
+	if ( option_time_modified &&
 	     fstatat(sort_dirents_dirfd, a->d_name, &a_st, 0) == 0 &&
 	     fstatat(sort_dirents_dirfd, b->d_name, &b_st, 0) == 0 )
 	{
@@ -152,49 +151,88 @@ int sort_dirents(const void* a_void, const void* b_void)
 	return strcmp(a->d_name, b->d_name);
 }
 
-void getentrycolor(const char** pre, const char** post, mode_t mode)
-{
-	*pre = "";
-	*post = "";
-	if ( !colors )
-		return;
-	if ( S_ISDIR(mode) )
-		*pre = "\e[36m",
-		*post = "\e[37m";
-	else if ( mode & 0111 )
-		*pre = "\e[32m",
-		*post = "\e[37m";
-}
-
-int handleentry_internal(const char* fullpath, const char* name)
+int handle_entry_internal(const char* fullpath, const char* name, unsigned char type)
 {
 	// TODO: Use openat and fstat.
 	struct stat st;
-	if ( stat(fullpath, &st) )
+	bool stat_error = false;
+	if ( (option_long_format || type == DT_UNKNOWN || type == DT_REG) )
 	{
-		finishoutput();
-		error(0, errno, "stat: %s", fullpath);
-		return 2;
+		if ( stat(fullpath, &st) == 0 )
+		{
+			if ( S_ISBLK(st.st_mode) )
+				type = DT_BLK;
+			if ( S_ISCHR(st.st_mode) )
+				type = DT_CHR;
+			if ( S_ISDIR(st.st_mode) )
+				type = DT_DIR;
+			if ( S_ISFIFO(st.st_mode) )
+				type = DT_FIFO;
+			if ( S_ISLNK(st.st_mode) )
+				type = DT_LNK;
+			if ( S_ISREG(st.st_mode) )
+				type = DT_REG;
+			if ( S_ISSOCK(st.st_mode) )
+				type = DT_SOCK;
+		}
+		else
+		{
+			memset(&st, 0, sizeof(st));
+			stat_error = true;
+		}
 	}
-	const char* colorpre;
-	const char* colorpost;
-	getentrycolor(&colorpre, &colorpost, st.st_mode);
-	if ( inode )
-		printf("%ju ", (uintmax_t) st.st_ino);
-	if ( !longformat )
+
+	const char* color_pre = "";
+	const char* color_post = "";
+	if ( option_colors )
 	{
-		printf("%s%s%s\n", colorpre, name, colorpost);
+		color_post = "\e[m";
+		switch ( type )
+		{
+		case DT_UNKNOWN: color_pre = "\e[91m"; break;
+		case DT_BLK: color_pre = "\e[93m"; break;
+		case DT_CHR: color_pre = "\e[93m"; break;
+		case DT_DIR: color_pre = "\e[36m"; break;
+		case DT_FIFO: color_pre = "\e[33m"; break;
+		case DT_LNK: color_pre = "\e[96m"; break;
+		case DT_SOCK: color_pre = "\e[35m"; break;
+		case DT_REG:
+			if ( type == DT_REG && !stat_error && (st.st_mode & 0111) )
+				color_pre = "\e[32m";
+			else
+				color_post = "";
+			break;
+		default:
+			color_post = "";
+		}
+	}
+
+	if ( option_inode )
+		printf("%ju ", (uintmax_t) st.st_ino);
+	if ( !option_long_format )
+	{
+		printf("%s%s%s\n", color_pre, name, color_post);
 		return 0;
 	}
 	char perms[11];
 	perms[0] = '?';
-	if ( S_ISREG(st.st_mode) ) { perms[0] = '-'; }
-	if ( S_ISDIR(st.st_mode) ) { perms[0] = 'd'; }
+	switch ( type )
+	{
+		case DT_UNKNOWN: perms[0] = '?'; break;
+		case DT_BLK: perms[0] = 'b'; break;
+		case DT_CHR: perms[0] = 'c'; break;
+		case DT_DIR: perms[0] = 'd'; break;
+		case DT_FIFO: perms[0] = 'p'; break;
+		case DT_LNK: perms[0] = 'l'; break;
+		case DT_REG: perms[0] = '-'; break;
+		case DT_SOCK: perms[0] = 's'; break;
+		default: perms[0] = '?'; break;
+	}
 	const char flagnames[] = { 'x', 'w', 'r' };
 	for ( size_t i = 0; i < 9; i++ )
 	{
 		bool set = st.st_mode & (1UL<<i);
-		perms[9-i] = set ? flagnames[i % 3] : '-';
+		perms[9-i] = stat_error ? '?' : set ? flagnames[i % 3] : '-';
 	}
 	const char* sizeunit = "B";
 	off_t size = st.st_size;
@@ -216,35 +254,31 @@ int handleentry_internal(const char* fullpath, const char* name)
 		(uintmax_t) st.st_nlink,
 		(uintmax_t) size, sizeunit,
 		time_str,
-		colorpre, name, colorpost);
+		color_pre, name, color_post);
 	return 0;
 }
 
-int handleentry(const char* path, const char* name)
+int handle_entry(const char* path, const char* name, unsigned char type)
 {
 	bool isdotdot = strcmp(name, ".") == 0 || strcmp(name, "..") == 0;
 	bool isdotfile = !isdotdot && name[0] == '.';
-	if ( isdotdot && !showdotdot && !directory ) { return 0; }
-	if ( isdotfile && !showdotfiles && !directory ) { return 0; }
+	if ( isdotdot && !option_show_dotdot && !option_directory )
+		return 0;
+	if ( isdotfile && !option_show_dotfiles && !option_directory )
+		return 0;
 	char* fullpath = new char[strlen(path) + 1 + strlen(name) + 1];
 	strcpy(fullpath, path);
 	strcat(fullpath, "/");
 	strcat(fullpath, name);
-	int result = handleentry_internal(fullpath, name);
+	int result = handle_entry_internal(fullpath, name, type);
 	delete[] fullpath;
 	return result;
 }
 
 int ls(const char* path)
 {
-	time_t current_time;
-	struct tm current_year_tm;
-	time(&current_time);
-	localtime_r(&current_time, &current_year_tm);
-	current_year = current_year_tm.tm_year;
-
-	if ( directory )
-		return handleentry_internal(path, path);
+	if ( option_directory )
+		return handle_entry_internal(path, path, DT_UNKNOWN);
 
 	int ret = 1;
 	DIR* dir;
@@ -253,20 +287,23 @@ int ls(const char* path)
 	size_t entriesused = 0;
 	size_t entriessize = sizeof(struct dirent*) * entrieslen;
 	struct dirent** entries = (struct dirent**) malloc(entriessize);
-	if ( !entries ) { ls_perror("malloc"); goto cleanup_done; }
+	if ( !entries )
+	{
+		ls_error(0, errno, "malloc");
+		goto cleanup_done;
+	}
 
 	dir = opendir(path);
 	if ( !dir )
 	{
 		if ( errno == ENOTDIR )
-			return handleentry_internal(path, path);
+			return handle_entry_internal(path, path, DT_UNKNOWN);
 		perror(path);
 		ret = 2;
 		goto cleanup_entries;
 	}
 
-	struct dirent* entry;
-	while ( (entry = readdir(dir)) )
+	while ( struct dirent* entry = readdir(dir) )
 	{
 		if ( entriesused == entrieslen )
 		{
@@ -274,18 +311,30 @@ int ls(const char* path)
 			struct dirent** newentries;
 			size_t newentriessize = sizeof(struct dirent*) * newentrieslen;
 			newentries = (struct dirent**) realloc(entries, newentriessize);
-			if ( !newentries ) { ls_perror("realloc"); goto cleanup_dir; }
+			if ( !newentries )
+			{
+				ls_error(0, errno, "realloc");
+				goto cleanup_dir;
+			}
 			entries = newentries;
 			entrieslen = newentrieslen;
 			entriessize = newentriessize;
 		}
 		struct dirent* copy = dirent_dup(entry);
-		if ( !copy ) { ls_perror("malloc"); goto cleanup_dir; }
+		if ( !copy )
+		{
+			ls_error(0, errno, "malloc");
+			goto cleanup_dir;
+		}
 		entries[entriesused++] = copy;
 	}
 
 #if defined(sortix)
-	if ( derror(dir) ) { perror(path); goto cleanup_dir; }
+	if ( derror(dir) )
+	{
+		ls_error(0, errno, path);
+		goto cleanup_dir;
+	}
 #endif
 
 	sort_dirents_dirfd = dirfd(dir);
@@ -293,7 +342,7 @@ int ls(const char* path)
 
 	for ( size_t i = 0; i < entriesused; i++ )
 	{
-		if ( handleentry(path, entries[i]->d_name) != 0 )
+		if ( handle_entry(path, entries[i]->d_name, entries[i]->d_type) != 0 )
 			goto cleanup_dir;
 	}
 
@@ -309,7 +358,20 @@ cleanup_done:
 	return ret;
 }
 
-void version(FILE* fp, const char* argv0)
+static void compact_arguments(int* argc, char*** argv)
+{
+	for ( int i = 0; i < *argc; i++ )
+	{
+		while ( i < *argc && !(*argv)[i] )
+		{
+			for ( int n = i; n < *argc; n++ )
+				(*argv)[n] = (*argv)[n+1];
+			(*argc)--;
+		}
+	}
+}
+
+static void version(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
 	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
@@ -317,62 +379,52 @@ void version(FILE* fp, const char* argv0)
 	fprintf(fp, "There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
-void help(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
-	fprintf(fp, "usage: %s [-l] [-a | -A] [<DIR> ...]\n", argv0);
+	fprintf(fp, "Usage: %s [OPTION]... [FILE]...\n", argv0);
 }
 
 int main(int argc, char** argv)
 {
+	setlocale(LC_ALL, "");
+
 	const char* argv0 = argv[0];
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' || !arg[1] ) { continue; }
+		if ( arg[0] != '-' || !arg[1] )
+			continue;
 		argv[i] = NULL;
-		if ( !strcmp(arg, "--") ) { break; }
+		if ( !strcmp(arg, "--") )
+			break;
 		if ( arg[1] != '-' )
 		{
-			char c;
-			while ( (c = *++arg) )
+			while ( char c = *++arg ) switch ( c )
 			{
-				switch ( c )
-				{
-				case 'd':
-					directory = true;
-					break;
-				case 'i':
-					inode = true;
-					break;
-				case 'l':
-					longformat = true;
-					break;
-				case 't':
-					time_modified = true;
-					break;
-				case 'a':
-					showdotdot = true;
-					showdotfiles = true;
-					break;
-				case 'A':
-					showdotdot = false;
-					showdotfiles = true;
-					break;
-				default:
-					fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
-					help(stderr, argv0);
-					exit(2);
-				}
+			case 'a': option_show_dotdot = true, option_show_dotfiles = true; break;
+			case 'A': option_show_dotdot = false, option_show_dotfiles = true; break;
+			case 'd': option_directory = true; break;
+			case 'i': option_inode = true; break;
+			case 'l': option_long_format = true; break;
+			case 't': option_time_modified = true; break;
+			default:
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
+				help(stderr, argv0);
+				exit(2);
 			}
 		}
 		else if ( !strcmp(arg, "--version") )
-		{
-			version(stdout, argv0); exit(0);
-		}
+			version(stdout, argv0), exit(0);
 		else if ( !strcmp(arg, "--help") )
-		{
-			help(stdout, argv0); exit(0);
-		}
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--all") )
+			option_show_dotdot = false, option_show_dotfiles = true;
+		else if ( !strcmp(arg, "--almost-all") )
+			option_show_dotdot = false, option_show_dotfiles = true;
+		else if ( !strcmp(arg, "--directory") )
+			option_directory = true;
+		else if ( !strcmp(arg, "--inode") )
+			option_inode = true;
 		else
 		{
 			fprintf(stderr, "%s: unrecognized option: %s\n", argv0, arg);
@@ -381,18 +433,28 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if ( isatty(1) )
-		colors = true;
+	compact_arguments(&argc, &argv);
 
-	childpid = 0;
-	bool columnable = !longformat;
+	time_t current_time;
+	struct tm current_year_tm;
+	time(&current_time);
+	localtime_r(&current_time, &current_year_tm);
+	current_year = current_year_tm.tm_year;
+
+	if ( isatty(1) )
+		option_colors = true;
+
+	child_pid = 0;
+	bool columnable = !option_long_format;
 	if ( columnable && isatty(1) )
 	{
 		int pipes[2];
-		if ( pipe(pipes) ) { perror("pipe"); return 1; }
-		childpid = fork();
-		if ( childpid < 0 ) { perror("fork"); return 1; }
-		if ( childpid )
+		if ( pipe(pipes) )
+			error(1, errno, "pipe");
+		child_pid = fork();
+		if ( child_pid < 0 )
+			error(1, errno, "fork");
+		if ( child_pid )
 		{
 			close(1);
 			dup(pipes[1]);
@@ -412,22 +474,24 @@ int main(int argc, char** argv)
 		}
 	}
 
-	// TODO: This isn't the strictly correct semantics:
-	if ( time_modified )
-		qsort(argv + 1, argc - 1, sizeof(char*), argv_mtim_compare);
-
 	int result = 0;
-	bool anyargs = false;
-	for ( int i = 1; i < argc; i++ )
+
+	if ( 2 <= argc )
 	{
-		if ( !argv[i] ) { continue; }
-		anyargs = true;
-		if ( (result = ls(argv[i])) ) { break; }
+		// TODO: This isn't the strictly correct semantics:
+		if ( option_time_modified )
+			qsort(argv + 1, argc - 1, sizeof(char*), argv_mtim_compare);
+
+		for ( int i = 1; i < argc; i++ )
+			if ( (result = ls(argv[i])) != 0 )
+				break;
+	}
+	else
+	{
+		result = ls(".");
 	}
 
-	if ( !anyargs ) { result = ls("."); }
-
-	finishoutput();
+	finish_output();
 
 	return result;
 }
