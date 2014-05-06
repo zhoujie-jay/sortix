@@ -249,7 +249,7 @@ ATADrive* ATABus::Instatiate(unsigned driveid)
 	// Check for ATAPI device not following spec.
 	if ( CPU::InPortB(iobase + LBA_MID) || CPU::InPortB(iobase + LBA_MID) )
 		return errno = ENODEV, (ATADrive*) NULL;
-	while ( !(status & STATUS_DATAREADY) && !(status & STATUS_ERROR) )
+	while ( (status & STATUS_BUSY) || (!(status & STATUS_DATAREADY) && !(status & STATUS_ERROR)) )
 		status = CPU::InPortB(iobase + STATUS);
 	if ( status & STATUS_ERROR )
 	{
@@ -291,7 +291,7 @@ bool ATABus::SelectDrive(unsigned driveid)
 const size_t META_LBA28 = 60;
 const size_t META_FLAGS = 83;
 const size_t META_LBA48 = 100;
-const uint16_t FLAG_LBA48 = (1<<10);
+const uint16_t FLAG_LBA48 = 1 << 10;
 
 ATADrive::ATADrive(ATABus* bus, unsigned driveid, uint16_t portoffset, uint16_t altport)
 {
@@ -301,28 +301,20 @@ ATADrive::ATADrive(ATABus* bus, unsigned driveid, uint16_t portoffset, uint16_t 
 	this->iobase = portoffset;
 	this->altport = altport;
 	for ( size_t i = 0; i < 256; i++ )
-	{
 		meta[i] = CPU::InPortW(iobase + DATA);
-	}
 	lba48 = meta[META_FLAGS] & FLAG_LBA48;
 	numsectors = 0;
 	if ( lba48 )
 	{
 		numsectors = (uint64_t) meta[META_LBA48 + 0] <<  0
-		           | (uint64_t) meta[META_LBA48 + 1] <<  8
-		           | (uint64_t) meta[META_LBA48 + 2] << 16
-		           | (uint64_t) meta[META_LBA48 + 3] << 24
-		           | (uint64_t) meta[META_LBA48 + 4] << 32
-		           | (uint64_t) meta[META_LBA48 + 5] << 40
-		           | (uint64_t) meta[META_LBA48 + 6] << 48
-		           | (uint64_t) meta[META_LBA48 + 7] << 56;
+		           | (uint64_t) meta[META_LBA48 + 1] << 16
+		           | (uint64_t) meta[META_LBA48 + 2] << 32
+		           | (uint64_t) meta[META_LBA48 + 3] << 48;
 	}
 	else
 	{
 		numsectors = meta[META_LBA28 + 0] <<  0
-		           | meta[META_LBA28 + 1] <<  8
-		           | meta[META_LBA28 + 2] << 16
-		           | meta[META_LBA28 + 3] << 24;
+		           | meta[META_LBA28 + 1] << 16;
 	}
 	sectorsize = 512; // TODO: Detect this!
 	Initialize();
