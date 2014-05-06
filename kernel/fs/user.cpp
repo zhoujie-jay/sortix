@@ -134,7 +134,7 @@ class ChannelNode : public AbstractInode
 public:
 	ChannelNode();
 	ChannelNode(Channel* channel);
-	~ChannelNode();
+	virtual ~ChannelNode();
 	void Construct(Channel* channel);
 	virtual ssize_t read(ioctx_t* ctx, uint8_t* buf, size_t count);
 	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
@@ -149,6 +149,7 @@ class Server : public Refcountable
 public:
 	Server();
 	virtual ~Server();
+	void Disconnect();
 	Channel* Connect();
 	Channel* Listen();
 	Ref<Inode> BootstrapNode(ino_t ino, mode_t type);
@@ -159,6 +160,7 @@ private:
 	kthread_cond_t connecting_cond;
 	kthread_cond_t connectable_cond;
 	Channel* connecting;
+	bool disconnected;
 
 };
 
@@ -274,7 +276,7 @@ size_t ChannelDirection::Send(ioctx_t* ctx, const void* ptr, size_t least, size_
 		while ( true )
 		{
 			if ( !still_reading )
-				return errno = EPIPE, sofar;
+				return errno = ECONNRESET, sofar;
 			if ( buffer_used < BUFFER_SIZE )
 				break;
 			if ( least <= sofar )
@@ -316,7 +318,7 @@ size_t ChannelDirection::Recv(ioctx_t* ctx, void* ptr, size_t least, size_t max)
 			if ( least <= sofar )
 				return sofar;
 			if ( !still_writing )
-				return errno = EPIPE, sofar;
+				return errno = ECONNRESET, sofar;
 			if ( !kthread_cond_wait_signal(&not_empty, &transfer_lock) )
 				return errno = EINTR, sofar;
 		}
@@ -483,10 +485,18 @@ Server::Server()
 	connecting_cond = KTHREAD_COND_INITIALIZER;
 	connectable_cond = KTHREAD_COND_INITIALIZER;
 	connecting = NULL;
+	disconnected = false;
 }
 
 Server::~Server()
 {
+}
+
+void Server::Disconnect()
+{
+	ScopedLock lock(&connect_lock);
+	disconnected = true;
+	kthread_cond_signal(&connectable_cond);
 }
 
 Channel* Server::Connect()
@@ -495,12 +505,14 @@ Channel* Server::Connect()
 	if ( !channel )
 		return NULL;
 	ScopedLock lock(&connect_lock);
-	while ( connecting )
+	while ( !disconnected && connecting )
 		if ( !kthread_cond_wait_signal(&connectable_cond, &connect_lock) )
 		{
 			delete channel;
 			return errno = EINTR, (Channel*) NULL;
 		}
+	if ( disconnected )
+		return delete channel, errno = ECONNREFUSED, (Channel*) NULL;
 	connecting = channel;
 	kthread_cond_signal(&connecting_cond);
 	return channel;
@@ -544,6 +556,7 @@ ServerNode::ServerNode(Ref<Server> server)
 
 ServerNode::~ServerNode()
 {
+	server->Disconnect();
 }
 
 Ref<Inode> ServerNode::open(ioctx_t* /*ctx*/, const char* filename, int flags,
