@@ -52,6 +52,7 @@ true \
 type \
 uname \
 uniq \
+unmount \
 uptime \
 wc \
 which \

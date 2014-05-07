@@ -200,6 +200,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `type` - type raw characters directly into the terminal
 * `uname` - system information
 * `uniq` - report or omit repeated lines
+* `unmount` - unmount filesystem
 * `uptime` - time since initialization
 * `wc` - count words and lines
 * `which` - find path to command
