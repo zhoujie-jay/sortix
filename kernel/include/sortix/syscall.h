@@ -175,6 +175,8 @@
 #define SYSCALL_GETENTROPY 147
 #define SYSCALL_GETHOSTNAME 148
 #define SYSCALL_SETHOSTNAME 149
-#define SYSCALL_MAX_NUM 150 /* index of highest constant + 1 */
+#define SYSCALL_UNMOUNTAT 150
+#define SYSCALL_FSM_MOUNTAT 151
+#define SYSCALL_MAX_NUM 152 /* index of highest constant + 1 */
 
 #endif

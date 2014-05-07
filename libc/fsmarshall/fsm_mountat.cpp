@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,16 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fsmarshall/fsm_closechannel.cpp
-    Closes a user-space filesystem communication channel.
+    fsmarshall/fsm_mountat.cpp
+    Attaches a user-space filesystem at the specified mount point.
 
 *******************************************************************************/
 
-#include <unistd.h>
+#include <sys/syscall.h>
 
 #include <fsmarshall.h>
 
-extern "C" int fsm_closechannel(int /*server*/, int channel)
+DEFN_SYSCALL4(int, sys_fsm_mountat, SYSCALL_FSM_MOUNTAT, int, const char*, const struct stat*, int);
+
+extern "C" int fsm_mountat(int dirfd, const char* path, const struct stat* rootst, int flags)
 {
-	return close(channel);
+	return sys_fsm_mountat(dirfd, path, rootst, flags);
 }

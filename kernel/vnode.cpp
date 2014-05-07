@@ -25,7 +25,9 @@
 #include <assert.h>
 #include <errno.h>
 
+#include <sortix/fcntl.h>
 #include <sortix/mount.h>
+#include <sortix/stat.h>
 
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/refcount.h>
@@ -36,20 +38,31 @@
 #include <sortix/kernel/mtable.h>
 #include <sortix/kernel/process.h>
 
+#include "fs/user.h"
+
 namespace Sortix {
 
-static Ref<Inode> LookupMount(Ref<Inode> inode)
+static Ref<Inode> LookupMountUnlocked(Ref<Inode> inode, size_t* out_index = NULL)
 {
+	Ref<Inode> result_inode(NULL);
 	Ref<MountTable> mtable = CurrentProcess()->GetMTable();
-	ScopedLock lock(&mtable->mtablelock);
 	for ( size_t i = 0; i < mtable->nummounts; i++ )
 	{
 		mountpoint_t* mp = mtable->mounts + i;
 		if ( mp->ino != inode->ino || mp->dev != inode->dev )
 			continue;
-		return mp->inode;
+		if ( out_index )
+			*out_index = i;
+		result_inode = mp->inode;
 	}
-	return Ref<Inode>(NULL);
+	return result_inode;
+}
+
+static Ref<Inode> LookupMount(Ref<Inode> inode)
+{
+	Ref<MountTable> mtable = CurrentProcess()->GetMTable();
+	ScopedLock mtable_lock(&mtable->mtablelock);
+	return LookupMountUnlocked(inode);
 }
 
 Vnode::Vnode(Ref<Inode> inode, Ref<Vnode> mountedat, ino_t rootino, dev_t rootdev)
@@ -88,7 +101,8 @@ Ref<Vnode> Vnode::open(ioctx_t* ctx, const char* filename, int flags, mode_t mod
 
 	// Move within the current filesystem.
 	Ref<Inode> retinode = inode->open(ctx, filename, flags, mode);
-	if ( !retinode ) { return Ref<Vnode>(NULL); }
+	if ( !retinode )
+		return Ref<Vnode>(NULL);
 	Ref<Vnode> retmountedat = mountedat;
 	ino_t retrootino = rootino;
 	dev_t retrootdev = rootdev;
@@ -104,6 +118,102 @@ Ref<Vnode> Vnode::open(ioctx_t* ctx, const char* filename, int flags, mode_t mod
 	}
 
 	return Ref<Vnode>(new Vnode(retinode, retmountedat, retrootino, retrootdev));
+}
+
+int Vnode::fsm_fsbind(ioctx_t* ctx, Ref<Vnode> target, int flags)
+{
+	(void) ctx;
+	if ( flags & ~(0) )
+		return errno = EINVAL, -1;
+	Ref<MountTable> mtable = CurrentProcess()->GetMTable();
+	if ( !mtable->AddMount(ino, dev, target->inode, true) )
+		return -1;
+	return 0;
+}
+
+Ref<Vnode> Vnode::fsm_mount(ioctx_t* ctx,
+                            const char* filename,
+                            const struct stat* rootst_ptr,
+                            int flags)
+{
+	if ( flags & ~(0) )
+		return Ref<Vnode>(NULL);
+
+	if ( !strcmp(filename, ".") || !strcmp(filename, "..") )
+		return errno = EINVAL, Ref<Vnode>(NULL);
+
+	struct stat rootst;
+	if ( !ctx->copy_from_src(&rootst, rootst_ptr, sizeof(struct stat)) )
+		return Ref<Vnode>(NULL);
+
+	Ref<Inode> normal_inode = inode->open(ctx, filename, O_READ, 0);
+	if ( !normal_inode )
+		return Ref<Vnode>(NULL);
+
+	Ref<Inode> root_inode;
+	Ref<Inode> server_inode;
+	if ( !UserFS::Bootstrap(&root_inode, &server_inode, &rootst) )
+		return Ref<Vnode>(NULL);
+
+	Ref<Vnode> server_vnode(new Vnode(server_inode, Ref<Vnode>(NULL), 0, 0));
+	if ( !server_vnode )
+		return Ref<Vnode>(NULL);
+
+	Ref<MountTable> mtable = CurrentProcess()->GetMTable();
+	ScopedLock lock(&mtable->mtablelock);
+	if ( Ref<Inode> mounted = LookupMountUnlocked(normal_inode) )
+		normal_inode = mounted;
+
+	if ( !mtable->AddMountUnlocked(normal_inode->ino, normal_inode->dev, root_inode, false) )
+		return Ref<Vnode>(NULL);
+
+	return server_vnode;
+}
+
+int Vnode::unmount(ioctx_t* ctx, const char* filename, int flags)
+{
+	if ( flags & ~(UNMOUNT_FORCE | UNMOUNT_DETACH) )
+		return errno = EINVAL, -1;
+
+	if ( !strcmp(filename, ".") || !strcmp(filename, "..") )
+		return errno = EINVAL, -1;
+
+	Ref<Inode> normal_inode = inode->open(ctx, filename, O_READ, 0);
+	if ( !normal_inode )
+		return -1;
+
+	Ref<MountTable> mtable = CurrentProcess()->GetMTable();
+	ScopedLock mtable_lock(&mtable->mtablelock);
+
+	size_t mp_index;
+	if ( !LookupMountUnlocked(normal_inode, &mp_index) )
+		return errno = EINVAL, -1;
+	mountpoint_t* mp = mtable->mounts + mp_index;
+
+	Ref<Inode> mp_inode = mp->inode;
+	bool mp_fsbind = mp->fsbind;
+
+	mp->inode.Reset();
+	for ( size_t n = mp_index; n < mtable->nummounts - 1; n++ )
+	{
+		mtable->mounts[n].inode.Reset();
+		mtable->mounts[n] = mtable->mounts[n+1];
+	}
+	if ( mp_index + 1 != mtable->nummounts )
+		mtable->mounts[mtable->nummounts].inode.Reset();
+	mtable->nummounts--;
+
+	mtable_lock.Reset();
+
+	if ( !mp_fsbind )
+	{
+		// TODO: Implement the !UNMOUNT_DETACH case.
+		// TODO: Implement the UNMOUNT_FORCE case.
+		mp_inode->unmounted(ctx);
+	}
+	mp_inode.Reset();
+
+	return 0;
 }
 
 int Vnode::sync(ioctx_t* ctx)

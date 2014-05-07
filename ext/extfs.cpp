@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -23,6 +23,7 @@
 #define __STDC_CONSTANT_MACROS
 #define __STDC_LIMIT_MACROS
 
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -49,6 +50,7 @@
 #endif
 
 #if defined(__sortix__)
+#include <ioleast.h>
 #include <timespec.h>
 #else
 struct timespec timespec_make(time_t sec, long nsec)
@@ -79,6 +81,8 @@ struct timespec timespec_make(time_t sec, long nsec)
 #include "inode.h"
 #include "ioleast.h"
 #include "util.h"
+
+static volatile bool should_terminate = false;
 
 const uint32_t EXT2_FEATURE_COMPAT_SUPPORTED = 0;
 const uint32_t EXT2_FEATURE_INCOMPAT_SUPPORTED = \
@@ -146,105 +150,103 @@ void StatInode(Inode* inode, struct stat* st)
 
 #if defined(__sortix__)
 
-bool RespondData(int svr, int chl, const void* ptr, size_t count)
+bool RespondData(int chl, const void* ptr, size_t count)
 {
-	return fsm_send(svr, chl, ptr, count) == (ssize_t) count;
+	return writeall(chl, ptr, count) == count;
 }
 
-bool RespondHeader(int svr, int chl, size_t type, size_t size)
+bool RespondHeader(int chl, size_t type, size_t size)
 {
 	struct fsm_msg_header hdr;
 	hdr.msgtype = type;
 	hdr.msgsize = size;
-	return RespondData(svr, chl, &hdr, sizeof(hdr));
+	return RespondData(chl, &hdr, sizeof(hdr));
 }
 
-bool RespondMessage(int svr, int chl, unsigned int type, const void* ptr,
-                    size_t count)
+bool RespondMessage(int chl, unsigned int type, const void* ptr, size_t count)
 {
-	return RespondHeader(svr, chl, type, count) &&
-	       RespondData(svr, chl, ptr, count);
+	return RespondHeader(chl, type, count) &&
+	       RespondData(chl, ptr, count);
 }
 
-bool RespondError(int svr, int chl, int errnum)
+bool RespondError(int chl, int errnum)
 {
 	struct fsm_resp_error body;
 	body.errnum = errnum;
 	//fprintf(stderr, "extfs: sending error %i (%s)\n", errnum, strerror(errnum));
-	return RespondMessage(svr, chl, FSM_RESP_ERROR, &body, sizeof(body));
+	return RespondMessage(chl, FSM_RESP_ERROR, &body, sizeof(body));
 }
 
-bool RespondSuccess(int svr, int chl)
+bool RespondSuccess(int chl)
 {
 	struct fsm_resp_success body;
-	return RespondMessage(svr, chl, FSM_RESP_SUCCESS, &body, sizeof(body));
+	return RespondMessage(chl, FSM_RESP_SUCCESS, &body, sizeof(body));
 }
 
-bool RespondStat(int svr, int chl, struct stat* st)
+bool RespondStat(int chl, struct stat* st)
 {
 	struct fsm_resp_stat body;
 	body.st = *st;
-	return RespondMessage(svr, chl, FSM_RESP_STAT, &body, sizeof(body));
+	return RespondMessage(chl, FSM_RESP_STAT, &body, sizeof(body));
 }
 
-bool RespondSeek(int svr, int chl, off_t offset)
+bool RespondSeek(int chl, off_t offset)
 {
 	struct fsm_resp_lseek body;
 	body.offset = offset;
-	return RespondMessage(svr, chl, FSM_RESP_LSEEK, &body, sizeof(body));
+	return RespondMessage(chl, FSM_RESP_LSEEK, &body, sizeof(body));
 }
 
-bool RespondRead(int svr, int chl, const uint8_t* buf, size_t count)
+bool RespondRead(int chl, const uint8_t* buf, size_t count)
 {
 	struct fsm_resp_read body;
 	body.count = count;
-	return RespondMessage(svr, chl, FSM_RESP_READ, &body, sizeof(body)) &&
-	       RespondData(svr, chl, buf, count);
+	return RespondMessage(chl, FSM_RESP_READ, &body, sizeof(body)) &&
+	       RespondData(chl, buf, count);
 }
 
-bool RespondReadlink(int svr, int chl, const uint8_t* buf, size_t count)
+bool RespondReadlink(int chl, const uint8_t* buf, size_t count)
 {
 	struct fsm_resp_readlink body;
 	body.targetlen = count;
-	return RespondMessage(svr, chl, FSM_RESP_READLINK, &body, sizeof(body)) &&
-	       RespondData(svr, chl, buf, count);
+	return RespondMessage(chl, FSM_RESP_READLINK, &body, sizeof(body)) &&
+	       RespondData(chl, buf, count);
 }
 
-bool RespondWrite(int svr, int chl, size_t count)
+bool RespondWrite(int chl, size_t count)
 {
 	struct fsm_resp_write body;
 	body.count = count;
-	return RespondMessage(svr, chl, FSM_RESP_WRITE, &body, sizeof(body));
+	return RespondMessage(chl, FSM_RESP_WRITE, &body, sizeof(body));
 }
 
-bool RespondOpen(int svr, int chl, ino_t ino, mode_t type)
+bool RespondOpen(int chl, ino_t ino, mode_t type)
 {
 	struct fsm_resp_open body;
 	body.ino = ino;
 	body.type = type;
-	return RespondMessage(svr, chl, FSM_RESP_OPEN, &body, sizeof(body));
+	return RespondMessage(chl, FSM_RESP_OPEN, &body, sizeof(body));
 }
 
-bool RespondMakeDir(int svr, int chl, ino_t ino)
+bool RespondMakeDir(int chl, ino_t ino)
 {
 	struct fsm_resp_mkdir body;
 	body.ino = ino;
-	return RespondMessage(svr, chl, FSM_RESP_MKDIR, &body, sizeof(body));
+	return RespondMessage(chl, FSM_RESP_MKDIR, &body, sizeof(body));
 }
 
-bool RespondReadDir(int svr, int chl, struct kernel_dirent* dirent)
+bool RespondReadDir(int chl, struct kernel_dirent* dirent)
 {
 	struct fsm_resp_readdirents body;
 	body.ino = dirent->d_ino;
 	body.type = dirent->d_type;
 	body.namelen = dirent->d_namlen;
-	return RespondMessage(svr, chl, FSM_RESP_READDIRENTS, &body, sizeof(body)) &&
-	       RespondData(svr, chl, dirent->d_name, dirent->d_namlen);
+	return RespondMessage(chl, FSM_RESP_READDIRENTS, &body, sizeof(body)) &&
+	       RespondData(chl, dirent->d_name, dirent->d_namlen);
 }
 
-void HandleRefer(int svr, int chl, struct fsm_req_refer* msg, Filesystem* fs)
+void HandleRefer(int chl, struct fsm_req_refer* msg, Filesystem* fs)
 {
-	(void) svr;
 	(void) chl;
 	if ( fs->num_inodes <= msg->ino )
 		return;
@@ -252,9 +254,8 @@ void HandleRefer(int svr, int chl, struct fsm_req_refer* msg, Filesystem* fs)
 		inode->RemoteRefer();
 }
 
-void HandleUnref(int svr, int chl, struct fsm_req_unref* msg, Filesystem* fs)
+void HandleUnref(int chl, struct fsm_req_unref* msg, Filesystem* fs)
 {
-	(void) svr;
 	(void) chl;
 	if ( fs->num_inodes <= msg->ino )
 		return;
@@ -262,32 +263,32 @@ void HandleUnref(int svr, int chl, struct fsm_req_unref* msg, Filesystem* fs)
 		inode->RemoteUnref();
 }
 
-void HandleSync(int svr, int chl, struct fsm_req_sync* msg, Filesystem* fs)
+void HandleSync(int chl, struct fsm_req_sync* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->ino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 	inode->Sync();
 	inode->Unref();
-	RespondSuccess(svr, chl);
+	RespondSuccess(chl);
 }
 
-void HandleStat(int svr, int chl, struct fsm_req_stat* msg, Filesystem* fs)
+void HandleStat(int chl, struct fsm_req_stat* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->ino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 	struct stat st;
 	StatInode(inode, &st);
 	inode->Unref();
-	RespondStat(svr, chl, &st);
+	RespondStat(chl, &st);
 }
 
-void HandleChangeMode(int svr, int chl, struct fsm_req_chmod* msg, Filesystem* fs)
+void HandleChangeMode(int chl, struct fsm_req_chmod* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->ino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 	uint32_t req_mode = ExtModeFromHostMode(msg->mode);
 	uint32_t old_mode = inode->Mode();
 	uint32_t new_mode = (old_mode & ~S_SETABLE) | (req_mode & S_SETABLE);
@@ -295,96 +296,96 @@ void HandleChangeMode(int svr, int chl, struct fsm_req_chmod* msg, Filesystem* f
 	inode->Unref();
 }
 
-void HandleChangeOwner(int svr, int chl, struct fsm_req_chown* msg, Filesystem* fs)
+void HandleChangeOwner(int chl, struct fsm_req_chown* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->ino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 	inode->SetUserId((uint32_t) msg->uid);
 	inode->SetGroupId((uint32_t) msg->gid);
 	inode->Unref();
-	RespondSuccess(svr, chl);
+	RespondSuccess(chl);
 }
 
-void HandleUTimens(int svr, int chl, struct fsm_req_utimens* msg, Filesystem* fs)
+void HandleUTimens(int chl, struct fsm_req_utimens* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->ino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 	inode->data->i_atime = msg->times[0].tv_sec;
 	inode->data->i_mtime = msg->times[1].tv_sec;
 	inode->Dirty();
 	inode->Unref();
-	RespondSuccess(svr, chl);
+	RespondSuccess(chl);
 }
 
-void HandleTruncate(int svr, int chl, struct fsm_req_truncate* msg, Filesystem* fs)
+void HandleTruncate(int chl, struct fsm_req_truncate* msg, Filesystem* fs)
 {
-	if( msg->size < 0 ) { RespondError(svr, chl, EINVAL); return; }
-	if ( fs->num_inodes <= msg->ino ) { RespondError(svr, chl, EBADF); return; }
+	if( msg->size < 0 ) { RespondError(chl, EINVAL); return; }
+	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 	inode->Truncate((uint64_t) msg->size);
 	inode->Unref();
-	RespondSuccess(svr, chl);
+	RespondSuccess(chl);
 }
 
-void HandleSeek(int svr, int chl, struct fsm_req_lseek* msg, Filesystem* fs)
+void HandleSeek(int chl, struct fsm_req_lseek* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->ino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 	if ( msg->whence == SEEK_SET )
-		RespondSeek(svr, chl, msg->offset);
+		RespondSeek(chl, msg->offset);
 	else if ( msg->whence == SEEK_END )
 	{
 		off_t inode_size = inode->Size();
 		if ( (msg->offset < 0 && inode_size + msg->offset < 0) ||
 		     (0 <= msg->offset && OFF_MAX - inode_size < msg->offset) )
-			RespondError(svr, chl, EOVERFLOW);
+			RespondError(chl, EOVERFLOW);
 		else
-			RespondSeek(svr, chl, msg->offset + inode_size);
+			RespondSeek(chl, msg->offset + inode_size);
 	}
 	else
-		RespondError(svr, chl, EINVAL);
+		RespondError(chl, EINVAL);
 	inode->Unref();
 }
 
-void HandleReadAt(int svr, int chl, struct fsm_req_pread* msg, Filesystem* fs)
+void HandleReadAt(int chl, struct fsm_req_pread* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->ino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 	uint8_t* buf = (uint8_t*) malloc(msg->count);
-	if ( !buf ) { inode->Unref(); RespondError(svr, chl, errno); return; }
+	if ( !buf ) { inode->Unref(); RespondError(chl, errno); return; }
 	ssize_t amount = inode->ReadAt(buf, msg->count, msg->offset);
-	RespondRead(svr, chl, buf, amount);
+	RespondRead(chl, buf, amount);
 	inode->Unref();
 	free(buf);
 }
 
-void HandleWriteAt(int svr, int chl, struct fsm_req_pread* msg, Filesystem* fs)
+void HandleWriteAt(int chl, struct fsm_req_pread* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->ino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 	const uint8_t* buf = (const uint8_t*) &msg[1];
 	ssize_t amount = inode->WriteAt(buf, msg->count, msg->offset);
-	RespondWrite(svr, chl, amount);
+	RespondWrite(chl, amount);
 	inode->Unref();
 }
 
-void HandleOpen(int svr, int chl, struct fsm_req_open* msg, Filesystem* fs)
+void HandleOpen(int chl, struct fsm_req_open* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->dirino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->dirino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->dirino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 
 	char* pathraw = (char*) &(msg[1]);
 	char* path = (char*) malloc(msg->namelen+1);
 	if ( !path )
 	{
-		RespondError(svr, chl, errno);
+		RespondError(chl, errno);
 		inode->Unref();
 		return;
 	}
@@ -396,23 +397,23 @@ void HandleOpen(int svr, int chl, struct fsm_req_open* msg, Filesystem* fs)
 	free(path);
 	inode->Unref();
 
-	if ( !result ) { RespondError(svr, chl, errno); return; }
+	if ( !result ) { RespondError(chl, errno); return; }
 
-	RespondOpen(svr, chl, result->inode_id, result->Mode() & S_IFMT);
+	RespondOpen(chl, result->inode_id, result->Mode() & S_IFMT);
 	result->Unref();
 }
 
-void HandleMakeDir(int svr, int chl, struct fsm_req_open* msg, Filesystem* fs)
+void HandleMakeDir(int chl, struct fsm_req_open* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->dirino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->dirino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->dirino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 
 	char* pathraw = (char*) &(msg[1]);
 	char* path = (char*) malloc(msg->namelen+1);
 	if ( !path )
 	{
-		RespondError(svr, chl, errno);
+		RespondError(chl, errno);
 		inode->Unref();
 		return;
 	}
@@ -424,21 +425,21 @@ void HandleMakeDir(int svr, int chl, struct fsm_req_open* msg, Filesystem* fs)
 	free(path);
 	inode->Unref();
 
-	if ( !result ) { RespondError(svr, chl, errno); return; }
+	if ( !result ) { RespondError(chl, errno); return; }
 
-	RespondMakeDir(svr, chl, result->inode_id);
+	RespondMakeDir(chl, result->inode_id);
 	result->Unref();
 }
 
-void HandleReadDir(int svr, int chl, struct fsm_req_readdirents* msg, Filesystem* fs)
+void HandleReadDir(int chl, struct fsm_req_readdirents* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->ino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 	if ( !S_ISDIR(inode->Mode()) )
 	{
 		inode->Unref();
-		RespondError(svr, chl, ENOTDIR);
+		RespondError(chl, ENOTDIR);
 		return;
 	}
 	union
@@ -462,7 +463,7 @@ void HandleReadDir(int svr, int chl, struct fsm_req_readdirents* msg, Filesystem
 		if ( !block && !(block = inode->GetBlock(block_id = entry_block_id)) )
 		{
 			inode->Unref();
-			RespondError(svr, chl, errno);
+			RespondError(chl, errno);
 			return;
 		}
 		const uint8_t* block_data = block->block_data + entry_block_offset;
@@ -480,7 +481,7 @@ void HandleReadDir(int svr, int chl, struct fsm_req_readdirents* msg, Filesystem
 			padding[dname_offset + kernel_entry.d_namlen] = '\0';
 			block->Unref();
 			inode->Unref();
-			RespondReadDir(svr, chl, &kernel_entry);
+			RespondReadDir(chl, &kernel_entry);
 			return;
 		}
 		offset += entry->reclen;
@@ -489,29 +490,29 @@ void HandleReadDir(int svr, int chl, struct fsm_req_readdirents* msg, Filesystem
 		block->Unref();
 
 	kernel_entry.d_reclen = sizeof(kernel_entry);
-	RespondReadDir(svr, chl, &kernel_entry);
+	RespondReadDir(chl, &kernel_entry);
 }
 
-void HandleIsATTY(int svr, int chl, struct fsm_req_isatty* msg, Filesystem* fs)
+void HandleIsATTY(int chl, struct fsm_req_isatty* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->ino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
-	RespondError(svr, chl, ENOTTY);
+	if ( !inode ) { RespondError(chl, errno); return; }
+	RespondError(chl, ENOTTY);
 	inode->Unref();
 }
 
-void HandleUnlink(int svr, int chl, struct fsm_req_unlink* msg, Filesystem* fs)
+void HandleUnlink(int chl, struct fsm_req_unlink* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->dirino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->dirino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->dirino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 
 	char* pathraw = (char*) &(msg[1]);
 	char* path = (char*) malloc(msg->namelen+1);
 	if ( !path )
 	{
-		RespondError(svr, chl, errno);
+		RespondError(chl, errno);
 		inode->Unref();
 		return;
 	}
@@ -522,24 +523,24 @@ void HandleUnlink(int svr, int chl, struct fsm_req_unlink* msg, Filesystem* fs)
 	free(path);
 	inode->Unref();
 
-	if ( !result ) { RespondError(svr, chl, errno); return; }
+	if ( !result ) { RespondError(chl, errno); return; }
 
 	result->Unref();
 
-	RespondSuccess(svr, chl);
+	RespondSuccess(chl);
 }
 
-void HandleRemoveDir(int svr, int chl, struct fsm_req_unlink* msg, Filesystem* fs)
+void HandleRemoveDir(int chl, struct fsm_req_unlink* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->dirino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->dirino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->dirino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 
 	char* pathraw = (char*) &(msg[1]);
 	char* path = (char*) malloc(msg->namelen+1);
 	if ( !path )
 	{
-		RespondError(svr, chl, errno);
+		RespondError(chl, errno);
 		inode->Unref();
 		return;
 	}
@@ -547,28 +548,28 @@ void HandleRemoveDir(int svr, int chl, struct fsm_req_unlink* msg, Filesystem* f
 	path[msg->namelen] = '\0';
 
 	if ( inode->RemoveDirectory(path) )
-		RespondSuccess(svr, chl);
+		RespondSuccess(chl);
 	else
-		RespondError(svr, chl, errno);
+		RespondError(chl, errno);
 
 	free(path);
 	inode->Unref();
 }
 
-void HandleLink(int svr, int chl, struct fsm_req_link* msg, Filesystem* fs)
+void HandleLink(int chl, struct fsm_req_link* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->dirino ) { RespondError(svr, chl, EBADF); return; }
-	if ( fs->num_inodes <= msg->linkino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->dirino ) { RespondError(chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->linkino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->dirino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 	Inode* dest = fs->GetInode((uint32_t) msg->linkino);
-	if ( !dest ) { inode->Unref(); RespondError(svr, chl, errno); return; }
+	if ( !dest ) { inode->Unref(); RespondError(chl, errno); return; }
 
 	char* pathraw = (char*) &(msg[1]);
 	char* path = (char*) malloc(msg->namelen+1);
 	if ( !path )
 	{
-		RespondError(svr, chl, errno);
+		RespondError(chl, errno);
 		inode->Unref();
 		return;
 	}
@@ -576,26 +577,26 @@ void HandleLink(int svr, int chl, struct fsm_req_link* msg, Filesystem* fs)
 	path[msg->namelen] = '\0';
 
 	if ( inode->Link(path, dest, false) )
-		RespondSuccess(svr, chl);
+		RespondSuccess(chl);
 	else
-		RespondError(svr, chl, errno);
+		RespondError(chl, errno);
 
 	free(path);
 	dest->Unref();
 	inode->Unref();
 }
 
-void HandleSymlink(int svr, int chl, struct fsm_req_symlink* msg, Filesystem* fs)
+void HandleSymlink(int chl, struct fsm_req_symlink* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->dirino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->dirino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->dirino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
 
 	char* dest_raw = (char*) &(msg[1]);
 	char* dest = (char*) malloc(msg->targetlen + 1);
 	if ( !dest )
 	{
-		RespondError(svr, chl, errno);
+		RespondError(chl, errno);
 		inode->Unref();
 		return;
 	}
@@ -606,7 +607,7 @@ void HandleSymlink(int svr, int chl, struct fsm_req_symlink* msg, Filesystem* fs
 	char* path = (char*) malloc(msg->namelen + 1);
 	if ( !path )
 	{
-		RespondError(svr, chl, errno);
+		RespondError(chl, errno);
 		inode->Unref();
 		return;
 	}
@@ -614,38 +615,38 @@ void HandleSymlink(int svr, int chl, struct fsm_req_symlink* msg, Filesystem* fs
 	path[msg->namelen] = '\0';
 
 	if ( inode->Symlink(path, dest) )
-		RespondSuccess(svr, chl);
+		RespondSuccess(chl);
 	else
-		RespondError(svr, chl, errno);
+		RespondError(chl, errno);
 
 	free(path);
 	free(dest);
 	inode->Unref();
 }
 
-void HandleReadlink(int svr, int chl, struct fsm_req_readlink* msg, Filesystem* fs)
+void HandleReadlink(int chl, struct fsm_req_readlink* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->ino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
-	if ( !inode ) { RespondError(svr, chl, errno); return; }
-	if ( !EXT2_S_ISLNK(inode->Mode()) ) { RespondError(svr, chl, EINVAL); return; }
+	if ( !inode ) { RespondError(chl, errno); return; }
+	if ( !EXT2_S_ISLNK(inode->Mode()) ) { RespondError(chl, EINVAL); return; }
 	size_t count = inode->Size();
 	uint8_t* buf = (uint8_t*) malloc(count);
-	if ( !buf ) { inode->Unref(); RespondError(svr, chl, errno); return; }
+	if ( !buf ) { inode->Unref(); RespondError(chl, errno); return; }
 	ssize_t amount = inode->ReadAt(buf, count, 0);
-	RespondReadlink(svr, chl, buf, amount);
+	RespondReadlink(chl, buf, amount);
 	inode->Unref();
 	free(buf);
 }
 
-void HandleRename(int svr, int chl, struct fsm_req_rename* msg, Filesystem* fs)
+void HandleRename(int chl, struct fsm_req_rename* msg, Filesystem* fs)
 {
-	if ( fs->num_inodes <= msg->olddirino ) { RespondError(svr, chl, EBADF); return; }
-	if ( fs->num_inodes <= msg->newdirino ) { RespondError(svr, chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->olddirino ) { RespondError(chl, EBADF); return; }
+	if ( fs->num_inodes <= msg->newdirino ) { RespondError(chl, EBADF); return; }
 
 	char* pathraw = (char*) &(msg[1]);
 	char* path = (char*) malloc(msg->oldnamelen+1 + msg->newnamelen+1);
-	if ( !path ) { RespondError(svr, chl, errno); return; }
+	if ( !path ) { RespondError(chl, errno); return; }
 	memcpy(path, pathraw, msg->oldnamelen);
 	path[msg->oldnamelen] = '\0';
 	memcpy(path + msg->oldnamelen + 1, pathraw + msg->oldnamelen, msg->newnamelen);
@@ -655,24 +656,23 @@ void HandleRename(int svr, int chl, struct fsm_req_rename* msg, Filesystem* fs)
 	const char* newname = path + msg->oldnamelen + 1;
 
 	Inode* olddir = fs->GetInode((uint32_t) msg->olddirino);
-	if ( !olddir ) { free(path); RespondError(svr, chl, errno); return; }
+	if ( !olddir ) { free(path); RespondError(chl, errno); return; }
 	Inode* newdir = fs->GetInode((uint32_t) msg->newdirino);
-	if ( !newdir ) { olddir->Unref(); free(path); RespondError(svr, chl, errno); return; }
+	if ( !newdir ) { olddir->Unref(); free(path); RespondError(chl, errno); return; }
 
 	if ( newdir->Rename(olddir, oldname, newname) )
-		RespondSuccess(svr, chl);
+		RespondSuccess(chl);
 	else
-		RespondError(svr, chl, errno);
+		RespondError(chl, errno);
 
 	newdir->Unref();
 	olddir->Unref();
 	free(path);
 }
 
-void HandleIncomingMessage(int svr, int chl, struct fsm_msg_header* hdr,
-                           Filesystem* fs)
+void HandleIncomingMessage(int chl, struct fsm_msg_header* hdr, Filesystem* fs)
 {
-	typedef void (*handler_t)(int, int, void*, Filesystem*);
+	typedef void (*handler_t)(int, void*, Filesystem*);
 	handler_t handlers[FSM_MSG_NUM] = { NULL };
 	handlers[FSM_REQ_SYNC] = (handler_t) HandleSync;
 	handlers[FSM_REQ_STAT] = (handler_t) HandleStat;
@@ -700,25 +700,25 @@ void HandleIncomingMessage(int svr, int chl, struct fsm_msg_header* hdr,
 	if ( FSM_MSG_NUM <= hdr->msgtype || !handlers[hdr->msgtype] )
 	{
 		fprintf(stderr, "extfs: message type %zu not supported!\n", hdr->msgtype);
-		RespondError(svr, chl, ENOTSUP);
+		RespondError(chl, ENOTSUP);
 		return;
 	}
 	uint8_t* body = (uint8_t*) malloc(hdr->msgsize);
 	if ( !body )
 	{
 		fprintf(stderr, "extfs: message of type %zu too large: %zu bytes\n", hdr->msgtype, hdr->msgsize);
-		RespondError(svr, chl, errno);
+		RespondError(chl, errno);
 		return;
 	}
-	ssize_t amount = fsm_recv(svr, chl, body, hdr->msgsize);
-	if ( amount < (ssize_t) hdr->msgsize )
+	size_t amount = readall(chl, body, hdr->msgsize);
+	if ( amount < hdr->msgsize )
 	{
 		fprintf(stderr, "extfs: incomplete message of type %zu: got %zi of %zu bytes\n", hdr->msgtype, amount, hdr->msgsize);
-		RespondError(svr, chl, errno);
+		RespondError(chl, errno);
 		free(body);
 		return;
 	}
-	handlers[hdr->msgtype](svr, chl, body, fs);
+	handlers[hdr->msgtype](chl, body, fs);
 	free(body);
 }
 
@@ -726,7 +726,6 @@ void AlarmHandler(int)
 {
 }
 
-static volatile bool should_terminate = false;
 void TerminationHandler(int)
 {
 	should_terminate = true;
@@ -1471,32 +1470,22 @@ int main(int argc, char* argv[])
 	for ( size_t i = 0; i < fs->num_groups; i++ )
 		fs->block_groups[i] = NULL;
 
-#if defined(__sortix__)
 	if ( !mount_path )
 		return 0;
 
-	// Open the mount point.
-	int mountfd = open(mount_path, O_RDWR | O_DIRECTORY);
-	if ( mountfd < 0 )
-		error(1, errno, "%s", mount_path);
+#if defined(__sortix__)
+	// Stat the root inode.
+	struct stat root_inode_st;
+	Inode* root_inode = fs->GetInode((uint32_t) EXT2_ROOT_INO);
+	if ( !root_inode )
+		error(1, errno, "GetInode(%u)", EXT2_ROOT_INO);
+	StatInode(root_inode, &root_inode_st);
+	root_inode->Unref();
 
 	// Create a filesystem server connected to the kernel that we'll listen on.
-	int serverfd = fsm_mkserver();
+	int serverfd = fsm_mountat(AT_FDCWD, mount_path, &root_inode_st, 0);
 	if ( serverfd < 0 )
-		error(1, errno, "fsm_mkserver");
-
-	// Create a file descriptor for our root directory. The kernel won't send
-	// a message to this file descriptor so we can mount it before starting to
-	// listen for messages.
-	int rootfd = fsm_bootstraprootfd(serverfd, EXT2_ROOT_INO, O_RDWR | O_CREAT,
-	                                 S_IFDIR);
-	if ( rootfd < 0 )
-		error(1, errno, "fsm_bootstraprootfd");
-
-	if ( fsm_fsbind(rootfd, mountfd, 0) < 0 )
-		error(1, errno, "fsm_fsbind");
-
-	close(mountfd);
+		error(1, errno, "%s", mount_path);
 
 	// Make sure the server isn't unexpectedly killed and data is lost.
 	signal(SIGINT, TerminationHandler);
@@ -1506,7 +1495,10 @@ int main(int argc, char* argv[])
 	// Become a background process in its own process group by default.
 	if ( !foreground )
 	{
-		if ( fork() )
+		pid_t child_pid = fork();
+		if ( child_pid < 0 )
+			error(1, errno, "fork");
+		if ( child_pid )
 			exit(0);
 		setpgid(0, 0);
 	}
@@ -1515,20 +1507,20 @@ int main(int argc, char* argv[])
 	struct timespec last_sync_at;
 	clock_gettime(CLOCK_MONOTONIC, &last_sync_at);
 	int channel;
-	while ( 0 <= (channel = fsm_listen(serverfd)) )
+	while ( 0 <= (channel = accept(serverfd, NULL, NULL)) )
 	{
 		if ( should_terminate )
 			break;
 		struct fsm_msg_header hdr;
-		ssize_t amount;
-		if ( (amount = fsm_recv(serverfd, channel, &hdr, sizeof(hdr))) != sizeof(hdr) )
+		size_t amount;
+		if ( (amount = readall(channel, &hdr, sizeof(hdr))) != sizeof(hdr) )
 		{
 			error(0, errno, "incomplete header: got %zi of %zu bytes", amount, sizeof(hdr));
 			errno = 0;
 			continue;
 		}
-		HandleIncomingMessage(serverfd, channel, &hdr, fs);
-		fsm_closechannel(serverfd, channel);
+		HandleIncomingMessage(channel, &hdr, fs);
+		close(channel);
 
 		struct timespec now;
 		clock_gettime(CLOCK_MONOTONIC, &now);
@@ -1549,7 +1541,7 @@ int main(int argc, char* argv[])
 		fprintf(stderr, " done.\n");
 	}
 
-	fsm_closeserver(serverfd);
+	close(serverfd);
 
 #elif defined(__linux__)
 

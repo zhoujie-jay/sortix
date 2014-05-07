@@ -158,8 +158,9 @@ public:
 	Server();
 	virtual ~Server();
 	void Disconnect();
+	void Unmount();
 	Channel* Connect();
-	Channel* Listen();
+	Channel* Accept();
 	Ref<Inode> BootstrapNode(ino_t ino, mode_t type);
 	Ref<Inode> OpenNode(ino_t ino, mode_t type);
 
@@ -171,6 +172,7 @@ private:
 	uintptr_t connecter_system_tid;
 	Channel* connecting;
 	bool disconnected;
+	bool unmounted;
 
 };
 
@@ -179,8 +181,8 @@ class ServerNode : public AbstractInode
 public:
 	ServerNode(Ref<Server> server);
 	virtual ~ServerNode();
-	virtual Ref<Inode> open(ioctx_t* ctx, const char* filename, int flags,
-	                        mode_t mode);
+	virtual Ref<Inode> accept(ioctx_t* ctx, uint8_t* addr, size_t* addrlen,
+	                          int flags);
 
 private:
 	Ref<Server> server;
@@ -248,6 +250,7 @@ public:
 	                       const void* option_value, size_t option_size);
 	virtual ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count);
 	virtual ssize_t tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count);
+	virtual int unmounted(ioctx_t* ctx);
 
 private:
 	bool SendMessage(Channel* channel, size_t type, void* ptr, size_t size,
@@ -527,6 +530,7 @@ Server::Server()
 	listener_system_tid = 0;
 	connecting = NULL;
 	disconnected = false;
+	unmounted = false;
 }
 
 Server::~Server()
@@ -538,6 +542,13 @@ void Server::Disconnect()
 	ScopedLock lock(&connect_lock);
 	disconnected = true;
 	kthread_cond_signal(&connectable_cond);
+}
+
+void Server::Unmount()
+{
+	ScopedLock lock(&connect_lock);
+	unmounted = true;
+	kthread_cond_signal(&connecting_cond);
 }
 
 Channel* Server::Connect()
@@ -565,13 +576,15 @@ Channel* Server::Connect()
 	return channel;
 }
 
-Channel* Server::Listen()
+Channel* Server::Accept()
 {
 	ScopedLock lock(&connect_lock);
 	listener_system_tid = CurrentThread()->system_tid;
-	while ( !connecting )
+	while ( !connecting && !unmounted )
 		if ( !kthread_cond_wait_signal(&connecting_cond, &connect_lock) )
 			return errno = EINTR, (Channel*) NULL;
+	if ( unmounted )
+		return errno = ECONNRESET, (Channel*) NULL;
 	Channel* result = connecting;
 	connecting = NULL;
 	kthread_cond_signal(&connectable_cond);
@@ -596,7 +609,7 @@ ServerNode::ServerNode(Ref<Server> server)
 {
 	inode_type = INODE_TYPE_UNKNOWN;
 	this->server = server;
-	this->type = S_IFDIR;
+	this->type = S_IFSOCK;
 	this->dev = (dev_t) this;
 	this->ino = 0;
 	// TODO: Set uid, gid, mode.
@@ -607,36 +620,22 @@ ServerNode::~ServerNode()
 	server->Disconnect();
 }
 
-Ref<Inode> ServerNode::open(ioctx_t* /*ctx*/, const char* filename, int flags,
-                            mode_t mode)
+Ref<Inode> ServerNode::accept(ioctx_t* ctx, uint8_t* addr, size_t* addrlen,
+                              int flags)
 {
-	unsigned long long ull_ino;
-	char* end;
-	int saved_errno = errno; errno = 0;
-	if ( !isspace(*filename) &&
-	     0 < (ull_ino = strtoull(filename, &end, 10)) &&
-	     *end == '\0' &&
-	     errno != ERANGE )
-	{
-		errno = saved_errno;
-		if ( !(flags & O_CREATE) )
-			return errno = ENOENT, Ref<Inode>(NULL);
-		ino_t ino = (ino_t) ull_ino;
-		return server->BootstrapNode(ino, mode & S_IFMT);
-	}
-	errno = saved_errno;
-	if ( !strcmp(filename, "listen") )
-	{
-		Ref<ChannelNode> node(new ChannelNode);
-		if ( !node )
-			return Ref<Inode>(NULL);
-		Channel* channel = server->Listen();
-		if ( !channel )
-			return Ref<Inode>(NULL);
-		node->Construct(channel);
-		return node;
-	}
-	return errno = ENOENT, Ref<Inode>(NULL);
+	(void) addr;
+	(void) flags;
+	size_t out_addrlen = 0;
+	if ( addrlen && !ctx->copy_to_dest(addrlen, &out_addrlen, sizeof(out_addrlen)) )
+		return Ref<Inode>(NULL);
+	Ref<ChannelNode> node(new ChannelNode);
+	if ( !node )
+		return Ref<Inode>(NULL);
+	Channel* channel = server->Accept();
+	if ( !channel )
+		return Ref<Inode>(NULL);
+	node->Construct(channel);
+	return node;
 }
 
 //
@@ -1443,86 +1442,31 @@ ssize_t Unode::tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, siz
 	return ret;
 }
 
-//
-// Initialization.
-//
-
-class FactoryNode : public AbstractInode
+int Unode::unmounted(ioctx_t* /*ctx*/)
 {
-public:
-	FactoryNode(uid_t owner, gid_t group, mode_t mode);
-	virtual ~FactoryNode() { }
-	virtual Ref<Inode> open(ioctx_t* ctx, const char* filename, int flags,
-	                        mode_t mode);
-
-};
-
-FactoryNode::FactoryNode(uid_t owner, gid_t group, mode_t mode)
-{
-	inode_type = INODE_TYPE_UNKNOWN;
-	dev = (dev_t) this;
-	ino = 0;
-	this->type = S_IFDIR;
-	this->stat_uid = owner;
-	this->stat_gid = group;
-	this->stat_mode = (mode & S_SETABLE) | this->type;
+	server->Unmount();
+	return 0;
 }
 
-Ref<Inode> FactoryNode::open(ioctx_t* /*ctx*/, const char* filename,
-                             int /*flags*/, mode_t /*mode*/)
+bool Bootstrap(Ref<Inode>* out_root,
+               Ref<Inode>* out_server,
+               const struct stat* rootst)
 {
-	if ( !strcmp(filename, "new") )
-	{
-		Ref<Server> server(new Server());
-		if ( !server )
-			return Ref<Inode>(NULL);
-		Ref<ServerNode> node(new ServerNode(server));
-		if ( !node )
-			return Ref<Inode>(NULL);
-		return node;
-	}
-	return errno = ENOENT, Ref<Inode>(NULL);
-}
+	Ref<Server> server(new Server());
+	if ( !server )
+		return false;
 
-} // namespace UserFS
-} // namespace Sortix
+	ino_t root_inode_ino = rootst->st_ino;
+	mode_t root_inode_type = rootst->st_mode & S_IFMT;
+	Ref<Inode> root_inode = server->OpenNode(root_inode_ino, root_inode_type);
+	if ( !root_inode )
+		return false;
 
-namespace Sortix {
+	Ref<ServerNode> server_inode(new ServerNode(server));
+	if ( !server_inode )
+		return false;
 
-int sys_fsm_fsbind(int rootfd, int mpointfd, int /*flags*/)
-{
-	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(rootfd);
-	if ( !desc ) { return -1; }
-	Ref<Descriptor> mpoint = CurrentProcess()->GetDescriptor(mpointfd);
-	if ( !mpoint ) { return -1; }
-	Ref<MountTable> mtable = CurrentProcess()->GetMTable();
-	Ref<Inode> node = desc->vnode->inode;
-	return mtable->AddMount(mpoint->ino, mpoint->dev, node) ? 0 : -1;
-}
-
-} // namespace Sortix
-
-namespace Sortix {
-namespace UserFS {
-
-void Init(const char* devpath, Ref<Descriptor> slashdev)
-{
-	ioctx_t ctx; SetupKernelIOCtx(&ctx);
-	Ref<Inode> node(new FactoryNode(0, 0, 0666));
-	if ( !node )
-		PanicF("Unable to allocate %s/fs inode.", devpath);
-	// TODO: Race condition! Create a mkdir function that returns what it
-	// created, possibly with a O_MKDIR flag to open.
-	if ( slashdev->mkdir(&ctx, "fs", 0755) < 0 && errno != EEXIST )
-		PanicF("Could not create a %s/fs directory", devpath);
-	Ref<Descriptor> mpoint = slashdev->open(&ctx, "fs", O_READ | O_WRITE, 0);
-	if ( !mpoint )
-		PanicF("Could not open the %s/fs directory", devpath);
-	Ref<MountTable> mtable = CurrentProcess()->GetMTable();
-	// TODO: Make sure that the mount point is *empty*! Add a proper function
-	// for this on the file descriptor class!
-	if ( !mtable->AddMount(mpoint->ino, mpoint->dev, node) )
-		PanicF("Unable to mount filesystem on %s/fs", devpath);
+	return *out_root = root_inode, *out_server = server_inode, true;
 }
 
 } // namespace UserFS

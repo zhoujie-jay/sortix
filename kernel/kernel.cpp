@@ -73,7 +73,6 @@
 #include "fs/full.h"
 #include "fs/kram.h"
 #include "fs/null.h"
-#include "fs/user.h"
 #include "fs/zero.h"
 #include "gpu/bga/bga.h"
 #include "initrd.h"
@@ -600,9 +599,6 @@ static void BootThread(void* /*user*/)
 
 	// Initialize the filesystem network-
 	NetFS::Init("/dev", slashdev);
-
-	// Initialize the user-space filesystem framework.
-	UserFS::Init("/dev", slashdev);
 
 	//
 	// Stage 6. Executing Hosted Environment ("User-Space")

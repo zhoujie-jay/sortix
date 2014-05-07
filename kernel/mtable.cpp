@@ -61,9 +61,14 @@ Ref<MountTable> MountTable::Fork()
 	return clone;
 }
 
-bool MountTable::AddMount(ino_t ino, dev_t dev, Ref<Inode> inode)
+bool MountTable::AddMount(ino_t ino, dev_t dev, Ref<Inode> inode, bool fsbind)
 {
 	ScopedLock lock(&mtablelock);
+	return AddMountUnlocked(ino, dev, inode, fsbind);
+}
+
+bool MountTable::AddMountUnlocked(ino_t ino, dev_t dev, Ref<Inode> inode, bool fsbind)
+{
 	if ( nummounts == mountsalloced )
 	{
 		size_t newalloced = mountsalloced ? 2UL * mountsalloced : 4UL;
@@ -80,6 +85,7 @@ bool MountTable::AddMount(ino_t ino, dev_t dev, Ref<Inode> inode)
 	mp->ino = ino;
 	mp->dev = dev;
 	mp->inode = inode;
+	mp->fsbind = fsbind;
 	return true;
 }
 

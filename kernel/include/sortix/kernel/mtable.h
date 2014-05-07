@@ -39,6 +39,7 @@ typedef struct
 	Ref<Inode> inode;
 	ino_t ino;
 	dev_t dev;
+	bool fsbind;
 } mountpoint_t;
 
 class MountTable : public Refcountable
@@ -47,7 +48,8 @@ public:
 	MountTable();
 	virtual ~MountTable();
 	Ref<MountTable> Fork();
-	bool AddMount(ino_t ino, dev_t dev, Ref<Inode> inode);
+	bool AddMount(ino_t ino, dev_t dev, Ref<Inode> inode, bool fsbind);
+	bool AddMountUnlocked(ino_t ino, dev_t dev, Ref<Inode> inode, bool fsbind);
 
 public: // Consider these read-only.
 	kthread_mutex_t mtablelock;

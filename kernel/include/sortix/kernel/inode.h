@@ -112,6 +112,7 @@ public:
 	                       const void* option_value, size_t option_size) = 0;
 	virtual ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count) = 0;
 	virtual ssize_t tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count) = 0;
+	virtual int unmounted(ioctx_t* ctx) = 0;
 
 };
 
@@ -199,6 +200,7 @@ public:
 	                       const void* option_value, size_t option_size);
 	virtual ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count);
 	virtual ssize_t tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count);
+	virtual int unmounted(ioctx_t* ctx);
 
 };
 

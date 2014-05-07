@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -25,29 +25,17 @@
 #ifndef INCLUDE_FSMARSHALL_H
 #define INCLUDE_FSMARSHALL_H
 
-#include <stddef.h>
-
-#include <sortix/stat.h>
-#include <sortix/termios.h>
-#include <sortix/timespec.h>
+#include <sys/cdefs.h>
 
 #include <fsmarshall-msg.h>
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+__BEGIN_DECLS
 
-int fsm_mkserver();
-int fsm_closeserver(int server);
-int fsm_bootstraprootfd(int server, ino_t ino, int open_flags, mode_t mode);
-int fsm_fsbind(int rootfd, int mountpoint, int flags);
-int fsm_listen(int server);
-int fsm_closechannel(int server, int channel);
-ssize_t fsm_recv(int server, int channel, void* ptr, size_t count);
-ssize_t fsm_send(int server, int channel, const void* ptr, size_t count);
+struct stat;
 
-#if defined(__cplusplus)
-} /* extern "C" */
-#endif
+int fsm_fsbind(int, int, int);
+int fsm_mountat(int, const char*, const struct stat*, int);
+
+__END_DECLS
 
 #endif

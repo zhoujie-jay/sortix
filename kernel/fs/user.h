@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -25,10 +25,15 @@
 #ifndef SORTIX_FS_USER_H
 #define SORTIX_FS_USER_H
 
+#include <sortix/stat.h>
+
+#include <sortix/kernel/refcount.h>
+#include <sortix/kernel/vnode.h>
+
 namespace Sortix {
 namespace UserFS {
 
-void Init(const char* devpath, Ref<Descriptor> slashdev);
+bool Bootstrap(Ref<Inode>* out_root, Ref<Inode>* out_server, const struct stat* rootst);
 
 } // namespace UserFS
 } // namespace Sortix

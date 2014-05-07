@@ -26,14 +26,17 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fsmarshall-msg.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <sortix/dirent.h>
 #include <sortix/fcntl.h>
+#include <sortix/mount.h>
 #include <sortix/seek.h>
 #include <sortix/stat.h>
 
+#include <sortix/kernel/copy.h>
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/fsfunc.h>
 #include <sortix/kernel/inode.h>
@@ -109,17 +112,40 @@ Ref<Descriptor> OpenDirContainingPath(ioctx_t* ctx,
 
 // TODO: Add security checks.
 
+Descriptor::Descriptor()
+{
+	current_offset_lock = KTHREAD_MUTEX_INITIALIZER;
+	this->vnode = Ref<Vnode>(NULL);
+	this->ino = 0;
+	this->dev = 0;
+	this->type = 0;
+	this->dflags = 0;
+	checked_seekable = false;
+	seekable = false /* unused */;
+	current_offset = 0;
+}
+
 Descriptor::Descriptor(Ref<Vnode> vnode, int dflags)
 {
 	current_offset_lock = KTHREAD_MUTEX_INITIALIZER;
+	this->vnode = Ref<Vnode>(NULL);
+	this->ino = 0;
+	this->dev = 0;
+	this->type = 0;
+	this->dflags = 0;
+	checked_seekable = false;
+	seekable = false /* unused */;
+	current_offset = 0;
+	LateConstruct(vnode, dflags);
+}
+
+void Descriptor::LateConstruct(Ref<Vnode> vnode, int dflags)
+{
 	this->vnode = vnode;
 	this->ino = vnode->ino;
 	this->dev = vnode->dev;
 	this->type = vnode->type;
 	this->dflags = dflags;
-	checked_seekable = false;
-	seekable = false /* unused */;
-	current_offset = 0;
 }
 
 Descriptor::~Descriptor()
@@ -747,6 +773,62 @@ ssize_t Descriptor::tcsetblob(ioctx_t* ctx, const char* name, const void* buffer
 	if ( SSIZE_MAX < count )
 		return errno = EFBIG, -1;
 	return vnode->tcsetblob(ctx, name, buffer, count);
+}
+
+int Descriptor::unmount(ioctx_t* ctx, const char* filename, int flags)
+{
+	if ( flags & ~(UNMOUNT_FORCE | UNMOUNT_DETACH | UNMOUNT_NOFOLLOW) )
+		return errno = EINVAL, -1;
+	int subflags = flags & ~(UNMOUNT_NOFOLLOW);
+	char* final;
+	// TODO: This may follow a symlink when not supposed to!
+	Ref<Descriptor> dir =
+		OpenDirContainingPath(ctx, Ref<Descriptor>(this), filename, &final);
+	if ( !dir )
+		return -1;
+	if ( !(flags & UNMOUNT_NOFOLLOW) )
+	{
+		// TODO: Potentially follow a symlink here!
+	}
+	int ret = dir->vnode->unmount(ctx, final, subflags);
+	delete[] final;
+	return ret;
+}
+
+int Descriptor::fsm_fsbind(ioctx_t* ctx, Ref<Descriptor> target, int flags)
+{
+	return vnode->fsm_fsbind(ctx, target->vnode, flags);
+}
+
+Ref<Descriptor> Descriptor::fsm_mount(ioctx_t* ctx,
+                                      const char* filename,
+                                      const struct stat* rootst,
+                                      int flags)
+{
+	if ( flags & ~(FSM_MOUNT_NOFOLLOW | FSM_MOUNT_NONBLOCK) )
+		return errno = EINVAL, Ref<Descriptor>(NULL);
+	int result_dflags = O_READ | O_WRITE;
+	if ( flags & FSM_MOUNT_NOFOLLOW ) result_dflags |= O_NONBLOCK;
+	int subflags = flags & ~(FSM_MOUNT_NOFOLLOW | FSM_MOUNT_NONBLOCK);
+	char* final;
+	// TODO: This may follow a symlink when not supposed to!
+	Ref<Descriptor> dir =
+		OpenDirContainingPath(ctx, Ref<Descriptor>(this), filename, &final);
+	if ( !dir )
+		return errno = EINVAL, Ref<Descriptor>(NULL);
+	if ( !(flags & FSM_MOUNT_NOFOLLOW) )
+	{
+		// TODO: Potentially follow a symlink here!
+	}
+	Ref<Descriptor> result(new Descriptor());
+	if ( !result )
+		return Ref<Descriptor>(NULL);
+	Ref<Vnode> result_vnode = dir->vnode->fsm_mount(ctx, final, rootst, subflags);
+	delete[] final;
+	if ( !result_vnode )
+		return Ref<Descriptor>(NULL);
+	result->LateConstruct(result_vnode, result_dflags);
+	return result;
 }
 
 } // namespace Sortix

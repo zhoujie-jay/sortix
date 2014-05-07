@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,22 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fsmarshall/fsm_bootstraprootfd.cpp
-    Creates a root file descriptor associated with a user-space filesystem.
+    sys/mount/unmountat.cpp
+    Unmount filesystem at path.
 
 *******************************************************************************/
 
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <string.h>
+#include <sys/mount.h>
+#include <sys/syscall.h>
 
-#include <fsmarshall.h>
+DEFN_SYSCALL3(int, sys_unmountat, SYSCALL_UNMOUNTAT, int, const char*, int);
 
-extern "C" int fsm_bootstraprootfd(int server, ino_t ino, int open_flags,
-                                   mode_t mode)
+extern "C" int unmountat(int dirfd, const char* path, int flags)
 {
-	char name[sizeof(uintmax_t)*3];
-	snprintf(name, sizeof(name), "%ju", (uintmax_t) ino);
-	return openat(server, name, open_flags, mode);
+	return sys_unmountat(dirfd, path, flags);
 }

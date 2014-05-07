@@ -78,6 +78,7 @@ int sys_fchroot(int);
 int sys_fchrootat(int, const char*);
 int sys_fcntl(int, int, uintptr_t);
 int sys_fsm_fsbind(int, int, int);
+int sys_fsm_mountat(int, const char*, const struct stat*, int flags);
 int sys_fstat(int, struct stat*);
 int sys_fstatat(int, const char*, struct stat*, int);
 int sys_fstatvfs(int, struct statvfs*);
@@ -166,6 +167,7 @@ int sys_timer_settime(timer_t, int, const struct itimerspec*, struct itimerspec*
 int sys_truncateat(int, const char*, off_t);
 mode_t sys_umask(mode_t);
 int sys_unlinkat(int, const char*, int);
+int sys_unmountat(int, const char*, int);
 int sys_utimensat(int, const char*, const struct timespec [2], int);
 pid_t sys_waitpid(pid_t, int*, int);
 ssize_t sys_write(int, const void*, size_t);

@@ -185,6 +185,8 @@ void* syscall_list[SYSCALL_MAX_NUM + 1] =
 	[SYSCALL_GETENTROPY] = (void*) sys_getentropy,
 	[SYSCALL_GETHOSTNAME] = (void*) sys_gethostname,
 	[SYSCALL_SETHOSTNAME] = (void*) sys_sethostname,
+	[SYSCALL_UNMOUNTAT] = (void*) sys_unmountat,
+	[SYSCALL_FSM_MOUNTAT] = (void*) sys_fsm_mountat,
 	[SYSCALL_MAX_NUM] = (void*) sys_bad_syscall,
 };
 } // extern "C"

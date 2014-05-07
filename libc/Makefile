@@ -333,14 +333,8 @@ fcntl/creat.o \
 fcntl/fcntl.o \
 fcntl/openat.o \
 fcntl/open.o \
-fsmarshall/fsm_bootstraprootfd.o \
-fsmarshall/fsm_closechannel.o \
-fsmarshall/fsm_closeserver.o \
 fsmarshall/fsm_fsbind.o \
-fsmarshall/fsm_listen.o \
-fsmarshall/fsm_mkserver.o \
-fsmarshall/fsm_recv.o \
-fsmarshall/fsm_send.o \
+fsmarshall/fsm_mountat.o \
 getopt/getopt_long.o \
 getopt/getopt.o \
 grp/endgrent.o \
@@ -476,6 +470,8 @@ syslog/vsyslog.o \
 sys/mman/mmap.o \
 sys/mman/mprotect.o \
 sys/mman/munmap.o \
+sys/mount/unmountat.o \
+sys/mount/unmount.o \
 sys/readdirents/readdirents.o \
 sys/resource/getpriority.o \
 sys/resource/getrlimit.o \

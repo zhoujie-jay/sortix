@@ -25,6 +25,8 @@
 #ifndef INCLUDE_FSMARSHALL_MSG_H
 #define INCLUDE_FSMARSHALL_MSG_H
 
+#include <sys/cdefs.h>
+
 #include <stddef.h>
 
 #include <sortix/stat.h>
@@ -32,9 +34,12 @@
 #include <sortix/termios.h>
 #include <sortix/timespec.h>
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+__BEGIN_DECLS
+
+#define FSM_MOUNT_CLOEXEC (1 << 0)
+#define FSM_MOUNT_CLOFORK (1 << 1)
+#define FSM_MOUNT_NOFOLLOW (1 << 2)
+#define FSM_MOUNT_NONBLOCK (1 << 3)
 
 struct fsm_msg_header
 {
@@ -427,8 +432,6 @@ struct fsm_resp_tcsetblob
 
 #define FSM_MSG_NUM 53
 
-#if defined(__cplusplus)
-} /* extern "C" */
-#endif
+__END_DECLS
 
 #endif

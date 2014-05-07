@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,16 +17,23 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fsmarshall/fsm_closeserver.cpp
-    Destroys a user-space filesystem server.
+    sys/mount.h
+    Filesystem mount functionality.
 
 *******************************************************************************/
 
-#include <unistd.h>
+#ifndef INCLUDE_SYS_MOUNT_H
+#define INCLUDE_SYS_MOUNT_H
 
-#include <fsmarshall.h>
+#include <sys/cdefs.h>
 
-extern "C" int fsm_closeserver(int server)
-{
-	return close(server);
-}
+#include <sortix/mount.h>
+
+__BEGIN_DECLS
+
+int unmount(const char*, int);
+int unmountat(int, const char*, int);
+
+__END_DECLS
+
+#endif

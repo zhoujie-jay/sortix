@@ -406,4 +406,9 @@ ssize_t AbstractInode::tcsetblob(ioctx_t* /*ctx*/, const char* /*name*/, const v
 	return errno = ENOTTY, -1;
 }
 
+int AbstractInode::unmounted(ioctx_t* /*ctx*/)
+{
+	return 0;
+}
+
 } // namespace Sortix

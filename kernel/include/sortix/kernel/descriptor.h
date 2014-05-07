@@ -50,6 +50,10 @@ typedef struct ioctx_struct ioctx_t;
 
 class Descriptor : public Refcountable
 {
+private:
+	Descriptor();
+	void LateConstruct(Ref<Vnode> vnode, int dflags);
+
 public:
 	Descriptor(Ref<Vnode> vnode, int dflags);
 	virtual ~Descriptor();
@@ -102,6 +106,10 @@ public:
 	               const void* option_value, size_t option_size);
 	ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count);
 	ssize_t tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count);
+	int unmount(ioctx_t* ctx, const char* filename, int flags);
+	int fsm_fsbind(ioctx_t* ctx, Ref<Descriptor> target, int flags);
+	Ref<Descriptor> fsm_mount(ioctx_t* ctx, const char* filename,
+	                          const struct stat* rootst, int flags);
 
 private:
 	Ref<Descriptor> open_elem(ioctx_t* ctx, const char* filename, int flags,

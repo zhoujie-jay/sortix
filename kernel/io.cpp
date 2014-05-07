@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fsmarshall-msg.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -174,7 +175,13 @@ int sys_openat(int dirfd, const char* path, int flags, mode_t mode)
 	if ( !desc )
 		return -1;
 	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
-	return dtable->Allocate(desc, fdflags);
+	int ret = dtable->Allocate(desc, fdflags);
+	if ( ret < 0 )
+	{
+		// TODO: We should use a fail-safe dtable reservation mechanism that
+		//       causes this error earlier before we have side effects.
+	}
+	return ret;
 }
 
 // TODO: This is a hack! Stat the file in some manner and check permissions.
@@ -1077,6 +1084,67 @@ int sys_shutdown(int fd, int how)
 	(void) fd;
 	(void) how;
 	return errno = ENOSYS, -1;
+}
+
+int sys_unmountat(int dirfd, const char* path, int flags)
+{
+	char* pathcopy = GetStringFromUser(path);
+	if ( !pathcopy )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	const char* relpath = pathcopy;
+	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	if ( !from )
+		return delete[] pathcopy, -1;
+	int ret = from->unmount(&ctx, relpath, flags);
+	delete[] pathcopy;
+	return ret;
+}
+
+int sys_fsm_fsbind(int rootfd, int mpointfd, int flags)
+{
+	if ( flags & ~(0) )
+		return errno = EINVAL, -1;
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(rootfd);
+	if ( !desc )
+		return -1;
+	Ref<Descriptor> mpoint = CurrentProcess()->GetDescriptor(mpointfd);
+	if ( !mpoint )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return mpoint->fsm_fsbind(&ctx, desc, flags);
+}
+
+int sys_fsm_mountat(int dirfd, const char* path, const struct stat* rootst, int flags)
+{
+	if ( flags & ~(FSM_MOUNT_CLOEXEC | FSM_MOUNT_CLOFORK |
+	               FSM_MOUNT_NOFOLLOW | FSM_MOUNT_NONBLOCK) )
+		return -1;
+	int fdflags = 0;
+	if ( flags & FSM_MOUNT_CLOEXEC ) fdflags |= FD_CLOEXEC;
+	if ( flags & FSM_MOUNT_CLOFORK ) fdflags |= FD_CLOFORK;
+	flags &= ~(FSM_MOUNT_CLOEXEC | FSM_MOUNT_CLOFORK);
+	char* pathcopy = GetStringFromUser(path);
+	if ( !pathcopy )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	const char* relpath = pathcopy;
+	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	if ( !from )
+		return delete[] pathcopy, -1;
+	Ref<Descriptor> desc = from->fsm_mount(&ctx, relpath, rootst, flags);
+	delete[] pathcopy;
+	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
+	int ret = dtable->Allocate(desc, fdflags);
+	if ( ret < 0 )
+	{
+		// TODO: We should use a fail-safe dtable reservation mechanism that
+		//       causes this error earlier before we have side effects.
+		int errnum = errno;
+		from->unmount(&ctx, relpath, 0);
+		return errno = errnum, -1;
+	}
+	return ret;
 }
 
 } // namespace Sortix

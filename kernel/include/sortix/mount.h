@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of Sortix.
 
@@ -29,10 +29,9 @@
 
 __BEGIN_DECLS
 
-#define MREPL   (0<<0) /* Replace binding. */
-#define MBEFORE (1<<0) /* Add to start of directory union. */
-#define MAFTER  (2<<0) /* Add to end of directory union. */
-#define MCREATE (1<<2) /* Create files here, otherwise try next in union. */
+#define UNMOUNT_FORCE (1 << 0)
+#define UNMOUNT_DETACH (1 << 1)
+#define UNMOUNT_NOFOLLOW (1 << 2)
 
 __END_DECLS
 

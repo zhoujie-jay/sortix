@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,16 +17,16 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    fsmarshall/fsm_listen.cpp
-    Listens for a new channel on a given filesystem server.
+    sys/mount/unmount.cpp
+    Unmount filesystem at path.
 
 *******************************************************************************/
 
+#include <sys/mount.h>
+
 #include <fcntl.h>
 
-#include <fsmarshall.h>
-
-extern "C" int fsm_listen(int server)
+extern "C" int unmount(const char* path, int flags)
 {
-	return openat(server, "listen", O_RDWR);
+	return unmountat(AT_FDCWD, path, flags);
 }

@@ -536,7 +536,7 @@ void Init(const char* devpath, Ref<Descriptor> slashdev)
 	Ref<MountTable> mtable = CurrentProcess()->GetMTable();
 	// TODO: Make sure that the mount point is *empty*! Add a proper function
 	// for this on the file descriptor class!
-	if ( !mtable->AddMount(mpoint->ino, mpoint->dev, node) )
+	if ( !mtable->AddMount(mpoint->ino, mpoint->dev, node, false) )
 		PanicF("Unable to mount filesystem on %s/net/fs", devpath);
 }
 
