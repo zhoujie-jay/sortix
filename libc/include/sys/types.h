@@ -22,8 +22,6 @@
 
 *******************************************************************************/
 
-// TODO: Make this header comply with POSIX-1.2008
-
 #ifndef INCLUDE_SYS_TYPES_H
 #define INCLUDE_SYS_TYPES_H
 
