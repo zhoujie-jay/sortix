@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of Sortix.
 
@@ -58,18 +58,63 @@ uint8_t DecodeBCD(uint8_t bcd)
 	return bcd / 16 * 10 + bcd % 16;
 }
 
+struct rtc_values
+{
+	uint8_t second;
+	uint8_t minute;
+	uint8_t hour;
+	uint8_t day;
+	uint8_t month;
+	uint8_t year;
+	uint8_t century;
+	uint8_t reg_b;
+};
+
+bool are_rtc_values_equal(struct rtc_values a, struct rtc_values b)
+{
+	return a.second == b.second &&
+	       a.minute == b.minute &&
+	       a.hour == b.hour &&
+	       a.day == b.day &&
+	       a.month == b.month &&
+	       a.year == b.year &&
+	       a.century == b.century &&
+	       a.reg_b == b.reg_b;
+}
+
+struct rtc_values ReadRTCValues()
+{
+	while ( IsRTCUpdateInProgress() );
+	struct rtc_values result;
+	result.second = ReadRTC(0x00);
+	result.minute = ReadRTC(0x02);
+	result.hour = ReadRTC(0x04);
+	result.day = ReadRTC(0x07);
+	result.month = ReadRTC(0x08);
+	result.year = ReadRTC(0x09);
+	result.century = ReadRTC(0x32);
+	result.reg_b = ReadRTC(0x0B);
+	return result;
+}
+
 void Init()
 {
-	while ( !IsRTCUpdateInProgress() );
-	while ( IsRTCUpdateInProgress() );
-	uint8_t second = ReadRTC(0x00);
-	uint8_t minute = ReadRTC(0x02);
-	uint8_t hour = ReadRTC(0x04);
-	uint8_t day = ReadRTC(0x07);
-	uint8_t month = ReadRTC(0x08);
-	uint8_t year = ReadRTC(0x09);
-	uint8_t century = ReadRTC(0x32);
-	uint8_t reg_b = ReadRTC(0x0B);
+	struct rtc_values values_first = ReadRTCValues();
+	struct rtc_values values_second = ReadRTCValues();
+	while ( !are_rtc_values_equal(values_first, values_second) )
+	{
+		values_first = values_second;
+		values_second = ReadRTCValues();
+	}
+
+	uint8_t second = values_first.second;
+	uint8_t minute = values_first.minute;
+	uint8_t hour = values_first.hour;
+	uint8_t day = values_first.day;
+	uint8_t month = values_first.month;
+	uint8_t year = values_first.year;
+	uint8_t century = values_first.century;
+	uint8_t reg_b = values_first.reg_b;
 
 	bool hour12 = !(reg_b & 0x02);
 	bool is_pm = hour12 && hour & 0x80;
