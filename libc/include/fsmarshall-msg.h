@@ -136,7 +136,7 @@ struct fsm_req_pread
 struct fsm_resp_read
 {
 	size_t count;
-	//uint8_t data[count];
+	/*uint8_t data[count];*/
 };
 
 #define FSM_REQ_WRITE 15
@@ -144,7 +144,7 @@ struct fsm_req_write
 {
 	ino_t ino;
 	size_t count;
-	//uint8_t data[count];
+	/*uint8_t data[count];*/
 };
 
 #define FSM_REQ_PWRITE 16
@@ -153,7 +153,7 @@ struct fsm_req_pwrite
 	ino_t ino;
 	off_t offset;
 	size_t count;
-	//uint8_t data[count];
+	/*uint8_t data[count];*/
 };
 
 #define FSM_RESP_WRITE 17
@@ -188,7 +188,7 @@ struct fsm_resp_readdirents
 	ino_t ino;
 	unsigned char type;
 	size_t namelen;
-	//char name[namelen];
+	/*char name[namelen];*/
 };
 
 #define FSM_REQ_OPEN 22
@@ -198,7 +198,7 @@ struct fsm_req_open
 	int flags;
 	mode_t mode;
 	size_t namelen;
-	//char name[namelen];
+	/*char name[namelen];*/
 };
 
 #define FSM_RESP_OPEN 23
@@ -214,7 +214,7 @@ struct fsm_req_mkdir
 	ino_t dirino;
 	mode_t mode;
 	size_t namelen;
-	//char name[namelen];
+	/*char name[namelen];*/
 };
 
 #define FSM_RESP_MKDIR 25
@@ -229,7 +229,7 @@ struct fsm_req_link
 	ino_t dirino;
 	ino_t linkino;
 	size_t namelen;
-	//char name[namelen];
+	/*char name[namelen];*/
 };
 
 #define FSM_REQ_SYMLINK 27
@@ -238,8 +238,8 @@ struct fsm_req_symlink
 	ino_t dirino;
 	size_t targetlen;
 	size_t namelen;
-	//char target[targetlen];
-	//char name[namelen];
+	/*char target[targetlen];*/
+	/*char name[namelen];*/
 };
 
 #define FSM_REQ_READLINK 28
@@ -252,7 +252,7 @@ struct fsm_req_readlink
 struct fsm_resp_readlink
 {
 	size_t targetlen;
-	//char target[targetlen];
+	/*char target[targetlen];*/
 };
 
 #define FSM_REQ_TCGETWINSIZE 30
@@ -291,7 +291,7 @@ struct fsm_req_unlink
 {
 	ino_t dirino;
 	size_t namelen;
-	//char name[namelen];
+	/*char name[namelen];*/
 };
 
 #define FSM_REQ_RMDIR 36
@@ -299,7 +299,7 @@ struct fsm_req_rmdir
 {
 	ino_t dirino;
 	size_t namelen;
-	//char name[namelen];
+	/*char name[namelen];*/
 };
 
 #define FSM_REQ_RENAME 37
@@ -309,8 +309,8 @@ struct fsm_req_rename
 	ino_t newdirino;
 	size_t oldnamelen;
 	size_t newnamelen;
-	//char oldname[oldnamelen];
-	//char newname[newnamelen];
+	/*char oldname[oldnamelen];*/
+	/*char newname[newnamelen];*/
 };
 
 #define FSM_REQ_REFER 38
