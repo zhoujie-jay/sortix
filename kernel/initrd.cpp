@@ -26,6 +26,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -60,10 +61,45 @@ struct initrd_context
 {
 	uint8_t* initrd;
 	size_t initrd_size;
+	size_t amount_extracted;
 	initrd_superblock_t* sb;
 	Ref<Descriptor> links;
 	ioctx_t ioctx;
+	int last_percent;
 };
+
+void initrd_activity(const char* status, const char* format, ...)
+{
+	Log::PrintF("\r");
+	Log::PrintF("  [%6.6s] ", status);
+	va_list ap;
+	va_start(ap, format);
+	Log::PrintFV(format, ap);
+	va_end(ap);
+	Log::PrintF("...");
+	size_t column, row;
+	while ( Log::GetCursor(&column, &row), column != Log::Width() )
+		Log::PrintF(" ");
+	Log::PrintF("\e[0J");
+}
+
+void initrd_activity_done()
+{
+	Log::PrintF("\r\e[0J");
+}
+
+void initrd_progress(struct initrd_context* ctx)
+{
+	int percent = 100;
+	if ( ctx->initrd_size && ctx->initrd_size != ctx->amount_extracted )
+		percent = ((uint64_t) ctx->amount_extracted * 100) / ctx->initrd_size;
+	if ( percent == ctx->last_percent )
+		return;
+	char status[6 + 1];
+	snprintf(status, sizeof(status), " %3i%% ", percent);
+	initrd_activity(status, "Extracting ramdisk into initial filesystem");
+	ctx->last_percent = percent;
+}
 
 static mode_t initrd_mode_to_host_mode(uint32_t mode)
 {
@@ -153,10 +189,15 @@ static bool ExtractFile(struct initrd_context* ctx, initrd_inode_t* inode, Ref<D
 	size_t sofar = 0;
 	while ( sofar < filesize )
 	{
-		ssize_t numbytes = file->write(&ctx->ioctx, data + sofar, filesize - sofar);
+		size_t left = filesize - sofar;
+		size_t chunk = 1024 * 1024;
+		size_t count = left < chunk ? left : chunk;
+		ssize_t numbytes = file->write(&ctx->ioctx, data + sofar, count);
 		if ( numbytes <= 0 )
 			return false;
 		sofar += numbytes;
+		ctx->amount_extracted += numbytes;
+		initrd_progress(ctx);
 	}
 	return true;
 }
@@ -220,6 +261,8 @@ static bool ExtractDir(struct initrd_context* ctx, initrd_inode_t* inode, Ref<De
 			}
 		}
 	}
+	ctx->amount_extracted += inode->size;
+	initrd_progress(ctx);
 	return true;
 }
 
@@ -244,6 +287,8 @@ static bool ExtractNode(struct initrd_context* ctx, initrd_inode_t* inode, Ref<D
 
 bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc)
 {
+	initrd_activity("      ", "Verifying ramdisk checksum");
+
 	// Allocate the needed kernel virtual address space.
 	addralloc_t initrd_addr_alloc;
 	if ( !AllocateKernelAddress(&initrd_addr_alloc, size) )
@@ -261,6 +306,8 @@ bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc)
 	memset(&ctx, 0, sizeof(ctx));
 	ctx.initrd = (uint8_t*) mapat;
 	ctx.initrd_size = size;
+	ctx.amount_extracted = 0;
+	ctx.last_percent = -1;
 	SetupKernelIOCtx(&ctx.ioctx);
 
 	if ( size < sizeof(*ctx.sb) )
@@ -300,6 +347,10 @@ bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc)
 				   "may have been corrupted by the bootloader.", filecrc32, crc32);
 		}
 	}
+
+	initrd_activity("  OK  ", "Verifying ramdisk checksum");
+
+	initrd_progress(&ctx);
 
 	if ( desc->mkdir(&ctx.ioctx, ".initrd-links", 0777) != 0 )
 		return false;
@@ -341,6 +392,10 @@ bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc)
 
 	// Free the used virtual address space.
 	FreeKernelAddress(&initrd_addr_alloc);
+
+	ctx.amount_extracted = ctx.initrd_size;
+	initrd_progress(&ctx);
+	initrd_activity_done();
 
 	return true;
 }
