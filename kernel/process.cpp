@@ -25,6 +25,7 @@
 #include <sys/wait.h>
 
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <limits.h>
 #include <msr.h>
@@ -1036,6 +1037,100 @@ int Process::Execute(const char* programname, const uint8_t* program,
 }
 
 static
+const char* shebang_lookup_environment(const char* name, char* const* envp)
+{
+	size_t equalpos = strcspn(name, "=");
+	if ( name[equalpos] == '=' )
+		return NULL;
+	size_t namelen = equalpos;
+	for ( size_t i = 0; envp[i]; i++ )
+	{
+		if ( strncmp(name, envp[i], namelen) )
+			continue;
+		if ( envp[i][namelen] != '=' )
+			continue;
+		return envp[i] + namelen + 1;
+	}
+	return NULL;
+}
+
+static char* shebang_tokenize(char** saved)
+{
+	char* data = *saved;
+	if ( !data )
+		return *saved = NULL;
+	while ( data[0] && isspace(data[0]) )
+		data++;
+	if ( !data[0] )
+		return *saved = NULL;
+	size_t input = 0;
+	size_t output = 0;
+	bool singly = false;
+	bool doubly = false;
+	bool escaped = false;
+	for ( ; data[input]; input++ )
+	{
+		char c = data[input];
+		if ( !escaped && !singly && !doubly && isspace(c) )
+			break;
+		if ( !escaped && !doubly && c == '\'' )
+		{
+			singly = !singly;
+			continue;
+		}
+		if ( !escaped && !singly && c == '"' )
+		{
+			doubly = !doubly;
+			continue;
+		}
+		if ( !singly && !escaped && c == '\\' )
+		{
+			escaped = true;
+			continue;
+		}
+		if ( escaped )
+		{
+			switch ( c )
+			{
+			case 'a': c = '\a'; break;
+			case 'b': c = '\b'; break;
+			case 'e': c = '\e'; break;
+			case 'f': c = '\f'; break;
+			case 'n': c = '\n'; break;
+			case 'r': c = '\r'; break;
+			case 't': c = '\t'; break;
+			case 'v': c = '\v'; break;
+			default: break;
+			};
+		}
+		escaped = false;
+		data[output++] = c;
+	}
+	if ( data[input] )
+		*saved = data + input + 1;
+	else
+		*saved = NULL;
+	data[output] = '\0';
+	return data;
+}
+
+static size_t shebang_count_arguments(char* line)
+{
+	size_t result = 0;
+	while ( shebang_tokenize(&line) )
+		result++;
+	return result;
+}
+
+// NOTE: The PATH-searching logic is repeated multiple places. Until this logic
+//       can be shared somehow, you need to keep this comment in sync as well
+//       as the logic in these files:
+//         * kernel/process.cpp
+//         * libc/unistd/execvpe.cpp
+//         * utils/which.cpp
+// NOTO: See comments in execvpe() for algorithmic commentary.
+
+static
 int sys_execve_kernel(const char* filename,
                       int argc,
                       char* const argv[],
@@ -1077,7 +1172,132 @@ int sys_execve_kernel(const char* filename,
 
 	int result = process->Execute(filename, buffer, filesize, argc, argv, envc, envp, regs);
 
+	if ( result == 0 || errno != ENOEXEC ||
+	     filesize < 2 || buffer[0] != '#' || buffer[1] != '!' )
+		return delete[] buffer, result;
+
+	size_t line_length = 0;
+	while ( line_length < filesize && buffer[2 + line_length] != '\n' )
+		line_length++;
+	if ( line_length == filesize )
+		return delete[] buffer, errno = ENOEXEC, -1;
+
+	char* line = new char[line_length+1];
+	if ( !line )
+		return delete[] buffer, -1;
+	memcpy(line, buffer + 2, line_length);
+	line[line_length] = '\0';
 	delete[] buffer;
+
+	char* line_clone = String::Clone(line);
+	if ( !line_clone )
+		return delete[] line, -1;
+	size_t argument_count = shebang_count_arguments(line_clone);
+	delete[] line_clone;
+
+	if ( !argument_count || INT_MAX < argument_count )
+		return delete[] line, errno = ENOEXEC, -1;
+
+	int sb_argc = (int) argument_count;
+	char** sb_argv = new char*[sb_argc];
+	if ( !sb_argv )
+		return delete[] line, -1;
+
+	char* sb_saved = line;
+	for ( int i = 0; i < sb_argc; i++ )
+		sb_argv[i] = shebang_tokenize(&sb_saved);
+
+	if ( INT_MAX - argc <= sb_argc )
+		return delete[] sb_argv, delete[] line, errno = EOVERFLOW, -1;
+
+	if ( !sb_argv[0][0] )
+		return delete[] sb_argv, delete[] line, errno = ENOENT, -1;
+
+	int new_argc = sb_argc + argc;
+	char** new_argv = new char*[new_argc + 1];
+	if ( !new_argv )
+		return delete[] sb_argv, delete[] line, -1;
+
+	for ( int i = 0; i < sb_argc; i++ )
+		new_argv[i] = sb_argv[i];
+	new_argv[sb_argc + 0] = (char*) filename;
+	for ( int i = 1; i < argc; i++ )
+		new_argv[sb_argc + i] = argv[i];
+	new_argv[new_argc] = (char*) NULL;
+
+	result = -1;
+
+	// (See the above comment block before editing this searching logic)
+	const char* path = shebang_lookup_environment("PATH", envp);
+	bool search_path = !strchr(sb_argv[0], '/') && path;
+	bool any_tries = false;
+	bool any_eacces = false;
+
+	const char* new_argv0 = sb_argv[0];
+	while ( search_path && *path )
+	{
+		size_t len = strcspn(path, ":");
+		if ( !len )
+		{
+			path++;
+			continue;
+		}
+
+		any_tries = true;
+
+		char* dirpath = strndup(path, len);
+		if ( !dirpath )
+			return -1;
+		if ( (path += len)[0] == ':' )
+			path++;
+		while ( len && dirpath[len - 1] == '/' )
+			dirpath[--len] = '\0';
+
+		char* fullpath;
+		if ( asprintf(&fullpath, "%s/%s", dirpath, sb_argv[0]) < 0 )
+			return free(dirpath), -1;
+
+		result = sys_execve_kernel(fullpath, new_argc, new_argv, envc, envp, regs);
+
+		free(fullpath);
+		free(dirpath);
+
+		if ( result == 0 )
+			break;
+
+		if ( errno == ENOENT )
+			continue;
+
+		if ( errno == ELOOP ||
+		     errno == EISDIR ||
+		     errno == ENAMETOOLONG ||
+		     errno == ENOTDIR )
+			continue;
+
+		if ( errno == EACCES )
+		{
+			any_eacces = true;
+			continue;
+		}
+
+		if ( errno == EACCES )
+		{
+			any_eacces = true;
+			continue;
+		}
+
+		break;
+	}
+
+	if ( !any_tries )
+		result = sys_execve_kernel(new_argv0, new_argc, new_argv, envc, envp, regs);
+
+	if ( result < 0 && any_eacces )
+		errno = EACCES;
+
+	delete[] new_argv;
+	delete[] sb_argv;
+	delete[] line;
 
 	return result;
 }

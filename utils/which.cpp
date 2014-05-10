@@ -38,6 +38,7 @@
 // NOTE: The PATH-searching logic is repeated multiple places. Until this logic
 //       can be shared somehow, you need to keep this comment in sync as well
 //       as the logic in these files:
+//         * kernel/process.cpp
 //         * libc/unistd/execvpe.cpp
 //         * utils/which.cpp
 // NOTO: See comments in execvpe() for algorithmic commentary.
