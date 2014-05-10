@@ -24,6 +24,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -824,90 +825,133 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	return 0;
 }
 
-// TODO. This is a hack. Please remove this when execve is moved to another
-// file/class, it doesn't belong here, it's a program loader ffs!
-Ref<Descriptor> Process::Open(ioctx_t* ctx, const char* path, int flags, mode_t mode)
+static
+int sys_execve_kernel(const char* filename,
+                      int argc,
+                      char* const argv[],
+                      int envc,
+                      char* const envp[],
+                      CPU::InterruptRegisters* regs)
 {
-	// TODO: Locking the root/cwd pointers. How should that be arranged?
-	Ref<Descriptor> dir = path[0] == '/' ? root : cwd;
-	return dir->open(ctx, path, flags, mode);
+	Process* process = CurrentProcess();
+
+	ioctx_t ctx;
+	SetupKernelIOCtx(&ctx);
+	Ref<Descriptor> from = filename[0] == '/' ? process->GetRoot() : process->GetCWD();
+	Ref<Descriptor> desc = from->open(&ctx, filename, O_EXEC | O_READ, 0);
+	if ( !desc )
+		return -1;
+
+	struct stat st;
+	if ( desc->stat(&ctx, &st) )
+		return -1;
+	if ( st.st_size < 0 )
+		return errno = EINVAL, -1;
+	if ( (uintmax_t) SIZE_MAX < (uintmax_t) st.st_size )
+		return errno = EFBIG, -1;
+
+	size_t filesize = (size_t) st.st_size;
+	uint8_t* buffer = new uint8_t[filesize];
+	if ( !buffer )
+		return -1;
+
+	for ( size_t sofar = 0; sofar < filesize; )
+	{
+		ssize_t amount = desc->read(&ctx, buffer + sofar, filesize - sofar);
+		if ( amount < 0 )
+			return delete[] buffer, -1;
+		if ( amount == 0 )
+			return delete[] buffer, errno = EEOF, -1;
+		sofar += amount;
+	}
+
+	int result = process->Execute(filename, buffer, filesize, argc, argv, envc, envp, regs);
+
+	delete[] buffer;
+
+	return result;
 }
 
 static
-int sys_execve(const char* _filename, char* const _argv[], char* const _envp[])
+int sys_execve(const char* user_filename,
+               char* const user_argv[],
+               char* const user_envp[])
 {
 	char* filename;
 	int argc;
 	int envc;
 	char** argv;
 	char** envp;
-	ioctx_t ctx;
-	Ref<Descriptor> desc;
-	struct stat st;
-	size_t sofar;
-	size_t count;
-	uint8_t* buffer;
 	int result = -1;
-	Process* process = CurrentProcess();
 	CPU::InterruptRegisters regs;
 	memset(&regs, 0, sizeof(regs));
 
-	filename = String::Clone(_filename);
-	if ( !filename ) { goto cleanup_done; }
+	if ( !user_filename || !user_argv || !user_envp )
+		return errno = EFAULT, -1;
 
-	for ( argc = 0; _argv && _argv[argc]; argc++ );
-	for ( envc = 0; _envp && _envp[envc]; envc++ );
+	if ( !(filename = GetStringFromUser(user_filename)) )
+		goto cleanup_done;
+
+	argc = 0;
+	while ( true )
+	{
+		const char* user_arg;
+		if ( !CopyFromUser(&user_arg, user_argv + argc, sizeof(user_arg)) )
+			goto cleanup_filename;
+		if ( !user_arg )
+			break;
+		if ( ++argc == INT_MAX )
+		{
+			errno = E2BIG;
+			goto cleanup_filename;
+		}
+	}
 
 	argv = new char*[argc+1];
-	if ( !argv ) { goto cleanup_filename; }
+	if ( !argv )
+		goto cleanup_filename;
 	memset(argv, 0, sizeof(char*) * (argc+1));
 
 	for ( int i = 0; i < argc; i++ )
 	{
-		argv[i] = String::Clone(_argv[i]);
-		if ( !argv[i] ) { goto cleanup_argv; }
+		const char* user_arg;
+		if ( !CopyFromUser(&user_arg, user_argv + i, sizeof(user_arg)) )
+			goto cleanup_argv;
+		if ( !(argv[i] = GetStringFromUser(user_arg)) )
+			goto cleanup_argv;
+	}
+
+	envc = 0;
+	while ( true )
+	{
+		const char* user_env;
+		if ( !CopyFromUser(&user_env, user_envp + envc, sizeof(user_env)) )
+			goto cleanup_argv;
+		if ( !user_env )
+			break;
+		if ( ++envc == INT_MAX  )
+		{
+			errno = E2BIG;
+			goto cleanup_argv;
+		}
 	}
 
 	envp = new char*[envc+1];
-	if ( !envp ) { goto cleanup_argv; }
-	envc = envc;
+	if ( !envp )
+		goto cleanup_argv;
 	memset(envp, 0, sizeof(char*) * (envc+1));
 
 	for ( int i = 0; i < envc; i++ )
 	{
-		envp[i] = String::Clone(_envp[i]);
-		if ( !envp[i] ) { goto cleanup_envp; }
+		const char* user_env;
+		if ( !CopyFromUser(&user_env, user_envp + i, sizeof(user_env)) )
+			goto cleanup_envp;
+		if ( !(envp[i] = GetStringFromUser(user_envp[i])) )
+			goto cleanup_envp;
 	}
 
-	SetupKernelIOCtx(&ctx);
+	result = sys_execve_kernel(filename, argc, argv, envc, envp, &regs);
 
-	// TODO: Somehow mark the executable as busy and don't permit writes?
-	desc = process->Open(&ctx, filename, O_READ | O_WRITE, 0);
-	if ( !desc ) { goto cleanup_envp; }
-
-	if ( desc->stat(&ctx, &st) ) { goto cleanup_desc; }
-	if ( st.st_size < 0 ) { errno = EINVAL; goto cleanup_desc; }
-	if ( SIZE_MAX < (uintmax_t) st.st_size ) { errno = ERANGE; goto cleanup_desc; }
-
-	count = (size_t) st.st_size;
-	buffer = new uint8_t[count];
-	if ( !buffer ) { goto cleanup_desc; }
-	sofar = 0;
-	while ( sofar < count )
-	{
-		ssize_t bytesread = desc->read(&ctx, buffer + sofar, count - sofar);
-		if ( bytesread < 0 ) { goto cleanup_buffer; }
-		if ( bytesread == 0 ) { errno = EEOF; goto cleanup_buffer; }
-		sofar += bytesread;
-	}
-
-	result = process->Execute(filename, buffer, count, argc, argv, envc,
-	                          envp, &regs);
-
-cleanup_buffer:
-	delete[] buffer;
-cleanup_desc:
-	desc.Reset();
 cleanup_envp:
 	for ( int i = 0; i < envc; i++)
 		delete[] envp[i];
@@ -919,7 +963,8 @@ cleanup_argv:
 cleanup_filename:
 	delete[] filename;
 cleanup_done:
-	if ( !result ) { CPU::LoadRegisters(&regs); }
+	if ( result == 0 )
+		CPU::LoadRegisters(&regs);
 	return result;
 }
 
