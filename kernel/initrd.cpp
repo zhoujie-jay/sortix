@@ -261,6 +261,42 @@ static bool ExtractDir(struct initrd_context* ctx, initrd_inode_t* inode, Ref<De
 			}
 		}
 	}
+
+	for ( size_t i = 0; i < numfiles; i++ )
+	{
+		const char* name = initrd_directory_get_filename(ctx, inode, i);
+		if ( !name )
+			return false;
+		if ( IsDotOrDotDot(name) )
+			continue;
+		uint32_t childino = initrd_directory_open(ctx, inode, name);
+		if ( !childino )
+			return false;
+		initrd_inode_t* child = (initrd_inode_t*) initrd_get_inode(ctx, childino);
+		if ( INITRD_S_ISLNK(child->mode) )
+		{
+			size_t filesize;
+			uint8_t* data = initrd_inode_get_data(ctx, child, &filesize);
+			if ( !data )
+				return false;
+			char* dest_path = new char[filesize + 1];
+			if ( !dest_path )
+				return false;
+			memcpy(dest_path, data, filesize);
+			dest_path[filesize] = '\0';
+			// TODO: Currently only symbolic links to files inside the same
+			//       directory are supported when converted to hardlinks.
+			if ( !strchr(dest_path, '/') )
+			{
+				if ( Ref<Descriptor> dest = dir->open(&ctx->ioctx, dest_path, O_READ, 0) )
+					dir->link(&ctx->ioctx, name, dest);
+			}
+			delete[] dest_path;
+			ctx->amount_extracted += child->size;
+			initrd_progress(ctx);
+		}
+	}
+
 	ctx->amount_extracted += inode->size;
 	initrd_progress(ctx);
 	return true;
