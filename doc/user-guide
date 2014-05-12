@@ -500,7 +500,7 @@ These depend on libdispd.
 The `mbrfs` program creates block devices for every partition in the master boot
 record in a block device.
 
-    cd /src/mbrfs
+    cd /src/mbr
     make
     make install
 
@@ -509,7 +509,7 @@ record in a block device.
 The `extfs` program translates a block device formatted with the second extended
 filesystem and mounts it at an empty directory.
 
-    cd /src/extfs
+    cd /src/ext
     make
     make install
 
