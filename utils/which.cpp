@@ -61,7 +61,8 @@ bool Which(const char* cmd, const char* path, bool all)
 			error(1, errno, "malloc");
 		memcpy(dirname, path, len * sizeof(char));
 		dirname[len] = '\0';
-		path += len + 1;
+		if ( (path += len)[0] == ':' )
+			path++;
 		int dirfd = open(dirname, O_RDONLY | O_DIRECTORY);
 		if ( dirfd < 0 )
 		{
