@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -35,54 +35,90 @@
 #define VERSIONSTR "unknown version"
 #endif
 
-bool Which(const char* cmd, const char* path, bool all)
-{
-	if ( strchr(cmd, '/') )
-	{
-		struct stat st;
-		if ( stat(path, &st) )
-		{
-			printf("%s\n", cmd);
-			return true;
-		}
-		return false;
-	}
+// NOTE: The PATH-searching logic is repeated multiple places. Until this logic
+//       can be shared somehow, you need to keep this comment in sync as well
+//       as the logic in these files:
+//         * libc/unistd/execvpe.cpp
+//         * utils/which.cpp
+// NOTO: See comments in execvpe() for algorithmic commentary.
 
-	// Sortix doesn't support that the empty string means current directory.
+bool Which(const char* filename, const char* path, bool all)
+{
 	bool found = false;
-	char* dirname = NULL;
-	while ( *path )
+
+	bool search_path = !strchr(filename, '/') && path;
+	bool any_tries = false;
+	bool any_eacces = false;
+
+	while ( search_path && *path )
 	{
-		if ( dirname ) { free(dirname); dirname = NULL; }
 		size_t len = strcspn(path, ":");
-		if ( !len ) { path++; continue; }
-		dirname = (char*) malloc((len+1) * sizeof(char));
-		if ( !dirname )
-			error(1, errno, "malloc");
-		memcpy(dirname, path, len * sizeof(char));
-		dirname[len] = '\0';
+		if ( !len )
+		{
+			path++;
+			continue;
+		}
+
+		any_tries = true;
+
+		char* dirpath = strndup(path, len);
+		if ( !dirpath )
+			return -1;
 		if ( (path += len)[0] == ':' )
 			path++;
-		int dirfd = open(dirname, O_RDONLY | O_DIRECTORY);
-		if ( dirfd < 0 )
+		while ( len && dirpath[len - 1] == '/' )
+			dirpath[--len] = '\0';
+
+		char* fullpath;
+		if ( asprintf(&fullpath, "%s/%s", dirpath, filename) < 0 )
+			return free(dirpath), -1;
+
+		if ( access(fullpath, X_OK) == 0 )
 		{
-			if ( errno == EACCES )
-				error(1, errno, "%s", dirname);
-			// TODO: May be a security concern to continue;
-			if ( errno == ENOENT )
+			found = true;
+			printf("%s\n", fullpath);
+			free(fullpath);
+			free(dirpath);
+			if ( all )
 				continue;
+			break;
+		}
+
+		free(fullpath);
+		free(dirpath);
+
+		if ( errno == ENOENT )
+			continue;
+
+		if ( errno == ELOOP ||
+		     errno == EISDIR ||
+		     errno == ENAMETOOLONG ||
+		     errno == ENOTDIR )
+			continue;
+
+		if ( errno == EACCES )
+		{
+			any_eacces = true;
 			continue;
 		}
-		struct stat st;
-		int ret = fstatat(dirfd, cmd, &st, 0);
-		if ( ret != 0 )
+
+		if ( all )
 			continue;
-		printf("%s/%s\n", dirname, cmd);
-		found = true;
-		if ( !all )
-			break;
+
+		break;
 	}
-	free(dirname);
+
+	if ( !any_tries )
+	{
+		if ( access(filename, X_OK) == 0 )
+		{
+			found = true;
+			printf("%s\n", filename);
+		}
+	}
+
+	(void) any_eacces;
+
 	return found;
 }
 
@@ -144,11 +180,6 @@ int main(int argc, char* argv[])
 	}
 
 	const char* path = getenv("PATH");
-	if ( !path )
-	{
-		fprintf(stderr, "%s: PATH variable is not set\n", argv0);
-		exit(1);
-	}
 
 	bool success = true;
 	for ( int i = 1; i < argc; i++ )
