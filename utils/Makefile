@@ -47,6 +47,7 @@ rm \
 rmdir \
 sh \
 sort \
+sortix-sh \
 tail \
 time \
 tr \
