@@ -16,6 +16,7 @@ games \
 mbr \
 mkinitrd \
 regress \
+tix \
 utils \
 kernel
 
@@ -133,7 +134,7 @@ $(SORTIX_REPOSITORY_DIR)/$(HOST): $(SORTIX_REPOSITORY_DIR)
 
 .PHONY: clean-core
 clean-core:
-	(for D in $(MODULES) tix; do $(MAKE) clean $(SUBMAKE_OPTIONS) --directory $$D || exit $$?; done)
+	(for D in $(MODULES); do $(MAKE) clean $(SUBMAKE_OPTIONS) --directory $$D || exit $$?; done)
 
 .PHONY: clean-ports
 clean-ports:
