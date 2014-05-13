@@ -2225,6 +2225,11 @@ void editor_kbkey(struct editor* editor, int kbkey)
 
 int main(int argc, char* argv[])
 {
+	if ( !isatty(0) )
+		error(1, errno, "standard input");
+	if ( !isatty(1) )
+		error(1, errno, "standard output");
+
 	struct editor editor;
 	initialize_editor(&editor);
 
