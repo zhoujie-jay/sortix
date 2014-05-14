@@ -123,8 +123,7 @@ Process::~Process()
 	delete[] symbol_table;
 	if ( alarm_timer.IsAttached() )
 		alarm_timer.Detach();
-	if ( program_image_path )
-		delete[] program_image_path;
+	delete[] program_image_path;
 	assert(!zombiechild);
 	assert(!firstchild);
 	assert(!addrspace);
@@ -326,7 +325,7 @@ void Process::LastPrayer()
 	if ( !zombify )
 	{
 		kthread_mutex_lock(&groupparentlock);
-		bool in_limbo = groupfirst || (grouplimbo = true);
+		bool in_limbo = groupfirst && (grouplimbo = true);
 		kthread_mutex_unlock(&groupparentlock);
 
 		if ( !in_limbo )
@@ -479,7 +478,7 @@ pid_t Process::Wait(pid_t thepid, int* user_status, int options)
 		status = W_EXITCODE(128 + SIGKILL, SIGKILL);
 
 	kthread_mutex_lock(&zombie->groupparentlock);
-	bool in_limbo = zombie->groupfirst || (zombie->grouplimbo = true);
+	bool in_limbo = zombie->groupfirst && (zombie->grouplimbo = true);
 	kthread_mutex_unlock(&zombie->groupparentlock);
 
 	// And so, the process was fully deleted.
