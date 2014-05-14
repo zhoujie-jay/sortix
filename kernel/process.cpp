@@ -45,6 +45,7 @@
 #include <sortix/uthread.h>
 #include <sortix/wait.h>
 
+#include <sortix/kernel/addralloc.h>
 #include <sortix/kernel/copy.h>
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/dtable.h>
@@ -1130,6 +1131,23 @@ static size_t shebang_count_arguments(char* line)
 //         * utils/which.cpp
 // NOTO: See comments in execvpe() for algorithmic commentary.
 
+static bool sys_execve_alloc(addralloc_t* alloc, size_t size)
+{
+	if ( !AllocateKernelAddress(alloc, size) )
+		return false;
+	if ( !Memory::MapRange(alloc->from, alloc->size, PROT_KREAD | PROT_KWRITE, PAGE_USAGE_EXECUTE) )
+		return FreeKernelAddress(alloc), false;
+	Memory::Flush();
+	return true;
+}
+
+static void sys_execve_free(addralloc_t* alloc)
+{
+	Memory::UnmapRange(alloc->from, alloc->size, PAGE_USAGE_EXECUTE);
+	Memory::Flush();
+	FreeKernelAddress(alloc);
+}
+
 static
 int sys_execve_kernel(const char* filename,
                       int argc,
@@ -1156,17 +1174,19 @@ int sys_execve_kernel(const char* filename,
 		return errno = EFBIG, -1;
 
 	size_t filesize = (size_t) st.st_size;
-	uint8_t* buffer = new uint8_t[filesize];
-	if ( !buffer )
+
+	addralloc_t buffer_alloc;
+	if ( !sys_execve_alloc(&buffer_alloc, filesize) )
 		return -1;
 
+	uint8_t* buffer = (uint8_t*) buffer_alloc.from;
 	for ( size_t sofar = 0; sofar < filesize; )
 	{
 		ssize_t amount = desc->read(&ctx, buffer + sofar, filesize - sofar);
 		if ( amount < 0 )
-			return delete[] buffer, -1;
+			return sys_execve_free(&buffer_alloc), -1;
 		if ( amount == 0 )
-			return delete[] buffer, errno = EEOF, -1;
+			return sys_execve_free(&buffer_alloc), errno = EEOF, -1;
 		sofar += amount;
 	}
 
@@ -1174,20 +1194,20 @@ int sys_execve_kernel(const char* filename,
 
 	if ( result == 0 || errno != ENOEXEC ||
 	     filesize < 2 || buffer[0] != '#' || buffer[1] != '!' )
-		return delete[] buffer, result;
+		return sys_execve_free(&buffer_alloc), result;
 
 	size_t line_length = 0;
 	while ( line_length < filesize && buffer[2 + line_length] != '\n' )
 		line_length++;
 	if ( line_length == filesize )
-		return delete[] buffer, errno = ENOEXEC, -1;
+		return sys_execve_free(&buffer_alloc), errno = ENOEXEC, -1;
 
 	char* line = new char[line_length+1];
 	if ( !line )
-		return delete[] buffer, -1;
+		return sys_execve_free(&buffer_alloc), -1;
 	memcpy(line, buffer + 2, line_length);
 	line[line_length] = '\0';
-	delete[] buffer;
+	sys_execve_free(&buffer_alloc);
 
 	char* line_clone = String::Clone(line);
 	if ( !line_clone )
