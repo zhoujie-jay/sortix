@@ -52,9 +52,9 @@ void InitCPU()
 	// mapped the first 2 MiB. This code finishes the job such that
 	// virtual memory is fully usable and manageable.
 
-	// boot.s already initialized everything from 0x1000UL to 0xE000UL
-	// to zeroes. Since these structures are already used, doing it here
-	// will be very dangerous.
+	// boot.s already initialized everything from 0x21000UL to 0x2F000UL to
+	// zeroes. Since these structures are already used, doing it here would
+	// destroying the existing data.
 
 	PML* const BOOTPML4 = (PML* const) 0x21000UL;
 	PML* const BOOTPML3 = (PML* const) 0x26000UL;
@@ -85,7 +85,7 @@ void InitCPU()
 	PML* const FORKPML1 = (PML* const) 0x2A000UL;
 
 	BOOTPML3->entry[0] = (addr_t) FORKPML2 | flags | PML_FORK;
-	BOOTPML2->entry[0] = (addr_t) FORKPML1 | flags | PML_FORK;
+	FORKPML2->entry[0] = (addr_t) FORKPML1 | flags | PML_FORK;
 
 	currentdir = (addr_t) BOOTPML4;
 
@@ -148,7 +148,7 @@ void DestroyAddressSpace(addr_t fallback, void (*func)(addr_t, void*), void* use
 	addr_t fractal3 = (PMLS[4] + 0)->entry[510UL];
 	addr_t fork2 = (PMLS[3] + 510UL)->entry[0];
 	addr_t fractal2 = (PMLS[3] + 510UL)->entry[510];
-	addr_t fork1 = (PMLS[2] + 510UL * 512UL + 510UL)->entry[0];
+	addr_t fork1 = (PMLS[2] + 510UL * 512UL + 0)->entry[0];
 	addr_t fractal1 = (PMLS[2] + 510UL * 512UL + 510UL)->entry[510];
 	addr_t dir = currentdir;
 
