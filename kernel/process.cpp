@@ -381,7 +381,7 @@ void Process::ResetAddressSpace()
 	assert(Memory::GetAddressSpace() == addrspace);
 
 	for ( size_t i = 0; i < segments_used; i++ )
-		Memory::UnmapRange(segments[i].addr, segments[i].size);
+		Memory::UnmapRange(segments[i].addr, segments[i].size, PAGE_USAGE_USER_SPACE);
 
 	Memory::Flush();
 
@@ -1632,7 +1632,7 @@ static void* sys_sbrk(intptr_t increment)
 		if ( heap_segment->size < abs_amount )
 			abs_amount = heap_segment->size;
 		uintptr_t new_end = heap_segment->addr + heap_segment->size - abs_amount;
-		Memory::UnmapRange(new_end, abs_amount);
+		Memory::UnmapRange(new_end, abs_amount, PAGE_USAGE_USER_SPACE);
 		heap_segment->size -= abs_amount;
 		// TODO: How do we handle that the heap shrinks to 0 bytes?
 	}
@@ -1652,7 +1652,7 @@ static void* sys_sbrk(intptr_t increment)
 			return errno = ENOMEM, (void*) -1UL;
 		if ( FindOverlappingSegment(process, &growth) )
 			return errno = ENOMEM, (void*) -1UL;
-		if ( !Memory::MapRange(growth.addr, growth.size, growth.prot) )
+		if ( !Memory::MapRange(growth.addr, growth.size, growth.prot, PAGE_USAGE_USER_SPACE) )
 			return errno = ENOMEM, (void*) -1UL;
 		heap_segment->size += growth.size;
 	}

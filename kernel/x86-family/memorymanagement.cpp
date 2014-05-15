@@ -54,6 +54,7 @@ size_t stackused;
 size_t stackreserved;
 size_t stacklength;
 size_t totalmem;
+size_t page_usage_counts[PAGE_USAGE_NUM_KINDS];
 kthread_mutex_t pagelock;
 
 } // namespace Page
@@ -234,7 +235,7 @@ void AllocateKernelPMLs()
 		if ( pml->entry[i] & PML_PRESENT )
 			continue;
 
-		addr_t page = Page::Get();
+		addr_t page = Page::Get(PAGE_USAGE_PAGING_OVERHEAD);
 		if ( !page )
 			Panic("out of memory allocating boot PMLs");
 
@@ -253,11 +254,28 @@ void AllocateKernelPMLs()
 namespace Sortix {
 namespace Page {
 
+void PageUsageRegisterUse(addr_t where, enum page_usage usage)
+{
+	if ( PAGE_USAGE_NUM_KINDS <= usage )
+		return;
+	(void) where;
+	page_usage_counts[usage]++;
+}
+
+void PageUsageRegisterFree(addr_t where, enum page_usage usage)
+{
+	if ( PAGE_USAGE_NUM_KINDS <= usage )
+		return;
+	(void) where;
+	assert(page_usage_counts[usage] != 0);
+	page_usage_counts[usage]--;
+}
+
 void ExtendStack()
 {
 	// This call will always succeed, if it didn't, then the stack
 	// wouldn't be full, and thus this function won't be called.
-	addr_t page = GetUnlocked();
+	addr_t page = GetUnlocked(PAGE_USAGE_PHYSICAL);
 
 	// This call will also succeed, since there are plenty of physical
 	// pages available and it might need some.
@@ -329,7 +347,7 @@ bool Reserve(size_t* counter, size_t amount)
 	return ReserveUnlocked(counter, amount);
 }
 
-addr_t GetReservedUnlocked(size_t* counter)
+addr_t GetReservedUnlocked(size_t* counter, enum page_usage usage)
 {
 	if ( !*counter )
 		return 0;
@@ -338,32 +356,34 @@ addr_t GetReservedUnlocked(size_t* counter)
 	assert(result == AlignDown(result));
 	stackreserved--;
 	(*counter)--;
+	PageUsageRegisterUse(result, usage);
 	return result;
 }
 
-addr_t GetReserved(size_t* counter)
+addr_t GetReserved(size_t* counter, enum page_usage usage)
 {
 	ScopedLock lock(&pagelock);
-	return GetReservedUnlocked(counter);
+	return GetReservedUnlocked(counter, usage);
 }
 
-addr_t GetUnlocked()
+addr_t GetUnlocked(enum page_usage usage)
 {
 	assert(stackreserved <= stackused);
 	if ( unlikely(stackreserved == stackused) )
 		return errno = ENOMEM, 0;
 	addr_t result = STACK[--stackused];
 	assert(result == AlignDown(result));
+	PageUsageRegisterUse(result, usage);
 	return result;
 }
 
-addr_t Get()
+addr_t Get(enum page_usage usage)
 {
 	ScopedLock lock(&pagelock);
-	return GetUnlocked();
+	return GetUnlocked(usage);
 }
 
-void PutUnlocked(addr_t page)
+void PutUnlocked(addr_t page, enum page_usage usage)
 {
 	assert(page == AlignDown(page));
 	if ( unlikely(stackused == stacklength) )
@@ -376,12 +396,13 @@ void PutUnlocked(addr_t page)
 		ExtendStack();
 	}
 	STACK[stackused++] = page;
+	PageUsageRegisterFree(page, usage);
 }
 
-void Put(addr_t page)
+void Put(addr_t page, enum page_usage usage)
 {
 	ScopedLock lock(&pagelock);
-	PutUnlocked(page);
+	PutUnlocked(page, usage);
 }
 
 void Lock()
@@ -507,18 +528,18 @@ void Flush()
 	asm volatile ( "mov %0, %%cr3" : : "r"(previous) );
 }
 
-bool MapRange(addr_t where, size_t bytes, int protection)
+bool MapRange(addr_t where, size_t bytes, int protection, enum page_usage usage)
 {
 	for ( addr_t page = where; page < where + bytes; page += 4096UL )
 	{
-		addr_t physicalpage = Page::Get();
+		addr_t physicalpage = Page::Get(usage);
 		if ( physicalpage == 0 )
 		{
 			while ( where < page )
 			{
 				page -= 4096UL;
 				physicalpage = Unmap(page);
-				Page::Put(physicalpage);
+				Page::Put(physicalpage, usage);
 			}
 			return false;
 		}
@@ -529,12 +550,12 @@ bool MapRange(addr_t where, size_t bytes, int protection)
 	return true;
 }
 
-bool UnmapRange(addr_t where, size_t bytes)
+bool UnmapRange(addr_t where, size_t bytes, enum page_usage usage)
 {
 	for ( addr_t page = where; page < where + bytes; page += 4096UL )
 	{
 		addr_t physicalpage = Unmap(page);
-		Page::Put(physicalpage);
+		Page::Put(physicalpage, usage);
 	}
 	return true;
 }
@@ -564,7 +585,7 @@ static bool MapInternal(addr_t physical, addr_t mapto, int prot, addr_t extrafla
 		if ( !(entry & PML_PRESENT) )
 		{
 			// TODO: Possible memory leak when page allocation fails.
-			addr_t page = Page::Get();
+			addr_t page = Page::Get(PAGE_USAGE_PAGING_OVERHEAD);
 
 			if ( !page )
 				return false;
@@ -682,7 +703,9 @@ void ForkCleanup(size_t i, size_t level)
 			InvalidatePage(destaddr);
 			ForkCleanup(ENTRIES+1UL, level-1);
 		}
-		Page::Put(phys);
+		enum page_usage usage = 1 < level ? PAGE_USAGE_PAGING_OVERHEAD
+		                                  : PAGE_USAGE_USER_SPACE;
+		Page::Put(phys, usage);
 	}
 }
 
@@ -696,13 +719,15 @@ bool Fork(size_t level, size_t pmloffset)
 		addr_t entry = (PMLS[level] + pmloffset)->entry[i];
 
 		// Link the entry if it isn't supposed to be forked.
-		if ( !(entry & PML_FORK ) )
+		if ( !(entry & PML_PRESENT) || !(entry & PML_FORK ) )
 		{
 			destpml->entry[i] = entry;
 			continue;
 		}
 
-		addr_t phys = Page::Get();
+		enum page_usage usage = 1 < level ? PAGE_USAGE_PAGING_OVERHEAD
+		                                  : PAGE_USAGE_USER_SPACE;
+		addr_t phys = Page::Get(usage);
 		if ( unlikely(!phys) )
 		{
 			ForkCleanup(i, level);
@@ -723,7 +748,7 @@ bool Fork(size_t level, size_t pmloffset)
 		{
 			if ( !Fork(level-1, offset) )
 			{
-				Page::Put(phys);
+				Page::Put(phys, usage);
 				ForkCleanup(i, level);
 				return false;
 			}
@@ -756,12 +781,12 @@ bool Fork(addr_t dir, size_t level, size_t pmloffset)
 // Create an exact copy of the current address space.
 addr_t Fork()
 {
-	addr_t dir = Page::Get();
+	addr_t dir = Page::Get(PAGE_USAGE_PAGING_OVERHEAD);
 	if ( dir == 0 )
 		return 0;
 	if ( !Fork(dir, TOPPMLLEVEL, 0) )
 	{
-		Page::Put(dir);
+		Page::Put(dir, PAGE_USAGE_PAGING_OVERHEAD);
 		return 0;
 	}
 

@@ -255,7 +255,7 @@ static bool ExtractDir(struct initrd_context* ctx, initrd_inode_t* inode, Ref<De
 				{
 					uintptr_t size_aligned = Page::AlignDown(size - from_distance);
 					for ( size_t i = 0; i < size_aligned; i += Page::Size() )
-						Page::Put(Memory::Unmap(from_aligned + i));
+						Page::Put(Memory::Unmap(from_aligned + i), PAGE_USAGE_WASNT_ALLOCATED);
 					Memory::Flush();
 				}
 			}
@@ -422,7 +422,7 @@ bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc)
 		if ( !Memory::LookUp(mapat + i, NULL, NULL) )
 			continue;
 		addr_t addr = Memory::Unmap(mapat + i);
-		Page::Put(addr);
+		Page::Put(addr, PAGE_USAGE_WASNT_ALLOCATED);
 	}
 	Memory::Flush();
 

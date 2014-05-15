@@ -36,6 +36,20 @@ namespace Sortix {
 
 class Process;
 
+enum page_usage
+{
+	PAGE_USAGE_OTHER,
+	PAGE_USAGE_PHYSICAL,
+	PAGE_USAGE_PAGING_OVERHEAD,
+	PAGE_USAGE_KERNEL_HEAP,
+	PAGE_USAGE_FILESYSTEM_CACHE,
+	PAGE_USAGE_USER_SPACE,
+	PAGE_USAGE_EXECUTE,
+	PAGE_USAGE_DRIVER,
+	PAGE_USAGE_NUM_KINDS,
+	PAGE_USAGE_WASNT_ALLOCATED,
+};
+
 } // namespace Sortix
 
 namespace Sortix {
@@ -45,12 +59,12 @@ bool Reserve(size_t* counter, size_t amount);
 bool ReserveUnlocked(size_t* counter, size_t amount);
 bool Reserve(size_t* counter, size_t least, size_t ideal);
 bool ReserveUnlocked(size_t* counter, size_t least, size_t ideal);
-addr_t GetReserved(size_t* counter);
-addr_t GetReservedUnlocked(size_t* counter);
-addr_t Get();
-addr_t GetUnlocked();
-void Put(addr_t page);
-void PutUnlocked(addr_t page);
+addr_t GetReserved(size_t* counter, enum page_usage usage);
+addr_t GetReservedUnlocked(size_t* counter, enum page_usage usage);
+addr_t Get(enum page_usage usage);
+addr_t GetUnlocked(enum page_usage usage);
+void Put(addr_t page, enum page_usage usage);
+void PutUnlocked(addr_t page, enum page_usage usage);
 void Lock();
 void Unlock();
 
@@ -87,8 +101,8 @@ int ProvidedProtection(int prot);
 void PageProtect(addr_t mapto, int protection);
 void PageProtectAdd(addr_t mapto, int protection);
 void PageProtectSub(addr_t mapto, int protection);
-bool MapRange(addr_t where, size_t bytes, int protection);
-bool UnmapRange(addr_t where, size_t bytes);
+bool MapRange(addr_t where, size_t bytes, int protection, enum page_usage usage);
+bool UnmapRange(addr_t where, size_t bytes, enum page_usage usage);
 void Statistics(size_t* amountused, size_t* totalmem);
 addr_t GetKernelStack();
 size_t GetKernelStackSize();

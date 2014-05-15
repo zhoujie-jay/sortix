@@ -159,7 +159,7 @@ addr_t Construct32(Process* process, const uint8_t* file, size_t filelen,
 
 		assert(process == CurrentProcess());
 
-		if ( !Memory::MapRange(segment.addr, segment.size, prot) )
+		if ( !Memory::MapRange(segment.addr, segment.size, prot, PAGE_USAGE_USER_SPACE) )
 		{
 			kthread_mutex_unlock(&process->segment_lock);
 			process->ResetAddressSpace();
@@ -168,7 +168,7 @@ addr_t Construct32(Process* process, const uint8_t* file, size_t filelen,
 
 		if ( !AddSegment(process, &segment) )
 		{
-			Memory::UnmapRange(segment.addr, segment.size);
+			Memory::UnmapRange(segment.addr, segment.size, PAGE_USAGE_USER_SPACE);
 			kthread_mutex_unlock(&process->segment_lock);
 			process->ResetAddressSpace();
 			return 0;
@@ -368,7 +368,7 @@ addr_t Construct64(Process* process, const uint8_t* file, size_t filelen,
 
 		assert(process == CurrentProcess());
 
-		if ( !Memory::MapRange(segment.addr, segment.size, prot) )
+		if ( !Memory::MapRange(segment.addr, segment.size, prot, PAGE_USAGE_USER_SPACE) )
 		{
 			kthread_mutex_unlock(&process->segment_lock);
 			process->ResetAddressSpace();
@@ -377,7 +377,7 @@ addr_t Construct64(Process* process, const uint8_t* file, size_t filelen,
 
 		if ( !AddSegment(process, &segment) )
 		{
-			Memory::UnmapRange(segment.addr, segment.size);
+			Memory::UnmapRange(segment.addr, segment.size, PAGE_USAGE_USER_SPACE);
 			kthread_mutex_unlock(&process->segment_lock);
 			process->ResetAddressSpace();
 			return 0;

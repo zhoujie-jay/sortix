@@ -80,7 +80,7 @@ static void FreeMemory(uintptr_t where, size_t bytes)
 	while ( bytes )
 	{
 		addr_t page = Sortix::Memory::Unmap(where);
-		Sortix::Page::Put(page);
+		Sortix::Page::Put(page, Sortix::PAGE_USAGE_KERNEL_HEAP);
 
 		bytes -= PAGESIZE;
 		where += PAGESIZE;
@@ -95,7 +95,7 @@ static bool AllocateMemory(uintptr_t where, size_t bytes)
 
 	while ( bytes )
 	{
-		addr_t page = Sortix::Page::Get();
+		addr_t page = Sortix::Page::Get(Sortix::PAGE_USAGE_KERNEL_HEAP);
 		if ( !page )
 		{
 			FreeMemory(where, pos-where);
@@ -104,7 +104,7 @@ static bool AllocateMemory(uintptr_t where, size_t bytes)
 
 		if ( !Sortix::Memory::Map(page, pos, PROT_KREAD | PROT_KWRITE) )
 		{
-			Sortix::Page::Put(page);
+			Sortix::Page::Put(page, Sortix::PAGE_USAGE_KERNEL_HEAP);
 			FreeMemory(where, pos-where);
 			return false;
 		}

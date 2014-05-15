@@ -76,7 +76,7 @@ void UnmapMemory(Process* process, uintptr_t addr, size_t size)
 		{
 			uintptr_t conflict_offset = (uintptr_t) conflict - (uintptr_t) process->segments;
 			size_t conflict_index = conflict_offset / sizeof(struct segment);
-			Memory::UnmapRange(conflict->addr, conflict->size);
+			Memory::UnmapRange(conflict->addr, conflict->size, PAGE_USAGE_USER_SPACE);
 			Memory::Flush();
 			if ( conflict_index + 1 == process->segments_used )
 			{
@@ -92,7 +92,7 @@ void UnmapMemory(Process* process, uintptr_t addr, size_t size)
 		// Delete the middle of the segment if covered there by our request.
 		if ( conflict->addr < addr && addr + size - conflict->addr <= conflict->size )
 		{
-			Memory::UnmapRange(addr, size);
+			Memory::UnmapRange(addr, size, PAGE_USAGE_USER_SPACE);
 			Memory::Flush();
 			struct segment right_segment;
 			right_segment.addr = addr + size;
@@ -109,7 +109,7 @@ void UnmapMemory(Process* process, uintptr_t addr, size_t size)
 		// Delete the part of the segment covered partially from the left.
 		if ( addr <= conflict->addr )
 		{
-			Memory::UnmapRange(conflict->addr, addr + size - conflict->addr);
+			Memory::UnmapRange(conflict->addr, addr + size - conflict->addr, PAGE_USAGE_USER_SPACE);
 			Memory::Flush();
 			conflict->size = conflict->addr + conflict->size - (addr + size);
 			conflict->addr = addr + size;
@@ -119,7 +119,7 @@ void UnmapMemory(Process* process, uintptr_t addr, size_t size)
 		// Delete the part of the segment covered partially from the right.
 		if ( conflict->addr + size <= addr + size )
 		{
-			Memory::UnmapRange(addr, addr + conflict->size + conflict->addr);
+			Memory::UnmapRange(addr, addr + conflict->size + conflict->addr, PAGE_USAGE_USER_SPACE);
 			Memory::Flush();
 			conflict->size -= conflict->size + conflict->addr;
 			continue;
@@ -232,13 +232,13 @@ bool MapMemory(Process* process, uintptr_t addr, size_t size, int prot)
 	new_segment.size = size;
 	new_segment.prot = prot;
 
-	if ( !MapRange(new_segment.addr, new_segment.size, new_segment.prot) )
+	if ( !MapRange(new_segment.addr, new_segment.size, new_segment.prot, PAGE_USAGE_USER_SPACE) )
 		return false;
 	Memory::Flush();
 
 	if ( !AddSegment(process, &new_segment) )
 	{
-		UnmapRange(new_segment.addr, new_segment.size);
+		UnmapRange(new_segment.addr, new_segment.size, PAGE_USAGE_USER_SPACE);
 		Memory::Flush();
 		return false;
 	}
