@@ -85,6 +85,8 @@ BlockCache::BlockCache()
 	areas_length = 0;
 	blocks_per_area = 1024UL;
 	unused_block_count = 0;
+	blocks_used = 0;
+	blocks_allocated = 0;
 	mru_block = NULL;
 	lru_block = NULL;
 	unused_block = NULL;
@@ -110,6 +112,7 @@ BlockCacheBlock* BlockCache::AcquireBlock()
 		unused_block->prev_block = NULL;
 	ret->information |= BCACHE_USED;
 	LinkBlock(ret);
+	blocks_used++;
 	return ret;
 }
 
@@ -118,8 +121,10 @@ void BlockCache::ReleaseBlock(BlockCacheBlock* block)
 	ScopedLock lock(&bcache_mutex);
 	assert(block->information & BCACHE_PRESENT);
 	assert(block->information & BCACHE_USED);
+	blocks_used--;
 	if ( blocks_per_area < unused_block_count )
 	{
+		blocks_allocated--;
 		uint8_t* block_data = BlockDataUnlocked(block);
 		addr_t block_data_addr = Memory::Unmap((addr_t) block_data);
 		Page::Put(block_data_addr);
@@ -212,8 +217,8 @@ bool BlockCache::AddArea()
 		goto cleanup_addralloc;
 	if ( !Memory::MapRange(area->addralloc.from, area->addralloc.size, prot) )
 		goto cleanup_blocks;
-
 	Memory::Flush();
+	blocks_allocated += blocks_per_area;
 
 	// Add all our new blocks into the unused block linked list.
 	for ( size_t i = blocks_per_area; i != 0; i-- )
