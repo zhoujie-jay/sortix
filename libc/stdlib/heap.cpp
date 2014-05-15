@@ -221,6 +221,9 @@ size_t heapmaxsize = SIZE_MAX;
 // excludes the wilderness.
 size_t heapsize = 0;
 
+// How many bytes of actual storage the heap contains.
+size_t heapstorage = 0;
+
 // bins[N] contain a linked list of chunks that are at least 2^(N+1)
 // bytes, but less than 2^(N+2) bytes. By selecting the proper bin in
 // constant time, we can allocate chunks in constant time.
@@ -502,6 +505,8 @@ extern "C" void* malloc(size_t size)
 		chunk->magic = MAGIC;
 		chunk->GetTrailer()->magic = MAGIC;
 
+		heapstorage += chunk->size;
+
 		#if 3 <= PARANOIA
 		assert(ValidateHeap());
 		#endif
@@ -545,6 +550,8 @@ extern "C" void* malloc(size_t size)
 	trailer->size = size;
 	chunk->magic = MAGIC;
 	trailer->magic = MAGIC;
+
+	heapstorage += chunk->size;
 
 	#if 3 <= PARANOIA
 	assert(ValidateHeap());
@@ -670,6 +677,8 @@ extern "C" void free(void* addr)
 #endif
 	assert(chunk->IsUsed());
 	assert(chunk->IsSane());
+
+	heapstorage -= chunk->size;
 
 	UnifyNeighbors(&chunk);
 
