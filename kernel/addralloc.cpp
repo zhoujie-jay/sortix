@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of Sortix.
 
@@ -61,11 +61,20 @@ bool AllocateKernelAddress(addralloc_t* ret, size_t size)
 	return true;
 }
 
+// TODO: Proper deallocation support!
 void FreeKernelAddress(addralloc_t* alloc)
 {
 	if ( !alloc->from )
 		return;
-	// Currently, nothing to do here.
+
+	ScopedLock lock(&alloc_lock);
+	addr_t kmem_from;
+	size_t kmem_size;
+	Memory::GetKernelVirtualArea(&kmem_from, &kmem_size);
+	addr_t aux_reached = kmem_from + kmem_size - aux_allocated;
+	if ( alloc->from == aux_reached )
+		aux_allocated -= alloc->size;
+
 	alloc->from = 0;
 	alloc->size = 0;
 }
