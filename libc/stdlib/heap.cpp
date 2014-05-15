@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -493,9 +493,10 @@ extern "C" void* malloc(size_t size)
 		assert(!bins[binindex] || bins[binindex]->IsSane());
 
 		// If we don't use the entire chunk.
-		if ( OVERHEAD <= binsize - size )
+		size_t original_chunk_size = chunk->size;
+		if ( OVERHEAD <= original_chunk_size - size )
 		{
-			size_t left = binsize - size;
+			size_t left = original_chunk_size - size;
 			chunk->size -= left;
 			chunk->GetTrailer()->size = chunk->size;
 
