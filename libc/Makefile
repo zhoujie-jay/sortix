@@ -260,6 +260,7 @@ wchar/wcsncasecmp.o \
 wchar/wcsncat.o \
 wchar/wcsncmp.o \
 wchar/wcsncpy.o \
+wchar/wcsnlen.o \
 wchar/wcsnrtombs.o \
 wchar/wcspbrk.o \
 wchar/wcsrchr.o \

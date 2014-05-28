@@ -205,7 +205,7 @@ int wcscasecmp(const wchar_t*, const wchar_t*);
 wchar_t* wcsdup(const wchar_t*);
 int wcsncasecmp(const wchar_t*, const wchar_t *, size_t);
 /* TODO: int wcsncasecmp_l(const wchar_t*, const wchar_t *, size_t, locale_t); */
-/* TODO: size_t wcsnlen(const wchar_t*, size_t); */
+size_t wcsnlen(const wchar_t*, size_t);
 size_t wcsnrtombs(char* __restrict, const wchar_t** __restrict, size_t, size_t, mbstate_t* __restrict);
 /* TODO: size_t wcsxfrm_l(wchar_t* __restrict, const wchar_t* __restrict, size_t, locale_t); */
 #endif
