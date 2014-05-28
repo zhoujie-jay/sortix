@@ -22,6 +22,7 @@
 
 *******************************************************************************/
 
+#include <assert.h>
 #include <time.h>
 
 // TODO: This function is crap and has been replaced by clock_gettime.
