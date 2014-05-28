@@ -56,6 +56,6 @@ mandated by POSIX. This has the advantage that time_t values are unambiguously
 translate to a particular date and time and back and that the values are
 continuous and adding an internal to a time_t value actually delays by that
 interval. This has the unfortunate consequence that translating to and from
-POSIX time requires subtracting the number of leap seconds that has occured for
+POSIX time requires subtracting the number of leap seconds that has occurred for
 that time value. The standard library needs to get some utility functions for
 doing such conversion.
