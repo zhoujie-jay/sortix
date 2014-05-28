@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <grp.h>
+#include <stdalign.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
