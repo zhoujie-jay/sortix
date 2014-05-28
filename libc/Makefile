@@ -250,6 +250,7 @@ wchar/wcscmp.o \
 wchar/wcscoll.o \
 wchar/wcscpy.o \
 wchar/wcscspn.o \
+wchar/wcsftime.o \
 wchar/wcslen.o \
 wchar/wcsncat.o \
 wchar/wcsncmp.o \

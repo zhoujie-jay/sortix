@@ -182,7 +182,7 @@ wchar_t* wmemset(wchar_t*, wchar_t, size_t);
 float wcstof(const wchar_t* __restrict, wchar_t** __restrict);
 long double wcstold(const wchar_t* __restrict, wchar_t** __restrict);
 /* TODO: int vwscanf(const wchar_t* __restrict, va_list); */
-/* TODO: size_t wcsftime(wchar_t* __restrict, size_t, const wchar_t* __restrict, const struct tm* __restrict); */
+size_t wcsftime(wchar_t* __restrict, size_t, const wchar_t* __restrict, const struct tm* __restrict);
 long long wcstoll(const wchar_t* __restrict, wchar_t** __restrict, int);
 unsigned long long wcstoull(const wchar_t* __restrict, wchar_t** __restrict, int);
 #endif
