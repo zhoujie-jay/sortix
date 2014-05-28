@@ -245,6 +245,7 @@ wchar/mbsrtowcs.o \
 wchar/wcpcpy.o \
 wchar/wcpncpy.o \
 wchar/wcrtomb.o \
+wchar/wcscasecmp.o \
 wchar/wcscat.o \
 wchar/wcschrnul.o \
 wchar/wcschr.o \

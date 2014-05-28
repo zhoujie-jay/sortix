@@ -199,7 +199,7 @@ size_t mbsnrtowcs(wchar_t* __restrict, const char** __restrict, size_t, size_t, 
 /* TODO: FILE* open_wmemstream(wchar_t**, size_t*); */
 wchar_t* wcpcpy(wchar_t* __restrict, const wchar_t* __restrict);
 wchar_t* wcpncpy(wchar_t* __restrict, const wchar_t* __restrict, size_t);
-/* TODO: int wcscasecmp(const wchar_t*, const wchar_t*); */
+int wcscasecmp(const wchar_t*, const wchar_t*);
 /* TODO: int wcscasecmp_l(const wchar_t*, const wchar_t*, locale_t); */
 /* TODO: int wcscoll_l(const wchar_t*, const wchar_t*, locale_t); */
 /* TODO: wchar_t* wcsdup(const wchar_t*); */
