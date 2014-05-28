@@ -260,7 +260,10 @@ wchar/wcsrchr.o \
 wchar/wcsrtombs.o \
 wchar/wcsspn.o \
 wchar/wcsstr.o \
+wchar/wcstod.o \
+wchar/wcstof.o \
 wchar/wcstok.o \
+wchar/wcstold.o \
 wchar/wcstoll.o \
 wchar/wcstol.o \
 wchar/wcstoull.o \

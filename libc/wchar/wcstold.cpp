@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,14 +17,14 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdlib/strtod.cpp
+    wchar/wcstold.cpp
     Converts floating numbers represented as strings to binary representation.
 
 *******************************************************************************/
 
-#define STRTOF_FLOAT double
-#define STRTOF strtod
-#define STRTOF_CHAR char
-#define STRTOF_L(x) x
+#define STRTOF_FLOAT long double
+#define STRTOF wcstold
+#define STRTOF_CHAR wchar_t
+#define STRTOF_L(x) L##x
 
-#include "strtof.cpp"
+#include "../stdlib/strtof.cpp"

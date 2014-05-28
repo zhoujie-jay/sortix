@@ -150,7 +150,7 @@ wchar_t* wcsrchr(const wchar_t*, wchar_t);
 size_t wcsrtombs(char* __restrict, const wchar_t** __restrict, size_t, mbstate_t* __restrict);
 size_t wcsspn(const wchar_t*, const wchar_t*);
 wchar_t* wcsstr(const wchar_t* __restrict, const wchar_t* __restrict);
-/* TODO: double wcstod(const wchar_t* __restrict, wchar_t** __restrict); */
+double wcstod(const wchar_t* __restrict, wchar_t** __restrict);
 wchar_t* wcstok(wchar_t* __restrict, const wchar_t* __restrict, wchar_t** __restrict);
 long wcstol(const wchar_t* __restrict, wchar_t** __restrict, int);
 unsigned long wcstoul(const wchar_t* __restrict, wchar_t** __restrict, int);
@@ -179,8 +179,8 @@ wchar_t* wmemset(wchar_t*, wchar_t, size_t);
 #if __USE_SORTIX || 1999 <= __USE_C
 /* TODO: int vfwscanf(FILE* __restrict, const wchar_t* __restrict, va_list); */
 /* TODO: int vswscanf(const wchar_t* __restrict, const wchar_t* __restrict, va_list); */
-/* TODO: float wcstof(const wchar_t* __restrict, wchar_t** __restrict); */
-/* TODO: long double wcstold(const wchar_t* __restrict, wchar_t** __restrict); */
+float wcstof(const wchar_t* __restrict, wchar_t** __restrict);
+long double wcstold(const wchar_t* __restrict, wchar_t** __restrict);
 /* TODO: int vwscanf(const wchar_t* __restrict, va_list); */
 /* TODO: size_t wcsftime(wchar_t* __restrict, size_t, const wchar_t* __restrict, const struct tm* __restrict); */
 long long wcstoll(const wchar_t* __restrict, wchar_t** __restrict, int);

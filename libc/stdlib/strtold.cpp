@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,7 +22,9 @@
 
 *******************************************************************************/
 
-#define FLOAT long double
+#define STRTOF_FLOAT long double
 #define STRTOF strtold
+#define STRTOF_CHAR char
+#define STRTOF_L(x) x
 
 #include "strtof.cpp"

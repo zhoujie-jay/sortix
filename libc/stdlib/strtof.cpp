@@ -22,13 +22,15 @@
 
 *******************************************************************************/
 
-#ifndef FLOAT
-#define FLOAT float
+#ifndef STRTOF
+#define STRTOF_FLOAT float
 #define STRTOF strtof
+#define STRTOF_CHAR char
+#define STRTOF_L(x) x
 #endif
 
 #include <stdlib.h>
-#include <stdio.h>
+#include <wchar.h>
 
 // TODO: This horribly hacky code is taken from sdlquake's common.c, which is
 //       licensed under the GPL. Since most Sortix software is GPL-compatible
@@ -36,31 +38,32 @@
 //       writing a real strtod function - most of them are true horrors.
 
 #if !defined(__is_sortix_kernel)
-extern "C" FLOAT STRTOF(const char* str, char** nptr)
+extern "C" STRTOF_FLOAT STRTOF(const STRTOF_CHAR* str, STRTOF_CHAR** nptr)
 {
-	int sign = *str == '-' ? (str++, -1) : 1;
-	FLOAT val = 0.0;
+	int sign = *str == STRTOF_L('-') ? (str++, -1) : 1;
+	STRTOF_FLOAT val = 0.0;
 
 	if ( false )
 	{
 	out:
 		if ( nptr )
-			*nptr = (char*) str;
+			*nptr = (STRTOF_CHAR*) str;
 		return val * sign;
 	}
 
-	if ( str[0] == '0' && (str[1] == 'x' || str[1] == 'X') )
+	if ( str[0] == STRTOF_L('0') &&
+	     (str[1] == STRTOF_L('x') || str[1] == STRTOF_L('X')) )
 	{
 		str += 2;
 		while ( true )
 		{
-			char c = *str++;
-			if ( '0' <= c && c <= '9' )
-				val = val * 16 + c - '0';
-			else if ( 'a' <= c && c <= 'f' )
-				val = val * 16 + c - 'a' + 10;
-			else if ( 'A' <= c && c <= 'F' )
-				val = val * 16 + c - 'A' + 10;
+			STRTOF_CHAR c = *str++;
+			if ( STRTOF_L('0') <= c && c <= STRTOF_L('9') )
+				val = val * 16 + c - STRTOF_L('0');
+			else if ( STRTOF_L('a') <= c && c <= STRTOF_L('f') )
+				val = val * 16 + c - STRTOF_L('a') + 10;
+			else if ( STRTOF_L('A') <= c && c <= STRTOF_L('F') )
+				val = val * 16 + c - STRTOF_L('A') + 10;
 			else
 				goto out;
 		}
@@ -70,15 +73,15 @@ extern "C" FLOAT STRTOF(const char* str, char** nptr)
 	int total = 0;
 	while ( true )
 	{
-		char c = *str++;
-		if (c == '.')
+		STRTOF_CHAR c = *str++;
+		if ( c == STRTOF_L('.') )
 		{
 			decimal = total;
 			continue;
 		}
-		if ( c < '0' || c > '9' )
+		if ( c < STRTOF_L('0') || c > STRTOF_L('9') )
 			break;
-		val = val * 10 + c - '0';
+		val = val * 10 + c - STRTOF_L('0');
 		total++;
 	}
 
