@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -24,7 +24,9 @@
 
 #include <stdlib.h>
 
+#if !defined(__is_sortix_kernel)
 extern "C" double atof(const char* str)
 {
 	return strtod(str, NULL);
 }
+#endif

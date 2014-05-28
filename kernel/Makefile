@@ -36,7 +36,7 @@ endif
 
 ifeq ($(CPU),x64)
     X86FAMILY:=1
-    CXXFLAGS:=$(CXXFLAGS) -mno-red-zone
+    CXXFLAGS:=$(CXXFLAGS) -mno-red-zone -mno-mmx -mno-sse -mno-sse2
     CPUOBJS:=$(CPU)/boot.o $(CPU)/base.o $(CPU)/x64.o
 endif
 
@@ -58,8 +58,6 @@ ifdef X86FAMILY
              x86-family/pat.o \
              x86-family/float.o \
              x86-family/x86-family.o
-    # TODO: Are these -m flags even needed in the first place?
-    CXXFLAGS:=$(CXXFLAGS) -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow
 endif
 
 # Object files that constitute the kernel.

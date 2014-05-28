@@ -340,6 +340,7 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 					else
 						written++;
 		}
+#if !defined(__is_sortix_kernel)
 		else if ( *format == 'e' || *format == 'E' ||
 		          *format == 'f' || *format == 'F' ||
 		          *format == 'g' || *format == 'G' ||
@@ -361,6 +362,7 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 
 			goto unsupported_conversion;
 		}
+#endif
 		else if ( *format == 'c' && (format++, true) )
 		{
 			char c;

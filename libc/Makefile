@@ -579,7 +579,7 @@ LIBK_FLAGS:=$(FLAGS) -ffreestanding
 LIBK_CFLAGS:=$(CFLAGS)
 LIBK_CXXFLAGS:=$(CXXFLAGS)
 ifeq ($(HOST),x86_64-sortix)
-    LIBK_FLAGS:=$(LIBK_FLAGS) -mno-red-zone
+    LIBK_FLAGS:=$(LIBK_FLAGS) -mno-red-zone -mno-mmx -mno-sse -mno-sse2
 endif
 
 BINS=libc.a libdl.a libg.a libpthread.a librt.a $(CRTOBJ)

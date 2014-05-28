@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -35,6 +35,7 @@
 //       this will do for now. It's a temporary measure until I get around to
 //       writing a real strtod function - most of them are true horrors.
 
+#if !defined(__is_sortix_kernel)
 extern "C" FLOAT STRTOF(const char* str, char** nptr)
 {
 	int sign = *str == '-' ? (str++, -1) : 1;
@@ -92,3 +93,4 @@ extern "C" FLOAT STRTOF(const char* str, char** nptr)
 
 	goto out;
 }
+#endif
