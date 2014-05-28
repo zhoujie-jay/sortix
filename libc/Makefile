@@ -243,6 +243,7 @@ wchar/mbsinit.o \
 wchar/mbsnrtowcs.o \
 wchar/mbsrtowcs.o \
 wchar/wcpcpy.o \
+wchar/wcpncpy.o \
 wchar/wcrtomb.o \
 wchar/wcscat.o \
 wchar/wcschrnul.o \

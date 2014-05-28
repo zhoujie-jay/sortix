@@ -198,7 +198,7 @@ int wcwidth(wchar_t);
 size_t mbsnrtowcs(wchar_t* __restrict, const char** __restrict, size_t, size_t, mbstate_t* __restrict);
 /* TODO: FILE* open_wmemstream(wchar_t**, size_t*); */
 wchar_t* wcpcpy(wchar_t* __restrict, const wchar_t* __restrict);
-/* TODO: wchar_t* wcpncpy(wchar_t* __restrict, const wchar_t* __restrict, size_t); */
+wchar_t* wcpncpy(wchar_t* __restrict, const wchar_t* __restrict, size_t);
 /* TODO: int wcscasecmp(const wchar_t*, const wchar_t*); */
 /* TODO: int wcscasecmp_l(const wchar_t*, const wchar_t*, locale_t); */
 /* TODO: int wcscoll_l(const wchar_t*, const wchar_t*, locale_t); */
