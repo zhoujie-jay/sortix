@@ -255,6 +255,8 @@ wchar/wcscpy.o \
 wchar/wcscspn.o \
 wchar/wcsdup.o \
 wchar/wcsftime.o \
+wchar/wcslcat.o \
+wchar/wcslcpy.o \
 wchar/wcslen.o \
 wchar/wcsncasecmp.o \
 wchar/wcsncat.o \

@@ -222,6 +222,8 @@ size_t wcsnrtombs(char* __restrict, const wchar_t** __restrict, size_t, size_t, 
 /* TODO: fputws_unlocked */
 wchar_t* wcschrnul(const wchar_t*, wchar_t);
 /* TODO: wcsftime_l */
+size_t wcslcat(wchar_t* __restrict, const wchar_t* __restrict, size_t);
+size_t wcslcpy(wchar_t* __restrict, const wchar_t* __restrict, size_t);
 /* TODO: wchar_t* wmempcpy(wchar_t* __restrict, const wchar_t* __restrict, size_t); */
 /* TODO: wcstod_l? */
 /* TODO: wcstof_l? */
