@@ -113,9 +113,6 @@ __BEGIN_DECLS
 #define SIG_ATOMIC_MAX __SIG_ATOMIC_MAX
 
 #define SIZE_MAX __SIZE_MAX
-/* TODO: Should SSIZE_MIN and SSIZE_MAX be declared here? */
-#define SSIZE_MIN __SSIZE_MIN
-#define SSIZE_MAX __SSIZE_MAX
 
 #ifndef WCHAR_MIN
 #define WCHAR_MIN __WCHAR_MIN

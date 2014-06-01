@@ -389,11 +389,6 @@ typedef __off_t off_t;
 typedef __pid_t pid_t;
 #endif
 
-#ifndef __useconds_t_defined
-#define __useconds_t_defined
-typedef __useconds_t useconds_t;
-#endif
-
 /* TODO: intptr_t is not declared because <stdint.h> doesn't allow other headers
          to define some, but not all, of the fixed width types. Additionally,
          intptr_t was only added for the sake of sbrk(), but that was removed in
@@ -558,6 +553,7 @@ char* get_current_dir_name(void);
 int getdomainname(char*, size_t);
 int pipe2(int [2], int);
 void* sbrk(__intptr_t increment);
+typedef unsigned int useconds_t;
 int usleep(useconds_t useconds);
 #endif
 

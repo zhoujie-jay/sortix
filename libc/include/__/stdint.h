@@ -498,15 +498,7 @@ typedef long long unsigned int __uintmax_t;
 #define __SIG_ATOMIC_MAX (2147483647)
 
 /* TODO: Should these come from a <__stddef.h>? */
-#if __WORDSIZE == 64
-#define __SIZE_MAX (18446744073709551615UL)
-#define __SSIZE_MIN (-9223372036854775807L-1)
-#define __SSIZE_MAX (9223372036854775807L)
-#else
-#define __SIZE_MAX (4294967295U)
-#define __SSIZE_MIN (-2147483647-1)
-#define __SSIZE_MAX (2147483647)
-#endif
+#define __SIZE_MAX __SIZE_MAX__
 
 __END_DECLS
 
