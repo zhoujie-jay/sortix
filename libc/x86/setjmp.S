@@ -49,6 +49,7 @@ longjmp:
 	mov $1, %edx
 1:
 	# TODO: Floating point stuff!
+	mov 0x00(%ecx), %ebx
 	mov 0x04(%ecx), %esi
 	mov 0x08(%ecx), %edi
 	mov 0x0C(%ecx), %ebp
