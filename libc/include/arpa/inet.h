@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -31,11 +31,23 @@
 
 __BEGIN_DECLS
 
+/* Functions from POSIX that is considered obsolete due to bad design. */
+#if __USE_POSIX
 in_addr_t inet_addr(const char*);
 char* inet_ntoa(struct in_addr);
+#endif
+
+/* Functions from POSIX. */
+#if __USE_SORTIX || __USE_POSIX
 const char* inet_ntop(int, const void* __restrict, char* __restrict, socklen_t);
 int inet_pton(int, const char* __restrict, void* __restrict);
-/* TODO: Also provide the various extensions supported by glibc. */
+#endif
+
+/* Functions copied from elsewhere. */
+#if __USE_SORTIX
+/* TODO: int inet_aton(const char*, struct in_addr*); */
+/* TODO: char* inet_neta(in_addr_t, char*, size_t); */
+#endif
 
 __END_DECLS
 
