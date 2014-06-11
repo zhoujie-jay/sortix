@@ -9,9 +9,6 @@ CXXFLAGS?=$(OPTLEVEL)
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 BINARIES:=\
-pong \
-conway \
-snake \
 asteroids \
 
 LIBS:=-ldispd

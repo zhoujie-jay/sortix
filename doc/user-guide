@@ -38,8 +38,7 @@ limited but works on most systems.
 You can change the display resolution using the `chvideomode` program. However,
 you need a suitable kernel driver to do the mode setting. The current release
 only has a simple BGA driver, which works in virtual machines such as Qemu,
-VirtualBox or Bochs. Note that some programs does not work outside of VGA Text
-Mode because the dispd library doesn't yet have a VGA->framebuffer converter.
+VirtualBox or Bochs.
 
 The BGA driver can support virtually any resolution, but since the interface
 fails to report which resolutions are appropriate in the current context, I have
@@ -152,7 +151,6 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `clear` - clear terminal
 * `colormake` - colorful version of make (if make is available)
 * `column` - format lines nicely in columns
-* `conway` - game of life simulator
 * `cp` - copy file
 * `date` - display current time and date
 * `dirname` - strip last component from file name
@@ -180,14 +178,12 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `mkinitrd` - create an initrd
 * `mv` - move a file
 * `pager` - display file page by page
-* `pong` - remake of the classic pong game
 * `pwd` - print current directory path
 * `regress` - run system tests
 * `rm` - remove file
 * `rmdir` - remove empty directory
 * `sh` - alias for the shell
 * `sleep` - delay for a specified amount of time
-* `snake` - remake of the classic snake game
 * `sort` - sort lines of text files
 * `tail` - display end of file
 * `time` - measure program running time
@@ -277,26 +273,6 @@ Included Games
 
 The system comes with a number of small casual games. Note that some games
 require running in the correct display mode before they will function.
-
-### Pong ###
-
-The program `pong` implements a simple pong clone that uses the VGA text mode
-buffer. Player one controls using `W` and `S`, while player two controls using
-the arrow keys. This program is only available in VGA mode.
-
-### Snake ###
-
-This is a simple snake clone that only works in VGA text mode. You control the
-snake using the `W`, `S`, `A`, and `D` keys. To run, start the program `snake`.
-This program is only available in VGA mode.
-
-### Conway's Game of Life ###
-
-You can do turing-complete calculations in the classic Game of Life in the VGA
-text mode buffer. Simply start the program `conway` and use `W`, `A`, `S`, and
-`D` to navigate the screen. `Space` toggles the current point between live and
-dead. `C` clears the entire screen, and `R` starts and stops the simulation.
-This program is only available in VGA mode.
 
 ### Asteroids ###
 
@@ -481,8 +457,8 @@ likely want to recompile large parts of user-land if you update this library.
 The dispd library allows processes to communicate with the dispd server that
 handles window management and graphical output. Currently, there is no such
 server and the library calls the kernel interface itself. This library allows
-games such as asteroids and pong to detect the current resolution and request
-whatever resolution they need to function.
+games such as asteroids to detect the current resolution and request whatever
+resolution they need to function.
 
     cd /src/dispd
     make
