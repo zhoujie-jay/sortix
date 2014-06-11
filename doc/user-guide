@@ -157,6 +157,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `echo` - print command line arguments
 * `editor` - text editor
 * `extfs` - ext2 filesystem server
+* `false` - exit with an error status
 * `find` - recursively list files
 * `head` - display start of file
 * `help` - show list of available programs
@@ -172,7 +173,6 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `mkdir` - create directory
 * `mkinitrd` - create an initrd
 * `mv` - move a file
-* `mxsh` - the shell
 * `pager` - display file page by page
 * `pong` - remake of the classic pong game
 * `pwd` - print current directory path
@@ -182,6 +182,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `snake` - remake of the classic snake game
 * `tail` - display end of file
 * `time` - measure program running time
+* `true` - exit with a success status
 * `type` - type raw characters directly into the terminal
 * `uname` - system information
 * `uptime` - time since initialization
