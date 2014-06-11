@@ -38,9 +38,7 @@ limited but works on most systems.
 You can change the display resolution using the `chvideomode` program. However,
 you need a suitable kernel driver to do the mode setting. The current release
 only has a simple BGA driver, which works in virtual machines such as Qemu,
-VirtualBox or Bochs. A VBE driver also exists, however, it is not yet merged
-into the mainline version because it causes problems on x86_64 due to missing
-BIOS call support. Note that some programs does not work outside of VGA Text
+VirtualBox or Bochs. Note that some programs does not work outside of VGA Text
 Mode because the dispd library doesn't yet have a VGA->framebuffer converter.
 
 The BGA driver can support virtually any resolution, but since the interface
