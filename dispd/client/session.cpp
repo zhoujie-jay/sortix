@@ -128,17 +128,18 @@ bool dispd_session_setup_game_rgba(struct dispd_session* session)
 		exit(127);
 	}
 
-	// TODO: HACK: The console may be rendered asynchronously and it is still
-	// rendering to the framebuffer, but this process may be able to write to
-	// the framebuffer before it is done. We need to wait for the console to
-	// finish to fix this race condition.
-	int ttyfd = open("/dev/tty", O_WRONLY);
-	if ( 0 <= ttyfd )
+	// HACK: The console may be rendered asynchronously and it might still be
+	//       rendering to the framebuffer, however this process is about to do
+	//       bitmapped graphics to the framebuffer as well. Since there is no
+	//       synchronization with the terminal except not writing to it, there
+	//       is a small window where both are fighting for the framebuffer.
+	//       We can resolve this issue by simply fsync()ing the terminal, which
+	//       causes the scheduled console rendering to finish before returning.
+	int tty_fd = open("/dev/tty", O_WRONLY);
+	if ( 0 <= tty_fd )
 	{
-		// TODO: There is no fsync system call yet! Whoops! However, closing a
-		// file descriptor also happens to sync it, so this actually works.
-		//fsync(ttyfd);
-		close(ttyfd);
+		fsync(tty_fd);
+		close(tty_fd);
 	}
 
 	return session->is_rgba = true;
