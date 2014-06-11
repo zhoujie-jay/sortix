@@ -67,31 +67,8 @@ bool dispd_detach_session(struct dispd_session* session)
 	return true;
 }
 
-bool dispd_session_setup_game_vga(struct dispd_session* session)
-{
-	if ( session->is_vga )
-		return true;
-	if ( session->is_rgba )
-		return false;
-	if ( session->current_window )
-		return false;
-	struct dispmsg_get_crtc_mode msg;
-	msg.msgid = DISPMSG_GET_CRTC_MODE;
-	msg.device = session->device;
-	msg.connector = session->connector;
-	if ( dispmsg_issue(&msg, sizeof(msg)) != 0 )
-		return false;
-	if ( (session->is_vga = !(msg.mode.control & 1)) )
-		return true;
-	error(0, 0, "This program requires a VGA Text Mode buffer, but you are "
-	            "currently using an incompatible (perhaps graphics) mode.");
-	return false;
-}
-
 bool dispd_session_setup_game_rgba(struct dispd_session* session)
 {
-	if ( session->is_vga )
-		return false;
 	if ( session->is_rgba )
 		return true;
 	if ( session->current_window )

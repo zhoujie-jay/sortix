@@ -35,7 +35,6 @@ struct dispd_session
 	uint64_t device;
 	uint64_t connector;
 	struct dispd_window* current_window;
-	bool is_vga;
 	bool is_rgba;
 };
 

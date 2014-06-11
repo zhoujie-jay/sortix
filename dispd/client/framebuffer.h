@@ -38,8 +38,6 @@ struct dispd_framebuffer
 	int bpp;
 	int width;
 	int height;
-	bool is_vga;
-	bool is_rgba;
 };
 
 #if defined(__cplusplus)

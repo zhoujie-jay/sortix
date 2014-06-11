@@ -44,10 +44,8 @@ bool dispd_initialize(int* argc, char*** argv);
 struct dispd_session* dispd_attach_default_session();
 bool dispd_detach_session(struct dispd_session* session);
 
-bool dispd_session_setup_game_vga(struct dispd_session* session);
 bool dispd_session_setup_game_rgba(struct dispd_session* session);
 
-struct dispd_window* dispd_create_window_game_vga(struct dispd_session* session);
 struct dispd_window* dispd_create_window_game_rgba(struct dispd_session* session);
 bool dispd_destroy_window(struct dispd_window* window);
 

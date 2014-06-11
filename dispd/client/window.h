@@ -34,8 +34,6 @@ struct dispd_window
 	struct dispd_session* session;
 	uint8_t* cached_buffer;
 	size_t cached_buffer_size;
-	bool is_vga;
-	bool is_rgba;
 };
 
 #if defined(__cplusplus)
