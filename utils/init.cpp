@@ -40,6 +40,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <timespec.h>
 #include <unistd.h>
 
 #include <fsmarshall.h>
@@ -379,7 +381,8 @@ int chain_boot_device(const char* dev_path)
 	}
 
 	// Wait for the filesystem server to come online.
-	do usleep(50*1000), stat(mount_point, &new_st);
+	struct timespec mount_wait_ts = timespec_make(0, 50L * 1000L * 1000L);
+	do nanosleep(&mount_wait_ts, NULL), stat(mount_point, &new_st);
 	while ( new_st.st_ino == orig_st.st_ino && new_st.st_dev == orig_st.st_dev );
 
 	// Create a device directory in the root filesystem.
