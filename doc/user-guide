@@ -55,7 +55,7 @@ current system.
 
 The system automatically reboots when the initial shell exits. You can exit the
 current shell by entering `exit`, which if entered from the initial shell will
-reboot the entire system (loosing any changes if the root filesystem is not
+reboot the entire system (losing any changes if the root filesystem is not
 permanent). Additionally, you can press Control-D ('^D') to exit the current
 shell, but the initial shell will require you to enter a literal `exit` before
 it exits and the system reboots.
