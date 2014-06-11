@@ -1,6 +1,5 @@
 *.o
 basename
-calc
 cat
 chmod
 chroot

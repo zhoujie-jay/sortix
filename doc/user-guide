@@ -144,7 +144,6 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `basename` - strip directory from filenames
 * `benchctxswitch` - useless benchmark
 * `benchsyscall` - slightly less useless benchmark
-* `calc` - reverse polish calculator
 * `carray` -  convert a binary file to a C array
 * `cat` - display file on terminal
 * `chmod` - change file mode bits

@@ -11,7 +11,6 @@ CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 BINARIES:=\
 basename \
-calc \
 cat \
 chmod \
 chroot \
