@@ -192,6 +192,7 @@ string/memchr.o \
 string/memcmp.o \
 string/memcpy.o \
 string/memmove.o \
+string/memrchr.o \
 string/memset.o \
 string/stpcpy.o \
 string/stpncpy.o \

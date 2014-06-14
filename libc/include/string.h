@@ -125,6 +125,7 @@ size_t strxfrm_l(char* __restrict, const char* __restrict, size_t, locale_t);
 /* Functions copied from elsewhere. */
 #if __USE_SORTIX
 int ffsl(long int);
+void* memrchr(const void*, int, size_t);
 /* TODO: strcasecmp_l */
 char* strchrnul(const char* str, int c);
 size_t strlcat(char* __restrict, const char* __restrict, size_t);
