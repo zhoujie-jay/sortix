@@ -32,12 +32,6 @@
 
 __BEGIN_DECLS
 
-/* TODO: These doesn't belong in this header! */
-#define R_OK 4 /* Test for read permission. */
-#define W_OK 2 /* Test for write permission. */
-#define X_OK 1 /* Test for execute permission. */
-#define F_OK 0 /* Test for existence. */
-
 /* The sfork system call is much like the rfork system call found in Plan 9 and
    BSD systems, however it works slightly differently and was renamed to avoid
    conflicts with existing programs. In particular, it never forks an item
