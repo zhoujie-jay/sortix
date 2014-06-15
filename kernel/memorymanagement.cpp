@@ -205,9 +205,11 @@ bool ProtectMemory(Process* process, uintptr_t addr, size_t size, int prot)
 			// TODO: There is a moment of inconsistency here when the segment
 			//       table itself has another protection written than what
 			//       what applies to the actual pages.
+			// TODO: SECURTIY: Does this have security implications?
 			segment->prot = prot;
 			for ( size_t i = 0; i < segment->size; i += Page::Size() )
 				Memory::PageProtect(segment->addr + i, prot);
+			Memory::Flush();
 		}
 
 		offset += segment->size;
@@ -245,6 +247,7 @@ bool MapMemory(Process* process, uintptr_t addr, size_t size, int prot)
 	// space exists and we can safely zero it here.
 	// TODO: Another thread is able to see the old contents of the memory before
 	//       we zero it causing potential information leaks.
+	// TODO: SECURITY: Information leak.
 	memset((void*) new_segment.addr, 0, new_segment.size);
 
 	return true;
@@ -328,7 +331,8 @@ void* sys_mmap(void* addr_ptr, size_t size, int prot, int flags, int fd,
 	// Determine where to put the new segment and its protection.
 	struct segment new_segment;
 	if ( flags & MAP_FIXED )
-		new_segment.addr = aligned_addr, new_segment.size = aligned_size;
+		new_segment.addr = aligned_addr,
+		new_segment.size = aligned_size;
 	else if ( !PlaceSegment(&new_segment, process, (void*) addr, aligned_size, flags) )
 		return errno = ENOMEM, MAP_FAILED;
 	new_segment.prot = prot | PROT_KREAD | PROT_KWRITE | PROT_FORK;
