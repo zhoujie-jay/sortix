@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -91,12 +91,13 @@ struct ipv6_mreq
 	unsigned int ipv6mr_interface;
 };
 
-#define IPPROTO_IP 0
-#define IPPROTO_IPV6 1
-#define IPPROTO_ICMP 2
-#define IPPROTO_RAW 3
-#define IPPROTO_TCP 4
-#define IPPROTO_UDP 5
+/* #define SOL_SOCKET 0 - in <sys/socket.h> */
+#define IPPROTO_ICMP 1
+#define IPPROTO_IP 2
+#define IPPROTO_IPV6 3
+#define IPPROTO_RAW 4
+#define IPPROTO_TCP 5
+#define IPPROTO_UDP 6
 
 #define INADDR_ANY ((in_addr_t) 0x00000000)
 #define INADDR_BROADCAST ((in_addr_t) 0xffffffff)

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -106,8 +106,10 @@ struct linger
 	int l_linger;
 };
 
-#define SOL_SOCKET 1
+#define SOL_SOCKET 0
+/* #define IPPROTO_* constants follow numerically. */
 
+/* Options at the SOL_SOCKET socket level. */
 #define SO_ACCEPTCONN 1
 #define SO_BROADCAST 2
 #define SO_DEBUG 3
