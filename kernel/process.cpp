@@ -1625,62 +1625,6 @@ int sys_setpgid(pid_t pid, pid_t pgid)
 	return 0;
 }
 
-void* sys_sbrk(intptr_t increment)
-{
-	Process* process = CurrentProcess();
-	ScopedLock lock(&process->segment_lock);
-
-	// Locate the heap segment.
-	struct segment* heap_segment = NULL;
-	for ( size_t i = process->segments_used; !heap_segment && i != 0; i-- )
-	{
-		struct segment* candidate = &process->segments[i-1];
-		if ( !(candidate->prot & PROT_HEAP) )
-			continue;
-		heap_segment = candidate;
-	}
-	if ( !heap_segment )
-		return errno = ENOMEM, (void*) -1UL;
-
-	assert(IsUserspaceSegment(heap_segment));
-
-	// Decrease the size of the heap segment if requested.
-	if ( increment < 0 )
-	{
-		uintptr_t abs_amount = Page::AlignDown(- (uintptr_t) increment);
-		if ( heap_segment->size < abs_amount )
-			abs_amount = heap_segment->size;
-		uintptr_t new_end = heap_segment->addr + heap_segment->size - abs_amount;
-		Memory::UnmapRange(new_end, abs_amount, PAGE_USAGE_USER_SPACE);
-		heap_segment->size -= abs_amount;
-		// TODO: How do we handle that the heap shrinks to 0 bytes?
-	}
-
-	// Increase the size of the heap if requested.
-	if ( 0 < increment )
-	{
-		uintptr_t abs_amount = Page::AlignUp(increment);
-		uintptr_t max_growth = 0 - (heap_segment->addr + heap_segment->size);
-		if ( max_growth < abs_amount )
-			return errno = ENOMEM, (void*) -1UL;
-		struct segment growth;
-		growth.addr = heap_segment->addr + heap_segment->size;
-		growth.size = abs_amount;
-		growth.prot = heap_segment->prot;
-		if ( !IsUserspaceSegment(&growth) )
-			return errno = ENOMEM, (void*) -1UL;
-		if ( FindOverlappingSegment(process, &growth) )
-			return errno = ENOMEM, (void*) -1UL;
-		if ( !Memory::MapRange(growth.addr, growth.size, growth.prot, PAGE_USAGE_USER_SPACE) )
-			return errno = ENOMEM, (void*) -1UL;
-		heap_segment->size += growth.size;
-	}
-
-	assert(IsUserspaceSegment(heap_segment));
-
-	return (void*) (heap_segment->addr + heap_segment->size);
-}
-
 size_t sys_getpagesize(void)
 {
 	return Page::Size();

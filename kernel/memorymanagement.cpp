@@ -262,7 +262,7 @@ bool MapMemory(Process* process, uintptr_t addr, size_t size, int prot)
 
 namespace Sortix {
 
-const int USER_SETTABLE_PROT = PROT_USER | PROT_HEAP;
+const int USER_SETTABLE_PROT = PROT_USER;
 const int UNDERSTOOD_MMAP_FLAGS = MAP_SHARED |
                                   MAP_PRIVATE |
                                   MAP_ANONYMOUS |

@@ -139,9 +139,6 @@ addr_t Construct32(Process* process, const uint8_t* file, size_t filelen,
 		if ( pht->flags & PF_R ) { prot |= PROT_READ; }
 		if ( pht->flags & PF_W ) { prot |= PROT_WRITE; }
 
-		if ( (pht->flags & (PF_X | PF_R | PF_W)) == (PF_R | PF_W) )
-			prot |= PROT_HEAP;
-
 		struct segment segment;
 		segment.addr = mapto;
 		segment.size = Page::AlignUp(mapbytes);
@@ -347,9 +344,6 @@ addr_t Construct64(Process* process, const uint8_t* file, size_t filelen,
 		if ( pht->flags & PF_X ) { prot |= PROT_EXEC; }
 		if ( pht->flags & PF_R ) { prot |= PROT_READ; }
 		if ( pht->flags & PF_W ) { prot |= PROT_WRITE; }
-
-		if ( (pht->flags & (PF_X | PF_R | PF_W)) == (PF_R | PF_W) )
-			prot |= PROT_HEAP;
 
 		struct segment segment;
 		segment.addr = mapto;

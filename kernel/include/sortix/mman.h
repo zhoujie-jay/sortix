@@ -43,7 +43,6 @@
 #define PROT_KERNEL (PROT_KEXEC | PROT_KWRITE | PROT_KREAD)
 
 #define PROT_FORK (1<<6)
-#define PROT_HEAP (1<<7)
 
 #define MAP_SHARED (1<<0)
 #define MAP_PRIVATE (1<<1)

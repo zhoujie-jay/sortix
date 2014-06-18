@@ -618,7 +618,6 @@ unistd/readlinkat.o \
 unistd/readlink.o \
 unistd/read.o \
 unistd/rmdir.o \
-unistd/sbrk.o \
 unistd/setegid.o \
 unistd/seteuid.o \
 unistd/setgid.o \

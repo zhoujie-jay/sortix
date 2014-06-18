@@ -131,7 +131,6 @@ ssize_t sys_readv(int, const struct iovec*, int);
 ssize_t sys_recv(int, void*, size_t, int);
 ssize_t sys_recvmsg(int, struct msghdr*, int);
 int sys_renameat(int, const char*, int, const char*);
-void* sys_sbrk(intptr_t);
 int sys_sched_yield(void);
 ssize_t sys_send(int, const void*, size_t, int);
 ssize_t sys_sendmsg(int, const struct msghdr*, int);

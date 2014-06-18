@@ -391,8 +391,7 @@ typedef __pid_t pid_t;
 /* TODO: intptr_t is not declared because <stdint.h> doesn't allow other headers
          to define some, but not all, of the fixed width types. Additionally,
          intptr_t was only added for the sake of sbrk(), but that was removed in
-         POSIX 2001. The legacy sbrk() system call left supported by the kernel
-         can do with __uintptr for now, as it will be removed soon enough. */
+         POSIX 2001. */
 
 /* Somehow programs are required to declare environ themselves according to
    the POSIX specification. */
@@ -552,7 +551,6 @@ char* get_current_dir_name(void);
 int getdomainname(char*, size_t);
 int getentropy(void*, size_t);
 int pipe2(int [2], int);
-void* sbrk(__intptr_t increment);
 int sethostname(const char*, size_t);
 typedef unsigned int useconds_t;
 int usleep(useconds_t useconds);
