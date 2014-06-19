@@ -18,21 +18,18 @@ tix-collection \
 tix-execdiff \
 tix-execpatch \
 tix-install \
-tix-object-insert \
 tix-rmpatch \
 
 PROGRAMS:=\
 $(BINARIES) \
 tix-eradicate-libtool-la \
 
-LIBS:=-lnettle
-
 all: $(PROGRAMS)
 
 .PHONY: all install clean
 
 %: %.cpp util.h
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@ $(LIBS)
+	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@
 
 $(DESTDIR)$(BINDIR):
 	mkdir -p $@
