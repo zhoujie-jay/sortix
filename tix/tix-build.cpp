@@ -329,6 +329,8 @@ void Make(metainfo_t* minfo, const char* make_target,
 			string_array_append(&args, fixed_cmd_argv[i]);
 		string_array_append_token_string(&args, make_target);
 		string_array_append_token_string(&args, make_extra_args);
+		if ( !die_on_error )
+			string_array_append(&args, "-k");
 		string_array_append(&args, NULL);
 		if ( die_on_error )
 			recovery_execvp(args.strings[0], (char* const*) args.strings);
