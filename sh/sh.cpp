@@ -1452,20 +1452,17 @@ bool does_line_editing_need_another_line(void*, const char* line)
 	return !is_shell_input_ready(line);
 }
 
-bool is_parent_init()
+bool is_outermost_shell()
 {
-	const char* init_pid_str = getenv("INIT_PID");
-	if ( !init_pid_str)
-		init_pid_str = "1";
-	pid_t init_pid = (pid_t) atol(init_pid_str);
-	if ( !init_pid )
-		init_pid = 1;
-	return getppid() == init_pid;
+	const char* shlvl_str = getenv("SHLVL");
+	if ( !shlvl_str )
+		return true;
+	return atol(shlvl_str) <= 1;
 }
 
 void on_trap_eof(void* edit_state_ptr)
 {
-	if ( is_parent_init() )
+	if ( is_outermost_shell() )
 		return;
 	struct edit_line* edit_state = (struct edit_line*) edit_state_ptr;
 	edit_line_type_codepoint(edit_state, L'e');
@@ -1728,8 +1725,8 @@ int get_and_run_command_interactive(bool exit_on_error, bool* exitexec)
 
 	if ( edit_state.eof_condition )
 	{
-		if ( is_parent_init() )
-			printf("Type exit to shutdown the system.\n");
+		if ( is_outermost_shell() )
+			printf("Type exit to close the outermost shell.\n");
 		else
 			*exitexec = true;
 	}
@@ -1879,6 +1876,21 @@ int main(int argc, char* argv[])
 		for ( int i = 1; i < argc; i++ )
 			argv[i] = argv[i+1];
 		argv[argc] = NULL;
+	}
+	if ( getenv("SHLVL") )
+	{
+		long shlvl = atol(getenv("SHLVL"));
+		if ( shlvl < 1 )
+			shlvl = 1;
+		else
+			shlvl++;
+		char shlvl_string[sizeof(long) * 3];
+		snprintf(shlvl_string, sizeof(shlvl_string), "%li", shlvl);
+		setenv("SHLVL", shlvl_string, 1);
+	}
+	else
+	{
+		setenv("SHLVL", "1", 1);
 	}
 	char pidstr[3 * sizeof(pid_t)];
 	char ppidstr[3 * sizeof(pid_t)];
