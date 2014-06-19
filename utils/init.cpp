@@ -450,10 +450,6 @@ int main(int /*argc*/, char* /*argv*/[])
 	// Set the default file creation mask.
 	umask(022);
 
-	// By default, compile to the same architecture that the kernel told us that
-	// we are running.
-	setenv("objtype", getenv("cputype"), 0);
-
 	// Set up the PATH variable.
 	const char* prefix = "/";
 	const char* cputype = getenv("cputype");
