@@ -25,7 +25,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-DEFN_SYSCALL0(size_t, sys_getpagesize, SYSCALL_GET_PAGE_SIZE);
+DEFN_SYSCALL0(size_t, sys_getpagesize, SYSCALL_GETPAGESIZE);
 
 extern "C" size_t getpagesize(void)
 {

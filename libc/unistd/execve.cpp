@@ -25,7 +25,7 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-DEFN_SYSCALL3(int, sys_execve, SYSCALL_EXEC, const char*, char* const*, char* const*);
+DEFN_SYSCALL3(int, sys_execve, SYSCALL_EXECVE, const char*, char* const*, char* const*);
 
 extern "C" int execve(const char* pathname, char* const* argv,
                       char* const* envp)

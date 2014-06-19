@@ -105,7 +105,7 @@ static ssize_t sys_pread(int fd, void* buffer, size_t count, off_t off)
 	return ret;
 }
 
-static off_t sys_seek(int fd, off_t offset, int whence)
+static off_t sys_lseek(int fd, off_t offset, int whence)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -1070,6 +1070,7 @@ void Init()
 	Syscall::Register(SYSCALL_LINKAT, (void*) sys_linkat);
 	Syscall::Register(SYSCALL_LINK, (void*) sys_link);
 	Syscall::Register(SYSCALL_LISTEN, (void*) sys_listen);
+	Syscall::Register(SYSCALL_LSEEK, (void*) sys_lseek);
 	Syscall::Register(SYSCALL_MKDIRAT, (void*) sys_mkdirat);
 	Syscall::Register(SYSCALL_MKDIR, (void*) sys_mkdir);
 	Syscall::Register(SYSCALL_MKPARTITION, (void*) sys_mkpartition);
@@ -1086,7 +1087,6 @@ void Init()
 	Syscall::Register(SYSCALL_RECV, (void*) sys_recv);
 	Syscall::Register(SYSCALL_RENAMEAT, (void*) sys_renameat);
 	Syscall::Register(SYSCALL_RMDIR, (void*) sys_rmdir);
-	Syscall::Register(SYSCALL_SEEK, (void*) sys_seek);
 	Syscall::Register(SYSCALL_SEND, (void*) sys_send);
 	Syscall::Register(SYSCALL_SETTERMMODE, (void*) sys_settermmode);
 	Syscall::Register(SYSCALL_STAT, (void*) sys_stat);

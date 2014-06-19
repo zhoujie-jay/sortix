@@ -1256,9 +1256,9 @@ static mode_t sys_getumask(void)
 
 void Process::Init()
 {
-	Syscall::Register(SYSCALL_EXEC, (void*) sys_execve);
+	Syscall::Register(SYSCALL_EXECVE, (void*) sys_execve);
 	Syscall::Register(SYSCALL_EXIT, (void*) sys_exit);
-	Syscall::Register(SYSCALL_GET_PAGE_SIZE, (void*) sys_getpagesize);
+	Syscall::Register(SYSCALL_GETPAGESIZE, (void*) sys_getpagesize);
 	Syscall::Register(SYSCALL_GETPGID, (void*) sys_getpgid);
 	Syscall::Register(SYSCALL_GETPID, (void*) sys_getpid);
 	Syscall::Register(SYSCALL_GETPPID, (void*) sys_getppid);
