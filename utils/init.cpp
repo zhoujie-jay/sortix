@@ -459,6 +459,9 @@ int main(int /*argc*/, char* /*argv*/[])
 	setenv("PATH", path, 1);
 	delete[] path;
 
+	// Set the terminal type.
+	setenv("TERM", "sortix", 1);
+
 	// Make sure that we have a /tmp directory.
 	mkdir("/tmp", 01777);
 
