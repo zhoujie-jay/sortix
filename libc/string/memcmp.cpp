@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,16 +22,18 @@
 
 *******************************************************************************/
 
-#include <stdint.h>
 #include <string.h>
 
-extern "C" int memcmp(const void* a, const void* b, size_t size)
+extern "C" int memcmp(const void* a_ptr, const void* b_ptr, size_t size)
 {
-	const uint8_t* buf1 = (const uint8_t*) a;
-	const uint8_t* buf2 = (const uint8_t*) b;
+	const unsigned char* a = (const unsigned char*) a_ptr;
+	const unsigned char* b = (const unsigned char*) b_ptr;
 	for ( size_t i = 0; i < size; i++ )
 	{
-		if ( buf1[i] != buf2[i] ) { return (int)(buf1[i]) - (int)(buf2[i]); }
+		if ( a[i] < b[i] )
+			return -1;
+		if ( a[i] > b[i] )
+			return +1;
 	}
 	return 0;
 }
