@@ -228,6 +228,7 @@ string/strtok_r.o \
 string/strverscmp.o \
 string/strxfrm_l.o \
 string/strxfrm.o \
+string/timingsafe_memcmp.o \
 time/asctime.o \
 time/asctime_r.o \
 time/gmtime.o \

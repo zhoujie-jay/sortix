@@ -132,6 +132,7 @@ size_t strlcat(char* __restrict, const char* __restrict, size_t);
 size_t strlcpy(char* __restrict, const char* __restrict, size_t);
 /* TODO: strncasecmp_l */
 int strverscmp(const char*, const char*);
+int timingsafe_memcmp(const void*, const void*, size_t);
 #endif
 
 /* Functions that are Sortix extensions. */
