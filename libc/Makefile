@@ -179,6 +179,7 @@ stdlib/mbstowcs.o \
 stdlib/mbtowc.o \
 stdlib/qsort.o \
 stdlib/qsort_r.o \
+stdlib/reallocarray.o \
 stdlib/realloc.o \
 stdlib/strtod.o \
 stdlib/strtof.o \
