@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,13 +22,12 @@
 
 *******************************************************************************/
 
-#include <stdint.h>
 #include <string.h>
 
-extern "C" void* memset(void* destptr, int value, size_t length)
+extern "C" void* memset(void* dest_ptr, int value, size_t length)
 {
-	uint8_t* dest = (uint8_t*) destptr;
+	unsigned char* dest = (unsigned char*) dest_ptr;
 	for ( size_t i = 0; i < length; i++ )
-		dest[i] = value & 0xFF;
-	return destptr;
+		dest[i] = (unsigned char) value;
+	return dest_ptr;
 }
