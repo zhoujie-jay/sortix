@@ -184,6 +184,7 @@ stdlib/strtoull.o \
 stdlib/strtoul.o \
 stdlib/wcstombs.o \
 stdlib/wctomb.o \
+string/explicit_bzero.o \
 string/ffsll.o \
 string/ffsl.o \
 string/ffs.o \
