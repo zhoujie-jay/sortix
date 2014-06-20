@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,13 +22,12 @@
 
 *******************************************************************************/
 
-#include <stdint.h>
 #include <string.h>
 
 extern "C" void* memmove(void* dest_ptr, const void* src_ptr, size_t n)
 {
-	uint8_t* dest = (uint8_t*) dest_ptr;
-	const uint8_t* src = (const uint8_t*) src_ptr;
+	unsigned char* dest = (unsigned char*) dest_ptr;
+	const unsigned char* src = (const unsigned char*) src_ptr;
 	if ( dest < src )
 		for ( size_t i = 0; i < n; i++ )
 			dest[i] = src[i];
