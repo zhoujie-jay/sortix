@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -23,17 +23,16 @@
 *******************************************************************************/
 
 #include <stddef.h>
-#include <stdint.h>
 #include <string.h>
 
-extern "C" void* memccpy(void* destp, const void* srcp, int c, size_t n)
+extern "C" void* memccpy(void* dest_ptr, const void* src_ptr, int c, size_t n)
 {
-	uint8_t* dest = (uint8_t*) destp;
-	const uint8_t* src = (const uint8_t*) srcp;
+	unsigned char* dest = (unsigned char*) dest_ptr;
+	const unsigned char* src = (const unsigned char*) src_ptr;
 	for ( size_t i = 0; i < n; i++ )
-		if ( src[i] == (uint8_t) c )
-			return dest + i;
-		else
-			dest[i] = src[i];
+	{
+		if ( (dest[i] = src[i]) == (unsigned char) c )
+			return dest + i + 1;
+	}
 	return NULL;
 }
