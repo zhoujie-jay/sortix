@@ -448,6 +448,14 @@ bool FileCache::ChangeNumBlocks(size_t new_numblocks, bool exact)
 	if ( new_numblocks == blocks_used && !exact )
 		return true;
 
+	// Release blocks if the file has decreased in size.
+	if ( new_numblocks < blocks_used )
+	{
+		for ( size_t i = new_numblocks; i < blocks_used; i++ )
+			kernel_block_cache->ReleaseBlock(blocks[i]);
+		blocks_used = new_numblocks;
+	}
+
 	// If needed, adapt the length of the array containing block pointers.
 	if ( new_numblocks < blocks_length )
 		exact = true;
@@ -458,25 +466,17 @@ bool FileCache::ChangeNumBlocks(size_t new_numblocks, bool exact)
 	BlockCacheBlock** new_blocks = (BlockCacheBlock**) realloc(blocks, size);
 	if ( !new_blocks )
 	{
-		if ( new_blocks_length < blocks_length )
-			new_blocks = blocks;
-		else
+		if ( blocks_length < new_blocks_length )
 			return false;
 	}
 	else
-		blocks = new_blocks,
-		blocks_length = new_blocks_length;
-
-	assert(!blocks_length || blocks);
-
-	// Release blocks if the file has decreased in size.
-	if ( new_numblocks < blocks_used )
 	{
-		for ( size_t i = new_numblocks; i < blocks_used; i++ )
-			kernel_block_cache->ReleaseBlock(blocks[i]);
-		blocks_used = new_numblocks;
-		return true;
+		blocks = new_blocks;
+		blocks_length = new_blocks_length;
 	}
+
+	assert(new_numblocks <= blocks_length);
+	assert(!blocks_length || blocks);
 
 	// Acquire more blocks if the file has increased in size.
 	for ( size_t i = blocks_used; i < new_numblocks; i++ )
@@ -487,9 +487,9 @@ bool FileCache::ChangeNumBlocks(size_t new_numblocks, bool exact)
 				kernel_block_cache->ReleaseBlock(blocks[n]);
 			return false;
 		}
+		blocks_used++;
 	}
 
-	blocks_used = new_numblocks;
 	return true;
 }
 
