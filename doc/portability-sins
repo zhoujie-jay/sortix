@@ -1,0 +1,85 @@
+Portability Sins
+================
+
+Sortix makes use of third-party software. In many cases porting software and
+integrating it into the Sortix ports is a fairly smooth ride. Unfortunately,
+this is not always the case if the package is flawed. Such mistakes are usually
+not intentional, but are simply accidents, rarely tested code cases or simply
+the upstream being unaware of portability issues. We should identify such issues
+and report them to the upstream projects.
+
+This is a list of common problems that cause problems when integrating packages
+into the Sortix ports build system. Almost all the issues listed here will tend
+to get patched in Sortix as we want good ports, not fragile ports that we would
+need all sorts of tricks to work around.
+
+TODO: Potentially merge with cross-compilation-sins as a package-sins guide.
+
+Cross-compilation issues
+------------------------
+
+See doc/cross-compilation-sins as well.
+
+Don't be different for the sake of it
+-------------------------------------
+
+Pay respect to the traditions unless you are strictly better.
+
+distclean is what goes into a release
+-------------------------------------
+
+When finishing it's useful to be able to reset the source tree to the state that
+you got it in (i.e. no temporary build files left behind) so you can easily diff
+it against the upstream tarball. Packages usually have a makefile target called
+distclean that cleans the source directory for distribution, ideal for such
+purposes. However, in some packages the distclean target doesn't actually do
+that: It occasionally deletes files present in the upstream tarball while
+leaving other files behind that wasn't in the upstream tarball. This is pretty
+annoying. It makes the Sortix patches for a port harder to read as they are
+filled with noise (generated XML files are fun), unless manual care is taken.
+
+The ideal is that you can extract a tarball and run configure, make and finally
+make distclean. The source directory should then be equal to what is in the
+tarball. Otherwise the actual distribution wasn't actually distribution-clean.
+
+Fun examples: Deleting the configure script upon distclean, deleting the license
+files upon distclean, calling the target dist-clean instead of distclean.
+
+DESTDIR comes from the environment
+----------------------------------
+
+It comes from the environment.
+
+Use setenv instead of putenv
+----------------------------
+
+Use the system malloc
+
+Print system types in a portable manner
+---------------------------------------
+
+Use the proper casts and large types or Sortix extensions.
+
+64-bit and JIT
+--------------
+
+Don't assume that mmap() always returns below 4 GiB and that the distance
+between any two memory mappings are always less than 2 GiB. There are no such
+guarantees on 64-bit systems, yet many just-in-time virtual machines assumes
+this is true and truncate pointers if it is not (leading to obscure crashes).
+
+Don't use seemingly-unused bits in types
+----------------------------------------
+
+For instance, on x86-64 the address space is currently actually only 48-bit
+and the most significant 16-bits must always equal the 47th bit. Some see this
+as 16-bit perfectly usable bits for their own purposes. Don't do this, it's
+crazy and you know it. This often comes up in more subtle cases such as telldir
+that returns an opaque value that might have any bits set, but usually doesn't,
+which looks like bits that can be re-purposed. That is, until the system changes
+a bit and the package explodes.
+
+Don't do crazy stuff
+--------------------
+
+Just don't.
