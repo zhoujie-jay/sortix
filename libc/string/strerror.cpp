@@ -106,6 +106,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ENOUSER: return "No such user";
 	case ENOGROUP: return "No such group";
 	case ESIGPENDING: return "Signal is already pending";
+	case ESTALE: return "Stale file handle";
 	default: return "Unknown error condition";
 	}
 }
