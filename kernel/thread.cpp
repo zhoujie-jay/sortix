@@ -325,6 +325,7 @@ static int sys_exit_thread(int status,
 		ScopedLock lock(&process->segment_lock);
 		Memory::UnmapMemory(process, (uintptr_t) extended.unmap_from,
 		                                         extended.unmap_size);
+		Memory::Flush();
 	}
 
 	if ( flags & EXIT_THREAD_ZERO )
