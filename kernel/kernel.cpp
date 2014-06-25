@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <brand.h>
+#include <elf.h>
 #include <errno.h>
 #include <malloc.h>
 #include <stddef.h>
@@ -69,7 +70,6 @@
 
 #include "ata.h"
 #include "com.h"
-#include "elf.h"
 #include "fs/full.h"
 #include "fs/kram.h"
 #include "fs/null.h"
@@ -306,11 +306,11 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 			break;
 		}
 
-		#define SECTION(num) ((ELF::SectionHeader32*) ((uintptr_t) elf_sec->addr + (uintptr_t) elf_sec->size * (uintptr_t) (num)))
+		#define SECTION(num) ((Elf32_Shdr*) ((uintptr_t) elf_sec->addr + (uintptr_t) elf_sec->size * (uintptr_t) (num)))
 
 		// Verify the section name section.
-		ELF::SectionHeader32* section_string_section = SECTION(elf_sec->shndx);
-		if ( !BELOW_4MIB(section_string_section->addr, section_string_section->size) )
+		Elf32_Shdr* section_string_section = SECTION(elf_sec->shndx);
+		if ( !BELOW_4MIB(section_string_section->sh_addr, section_string_section->sh_size) )
 		{
 			Log::PrintF("Warning: the section string table was loaded inappropriately by the boot loader, kernel debugging symbols will not be available.\n");
 			break;
@@ -319,39 +319,39 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 		if ( !section_string_section )
 			break;
 
-		const char* section_string_table = (const char*) (uintptr_t) section_string_section->addr;
+		const char* section_string_table = (const char*) (uintptr_t) section_string_section->sh_addr;
 
 		// Find the symbol table.
-		ELF::SectionHeader32* symbol_table_section = NULL;
+		Elf32_Shdr* symbol_table_section = NULL;
 		for ( unsigned i = 0; i < elf_sec->num && !symbol_table_section; i++ )
 		{
-			ELF::SectionHeader32* section = SECTION(i);
-			if ( !strcmp(section_string_table + section->name, ".symtab") )
+			Elf32_Shdr* section = SECTION(i);
+			if ( !strcmp(section_string_table + section->sh_name, ".symtab") )
 				symbol_table_section = section;
 		}
 
 		if ( !symbol_table_section )
 			break;
 
-		if ( !BELOW_4MIB(symbol_table_section->addr, symbol_table_section->size) )
+		if ( !BELOW_4MIB(symbol_table_section->sh_addr, symbol_table_section->sh_size) )
 		{
 			Log::PrintF("Warning: the symbol table was loaded inappropriately by the boot loader, kernel debugging symbols will not be available.\n");
 			break;
 		}
 
 		// Find the symbol string table.
-		ELF::SectionHeader32* string_table_section = NULL;
+		Elf32_Shdr* string_table_section = NULL;
 		for ( unsigned i = 0; i < elf_sec->num && !string_table_section; i++ )
 		{
-			ELF::SectionHeader32* section = SECTION(i);
-			if ( !strcmp(section_string_table + section->name, ".strtab") )
+			Elf32_Shdr* section = SECTION(i);
+			if ( !strcmp(section_string_table + section->sh_name, ".strtab") )
 				string_table_section = section;
 		}
 
 		if ( !string_table_section )
 			break;
 
-		if ( !BELOW_4MIB(string_table_section->addr, string_table_section->size) )
+		if ( !BELOW_4MIB(string_table_section->sh_addr, string_table_section->sh_size) )
 		{
 			Log::PrintF("Warning: the symbol string table was loaded inappropriately by the boot loader, kernel debugging symbols will not be available.\n");
 			break;
@@ -359,10 +359,10 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 		// Duplicate the data structures and convert them to the kernel symbol
 		// table format and register it for later debugging.
-		const char* elf_string_table = (const char*) (uintptr_t) string_table_section->addr;
-		size_t elf_string_table_size = string_table_section->size;
-		ELF::Symbol32* elf_symbols = (ELF::Symbol32*) (uintptr_t) symbol_table_section->addr;
-		size_t elf_symbol_count = symbol_table_section->size / sizeof(ELF::Symbol32);
+		const char* elf_string_table = (const char*) (uintptr_t) string_table_section->sh_addr;
+		size_t elf_string_table_size = string_table_section->sh_size;
+		Elf32_Sym* elf_symbols = (Elf32_Sym*) (uintptr_t) symbol_table_section->sh_addr;
+		size_t elf_symbol_count = symbol_table_section->sh_size / sizeof(Elf32_Sym);
 
 		if ( !elf_symbol_count || elf_symbol_count == 1 /* null symbol */)
 			break;

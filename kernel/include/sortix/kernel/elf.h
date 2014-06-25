@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -17,20 +17,35 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    sortix/elf-note.h
-    Declares type constants for the Sortix ELF notes.
+    sortix/kernel/elf.h
+    Executable and Linkable Format.
 
 *******************************************************************************/
 
-#ifndef INCLUDE_SORTIX_ELF_NOTE_H
-#define INCLUDE_SORTIX_ELF_NOTE_H
+#ifndef INCLUDE_SORTIX_KERNEL_ELF_H
+#define INCLUDE_SORTIX_KERNEL_ELF_H
 
-#include <sys/cdefs.h>
+#include <stddef.h>
+#include <stdint.h>
 
-__BEGIN_DECLS
+namespace Sortix {
+namespace ELF {
 
-#define ELF_NOTE_SORTIX_UTHREAD_SIZE 0x10
+struct Auxiliary
+{
+	size_t tls_file_offset;
+	size_t tls_file_size;
+	size_t tls_mem_size;
+	size_t tls_mem_align;
+	size_t uthread_size;
+	size_t uthread_align;
+};
 
-__END_DECLS
+// Reads the elf file into the current address space and returns the entry
+// address of the program, or 0 upon failure.
+uintptr_t Load(const void* file, size_t filelen, Auxiliary* aux);
+
+} // namespace ELF
+} // namespace Sortix
 
 #endif

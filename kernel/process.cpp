@@ -49,6 +49,7 @@
 #include <sortix/kernel/copy.h>
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/dtable.h>
+#include <sortix/kernel/elf.h>
 #include <sortix/kernel/ioctx.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
@@ -65,8 +66,6 @@
 #include <sortix/kernel/thread.h>
 #include <sortix/kernel/time.h>
 #include <sortix/kernel/worker.h>
-
-#include "elf.h"
 
 #if defined(__i386__) || defined(__x86_64__)
 #include "x86-family/float.h"
@@ -836,7 +835,7 @@ int Process::Execute(const char* programname, const uint8_t* program,
 
 	ELF::Auxiliary aux;
 
-	addr_t entry = ELF::Construct(CurrentProcess(), program, programsize, &aux);
+	addr_t entry = ELF::Load(program, programsize, &aux);
 	if ( !entry ) { delete[] programname_clone; return -1; }
 
 	delete[] program_image_path;

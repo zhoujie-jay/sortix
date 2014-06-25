@@ -22,6 +22,7 @@
 
 *******************************************************************************/
 
+#include <elf.h>
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
@@ -30,8 +31,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-
-#include <sortix/elf-note.h>
 
 extern "C" { pthread_mutex_t __pthread_keys_lock =
                  PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; }
