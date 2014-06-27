@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <timespec.h>
 #include <unistd.h>
 
 #if !defined(VERSIONSTR)
@@ -41,7 +42,9 @@
 const char* BaseName(const char* path)
 {
 	size_t len = strlen(path);
-	while ( len-- ) { if ( path[len] == '/' ) { return path + len + 1; } }
+	while ( len-- )
+		if ( path[len] == '/' )
+			return path + len + 1;
 	return path;
 }
 
@@ -60,24 +63,14 @@ char* AddElemToPath(const char* path, const char* elem)
 	return ret;
 }
 
-void CompactArguments(int* argc, char*** argv)
-{
-	for ( int i = 0; i < *argc; i++ )
-	while ( i < *argc && !(*argv)[i] )
-	{
-		for ( int n = i; n < *argc; n++ )
-			(*argv)[n] = (*argv)[n+1];
-		(*argc)--;
-	}
-}
-
 const int FLAG_RECURSIVE = 1 << 0;
 const int FLAG_VERBOSE = 1 << 1;
-const int FLAG_KEEP_GOING = 1 << 2;
-const int FLAG_TARGET_DIR = 1 << 3;
-const int FLAG_NO_TARGET_DIR = 1 << 4;
-const int FLAG_UPDATE = 1 << 5;
-const int FLAG_NO_DEREFERENCE = 1 << 6;
+const int FLAG_TARGET_DIR = 1 << 2;
+const int FLAG_NO_TARGET_DIR = 1 << 3;
+const int FLAG_UPDATE = 1 << 4;
+const int FLAG_NO_DEREFERENCE = 1 << 5;
+const int FLAG_DEREFERENCE = 1 << 6;
+const int FLAG_DEREFERENCE_ARGUMENTS = 1 << 7;
 
 bool CopyFileContents(int srcfd, const char* srcpath,
                       int dstfd, const char* dstpath, int flags);
@@ -177,11 +170,7 @@ bool CopyDirectoryContentsInner(DIR* srcdir, const char* srcpath,
 		free(srcpath_new);
 		free(dstpath_new);
 		if ( !ok )
-		{
 			ret = false;
-			if ( !(flags & FLAG_KEEP_GOING) )
-				break;
-		}
 	}
 	return ret;
 }
@@ -190,14 +179,15 @@ bool CopyDirectoryContentsOuter(int srcfd, const char* srcpath,
                                 int dstfd, const char* dstpath, int flags)
 {
 	struct stat srcst, dstst;
-	if ( fstat(srcfd, &srcst) )
+	if ( fstat(srcfd, &srcst) < 0 )
 	{
 		error(0, errno, "stat: %s", srcpath);
 		return false;
 	}
-	if ( fstat(dstfd, &dstst) )
+	if ( fstat(dstfd, &dstst) < 0 )
 	{
 		error(0, errno, "stat: %s", dstpath);
+		return false;
 	}
 	if ( srcst.st_dev == dstst.st_dev && srcst.st_ino == dstst.st_ino )
 	{
@@ -205,9 +195,11 @@ bool CopyDirectoryContentsOuter(int srcfd, const char* srcpath,
 		return false;
 	}
 	DIR* srcdir = fdopendir(srcfd);
-	if ( !srcdir ) { perror("fdopendir"); return false; }
+	if ( !srcdir )
+		return error(0, errno, "fdopendir()"), false;
 	DIR* dstdir = fdopendir(dstfd);
-	if ( !dstdir ) { perror("fdopendir"); closedir(srcdir); return false; }
+	if ( !dstdir )
+		return error(0, errno, "fdopendir()"), closedir(srcdir), false;
 	bool ret = CopyDirectoryContentsInner(srcdir, srcpath, dstdir, dstpath,
 	                                      flags);
 	closedir(dstdir);
@@ -219,9 +211,11 @@ bool CopyDirectoryContents(int srcfd, const char* srcpath,
                            int dstfd, const char* dstpath, int flags)
 {
 	int srcfd_copy = dup(srcfd);
-	if ( srcfd_copy < 0 ) { perror("dup"); return false; }
+	if ( srcfd_copy < 0 )
+		return error(0, errno, "dup"), false;
 	int dstfd_copy = dup(dstfd);
-	if ( dstfd_copy < 0 ) { perror("dup"); close(srcfd_copy); return false; }
+	if ( dstfd_copy < 0 )
+		return error(0, errno, "dup"), close(srcfd_copy), false;
 	bool ret = CopyDirectoryContentsOuter(srcfd_copy, srcpath,
 	                                      dstfd_copy, dstpath, flags);
 	close(dstfd_copy);
@@ -239,19 +233,19 @@ bool CopyToDest(int srcdirfd, const char* srcrel, const char* srcpath,
 	if ( srcfd < 0 )
 	{
 		error(0, errno, "%s", srcpath);
-		goto out_done;
+		return false;
 	}
 	if ( fstat(srcfd, &srcst) )
 	{
 		error(0, errno, "stat: %s", srcpath);
-		goto out_cleanup_srcfd;
+		return close(srcfd), false;
 	}
 	if ( S_ISDIR(srcst.st_mode) )
 	{
 		if ( !(flags & FLAG_RECURSIVE) )
 		{
 			error(0, 0, "omitting directory `%s'", srcpath);
-			goto out_cleanup_srcfd;
+				return close(srcfd), false;
 		}
 		int dstfd = openat(dstdirfd, dstrel, O_RDONLY | O_DIRECTORY);
 		if ( dstfd < 0 )
@@ -259,17 +253,17 @@ bool CopyToDest(int srcdirfd, const char* srcrel, const char* srcpath,
 			if ( errno != ENOENT )
 			{
 				error(0, errno, "%s", dstpath);
-				goto out_cleanup_srcfd;
+				return close(srcfd), false;
 			}
 			if ( mkdirat(dstdirfd, dstrel, srcst.st_mode & 03777) )
 			{
 				error(0, errno, "cannot create directory `%s'", dstpath);
-				goto out_cleanup_srcfd;
+				return close(srcfd), false;
 			}
 			if ( (dstfd = openat(dstdirfd, dstrel, O_RDONLY | O_DIRECTORY)) < 0 )
 			{
 				error(0, errno, "%s", dstpath);
-				goto out_cleanup_srcfd;
+				return close(srcfd), false;
 			}
 		}
 		ret = CopyDirectoryContents(srcfd, srcpath, dstfd, dstpath, flags);
@@ -277,19 +271,26 @@ bool CopyToDest(int srcdirfd, const char* srcrel, const char* srcpath,
 	}
 	else
 	{
+		if ( flags & FLAG_UPDATE )
+		{
+			struct stat dstst;
+			if ( fstatat(dstdirfd, dstrel, &dstst, 0) == 0 && S_ISREG(dstst.st_mode) )
+			{
+				if ( timespec_le(srcst.st_mtim, dstst.st_mtim) )
+					return close(srcfd), true;
+			}
+		}
+
 		int dstfd = openat(dstdirfd, dstrel, O_WRONLY | O_CREAT, srcst.st_mode & 03777);
 		if ( dstfd < 0 )
 		{
 			error(0, errno, "%s", dstpath);
-			goto out_cleanup_srcfd;
+			return close(srcfd), false;
 		}
 		ret = CopyFileContents(srcfd, srcpath, dstfd, dstpath, flags);
 		close(dstfd);
 	}
-
-out_cleanup_srcfd:
 	close(srcfd);
-out_done:
 	return ret;
 }
 
@@ -316,7 +317,7 @@ bool CopyAmbigious(int srcdirfd, const char* srcrel, const char* srcpath,
                    int flags)
 {
 	struct stat dstst;
-	if ( fstatat(dstdirfd, dstrel, &dstst, 0) )
+	if ( fstatat(dstdirfd, dstrel, &dstst, 0) < 0 )
 	{
 		if ( errno != ENOENT )
 		{
@@ -333,7 +334,20 @@ bool CopyAmbigious(int srcdirfd, const char* srcrel, const char* srcpath,
 		                  dstdirfd, dstrel, dstpath, flags);
 }
 
-void Help(FILE* fp, const char* argv0)
+void compact_arguments(int* argc, char*** argv)
+{
+	for ( int i = 0; i < *argc; i++ )
+	{
+		while ( i < *argc && !(*argv)[i] )
+		{
+			for ( int n = i; n < *argc; n++ )
+				(*argv)[n] = (*argv)[n+1];
+			(*argc)--;
+		}
+	}
+}
+
+void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION]... [-T] SOURCE DEST\n", argv0);
 	fprintf(fp, "  or:  %s [OPTION]... SOURCE... DIRECTORY\n", argv0);
@@ -345,7 +359,7 @@ void Help(FILE* fp, const char* argv0)
 #endif
 }
 
-void Version(FILE* fp, const char* argv0)
+void version(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
 	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
@@ -356,7 +370,8 @@ void Version(FILE* fp, const char* argv0)
 int main(int argc, char* argv[])
 {
 	const char* argv0 = argv[0];
-	int flags = FLAG_KEEP_GOING;
+	int flags = 0;
+	const char* target_directory = NULL;
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
@@ -369,10 +384,30 @@ int main(int argc, char* argv[])
 		{
 			while ( char c = *++arg ) switch ( c )
 			{
+			case 'H': flags |= FLAG_DEREFERENCE_ARGUMENTS; break;
+			case 'L': flags |= FLAG_DEREFERENCE; break;
 			case 'r':
 			case 'R': flags |= FLAG_RECURSIVE; break;
 			case 'v': flags |= FLAG_VERBOSE; break;
-			case 't': flags |= FLAG_TARGET_DIR; break;
+			case 't':
+				flags |= FLAG_TARGET_DIR;
+				if ( *(arg + 1) )
+				{
+					target_directory = arg + 1;
+				}
+				else if ( i + 1 == argc )
+				{
+					error(0, 0, "option requires an argument -- '%c'", c);
+					fprintf(stderr, "Try '%s --help' for more information\n", argv0);
+					exit(1);
+				}
+				else
+				{
+					target_directory = argv[i+1];
+					argv[++i] = NULL;
+				}
+				arg = "t";
+				break;
 			case 'T': flags |= FLAG_NO_TARGET_DIR; break;
 			case 'u': flags |= FLAG_UPDATE; break;
 			case 'P': flags |= FLAG_NO_DEREFERENCE; break;
@@ -382,18 +417,37 @@ int main(int argc, char* argv[])
 				continue;
 #endif
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
-				Help(stderr, argv0);
+				help(stderr, argv0);
 				exit(1);
 			}
 		}
-		else if ( !strcmp(arg, "--help") ) { Help(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--version") ) { Version(stdout, argv0); exit(0); }
+		else if ( !strcmp(arg, "--help") )
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--version") )
+			version(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--dereference") )
+			flags |= FLAG_DEREFERENCE;
 		else if ( !strcmp(arg, "--recursive") )
 			flags |= FLAG_RECURSIVE;
 		else if ( !strcmp(arg, "--verbose") )
 			flags |= FLAG_VERBOSE;
 		else if ( !strcmp(arg, "--target-directory") )
+		{
+			if ( i + 1 == argc )
+			{
+				error(0, 0, "option '--target-directory 'requires an argument");
+				fprintf(stderr, "Try '%s --help' for more information\n", argv0);
+				exit(1);
+			}
+			target_directory = argv[++i];
+			argv[i] = NULL;
 			flags |= FLAG_TARGET_DIR;
+		}
+		else if ( !strncmp(arg, "--target-directory=", strlen("--target-directory=")) )
+		{
+			target_directory = arg + strlen("--target-directory=");
+			flags |= FLAG_TARGET_DIR;
+		}
 		else if ( !strcmp(arg, "--no-target-directory") )
 			flags |= FLAG_NO_TARGET_DIR;
 		else if ( !strcmp(arg, "--update") )
@@ -407,36 +461,46 @@ int main(int argc, char* argv[])
 			continue;
 #endif
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
-			Help(stderr, argv0);
+			help(stderr, argv0);
 			exit(1);
 		}
 	}
 
-	if ( flags & FLAG_UPDATE )
-		error(0, 0, "ignoring unsupported, but known -u, --update flag");
-	if ( flags & FLAG_NO_DEREFERENCE )
-		error(0, 0, "ignoring unsupported, but known -P, --no-dereference flag");
+	if ( (flags & FLAG_TARGET_DIR) && (flags & FLAG_NO_TARGET_DIR) )
+		error(1, 0, "cannot combine --target-directory (-t) and --no-target-directory (-T)");
 
-	CompactArguments(&argc, &argv);
+	compact_arguments(&argc, &argv);
 
-	if ( flags & FLAG_NO_TARGET_DIR || argc <= 3 )
+	if ( argc < 2 )
+		error(1, 0, "missing file operand");
+
+	if ( flags & FLAG_NO_TARGET_DIR )
 	{
-		if ( argc < 2 )
-			error(1, 0, "missing file operand");
 		const char* src = argv[1];
 		if ( argc < 3 )
 			error(1, 0, "missing destination file operand after `%s'", src);
 		const char* dst = argv[2];
 		if ( 3 < argc )
 			error(1, 0, "extra operand `%s'", argv[3]);
-		if ( !(flags & FLAG_NO_TARGET_DIR) && argc == 3 )
-			return CopyAmbigious(AT_FDCWD, src, src, AT_FDCWD, dst, dst, flags) ? 0 : 1;
 		return CopyToDest(AT_FDCWD, src, src, AT_FDCWD, dst, dst, flags) ? 0 : 1;
 	}
 
-	int dst_index = flags & FLAG_TARGET_DIR ? 1 : argc-1;
-	const char* dst = argv[dst_index]; argv[dst_index] = NULL;
-	CompactArguments(&argc, &argv);
+	if ( !(flags & FLAG_TARGET_DIR) && argc <= 3 )
+	{
+		const char* src = argv[1];
+		if ( argc < 3 )
+			error(1, 0, "missing destination file operand after `%s'", src);
+		const char* dst = argv[2];
+		if ( 3 < argc )
+			error(1, 0, "extra operand `%s'", argv[3]);
+		return CopyAmbigious(AT_FDCWD, src, src, AT_FDCWD, dst, dst, flags) ? 0 : 1;
+	}
+
+	if ( !target_directory )
+	{
+		target_directory = argv[--argc];
+		argv[argc] = NULL;
+	}
 
 	if ( argc < 2 )
 		error(1, 0, "missing file operand");
@@ -445,6 +509,7 @@ int main(int argc, char* argv[])
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* src = argv[i];
+		const char* dst = target_directory;
 		if ( !CopyIntoDirectory(AT_FDCWD, src, src, AT_FDCWD, dst, dst, flags) )
 			success = false;
 	}

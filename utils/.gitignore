@@ -21,7 +21,6 @@ find
 head
 help
 init
-install-file
 kernelinfo
 kill
 ln
@@ -47,3 +46,4 @@ uniq
 uptime
 wc
 which
+xinstall

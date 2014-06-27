@@ -9,7 +9,7 @@ CXXFLAGS?=$(OPTLEVEL)
 CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\"
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
-BINARIES:=\
+BINARIES_EXCEPT_INSTALL:=\
 basename \
 cat \
 chmod \
@@ -32,7 +32,6 @@ find \
 head \
 help \
 init \
-install-file \
 kernelinfo \
 kill \
 ln \
@@ -59,14 +58,18 @@ uptime \
 wc \
 which \
 
+BINARIES=\
+$(BINARIES_EXCEPT_INSTALL) \
+xinstall
+
 all: $(BINARIES)
 
 .PHONY: all install clean
 
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)
-	install $(BINARIES) $(DESTDIR)$(BINDIR)
-	install install-file $(DESTDIR)$(BINDIR)/install
+	install $(BINARIES_EXCEPT_INSTALL) $(DESTDIR)$(BINDIR)
+	install xinstall $(DESTDIR)$(BINDIR)/install
 
 %: %.cpp
 	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@
