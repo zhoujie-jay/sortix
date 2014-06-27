@@ -582,6 +582,7 @@ unistd/fchown.o \
 unistd/fchrootat.o \
 unistd/fchroot.o \
 unistd/fork.o \
+unistd/fpathconf.o \
 unistd/fsync.o \
 unistd/ftruncate.o \
 unistd/getcwd.o \
