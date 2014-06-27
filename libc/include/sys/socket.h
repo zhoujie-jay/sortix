@@ -156,10 +156,9 @@ struct linger
 #define PF_LOCAL PF_UNIX
 
 /* TODO: Nicely wrap this in an enum, as in glibc's header? */
-/* TODO: Should SHUT_RDWR = SHUT_RD | SHUT_WR? */
-#define SHUT_RD 0
-#define SHUT_RDWR 1
-#define SHUT_WR 2
+#define SHUT_RD (1 << 0)
+#define SHUT_WR (1 << 1)
+#define SHUT_RDWR (SHUT_RD | SHUT_WR)
 
 int accept4(int, struct sockaddr* __restrict, socklen_t* __restrict, int);
 int accept(int, struct sockaddr* __restrict, socklen_t* __restrict);

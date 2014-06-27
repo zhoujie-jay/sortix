@@ -1080,6 +1080,13 @@ static int sys_getsockname(int fd, struct sockaddr* addr, socklen_t* addrsize)
 	return errno = ENOSYS, -1;
 }
 
+static int sys_shutdown(int fd, int how)
+{
+	(void) fd;
+	(void) how;
+	return errno = ENOSYS, -1;
+}
+
 void Init()
 {
 	Syscall::Register(SYSCALL_ACCEPT4, (void*) sys_accept4);
@@ -1133,6 +1140,7 @@ void Init()
 	Syscall::Register(SYSCALL_SEND, (void*) sys_send);
 	Syscall::Register(SYSCALL_SETSOCKOPT, (void*) sys_setsockopt);
 	Syscall::Register(SYSCALL_SETTERMMODE, (void*) sys_settermmode);
+	Syscall::Register(SYSCALL_SHUTDOWN, (void*) sys_shutdown);
 	Syscall::Register(SYSCALL_SYMLINKAT, (void*) sys_symlinkat);
 	Syscall::Register(SYSCALL_TCGETBLOB, (void*) sys_tcgetblob);
 	Syscall::Register(SYSCALL_TCGETPGRP, (void*) sys_tcgetpgrp);

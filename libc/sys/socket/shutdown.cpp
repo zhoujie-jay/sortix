@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -23,12 +23,11 @@
 *******************************************************************************/
 
 #include <sys/socket.h>
+#include <sys/syscall.h>
 
-#include <errno.h>
-#include <stdio.h>
+DEFN_SYSCALL2(int, sys_shutdown, SYSCALL_SHUTDOWN, int, int);
 
-extern "C" int shutdown(int, int)
+extern "C" int shutdown(int fd, int how)
 {
-	fprintf(stderr, "%s is not implemented yet.\n", __func__);
-	return errno = ENOSYS, -1;
+	return sys_shutdown(fd, how);
 }
