@@ -22,16 +22,16 @@
 
 *******************************************************************************/
 
-#if defined(__is_sortix_kernel)
-#error "This file is part of user-space and should not be built in kernel mode"
-#endif
-
 #ifndef INCLUDE_SYS_SYSCALL_H
 #define INCLUDE_SYS_SYSCALL_H
 
+#if !__STDC_HOSTED__
+#error "This file is part of user-space and should not be built into libk"
+#endif
+
 #include <sys/cdefs.h>
 
-#include <sortix/syscallnum.h>
+#include <sortix/syscall.h>
 
 /* Expand a macro and convert it to string. */
 #define SYSCALL_STRINGIFY_EXPAND(foo) #foo

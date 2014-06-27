@@ -24,7 +24,7 @@
 
 #include <stddef.h>
 
-#include <sortix/syscallnum.h>
+#include <sortix/syscall.h>
 
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/process.h>
@@ -57,7 +57,6 @@ void Init()
 
 void Register(size_t index, void* function)
 {
-
 	if ( SYSCALL_MAX_NUM <= index )
 		PanicF("Attempted to register system call %p to index %zu, but "
 		       "SYSCALL_MAX_NUM = %zu", function, index, (size_t) SYSCALL_MAX_NUM);

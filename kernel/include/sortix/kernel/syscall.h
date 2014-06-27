@@ -27,7 +27,7 @@
 
 #include <stddef.h>
 
-#include <sortix/syscallnum.h>
+#include <sortix/syscall.h>
 
 namespace Sortix {
 namespace Syscall {

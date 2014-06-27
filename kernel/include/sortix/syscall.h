@@ -17,8 +17,8 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    sortix/syscallnum.h
-    Stores numerical constants for each available system call on this kernel.
+    sortix/syscall.h
+    Numeric constants identifying each system call.
 
 *******************************************************************************/
 

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of Sortix.
 
@@ -21,8 +21,6 @@
     System calls for managing user and group identities.
 
 *******************************************************************************/
-
-#include <sortix/syscallnum.h>
 
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>

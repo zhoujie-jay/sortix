@@ -31,7 +31,6 @@
 
 #include <sortix/poll.h>
 #include <sortix/sigset.h>
-#include <sortix/syscallnum.h>
 #include <sortix/timespec.h>
 
 #include <sortix/kernel/copy.h>
