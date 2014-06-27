@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -24,12 +24,32 @@
 
 #include <sys/socket.h>
 
-#include <errno.h>
-#include <stdio.h>
+#include <string.h>
 
-extern "C" ssize_t recvfrom(int, void* restrict, size_t, int,
-                            struct sockaddr* restrict, socklen_t* restrict)
+extern "C"
+ssize_t recvfrom(int fd,
+                 void* restrict buffer,
+                 size_t buffer_size,
+                 int flags,
+                 struct sockaddr* restrict addr,
+                 socklen_t* restrict addrsize)
 {
-	fprintf(stderr, "%s is not implemented yet.\n", __func__);
-	return errno = ENOSYS, -1;
+	struct msghdr msghdr;
+	memset(&msghdr, 0, sizeof(msghdr));
+
+	struct iovec iovec;
+	iovec.iov_base = buffer;
+	iovec.iov_len = buffer_size;
+
+	msghdr.msg_name = addr;
+	msghdr.msg_namelen = addrsize ? *addrsize : 0;
+	msghdr.msg_iov = &iovec;
+	msghdr.msg_iovlen = 1;
+
+	ssize_t result = recvmsg(fd, &msghdr, flags);
+
+	if ( addrsize )
+		*addrsize = msghdr.msg_namelen;
+
+	return result;
 }

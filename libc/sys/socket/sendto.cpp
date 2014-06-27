@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -24,12 +24,27 @@
 
 #include <sys/socket.h>
 
-#include <errno.h>
-#include <stdio.h>
+#include <string.h>
 
-extern "C" ssize_t sendto(int, const void*, size_t, int, const struct sockaddr*,
-                          socklen_t)
+extern "C"
+ssize_t sendto(int fd,
+               const void* buffer,
+               size_t buffer_size,
+               int flags,
+               const struct sockaddr* addr,
+               socklen_t addrsize)
 {
-	fprintf(stderr, "%s is not implemented yet.\n", __func__);
-	return errno = ENOSYS, -1;
+	struct msghdr msghdr;
+	memset(&msghdr, 0, sizeof(msghdr));
+
+	struct iovec iovec;
+	iovec.iov_base = (void*) buffer;
+	iovec.iov_len = buffer_size;
+
+	msghdr.msg_name = (void*) addr;
+	msghdr.msg_namelen = addrsize;
+	msghdr.msg_iov = &iovec;
+	msghdr.msg_iovlen = 1;
+
+	return sendmsg(fd, &msghdr, flags);
 }
