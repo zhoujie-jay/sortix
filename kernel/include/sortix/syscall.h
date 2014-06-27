@@ -169,6 +169,8 @@
 #define SYSCALL_SETSOCKOPT 141
 #define SYSCALL_TCGETBLOB 142
 #define SYSCALL_TCSETBLOB 143
-#define SYSCALL_MAX_NUM 144 /* index of highest constant + 1 */
+#define SYSCALL_GETPEERNAME 144
+#define SYSCALL_GETSOCKNAME 145
+#define SYSCALL_MAX_NUM 146 /* index of highest constant + 1 */
 
 #endif

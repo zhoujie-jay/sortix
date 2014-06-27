@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -23,12 +23,14 @@
 *******************************************************************************/
 
 #include <sys/socket.h>
+#include <sys/syscall.h>
 
-#include <errno.h>
-#include <stdio.h>
+DEFN_SYSCALL3(int, sys_getpeername, SYSCALL_GETPEERNAME, int, struct sockaddr*, socklen_t*);
 
-extern "C" int getpeername(int, struct sockaddr* restrict, socklen_t* restrict)
+extern "C"
+int getpeername(int fd,
+                struct sockaddr* restrict addr,
+                socklen_t* restrict addrsize)
 {
-	fprintf(stderr, "%s is not implemented yet.\n", __func__);
-	return errno = ENOSYS, -1;
+	return sys_getpeername(fd, addr, addrsize);
 }

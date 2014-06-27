@@ -1064,6 +1064,22 @@ static ssize_t sys_tcsetblob(int fd, const char* name, const void* buffer, size_
 	return result;
 }
 
+static int sys_getpeername(int fd, struct sockaddr* addr, socklen_t* addrsize)
+{
+	(void) fd;
+	(void) addr;
+	(void) addrsize;
+	return errno = ENOSYS, -1;
+}
+
+static int sys_getsockname(int fd, struct sockaddr* addr, socklen_t* addrsize)
+{
+	(void) fd;
+	(void) addr;
+	(void) addrsize;
+	return errno = ENOSYS, -1;
+}
+
 void Init()
 {
 	Syscall::Register(SYSCALL_ACCEPT4, (void*) sys_accept4);
@@ -1090,6 +1106,8 @@ void Init()
 	Syscall::Register(SYSCALL_FSYNC, (void*) sys_fsync);
 	Syscall::Register(SYSCALL_FTRUNCATE, (void*) sys_ftruncate);
 	Syscall::Register(SYSCALL_FUTIMENS, (void*) sys_futimens);
+	Syscall::Register(SYSCALL_GETPEERNAME, (void*) sys_getpeername);
+	Syscall::Register(SYSCALL_GETSOCKNAME, (void*) sys_getsockname);
 	Syscall::Register(SYSCALL_GETSOCKOPT, (void*) sys_getsockopt);
 	Syscall::Register(SYSCALL_GETTERMMODE, (void*) sys_gettermmode);
 	Syscall::Register(SYSCALL_IOCTL, (void*) sys_ioctl);
