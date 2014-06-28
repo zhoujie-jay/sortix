@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -22,115 +22,144 @@
 
 #include <sys/ioctl.h>
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <error.h>
+#include <locale.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <termios.h>
+#include <wchar.h>
 
 #if !defined(VERSIONSTR)
 #define VERSIONSTR "unknown version"
 #endif
 
-int termwidth = 80;
-
-size_t linesused = 0;
-size_t lineslength = 0;
-char** lines = 0;
-size_t longestline = 0;
-
-size_t measurelength(const char* line)
+struct line
 {
-	size_t len = 0;
+	const char* string;
+	size_t display_width;
+};
+
+size_t measure_line_display_width(const char* string)
+{
+	mbstate_t ps;
+	memset(&ps, 0, sizeof(ps));
+
+	size_t index = 0;
+	size_t result = 0;
+
 	bool escaped = false;
-	while ( char c = *line++ )
+
+	while ( true )
 	{
-		if ( escaped )
+		wchar_t wc;
+		size_t consumed = mbrtowc(&wc, string + index, SIZE_MAX, &ps);
+		if ( consumed == (size_t) -2 )
+			return result + 1;
+		if ( consumed == (size_t) -1 )
 		{
-			if ( isalpha(c) )
-				escaped = false;
+			index++;
+			if ( !escaped )
+				result++;
+			memset(&ps, 0, sizeof(ps));
 			continue;
 		}
-		if ( c == '\e' )
+		if ( consumed == (size_t) 0 )
+			return result;
+		index += consumed;
+		if ( wc == L'\e' )
 		{
 			escaped = true;
 			continue;
 		}
-		len++;
+		if ( escaped )
+		{
+			if ( ('a' <= wc && wc <= 'z') || ('A' <= wc && wc <= 'Z') )
+				escaped = false;
+			continue;
+		}
+		int wc_width = wcwidth(wc);
+		result += 0 <= wc_width ? wc_width : 1;
 	}
-	return len;
 }
 
-bool processline(char* line)
+bool append_lines_from_file(FILE* fp,
+                            const char* fpname,
+                            struct line** lines_ptr,
+                            size_t* lines_used_ptr,
+                            size_t* lines_length_ptr,
+                            bool flag_empty)
 {
-	if ( linesused == lineslength )
-	{
-		size_t newlineslength = lineslength ? 2 * lineslength : 32;
-		char** newlines = new char*[newlineslength];
-		memcpy(newlines, lines, sizeof(char*) * linesused);
-		delete[] lines;
-		lines = newlines;
-		lineslength = newlineslength;
-	}
-
-	lines[linesused++] = line;
-	size_t linelen = measurelength(line);
-	if ( longestline < linelen ) { longestline = linelen; }
-	return true;
-}
-
-bool processfp(const char* inputname, FILE* fp)
-{
-	if ( strcmp(inputname, "-") == 0 ) { inputname = "<stdin>"; }
 	while ( true )
 	{
-		size_t linesize;
-		char* line = NULL;
-		ssize_t linelen = getline(&line, &linesize, fp);
-		if ( linelen < 0 )
+		char* string = NULL;
+		size_t string_size;
+		ssize_t string_length = getline(&string, &string_size, fp);
+		if ( string_length < 0 )
 		{
-			if ( feof(fp) ) { return true; }
-			error(0, errno, "error reading: %s (%i)", inputname, fileno(fp));
+			if ( feof(stdin) )
+				return true;
+			error(0, errno, "getline: `%s'", fpname);
 			return false;
 		}
-		line[--linelen] = 0;
-		if ( !processline(line) ) { exit(1); }
+		if ( string_length && string[string_length-1] == '\n' )
+			string[--string_length] = '\0';
+		size_t display_width = measure_line_display_width(string);
+		if ( display_width == 0 && !flag_empty )
+		{
+			free(string);
+			continue;
+		}
+		if ( *lines_used_ptr == *lines_length_ptr )
+		{
+			size_t new_length = 2 * *lines_length_ptr;
+			if ( !new_length )
+				new_length = 64;
+			size_t new_size = sizeof(struct line) * new_length;
+			struct line* new_lines = (struct line*) realloc(*lines_ptr, new_size);
+			if ( !new_lines )
+			{
+				error(0, errno, "realloc lines array");
+				free(string);
+				return false;
+			}
+			*lines_ptr = new_lines;
+			*lines_length_ptr = new_length;
+		}
+		struct line* line = (*lines_ptr) + (*lines_used_ptr)++;
+		line->string = string;
+		line->display_width = display_width;
 	}
 }
 
-bool doformat()
+void compact_arguments(int* argc, char*** argv)
 {
-	size_t width = termwidth;
-	size_t columnwidth = longestline + 2;
-	size_t columns = width / columnwidth;
-	if ( !columns ) { columns = 1; }
-
-	bool newline = false;
-	for ( size_t i = 0; i < linesused; i++ )
+	for ( int i = 0; i < *argc; i++ )
 	{
-		newline = false;
-		size_t column = i % columns;
-		size_t offset = column * columnwidth;
-		printf("\e[%zuG%s", offset+1, lines[i]);
-		if ( columns <= column + 1 ) { printf("\n"); newline = true; }
+		while ( i < *argc && !(*argv)[i] )
+		{
+			for ( int n = i; n < *argc; n++ )
+				(*argv)[n] = (*argv)[n+1];
+			(*argc)--;
+		}
 	}
-	if ( linesused && !newline ) { printf("\n"); }
-
-	return true;
 }
 
-void help(const char* argv0)
+void help(FILE* fp, const char* argv0)
 {
-	printf("usage: %s [--help | --version] [-c width]  [<FILE> ...]\n", argv0);
+	fprintf(fp, "Usage: %s [OPTION]... FILE...\n", argv0);
+	fprintf(fp, "Columnate lists.\n");
+	fprintf(fp, "\n");
+	fprintf(fp, "  -c COLUMNS                   output is formatted for a display COLUMNS wide.\n");
+	fprintf(fp, "  -e                           do not ignore empty lines..\n");
+	fprintf(fp, "      --help                   display this help and exit\n");
+	fprintf(fp, "      --version                output version information and exit\n");
 }
 
-void version(const char* argv0)
+void version(FILE* fp, const char* argv0)
 {
-	FILE* fp = stdout;
 	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
 	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
 	fprintf(fp, "This is free software: you are free to change and redistribute it.\n");
@@ -139,59 +168,185 @@ void version(const char* argv0)
 
 int main(int argc, char* argv[])
 {
-#if defined(__sortix__)
-	struct winsize ws;
-	if ( tcgetwinsize(1, &ws) == 0 )
-		termwidth = ws.ws_col;
-#elif defined(TIOCGWINSZ)
+	setlocale(LC_ALL, "");
+
+	size_t display_columns = 80;
+#if defined(TIOCGWINSZ)
 	struct winsize ws;
 	if ( ioctl(1, TIOCGWINSZ, &ws) == 0 )
-		termwidth = ws.ws_col;
-#else
-	if ( getenv("COLUMNS") )
-		termwidth = atoi(getenv("COLUMNS"));
+		display_columns = ws.ws_col;
+#elif defined(__sortix__)
+	struct winsize ws;
+	if ( tcgetwinsize(1, &ws) == 0 )
+		display_columns = ws.ws_col;
 #endif
 
+	bool flag_empty = false;
+
 	const char* argv0 = argv[0];
+	for ( int i = 1; i < argc; i++ )
+	{
+		const char* arg = argv[i];
+		if ( arg[0] != '-' )
+			continue;
+		argv[i] = NULL;
+		if ( !strcmp(arg, "--") )
+			break;
+		if ( arg[1] != '-' )
+		{
+			while ( char c = *++arg ) switch ( c )
+			{
+			case 'c':
+			{
+				const char* parameter;
+				if ( *(arg + 1) )
+					parameter = arg + 1;
+				else if ( i + 1 == argc )
+				{
+					error(0, 0, "option requires an argument -- '%c'", c);
+					fprintf(stderr, "Try '%s --help' for more information\n", argv0);
+					exit(1);
+				}
+				else
+				{
+					parameter = argv[i+1];
+					argv[++i] = NULL;
+				}
+				errno = 0;
+				char* endptr = (char*) parameter;
+				display_columns = (size_t) strtoul((char*) parameter, &endptr, 10);
+				if ( errno == ERANGE )
+					error(1, 0, "option -c `%s' is out of range", parameter);
+				if  ( *endptr )
+					error(1, 0, "option -c `%s' is invalid", parameter);
+			} break;
+			case 'e': flag_empty = true; break;
+			default:
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
+				help(stderr, argv0);
+				exit(1);
+			}
+		}
+		else if ( !strcmp(arg, "--help") )
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--version") )
+			version(stdout, argv0), exit(0);
+		else
+		{
+			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
+			help(stderr, argv0);
+			exit(1);
+		}
+	}
+
+	compact_arguments(&argc, &argv);
+
+	bool success = true;
+	struct line* lines = NULL;
+	size_t lines_used = 0;
+	size_t lines_length = 0;
 
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' ) { continue; }
-		if ( strcmp(arg, "-") == 0 ) { continue; }
-		argv[i] = NULL;
-		if ( strcmp(arg, "--") == 0 ) { break; }
-		if ( strcmp(arg, "--help") == 0 ) { help(argv0); exit(0); }
-		if ( strcmp(arg, "--version") == 0 ) { version(argv0); exit(0); }
-		if ( strcmp(arg, "-c") == 0 )
+		FILE* fp = fopen(arg, "r");
+		if ( !fp )
 		{
-			if ( i+1 == argc ) { help(argv0); exit(1); }
-			termwidth = atoi(argv[++i]); argv[i] = NULL;
+			error(0, errno, "`%s'", arg);
+			success = false;
 			continue;
 		}
-		error(0, 0, "unknown option %s", arg);
-		help(argv0);
-		return 1;
+		if ( !append_lines_from_file(fp, arg, &lines, &lines_used,
+		                             &lines_length, flag_empty) )
+		{
+			fclose(fp);
+			success = false;
+			continue;
+		}
+		fclose(fp);
 	}
 
-	bool hadany = false;
-	for ( int i = 1; i < argc; i++ )
+	if ( argc <= 1 )
 	{
-		const char* arg = argv[i];
-		if ( !arg ) { continue; }
-		bool isstdin = strcmp(arg, "-") == 0;
-		FILE* fp = isstdin ? stdin : fopen(arg, "r");
-		if ( !fp ) { error(1, errno, "fopen failed: %s", arg); }
-		hadany = true;
-		if ( !processfp(arg, fp) ) { return 1; }
-		if ( fp != stdin ) { fclose(fp); }
+		if ( !append_lines_from_file(stdin, "<stdin>", &lines, &lines_used,
+		                             &lines_length, flag_empty) )
+			success = false;
 	}
 
-	if ( !hadany )
+	for ( size_t rows = 1; lines_used != 0; rows++ )
 	{
-		if ( !processfp("-", stdin) ) { return 1; }
+		size_t total_columns_width = 0;
+		size_t column_width = 0;
+		size_t row = 0;
+		size_t columns = 0;
+		for ( size_t line_index = 0; line_index < lines_used; line_index++ )
+		{
+			if ( column_width < lines[line_index].display_width )
+				column_width = lines[line_index].display_width;
+			if ( ++row == rows || line_index + 1 == lines_used )
+			{
+				if ( columns != 0 )
+					total_columns_width += 2;
+				total_columns_width += column_width;
+				if ( display_columns < total_columns_width )
+					break;
+				row = 0;
+				column_width = 0;
+				columns++;
+			}
+		}
+
+		if ( display_columns < total_columns_width && columns != 1 )
+			continue;
+
+		if ( columns == 1 )
+			rows = lines_used;
+
+		size_t* column_widths = (size_t*) calloc(sizeof(size_t*), columns);
+		if ( !column_widths )
+			error(1, errno, "calloc column widths");
+
+		for ( size_t column = 0; column < columns; column++ )
+		{
+			size_t column_width = 0;
+			for ( size_t i = 0; i < rows; i++ )
+			{
+				size_t line_index = column * rows + i;
+				if ( lines_used <= line_index )
+					break;
+				if ( column_width < lines[line_index].display_width )
+					column_width = lines[line_index].display_width;
+			}
+			column_widths[column] = column_width;
+		}
+
+		for ( size_t row = 0; row < rows; row++ )
+		{
+			for ( size_t column = 0; column < columns; column++ )
+			{
+				size_t line_index = column * rows + row;
+				struct line* line = &lines[line_index];
+				if ( lines_used <= line_index )
+					break;
+				if ( column != 0 )
+					printf("  ");
+				printf("%s", line->string);
+				size_t new_line_index = (column + 1) * rows + row;
+				for ( size_t i = line->display_width;
+				      i < column_widths[column] && new_line_index < lines_used;
+				      i++ )
+					putchar(' ');
+			}
+			printf("\n");
+		}
+
+		free(column_widths);
+
+		if ( ferror(stdout) )
+			success = false;
+
+		break;
 	}
 
-	if ( !doformat() ) { exit(1); }
-	return 0;
+	return success ? 0 : 1;
 }
