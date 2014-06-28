@@ -1,5 +1,3 @@
-#!/bin/sh
-
 set -e
 
 make_dir_path_absolute() {

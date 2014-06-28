@@ -1,7 +1,7 @@
 SOFTWARE_MEANT_FOR_SORTIX=1
-MAKEFILE_NOT_MEANT_FOR_SORTIX=1
-include compiler.mak
-include version.mak
+include build-aux/platform.mak
+include build-aux/compiler.mak
+include build-aux/version.mak
 
 MODULES=\
 doc \
@@ -22,12 +22,10 @@ kernel
 
 ifndef SYSROOT
   SYSROOT:=$(shell pwd)/sysroot
-  SUBMAKE_OPTIONS:=$(SUBMAKE_OPTIONS) "SYSROOT=$(SYSROOT)"
 endif
 
 ifndef SYSROOT_OVERLAY
   SYSROOT_OVERLAY:=$(shell pwd)/sysroot-overlay
-  SUBMAKE_OPTIONS:=$(SUBMAKE_OPTIONS) "SYSROOT_OVERLAY=$(SYSROOT_OVERLAY)"
 endif
 
 SORTIX_BUILDS_DIR?=builds
@@ -35,17 +33,35 @@ SORTIX_PORTS_DIR?=ports
 SORTIX_RELEASE_DIR?=release
 SORTIX_REPOSITORY_DIR?=repository
 
-include dirs.mak
+include build-aux/dirs.mak
+
+PREFIX:=
+EXEC_PREFIX:=$(PREFIX)/$(HOST)
+
+export PREFIX
+export EXEC_PREFIX
+export SYSROOT
+
+ifeq ($(BUILD_IS_SORTIX),1)
+  export C_INCLUDE_PATH=$(SYSROOT)/include
+  export CPLUS_INCLUDE_PATH=$(SYSROOT)/include
+  export LIBRARY_PATH=$(SYSROOT)/$(HOST)/lib
+endif
 
 BUILD_NAME:=sortix_$(VERSION)_$(MACHINE)
-DEBNAME:=sortix_$(VERSION)_$(MACHINE)
 
 INITRD:=$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).initrd
 
-SUBMAKE_OPTIONS:=$(SUBMAKE_OPTIONS) VERSION=$(VERSION) PREFIX= EXEC_PREFIX=/$(HOST)
-
 .PHONY: all
 all: sysroot
+
+ifeq ($(BUILD_IS_SORTIX),1)
+.PHONY: install
+install: sysroot
+	(for ENTRY in $$(ls -A "$(SYSROOT)" | grep -Ev '^src$$'); do \
+		cp -RTv "$(SYSROOT)/$$ENTRY" "$(DESTDIR)/$$ENTRY" || exit $$?; \
+	done)
+endif
 
 .PHONY: build-tools
 build-tools:
@@ -81,23 +97,21 @@ sysroot-fsh:
 
 .PHONY: sysroot-base-headers
 sysroot-base-headers: sysroot-fsh
-	(for D in libc libm libpthread kernel; do ($(MAKE) -C $$D install-headers $(SUBMAKE_OPTIONS) DESTDIR="$(SYSROOT)") || exit $$?; done)
+	(for D in libc libm libpthread kernel; do ($(MAKE) -C $$D install-headers DESTDIR="$(SYSROOT)") || exit $$?; done)
 
 .PHONY: sysroot-system
 sysroot-system: sysroot-fsh sysroot-base-headers
-	(for D in $(MODULES); do ($(MAKE) -C $$D $(SUBMAKE_OPTIONS) && $(MAKE) -C $$D install $(SUBMAKE_OPTIONS) DESTDIR="$(SYSROOT)") || exit $$?; done)
+	(for D in $(MODULES); do ($(MAKE) -C $$D && $(MAKE) -C $$D install DESTDIR="$(SYSROOT)") || exit $$?; done)
 
 .PHONY: sysroot-source
 sysroot-source: sysroot-fsh
-	cp compiler.mak -t "$(SYSROOT)/src"
-	cp dirs.mak -t "$(SYSROOT)/src"
-	cp platform.mak -t "$(SYSROOT)/src"
-	cp version.mak -t "$(SYSROOT)/src"
+	cp .gitignore -t "$(SYSROOT)/src"
 	cp COPYING-GPL -t "$(SYSROOT)/src"
 	cp COPYING-LGPL -t "$(SYSROOT)/src"
+	cp Makefile -t "$(SYSROOT)/src"
 	cp README -t "$(SYSROOT)/src"
+	cp -RT build-aux "$(SYSROOT)/src/build-aux"
 	(for D in $(MODULES); do (cp -LR $$D -t "$(SYSROOT)/src" && $(MAKE) -C "$(SYSROOT)/src/$$D" clean) || exit $$?; done)
-	cp -LR system -t "$(SYSROOT)/src"
 
 .PHONY: sysroot-ports
 sysroot-ports: sysroot-fsh sysroot-base-headers sysroot-system sysroot-source
@@ -106,13 +120,13 @@ sysroot-ports: sysroot-fsh sysroot-base-headers sysroot-system sysroot-source
 	 SYSROOT="$(SYSROOT)" \
 	 HOST="$(HOST)" \
 	 MAKE="$(MAKE)" \
-	 MAKEFLAGS="$(MAKEFLAGS) $(SUBMAKE_OPTIONS)" \
-	 ./build-ports.sh
+	 MAKEFLAGS="$(MAKEFLAGS)" \
+	 build-aux/build-ports.sh
 
 .PHONY: sysroot-overlay
 sysroot-overlay: sysroot-fsh sysroot-system sysroot-ports
 	! [ -d "$(SYSROOT_OVERLAY)" ] || \
-	cp -R --preserve=mode,timestamp,links "$(SYSROOT_OVERLAY)" -T "$(SYSROOT)"
+	cp -RT --preserve=mode,timestamp,links "$(SYSROOT_OVERLAY)" "$(SYSROOT)"
 
 .PHONY: sysroot-user-skel
 sysroot-user-skel: sysroot-fsh sysroot-system sysroot-ports sysroot-overlay
@@ -121,7 +135,7 @@ sysroot-user-skel: sysroot-fsh sysroot-system sysroot-ports sysroot-overlay
 .PHONY: sysroot-home-directory
 sysroot-home-directory: sysroot-fsh sysroot-system sysroot-ports sysroot-overlay sysroot-user-skel
 	mkdir -p "$(SYSROOT)/root"
-	cp -R "$(SYSROOT)/etc/skel" -T "$(SYSROOT)/root"
+	cp -RT "$(SYSROOT)/etc/skel" "$(SYSROOT)/root"
 
 .PHONY: sysroot
 sysroot: sysroot-system sysroot-source sysroot-ports sysroot-overlay sysroot-home-directory
@@ -134,15 +148,15 @@ $(SORTIX_REPOSITORY_DIR)/$(HOST): $(SORTIX_REPOSITORY_DIR)
 
 .PHONY: clean-core
 clean-core:
-	(for D in $(MODULES); do $(MAKE) clean $(SUBMAKE_OPTIONS) --directory $$D || exit $$?; done)
+	(for D in $(MODULES); do $(MAKE) clean -C $$D || exit $$?; done)
 
 .PHONY: clean-ports
 clean-ports:
 	@SORTIX_PORTS_DIR="$(SORTIX_PORTS_DIR)" \
 	 HOST="$(HOST)" \
 	 MAKE="$(MAKE)" \
-	 MAKEFLAGS="$(MAKEFLAGS) $(SUBMAKE_OPTIONS)" \
-	 ./clean-ports.sh
+	 MAKEFLAGS="$(MAKEFLAGS)" \
+	 build-aux/clean-ports.sh
 
 .PHONY: clean-builds
 clean-builds:
@@ -174,7 +188,7 @@ mostlyclean: clean-core clean-ports clean-builds clean-release clean-sysroot
 distclean: clean-core clean-ports clean-builds clean-release clean-repository clean-sysroot
 
 .PHONY: most-things
-most-things: sysroot initrd deb tar iso
+most-things: sysroot initrd tar iso
 
 .PHONY: everything
 everything: most-things iso.xz
@@ -232,6 +246,7 @@ $(INITRD): sysroot
 	echo "exclude /boot" >> $(INITRD).filter
 	echo "exclude /dev" >> $(INITRD).filter
 	echo "exclude /next" >> $(INITRD).filter
+	echo "exclude /src/sysroot" >> $(INITRD).filter
 	echo "exclude /tmp" >> $(INITRD).filter
 	for OTHER_PLATFORM in $(OTHER_PLATFORMS); do \
 	  echo "exclude /$$OTHER_PLATFORM" >> $(INITRD).filter; \
@@ -249,22 +264,6 @@ initrd: $(INITRD)
 sortix.initrd: $(INITRD)
 	cp $(INITRD) sortix.initrd
 
-# Local machine
-
-.PHONY: install
-install: sysroot initrd
-	cp "$(SYSROOT)/boot/$(HOST)/sortix.bin" /boot/sortix.initrd
-	cp $(INITRD) /boot/sortix.initrd
-	cp debsrc/etc/grub.d/42_sortix /etc/grub.d/42_sortix
-	chmod +x /etc/grub.d/42_sortix
-	update-grub
-
-.PHONY: uninstall
-uninstall:
-	rm -f /boot/sortix.bin
-	rm -f /boot/sortix.initrd
-	rm -f /etc/grub.d/42_sortix
-
 # Packaging
 
 $(SORTIX_BUILDS_DIR):
@@ -276,45 +275,18 @@ $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).tar.xz: sysroot $(INITRD) $(SORTIX_BUILDS_DIR
 	mkdir -p $(SORTIX_BUILDS_DIR)/tardir/boot
 	cp "$(SYSROOT)/boot/$(HOST)/sortix.bin" $(SORTIX_BUILDS_DIR)/tardir/boot/sortix.bin
 	cp $(INITRD) $(SORTIX_BUILDS_DIR)/tardir/boot/sortix.initrd
-	cp -R debsrc -T $(SORTIX_BUILDS_DIR)/tardir
-	rm -rf $(SORTIX_BUILDS_DIR)/tardir/DEBIAN
 	tar --create --xz --file $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).tar.xz -C $(SORTIX_BUILDS_DIR)/tardir `ls $(SORTIX_BUILDS_DIR)/tardir`
 	rm -rf $(SORTIX_BUILDS_DIR)/tardir
 
 .PHONY: tar
 tar: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).tar.xz
 
-$(SORTIX_BUILDS_DIR)/$(DEBNAME).deb: sysroot $(INITRD) $(SORTIX_BUILDS_DIR)
-	rm -rf $(SORTIX_BUILDS_DIR)/$(DEBNAME)
-	mkdir -p $(SORTIX_BUILDS_DIR)/$(DEBNAME)
-	mkdir -p $(SORTIX_BUILDS_DIR)/$(DEBNAME)/boot
-	cp "$(SYSROOT)/boot/$(HOST)/sortix.bin" $(SORTIX_BUILDS_DIR)/$(DEBNAME)/boot/sortix.bin
-	cp $(INITRD) $(SORTIX_BUILDS_DIR)/$(DEBNAME)/boot/sortix.initrd
-	expr \( `stat --printf="%s" $(SORTIX_BUILDS_DIR)/$(DEBNAME)/boot/sortix.bin` \
-	      + `stat --printf="%s" $(SORTIX_BUILDS_DIR)/$(DEBNAME)/boot/sortix.initrd` \
-	      + 1023 \) / 1024 > $(SORTIX_BUILDS_DIR)/$(DEBNAME)/boot/deb.size
-	cp -R debsrc -T $(SORTIX_BUILDS_DIR)/$(DEBNAME)
-	SIZE=`cat $(SORTIX_BUILDS_DIR)/$(DEBNAME)/boot/deb.size`; \
-	cat debsrc/DEBIAN/control | \
-	sed "s/SORTIX_PACKAGE_NAME/sortix/g" | \
-	sed "s/SORTIX_VERSION/$(VERSION)/g" | \
-	sed "s/SORTIX_ARCH/all/g" | \
-	sed "s/SORTIX_SIZE/$$SIZE/g" | \
-	cat > $(SORTIX_BUILDS_DIR)/$(DEBNAME)/DEBIAN/control
-	rm $(SORTIX_BUILDS_DIR)/$(DEBNAME)/boot/deb.size
-	dpkg --build $(SORTIX_BUILDS_DIR)/$(DEBNAME) $(SORTIX_BUILDS_DIR)/$(DEBNAME).deb
-	rm -rf $(SORTIX_BUILDS_DIR)/$(DEBNAME)/DEBIAN
-	rm -rf $(SORTIX_BUILDS_DIR)/$(DEBNAME)
-
-.PHONY: deb
-deb: $(SORTIX_BUILDS_DIR)/$(DEBNAME).deb
-
 # Bootable images
 
 $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso: sysroot $(INITRD) $(SORTIX_BUILDS_DIR)
 	rm -rf $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 	mkdir -p $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
-	cp -R isosrc -T $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
+	cp -RT isosrc $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 	cp "$(SYSROOT)/boot/$(HOST)/sortix.bin" $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.bin
 	cp $(INITRD) $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.initrd
 	grub-mkrescue -o $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
@@ -330,10 +302,10 @@ iso: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso
 iso.xz: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso.xz
 
 sortix.iso: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso
-	cp $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso $@
+	cp $< $@
 
 sortix.iso.xz: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso.xz
-	cp $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso.xz $@
+	cp $< $@
 
 # Release
 
@@ -352,12 +324,6 @@ $(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(BUILD_NAME).iso.xz: $(SORTIX_BUILDS_DI
 .PHONY: release-iso.xz
 release-iso.xz: $(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(BUILD_NAME).iso.xz
 
-$(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(DEBNAME).deb: $(SORTIX_BUILDS_DIR)/$(DEBNAME).deb $(SORTIX_RELEASE_DIR)/$(VERSION)/builds
-	cp $< $@
-
-.PHONY: release-deb
-release-deb: $(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(DEBNAME).deb
-
 $(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(BUILD_NAME).tar.xz: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).tar.xz $(SORTIX_RELEASE_DIR)/$(VERSION)/builds
 	cp $< $@
 
@@ -365,10 +331,10 @@ $(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(BUILD_NAME).tar.xz: $(SORTIX_BUILDS_DI
 release-tar: $(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(BUILD_NAME).tar.xz
 
 .PHONY: release-builds
-release-builds: release-iso.xz release-deb release-tar
+release-builds: release-iso.xz release-tar
 
 $(SORTIX_RELEASE_DIR)/$(VERSION)/doc: $(SORTIX_RELEASE_DIR)/$(VERSION) doc doc/*
-	cp -R doc -T $(SORTIX_RELEASE_DIR)/$(VERSION)/doc
+	cp -RT doc $(SORTIX_RELEASE_DIR)/$(VERSION)/doc
 	rm -f $(SORTIX_RELEASE_DIR)/$(VERSION)/doc/.gitignore
 	rm -f $(SORTIX_RELEASE_DIR)/$(VERSION)/doc/Makefile
 
@@ -385,7 +351,7 @@ $(SORTIX_RELEASE_DIR)/$(VERSION)/repository:
 	mkdir -p $@
 
 $(SORTIX_RELEASE_DIR)/$(VERSION)/repository/$(HOST): sysroot $(SORTIX_REPOSITORY_DIR)/$(HOST) $(SORTIX_RELEASE_DIR)/$(VERSION)/repository
-	cp -R $(SORTIX_REPOSITORY_DIR)/$(HOST) -T $@
+	cp -RT $(SORTIX_REPOSITORY_DIR)/$(HOST) $@
 
 .PHONY: release-repository
 release-repository: $(SORTIX_RELEASE_DIR)/$(VERSION)/repository/$(HOST)

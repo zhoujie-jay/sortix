@@ -1,7 +1,8 @@
 SOFTWARE_MEANT_FOR_SORTIX=1
-include ../compiler.mak
-include ../version.mak
-include ../dirs.mak
+include ../build-aux/platform.mak
+include ../build-aux/compiler.mak
+include ../build-aux/version.mak
+include ../build-aux/dirs.mak
 
 OPTLEVEL?=$(DEFAULT_OPTLEVEL)
 CXXFLAGS?=$(OPTLEVEL)

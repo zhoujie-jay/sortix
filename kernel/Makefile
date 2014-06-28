@@ -1,7 +1,8 @@
 SOFTWARE_MEANT_FOR_SORTIX=1
-include ../compiler.mak
-include ../version.mak
-include ../dirs.mak
+include ../build-aux/platform.mak
+include ../build-aux/compiler.mak
+include ../build-aux/version.mak
+include ../build-aux/dirs.mak
 
 # Default values in case the user doesn't override these variables.
 OPTLEVEL?=$(DEFAULT_HOST_OPTLEVEL)
@@ -190,8 +191,8 @@ endif
 
 clean:
 	rm -f $(ALLOBJS) sortix.bin
-	rm -f $(wildcard *.bin) $(wildcard *.out) $(wildcard *.tmp)
-	rm -f $(wildcard *.o) $(wildcard */*.o) $(wildcard */*/*.o)
+	rm -f *.bin *.out *.tmp
+	rm -f *.o */*.o */*/*.o
 
 # Installation into sysroot
 install: install-headers install-kernel
@@ -207,4 +208,3 @@ install-kernel: install-kernel-binary
 install-kernel-binary: sortix.bin
 	mkdir -p $(DESTDIR)$(BOOTDIR)/$(HOST)
 	cp sortix.bin $(DESTDIR)$(BOOTDIR)/$(HOST)
-

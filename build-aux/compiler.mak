@@ -1,6 +1,3 @@
-COMPILER_MAK_DIR:=$(dir $(lastword $(MAKEFILE_LIST)))
-include $(COMPILER_MAK_DIR)/platform.mak
-
 # Warn if default target is used and the software shouldn't be built under Sortix.
 ifeq ($(BUILD_IS_SORTIX),1)
   ifeq ($(MAKEFILE_NOT_MEANT_FOR_SORTIX), 1)

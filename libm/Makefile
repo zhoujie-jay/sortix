@@ -1,7 +1,7 @@
-include ../platform.mak
-include ../compiler.mak
-include ../version.mak
-include ../dirs.mak
+include ../build-aux/platform.mak
+include ../build-aux/compiler.mak
+include ../build-aux/version.mak
+include ../build-aux/dirs.mak
 
 OPTLEVEL?=$(DEFAULT_HOST_OPTLEVEL)
 CFLAGS?=$(OPTLEVEL)
@@ -413,4 +413,3 @@ install-libm-dirs:
 
 install-libm: install-libm-dirs libm.a
 	cp -P libm.a $(DESTDIR)$(LIBDIR)
-

@@ -1,12 +1,8 @@
 ifeq ($(HOST_IS_SORTIX),1)
   DEFAULT_PREFIX=
-else
-  DEFAULT_PREFIX=/usr/local
-endif
-
-ifeq ($(HOST_IS_SORTIX),1)
   DEFAULT_EXEC_PREFIX=$(PREFIX)/$(HOST)
 else
+  DEFAULT_PREFIX=/usr/local
   DEFAULT_EXEC_PREFIX=$(PREFIX)
 endif
 

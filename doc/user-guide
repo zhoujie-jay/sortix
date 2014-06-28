@@ -67,7 +67,7 @@ More Documentation
 ------------------
 
 The system documentation (at least what has been documented so far) is installed
-in the /share/doc directory. You can view these documents (well, the ones that
+in the `/share/doc` directory. You can view these documents (well, the ones that
 are plain text, there is no `man` program yet) using the `editor` program, which
 you exit by pressing Control-Q ('^Q'). It is probably a good idea to change
 the resolution using the `chvideomode` program if drivers are available.
@@ -81,20 +81,20 @@ Filesystem Structure
 
 This as an incomplete list of the common top level directories in Sortix.
 
-* /boot - Kernel images, initrd images.
-* /dev - Device filesystem.
-* /etc - System-wide configuration.
-* /home - User directories.
-* /include - Header files.
-* /root - Directory of the root user.
-* /share - Architecture independent files.
-* /share/doc - Documentation.
-* /src - System source code.
-* /tmp - Temporary files.
-* /$cputype - Files for $cputype.
-* /$cputype/bin - Programs for $cputype.
-* /$cputype/lib - Shared libaries for $cputype.
-* /$cputype/libexec - Shared libaries for $cputype.
+* `/boot` - Kernel images, initrd images.
+* `/dev` - Device filesystem.
+* `/etc` - System-wide configuration.
+* `/home` - User directories.
+* `/include` - Header files.
+* `/root` - Directory of the root user.
+* `/share` - Architecture independent files.
+* `/share/doc` - Documentation.
+* `/src` - System source code.
+* `/tmp` - Temporary files.
+* `/$cputype` - Files for $cputype.
+* `/$cputype/bin` - Programs for $cputype.
+* `/$cputype/lib` - Shared libaries for $cputype.
+* `/$cputype/libexec` - Shared libaries for $cputype.
 
 Some of these directories not be present or empty on your installation.
 
@@ -292,9 +292,9 @@ System Source Code
 ------------------
 
 The entire system source code (except third party components) is installed into
-the /src directory. You can use the `editor` program to view and edit the system
-source code. If your release contains the GNU compiler collection (gcc), you can
-even modify the system and compile custom programs.
+the `/src` directory. You can use the `editor` program to view and edit the
+system source code. If your release contains the GNU compiler collection (gcc),
+you can even modify the system and compile custom programs.
 
 Editing Files
 -------------
@@ -337,14 +337,14 @@ will have to be done from an external system. You must take care to send the
 filesystem server a SIGTERM signal to shut down when you are unfinished,
 otherwise the data may not have been synced to disk. This will be done
 automatically if the root filesystem was mounted by the initrd. If the device
-/dev/ata0p1 contasins an ext2 filesystem, then it can be mounted using:
+`/dev/ata0p1` contasins an ext2 filesystem, then it can be mounted using:
 
     mkdir /fs
     extfs /dev/ata0 /fs
 
-You can then access the filesystem at /fs. There is no real unmount support and
-if the file system server shuts down, the system may hang trying to communicate
-with a server that isn't there.
+You can then access the filesystem at `/fs`. There is no real unmount support
+and if the file system server shuts down, the system may hang trying to
+communicate with a server that isn't there.
 
 Graphical User Interface
 ------------------------
@@ -366,33 +366,40 @@ possible to build all the the third party software used to build itself, but you
 can use the system to improve it until it is possible to build third party
 software under it.
 
-You need a version of Sortix that ships its own source code in /src and contains
-a copy of the GNU Compiler Collection (gcc). Additionally, you should be booting
-from a harddisk so that the new kernel is used after a reboot, otherwise you
-will have to be satisfied with only using a new user-land.
+You need a version of Sortix that ships its own source code in `/src` and
+contains a copy of the GNU Compiler Collection (gcc). Additionally, you should
+be booting from a harddisk so that the new kernel is used after a reboot,
+otherwise you will have to be satisfied with only using a new user-land.
 
 You can use the `colormake` program instead of regular `make` if you want
 colored output, which eases spotting compile warnings and errors. This program
 simply invokes the real `make` and colors its output.
 
-The /src/system directory contains a makefile that eases rebuilding the entire
+The `/src` directory contains a makefile that eases rebuilding the entire
 system automatically. To rebuild the entire system simply run:
 
-    cd /src/system
-    make system
+    cd /src
+    make
+    make install
 
-This will recompile the entire operating system and install it into the root
-directory as it progresses. You will be running a new version of everything upon
-completion, except the kernel and programs were previously started will still
-be running the old version. If the root filesystem is permanent and the computer
-has been configured to boot from it, then you can reboot the system by exiting
-the initial shell. You will then be running an entirely new system.
+This will recompile the entire operating system and install it into the staging
+area `/src/sysroot`. This is a full usable image of the root filesystem for a
+Sortix installation and you can successfully execute `chroot /src/sysroot init`.
+The install target does a single `cp -RT /src/sysroot /` command that replaces
+copies all files in `/src/sysroot` onto their root filesystem counterparts, with
+the exception that the precious files in /src are not replaced with their
+/src/system/src counterparts (even though they usually would be equal).
 
-In general, the projects that are part of the core system can be easily built
-and installed with the provided makefiles. In general, they can be built with
-this simple sequence:
+You will be running a new version of everything upon completion, except the
+kernel and programs were previously started will still be running the old
+version. If the root filesystem is permanent and the computer has been
+configured to boot from it, then you can reboot the system by exiting the
+initial shell. You will then be running an entirely new system.
 
-    cd /src/package
+The projects that are part of the core system can be easily built and installed
+with the provided makefiles. They can be built with this simple sequence:
+
+    cd /src/<package>
     make
     make install
 
@@ -416,7 +423,7 @@ the package will expect that it is installed into `/local` when it is run. This
 is useful for package management purposes to capture a copy of all the installed
 files before they are installed for real.
 
-### Building the C library ###
+### The C library ###
 
 The C library (libc) implements the common functions, data types and constants
 required by the C programming language standard, POSIX, other standards, and
@@ -427,32 +434,19 @@ freestanding C library designed for inclusion into the Sortix kernel. After
 rebuilding the C library, you may wish to rebuild the entire user-land since
 those programs have an older libc version statically linked into them.
 
-    cd /src/libc
-    make
-    make install
-
-### Building the Math Library ###
+### The Math Library ###
 
 The Math Library (libm) provides useful mathematical functions for manipulating
 floating-point numbers of various sizes. This implements the <math.h> header as
 known from standard C. Like the C library, you will likely want to recompile
 large parts of user-land if you update this library.
 
-    cd /src/libm
-    make
-    make install
-
-### Building the Pthread Library ###
+### The Pthread Library ###
 
 The Pthread Library (libpthread) provides a threading implementation through the
 standard header <pthread.h> as known from POSIX. Like the C library, you will
 likely want to recompile large parts of user-land if you update this library.
-
-    cd /src/libpthread
-    make
-    make install
-
-### Building the Display Daemon ###
+### The Display Daemon ###
 
 The dispd library allows processes to communicate with the dispd server that
 handles window management and graphical output. Currently, there is no such
@@ -460,89 +454,49 @@ server and the library calls the kernel interface itself. This library allows
 games such as asteroids to detect the current resolution and request whatever
 resolution they need to function.
 
-    cd /src/dispd
-    make
-    make install
-
-### Building the Utility Collection ###
+### Utility Collection ###
 
 The utility collection contains common programs such as `ls`, `cp`, `mkdir` and
 more. These programs allow the basic operation from the command line.
 
-    cd /src/utils
-    make
-    make install
-
-### Building the Benchmarks ###
+### Benchmarks ###
 
 The system comes with some small and outdated benchmark programs. They don't
 currently give any meaningful values, so you should not use them for anything.
 
-    cd /src/bench
-    make
-    make install
-
-### Building the Games ###
+### Games ###
 
 The games directory contains the source code for the above mentioned games.
 These depend on libdispd.
 
-    cd /src/games
-    make
-    make install
-
-### Building mbrfs ###
+### mbrfs ###
 
 The `mbrfs` program creates block devices for every partition in the master boot
 record in a block device.
 
-    cd /src/mbr
-    make
-    make install
-
-### Building extfs ###
+### extfs ###
 
 The `extfs` program translates a block device formatted with the second extended
 filesystem and mounts it at an empty directory.
 
-    cd /src/ext
-    make
-    make install
-
-### Building mkinitrd ###
+### mkinitrd ###
 
 This program produces a Sortix compatible initrd, the file that contains the
 initial filesystem used to bootstrap the real root filesystem.
 
-    cd /src/mkinitrd
-    make
-    make install
-
-### Building regress ###
+### regress ###
 
 This is a collection of operating system test cases run using the `regress`
 driver program.
 
-    cd /src/regress
-    make
-    make install
-
-### Building carray ###
+### carray ###
 
 This program converts a binary file to an C array.
 
-    cd /src/carray
-    make
-    make install
-
-### Building the Sortix Kernel ###
+### Sortix Kernel ###
 
 The Sortix kernel is the core of the Sortix operating system. It provides all
 the primitives libc needs to implement a Unix-like environment.
-
-    cd /src/kernel
-    make
-    make install
 
 Note that you need to reboot the system to use the new kernel and that you need
 a permanent root filesystem or your local changes will be lost.

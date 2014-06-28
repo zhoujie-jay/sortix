@@ -1,7 +1,8 @@
 SOFTWARE_MEANT_FOR_SORTIX=1
-include ../compiler.mak
-include ../version.mak
-include ../dirs.mak
+include ../build-aux/platform.mak
+include ../build-aux/compiler.mak
+include ../build-aux/version.mak
+include ../build-aux/dirs.mak
 
 OPTLEVEL?=$(DEFAULT_HOST_OPTLEVEL)
 
@@ -650,7 +651,7 @@ crtn.o \
 MISCOBJ=\
 $(CRTOBJ) \
 
-HEADERS:=$(shell find include -type d)
+HEADERS:=$(shell find include -type f)
 
 LIBK_OBJS:=$(FREEOBJS:.o=.libk.o)
 LIBK_CPPFLAGS:=$(CPPFLAGS) -D__is_sortix_kernel
@@ -726,8 +727,11 @@ headers:
 %.libk.o: %.cpp
 	$(HOSTCXX) -c $< -o $@ $(LIBK_CPPFLAGS) $(LIBK_FLAGS) $(LIBK_CXXFLAGS)
 
+%.libk.o: %.S
+	$(HOSTCC) -c $< -o $@ $(LIBK_CPPFLAGS) $(LIBK_FLAGS) $(LIBK_CFLAGS)
+
 clean:
-	rm -f $(wildcard *.o) $(wildcard */*.o) $(wildcard */*/*.o) $(wildcard *.a)
+	rm -f *.o */*.o */*/*.o *.a
 
 # Installation into sysroot
 install: install-headers install-libs install-libs-kernel
@@ -753,4 +757,3 @@ install-lib-dirs: $(DESTDIR)$(LIBDIR)
 install-libs: $(INSTALLLIBS)
 
 install-libs-kernel: $(INSTALLLIBSKERNEL)
-

@@ -1,6 +1,7 @@
-include ../compiler.mak
-include ../version.mak
-include ../dirs.mak
+include ../build-aux/platform.mak
+include ../build-aux/compiler.mak
+include ../build-aux/version.mak
+include ../build-aux/dirs.mak
 
 OPTLEVEL?=$(DEFAULT_OPTLEVEL)
 CXXFLAGS?=$(OPTLEVEL)
@@ -26,8 +27,7 @@ install: all
 	install $(BINARIES) $(DESTDIR)$(BINDIR)
 
 extfs: *.cpp *.h
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $(wildcard *.cpp) -o $@ $(LIBS)
+	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) *.cpp -o $@ $(LIBS)
 
 clean:
 	rm -f $(BINARIES) *.o
-
