@@ -92,6 +92,8 @@ sysroot-fsh:
 	mkdir -p "$(SYSROOT)/share"
 	mkdir -p "$(SYSROOT)/src"
 	mkdir -p "$(SYSROOT)/tmp"
+	mkdir -p "$(SYSROOT)/var"
+	mkdir -p "$(SYSROOT)/var/empty"
 	echo "root::0:0:root:/root:sh" > "$(SYSROOT)/etc/passwd"
 	echo "root::0:root" > "$(SYSROOT)/etc/group"
 
