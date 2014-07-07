@@ -42,6 +42,8 @@
 #ifndef	_I386_NPX_H_
 #define	_I386_NPX_H_
 
+#include <__/stdint.h>
+
 /* Environment information of floating point unit */
 struct env87 {
 	long	 en_cw;		/* control word (16bits) */
