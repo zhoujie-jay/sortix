@@ -61,7 +61,7 @@ int dispd_get_framebuffer_height(struct dispd_framebuffer* framebuffer);
 int dispd_get_framebuffer_width(struct dispd_framebuffer* framebuffer);
 
 #if defined(__cplusplus)
-} // extern "C"
+} /* extern "C" */
 #endif
 
 #endif
