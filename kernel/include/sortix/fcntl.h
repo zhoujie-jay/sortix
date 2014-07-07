@@ -29,8 +29,8 @@
 
 __BEGIN_DECLS
 
-// Remember to update the flag classifications at the top of descriptor.cpp if
-// you add new flags here.
+/* Remember to update the flag classifications at the top of descriptor.cpp if
+   you add new flags here. */
 #define O_READ (1<<0)
 #define O_WRITE (1<<1)
 #define O_EXEC (1<<2)
