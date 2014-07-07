@@ -73,7 +73,7 @@ struct dirent
 	ino_t d_ino;
 	dev_t d_dev;
 	unsigned char d_type;
-	char d_name[0];
+	__extension__ char d_name[];
 };
 
 #define _DIRENT_HAVE_D_RECLEN

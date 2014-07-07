@@ -77,10 +77,10 @@ struct kernel_dirent
 	ino_t d_ino;
 	dev_t d_dev;
 	unsigned char d_type;
-	char d_name[];
+	__extension__ char d_name[];
 };
 
-static inline struct kernel_dirent* kernel_dirent_next(struct kernel_dirent* ent)
+static __inline struct kernel_dirent* kernel_dirent_next(struct kernel_dirent* ent)
 {
 	if ( !ent->d_nextoff )
 		return NULL;
