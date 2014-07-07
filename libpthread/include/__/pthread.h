@@ -44,22 +44,26 @@ typedef struct
 {
 	struct pthread_cond_elem* first;
 	struct pthread_cond_elem* last;
+	__clock_t clock;
 } __pthread_cond_t;
 #else
 typedef struct
 {
 	void* __pthread_first;
 	void* __pthread_last;
+	__clock_t __pthread_clock;
 } __pthread_cond_t;
 #endif
 
 #if defined(__is_sortix_libpthread)
 typedef struct
 {
+	__clock_t clock;
 } __pthread_condattr_t;
 #else
 typedef struct
 {
+	__clock_t __pthread_clock;
 } __pthread_condattr_t;
 #endif
 

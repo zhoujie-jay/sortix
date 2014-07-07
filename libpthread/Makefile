@@ -12,7 +12,9 @@ CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 OBJS=\
 pthread_condattr_destroy.o \
+pthread_condattr_getclock.o \
 pthread_condattr_init.o \
+pthread_condattr_setclock.o \
 pthread_cond_broadcast.o \
 pthread_cond_destroy.o \
 pthread_cond_init.o \

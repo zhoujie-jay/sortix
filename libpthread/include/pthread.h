@@ -150,7 +150,7 @@ struct pthread_cond_elem
 };
 #endif
 
-#define PTHREAD_COND_INITIALIZER { NULL, NULL }
+#define PTHREAD_COND_INITIALIZER { NULL, NULL, CLOCK_REALTIME }
 #define PTHREAD_MUTEX_INITIALIZER { 0, PTHREAD_MUTEX_DEFAULT, 0, 0 }
 #define PTHREAD_RWLOCK_INITIALIZER 0
 
@@ -198,10 +198,11 @@ int pthread_cond_timedwait(pthread_cond_t* __restrict,
                            const struct timespec* __restrict);
 int pthread_cond_wait(pthread_cond_t* __restrict, pthread_mutex_t* __restrict);
 int pthread_condattr_destroy(pthread_condattr_t*);
-/* TODO: pthread_condattr_getclock */
+int pthread_condattr_getclock(const pthread_condattr_t* __restrict,
+                              clockid_t* __restrict);
 /* TODO: pthread_condattr_getpshared */
 int pthread_condattr_init(pthread_condattr_t*);
-/* TODO: pthread_condattr_setclock */
+int pthread_condattr_setclock(pthread_condattr_t*, clockid_t);
 /* TODO: pthread_condattr_setpshared */
 /* TODO: pthread_create */
 /* TODO: pthread_detach */

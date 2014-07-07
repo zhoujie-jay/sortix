@@ -45,7 +45,7 @@ int pthread_cond_timedwait(pthread_cond_t* restrict cond,
 	while ( !elem.woken )
 	{
 		struct timespec now;
-		if ( clock_gettime(CLOCK_REALTIME, &now) < 0 )
+		if ( clock_gettime(cond->clock, &now) < 0 )
 			return errno;
 		if ( timespec_le(*abstime, now) )
 			return errno = ETIMEDOUT;
