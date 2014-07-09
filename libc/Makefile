@@ -221,6 +221,7 @@ string/strndup.o \
 string/strnlen.o \
 string/strpbrk.o \
 string/strrchr.o \
+string/strsep.o \
 string/strsignal.o \
 string/strspn.o \
 string/strstr.o \
