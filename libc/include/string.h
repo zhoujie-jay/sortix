@@ -129,6 +129,7 @@ int ffsl(long int);
 void* memrchr(const void*, int, size_t);
 /* TODO: strcasecmp_l */
 char* strchrnul(const char* str, int c);
+char* stresep(char**, const char*, int);
 size_t strlcat(char* __restrict, const char* __restrict, size_t);
 size_t strlcpy(char* __restrict, const char* __restrict, size_t);
 /* TODO: strncasecmp_l */
