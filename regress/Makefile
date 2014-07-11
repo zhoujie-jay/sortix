@@ -14,6 +14,7 @@ BINARIES:=\
 regress \
 
 TESTS:=\
+test-pthread-argv \
 test-pthread-basic \
 test-pthread-main-join \
 test-pthread-once \
