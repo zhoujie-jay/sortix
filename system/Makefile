@@ -48,6 +48,7 @@ fsh:
 	mkdir -p $(ROOT)/tmp
 	mkdir -p $(ROOT)/$(cputype)/bin
 	mkdir -p $(ROOT)/$(cputype)/lib
+	mkdir -p $(ROOT)/$(cputype)/libexec
 
 # Install the system headers.
 system-headers:

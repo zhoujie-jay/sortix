@@ -62,7 +62,7 @@ sysroot-fsh:
 	  mkdir -p "$(SYSROOT)/$$DIRNAME/$(HOST)" \
 	) || exit $$?; done;
 	mkdir -p "$(SYSROOT)/$(HOST)"
-	for DIRNAME in bin lib; do (\
+	for DIRNAME in bin lib libexec; do (\
 	  mkdir -p "$(SYSROOT)/$(HOST)/$$DIRNAME" \
 	) || exit $$?; done;
 	mkdir -p "$(SYSROOT)/etc/skel"

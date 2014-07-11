@@ -95,6 +95,7 @@ This as an incomplete list of the common top level directories in Sortix.
 * /$cputype - Files for $cputype.
 * /$cputype/bin - Programs for $cputype.
 * /$cputype/lib - Shared libaries for $cputype.
+* /$cputype/libexec - Shared libaries for $cputype.
 
 Some of these directories not be present or empty on your installation.
 
