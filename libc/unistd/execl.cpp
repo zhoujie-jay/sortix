@@ -18,7 +18,7 @@
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
     unistd/execl.cpp
-    Loads a process image.
+    Loads a program image.
 
 *******************************************************************************/
 
