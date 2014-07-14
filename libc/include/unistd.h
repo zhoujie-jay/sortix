@@ -551,6 +551,7 @@ int dup3(int, int, int);
 int execvpe(const char*, char* const [], char* const []);
 char* get_current_dir_name(void);
 int getdomainname(char*, size_t);
+int getentropy(void*, size_t);
 int pipe2(int [2], int);
 void* sbrk(__intptr_t increment);
 typedef unsigned int useconds_t;

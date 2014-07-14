@@ -590,6 +590,7 @@ unistd/ftruncate.o \
 unistd/getcwd.o \
 unistd/getdomainname.o \
 unistd/getegid.o \
+unistd/getentropy.o \
 unistd/geteuid.o \
 unistd/getgid.o \
 unistd/gethostname.o \

@@ -123,6 +123,7 @@ pipe.o \
 poll.o \
 process.o \
 ptable.o \
+random.o \
 refcount.o \
 registers.o \
 resource.o \

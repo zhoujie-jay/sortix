@@ -172,6 +172,7 @@
 #define SYSCALL_GETPEERNAME 144
 #define SYSCALL_GETSOCKNAME 145
 #define SYSCALL_SHUTDOWN 146
-#define SYSCALL_MAX_NUM 147 /* index of highest constant + 1 */
+#define SYSCALL_GETENTROPY 147
+#define SYSCALL_MAX_NUM 148 /* index of highest constant + 1 */
 
 #endif

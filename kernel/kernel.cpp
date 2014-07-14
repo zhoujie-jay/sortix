@@ -54,6 +54,7 @@
 #include <sortix/kernel/pci.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/ptable.h>
+#include <sortix/kernel/random.h>
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
@@ -296,6 +297,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	// Initialize the interrupt handler table and enable interrupts.
 	Interrupt::Init();
+
+	// Initialize entropy gathering.
+	Random::Init();
 
 	// Load the kernel symbols if provided by the bootloader.
 	do if ( bootinfo->flags & MULTIBOOT_INFO_ELF_SHDR )
