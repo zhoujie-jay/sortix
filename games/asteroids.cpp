@@ -43,7 +43,7 @@ const float PI = 3.1415926532f;
 
 inline float RandomFloat()
 {
-	return (float) rand() / 32768.0f;
+	return arc4random() / (float) UINT32_MAX;
 }
 
 inline float RandomFloat(float min, float max)
@@ -73,12 +73,14 @@ uint32_t starfield[STARFIELD_WIDTH * STARFIELD_HEIGHT];
 void GenerateStarfield(uint32_t* bitmap, size_t width, size_t height)
 {
 	size_t numpixels = width * height;
+
 	for ( size_t i = 0; i < numpixels; i++ )
 	{
 		uint8_t color = 0;
-		int randval = rand() % 256;
-		bool isstar = randval == 5 || randval == 42 || randval == 101;
-		if ( isstar ) { color = rand(); }
+		uint8_t randval;
+		arc4random_buf(&randval, sizeof(randval));
+		if ( randval == 5 || randval == 42 || randval == 101 )
+			arc4random_buf(&color, sizeof(color));
 		bitmap[i] = MakeColor(color, color, color);
 	}
 }
@@ -467,7 +469,7 @@ Asteroid::Asteroid(Vector pos, Vector vel, float size, AsteroidType type)
 	}
 	angle = 0.0f;
 	turnspeed = DegreeToRadian(MAX_TURN_SPEED) * (RandomFloat() * 2.0f - 1.0f);
-	numpolygons = MIN_POLYS + rand() % (MAX_POLYS - MIN_POLYS);
+	numpolygons = MIN_POLYS + arc4random_uniform(MAX_POLYS - MIN_POLYS);
 	slice = DegreeToRadian(360.0f) / (float) numpolygons;
 	for ( size_t i = 0; i < numpolygons; i++ )
 	{
