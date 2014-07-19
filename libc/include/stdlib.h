@@ -29,6 +29,10 @@
 
 #include <sys/__/types.h>
 
+#if __USE_SORTIX
+#include <stdint.h>
+#endif
+
 #include <sortix/wait.h>
 
 __BEGIN_DECLS
@@ -159,6 +163,13 @@ char* setstate(char*);
 void srand48(long);
 void srandom(unsigned);
 int unlockpt(int);
+#endif
+
+/* Functions copied from elsewhere. */
+#if __USE_SORTIX
+uint32_t arc4random(void);
+void arc4random_buf(void*, size_t);
+uint32_t arc4random_uniform(uint32_t);
 #endif
 
 __END_DECLS
