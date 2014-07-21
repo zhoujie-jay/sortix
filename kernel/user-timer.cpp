@@ -42,8 +42,6 @@
 #include <sortix/kernel/time.h>
 #include <sortix/kernel/user-timer.h>
 
-// TODO: Memset all user timers in process constructor.
-
 namespace Sortix {
 
 // TODO: We also need to fetch the pthread attr if there is one.

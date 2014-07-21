@@ -102,6 +102,7 @@ Process::Process()
 	ptrlock = KTHREAD_MUTEX_INITIALIZER;
 	idlock = KTHREAD_MUTEX_INITIALIZER;
 	user_timers_lock = KTHREAD_MUTEX_INITIALIZER;
+	memset(&user_timers, 0, sizeof(user_timers));
 	segments = NULL;
 	segments_used = 0;
 	segments_length = 0;
