@@ -674,13 +674,13 @@ extern "C" void free(void* addr)
 	if ( !IsGoodHeapPointer(addr, 1) ||
 	     !IsGoodHeapPointer(chunk, sizeof(*chunk)) )
 	{
-		error(0, 0, "attempted to free(3) non-heap pointer: 0x%zx", addr);
+		error(0, 0, "attempted to free(3) non-heap pointer: %p", addr);
 		abort();
 	}
 	if ( !chunk->IsUsed() )
 	{
 		error(0, 0, "attempted to free(3) area that doesn't appear to be "
-		      "allocated: 0x%zx + 0x%zx", addr);
+		      "allocated: %p + 0x%zx", chunk, chunk->size);
 		abort();
 	}
 #endif

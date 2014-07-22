@@ -467,7 +467,7 @@ Try make sure the desired driver is loaded and is configured correctly.\n");
 	struct dispmsg_crtc_mode mode = modes[selection];
 	if ( !SetCurrentMode(mode) )
 	{
-		error(1, errno, "Unable to set video mode: %s", mode);
+		error(1, errno, "Unable to set video mode: %s", StringOfCrtcMode(mode));
 	}
 #endif
 	if ( 1 < argc )
@@ -480,7 +480,7 @@ Try make sure the desired driver is loaded and is configured correctly.\n");
 			waitpid(childpid, &status, 0);
 			if ( !SetCurrentMode(prevmode) )
 			{
-				error(1, errno, "Unable to restore video mode: %s", prevmode);
+				error(1, errno, "Unable to restore video mode: %s", StringOfCrtcMode(prevmode));
 			}
 			exit(WEXITSTATUS(status));
 		}

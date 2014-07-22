@@ -97,7 +97,7 @@ int main(int argc, char* argv[])
 		if ( arg[0] != '-' )
 		{
 			if ( found_options )
-				error(1, 0, "path `%s' must come before options");
+				error(1, 0, "path `%s' must come before options", arg);
 			if ( path )
 				error(1, 0, "multiple paths are not supported");
 			path = arg;

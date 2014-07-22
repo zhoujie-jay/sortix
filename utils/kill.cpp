@@ -20,12 +20,13 @@
 
 *******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <signal.h>
-#include <string.h>
 #include <errno.h>
 #include <error.h>
+#include <signal.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 int usage()
 {
@@ -52,7 +53,7 @@ int main(int argc, char* argv[])
 		pid_t pid = atoi(argv[i]);
 		if ( kill(pid, signum) )
 		{
-			error(0, errno, "(%u)", pid);
+			error(0, errno, "(%ji)", (intmax_t) pid);
 			result |= 1;
 		}
 	}
