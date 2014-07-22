@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -98,10 +98,12 @@ extern FILE* stderr;
 #define stdout stdout
 #define stderr stderr
 
-int asprintf(char** __restrict, const char* __restrict, ...);
+int asprintf(char** __restrict, const char* __restrict, ...)
+	__attribute__((__format__ (printf, 2, 3)));
 void clearerr(FILE* stream);
 void clearerr_unlocked(FILE* stream);
-int dprintf(int fildes, const char* __restrict format, ...);
+int dprintf(int fildes, const char* __restrict format, ...)
+	__attribute__((__format__ (printf, 2, 3)));
 int fclose(FILE* stream);
 FILE* fdopen(int fildes, const char* mode);
 int feof(FILE* stream);
@@ -119,8 +121,10 @@ char* fgets(char* __restrict s, int n, FILE* __restrict stream);
 char* fgets_unlocked(char* __restrict, int, FILE* __restrict);
 void flockfile(FILE* file);
 FILE* fopen(const char* __restrict filename, const char* __restrict mode);
-int fprintf(FILE* __restrict stream, const char* __restrict format, ...);
-int fprintf_unlocked(FILE* __restrict stream, const char* __restrict format, ...);
+int fprintf(FILE* __restrict stream, const char* __restrict format, ...)
+	__attribute__((__format__ (printf, 2, 3)));
+int fprintf_unlocked(FILE* __restrict stream, const char* __restrict format, ...)
+	__attribute__((__format__ (printf, 2, 3)));
 int fputc(int c, FILE* stream);
 int fputc_unlocked(int c, FILE* stream);
 int fputs(const char* __restrict, FILE* __restrict stream);
@@ -128,8 +132,10 @@ int fputs_unlocked(const char* __restrict, FILE* __restrict stream);
 size_t fread(void* __restrict ptr, size_t size, size_t nitems, FILE* __restrict stream);
 size_t fread_unlocked(void* __restrict ptr, size_t size, size_t nitems, FILE* __restrict stream);
 FILE* freopen(const char* __restrict filename, const char *__restrict mode, FILE* __restrict stream);
-int fscanf(FILE* __restrict stream, const char* __restrict format, ... );
-int fscanf_unlocked(FILE* __restrict stream, const char* __restrict format, ... );
+int fscanf(FILE* __restrict stream, const char* __restrict format, ... )
+	__attribute__((__format__ (scanf, 2, 3)));
+int fscanf_unlocked(FILE* __restrict stream, const char* __restrict format, ... )
+	__attribute__((__format__ (scanf, 2, 3)));
 int fseek(FILE* stream, long offset, int whence);
 int fseeko(FILE* stream, off_t offset, int whence);
 int fseeko_unlocked(FILE* stream, off_t offset, int whence);
@@ -150,7 +156,8 @@ ssize_t getline(char** __restrict lineptr, size_t* __restrict n, FILE* __restric
 int pclose(FILE* steam);
 void perror(const char* s);
 FILE* popen(const char* command, const char* mode);
-int printf(const char* __restrict format, ...);
+int printf(const char* __restrict format, ...)
+	__attribute__((__format__ (printf, 1, 2)));
 int putc(int c, FILE* stream);
 int putc_unlocked(int c, FILE* stream);
 int putchar(int c);
@@ -161,30 +168,45 @@ int remove(const char* path);
 int renameat(int oldfd, const char* oldname, int newfd, const char* newname);
 int rename(const char* oldname, const char* newname);
 void rewind(FILE* stream);
-int snprintf(char* __restrict s, size_t n, const char* __restrict format, ...);
+int snprintf(char* __restrict s, size_t n, const char* __restrict format, ...)
+	__attribute__((__format__ (printf, 3, 4)));
 void setbuf(FILE* __restrict stream, char* __restrict buf);
 int setvbuf(FILE* __restrict stream, char* __restrict buf, int type, size_t size);
 int setvbuf_unlocked(FILE* __restrict stream, char* __restrict buf, int type, size_t size);
 char* sortix_gets(void);
 int sortix_puts(const char* str);
-int sprintf(char* __restrict s, const char* __restrict format, ...);
-int scanf(const char* __restrict format, ...);
-int sscanf(const char* __restrict s, const char* __restrict format, ...);
+int sprintf(char* __restrict s, const char* __restrict format, ...)
+	__attribute__((__format__ (printf, 2, 3)));
+int scanf(const char* __restrict format, ...)
+	__attribute__((__format__ (scanf, 1, 2)));
+int sscanf(const char* __restrict s, const char* __restrict format, ...)
+	__attribute__((__format__ (scanf, 2, 3)));
 FILE* tmpfile(void);
 char* tmpnam(char* s);
 int ungetc(int c, FILE* stream);
 int ungetc_unlocked(int c, FILE* stream);
-int vasprintf(char** __restrict, const char* __restrict, __gnuc_va_list);
-int vdprintf(int fildes, const char* __restrict format, __gnuc_va_list ap);
-int vfprintf(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list ap);
-int vfprintf_unlocked(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list ap);
-int vfscanf(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list arg);
-int vfscanf_unlocked(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list arg);
-int vprintf(const char* __restrict format, __gnuc_va_list ap);
-int vscanf(const char* __restrict format, __gnuc_va_list arg);
-int vsnprintf(char* __restrict, size_t, const char* __restrict, __gnuc_va_list);
-int vsprintf(char* __restrict s, const char* __restrict format, __gnuc_va_list ap);
-int vsscanf(const char* __restrict s, const char* __restrict format, __gnuc_va_list arg);
+int vasprintf(char** __restrict, const char* __restrict, __gnuc_va_list)
+	__attribute__((__format__ (printf, 2, 0)));
+int vdprintf(int fildes, const char* __restrict format, __gnuc_va_list ap)
+	__attribute__((__format__ (printf, 2, 0)));
+int vfprintf(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list ap)
+	__attribute__((__format__ (printf, 2, 0)));
+int vfprintf_unlocked(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list ap)
+	__attribute__((__format__ (printf, 2, 0)));
+int vfscanf(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list arg)
+	__attribute__((__format__ (scanf, 2, 0)));
+int vfscanf_unlocked(FILE* __restrict stream, const char* __restrict format, __gnuc_va_list arg)
+	__attribute__((__format__ (scanf, 2, 0)));
+int vprintf(const char* __restrict format, __gnuc_va_list ap)
+	__attribute__((__format__ (printf, 1, 0)));
+int vscanf(const char* __restrict format, __gnuc_va_list arg)
+	__attribute__((__format__ (scanf, 1, 0)));
+int vsnprintf(char* __restrict, size_t, const char* __restrict, __gnuc_va_list)
+	__attribute__((__format__ (printf, 3, 0)));
+int vsprintf(char* __restrict s, const char* __restrict format, __gnuc_va_list ap)
+	__attribute__((__format__ (printf, 2, 0)));
+int vsscanf(const char* __restrict s, const char* __restrict format, __gnuc_va_list arg)
+	__attribute__((__format__ (scanf, 2, 0)));
 
 /* TODO: These are not implemented in sortix libc yet. */
 #if 0
@@ -236,12 +258,14 @@ int fpipe(FILE* pipes[2]);
 size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
                         void* user,
                         const char* __restrict format,
-                        __gnuc_va_list ap);
+                        __gnuc_va_list ap)
+	__attribute__((__format__ (printf, 3, 0)));
 int vscanf_callback(void* fp,
                     int (*fgetc)(void*),
                     int (*ungetc)(int, void*),
                     const char* __restrict format,
-                    __gnuc_va_list ap);
+                    __gnuc_va_list ap)
+	__attribute__((__format__ (scanf, 4, 0)));
 #endif
 
 __END_DECLS
