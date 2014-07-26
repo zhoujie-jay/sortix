@@ -32,6 +32,7 @@ extern "C" int clearenv()
 		for ( size_t i = 0; environ[i]; i++ )
 			free(environ[i]);
 		free(environ);
+		__environ_malloced = NULL;
 	}
 	environ = NULL;
 	return 0;

@@ -42,7 +42,10 @@ static char* create_entry(const char* name, size_t name_length,
 	char* result = (char*) malloc(result_size);
 	if ( !result )
 		return NULL;
-	stpcpy(stpcpy(stpcpy(result, name), "="), value);
+	memcpy(result, name, name_length);
+	result[name_length] = '=';
+	memcpy(result + name_length + 1, value, value_length);
+	result[name_length + 1 + value_length] = '\0';
 	return result;
 }
 
@@ -73,7 +76,7 @@ static bool recover_environment()
 		for ( size_t i = 0; i < __environ_used; i++ )
 			free(__environ_malloced[i]);
 		free(__environ_malloced);
-		__environ_malloced = 0;
+		__environ_malloced = NULL;
 		__environ_length = 0;
 		__environ_used = 0;
 	}
