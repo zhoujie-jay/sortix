@@ -16,8 +16,8 @@ ASFLAGS=
 
 FREEOBJS=\
 assert/__assert.o \
-aux/c++.o \
-aux/op-new.o \
+c++/c++.o \
+c++/op-new.o \
 ctype/isalnum.o \
 ctype/isalpha.o \
 ctype/isascii.o \
