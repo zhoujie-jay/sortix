@@ -278,6 +278,8 @@ struct editor
 
 void initialize_editor(struct editor* editor)
 {
+	memset(editor, 0, sizeof(*editor));
+
 	editor->current_file_name = NULL;
 	editor->lines = NULL;
 	editor->lines_used = 0;
@@ -754,10 +756,14 @@ void editor_colorize(struct editor* editor)
 						continue;
 					if ( strncmp(line->data + x, keyword, keyword_length) != 0 )
 						continue;
-					if ( (x - line->used) != keyword_length &&
-					     (isalnum(line->data[x+keyword_length]) ||
-					      line->data[x+keyword_length] == '_') )
-						continue;
+
+					if ( keyword_length < line->used - x )
+					{
+						char c = line->data[x + keyword_length];
+						if ( isalnum(c) || c == '_' )
+							continue;
+					}
+
 					state = STATE_KEYWORD;
 					fixed_state = keyword_length;
 				}
