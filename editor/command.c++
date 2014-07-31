@@ -221,7 +221,7 @@ void editor_type_delete_selection(struct editor* editor)
 		editor_type_backspace(editor);
 }
 
-void editor_type_left(struct editor* editor)
+void editor_type_exit_select_left(struct editor* editor)
 {
 	if ( editor_has_selection(editor) )
 	{
@@ -232,6 +232,24 @@ void editor_type_left(struct editor* editor)
 		editor_cursor_set(editor, column, row);
 		return;
 	}
+}
+
+void editor_type_exit_select_right(struct editor* editor)
+{
+	if ( editor_has_selection(editor) )
+	{
+		size_t column, row;
+		row_column_biggest(editor->cursor_row, editor->cursor_column,
+		                  editor->select_row, editor->select_column,
+		                  &column, &row);
+		editor_cursor_set(editor, column, row);
+		return;
+	}
+}
+
+void editor_type_left(struct editor* editor)
+{
+	editor_type_exit_select_left(editor);
 	if ( editor->cursor_column )
 		editor_cursor_column_dec(editor);
 	else if ( editor->cursor_row )
@@ -252,17 +270,48 @@ void editor_type_select_left(struct editor* editor)
 	}
 }
 
+void editor_type_control_left(struct editor* editor)
+{
+	editor_type_exit_select_left(editor);
+	if ( editor->cursor_column || editor->cursor_row )
+		editor_type_left(editor);
+	int state = 0;
+	while ( editor->cursor_column || editor->cursor_row )
+	{
+		editor_type_left(editor);
+		struct line* line = &editor->lines[editor->cursor_row];
+		wchar_t wc = line->data[editor->cursor_column];
+		if ( (state == 0 && !iswspace(wc)) || (state == 1 && iswspace(wc)) )
+		{
+			editor_type_right(editor);
+			if ( ++state == 2 )
+				break;
+		}
+	}
+}
+
+void editor_type_control_select_left(struct editor* editor)
+{
+	if ( editor->select_column || editor->select_row )
+		editor_type_select_left(editor);
+	int state = 0;
+	while ( editor->select_column || editor->select_row )
+	{
+		editor_type_select_left(editor);
+		struct line* line = &editor->lines[editor->select_row];
+		wchar_t wc = line->data[editor->select_column];
+		if ( (state == 0 && !iswspace(wc)) || (state == 1 && iswspace(wc)) )
+		{
+			editor_type_select_right(editor);
+			if ( ++state == 2 )
+				break;
+		}
+	}
+}
+
 void editor_type_right(struct editor* editor)
 {
-	if ( editor_has_selection(editor) )
-	{
-		size_t column, row;
-		row_column_biggest(editor->cursor_row, editor->cursor_column,
-		                  editor->select_row, editor->select_column,
-		                  &column, &row);
-		editor_cursor_set(editor, column, row);
-		return;
-	}
+	editor_type_exit_select_right(editor);
 	struct line* current_line = &editor->lines[editor->cursor_row];
 	if ( editor->cursor_column != current_line->used )
 		editor_cursor_column_inc(editor);
@@ -281,16 +330,46 @@ void editor_type_select_right(struct editor* editor)
 		editor_select_column_set(editor, 0);
 }
 
+void editor_type_control_right(struct editor* editor)
+{
+	editor_type_exit_select_right(editor);
+	int state = 0;
+	while ( editor->cursor_column != editor->lines[editor->cursor_row].used ||
+	        editor->cursor_row != editor->lines_used )
+	{
+		struct line* line = &editor->lines[editor->cursor_row];
+		wchar_t wc = editor->cursor_column != line->used ?
+		             line->data[editor->cursor_column] : ' ';
+		if ( (state == 0 && !iswspace(wc)) || (state == 1 && iswspace(wc)) )
+		{
+			if ( ++state == 2 )
+				break;
+		}
+		editor_type_right(editor);
+	}
+}
+
+void editor_type_control_select_right(struct editor* editor)
+{
+	int state = 0;
+	while ( editor->select_column != editor->lines[editor->select_row].used ||
+	        editor->select_row != editor->lines_used )
+	{
+		struct line* line = &editor->lines[editor->select_row];
+		wchar_t wc = editor->select_column != line->used ?
+		             line->data[editor->select_column] : ' ';
+		if ( (state == 0 && !iswspace(wc)) || (state == 1 && iswspace(wc)) )
+		{
+			if ( ++state == 2 )
+				break;
+		}
+		editor_type_select_right(editor);
+	}
+}
+
 void editor_type_up(struct editor* editor)
 {
-	if ( editor_has_selection(editor) )
-	{
-		size_t column, row;
-		row_column_smallest(editor->cursor_row, editor->cursor_column,
-		                    editor->select_row, editor->select_column,
-		                    &column, &row);
-		editor_cursor_set(editor, column, row);
-	}
+	editor_type_exit_select_left(editor);
 	if ( !editor->cursor_row )
 	{
 		editor_cursor_column_set(editor, 0);
@@ -313,16 +392,24 @@ void editor_type_select_up(struct editor* editor)
 		editor_select_column_set(editor, new_line_len);
 }
 
+void editor_type_control_up(struct editor* editor)
+{
+	editor_type_exit_select_left(editor);
+	if ( editor->cursor_row )
+		editor_cursor_row_dec(editor);
+	editor_cursor_column_set(editor, 0);
+}
+
+void editor_type_control_select_up(struct editor* editor)
+{
+	if ( editor->select_row )
+		editor_select_row_dec(editor);
+	editor_select_column_set(editor, 0);
+}
+
 void editor_type_down(struct editor* editor)
 {
-	if ( editor_has_selection(editor) )
-	{
-		size_t column, row;
-		row_column_biggest(editor->cursor_row, editor->cursor_column,
-		                   editor->select_row, editor->select_column,
-		                   &column, &row);
-		editor_cursor_set(editor, column, row);
-	}
+	editor_type_exit_select_right(editor);
 	if ( editor->cursor_row+1 == editor->lines_used  )
 	{
 		editor_cursor_column_set(editor, editor->lines[editor->cursor_row].used);
@@ -343,6 +430,21 @@ void editor_type_select_down(struct editor* editor)
 	size_t new_line_len = editor->lines[editor_select_row_inc(editor)].used;
 	if ( new_line_len < editor->select_column )
 		editor_select_column_set(editor, new_line_len);
+}
+
+void editor_type_control_down(struct editor* editor)
+{
+	editor_type_exit_select_right(editor);
+	if ( editor->cursor_row < editor->lines_used )
+		editor_cursor_row_inc(editor);
+	editor_cursor_column_set(editor, editor->lines[editor->cursor_row].used);
+}
+
+void editor_type_control_select_down(struct editor* editor)
+{
+	if ( editor->select_row < editor->lines_used )
+		editor_select_row_inc(editor);
+	editor_select_column_set(editor, editor->lines[editor->select_row].used);
 }
 
 void editor_skip_leading(struct editor* editor)
