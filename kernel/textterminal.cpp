@@ -553,12 +553,24 @@ void TextTerminal::RunAnsiCommand(TextBuffer* textbuf, char c)
 				vgacolor &= 0xF0;
 				vgacolor |= conversion[val] << 0;
 			}
+			// Set default text color.
+			else if ( cmd == 39 )
+			{
+				vgacolor &= 0xF0;
+				vgacolor |= DEFAULT_COLOR & 0x0F;
+			}
 			// Set background color.
 			else if ( 40 <= cmd && cmd <= 47 )
 			{
 				unsigned val = cmd - 40;
 				vgacolor &= 0x0F;
 				vgacolor |= conversion[val] << 4;
+			}
+			// Set default background color.
+			else if ( cmd == 49 )
+			{
+				vgacolor &= 0x0F;
+				vgacolor |= DEFAULT_COLOR & 0xF0;
 			}
 			// Set text color.
 			else if ( 90 <= cmd && cmd <= 97 )
