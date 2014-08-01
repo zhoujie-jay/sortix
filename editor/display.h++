@@ -27,6 +27,7 @@
 #include <stdint.h>
 
 struct editor;
+struct line;
 struct terminal_state;
 
 struct display_char
@@ -34,6 +35,13 @@ struct display_char
 	wchar_t character;
 	uint8_t color;
 };
+
+size_t editor_display_column_of_line_offset(struct editor* editor,
+                                            const struct line* line,
+                                            size_t offset);
+size_t editor_line_offset_of_display_column(struct editor* editor,
+                                            const struct line* line,
+                                            size_t column);
 
 size_t displayed_string_length(const wchar_t* str, size_t len, size_t tabsize);
 struct display_char* expand_tabs(const wchar_t* str, size_t len, uint8_t* colors,

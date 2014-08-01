@@ -33,6 +33,48 @@
 #include "multibyte.h++"
 #include "terminal.h++"
 
+size_t editor_display_column_of_line_offset(struct editor* editor,
+                                            const struct line* line,
+                                            size_t offset)
+{
+	if ( line->used < offset )
+		offset = line->used;
+	return displayed_string_length(line->data, offset, editor->tabsize);
+}
+
+size_t editor_line_offset_of_display_column(struct editor* editor,
+                                            const struct line* line,
+                                            size_t column)
+{
+	size_t current_column = 0;
+	for ( size_t offset = 0; offset < line->used; offset++ )
+	{
+		if ( column <= current_column )
+			return offset;
+
+		wchar_t wc = line->data[offset];
+
+		if ( wc == L'\t' )
+		{
+			size_t old_column = current_column;
+			do current_column++;
+			while ( current_column % editor->tabsize != 0 );
+			if ( column <= current_column )
+			{
+				size_t dist_to_old = column - old_column;
+				size_t dist_to_cur = current_column - column;
+				if ( dist_to_old < dist_to_cur )
+					return offset;
+				return offset + 1;
+			}
+			continue;
+		}
+
+		current_column++;
+	}
+	return line->used;
+}
+
 size_t displayed_string_length(const wchar_t* str, size_t len, size_t tabsize)
 {
 	size_t ret_len = 0;
