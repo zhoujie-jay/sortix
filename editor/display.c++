@@ -140,8 +140,20 @@ void render_editor(struct editor* editor, struct terminal_state* state)
 
 	// Calculate the dimensions of the viewport.
 	size_t viewport_top = 1;
+	size_t viewport_left = 0;
+
 	editor->viewport_width = (size_t) state->width;
-	editor->viewport_height = (size_t) state->height - viewport_top;
+	if ( editor->viewport_width < viewport_left )
+		editor->viewport_width = 0;
+	else
+		editor->viewport_width -= viewport_left;
+
+	editor->viewport_height = (size_t) state->height;
+	if ( editor->viewport_height < viewport_top )
+		editor->viewport_height = 0;
+	else
+		editor->viewport_height -= viewport_top;
+
 	if ( !editor->viewport_height )
 		return;
 
@@ -169,7 +181,9 @@ void render_editor(struct editor* editor, struct terminal_state* state)
 	for ( size_t y = 0; y < editor->viewport_height; y++ )
 	{
 		size_t line_index = page_y_offset + y;
-		struct terminal_datum* data_line = state->data + (viewport_top + y) * state->width;
+		struct terminal_datum* raw_data_line =
+			state->data + (viewport_top + y) * state->width;
+		struct terminal_datum* data_line = raw_data_line + viewport_left;
 		struct line* line = line_index < editor->lines_used ?
 		                    &editor->lines[line_index] : NULL;
 		struct color_line* color_line = line_index < editor->color_lines_used ?
@@ -210,10 +224,16 @@ void render_editor(struct editor* editor, struct terminal_state* state)
 	}
 
 	// Set the rest of the terminal state.
-	state->cursor_x = has_selection ?
-	                  editor->viewport_width : viewport_select_x;
-	state->cursor_y = has_selection ?
-	                  editor->viewport_height : viewport_select_y + viewport_top;
+	if ( has_selection )
+	{
+		state->cursor_x = state->width;
+		state->cursor_y = state->height;
+	}
+	else
+	{
+		state->cursor_x = viewport_left + viewport_select_x;
+		state->cursor_y = viewport_top + viewport_select_y;
+	}
 	state->color = 0x07;
 
 	if ( editor->mode == MODE_EDIT )
