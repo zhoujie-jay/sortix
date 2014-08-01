@@ -83,6 +83,7 @@ struct editor
 	bool dirty;
 	bool modal_error;
 	bool highlight_source;
+	bool line_numbering;
 };
 
 __attribute__((unused))

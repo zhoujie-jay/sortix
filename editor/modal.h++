@@ -25,6 +25,9 @@
 
 struct editor;
 
+bool is_truth_string(const char* truth);
+bool is_truth_true(const char* truth);
+
 void editor_modal_left(struct editor* editor);
 void editor_modal_right(struct editor* editor);
 void editor_modal_home(struct editor* editor);
@@ -40,6 +43,7 @@ void editor_modal_margin(struct editor* editor, const char* marginstr);
 void editor_modal_popen(struct editor* editor, const char* cmd);
 void editor_modal_tabsize(struct editor* editor, const char* tabsizestr);
 void editor_modal_language(struct editor* editor, const char* language);
+void editor_modal_line_numbering(struct editor* editor, const char* truth);
 
 bool is_modal_command(const char* cmd, const char* candidate, const char** rest);
 void editor_modal_command(struct editor* editor, const char* cmd);

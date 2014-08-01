@@ -37,6 +37,16 @@
 #include "modal.h++"
 #include "multibyte.h++"
 
+bool is_truth_string(const char* truth)
+{
+	return !strcmp(truth, "on") || !strcmp(truth, "off");
+}
+
+bool is_truth_true(const char* truth)
+{
+	return strcmp(truth, "off") != 0;
+}
+
 void editor_modal_left(struct editor* editor)
 {
 	if ( editor->modal_cursor )
@@ -210,6 +220,17 @@ void editor_modal_language(struct editor* editor, const char* language)
 	editor_type_edit(editor);
 }
 
+void editor_modal_line_numbering(struct editor* editor, const char* truth)
+{
+	if ( !is_truth_string(truth) )
+	{
+		editor->modal_error = true;
+		return;
+	}
+	editor->line_numbering = is_truth_true(truth);
+	editor_type_edit(editor);
+}
+
 bool is_modal_command(const char* cmd, const char* candidate, const char** rest)
 {
 	size_t candidate_len = strlen(candidate);
@@ -249,6 +270,8 @@ void editor_modal_command(struct editor* editor, const char* cmd)
 		editor_modal_tabsize(editor, cmd);
 	else if ( is_modal_command(cmd, "language", &cmd) )
 		editor_modal_language(editor, cmd);
+	else if ( is_modal_command(cmd, "line-numbering", &cmd) )
+		editor_modal_line_numbering(editor, cmd);
 	else
 		editor->modal_error = true;
 }

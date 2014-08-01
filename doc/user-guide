@@ -320,6 +320,7 @@ simple to use. It currently supports these keyboard commands:
 * `Ctrl-V` - Paste
 * `Ctrl-X` - Cut
 * `ESC language <c or c++>` - enable syntax highlighting
+* `ESC line-numbering <on or off>` - enable line numbering
 * `ESC margin <column>` - add right margin at column
 * `ESC popen <command>` - open command output
 * `ESC tabsize <desired-tab-size>` - change tab size

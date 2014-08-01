@@ -26,6 +26,7 @@
 
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 
 #include "display.h++"
@@ -138,9 +139,15 @@ void render_editor(struct editor* editor, struct terminal_state* state)
 			state->data[header_start_len+i].character = wcs_file_name[i];
 	free(wcs_file_name);
 
+	size_t line_number_width = 1;
+	for ( size_t tmp = editor->lines_used; 10 <= tmp; tmp /= 10 )
+		line_number_width++;
+	if ( !editor->line_numbering )
+		line_number_width = 0;
+
 	// Calculate the dimensions of the viewport.
 	size_t viewport_top = 1;
-	size_t viewport_left = 0;
+	size_t viewport_left = line_number_width;
 
 	editor->viewport_width = (size_t) state->width;
 	if ( editor->viewport_width < viewport_left )
@@ -202,6 +209,17 @@ void render_editor(struct editor* editor, struct terminal_state* state)
 			chars = NULL, chars_length = 0;
 		else
 			chars += page_x_offset, chars_length -= page_x_offset;
+		for ( size_t x = 0; x < line_number_width; x++ )
+			raw_data_line[x] = make_terminal_datum(L' ', 0x70);
+		if ( editor->line_numbering && line_index < editor->lines_used )
+		{
+			char line_number[sizeof(size_t) * 3];
+			snprintf(line_number, sizeof(line_number), "%zu", line_index + 1);
+			size_t length = strlen(line_number);
+			size_t offset = line_number_width - length;
+			for ( size_t i = 0; i < length; i++ )
+				raw_data_line[offset + i].character = btowc(line_number[i]);
+		}
 		for ( size_t x = 0; x < editor->viewport_width; x++ )
 		{
 			size_t column_index = page_x_offset + x;
