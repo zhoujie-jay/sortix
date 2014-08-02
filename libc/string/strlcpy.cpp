@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -28,10 +28,10 @@ extern "C"
 size_t strlcpy(char* restrict dest, const char* restrict src, size_t size)
 {
 	if ( !size )
-		return 0;
+		return strlen(src);
 	size_t result;
 	for ( result = 0; result < size-1 && src[result]; result++ )
 		dest[result] = src[result];
 	dest[result] = '\0';
-	return result;
+	return result + strlen(src + result);
 }

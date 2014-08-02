@@ -29,7 +29,6 @@ size_t strlcat(char* restrict dest, const char* restrict src, size_t size)
 {
 	size_t dest_len = strnlen(dest, size);
 	if ( size <= dest_len )
-		return dest_len;
-	strcpy(dest + strlen(dest), src);
+		return dest_len + strlen(src);
 	return dest_len + strlcpy(dest + dest_len, src, size - dest_len);
 }
