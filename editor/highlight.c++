@@ -174,6 +174,7 @@ void editor_colorize(struct editor* editor)
 		STATE_LINE_COMMENT,
 		STATE_MULTI_LINE_COMMENT,
 		STATE_PREPROCESSOR,
+		STATE_PREPROCESSOR_VALUE,
 		STATE_SINGLE_QUOTE,
 		STATE_DOUBLE_QUOTE,
 		STATE_NUMBER,
@@ -202,9 +203,15 @@ void editor_colorize(struct editor* editor)
 				state = STATE_INIT;
 
 			// The character makes you enter a new state.
-
-			if ( !fixed_state && state == STATE_INIT && c == L'#' )
-				state = STATE_PREPROCESSOR;
+			if ( !fixed_state )
+			{
+				if ( state == STATE_INIT && c == L'#' )
+					state = STATE_PREPROCESSOR;
+				if ( state == STATE_PREPROCESSOR && c == '<' )
+					state = STATE_PREPROCESSOR_VALUE, fixed_state = 1;
+				if ( state == STATE_PREPROCESSOR && c == '"' )
+					state = STATE_PREPROCESSOR_VALUE, fixed_state = 1;
+			}
 
 			// TODO: Detect NULL as a value.
 
@@ -430,7 +437,8 @@ void editor_colorize(struct editor* editor)
 
 			if ( state == STATE_SINGLE_QUOTE ||
 			     state == STATE_DOUBLE_QUOTE ||
-			     state == STATE_NUMBER )
+			     state == STATE_NUMBER ||
+			     state == STATE_PREPROCESSOR_VALUE )
 				color = 5;
 
 			if ( state == STATE_PREPROCESSOR )
@@ -454,6 +462,10 @@ void editor_colorize(struct editor* editor)
 					state = STATE_INIT, fixed_state = 1;
 				if ( state == STATE_DOUBLE_QUOTE && !escaped && c == L'"' )
 					state = STATE_INIT, fixed_state = 1;
+				if ( state == STATE_PREPROCESSOR_VALUE && c == '>' )
+					state = STATE_PREPROCESSOR;
+				if ( state == STATE_PREPROCESSOR_VALUE && c == '"' )
+					state = STATE_PREPROCESSOR;
 			}
 
 			if ( (state == STATE_SINGLE_QUOTE || state == STATE_DOUBLE_QUOTE) )
@@ -483,6 +495,7 @@ void editor_colorize(struct editor* editor)
 
 		if ( state == STATE_LINE_COMMENT ||
 		     state == STATE_PREPROCESSOR ||
+		     state == STATE_PREPROCESSOR_VALUE ||
 		     state == STATE_SINGLE_QUOTE ||
 		     state == STATE_DOUBLE_QUOTE )
 		{
