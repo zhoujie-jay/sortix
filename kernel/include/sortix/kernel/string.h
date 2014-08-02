@@ -31,7 +31,6 @@ namespace Sortix {
 namespace String {
 
 char* Clone(const char* Source);
-char* Combine(size_t NumParameters, ...);
 char* Substring(const char* src, size_t offset, size_t length);
 bool StartsWith(const char* Haystack, const char* Needle);
 

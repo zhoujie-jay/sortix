@@ -52,48 +52,5 @@ char* Substring(const char* src, size_t offset, size_t length)
 	return dest;
 }
 
-char* Combine(size_t NumParameters, ...)
-{
-	va_list param_pt;
-
-	va_start(param_pt, NumParameters);
-
-	// First calculate the string length.
-	size_t ResultLength = 0;
-	const char* TMP = 0;
-
-	for ( size_t I = 0; I < NumParameters; I++ )
-	{
-		TMP = va_arg(param_pt, const char*);
-
-		if ( TMP != NULL ) { ResultLength += strlen(TMP); }
-	}
-
-	// Allocate a string with the desired length.
-	char* Result = new char[ResultLength+1];
-	if ( !Result ) { return NULL; }
-
-	Result[0] = 0;
-
-	va_end(param_pt);
-	va_start(param_pt, NumParameters);
-
-	size_t ResultOffset = 0;
-
-	for ( size_t I = 0; I < NumParameters; I++ )
-	{
-		TMP = va_arg(param_pt, const char*);
-
-		if ( TMP )
-		{
-			size_t TMPLength = strlen(TMP);
-			strcpy(Result + ResultOffset, TMP);
-			ResultOffset += TMPLength;
-		}
-	}
-
-	return Result;
-}
-
 } // namespace String
 } // namespace Sortix
