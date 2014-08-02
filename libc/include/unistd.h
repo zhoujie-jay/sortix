@@ -96,8 +96,7 @@ __BEGIN_DECLS
    TODO: Uncomment when regular expressions are implemented. */
 /* #define _POSIX_SAVED_IDS 1
    TODO: Uncomment when saved ids are implemented. I forgot if they already are. */
-/* #define _POSIX_SEMAPHORES 200809L
-   TODO: Uncomment when named semaphores are implemented. */
+#define _POSIX_SEMAPHORES 200809L
 /*TODO: _POSIX_SHARED_MEMORY_OBJECTS - Research what this is. */
 #define _POSIX_SHELL 1
 /*TODO: _POSIX_SPAWN - Research what this is. */

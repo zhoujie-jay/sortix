@@ -56,6 +56,13 @@ pthread_rwlock_wrlock.o \
 pthread_self.o \
 pthread_setspecific.o \
 pthread_sigmask.o \
+sem_destroy.o \
+sem_getvalue.o \
+sem_init.o \
+sem_post.o \
+sem_timedwait.o \
+sem_trywait.o \
+sem_wait.o \
 
 BINS:=libpthread.a
 
