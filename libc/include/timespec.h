@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
+#if !defined(__cplusplus)
 #include <stdbool.h>
+#endif
 
 __BEGIN_DECLS
 
