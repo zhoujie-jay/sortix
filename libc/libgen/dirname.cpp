@@ -43,6 +43,6 @@ extern "C" char* dirname(char* path)
 	while ( 1 <= path_len && path[path_len-1] == '/' )
 		path[--path_len] = '\0';
 	if ( !path[0] )
-		strcpy(path, "/");
+		path[0] = '/', path[1] = '\0';
 	return path;
 }

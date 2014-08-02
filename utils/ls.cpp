@@ -266,12 +266,10 @@ int handle_entry(const char* path, const char* name, unsigned char type)
 		return 0;
 	if ( isdotfile && !option_show_dotfiles && !option_directory )
 		return 0;
-	char* fullpath = new char[strlen(path) + 1 + strlen(name) + 1];
-	strcpy(fullpath, path);
-	strcat(fullpath, "/");
-	strcat(fullpath, name);
+	char* fullpath;
+	asprintf(&fullpath, "%s/%s", path, name);
 	int result = handle_entry_internal(fullpath, name, type);
-	delete[] fullpath;
+	free(fullpath);
 	return result;
 }
 

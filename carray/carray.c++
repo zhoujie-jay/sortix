@@ -245,11 +245,7 @@ int main(int argc, char* argv[])
 		if ( output_path )
 			guard = strdup(output_path);
 		else if ( 2 <= argc && strcmp(argv[1], "-") != 0 )
-		{
-			guard = (char*) malloc(strlen(argv[1]) + 2 + 1);
-			strcpy(guard, argv[1]);
-			strcat(guard, "_H");
-		}
+			asprintf(&guard, "%s_H", argv[1]);
 		else
 			guard = strdup("CARRAY_H");
 
