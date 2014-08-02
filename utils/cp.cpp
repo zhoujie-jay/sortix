@@ -372,6 +372,7 @@ int main(int argc, char* argv[])
 	const char* argv0 = argv[0];
 	int flags = 0;
 	const char* target_directory = NULL;
+	const char* preserve_list = NULL;
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
@@ -410,6 +411,7 @@ int main(int argc, char* argv[])
 				break;
 			case 'T': flags |= FLAG_NO_TARGET_DIR; break;
 			case 'u': flags |= FLAG_UPDATE; break;
+			case 'p': preserve_list = "mode,ownership,timestamps"; break;
 			case 'P': flags |= FLAG_NO_DEREFERENCE; break;
 			default:
 #ifdef CP_PRETEND_TO_BE_INSTALL
@@ -431,6 +433,10 @@ int main(int argc, char* argv[])
 			flags |= FLAG_RECURSIVE;
 		else if ( !strcmp(arg, "--verbose") )
 			flags |= FLAG_VERBOSE;
+		else if ( !strcmp(arg, "--preserve") )
+			preserve_list = "mode,ownership,timestamps";
+		else if ( !strncmp(arg, "--preserve=", strlen("--preserve=")) )
+			preserve_list = arg + strlen("--preserve=");
 		else if ( !strcmp(arg, "--target-directory") )
 		{
 			if ( i + 1 == argc )
@@ -468,6 +474,9 @@ int main(int argc, char* argv[])
 
 	if ( (flags & FLAG_TARGET_DIR) && (flags & FLAG_NO_TARGET_DIR) )
 		error(1, 0, "cannot combine --target-directory (-t) and --no-target-directory (-T)");
+
+	// TODO: Actually preserve.
+	(void) preserve_list;
 
 	compact_arguments(&argc, &argv);
 
