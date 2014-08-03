@@ -58,7 +58,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ENOTEMPTY: return "Directory not empty";
 	case EBUSY: return "Device or resource busy";
 	case EPIPE: return "Broken pipe";
-	case EILSEQ: return "Illegal byte sequence";
+	case EILSEQ: return "Invalid byte sequence";
 	case ELAKE: return "Sit by a lake";
 	case EMFILE: return "Too many open files";
 	case EAGAIN: return "Resource temporarily unavailable";

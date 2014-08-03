@@ -32,7 +32,7 @@ __BEGIN_DECLS
 #define SIGHUP      1 /* Hangup */
 #define SIGINT      2 /* Interrupt */
 #define SIGQUIT     3 /* Quit */
-#define SIGILL      4 /* Illegal instruction */
+#define SIGILL      4 /* Invalid instruction */
 #define SIGTRAP     5 /* Trace/breakpoint trap */
 #define SIGABRT     6 /* Aborted */
 #define SIGBUS      7 /* Bus Error */

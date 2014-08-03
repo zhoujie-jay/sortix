@@ -33,7 +33,7 @@ extern "C" const char* sortix_strsignal(int signum)
 	case SIGHUP: return "Hangup";
 	case SIGINT: return "Interrupt";
 	case SIGQUIT: return "Quit";
-	case SIGILL: return "Illegal instruction";
+	case SIGILL: return "Invalid instruction";
 	case SIGTRAP: return "Trace/breakpoint trap";
 	case SIGABRT: return "Aborted";
 	case SIGBUS: return "Bus Error";
