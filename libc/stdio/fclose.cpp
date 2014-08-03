@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -26,6 +26,8 @@
 
 extern "C" int fclose(FILE* fp)
 {
+	flockfile(fp);
+	funlockfile(fp);
 	int ret = fshutdown(fp);
 	fdeletefile(fp);
 	return ret;

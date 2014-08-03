@@ -35,6 +35,7 @@ extern "C" int setvbuf_unlocked(FILE* fp, char* buf, int mode, size_t size)
 		fp->buffer = (unsigned char*) buf;
 		fp->buffersize = size;
 		fp->flags |= _FILE_BUFFER_MODE_SET;
+		fp->fflush_indirect = fflush;
 	}
 	return 0;
 }

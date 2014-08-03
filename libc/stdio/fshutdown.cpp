@@ -27,7 +27,7 @@
 
 extern "C" int fshutdown(FILE* fp)
 {
-	int ret = fflush(fp);
+	int ret = fp->fflush_indirect ? fp->fflush_indirect(fp) : 0;
 	if ( ret )
 	{
 		/* TODO: How to report errors here? fclose may need us to return its
