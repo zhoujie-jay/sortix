@@ -66,5 +66,7 @@ extern "C" int fsetdefaultbuf_unlocked(FILE* fp)
 
 	// The buffer now belongs to the FILE.
 	fp->flags |= _FILE_BUFFER_OWNED;
+	fp->buffer_free_indirect = free;
+
 	return 0;
 }

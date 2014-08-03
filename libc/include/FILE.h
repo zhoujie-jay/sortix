@@ -86,6 +86,7 @@ struct FILE
 	void (*free_func)(void* free_user, struct FILE* fp);
 	/* Application writers shouldn't use anything beyond this point. */
 	pthread_mutex_t file_lock;
+	void (*buffer_free_indirect)(void*);
 	struct FILE* prev;
 	struct FILE* next;
 	int flags;
