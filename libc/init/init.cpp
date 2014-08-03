@@ -30,8 +30,6 @@
 extern "C" { char* program_invocation_name; }
 extern "C" { char* program_invocation_short_name; }
 
-extern "C" void init_stdio();
-
 static char* find_last_elem(char* str)
 {
 	size_t len = strlen(str);
@@ -49,7 +47,4 @@ extern "C" void initialize_standard_library(int argc, char* argv[])
 
 	// Initialize pthreads.
 	pthread_initialize();
-
-	// Initialize stdio.
-	init_stdio();
 }

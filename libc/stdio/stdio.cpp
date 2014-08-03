@@ -23,6 +23,7 @@
 *******************************************************************************/
 
 #include <errno.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -32,35 +33,89 @@ static struct fdio_state stdin_fdio = { NULL, 0 };
 static struct fdio_state stdout_fdio = { NULL, 1 };
 static struct fdio_state stderr_fdio = { NULL, 2 };
 
-static FILE stdin_file;
-static FILE stdout_file;
-static FILE stderr_file;
+extern "C" {
 
-extern "C" { FILE* stdin = &stdin_file; }
-extern "C" { FILE* stdout = &stdout_file; }
-extern "C" { FILE* stderr = &stderr_file; }
+extern FILE __stdin_file;
+extern FILE __stdout_file;
+extern FILE __stderr_file;
 
-static void bootstrap_stdio(FILE* fp, struct fdio_state* fdio, int file_flags)
+FILE __stdin_file =
 {
-	fresetfile(fp);
+	/* buffersize = */ 0,
+	/* buffer = */ NULL,
+	/* user = */ &stdin_fdio,
+	/* free_user = */ NULL,
+	/* reopen_func = */ fdio_reopen,
+	/* read_func = */ fdio_read,
+	/* write_func = */ fdio_write,
+	/* seek_func = */ fdio_seek,
+	/* fileno_func = */ fdio_fileno,
+	/* close_func = */ fdio_close,
+	/* free_func = */ NULL,
+	/* file_lock = */ PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP,
+	/* fflush_indirect = */ NULL,
+	/* buffer_free_indirect = */ NULL,
+	/* prev = */ NULL,
+	/* next = */ &__stdout_file,
+	/* flags = */ _FILE_REGISTERED | _FILE_READABLE,
+	/* buffer_mode = */ -1,
+	/* offset_input_buffer = */ 0,
+	/* amount_input_buffered = */ 0,
+	/* amount_output_buffered = */ 0,
+};
 
-	fp->flags |= file_flags;
-	fp->user = fdio;
-	fp->reopen_func = fdio_reopen;
-	fp->read_func = fdio_read;
-	fp->write_func = fdio_write;
-	fp->seek_func = fdio_seek;
-	fp->fileno_func = fdio_fileno;
-	fp->close_func = fdio_close;
-
-	fregister(fp);
-}
-
-extern "C" void init_stdio()
+FILE __stdout_file
 {
-	bootstrap_stdio(stdin, &stdin_fdio, _FILE_READABLE);
-	bootstrap_stdio(stdout, &stdout_fdio, _FILE_WRITABLE);
-	bootstrap_stdio(stderr, &stderr_fdio, _FILE_WRITABLE);
+	/* buffersize = */ 0,
+	/* buffer = */ NULL,
+	/* user = */ &stdout_fdio,
+	/* free_user = */ NULL,
+	/* reopen_func = */ fdio_reopen,
+	/* read_func = */ fdio_read,
+	/* write_func = */ fdio_write,
+	/* seek_func = */ fdio_seek,
+	/* fileno_func = */ fdio_fileno,
+	/* close_func = */ fdio_close,
+	/* free_func = */ NULL,
+	/* file_lock = */ PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP,
+	/* fflush_indirect = */ NULL,
+	/* buffer_free_indirect = */ NULL,
+	/* prev = */ &__stdin_file,
+	/* next = */ &__stderr_file,
+	/* flags = */ _FILE_REGISTERED | _FILE_WRITABLE,
+	/* buffer_mode = */ -1,
+	/* offset_input_buffer = */ 0,
+	/* amount_input_buffered = */ 0,
+	/* amount_output_buffered = */ 0,
+};
 
-	stderr->buffer_mode = _IONBF;
-}
+FILE __stderr_file
+{
+	/* buffersize = */ 0,
+	/* buffer = */ NULL,
+	/* user = */ &stderr_fdio,
+	/* free_user = */ NULL,
+	/* reopen_func = */ fdio_reopen,
+	/* read_func = */ fdio_read,
+	/* write_func = */ fdio_write,
+	/* seek_func = */ fdio_seek,
+	/* fileno_func = */ fdio_fileno,
+	/* close_func = */ fdio_close,
+	/* free_func = */ NULL,
+	/* file_lock = */ PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP,
+	/* fflush_indirect = */ NULL,
+	/* buffer_free_indirect = */ NULL,
+	/* prev = */ &__stdout_file,
+	/* next = */ NULL,
+	/* flags = */ _FILE_REGISTERED | _FILE_WRITABLE,
+	/* buffer_mode = */ _IONBF,
+	/* offset_input_buffer = */ 0,
+	/* amount_input_buffered = */ 0,
+	/* amount_output_buffered = */ 0,
+};
+
+FILE* stdin = &__stdin_file;
+FILE* stdout = &__stdout_file;
+FILE* stderr = &__stderr_file;
+
+} // extern "C"

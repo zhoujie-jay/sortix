@@ -67,6 +67,8 @@ typedef struct FILE FILE;
 
 #define _FILE_MAX_PUSHBACK 8
 
+/* Note stdio/stdio.cpp's declarations of stdin/stdout/stderr also needs to be
+   changed if you make changes to this structure. */
 struct FILE
 {
 	/* This is non-standard, but useful. If you allocate your own FILE and

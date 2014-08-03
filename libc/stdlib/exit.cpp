@@ -35,9 +35,11 @@ extern "C" { struct exit_handler* __exit_handler_stack = NULL; }
 static pthread_mutex_t exit_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 static bool currently_exiting = false;
 
+extern "C" FILE __stdin_file;
+
 extern "C" { DIR* __first_dir = NULL; }
 extern "C" { pthread_mutex_t __first_dir_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; }
-extern "C" { FILE* __first_file = NULL; }
+extern "C" { FILE* __first_file = &__stdin_file; }
 extern "C" { pthread_mutex_t __first_file_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; }
 
 extern "C" void exit(int status)
