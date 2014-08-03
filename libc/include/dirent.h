@@ -31,6 +31,10 @@
 
 #include <sortix/__/dirent.h>
 
+#if defined(__is_sortix_libc)
+#include <DIR.h>
+#endif
+
 __BEGIN_DECLS
 
 #ifndef __dev_t_defined
@@ -111,14 +115,9 @@ int versionsort_r(const struct dirent**, const struct dirent**, void*);
 void dregister(DIR* dir);
 void dunregister(DIR* dir);
 DIR* dnewdir(void);
-int dcloseall(void);
 void dclearerr(DIR* dir);
 int derror(DIR* dir);
 int deof(DIR* dif);
-#endif
-
-#if defined(__is_sortix_libc)
-extern DIR* __firstdir;
 #endif
 
 __END_DECLS

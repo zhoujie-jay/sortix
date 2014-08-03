@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -18,44 +18,19 @@
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
     stdio/fregister.cpp
-    Registers a FILE in the global list of open FILES, which allows the standard
-    library to close and flush all open files upon program exit.
+    Registers a FILE in the global list of open FILEs.
 
 *******************************************************************************/
 
 #include <pthread.h>
 #include <stdio.h>
 
-extern "C"
-{
-	FILE* __first_file = NULL;
-	pthread_mutex_t __first_file_lock = PTHREAD_MUTEX_INITIALIZER;
-}
-
 extern "C" void fregister(FILE* fp)
 {
 	pthread_mutex_lock(&__first_file_lock);
 	fp->flags |= _FILE_REGISTERED;
-	if ( __first_file )
-	{
-		fp->next = __first_file;
+	if ( (fp->next = __first_file) )
 		__first_file->prev = fp;
-	}
 	__first_file = fp;
-	pthread_mutex_unlock(&__first_file_lock);
-}
-
-extern "C" void funregister(FILE* fp)
-{
-	if ( !(fp->flags & _FILE_REGISTERED) )
-		return;
-	pthread_mutex_lock(&__first_file_lock);
-	if ( !fp->prev )
-		__first_file = fp->next;
-	if ( fp->prev )
-		fp->prev->next = fp->next;
-	if ( fp->next )
-		fp->next->prev = fp->prev;
-	fp->flags &= ~_FILE_REGISTERED;
 	pthread_mutex_unlock(&__first_file_lock);
 }

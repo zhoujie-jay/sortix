@@ -23,17 +23,14 @@
 *******************************************************************************/
 
 #include <dirent.h>
-#include <DIR.h>
 #include <pthread.h>
-
-extern "C" pthread_mutex_t __dirname_lock;
 
 extern "C" void dregister(DIR* dir)
 {
-	pthread_mutex_lock(&__dirname_lock);
+	pthread_mutex_lock(&__first_dir_lock);
 	dir->flags |= _DIR_REGISTERED;
-	if ( (dir->next = __firstdir) )
+	if ( (dir->next = __first_dir) )
 		dir->next->prev = dir;
-	__firstdir = dir;
-	pthread_mutex_unlock(&__dirname_lock);
+	__first_dir = dir;
+	pthread_mutex_unlock(&__first_dir_lock);
 }

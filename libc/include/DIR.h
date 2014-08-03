@@ -29,6 +29,8 @@
 
 #include <sys/__/types.h>
 
+#include <pthread.h>
+
 __BEGIN_DECLS
 
 #ifndef __size_t_defined
@@ -63,6 +65,11 @@ struct DIR
 	size_t entrysize;
 	int flags;
 };
+
+#if defined(__is_sortix_libc)
+extern DIR* __first_dir;
+extern __pthread_mutex_t __first_dir_lock;
+#endif
 
 __END_DECLS
 

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,23 +17,25 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    dirent/dcloseall.cpp
-    Closes all registered directory streams.
+    stdio/funregister.cpp
+    Unregisters a FILE in the global list of open FILEs.
 
 *******************************************************************************/
 
-#include <dirent.h>
-#include <DIR.h>
+#include <pthread.h>
 #include <stdio.h>
 
-extern "C" { DIR* __firstdir = NULL; }
-
-extern "C" int dcloseall(void)
+extern "C" void funregister(FILE* fp)
 {
-	int result = 0;
-	// We do not lock __firstdir_lock here because this function is called on
-	// process termination and only one thread can call exit(3).
-	while ( __firstdir )
-		result |= closedir(__firstdir);
-	return result ? EOF : 0;
+	if ( !(fp->flags & _FILE_REGISTERED) )
+		return;
+	pthread_mutex_lock(&__first_file_lock);
+	if ( !fp->prev )
+		__first_file = fp->next;
+	if ( fp->prev )
+		fp->prev->next = fp->next;
+	if ( fp->next )
+		fp->next->prev = fp->prev;
+	fp->flags &= ~_FILE_REGISTERED;
+	pthread_mutex_unlock(&__first_file_lock);
 }

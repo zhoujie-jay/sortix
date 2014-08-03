@@ -247,7 +247,6 @@ int vdprintf(int fildes, const char* __restrict format, __gnuc_va_list ap)
 int asprintf(char** __restrict, const char* __restrict, ...)
 	__attribute__((__format__ (printf, 2, 3)));
 void clearerr_unlocked(FILE* stream);
-int fcloseall(void);
 int feof_unlocked(FILE* stream);
 int ferror_unlocked(FILE* stream);
 int fflush_unlocked(FILE* stream);

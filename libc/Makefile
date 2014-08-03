@@ -37,7 +37,6 @@ dirent/alphasort.o \
 dirent/alphasort_r.o \
 dirent/closedir.o \
 dirent/dclearerr.o \
-dirent/dcloseall.o \
 dirent/deof.o \
 dirent/derror.o \
 dirent/dirfd.o \
@@ -129,6 +128,7 @@ stdio/ftello.o \
 stdio/ftello_unlocked.o \
 stdio/ftrylockfile.o \
 stdio/funlockfile.o \
+stdio/funregister.o \
 stdio/fwritable.o \
 stdio/fwritable_unlocked.o \
 stdio/fwrite.o \
@@ -412,7 +412,6 @@ signal/signal.o \
 signal/sigpending.o \
 signal/sigprocmask.o \
 signal/sigsuspend.o \
-stdio/fcloseall.o \
 stdio/fdio_install_fd.o \
 stdio/fdio_install_path.o \
 stdio/fdio.o \

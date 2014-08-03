@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -23,6 +23,8 @@
 *******************************************************************************/
 
 #include <dirent.h>
+#include <DIR.h>
+#include <FILE.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +34,11 @@ extern "C" { struct exit_handler* __exit_handler_stack = NULL; }
 
 static pthread_mutex_t exit_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 static bool currently_exiting = false;
+
+extern "C" { DIR* __first_dir = NULL; }
+extern "C" { pthread_mutex_t __first_dir_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; }
+extern "C" { FILE* __first_file = NULL; }
+extern "C" { pthread_mutex_t __first_file_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; }
 
 extern "C" void exit(int status)
 {
@@ -51,7 +58,13 @@ extern "C" void exit(int status)
 		__exit_handler_stack = __exit_handler_stack->next;
 	}
 
-	dcloseall();
-	fcloseall();
+	pthread_mutex_lock(&__first_dir_lock);
+	pthread_mutex_lock(&__first_file_lock);
+
+	while ( __first_dir )
+		closedir(__first_dir);
+	while ( __first_file )
+		fclose(__first_file);
+
 	_Exit(status);
 }
