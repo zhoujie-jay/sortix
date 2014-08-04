@@ -35,7 +35,7 @@ extern "C" { FILE* stdin; }
 extern "C" { FILE* stdout; }
 extern "C" { FILE* stderr; }
 
-extern "C" int init_stdio()
+extern "C" void init_stdio()
 {
 	// TODO: These calls require memory allocation and can fail - which we don't
 	//       currently handle. How about declaring these as global objects and
@@ -44,7 +44,6 @@ extern "C" int init_stdio()
 	stdout = fdio_new_fd(1, "w");
 	stderr = fdio_new_fd(2, "w");
 	setvbuf(stderr, NULL, _IONBF, 0);
-	return 0;
 }
 
 extern "C" int getchar_unlocked(void)
