@@ -65,8 +65,14 @@ extern "C" void exit(int status)
 
 	while ( __first_dir )
 		__first_dir->closedir_indirect(__first_dir);
-	while ( __first_file )
-		fclose(__first_file);
+	for ( FILE* fp = __first_file; fp; fp = fp->next )
+	{
+		flockfile(fp);
+		if ( fp->fflush_indirect )
+			fp->fflush_indirect(fp);
+		if ( fp->close_func )
+			fp->close_func(fp->user);
+	}
 
 	_Exit(status);
 }
