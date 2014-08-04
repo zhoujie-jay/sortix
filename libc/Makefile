@@ -313,8 +313,6 @@ arpa/inet/inet_addr.o \
 arpa/inet/inet_ntoa.o \
 arpa/inet/inet_ntop.o \
 arpa/inet/inet_pton.o \
-calltrace/calltrace.o \
-$(CPUDIR)/calltrace.o \
 $(CPUDIR)/fork.o \
 $(CPUDIR)/setjmp.o \
 $(CPUDIR)/signal.o \

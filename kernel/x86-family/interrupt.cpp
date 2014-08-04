@@ -28,7 +28,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <sortix/kernel/calltrace.h>
 #include <sortix/kernel/cpu.h>
 #include <sortix/kernel/debugger.h>
 #include <sortix/kernel/interrupt.h>
@@ -104,8 +103,6 @@ namespace Interrupt {
 
 extern "C" { unsigned long asm_is_cpu_interrupted = 0; }
 
-const bool CALLTRACE_KERNEL = false;
-const bool CALLTRACE_USER = false;
 const bool RUN_DEBUGGER_ON_KERNEL_CRASH = false;
 const bool RUN_DEBUGGER_ON_USER_CRASH = false;
 
@@ -260,25 +257,10 @@ uintptr_t ExceptionLocation(const struct interrupt_context* intctx)
 #endif
 }
 
-void CrashCalltrace(const struct interrupt_context* intctx)
-{
-#if defined(__x86_64__)
-	Calltrace::Perform(intctx->rbp);
-#elif defined(__i386__)
-	Calltrace::Perform(intctx->ebp);
-#else
-	#warning "Please provide a calltrace implementation for your CPU."
-#endif
-}
-
 __attribute__((noreturn))
 void KernelCrashHandler(struct interrupt_context* intctx)
 {
 	Scheduler::SaveInterruptedContext(intctx, &CurrentThread()->registers);
-
-	// Walk and print the stack frames if this is a debug build.
-	if ( CALLTRACE_KERNEL )
-		CrashCalltrace(intctx);
 
 	// Possibly switch to the kernel debugger in event of a crash.
 	if ( RUN_DEBUGGER_ON_KERNEL_CRASH )
@@ -309,10 +291,6 @@ void UserCrashHandler(struct interrupt_context* intctx)
 		if ( handled )
 			return Signal::DispatchHandler(intctx, NULL);
 	}
-
-	// Walk and print the stack frames if this is a debug build.
-	if ( CALLTRACE_USER )
-		CrashCalltrace(intctx);
 
 	// Possibly switch to the kernel debugger in event of a crash.
 	if ( RUN_DEBUGGER_ON_USER_CRASH )

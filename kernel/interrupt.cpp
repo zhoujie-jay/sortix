@@ -26,7 +26,6 @@
 #include <errno.h>
 #include <string.h>
 
-#include <sortix/kernel/calltrace.h>
 #include <sortix/kernel/cpu.h>
 #include <sortix/kernel/debugger.h>
 #include <sortix/kernel/interrupt.h>

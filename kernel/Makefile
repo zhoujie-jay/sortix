@@ -5,7 +5,6 @@ include ../dirs.mak
 
 # Default values in case the user doesn't override these variables.
 OPTLEVEL?=$(DEFAULT_HOST_OPTLEVEL)
-CALLTRACE?=0
 DISKWRITE?=1
 CPPFLAGS?=
 CXXFLAGS?=$(OPTLEVEL)
@@ -20,7 +19,6 @@ ifeq ($(PANIC_SHORT),1)
     CPPFLAGS:=$(CPPFLAGS) -DPANIC_SHORT
 endif
 CPPFLAGS:=$(CPPFLAGS) -DENABLE_DISKWRITE=$(DISKWRITE)
-CPPFLAGS:=$(CPPFLAGS) -DENABLE_CALLTRACE=$(CALLTRACE)
 ifdef VERSION
     CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\"
 endif
@@ -75,11 +73,9 @@ $(CPUOBJS) \
 addralloc.o \
 alarm.o \
 ata.o \
-calltrace.o \
 clock.o \
 com.o \
 copy.o \
-$(CPU)/calltrace.o \
 $(CPU)/kthread.o \
 crc32.o \
 debugger.o \

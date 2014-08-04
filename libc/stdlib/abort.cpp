@@ -25,7 +25,6 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#include <calltrace.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -44,12 +43,6 @@ extern "C" void abort(void)
 
 extern "C" void abort(void)
 {
-	struct stat st;
-	if ( stat("/etc/calltrace", &st) == 0 )
-		calltrace();
-	if ( stat("/etc/calltrace_loop", &st) == 0 )
-		while ( true );
-
 	sigset_t set_of_sigabrt;
 	sigemptyset(&set_of_sigabrt);
 	sigaddset(&set_of_sigabrt, SIGABRT);

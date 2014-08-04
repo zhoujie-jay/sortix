@@ -25,7 +25,6 @@
 #include <brand.h>
 #include <string.h>
 
-#include <sortix/kernel/calltrace.h>
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/log.h>
@@ -116,18 +115,10 @@ void PanicInit()
 	longpanic ? PanicLogoLong() : PanicLogoShort();
 }
 
-static void PanicCalltrace()
-{
-	Log::Print("\n");
-	Calltrace::Perform();
-}
-
 static void PanicHooks()
 {
 	if ( doublepanic )
 		return;
-	if ( ENABLE_CALLTRACE )
-		PanicCalltrace();
 }
 
 extern "C" __attribute__((noreturn)) void Panic(const char* error)
