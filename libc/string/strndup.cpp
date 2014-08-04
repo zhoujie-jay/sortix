@@ -27,9 +27,7 @@
 
 extern "C" char* strndup(const char* input, size_t n)
 {
-	size_t inputsize = strlen(input);
-	if ( n < inputsize )
-		inputsize = n;
+	size_t inputsize = strnlen(input, n);
 	char* result = (char*) malloc(inputsize + 1);
 	if ( !result )
 		return NULL;
