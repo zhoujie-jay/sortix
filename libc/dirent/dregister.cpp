@@ -30,8 +30,10 @@ extern "C" pthread_mutex_t __dirname_lock;
 
 extern "C" void dregister(DIR* dir)
 {
+	pthread_mutex_lock(&__dirname_lock);
 	dir->flags |= _DIR_REGISTERED;
 	if ( (dir->next = __firstdir) )
 		dir->next->prev = dir;
 	__firstdir = dir;
+	pthread_mutex_unlock(&__dirname_lock);
 }
