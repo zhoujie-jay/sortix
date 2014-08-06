@@ -36,7 +36,6 @@ int __freading(FILE* fp);
 int __fwriting(FILE* fp);
 int __freadable(FILE* fp);
 int __fwritable(FILE* fp);
-int __flbf(FILE* fp);
 void __fpurge(FILE* fp);
 size_t __fpending(FILE* fp);
 

@@ -87,8 +87,6 @@ stdio/fgetc_unlocked.o \
 stdio/fgets.o \
 stdio/fgets_unlocked.o \
 stdio/fileno_unlocked.o \
-stdio/flbf.o \
-stdio/flbf_unlocked.o \
 stdio/flockfile.o \
 stdio/fmemopen.o \
 stdio/fnewfile.o \

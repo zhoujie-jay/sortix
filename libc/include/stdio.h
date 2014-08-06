@@ -314,8 +314,6 @@ int fwriting_unlocked(FILE* fp);
 int freadable_unlocked(FILE* fp);
 #define fwritable __fwritable
 int fwritable_unlocked(FILE* fp);
-#define flbf __flbf
-int flbf_unlocked(FILE* fp);
 #define fpurge __fpurge
 void fpurge_unlocked(FILE* fp);
 #define fpending __fpending
