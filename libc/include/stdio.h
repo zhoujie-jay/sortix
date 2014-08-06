@@ -320,7 +320,6 @@ int flbf_unlocked(FILE* fp);
 void fpurge_unlocked(FILE* fp);
 #define fpending __fpending
 size_t fpending_unlocked(FILE* fp);
-#define flushlbf _flushlbf
 #endif
 
 /* The Sortix backends for *printf and *scanf. */

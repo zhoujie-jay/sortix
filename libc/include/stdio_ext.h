@@ -39,7 +39,6 @@ int __fwritable(FILE* fp);
 int __flbf(FILE* fp);
 void __fpurge(FILE* fp);
 size_t __fpending(FILE* fp);
-void _flushlbf(void);
 
 __END_DECLS
 
