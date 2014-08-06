@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -29,17 +29,6 @@
 
 #include <stdio.h>
 
-enum
-{
-	FSETLOCKING_QUERY = 0,
-	FSETLOCKING_INTERNAL,
-	FSETLOCKING_BYCALLER,
-};
-
-#define FSETLOCKING_QUERY FSETLOCKING_QUERY
-#define FSETLOCKING_INTERNAL FSETLOCKING_INTERNAL
-#define FSETLOCKING_BYCALLER FSETLOCKING_BYCALLER
-
 __BEGIN_DECLS
 
 size_t __fbufsize(FILE* fp);
@@ -51,7 +40,6 @@ int __flbf(FILE* fp);
 void __fpurge(FILE* fp);
 size_t __fpending(FILE* fp);
 void _flushlbf(void);
-int __fsetlocking(FILE* fp, int type);
 
 __END_DECLS
 

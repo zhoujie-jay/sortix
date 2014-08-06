@@ -321,8 +321,6 @@ void fpurge_unlocked(FILE* fp);
 #define fpending __fpending
 size_t fpending_unlocked(FILE* fp);
 #define flushlbf _flushlbf
-#define fsetlocking __fsetlocking
-int fsetlocking_unlocked(FILE* fp, int type);
 #endif
 
 /* The Sortix backends for *printf and *scanf. */

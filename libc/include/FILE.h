@@ -58,12 +58,11 @@ typedef struct FILE FILE;
 #define _FILE_BUFFER_MODE_SET (1<<1)
 #define _FILE_LAST_WRITE (1<<2)
 #define _FILE_LAST_READ (1<<3)
-#define _FILE_AUTO_LOCK (1<<4)
-#define _FILE_BUFFER_OWNED (1<<5)
-#define _FILE_STATUS_ERROR (1<<6)
-#define _FILE_STATUS_EOF (1<<7)
-#define _FILE_READABLE (1<<8)
-#define _FILE_WRITABLE (1<<9)
+#define _FILE_BUFFER_OWNED (1<<4)
+#define _FILE_STATUS_ERROR (1<<5)
+#define _FILE_STATUS_EOF (1<<6)
+#define _FILE_READABLE (1<<7)
+#define _FILE_WRITABLE (1<<8)
 
 #define _FILE_MAX_PUSHBACK 8
 

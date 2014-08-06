@@ -120,8 +120,6 @@ stdio/fsetdefaultbuf.o \
 stdio/fsetdefaultbuf_unlocked.o \
 stdio/fseterr.o \
 stdio/fseterr_unlocked.o \
-stdio/fsetlocking.o \
-stdio/fsetlocking_unlocked.o \
 stdio/fshutdown.o \
 stdio/ftell.o \
 stdio/ftello.o \

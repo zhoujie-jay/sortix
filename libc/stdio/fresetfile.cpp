@@ -38,7 +38,7 @@ extern "C" void fresetfile(FILE* fp)
 	int kept_flags = fp->flags & (_FILE_REGISTERED | 0);
 	memset(fp, 0, sizeof(*fp));
 	fp->file_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-	fp->flags = kept_flags | _FILE_AUTO_LOCK;
+	fp->flags = kept_flags;
 	fp->buffer_mode = -1;
 	fp->free_user = free_user;
 	fp->free_func = free_func;
