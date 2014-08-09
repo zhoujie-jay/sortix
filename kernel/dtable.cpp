@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -217,6 +217,41 @@ int DescriptorTable::GetFlags(int index)
 	ScopedLock lock(&dtablelock);
 	if ( !IsGoodEntry(index) ) { errno = EBADF; return -1; }
 	return entries[index].flags;
+}
+
+int DescriptorTable::Previous(int index)
+{
+	ScopedLock lock(&dtablelock);
+
+	if ( index < 0 )
+		index = numentries;
+
+	do index--;
+	while ( 0 <= index && !IsGoodEntry(index) );
+
+	if ( index < 0 )
+		return errno = EBADF, -1;
+
+	return index;
+}
+
+int DescriptorTable::Next(int index)
+{
+	ScopedLock lock(&dtablelock);
+
+	if ( index < 0 )
+		index = -1;
+
+	if ( numentries <= index )
+		return errno = EBADF, -1;
+
+	do index++;
+	while ( index < numentries && !IsGoodEntry(index) );
+
+	if ( numentries <= index )
+		return errno = EBADF, -1;
+
+	return index;
 }
 
 } // namespace Sortix

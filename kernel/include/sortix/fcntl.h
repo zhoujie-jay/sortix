@@ -99,6 +99,14 @@ __BEGIN_DECLS
 #define F_DUPFD_CLOEXEC F_ENCODE_CMD(F_ENCODE(F_DUPFD_NUM, FD_CLOEXEC), F_TYPE_INT)
 #define F_DUPFD_CLOFORK F_ENCODE_CMD(F_ENCODE(F_DUPFD_NUM, FD_CLOFORK), F_TYPE_INT)
 
+/* Find the previous file descriptor. */
+#define F_PREVFD_NUM 5
+#define F_PREVFD F_ENCODE_CMD(F_PREVFD_NUM, F_TYPE_VOID)
+
+/* Find the next file descriptor. */
+#define F_NEXTFD_NUM 6
+#define F_NEXTFD F_ENCODE_CMD(F_NEXTFD_NUM, F_TYPE_VOID)
+
 #define AT_FDCWD (-100)
 #define AT_REMOVEDIR (1<<0)
 #define AT_EACCESS (1<<1)

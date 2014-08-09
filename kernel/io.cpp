@@ -316,6 +316,10 @@ static int sys_fcntl(int fd, int cmd, uintptr_t arg)
 {
 	// Operations on the descriptor table.
 	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
+	if ( cmd == F_PREVFD )
+		return dtable->Previous(fd);
+	if ( cmd == F_NEXTFD )
+		return dtable->Next(fd);
 
 	// Operations on the file descriptior.
 	if ( cmd == F_SETFD )

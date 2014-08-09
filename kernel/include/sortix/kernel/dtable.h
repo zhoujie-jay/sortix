@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -52,6 +52,8 @@ public:
 	void OnExecute();
 	bool SetFlags(int index, int flags);
 	int GetFlags(int index);
+	int Previous(int index);
+	int Next(int index);
 
 private:
 	void Reset(); // Hey, reference counted. Don't call this.
