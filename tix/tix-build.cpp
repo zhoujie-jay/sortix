@@ -274,6 +274,9 @@ void Make(metainfo_t* minfo, const char* make_target,
 			free(make);
 			make = join_paths(minfo->package_dir, override_make);
 		}
+		if ( dictionary_get(pkg_info, "pkg.make.needed-vars.AR", NULL) )
+			setenv("AR", strcmp(minfo->build, minfo->host) ?
+			             print_string("%s-ar", minfo->host) : "ar", 1);
 		if ( dictionary_get(pkg_info, "pkg.make.needed-vars.CC", NULL) )
 			setenv("CC", strcmp(minfo->build, minfo->host) ?
 			             print_string("%s-gcc", minfo->host) : "gcc", 1);
