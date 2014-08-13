@@ -17,15 +17,13 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/vprintf_callback.cpp
-    Provides printf formatting functions that uses callbacks.
+    stdio/vcbprintf.cpp
+    Formats text and outputs it via callback functions.
 
 *******************************************************************************/
 
-// Number of bugs seemingly unrelated bugs that have been traced to here:
-// Countless + 2
-
 #include <errno.h>
+#include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -51,19 +49,19 @@ static size_t noop_callback(void*, const char*, size_t amount)
 	return amount;
 }
 
-static
-size_t callback_character(size_t (*callback)(void*, const char*, size_t),
-                          void* user,
+static inline
+size_t callback_character(void* user,
+                          size_t (*callback)(void*, const char*, size_t),
                           char c)
 {
 	return callback(user, &c, 1);
 }
 
 extern "C"
-size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
-                        void* user,
-                        const char* restrict format,
-                        va_list parameters)
+int vcbprintf(void* user,
+              size_t (*callback)(void*, const char*, size_t),
+              const char* format,
+              va_list parameters)
 {
 	if ( !callback )
 		callback = noop_callback;
@@ -80,7 +78,7 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 			while ( format[amount] && format[amount] != '%' )
 				amount++;
 			if ( callback(user, format, amount) != amount )
-				return SIZE_MAX;
+				return -1;
 			format += amount;
 			written += amount;
 			continue;
@@ -311,32 +309,32 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 
 			if ( use_left_pad )
 				for ( size_t i = length_with_precision; i < abs_field_width; i++ )
-					if ( callback_character(callback, user, ' ') != 1 )
-						return SIZE_MAX;
+					if ( callback_character(user, callback, ' ') != 1 )
+						return -1;
 					else
 						written++;
 			if ( callback(user, prefix, prefix_length) != prefix_length )
-				return SIZE_MAX;
+				return -1;
 			written += prefix_length;
 			if ( use_zero_pad )
 				for ( size_t i = normal_length; i < abs_field_width; i++ )
-					if ( callback_character(callback, user, '0') != 1 )
-						return SIZE_MAX;
+					if ( callback_character(user, callback, '0') != 1 )
+						return -1;
 					else
 						written++;
 			if ( use_precision )
 				for ( size_t i = digits_length; i < precision; i++ )
-					if ( callback_character(callback, user, '0') != 1 )
-						return SIZE_MAX;
+					if ( callback_character(user, callback, '0') != 1 )
+						return -1;
 					else
 						written++;
 			if ( callback(user, output, output_length) != output_length )
-				return SIZE_MAX;
+				return -1;
 			written += output_length;
 			if ( use_right_pad )
 				for ( size_t i = length_with_precision; i < abs_field_width; i++ )
-					if ( callback_character(callback, user, ' ') != 1 )
-						return SIZE_MAX;
+					if ( callback_character(user, callback, ' ') != 1 )
+						return -1;
 					else
 						written++;
 		}
@@ -379,19 +377,19 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 
 			if ( !field_width_is_negative && 1 < abs_field_width )
 				for ( size_t i = 1; i < abs_field_width; i++ )
-					if ( callback_character(callback, user, ' ') != 1 )
-						return SIZE_MAX;
+					if ( callback_character(user, callback, ' ') != 1 )
+						return -1;
 					else
 						written++;
 
 			if ( callback(user, &c, 1) != 1 )
-				return SIZE_MAX;
+				return -1;
 			written++;
 
 			if ( field_width_is_negative && 1 < abs_field_width )
 				for ( size_t i = 1; i < abs_field_width; i++ )
-					if ( callback_character(callback, user, ' ') != 1 )
-						return SIZE_MAX;
+					if ( callback_character(user, callback, ' ') != 1 )
+						return -1;
 					else
 						written++;
 		}
@@ -422,19 +420,19 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 
 			if ( !field_width_is_negative && string_length < abs_field_width )
 				for ( size_t i = string_length; i < abs_field_width; i++ )
-					if ( callback_character(callback, user, ' ') != 1 )
-						return SIZE_MAX;
+					if ( callback_character(user, callback, ' ') != 1 )
+						return -1;
 					else
 						written++;
 
 			if ( callback(user, string, string_length) != string_length )
-				return SIZE_MAX;
+				return -1;
 			written += string_length;
 
 			if ( field_width_is_negative && string_length < abs_field_width )
 				for ( size_t i = string_length; i < abs_field_width; i++ )
-					if ( callback_character(callback, user, ' ') != 1 )
-						return SIZE_MAX;
+					if ( callback_character(user, callback, ' ') != 1 )
+						return -1;
 					else
 						written++;
 
@@ -463,6 +461,9 @@ size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
 		else
 			goto incomprehensible_conversion;
 	}
+
+	if ( INT_MAX < written )
+		return INT_MAX;
 
 	return written;
 }

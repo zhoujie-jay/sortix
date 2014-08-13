@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,23 +17,23 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/vdprintf.cpp
-    Prints a formatted string to a file descriptor.
+    stdio/cbprintf.cpp
+    Formats text and outputs it via callback functions.
 
 *******************************************************************************/
 
-#include <ioleast.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdint.h>
-#include <unistd.h>
 
-static size_t write_callback(void* user, const char* string, size_t stringlen)
+extern "C"
+int cbprintf(void* user,
+             size_t (*callback)(void*, const char*, size_t),
+             const char* format,
+             ...)
 {
-	return writeall((int) (uintptr_t) user, string, stringlen);
-}
-
-extern "C" int vdprintf(int fd, const char* restrict format, va_list list)
-{
-	return vcbprintf((void*) (uintptr_t) fd, write_callback, format, list);
+	va_list ap;
+	va_start(ap, format);
+	int result = vcbprintf(user, callback, format, ap);
+	va_end(ap);
+	return result;
 }

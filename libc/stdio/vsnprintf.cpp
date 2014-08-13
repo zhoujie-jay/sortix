@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -58,8 +58,8 @@ int vsnprintf(char* restrict str, size_t size, const char* restrict format,
 	info.size = size ? size-1 : 0;
 	info.produced = 0;
 	info.written = 0;
-	vprintf_callback(StringPrintCallback, &info, format, list);
+	int result = vcbprintf(&info, StringPrintCallback, format, list);
 	if ( size )
 		info.str[info.written] = '\0';
-	return (int) info.produced;
+	return result;
 }

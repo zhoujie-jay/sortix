@@ -153,7 +153,7 @@ void Print(const char* format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
-	vprintf_callback(PrintCallback, NULL, format, ap);
+	vcbprintf(NULL, PrintCallback, format, ap);
 	va_end(ap);
 }
 

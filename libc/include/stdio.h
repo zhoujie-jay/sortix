@@ -320,12 +320,11 @@ void fpurge_unlocked(FILE* fp);
 size_t fpending_unlocked(FILE* fp);
 #endif
 
-/* The Sortix backends for *printf and *scanf. */
+/* The backends for printf and scanf. */
 #if __USE_SORTIX
-size_t vprintf_callback(size_t (*callback)(void*, const char*, size_t),
-                        void* user,
-                        const char* __restrict format,
-                        __gnuc_va_list ap)
+int cbprintf(void*, size_t (*)(void*, const char*, size_t), const char*, ...)
+	__attribute__((__format__ (printf, 3, 4)));
+int vcbprintf(void*, size_t (*)(void*, const char*, size_t), const char*, __gnuc_va_list ap)
 	__attribute__((__format__ (printf, 3, 0)));
 int vscanf_callback(void* fp,
                     int (*fgetc)(void*),

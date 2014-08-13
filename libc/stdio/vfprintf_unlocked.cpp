@@ -38,8 +38,5 @@ int vfprintf_unlocked(FILE* fp, const char* restrict format, va_list list)
 	if ( !(fp->flags & _FILE_WRITABLE) )
 		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
 
-	size_t result = vprintf_callback(FileWriteCallback, fp, format, list);
-	if ( result == SIZE_MAX )
-		return -1;
-	return (int) result;
+	return vcbprintf(fp, FileWriteCallback, format, list);
 }

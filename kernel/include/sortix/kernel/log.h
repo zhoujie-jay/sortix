@@ -28,6 +28,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
 namespace Sortix {
@@ -95,15 +96,20 @@ inline size_t PrintF(const char* format, ...)
 {
 	va_list list;
 	va_start(list, format);
-	size_t result = vprintf_callback(device_callback, device_pointer, format, list);
+	int result = vcbprintf(device_pointer, device_callback, format, list);
 	va_end(list);
-	return result;
+	if ( result < 0 )
+		return SIZE_MAX;
+	return (size_t) result;
 }
 
 __attribute__((format(printf, 1, 0)))
 inline size_t PrintFV(const char* format, va_list list)
 {
-	return vprintf_callback(device_callback, device_pointer, format, list);
+	int result = vcbprintf(device_pointer, device_callback, format, list);
+	if ( result < 0 )
+		return SIZE_MAX;
+	return (size_t) result;
 }
 
 } // namespace Log

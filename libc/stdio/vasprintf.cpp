@@ -72,9 +72,9 @@ int vasprintf(char** restrict result_ptr,
 	state.string_used = 0;
 	if ( !(state.string = (char*) malloc(state.string_length * sizeof(char))) )
 		return *result_ptr = NULL, -1;
-	vprintf_callback(vasprintf_callback, &state, format, list);
+	int result = vcbprintf(&state, vasprintf_callback, format, list);
 	if ( !state.string )
 		return *result_ptr = NULL, -1;
 	state.string[state.string_used] = '\0';
-	return *result_ptr = state.string, (int) state.string_used;
+	return *result_ptr = state.string, result;
 }

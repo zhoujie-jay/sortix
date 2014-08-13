@@ -67,6 +67,7 @@ signal/sigorset.o \
 stdio/asprintf.o \
 stdio/clearerr.o \
 stdio/clearerr_unlocked.o \
+stdio/cbprintf.o \
 stdio/dprintf.o \
 stdio/fbufsize.o \
 stdio/fbufsize_unlocked.o \
@@ -142,11 +143,11 @@ stdio/sscanf.o \
 stdio/ungetc.o \
 stdio/ungetc_unlocked.o \
 stdio/vasprintf.o \
+stdio/vcbprintf.o \
 stdio/vdprintf.o \
 stdio/vfprintf_unlocked.o \
 stdio/vfscanf.o \
 stdio/vfscanf_unlocked.o \
-stdio/vprintf_callback.o \
 stdio/vscanf_callback.o \
 stdio/vsnprintf.o \
 stdio/vsprintf.o \
