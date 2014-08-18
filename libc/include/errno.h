@@ -106,6 +106,16 @@ __BEGIN_DECLS
 #define ENOGROUP 86
 #define ESIGPENDING 87
 #define ESTALE 88
+#define EBADMSG 89
+#define ECANCELED 90
+#define EDQUOT 91
+#define EIDRM 92
+#define EMULTIHOP 93
+#define ENOLINK 94
+#define ENOTRECOVERABLE 95
+#define EOWNERDEAD 96
+#define EPROTO 97
+#define ETXTBSY 98
 
 #define EOPNOTSUPP ENOTSUP
 

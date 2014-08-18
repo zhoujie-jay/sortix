@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -107,6 +107,16 @@ extern "C" const char* sortix_strerror(int errnum)
 	case ENOGROUP: return "No such group";
 	case ESIGPENDING: return "Signal is already pending";
 	case ESTALE: return "Stale file handle";
+	case EBADMSG: return "Bad message";
+	case ECANCELED: return "Operation canceled";
+	case EDQUOT: return "Disk quota exceeded";
+	case EIDRM: return "Identifier removed";
+	case EMULTIHOP: return "Multihop attempted";
+	case ENOLINK: return "Link has been severed";
+	case ENOTRECOVERABLE: return "State not recoverable";
+	case EOWNERDEAD: return "Previous owner died";
+	case EPROTO: return "Protocol error";
+	case ETXTBSY: return "Text file busy";
 	default: return "Unknown error condition";
 	}
 }
