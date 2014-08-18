@@ -72,35 +72,6 @@ char* strdup_null(const char* src)
 	return src ? strdup(src) : NULL;
 }
 
-#if defined(__sortix__)
-int vasprintf(char** strp, const char* format, va_list ap)
-{
-	assert(format);
-	size_t guess = 256;
-	while ( true )
-	{
-		if ( !(*strp = (char*) malloc(sizeof(char) * (guess+1))) )
-			return -1;
-		assert(*strp);
-		va_list ap_copy;
-		va_copy(ap_copy, ap);
-		int ret = vsnprintf(*strp, guess+1, format, ap);
-		va_end(ap_copy);
-		if ( ret < 0 )
-		{
-			free(*strp);
-			*strp = 0;
-			return ret;
-		}
-		if ( (size_t) ret < guess+1 )
-			return ret;
-		guess = (size_t) ret;
-		free(*strp);
-	}
-	return -1;
-}
-#endif
-
 char* print_string(const char* format, ...)
 {
 	char* ret = NULL;
