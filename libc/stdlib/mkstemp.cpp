@@ -43,7 +43,7 @@ extern "C" int mkstemp(char* templ)
 	{
 		for ( size_t i = templ_length - 6; i < templ_length; i++ )
 			templ[i] = '0' + rand() % 10;
-	} while ( (fd = open(templ, O_RDWR | O_EXCL | O_CREAT, 0666)) < 0 &&
+	} while ( (fd = open(templ, O_RDWR | O_EXCL | O_CREAT, 0600)) < 0 &&
 	          (errno == EEXIST) );
 
 	return fd;
