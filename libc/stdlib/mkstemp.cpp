@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -29,13 +29,22 @@
 
 extern "C" int mkstemp(char* templ)
 {
+	size_t templ_length = strlen(templ);
+	for ( size_t i = 0; i < 6; i++ )
+	{
+		if ( templ_length - i  == 0 )
+			return errno = EINVAL, -1;
+		if ( templ[templ_length - i - 1] != 'X' )
+			return errno = EINVAL, -1;
+	}
+
 	int fd;
 	do
 	{
-		size_t templ_len = strlen(templ);
-		for ( size_t i = templ_len - 6UL; i < templ_len; i++ )
+		for ( size_t i = templ_length - 6; i < templ_length; i++ )
 			templ[i] = '0' + rand() % 10;
 	} while ( (fd = open(templ, O_RDWR | O_EXCL | O_CREAT, 0666)) < 0 &&
 	          (errno == EEXIST) );
+
 	return fd;
 }
