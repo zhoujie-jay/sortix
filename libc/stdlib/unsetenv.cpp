@@ -39,6 +39,9 @@ extern "C" int unsetenv(const char* name)
 	if ( !name )
 		return errno = EINVAL, -1;
 
+	if ( !name[0] )
+		return errno = EINVAL, -1;
+
 	// Verify the name doesn't contain a '=' character.
 	size_t name_length = 0;
 	while ( name[name_length] )
