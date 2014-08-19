@@ -164,7 +164,8 @@ STRTOL_INT STRTOL(const STRTOL_CHAR* restrict str,
 	// Skip the leading '0x' prefix in base 16 for hexadecimal integers.
 	if ( origbase == 16 &&
 	     str[0] == STRTOL_L('0') &&
-	     (str[1] == STRTOL_L('x') || str[1] == STRTOL_L('X')) )
+	     (str[1] == STRTOL_L('x') || str[1] == STRTOL_L('X')) &&
+	     (0 <= debase(str[2]) && debase(str[2]) < 16) )
 		str += 2;
 
 	// Determine what value will be returned on overflow/underflow.
