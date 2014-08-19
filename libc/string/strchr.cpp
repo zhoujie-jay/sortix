@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -27,5 +27,5 @@
 extern "C" char* strchr(const char* str, int uc)
 {
 	char* ret = strchrnul(str, uc);
-	return uc == ((unsigned char*) ret)[0] ? ret : NULL;
+	return (unsigned char) uc == ((unsigned char*) ret)[0] ? ret : NULL;
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -30,7 +30,7 @@ extern "C" char* strrchr(const char* str, int uc)
 	const char* last = NULL;
 	for ( size_t i = 0; true; i++ )
 	{
-		if ( ustr[i] == uc )
+		if ( ustr[i] == (unsigned char) uc )
 			last = str + i;
 		if ( !ustr[i] )
 			break;
