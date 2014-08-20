@@ -288,5 +288,7 @@ extern "C" time_t timegm(struct tm* tm)
 	ret += (time_t) minute * 60;
 	ret += (time_t) second * 1;
 
+	gmtime_r(&ret, tm);
+
 	return ret;
 }
