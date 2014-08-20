@@ -43,6 +43,7 @@ DescriptorTable::DescriptorTable()
 	dtablelock = KTHREAD_MUTEX_INITIALIZER;
 	entries = NULL;
 	numentries = 0;
+	first_not_taken = 0;
 }
 
 DescriptorTable::~DescriptorTable()
@@ -63,11 +64,16 @@ Ref<DescriptorTable> DescriptorTable::Fork()
 	if ( !ret ) { return Ref<DescriptorTable>(NULL); }
 	ret->entries = new dtableent_t[numentries];
 	if ( !ret->entries ) { return Ref<DescriptorTable>(NULL); }
+	ret->first_not_taken = 0;
 	for ( ret->numentries = 0; ret->numentries < numentries; ret->numentries++ )
 	{
 		int i = ret->numentries;
 		if ( entries[i].desc && !(entries[i].flags & FD_CLOFORK) )
+		{
 			ret->entries[i] = entries[i];
+			if ( i == ret->first_not_taken && i != INT_MAX )
+				ret->first_not_taken++;
+		}
 		else
 			/* Already set to NULL in dtableent_t::desc constructor. */{}
 	}
@@ -111,13 +117,19 @@ int DescriptorTable::AllocateInternal(Ref<Descriptor> desc, int flags,
 		return errno = EINVAL, -1;
 	if ( min_index < 0 )
 		return errno = EINVAL, -1;
+	if ( min_index < first_not_taken )
+		min_index = first_not_taken;
 	for ( int i = min_index; i < numentries; i++ )
+	{
 		if ( !entries[i].desc )
 		{
 			entries[i].desc = desc;
 			entries[i].flags = flags;
 			return i;
 		}
+		if ( i == first_not_taken && i != INT_MAX )
+			first_not_taken++;
+	}
 	int oldnumentries = numentries;
 	if ( !Enlargen(min_index) )
 		return -1;
@@ -162,6 +174,8 @@ int DescriptorTable::Copy(int from, int to, int flags)
 		if ( entries[to].desc )
 			/* TODO: Should this be synced or otherwise properly closed? */{}
 		entries[to].desc = entries[from].desc;
+		if ( to == first_not_taken && to != INT_MAX )
+			first_not_taken++;
 	}
 	entries[to].flags = flags;
 	return to;
@@ -173,6 +187,8 @@ Ref<Descriptor> DescriptorTable::FreeKeep(int index)
 	if ( !IsGoodEntry(index) ) { errno = EBADF; return Ref<Descriptor>(NULL); }
 	Ref<Descriptor> ret = entries[index].desc;
 	entries[index].desc.Reset();
+	if ( index < first_not_taken )
+		first_not_taken = index;
 	return ret;
 }
 
@@ -191,6 +207,8 @@ void DescriptorTable::OnExecute()
 		if ( !(entries[i].flags & FD_CLOEXEC) )
 			continue;
 		entries[i].desc.Reset();
+		if ( i < first_not_taken )
+			first_not_taken = i;
 	}
 }
 
@@ -200,6 +218,7 @@ void DescriptorTable::Reset()
 	numentries = 0;
 	delete[] entries;
 	entries = NULL;
+	first_not_taken = 0;
 }
 
 bool DescriptorTable::SetFlags(int index, int flags)

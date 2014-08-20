@@ -65,6 +65,7 @@ private:
 	kthread_mutex_t dtablelock;
 	dtableent_t* entries;
 	int numentries;
+	int first_not_taken;
 
 };
 
