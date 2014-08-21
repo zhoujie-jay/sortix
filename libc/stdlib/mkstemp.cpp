@@ -27,12 +27,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+const uint32_t NUM_CHARACTERS = 10 + 26 + 26;
+
+static inline char get_character(uint32_t index)
+{
+	if ( index < 10 )
+		return '0' + index;
+	if ( index < 10 + 26 )
+		return 'a' + index - 10;
+	if ( index < 10 + 26 + 26 )
+		return 'A' + index - (10 + 26);
+	__builtin_unreachable();
+}
+
 extern "C" int mkstemp(char* templ)
 {
 	size_t templ_length = strlen(templ);
 	for ( size_t i = 0; i < 6; i++ )
 	{
-		if ( templ_length - i  == 0 )
+		if ( templ_length - i == 0 )
 			return errno = EINVAL, -1;
 		if ( templ[templ_length - i - 1] != 'X' )
 			return errno = EINVAL, -1;
@@ -42,7 +55,7 @@ extern "C" int mkstemp(char* templ)
 	do
 	{
 		for ( size_t i = templ_length - 6; i < templ_length; i++ )
-			templ[i] = '0' + rand() % 10;
+			templ[i] = get_character(arc4random_uniform(NUM_CHARACTERS));
 	} while ( (fd = open(templ, O_RDWR | O_EXCL | O_CREAT, 0600)) < 0 &&
 	          (errno == EEXIST) );
 
