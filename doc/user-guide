@@ -311,14 +311,18 @@ Editing Files
 You can use the `editor` program to edit files. The editor itself is fairly
 simple to use. It currently supports these keyboard commands:
 
-* `Ctrl-Q` - Exit
-* `Ctrl-O` - Open a file
-* `Ctrl-S` - Save a file
+* `Ctrl-C` - Copy
 * `Ctrl-I` - Go to line
-* `ESC tabsize <desired-tab-size>` - change tab size
+* `Ctrl-K` - Cut
+* `Ctrl-O` - Open a file
+* `Ctrl-Q` - Exit
+* `Ctrl-S` - Save a file
+* `Ctrl-V` - Paste
+* `Ctrl-X` - Cut
+* `ESC language <c or c++>` - enable syntax highlighting
 * `ESC margin <column>` - add right margin at column
 * `ESC popen <command>` - open command output
-* `ESC language <c or c++>` - enable syntax highlighting
+* `ESC tabsize <desired-tab-size>` - change tab size
 
 It is not currently possible to port third party editors because the terminal
 implementation is not standards-compliant enough and is seriously lacking.

@@ -11,6 +11,7 @@ libpthread \
 dispd \
 bench \
 carray \
+editor \
 ext \
 games \
 mbr \

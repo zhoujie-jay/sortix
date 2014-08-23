@@ -25,7 +25,6 @@ date \
 dirname \
 du \
 echo \
-editor \
 env \
 expr \
 false \
