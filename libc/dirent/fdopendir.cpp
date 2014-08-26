@@ -136,7 +136,7 @@ extern "C" DIR* fdopendir(int fd)
 
 	int old_dflags = fcntl(fd, F_GETFD);
 	if ( 0 <= old_dflags )
-		fcntl(fd, F_SETFD, old_dflags | O_CLOEXEC);
+		fcntl(fd, F_SETFD, old_dflags | FD_CLOEXEC);
 
 	info->fd = fd;
 
