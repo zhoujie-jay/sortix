@@ -54,10 +54,12 @@ static int fddir_sortix_readents(fddir_sortix_t* info)
 			return -1;
 	}
 
+	int saved_errno = errno;
 	if ( readdirents(info->fd, info->dirent, info->direntsize) < 0 )
 	{
 		if ( errno != ERANGE )
 			return -1;
+		errno = saved_errno;
 		size_t newdirentsize = sizeof(struct kernel_dirent) + info->dirent->d_namlen + 1;
 		if ( newdirentsize < info->direntsize )
 			newdirentsize *= 2;
