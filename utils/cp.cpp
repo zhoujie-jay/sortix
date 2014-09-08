@@ -385,6 +385,16 @@ int main(int argc, char* argv[])
 		{
 			while ( char c = *++arg ) switch ( c )
 			{
+#ifdef CP_PRETEND_TO_BE_INSTALL
+			case 'b': /* ignored */ break;
+			case 'c': /* ignored */ break;
+			case 'C': /* ignored */ break;
+			case 'd': /* ignored */ break;
+			case 'g': if ( *(arg + 1) ) arg = "g"; else if ( i + 1 != argc ) argv[++i] = NULL; break;
+			case 'm': if ( *(arg + 1) ) arg = "m"; else if ( i + 1 != argc ) argv[++i] = NULL; break;
+			case 'o': if ( *(arg + 1) ) arg = "o"; else if ( i + 1 != argc ) argv[++i] = NULL; break;
+			case 's': /* ignored */ break;
+#endif
 			case 'H': flags |= FLAG_DEREFERENCE_ARGUMENTS; break;
 			case 'L': flags |= FLAG_DEREFERENCE; break;
 			case 'r':
