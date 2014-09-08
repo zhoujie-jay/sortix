@@ -47,7 +47,6 @@ typedef __off_t off_t;
 #ifndef __FILE_defined
 #define __FILE_defined
 typedef struct FILE FILE;
-#define FILE FILE
 #endif
 
 #define _FILE_REGISTERED (1<<0)

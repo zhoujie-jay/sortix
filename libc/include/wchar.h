@@ -65,7 +65,6 @@ typedef __off_t off_t;
 #ifndef __FILE_defined
 #define __FILE_defined
 typedef struct FILE FILE;
-#define FILE FILE
 #endif
 
 #ifndef __locale_t_defined

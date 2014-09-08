@@ -34,7 +34,6 @@ __BEGIN_DECLS
 #ifndef __FILE_defined
 #define __FILE_defined
 typedef struct FILE FILE;
-#define FILE FILE
 #endif
 
 #ifndef __gid_t_defined

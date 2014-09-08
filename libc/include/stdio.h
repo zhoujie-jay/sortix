@@ -65,7 +65,6 @@ typedef __ssize_t ssize_t;
 #ifndef __FILE_defined
 #define __FILE_defined
 typedef struct FILE FILE;
-#define FILE FILE
 #endif
 
 typedef off_t fpos_t;
