@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -28,13 +28,17 @@
 
 extern "C" ssize_t getdelim(char** lineptr, size_t* n, int delim, FILE* fp)
 {
-	if ( !lineptr || (*lineptr && !n) || !fp ) { errno = EINVAL; return -1; }
+	if ( !lineptr || (*lineptr && !n) || !fp )
+		return errno = EINVAL, -1;
 	const size_t DEFAULT_BUFSIZE = 32UL;
-	int malloced = !*lineptr;
-	if ( malloced ) { *lineptr = (char*) malloc(DEFAULT_BUFSIZE); }
-	if ( !*lineptr ) { return -1; }
+	bool malloced = !*lineptr;
+	if ( malloced )
+		*lineptr = (char*) malloc(DEFAULT_BUFSIZE);
+	if ( !*lineptr )
+		return -1;
 	size_t bufsize = malloced ? DEFAULT_BUFSIZE : *n;
-	if ( n ) { *n = bufsize; }
+	if ( n )
+		*n = bufsize;
 	ssize_t written = 0;
 	int c;
 	flockfile(fp);
@@ -42,15 +46,20 @@ extern "C" ssize_t getdelim(char** lineptr, size_t* n, int delim, FILE* fp)
 	{
 		if ( (c = getc_unlocked(fp)) == EOF )
 		{
-			if ( written ) { break; } else { goto cleanup; }
+			if ( written )
+				break;
+			else
+				goto cleanup;
 		}
 		if ( bufsize <= (size_t) written + 1UL )
 		{
 			size_t newbufsize = 2UL * bufsize;
 			char* newbuf = (char*) realloc(*lineptr, newbufsize);
-			if ( !newbuf ) { goto cleanup; }
+			if ( !newbuf )
+				goto cleanup;
 			bufsize = newbufsize;
-			if ( n ) { *n = bufsize; }
+			if ( n )
+				*n = bufsize;
 			*lineptr = newbuf;
 		}
 		(*lineptr)[written++] = c;
@@ -61,6 +70,10 @@ extern "C" ssize_t getdelim(char** lineptr, size_t* n, int delim, FILE* fp)
 
 cleanup:
 	funlockfile(fp);
-	free(malloced ? *lineptr : NULL);
+	if ( malloced )
+	{
+		free(*lineptr);
+		*lineptr = NULL;
+	}
 	return -1;
 }
