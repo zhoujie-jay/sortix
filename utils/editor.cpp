@@ -1681,8 +1681,8 @@ void editor_type_cut(struct editor* editor)
 
 void editor_type_paste(struct editor* editor)
 {
-	if ( editor->cursor_row == editor->select_row &&
-	     editor->cursor_column == editor->select_column )
+	if ( !(editor->cursor_row == editor->select_row &&
+	       editor->cursor_column == editor->select_column) )
 		editor_type_delete_selection(editor);
 
 	for ( size_t i = 0; editor->clipboard && editor->clipboard[i]; i++ )
