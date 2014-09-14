@@ -177,6 +177,9 @@ extern "C" int setenv(const char* name, const char* value, int overwrite)
 	}
 
 	// Append the new entry to the environ array.
-	bool result = set_entry_at(environ, __environ_used++, name, name_length, value, value_length);
-	return result ? 0 : -1;
+	if ( !set_entry_at(environ, __environ_used,
+	                   name, name_length,
+	                   value, value_length) )
+		return -1;
+	return __environ_used++, 0;
 }
