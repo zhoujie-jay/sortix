@@ -366,9 +366,8 @@ static void Clock__FireTimer(void* timer_ptr)
 	timer->clock->UnlockClock();
 }
 
-static void Clock__FireTimer_InterruptWorker(void* timer_ptr_ptr, size_t)
+static void Clock__FireTimer_InterruptWorker(void* timer_ptr, void*, size_t)
 {
-	void* timer_ptr = *((void**) timer_ptr_ptr);
 	Clock__FireTimer(timer_ptr);
 }
 
@@ -389,8 +388,7 @@ void Clock::FireTimer(Timer* timer)
 		else
 		{
 			timer->flags |= TIMER_FIRING;
-			Interrupt::ScheduleWork(Clock__FireTimer_InterruptWorker, &timer,
-			                        sizeof(timer));
+			Interrupt::ScheduleWork(Clock__FireTimer_InterruptWorker, timer, NULL, 0);
 		}
 	}
 

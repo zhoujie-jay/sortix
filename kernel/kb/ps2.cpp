@@ -89,15 +89,14 @@ PS2Keyboard::~PS2Keyboard()
 
 struct PS2KeyboardWork
 {
-	PS2Keyboard* kb;
 	uint8_t scancode;
 };
 
-static void PS2Keyboard__InterruptWork(void* payload, size_t size)
+static void PS2Keyboard__InterruptWork(void* kb_ptr, void* payload, size_t size)
 {
 	assert(size == sizeof(PS2KeyboardWork));
 	PS2KeyboardWork* work = (PS2KeyboardWork*) payload;
-	work->kb->InterruptWork(work->scancode);
+	((PS2Keyboard*) kb_ptr)->InterruptWork(work->scancode);
 }
 
 void PS2Keyboard::OnInterrupt(CPU::InterruptRegisters* regs)
@@ -117,9 +116,8 @@ void PS2Keyboard::OnInterrupt(CPU::InterruptRegisters* regs)
 		Debugger::Run();
 	}
 	PS2KeyboardWork work;
-	work.kb = this;
 	work.scancode = scancode;
-	Interrupt::ScheduleWork(PS2Keyboard__InterruptWork, &work, sizeof(work));
+	Interrupt::ScheduleWork(PS2Keyboard__InterruptWork, this, &work, sizeof(work));
 }
 
 void PS2Keyboard::InterruptWork(uint8_t scancode)

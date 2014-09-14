@@ -115,8 +115,10 @@ void Init();
 void InitWorker();
 void WorkerThread(void* user);
 
-typedef void(*WorkHandler)(void* payload, size_t payloadsize);
-bool ScheduleWork(WorkHandler handler, void* payload, size_t payloadsize);
+bool ScheduleWork(void (*handler)(void*, void*, size_t),
+                  void* handler_context,
+                  void* payload,
+                  size_t payload_size);
 
 } // namespace Interrupt
 } // namespace Sortix

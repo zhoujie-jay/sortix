@@ -37,115 +37,127 @@
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/thread.h>
 
+// TODO: The interrupt worker isn't a reliable design.
+
 namespace Sortix {
 namespace Interrupt {
 
-// TODO: This implementation is a bit hacky and can be optimized.
+unsigned char* queue;
+volatile size_t queue_offset;
+volatile size_t queue_used;
+const size_t QUEUE_SIZE = 4096;
 
-uint8_t* queue;
-uint8_t* storage;
-volatile size_t queueoffset;
-volatile size_t queueused;
-size_t queuesize;
-
-struct Package
+struct worker_package
 {
-	size_t size;
-	size_t payloadoffset;
-	size_t payloadsize;
-	WorkHandler handler;
-	uint8_t payload[0];
+	size_t payload_size;
+	void (*handler)(void*, void*, size_t);
+	void* handler_context;
 };
 
 void InitWorker()
 {
-	const size_t QUEUE_SIZE = 4UL*1024UL;
-	static_assert(QUEUE_SIZE % sizeof(Package) == 0, "QUEUE_SIZE must be a multiple of the package size");
-	queue = new uint8_t[QUEUE_SIZE];
+	queue = new unsigned char[QUEUE_SIZE];
 	if ( !queue )
 		Panic("Can't allocate interrupt worker queue");
-	storage = new uint8_t[QUEUE_SIZE];
-	if ( !storage )
-		Panic("Can't allocate interrupt worker storage");
-	queuesize = QUEUE_SIZE;
-	queueoffset = 0;
-	queueused = 0;
+	queue_offset = 0;
+	queue_used = 0;
 }
 
 static void WriteToQueue(const void* src, size_t size)
 {
-	const uint8_t* buf = (const uint8_t*) src;
-	size_t writeat = (queueoffset + queueused) % queuesize;
-	size_t available = queuesize - writeat;
-	size_t count = available < size ? available : size;
-	memcpy(queue + writeat, buf, count);
-	queueused += count;
-	if ( count < size )
-		WriteToQueue(buf + count, size - count);
+	assert(size <= QUEUE_SIZE - queue_used);
+	const unsigned char* input = (const unsigned char*) src;
+	for ( size_t i = 0; i < size; i++ )
+	{
+		size_t index = (queue_offset + queue_used + i) % QUEUE_SIZE;
+		queue[index] = input[i];
+	}
+	queue_used += size;
 }
 
-static void ReadFromQueue(void* dest, size_t size)
+static void ReadFromQueue(void* dst, size_t size)
 {
-	uint8_t* buf = (uint8_t*) dest;
-	size_t available = queuesize - queueoffset;
-	size_t count = available < size ? available : size;
-	memcpy(buf, queue + queueoffset, count);
-	queueused -= count;
-	queueoffset = (queueoffset + count) % queuesize;
-	if ( count < size )
-		ReadFromQueue(buf + count, size - count);
+	assert(size <= queue_used);
+	unsigned char* output = (unsigned char*) dst;
+	for ( size_t i = 0; i < size; i++ )
+	{
+		size_t index = (queue_offset + i) % QUEUE_SIZE;
+		output[i] = queue[index];
+	}
+	queue_offset = (queue_offset + size) % QUEUE_SIZE;
+	queue_used -= size;
 }
 
-static Package* PopPackage(uint8_t** payloadp, Package* /*prev*/)
+static bool PopPackage(struct worker_package* package,
+                       unsigned char* payload,
+                       size_t payload_size)
 {
-	Package* package = NULL;
-	uint8_t* payload = NULL;
-	Interrupt::Disable();
+	bool interrupts_was_enabled = Interrupt::SetEnabled(false);
+	if ( !queue_used )
+	{
+		Interrupt::SetEnabled(interrupts_was_enabled);
+		return false;
+	}
 
-	if ( !queueused )
-		goto out;
-
-	package = (Package*) storage;
 	ReadFromQueue(package, sizeof(*package));
-	payload = storage + sizeof(*package);
-	ReadFromQueue(payload, package->payloadsize);
-	*payloadp = payload;
+	if ( !(package->payload_size <= payload_size) )
+	{
+		Interrupt::SetEnabled(interrupts_was_enabled);
+		assert(package->payload_size <= payload_size);
+		queue_offset = (queue_offset + package->payload_size) % QUEUE_SIZE;
+		return false;
+	}
 
-out:
-	Interrupt::Enable();
-	return package;
+	ReadFromQueue(payload, package->payload_size);
+
+	Interrupt::SetEnabled(interrupts_was_enabled);
+	return true;
 }
 
 void WorkerThread(void* /*user*/)
 {
 	assert(Interrupt::IsEnabled());
-	uint8_t* payload = NULL;
-	Package* package = NULL;
+
+	struct worker_package package;
+	size_t storage_size = QUEUE_SIZE;
+	unsigned char* storage = new unsigned char[storage_size];
+	if ( !storage )
+		Panic("Can't allocate interrupt worker storage");
 	while ( true )
 	{
-		package = PopPackage(&payload, package);
-		if ( !package ) { Scheduler::Yield(); continue; }
-		size_t payloadsize = package->payloadsize;
-		package->handler(payload, payloadsize);
+		if ( !PopPackage(&package, storage, storage_size) )
+		{
+			Scheduler::Yield();
+			continue;
+		}
+		unsigned char* payload = storage;
+		size_t payload_size = package.payload_size;
+		assert(package.handler);
+		package.handler(package.handler_context, payload, payload_size);
 	}
 }
 
-bool ScheduleWork(WorkHandler handler, void* payload, size_t payloadsize)
+bool ScheduleWork(void (*handler)(void*, void*, size_t),
+                  void* handler_context,
+                  void* payload,
+                  size_t payload_size)
 {
 	assert(!Interrupt::IsEnabled());
 
-	Package package;
-	package.size = sizeof(package) + payloadsize;
-	package.payloadoffset = 0; // Currently unused
-	package.payloadsize = payloadsize;
-	package.handler = handler;
+	assert(handler);
+	assert(payload || !payload_size);
 
-	size_t queuefreespace = queuesize - queueused;
-	if ( queuefreespace < package.size )
+	struct worker_package package;
+	package.payload_size = payload_size;
+	package.handler = handler;
+	package.handler_context = handler_context;
+
+	if ( QUEUE_SIZE - queue_used < sizeof(package) + payload_size )
 		return false;
 
 	WriteToQueue(&package, sizeof(package));
-	WriteToQueue(payload, payloadsize);
+	WriteToQueue(payload, payload_size);
+
 	return true;
 }
 
