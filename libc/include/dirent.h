@@ -58,6 +58,7 @@ typedef __ino_t ino_t;
 typedef struct DIR DIR;
 #endif
 
+#if __USE_SORTIX
 #define DT_UNKNOWN __DT_UNKNOWN
 #define DT_BLK __DT_BLK
 #define DT_CHR __DT_CHR
@@ -66,9 +67,12 @@ typedef struct DIR DIR;
 #define DT_LNK __DT_LNK
 #define DT_REG __DT_REG
 #define DT_SOCK __DT_SOCK
+#endif
 
+#if __USE_SORTIX
 #define IFTODT(x) __IFTODT(x)
 #define DTTOIF(x) __DTTOIF(x)
+#endif
 
 struct dirent
 {
@@ -90,34 +94,50 @@ struct dirent
 #define _D_EXACT_NAMLEN(d) ((d)->d_namlen)
 #define _D_ALLOC_NAMLEN(d) (_D_EXACT_NAMLEN(d) + 1)
 
-int alphasort(const struct dirent**, const struct dirent**);
-int alphasort_r(const struct dirent**, const struct dirent**, void*);
 int closedir(DIR* dir);
+DIR* opendir(const char* path);
+struct dirent* readdir(DIR* dir);
+void rewinddir(DIR* dir);
+
+#if __USE_SORTIX || __USE_XOPEN
+/* TODO: seekdir */
+/* TODO: telldir */
+#endif
+
+/* Functions from POSIX 1995. */
+#if 199506L <= __USE_POSIX
+/* readdir_r will not be implemented. */
+#endif
+
+/* Functions from POSIX 2008. */
+#if __USE_SORTIX || 200809L <= __USE_POSIX
+int alphasort(const struct dirent**, const struct dirent**);
 int dirfd(DIR* dir);
+DIR* fdopendir(int fd);
+int scandir(const char*, struct dirent***, int (*)(const struct dirent*),
+            int (*)(const struct dirent**, const struct dirent**));
+#endif
+
+/* Functions copied from elsewhere. */
+#if __USE_SORTIX
+int versionsort(const struct dirent**, const struct dirent**);
+#endif
+
+/* Functions that are Sortix extensions. */
+#if __USE_SORTIX
+int alphasort_r(const struct dirent**, const struct dirent**, void*);
+void dclearerr(DIR* dir);
+int deof(DIR* dif);
+int derror(DIR* dir);
+DIR* dnewdir(void);
+void dregister(DIR* dir);
 int dscandir_r(DIR*, struct dirent***,
                int (*)(const struct dirent*, void*),
                void*,
                int (*)(const struct dirent**, const struct dirent**, void*),
                void*);
-DIR* fdopendir(int fd);
-DIR* opendir(const char* path);
-struct dirent* readdir(DIR* dir);
-/* TODO: readdir_r */
-void rewinddir(DIR* dir);
-int scandir(const char*, struct dirent***, int (*)(const struct dirent*),
-            int (*)(const struct dirent**, const struct dirent**));
-/* TODO: seekdir */
-/* TODO: telldir */
-int versionsort(const struct dirent**, const struct dirent**);
-int versionsort_r(const struct dirent**, const struct dirent**, void*);
-
-#if __USE_SORTIX
-void dregister(DIR* dir);
 void dunregister(DIR* dir);
-DIR* dnewdir(void);
-void dclearerr(DIR* dir);
-int derror(DIR* dir);
-int deof(DIR* dif);
+int versionsort_r(const struct dirent**, const struct dirent**, void*);
 #endif
 
 __END_DECLS
