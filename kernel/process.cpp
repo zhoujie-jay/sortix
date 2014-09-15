@@ -670,6 +670,20 @@ Process* Process::Fork()
 	clone->cwd = cwd;
 	kthread_mutex_unlock(&ptrlock);
 
+	kthread_mutex_lock(&idlock);
+	clone->uid = uid;
+	clone->gid = gid;
+	clone->euid = euid;
+	clone->egid = egid;
+	clone->umask = umask;
+	kthread_mutex_unlock(&idlock);
+
+	kthread_mutex_lock(&signal_lock);
+	memcpy(&clone->signal_actions, &signal_actions, sizeof(signal_actions));
+	sigemptyset(&clone->signal_pending);
+	clone->sigreturn = sigreturn;
+	kthread_mutex_unlock(&signal_lock);
+
 	// Initialize things that can fail and abort if needed.
 	bool failure = false;
 
@@ -680,14 +694,6 @@ Process* Process::Fork()
 	//	failure = true;
 	clone->mtable = mtable;
 	kthread_mutex_unlock(&ptrlock);
-
-	kthread_mutex_lock(&idlock);
-	clone->uid = uid;
-	clone->gid = gid;
-	clone->euid = euid;
-	clone->egid = egid;
-	clone->umask = umask;
-	kthread_mutex_unlock(&idlock);
 
 	if ( !(clone->program_image_path = String::Clone(program_image_path)) )
 		failure = false;
