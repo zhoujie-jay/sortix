@@ -719,7 +719,7 @@ Process* Process::Fork()
 	kthread_mutex_unlock(&ptrlock);
 
 	if ( !(clone->program_image_path = String::Clone(program_image_path)) )
-		failure = false;
+		failure = true;
 
 	if ( string_table && (clone->string_table = new char[string_table_length]) )
 	{
