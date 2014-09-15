@@ -78,49 +78,34 @@ Process::Process()
 	string_table_length = 0;
 	symbol_table = NULL;
 	symbol_table_length = 0;
-	addrspace = 0;
-	segments = NULL;
-	parent = NULL;
-	prevsibling = NULL;
-	nextsibling = NULL;
-	firstchild = NULL;
-	zombiechild = NULL;
-	group = NULL;
-	groupprev = NULL;
-	groupnext = NULL;
-	groupfirst = NULL;
 	program_image_path = NULL;
-	parentlock = KTHREAD_MUTEX_INITIALIZER;
-	childlock = KTHREAD_MUTEX_INITIALIZER;
-	groupparentlock = KTHREAD_MUTEX_INITIALIZER;
-	groupchildlock = KTHREAD_MUTEX_INITIALIZER;
-	groupchildleft = KTHREAD_COND_INITIALIZER;
-	zombiecond = KTHREAD_COND_INITIALIZER;
-	zombiewaiting = 0;
-	iszombie = false;
-	nozombify = false;
-	grouplimbo = false;
-	firstthread = NULL;
-	threadlock = KTHREAD_MUTEX_INITIALIZER;
-	threads_exiting = false;
-	ptrlock = KTHREAD_MUTEX_INITIALIZER;
-	idlock = KTHREAD_MUTEX_INITIALIZER;
-	user_timers_lock = KTHREAD_MUTEX_INITIALIZER;
-	memset(&user_timers, 0, sizeof(user_timers));
-	segments = NULL;
-	segments_used = 0;
-	segments_length = 0;
-	segment_lock = KTHREAD_MUTEX_INITIALIZER;
-	exit_code = -1;
+	addrspace = 0;
 	pid = AllocatePID();
+
+	nicelock = KTHREAD_MUTEX_INITIALIZER;
+	nice = 0;
+
+	idlock = KTHREAD_MUTEX_INITIALIZER;
 	uid = euid = 0;
 	gid = egid = 0;
 	umask = 0022;
-	nicelock = KTHREAD_MUTEX_INITIALIZER;
-	nice = 0;
+
+	ptrlock = KTHREAD_MUTEX_INITIALIZER;
+	// root set to null reference in the member constructor.
+	// cwd set to null reference in the member constructor.
+	// mtable set to null reference in the member constructor.
+	// dtable set to null reference in the member constructor.
+
+	// ptable set to null reference in the member constructor.
+
 	resource_limits_lock = KTHREAD_MUTEX_INITIALIZER;
+	for ( size_t i = 0; i < RLIMIT_NUM_DECLARED; i++ )
+	{
+		resource_limits[i].rlim_cur = RLIM_INFINITY;
+		resource_limits[i].rlim_max = RLIM_INFINITY;
+	}
+
 	signal_lock = KTHREAD_MUTEX_INITIALIZER;
-	sigemptyset(&signal_pending);
 	memset(&signal_actions, 0, sizeof(signal_actions));
 	for ( int i = 0; i < SIG_MAX_NUM; i++ )
 	{
@@ -129,11 +114,49 @@ Process::Process()
 		signal_actions[i].sa_cookie = NULL;
 		signal_actions[i].sa_flags = 0;
 	}
-	for ( size_t i = 0; i < RLIMIT_NUM_DECLARED; i++ )
-	{
-		resource_limits[i].rlim_cur = RLIM_INFINITY;
-		resource_limits[i].rlim_max = RLIM_INFINITY;
-	}
+	sigemptyset(&signal_pending);
+	sigreturn = NULL;
+
+	parent = NULL;
+	prevsibling = NULL;
+	nextsibling = NULL;
+	firstchild = NULL;
+	zombiechild = NULL;
+	childlock = KTHREAD_MUTEX_INITIALIZER;
+	parentlock = KTHREAD_MUTEX_INITIALIZER;
+	zombiecond = KTHREAD_COND_INITIALIZER;
+	zombiewaiting = 0;
+	iszombie = false;
+	nozombify = false;
+	exit_code = -1;
+
+	group = NULL;
+	groupprev = NULL;
+	groupnext = NULL;
+	groupfirst = NULL;
+
+	groupparentlock = KTHREAD_MUTEX_INITIALIZER;
+	groupchildlock = KTHREAD_MUTEX_INITIALIZER;
+	groupchildleft = KTHREAD_COND_INITIALIZER;
+	grouplimbo = false;
+
+	firstthread = NULL;
+	threadlock = KTHREAD_MUTEX_INITIALIZER;
+	threads_exiting = false;
+
+	segments = NULL;
+	segments_used = 0;
+	segments_length = 0;
+	segment_lock = KTHREAD_MUTEX_INITIALIZER;
+
+	user_timers_lock = KTHREAD_MUTEX_INITIALIZER;
+	memset(&user_timers, 0, sizeof(user_timers));
+	// alarm_timer initialized in member constructor.
+	// execute_clock initialized in member constructor.
+	// system_clock initialized in member constructor.
+	// execute_clock initialized in member constructor.
+	// child_execute_clock initialized in member constructor.
+	// child_system_clock initialized in member constructor.
 	Time::InitializeProcessClocks(this);
 	alarm_timer.Attach(Time::GetClock(CLOCK_MONOTONIC));
 	Put(this);
