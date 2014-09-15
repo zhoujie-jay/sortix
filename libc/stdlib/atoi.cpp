@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -22,9 +22,16 @@
 
 *******************************************************************************/
 
+#include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 
 extern "C" int atoi(const char* str)
 {
-	return (int) strtol(str, (char**) NULL, 10);
+	long long_result = strtol(str, (char**) NULL, 10);
+	if ( long_result < INT_MIN )
+		return errno = ERANGE, INT_MIN;
+	if ( INT_MAX < long_result )
+		return errno = ERANGE, INT_MAX;
+	return (int) long_result;
 }
