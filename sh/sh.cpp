@@ -33,6 +33,7 @@
 #include <inttypes.h>
 #include <ioleast.h>
 #include <libgen.h>
+#include <locale.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +42,10 @@
 #include <unistd.h>
 #include <wchar.h>
 #include <wctype.h>
+
+#if !defined(VERSIONSTR)
+#define VERSIONSTR "unknown version"
+#endif
 
 static const unsigned int NORMAL_TERMMODE =
 	TERMMODE_UNICODE |
@@ -1812,18 +1817,13 @@ int get_and_run_command_non_interactive(FILE* fp,
 	return run_command(command, false, exit_on_error, exitexec);
 }
 
-void load_argv_variables(int argc, char* argv[])
+int run(FILE* fp, const char* name, bool interactive, bool exit_on_error)
 {
-	char varname[sizeof(int) * 3];
-	for ( int i = 0; i < argc; i++ )
-		snprintf(varname, sizeof(varname), "%i", i),
-		setenv(varname, argv[i], 1);
-}
-
-int run(FILE* fp, int argc, char* argv[], const char* name, bool interactive,
-        bool exit_on_error)
-{
-	load_argv_variables(argc, argv);
+	// TODO: The interactive read code should cope when the input is not a
+	//       terminal; it should print the prompt and then read normally without
+	//       any line editing features.
+	if ( !isatty(fileno(fp)) )
+		interactive = false;
 	bool exitexec = false;
 	int exitstatus;
 	do
@@ -1838,45 +1838,119 @@ int run(FILE* fp, int argc, char* argv[], const char* name, bool interactive,
 	return exitstatus;
 }
 
-int run_interactive(int argc, char* argv[], bool exit_on_error)
+void compact_arguments(int* argc, char*** argv)
 {
-	return run(stdin, argc, argv, "<stdin>", true, exit_on_error);
+	for ( int i = 0; i < *argc; i++ )
+	{
+		while ( i < *argc && !(*argv)[i] )
+		{
+			for ( int n = i; n < *argc; n++ )
+				(*argv)[n] = (*argv)[n+1];
+			(*argc)--;
+		}
+	}
 }
 
-int run_stdin(int argc, char* argv[], bool exit_on_error)
+void help(FILE* fp, const char* argv0)
 {
-	return run(stdin, argc, argv, "<stdin>", false, exit_on_error);
+	fprintf(fp, "Usage: %s [OPTION...] [SCRIPT [ARGUMENT...]]\n", argv0);
+	fprintf(fp, "  or:  %s [OPTION...] -c COMMAND [ARGUMENT...]\n", argv0);
+	fprintf(fp, "  or:  %s [OPTION...] -s [ARGUMENT...]\n", argv0);
+#if 0
+	fprintf(fp, "  -a, +a         set -a\n");
+	fprintf(fp, "  -b, +b         set -b\n");
+#endif
+	fprintf(fp, "  -c             execute the first operand as the command\n");
+#if 0
+	fprintf(fp, "  -C, +C         set -C\n");
+	fprintf(fp, "  -e, +e         set -e\n");
+	fprintf(fp, "  -f, +f         set -f\n");
+	fprintf(fp, "  -h, +h         set -h\n");
+#endif
+	fprintf(fp, "  -i             shell is interactive\n");
+#if 0
+	fprintf(fp, "  -m, +m         set -m\n");
+	fprintf(fp, "  -n, +n         set -n\n");
+	fprintf(fp, "  -o OPTION      set -o OPTION\n");
+	fprintf(fp, "  +o OPTION      set +o OPTION\n");
+#endif
+	fprintf(fp, "  -s             read commands from the standard input\n");
+#if 0
+	fprintf(fp, "  -u, +u         set -u\n");
+	fprintf(fp, "  -v, +v         set -v\n");
+	fprintf(fp, "  -x, +x         set -x\n");
+#endif
+	fprintf(fp, "      --help     display this help and exit\n");
+	fprintf(fp, "      --version  output version information and exit\n");
 }
 
-int run_string(int argc, char* argv[], const char* str, bool exit_on_error)
+void version(FILE* fp, const char* argv0)
 {
-	FILE* fp = fmemopen((void*) str, strlen(str), "r");
-	if ( !fp ) { error(0, errno, "fmemopen"); return 1; }
-	int ret = run(fp, argc, argv, "<command-line>", false, exit_on_error);
-	fclose(fp);
-	return ret;
-}
-
-int run_script(const char* path, int argc, char* argv[], bool exit_on_error)
-{
-	FILE* fp = fopen(path, "r");
-	if ( !fp ) { error(0, errno, "%s", path); return 127; }
-	int ret = run(fp, argc, argv, path, false, exit_on_error);
-	fclose(fp);
-	return ret;
+	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
+	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
+	fprintf(fp, "This is free software: you are free to change and redistribute it.\n");
+	fprintf(fp, "There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
 int main(int argc, char* argv[])
 {
-	bool exit_on_error = false;
-	if ( 2 <= argc && !strcmp(argv[1], "-e") )
+	setlocale(LC_ALL, "");
+
+	// TODO: Canonicalize argv[0] if it contains a slash and isn't absolute?
+
+	bool flag_c_first_operand_is_command = false;
+	bool flag_e_exit_on_error = false;
+	bool flag_i_interactive = false;
+	bool flag_s_stdin = false;
+
+	const char* argv0 = argv[0];
+	for ( int i = 1; i < argc; i++ )
 	{
-		exit_on_error = true;
-		argc--;
-		for ( int i = 1; i < argc; i++ )
-			argv[i] = argv[i+1];
-		argv[argc] = NULL;
+		const char* arg = argv[i];
+		if ( (arg[0] != '-' && arg[0] != '+') || !arg[1] )
+			break;
+		argv[i] = NULL;
+		if ( !strcmp(arg, "--") )
+			break;
+		if ( arg[0] == '+' )
+		{
+			while ( char c = *++arg ) switch ( c )
+			{
+			case 'e': flag_e_exit_on_error = false; break;
+			default:
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
+				help(stderr, argv0);
+				exit(1);
+			}
+		}
+		else if ( arg[1] != '-' )
+		{
+			while ( char c = *++arg ) switch ( c )
+			{
+			case 'c': flag_c_first_operand_is_command = true; break;
+			case 'e': flag_e_exit_on_error = true; break;
+			case 'i': flag_i_interactive = true; break;
+			case 's': flag_s_stdin = true; break;
+			default:
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
+				help(stderr, argv0);
+				exit(1);
+			}
+		}
+		else if ( !strcmp(arg, "--help") )
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--version") )
+			version(stdout, argv0), exit(0);
+		else
+		{
+			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
+			help(stderr, argv0);
+			exit(1);
+		}
 	}
+
+	compact_arguments(&argc, &argv);
+
 	if ( getenv("SHLVL") )
 	{
 		long shlvl = atol(getenv("SHLVL"));
@@ -1892,6 +1966,7 @@ int main(int argc, char* argv[])
 	{
 		setenv("SHLVL", "1", 1);
 	}
+
 	char pidstr[3 * sizeof(pid_t)];
 	char ppidstr[3 * sizeof(pid_t)];
 	snprintf(pidstr, sizeof(pidstr), "%ji", (intmax_t) getpid());
@@ -1901,11 +1976,84 @@ int main(int argc, char* argv[])
 	setenv("PPID", ppidstr, 1);
 	setenv("?", "0", 1);
 	update_pwd();
-	if ( 2 <= argc && !strcmp(argv[1], "-c") )
-		return run_string(argc, argv, argv[2], exit_on_error);
-	if ( 1 < argc )
-		return run_script(argv[1], argc-1, argv+1, exit_on_error);
-	if ( isatty(0) )
-		return run_interactive(argc, argv, exit_on_error);
-	return run_stdin(argc, argv, exit_on_error);
+
+	setenv("0", argv[0], 1);
+
+	int status = 0;
+
+	if ( flag_c_first_operand_is_command )
+	{
+		if ( argc <= 1 )
+			error(2, 0, "option -c expects an operand");
+
+		for ( int i = 2; i < argc; i++ )
+		{
+			char varname[sizeof(int) * 3];
+			snprintf(varname, sizeof(varname), "%i", i - 2);
+			setenv(varname, argv[i], 1);
+		}
+
+		const char* command = argv[1];
+		size_t command_length = strlen(command);
+
+		FILE* fp = fmemopen((void*) command, command_length, "r");
+		if ( !fp )
+			error(2, errno, "fmemopen");
+
+		status = run(fp, "<command-line>", false, flag_e_exit_on_error);
+
+		fclose(fp);
+
+		if ( status != 0 && flag_e_exit_on_error )
+			exit(status);
+
+		if ( flag_s_stdin )
+		{
+			bool is_interactive = flag_i_interactive || isatty(fileno(stdin));
+			status = run(stdin, "<stdin>", is_interactive, flag_e_exit_on_error);
+			if ( status != 0 && flag_e_exit_on_error )
+				exit(status);
+		}
+	}
+	else if ( flag_s_stdin )
+	{
+		for ( int i = 1; i < argc; i++ )
+		{
+			char varname[sizeof(int) * 3];
+			snprintf(varname, sizeof(varname), "%i", i - 1);
+			setenv(varname, argv[i], 1);
+		}
+
+		bool is_interactive = flag_i_interactive || isatty(fileno(stdin));
+		status = run(stdin, "<stdin>", is_interactive, flag_e_exit_on_error);
+		if ( status != 0 && flag_e_exit_on_error )
+			exit(status);
+	}
+	else if ( 2 <= argc )
+	{
+		for ( int i = 1; i < argc; i++ )
+		{
+			char varname[sizeof(int) * 3];
+			snprintf(varname, sizeof(varname), "%i", i - 1);
+			setenv(varname, argv[i], 1);
+		}
+
+		const char* path = argv[1];
+		FILE* fp = fopen(path, "r");
+		if ( !fp )
+			error(127, errno, "%s", path);
+		status = run(fp, path, false, flag_e_exit_on_error);
+		fclose(fp);
+		if ( status != 0 && flag_e_exit_on_error )
+			exit(status);
+	}
+	else
+	{
+		bool is_interactive = flag_i_interactive || isatty(fileno(stdin));
+		status = run(stdin, "<stdin>", is_interactive, flag_e_exit_on_error);
+		if ( status != 0 && flag_e_exit_on_error )
+			exit(status);
+	}
+
+	return 0;
 }
