@@ -1083,7 +1083,7 @@ bool matches_simple_pattern(const char* string, const char* pattern)
 	              pattern + wildcard_index + 1) == 0;
 }
 
-int runcommandline(const char** tokens, bool* exitexec, bool interactive)
+int runcommandline(const char** tokens, bool* script_exited, bool interactive)
 {
 	int result = 127;
 	size_t cmdnext = 0;
@@ -1240,7 +1240,7 @@ readcmd:
 	if ( strcmp(argv[0], "exit") == 0 )
 	{
 		int exitcode = argv[1] ? atoi(argv[1]) : 0;
-		*exitexec = true;
+		*script_exited = true;
 		return exitcode;
 	}
 	if ( strcmp(argv[0], "unset") == 0 )
@@ -1362,7 +1362,7 @@ out:
 int run_command(char* command,
                 bool interactive,
                 bool exit_on_error,
-                bool* exitexec)
+                bool* script_exited)
 {
 	size_t commandused = strlen(command);
 
@@ -1430,9 +1430,9 @@ int run_command(char* command,
 		return status;
 
 	argv[argc] = NULL;
-	status = runcommandline(argv, exitexec, interactive);
+	status = runcommandline(argv, script_exited, interactive);
 	if ( status && exit_on_error )
-		*exitexec = true;
+		*script_exited = true;
 	return status;
 }
 
@@ -1678,13 +1678,20 @@ size_t do_complete(char*** completions_ptr,
 	return *completions_ptr = completions, num_completions;
 }
 
-int get_and_run_command_interactive(bool exit_on_error, bool* exitexec)
+struct sh_read_command
+{
+	char* command;
+	bool abort_condition;
+	bool eof_condition;
+	bool error_condition;
+};
+
+void read_command_interactive(struct sh_read_command* sh_read_command)
 {
 	update_pwd();
 	update_env();
 
-	static struct edit_line edit_state;
-
+	static struct edit_line edit_state; // static to preserve command history.
 	edit_state.in_fd = 0;
 	edit_state.out_fd = 1;
 	edit_state.check_input_incomplete_context = NULL;
@@ -1726,116 +1733,172 @@ int get_and_run_command_interactive(bool exit_on_error, bool* exitexec)
 
 	edit_line(&edit_state);
 
-	int result = status;
+	free(ps1);
+
+	if ( edit_state.abort_editing )
+	{
+		sh_read_command->abort_condition = true;
+		return;
+	}
 
 	if ( edit_state.eof_condition )
 	{
-		if ( is_outermost_shell() )
-			printf("Type exit to close the outermost shell.\n");
-		else
-			*exitexec = true;
-	}
-	else if ( !edit_state.abort_editing )
-	{
-		char* command = edit_line_result(&edit_state);
-		for ( size_t i = 0; command[i]; i++ )
-			if ( command[i + 0] == '\\' && command[i + 1] == '\n' )
-				command[i + 0] = ' ',
-				command[i + 1] = ' ';
-		result = run_command(command, true, exit_on_error, exitexec);
-		free(command);
+		sh_read_command->eof_condition = true;
+		return;
 	}
 
-	free(ps1);
-
-	return result;
+	char* command = edit_line_result(&edit_state);
+	assert(command);
+	for ( size_t i = 0; command[i]; i++ )
+		if ( command[i + 0] == '\\' && command[i + 1] == '\n' )
+			command[i + 0] = ' ',
+			command[i + 1] = ' ';
+	sh_read_command->command = command;
 }
 
-int get_and_run_command_non_interactive(FILE* fp,
-                                        const char* fpname,
-                                        bool exit_on_error,
-                                        bool* exitexec)
+void read_command_non_interactive(struct sh_read_command* sh_read_command,
+                                  FILE* fp)
 {
 	int fd = fileno(fp);
 
-	static char* command = NULL;
-	static size_t commandlen = 1024;
-	if ( !command )
-		commandlen = 1024,
-		command = (char*) malloc((commandlen+1) * sizeof(char));
+	size_t command_used = 0;
+	size_t command_length = 1024;
+	char* command = (char*) malloc(command_length + 1);
 	if ( !command )
 		error(64, errno, "malloc");
-
 	command[0] = '\0';
 
-	size_t commandused = 0;
 	while ( true )
 	{
 		char c;
-		ssize_t bytesread;
 		if ( 0 <= fd )
-			bytesread = read(fd, &c, sizeof(c));
+		{
+			ssize_t bytes_read = read(fd, &c, sizeof(c));
+			if ( bytes_read < 0 )
+			{
+				sh_read_command->error_condition = true;
+				free(command);
+				return;
+			}
+			else if ( bytes_read == 0 )
+			{
+				if ( command_used == 0 )
+				{
+					sh_read_command->eof_condition = true;
+					free(command);
+					return;
+				}
+				else
+				{
+					c = '\n';
+				}
+			}
+			else
+			{
+				assert(bytes_read == 1);
+				if ( c == '\0' )
+					continue;
+			}
+		}
 		else
 		{
 			int ic = fgetc(fp);
 			if ( ic == EOF && ferror(fp) )
-				bytesread = -1;
+			{
+				sh_read_command->error_condition = true;
+				free(command);
+				return;
+			}
 			else if ( ic == EOF )
-				bytesread = 0;
+			{
+				if ( command_used == 0 )
+				{
+					sh_read_command->eof_condition = true;
+					free(command);
+					return;
+				}
+				else
+				{
+					c = '\n';
+				}
+			}
 			else
-				c = (char) (unsigned char) ic, bytesread = 1;
+			{
+				c = (char) (unsigned char) ic;
+				if ( c == '\0' )
+					continue;
+			}
 		}
-		if ( bytesread < 0 && errno == EINTR )
-			return status;
-		if ( bytesread < 0 )
-			error(64, errno, "read %s", fpname);
-		if ( !bytesread )
-		{
-			if ( commandused )
-				break;
-			*exitexec = true;
-			return status;
-		}
-		if ( !c )
-			continue;
 		if ( c == '\n' && is_shell_input_ready(command) )
 			break;
-		if ( commandused == commandlen )
+		if ( command_used == command_length )
 		{
-			size_t newlen = commandlen * 2;
-			size_t newsize = (newlen+1) * sizeof(char);
-			char* newcommand = (char*) realloc(command, newsize);
-			if ( !newcommand )
+			size_t new_length = command_length * 2;
+			char* new_command = (char*) realloc(command, new_length + 1);
+			if ( !new_command )
 				error(64, errno, "realloc");
-			command = newcommand;
-			commandlen = newsize;
+			command = new_command;
+			command_length  = new_length;
 		}
-		command[commandused++] = c;
-		command[commandused] = '\0';
+		command[command_used++] = c;
+		command[command_used] = '\0';
 	}
 
-	return run_command(command, false, exit_on_error, exitexec);
+	sh_read_command->command = command;
 }
 
-int run(FILE* fp, const char* name, bool interactive, bool exit_on_error)
+int run(FILE* fp,
+        const char* fp_name,
+        bool interactive,
+        bool exit_on_error,
+        bool* script_exited,
+        int status)
 {
 	// TODO: The interactive read code should cope when the input is not a
 	//       terminal; it should print the prompt and then read normally without
 	//       any line editing features.
 	if ( !isatty(fileno(fp)) )
 		interactive = false;
-	bool exitexec = false;
-	int exitstatus;
-	do
+
+	while ( true )
 	{
+		struct sh_read_command sh_read_command;
+		memset(&sh_read_command, 0, sizeof(sh_read_command));
+
 		if ( interactive )
-			exitstatus = get_and_run_command_interactive(exit_on_error, &exitexec);
+			read_command_interactive(&sh_read_command);
 		else
-			exitstatus =
-				get_and_run_command_non_interactive(fp, name, exit_on_error, &exitexec);
+			read_command_non_interactive(&sh_read_command, fp);
+
+		if ( sh_read_command.abort_condition )
+			continue;
+
+		if ( sh_read_command.eof_condition )
+		{
+			if ( interactive && is_outermost_shell() )
+			{
+				printf("Type exit to close the outermost shell.\n");
+				continue;
+			}
+			break;
+		}
+
+		if ( sh_read_command.error_condition )
+		{
+			error(0, errno, "read: %s", fp_name);
+			return *script_exited = true, 2;
+		}
+
+		status = run_command(sh_read_command.command, interactive,
+		                     exit_on_error, script_exited);
+
+		free(sh_read_command.command);
+
+		if ( *script_exited || (status == 0 && exit_on_error) )
+			break;
 	}
-	while ( !exitexec );
-	return exitstatus;
+
+	return status;
 }
 
 void compact_arguments(int* argc, char*** argv)
@@ -1979,6 +2042,7 @@ int main(int argc, char* argv[])
 
 	setenv("0", argv[0], 1);
 
+	bool script_exited = false;
 	int status = 0;
 
 	if ( flag_c_first_operand_is_command )
@@ -2000,18 +2064,20 @@ int main(int argc, char* argv[])
 		if ( !fp )
 			error(2, errno, "fmemopen");
 
-		status = run(fp, "<command-line>", false, flag_e_exit_on_error);
+		status = run(fp, "<command-line>", false, flag_e_exit_on_error,
+		             &script_exited, status);
 
 		fclose(fp);
 
-		if ( status != 0 && flag_e_exit_on_error )
+		if ( script_exited || (status != 0 && flag_e_exit_on_error) )
 			exit(status);
 
 		if ( flag_s_stdin )
 		{
 			bool is_interactive = flag_i_interactive || isatty(fileno(stdin));
-			status = run(stdin, "<stdin>", is_interactive, flag_e_exit_on_error);
-			if ( status != 0 && flag_e_exit_on_error )
+			status = run(stdin, "<stdin>", is_interactive, flag_e_exit_on_error,
+			             &script_exited, status);
+			if ( script_exited || (status != 0 && flag_e_exit_on_error) )
 				exit(status);
 		}
 	}
@@ -2025,8 +2091,9 @@ int main(int argc, char* argv[])
 		}
 
 		bool is_interactive = flag_i_interactive || isatty(fileno(stdin));
-		status = run(stdin, "<stdin>", is_interactive, flag_e_exit_on_error);
-		if ( status != 0 && flag_e_exit_on_error )
+		status = run(stdin, "<stdin>", is_interactive, flag_e_exit_on_error,
+		             &script_exited, status);
+		if ( script_exited || (status != 0 && flag_e_exit_on_error) )
 			exit(status);
 	}
 	else if ( 2 <= argc )
@@ -2042,16 +2109,18 @@ int main(int argc, char* argv[])
 		FILE* fp = fopen(path, "r");
 		if ( !fp )
 			error(127, errno, "%s", path);
-		status = run(fp, path, false, flag_e_exit_on_error);
+		status = run(fp, path, false, flag_e_exit_on_error, &script_exited,
+		             status);
 		fclose(fp);
-		if ( status != 0 && flag_e_exit_on_error )
+		if ( script_exited || (status != 0 && flag_e_exit_on_error) )
 			exit(status);
 	}
 	else
 	{
 		bool is_interactive = flag_i_interactive || isatty(fileno(stdin));
-		status = run(stdin, "<stdin>", is_interactive, flag_e_exit_on_error);
-		if ( status != 0 && flag_e_exit_on_error )
+		status = run(stdin, "<stdin>", is_interactive, flag_e_exit_on_error,
+		             &script_exited, status);
+		if ( script_exited || (status != 0 && flag_e_exit_on_error) )
 			exit(status);
 	}
 
