@@ -1083,6 +1083,126 @@ bool matches_simple_pattern(const char* string, const char* pattern)
 	              pattern + wildcard_index + 1) == 0;
 }
 
+enum sh_tokenize_result
+{
+	SH_TOKENIZE_RESULT_OK,
+	SH_TOKENIZE_RESULT_PARTIAL,
+	SH_TOKENIZE_RESULT_INVALID,
+	SH_TOKENIZE_RESULT_ERROR,
+};
+
+enum sh_tokenize_result sh_tokenize(const char* command,
+                                    char*** tokens_ptr,
+                                    size_t* tokens_used_ptr,
+                                    size_t* tokens_length_ptr)
+{
+	enum sh_tokenize_result result = SH_TOKENIZE_RESULT_OK;
+
+	char** tokens = NULL;
+	size_t tokens_used = 0;
+	size_t tokens_length = 0;
+
+	size_t command_index = 0;
+	while ( true )
+	{
+		if ( command[command_index] == '\0' )
+			break;
+
+		if ( isspace((unsigned char) command[command_index]) )
+		{
+			command_index++;
+			continue;
+		}
+
+		if ( command[command_index] == '#' )
+		{
+			while ( command[command_index] != '\0' &&
+			        command[command_index] != '\n' )
+				command_index++;
+			continue;
+		}
+
+		size_t token_start = command_index;
+		bool escaped = false;
+		bool stop = false;
+		while ( true )
+		{
+			if ( command[command_index] == '\0' )
+			{
+				if ( escaped )
+					result = SH_TOKENIZE_RESULT_PARTIAL;
+				stop = true;
+				break;
+			}
+			else if ( !escaped && command[command_index] == '\\' )
+			{
+				escaped = true;
+				command_index++;
+			}
+			else if ( !escaped && isspace((unsigned char) command[command_index]) )
+			{
+				break;
+			}
+			else
+			{
+				command_index++;
+				escaped = false;
+			}
+		}
+
+		if ( tokens_used == tokens_length )
+		{
+			size_t new_length = tokens_length ? 2 * tokens_length : 16;
+			size_t new_size = new_length * sizeof(char*);
+			char** new_tokens = (char**) realloc(tokens, new_size);
+			if ( !new_tokens )
+			{
+				result = SH_TOKENIZE_RESULT_ERROR;
+				break;
+			}
+			tokens_length = new_length;
+			tokens = new_tokens;
+		}
+
+		size_t token_length = command_index - token_start;
+		char* token = strndup(command + token_start, token_length);
+		if ( !token )
+		{
+			result = SH_TOKENIZE_RESULT_ERROR;
+			break;
+		}
+
+		tokens[tokens_used++] = token;
+
+		if ( stop )
+			break;
+	}
+
+	*tokens_ptr = tokens;
+	*tokens_used_ptr = tokens_used;
+	*tokens_length_ptr = tokens_length;
+
+	return result;
+}
+
+bool is_shell_input_ready(const char* input)
+{
+	char** tokens = NULL;
+	size_t tokens_used = 0;
+	size_t tokens_length = 0;
+
+	enum sh_tokenize_result tokenize_result =
+		sh_tokenize(input, &tokens, &tokens_used, &tokens_length);
+
+	bool result = tokenize_result == SH_TOKENIZE_RESULT_OK;
+
+	for ( size_t i = 0; i < tokens_used; i++ )
+		free(tokens[i]);
+	free(tokens);
+
+	return result;
+}
+
 int runcommandline(const char** tokens, bool* script_exited, bool interactive)
 {
 	int result = 127;
@@ -1434,22 +1554,6 @@ int run_command(char* command,
 	if ( status && exit_on_error )
 		*script_exited = true;
 	return status;
-}
-
-bool is_shell_input_ready(const char* input)
-{
-	bool commented = false;
-	bool escaped = false;
-	for ( size_t i = 0; input[i]; i++ )
-	{
-		if ( !commented && !escaped && input[i] == '\\' )
-			escaped = true;
-		else if ( !commented && !escaped && input[i] == '#' )
-			commented = true;
-		else if ( !commented )
-			escaped = false;
-	}
-	return !escaped;
 }
 
 bool does_line_editing_need_another_line(void*, const char* line)
