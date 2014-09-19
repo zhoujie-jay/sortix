@@ -46,6 +46,22 @@ thereof as it has been customized to understand Sortix and provide a number of
 useful extensions. You may need to occasionally upgrade the toolchain, in the
 event that it is further modified and Sortix takes advantage of these changes.
 
+Variables
+---------
+
+This guide uses shell variables to denote where you have choice. You would
+typically decide to set them up somewhat like this:
+
+  # The Sortix source code is in /home/user/sortix
+  # The cross-compiler is installed in /home/user/opt/x86_64-sortix
+
+  SORTIX_PLATFORM=x86_64-sortix
+  CROSS_PREFIX=/home/user/opt/x86_64-sortix
+  SYSROOT=/home/user/sortix/sysroot
+  export PATH="/home/user/opt/x86_64-sortix/bin:$PATH"
+
+The following sections describe these variables in detail.
+
 Target Platform
 ---------------
 
