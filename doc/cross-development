@@ -97,7 +97,8 @@ commands:
 
   cd ~/sortix &&
   make PREFIX="$CROSS_PREFIX" build-tools &&
-  make PREFIX="$CROSS_PREFIX" install-build-tools
+  make PREFIX="$CROSS_PREFIX" install-build-tools &&
+  make distclean
 
 These tools produce platform independent output so you may wish to install them
 into $HOME/bin or /usr/local/bin or where it suits you in your $PATH.
@@ -188,16 +189,33 @@ completed the above steps correctly, then you can simply do:
 
 This will compile a basic Sortix system into ~/sortix/sysroot with a kernel,
 headers, libraries, programs, everything you need. This isn't a bootable system
-yet. If you have xorriso and grub-mkrescue from GRUB 2 installed, then you can
+yet. You need the combination of a kernel and an initrd to boot Sortix. The
+initrd is a root filesystem entirely in memory that is loaded by the bootloader
+in addition to the kernel. You can generate the initrd in builds/ by running:
+
+  cd ~/sortix &&
+  make HOST=$SORTIX_PLATFORM initrd
+
+If you want a copy of the kernel and initrd in the current directory (rather
+than normally finding them in builds/ and sysroot/), you can run:
+
+  cd ~/sortix &&
+  make HOST=$SORTIX_PLATFORM sortix.bin sortix.initrd
+
+You now have a sortix.bin and sortix.initrd pair. You can boot Sortix using a
+multiboot bootloader by passing them as a multiboot kernel and multiboot
+module/initrd.
+
+If you have xorriso and grub-mkrescue from GRUB 2 installed, then you can
 can build a bootable .iso by typing:
 
   cd ~/sortix &&
   make HOST=$SORTIX_PLATFORM sortix.iso
 
-This will produce a ~/sortix/sortix.iso file that is bootable on real hardware
-and virtual machines. Alternatively, you can take the sortix.bin file and boot
-that with GRUB as a multiboot kernel and sortix.initrd (snapshot of the sysroot)
-as a multiboot module/initrd.
+This will produce a sortix.iso file that is bootable on real hardware and
+virtual machines. This works by first building Sortix system and packaging up an
+initrd, then it create a cdrom image with a bootloader configured to load the
+kernel and initrd stored on the cdrom.
 
 You can clean the source directory fully:
 
