@@ -17,29 +17,30 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    unistd/getcwd.cpp
+    unistd/get_current_dir_name.cpp
     Returns the current working directory.
 
 *******************************************************************************/
+
+#include <sys/stat.h>
 
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-extern "C" char* getcwd(char* buf, size_t size)
+// TODO: This interface should removed as its $PWD use is not thread safe.
+extern "C" char* get_current_dir_name(void)
 {
-	char* cwd = canonicalize_file_name(".");
-	if ( !cwd )
-		return NULL;
-	if ( !buf )
-		return cwd;
-	if ( size <= strlcpy(buf, cwd, size) )
+	const char* pwd = getenv("PWD");
+	int saved_errno = errno;
+	struct stat pwd_st;
+	struct stat cur_st;
+	if ( pwd && pwd[0] && stat(pwd, &pwd_st) == 0 && stat(".", &cur_st) == 0 )
 	{
-		free(cwd);
-		errno = ERANGE;
-		return NULL;
+		if ( cur_st.st_dev == pwd_st.st_dev && cur_st.st_ino == pwd_st.st_ino )
+			return strdup(pwd);
 	}
-	free(cwd);
-	return buf;
+	errno = saved_errno;
+	return canonicalize_file_name(".");
 }
