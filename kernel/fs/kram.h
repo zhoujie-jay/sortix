@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -82,11 +82,11 @@ private:
 	void RemoveChild(size_t index);
 
 private:
-	kthread_mutex_t dirlock;
-	size_t numchildren;
-	size_t childrenlen;
+	kthread_mutex_t dir_lock;
+	size_t children_used;
+	size_t children_length;
 	DirEntry* children;
-	bool shutdown;
+	bool shut_down;
 
 };
 

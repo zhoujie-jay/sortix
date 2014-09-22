@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
 
     This file is part of Sortix.
 
@@ -113,17 +113,17 @@ Dir::Dir(dev_t dev, ino_t ino, uid_t owner, gid_t group, mode_t mode)
 		dev = (dev_t) this;
 	if ( !ino )
 		ino = (ino_t) this;
-	dirlock = KTHREAD_MUTEX_INITIALIZER;
+	dir_lock = KTHREAD_MUTEX_INITIALIZER;
 	this->stat_gid = owner;
 	this->stat_gid = group;
 	this->type = S_IFDIR;
 	this->stat_mode = (mode & S_SETABLE) | this->type;
 	this->dev = dev;
 	this->ino = ino;
-	numchildren = 0;
-	childrenlen = 0;
+	children_used = 0;
+	children_length = 0;
 	children = NULL;
-	shutdown = false;
+	shut_down = false;
 }
 
 Dir::~Dir()
@@ -131,15 +131,15 @@ Dir::~Dir()
 	// We must not be deleted or garbage collected if we are still used by
 	// someone. In that case the deleter should either delete our children or
 	// simply forget about us.
-	assert(!numchildren);
+	assert(!children_used);
 	delete[] children;
 }
 
 ssize_t Dir::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
                          size_t size, off_t start, size_t /*maxcount*/)
 {
-	ScopedLock lock(&dirlock);
-	if ( numchildren <= (uintmax_t) start )
+	ScopedLock lock(&dir_lock);
+	if ( children_used <= (uintmax_t) start )
 		return 0;
 	struct kernel_dirent retdirent;
 	memset(&retdirent, 0, sizeof(retdirent));
@@ -172,7 +172,7 @@ ssize_t Dir::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 
 size_t Dir::FindChild(const char* filename)
 {
-	for ( size_t i = 0; i < numchildren; i++ )
+	for ( size_t i = 0; i < children_used; i++ )
 		if ( !strcmp(filename, children[i].name) )
 			return i;
 	return SIZE_MAX;
@@ -180,52 +180,57 @@ size_t Dir::FindChild(const char* filename)
 
 bool Dir::AddChild(const char* filename, Ref<Inode> inode)
 {
-	if ( numchildren == childrenlen )
+	if ( children_used == children_length )
 	{
-		size_t newchildrenlen = childrenlen ? 2 * childrenlen : 4;
-		DirEntry* newchildren = new DirEntry[newchildrenlen];
-		if ( !newchildren )
+		size_t new_children_length = children_length ? 2 * children_length : 4;
+		DirEntry* new_children = new DirEntry[new_children_length];
+		if ( !new_children )
 			return false;
-		for ( size_t i = 0; i < numchildren; i++ )
-			newchildren[i].inode = children[i].inode,
-			newchildren[i].name = children[i].name;
-		delete[] children; children = newchildren;
-		childrenlen = newchildrenlen;
+		for ( size_t i = 0; i < children_used; i++ )
+		{
+			new_children[i].inode = children[i].inode;
+			new_children[i].name = children[i].name;
+			children[i].inode.Reset();
+		}
+		delete[] children; children = new_children;
+		children_length = new_children_length;
 	}
-	char* filenamecopy = String::Clone(filename);
-	if ( !filenamecopy )
+	char* filename_copy = String::Clone(filename);
+	if ( !filename_copy )
 		return false;
 	inode->linked();
-	DirEntry* dirent = children + numchildren++;
+	DirEntry* dirent = &children[children_used++];
 	dirent->inode = inode;
-	dirent->name = filenamecopy;
+	dirent->name = filename_copy;
 	return true;
 }
 
 void Dir::RemoveChild(size_t index)
 {
-	assert(index < numchildren);
-	if ( index != numchildren-1 )
+	assert(index < children_used);
+	if ( index != children_used-1 )
 	{
 		DirEntry tmp = children[index];
-		children[index] = children[numchildren-1];
-		children[numchildren-1] = tmp;
-		index = numchildren-1;
+		children[index] = children[children_used-1];
+		children[children_used-1] = tmp;
+		index = children_used-1;
 	}
 	children[index].inode.Reset();
 	delete[] children[index].name;
-	numchildren--;
+	children_used--;
 }
 
 Ref<Inode> Dir::open(ioctx_t* ctx, const char* filename, int flags, mode_t mode)
 {
-	ScopedLock lock(&dirlock);
-	if ( shutdown ) { errno = ENOENT; return Ref<Inode>(NULL); }
-	size_t childindex = FindChild(filename);
-	if ( childindex != SIZE_MAX )
+	ScopedLock lock(&dir_lock);
+	if ( shut_down )
+		return errno = ENOENT, Ref<Inode>(NULL);
+	size_t child_index = FindChild(filename);
+	if ( child_index != SIZE_MAX )
 	{
-		if ( flags & O_EXCL ) { errno = EEXIST; return Ref<Inode>(NULL); }
-		return children[childindex].inode;
+		if ( flags & O_EXCL )
+			return errno = EEXIST, Ref<Inode>(NULL);
+		return children[child_index].inode;
 	}
 	if ( !(flags & O_CREATE) )
 		return errno = ENOENT, Ref<Inode>(NULL);
@@ -239,10 +244,12 @@ Ref<Inode> Dir::open(ioctx_t* ctx, const char* filename, int flags, mode_t mode)
 
 int Dir::mkdir(ioctx_t* ctx, const char* filename, mode_t mode)
 {
-	ScopedLock lock(&dirlock);
-	if ( shutdown ) { errno = ENOENT; return -1; }
-	size_t childindex = FindChild(filename);
-	if ( childindex != SIZE_MAX ) { errno = EEXIST; return -1; }
+	ScopedLock lock(&dir_lock);
+	if ( shut_down )
+		return errno = ENOENT, -1;
+	size_t child_index = FindChild(filename);
+	if ( child_index != SIZE_MAX )
+		return errno = EEXIST, -1;
 	Ref<Dir> dir(new Dir(dev, 0, ctx->uid, ctx->gid, mode));
 	if ( !dir )
 		goto cleanup_done;
@@ -263,100 +270,114 @@ cleanup_done:
 
 int Dir::rmdir(ioctx_t* ctx, const char* filename)
 {
-	if ( IsDotOrDotDot(filename) ) { errno = ENOTEMPTY; return -1; }
-	ScopedLock lock(&dirlock);
-	if ( shutdown ) { errno = ENOENT; return -1; }
-	size_t childindex = FindChild(filename);
-	if ( childindex == SIZE_MAX ) { errno = ENOENT; return -1; }
-	Inode* child = children[childindex].inode.Get();
-	if ( !S_ISDIR(child->type) ) { errno = ENOTDIR; return -1; }
-	if ( child->rmdir_me(ctx) < 0 ) { return -1; }
-	RemoveChild(childindex);
+	if ( IsDotOrDotDot(filename) )
+		return errno = ENOTEMPTY, -1;
+	ScopedLock lock(&dir_lock);
+	if ( shut_down )
+		return errno = ENOENT, -1;
+	size_t child_index = FindChild(filename);
+	if ( child_index == SIZE_MAX )
+		return errno = ENOENT, -1;
+	Inode* child = children[child_index].inode.Get();
+	if ( !S_ISDIR(child->type) )
+		return errno = ENOTDIR, -1;
+	if ( child->rmdir_me(ctx) < 0 )
+		return -1;
+	RemoveChild(child_index);
 	return 0;
 }
 
 int Dir::rmdir_me(ioctx_t* /*ctx*/)
 {
-	ScopedLock lock(&dirlock);
-	if ( shutdown ) { errno = ENOENT; return -1; }
-	for ( size_t i = 0; i < numchildren; i++ )
+	ScopedLock lock(&dir_lock);
+	if ( shut_down )
+		return errno = ENOENT, -1;
+	for ( size_t i = 0; i < children_used; i++ )
 		if ( !IsDotOrDotDot(children[i].name) )
 			return errno = ENOTEMPTY, -1;
-	shutdown = true;
-	for ( size_t i = 0; i < numchildren; i++ )
+	shut_down = true;
+	for ( size_t i = 0; i < children_used; i++ )
 	{
 		children[i].inode->unlinked();
 		children[i].inode.Reset();
 		delete[] children[i].name;
 	}
 	delete[] children; children = NULL;
-	numchildren = childrenlen = 0;
+	children_used = children_length = 0;
 	return 0;
 }
 
 int Dir::link(ioctx_t* /*ctx*/, const char* filename, Ref<Inode> node)
 {
-	if ( S_ISDIR(node->type) ) { errno = EPERM; return -1; }
+	if ( S_ISDIR(node->type) )
+		return errno = EPERM, -1;
 	// TODO: Is this needed? This may protect against file descriptors to
 	// deleted directories being used to corrupt kernel state, or something.
-	if ( IsDotOrDotDot(filename) ) { errno = EEXIST; return -1; }
-	if ( node->dev != dev ) { errno = EXDEV; return -1; }
-	ScopedLock lock(&dirlock);
-	if ( shutdown ) { errno = ENOENT; return -1; }
-	size_t childindex = FindChild(filename);
-	if ( childindex != SIZE_MAX )
-	{
-		errno = EEXIST;
+	if ( IsDotOrDotDot(filename) )
+		return errno = EEXIST, -1;
+	if ( node->dev != dev )
+		return errno = EXDEV, -1;
+	ScopedLock lock(&dir_lock);
+	if ( shut_down )
+		return errno = ENOENT, -1;
+	size_t child_index = FindChild(filename);
+	if ( child_index != SIZE_MAX )
+		return errno = EEXIST, -1;
+	if ( !AddChild(filename, node) )
 		return -1;
-	}
-	else
-		if ( !AddChild(filename, node) )
-			return -1;
 	return 0;
 }
 
 int Dir::link_raw(ioctx_t* /*ctx*/, const char* filename, Ref<Inode> node)
 {
-	if ( node->dev != dev ) { errno = EXDEV; return -1; }
-	ScopedLock lock(&dirlock);
-	size_t childindex = FindChild(filename);
-	if ( childindex != SIZE_MAX )
+	if ( node->dev != dev )
+		return errno = EXDEV, -1;
+	ScopedLock lock(&dir_lock);
+	size_t child_index = FindChild(filename);
+	if ( child_index != SIZE_MAX )
 	{
-		children[childindex].inode->unlinked();
-		children[childindex].inode = node;
-		children[childindex].inode->linked();
+		children[child_index].inode->unlinked();
+		children[child_index].inode = node;
+		children[child_index].inode->linked();
 	}
 	else
+	{
 		if ( !AddChild(filename, node) )
 			return -1;
+	}
 	return 0;
 }
 
 int Dir::unlink(ioctx_t* /*ctx*/, const char* filename)
 {
-	ScopedLock lock(&dirlock);
-	if ( shutdown ) { errno = ENOENT; return -1; }
-	size_t childindex = FindChild(filename);
-	if ( childindex == SIZE_MAX ) { errno = ENOENT; return -1; }
-	Inode* child = children[childindex].inode.Get();
-	if ( S_ISDIR(child->type) ) { errno = EISDIR; return -1; }
-	RemoveChild(childindex);
+	ScopedLock lock(&dir_lock);
+	if ( shut_down )
+		return errno = ENOENT, -1;
+	size_t child_index = FindChild(filename);
+	if ( child_index == SIZE_MAX )
+		return errno = ENOENT, -1;
+	Inode* child = children[child_index].inode.Get();
+	if ( S_ISDIR(child->type) )
+		return errno = EISDIR, -1;
+	RemoveChild(child_index);
 	return 0;
 }
 
 int Dir::unlink_raw(ioctx_t* /*ctx*/, const char* filename)
 {
-	ScopedLock lock(&dirlock);
-	size_t childindex = FindChild(filename);
-	if ( childindex == SIZE_MAX ) { errno = ENOENT; return -1; }
-	RemoveChild(childindex);
+	ScopedLock lock(&dir_lock);
+	size_t child_index = FindChild(filename);
+	if ( child_index == SIZE_MAX )
+		return errno = ENOENT, -1;
+	RemoveChild(child_index);
 	return 0;
 }
 
 int Dir::symlink(ioctx_t* /*ctx*/, const char* oldname, const char* filename)
 {
-	ScopedLock lock(&dirlock);
-	if ( shutdown ) { errno = ENOENT; return -1; }
+	ScopedLock lock(&dir_lock);
+	if ( shut_down )
+		return errno = ENOENT, -1;
 	(void) oldname;
 	(void) filename;
 	errno = ENOSYS;
@@ -376,18 +397,22 @@ int Dir::rename_here(ioctx_t* ctx, Ref<Inode> from, const char* oldname,
 	kthread_mutex_t* mutex_ptr1;
 	kthread_mutex_t* mutex_ptr2;
 	if ( from_dir->ino < this->ino )
-		mutex_ptr1 = &from_dir->dirlock,
-		mutex_ptr2 = &this->dirlock;
+	{
+		mutex_ptr1 = &from_dir->dir_lock;
+		mutex_ptr2 = &this->dir_lock;
+	}
 	else if ( from_dir->ino == this->ino )
 	{
-		mutex_ptr1 = &this->dirlock,
+		mutex_ptr1 = &this->dir_lock,
 		mutex_ptr2 = NULL;
 		if ( !strcmp(oldname, newname) )
 			return 0;
 	}
 	else
-		mutex_ptr1 = &this->dirlock,
-		mutex_ptr2 = &from_dir->dirlock;
+	{
+		mutex_ptr1 = &this->dir_lock;
+		mutex_ptr2 = &from_dir->dir_lock;
+	}
 	ScopedLock lock1(mutex_ptr1);
 	ScopedLock lock2(mutex_ptr2);
 
@@ -411,16 +436,18 @@ int Dir::rename_here(ioctx_t* ctx, Ref<Inode> from, const char* oldname,
 			Dir* existing_dir = (Dir*) existing.Get();
 			if ( !S_ISDIR(the_inode->type) )
 				return errno = EISDIR, -1;
-			assert(&existing_dir->dirlock != mutex_ptr1);
-			assert(&existing_dir->dirlock != mutex_ptr2);
+			assert(&existing_dir->dir_lock != mutex_ptr1);
+			assert(&existing_dir->dir_lock != mutex_ptr2);
 			if ( existing_dir->rmdir_me(ctx) != 0 )
 				return -1;
 		}
 		this->children[to_index].inode = the_inode;
 	}
 	else
+	{
 		if ( !this->AddChild(newname, the_inode) )
 			return -1;
+	}
 
 	from_dir->RemoveChild(from_index);
 
