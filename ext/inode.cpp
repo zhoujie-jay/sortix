@@ -31,6 +31,7 @@
 #include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 
@@ -289,6 +290,12 @@ bool Inode::FreeIndirect(uint64_t from, uint64_t offset, uint32_t block_id,
 
 void Inode::Truncate(uint64_t new_size)
 {
+	if ( 0 < Size() && Size() <= 60 && !data->i_blocks )
+	{
+		fprintf(stderr, "extfs: Truncating optimized symlinks is not implemented!\n");
+		return;
+	}
+
 	// TODO: Enforce a filesize limit!
 	uint64_t old_size = Size();
 	SetSize(new_size);
@@ -638,7 +645,7 @@ Inode* Inode::Unlink(const char* elem, bool directories, bool force)
 
 ssize_t Inode::ReadAt(uint8_t* buf, size_t s_count, off_t o_offset)
 {
-	if ( !EXT2_S_ISREG(Mode()) )
+	if ( !EXT2_S_ISREG(Mode()) && !EXT2_S_ISLNK(Mode()) )
 		return errno = EISDIR, -1;
 	if ( o_offset < 0 )
 		return errno = EINVAL, -1;
@@ -652,6 +659,15 @@ ssize_t Inode::ReadAt(uint8_t* buf, size_t s_count, off_t o_offset)
 		return 0;
 	if ( file_size - offset < count )
 		count = file_size - offset;
+	// TODO: This case also needs to be handled in SetSize, Truncate, WriteAt,
+	//       and so on.
+	if ( 0 < file_size && file_size <= 60 && !data->i_blocks )
+	{
+		assert(count <= 60);
+		unsigned char* block_data = (unsigned char*) &(data->i_block[0]);
+		memcpy(buf, block_data + offset, count);
+		return (ssize_t) count;
+	}
 	while ( sofar < count )
 	{
 		uint64_t block_id = offset / filesystem->block_size;
@@ -671,7 +687,7 @@ ssize_t Inode::ReadAt(uint8_t* buf, size_t s_count, off_t o_offset)
 
 ssize_t Inode::WriteAt(const uint8_t* buf, size_t s_count, off_t o_offset)
 {
-	if ( !EXT2_S_ISREG(Mode()) )
+	if ( !EXT2_S_ISREG(Mode()) && !EXT2_S_ISLNK(Mode()) )
 		return errno = EISDIR, -1;
 	if ( o_offset < 0 )
 		return errno = EINVAL, -1;
@@ -684,6 +700,11 @@ ssize_t Inode::WriteAt(const uint8_t* buf, size_t s_count, off_t o_offset)
 	uint64_t end_at = offset + count;
 	if ( offset < end_at )
 		/* TODO: Overflow! off_t overflow? */{};
+	if ( 0 < file_size && file_size <= 60 && !data->i_blocks )
+	{
+		fprintf(stderr, "extfs: Writing to optimized symlinks is not implemented!\n");
+		return errno = EROFS, -1;
+	}
 	if ( file_size < end_at )
 		Truncate(end_at);
 	while ( sofar < count )
@@ -744,6 +765,44 @@ bool Inode::Rename(Inode* olddir, const char* oldname, const char* newname)
 	return true;
 }
 
+bool Inode::Symlink(const char* elem, const char* dest)
+{
+	// TODO: Preferred block group!
+	uint32_t result_inode_id = filesystem->AllocateInode();
+	if ( !result_inode_id )
+		return NULL;
+
+	Inode* result = filesystem->GetInode(result_inode_id);
+	memset(result->data, 0, sizeof(*result->data));
+	result->SetMode((0777 & S_SETABLE) | EXT2_S_IFLNK);
+
+	struct timespec now;
+	clock_gettime(CLOCK_REALTIME, &now);
+	result->data->i_atime = now.tv_sec;
+	result->data->i_ctime = now.tv_sec;
+	result->data->i_mtime = now.tv_sec;
+	// TODO: Set all the other inode properties!
+
+	if ( result->WriteAt((const uint8_t*) dest, strlen(dest), 0) < 0 )
+	{
+	error:
+		memset(result->data, 0, sizeof(*result->data));
+		// TODO: dtime
+		result->Unref();
+		filesystem->FreeInode(result_inode_id);
+		return false;
+	}
+
+	if ( !Link(elem, result, false) )
+	{
+		result->Truncate(0);
+		goto error;
+	}
+
+	result->Unref();
+	return true;
+}
+
 Inode* Inode::CreateDirectory(const char* path, mode_t mode)
 {
 	// TODO: Preferred block group!
@@ -753,7 +812,7 @@ Inode* Inode::CreateDirectory(const char* path, mode_t mode)
 
 	Inode* result = filesystem->GetInode(result_inode_id);
 	memset(result->data, 0, sizeof(*result->data));
-	result->SetMode((mode & S_SETABLE) | S_IFDIR);
+	result->SetMode((mode & S_SETABLE) | EXT2_S_IFDIR);
 
 	// Increase the directory count statistics.
 	uint32_t group_id = (result->inode_id - 1) / filesystem->sb->s_inodes_per_group;

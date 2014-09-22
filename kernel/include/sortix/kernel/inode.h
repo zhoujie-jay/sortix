@@ -122,6 +122,7 @@ enum InodeType
 	INODE_TYPE_STREAM,
 	INODE_TYPE_TTY,
 	INODE_TYPE_DIR,
+	INODE_TYPE_SYMLINK,
 };
 
 class AbstractInode : public Inode

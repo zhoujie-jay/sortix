@@ -202,6 +202,14 @@ bool RespondRead(int svr, int chl, const uint8_t* buf, size_t count)
 	       RespondData(svr, chl, buf, count);
 }
 
+bool RespondReadlink(int svr, int chl, const uint8_t* buf, size_t count)
+{
+	struct fsm_resp_readlink body;
+	body.targetlen = count;
+	return RespondMessage(svr, chl, FSM_RESP_READLINK, &body, sizeof(body)) &&
+	       RespondData(svr, chl, buf, count);
+}
+
 bool RespondWrite(int svr, int chl, size_t count)
 {
 	struct fsm_resp_write body;
@@ -577,6 +585,59 @@ void HandleLink(int svr, int chl, struct fsm_req_link* msg, Filesystem* fs)
 	inode->Unref();
 }
 
+void HandleSymlink(int svr, int chl, struct fsm_req_symlink* msg, Filesystem* fs)
+{
+	if ( fs->num_inodes <= msg->dirino ) { RespondError(svr, chl, EBADF); return; }
+	Inode* inode = fs->GetInode((uint32_t) msg->dirino);
+	if ( !inode ) { RespondError(svr, chl, errno); return; }
+
+	char* dest_raw = (char*) &(msg[1]);
+	char* dest = (char*) malloc(msg->targetlen + 1);
+	if ( !dest )
+	{
+		RespondError(svr, chl, errno);
+		inode->Unref();
+		return;
+	}
+	memcpy(dest, dest_raw, msg->namelen);
+	dest[msg->targetlen] = '\0';
+
+	char* path_raw = (char*) dest_raw + msg->targetlen;
+	char* path = (char*) malloc(msg->namelen + 1);
+	if ( !path )
+	{
+		RespondError(svr, chl, errno);
+		inode->Unref();
+		return;
+	}
+	memcpy(path, path_raw, msg->namelen);
+	path[msg->namelen] = '\0';
+
+	if ( inode->Symlink(path, dest) )
+		RespondSuccess(svr, chl);
+	else
+		RespondError(svr, chl, errno);
+
+	free(path);
+	free(dest);
+	inode->Unref();
+}
+
+void HandleReadlink(int svr, int chl, struct fsm_req_readlink* msg, Filesystem* fs)
+{
+	if ( fs->num_inodes <= msg->ino ) { RespondError(svr, chl, EBADF); return; }
+	Inode* inode = fs->GetInode((uint32_t) msg->ino);
+	if ( !inode ) { RespondError(svr, chl, errno); return; }
+	if ( !EXT2_S_ISLNK(inode->Mode()) ) { RespondError(svr, chl, EINVAL); return; }
+	size_t count = inode->Size();
+	uint8_t* buf = (uint8_t*) malloc(count);
+	if ( !buf ) { inode->Unref(); RespondError(svr, chl, errno); return; }
+	ssize_t amount = inode->ReadAt(buf, count, 0);
+	RespondReadlink(svr, chl, buf, amount);
+	inode->Unref();
+	free(buf);
+}
+
 void HandleRename(int svr, int chl, struct fsm_req_rename* msg, Filesystem* fs)
 {
 	if ( fs->num_inodes <= msg->olddirino ) { RespondError(svr, chl, EBADF); return; }
@@ -629,6 +690,8 @@ void HandleIncomingMessage(int svr, int chl, struct fsm_msg_header* hdr,
 	handlers[FSM_REQ_RMDIR] = (handler_t) HandleRemoveDir;
 	handlers[FSM_REQ_UNLINK] = (handler_t) HandleUnlink;
 	handlers[FSM_REQ_LINK] = (handler_t) HandleLink;
+	handlers[FSM_REQ_SYMLINK] = (handler_t) HandleSymlink;
+	handlers[FSM_REQ_READLINK] = (handler_t) HandleReadlink;
 	handlers[FSM_REQ_RENAME] = (handler_t) HandleRename;
 	// TODO: symlink
 	// TODO: readlink

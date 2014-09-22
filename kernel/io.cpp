@@ -182,7 +182,7 @@ static int sys_openat(int dirfd, const char* path, int flags, mode_t mode)
 // TODO: This is a hack! Stat the file in some manner and check permissions.
 static int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
 {
-	if ( flags & (AT_SYMLINK_NOFOLLOW) )
+	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
 		return errno = EINVAL, -1;
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
@@ -567,31 +567,25 @@ static int sys_symlinkat(const char* oldpath, int newdirfd, const char* newpath)
 {
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
 
-	char* newpathcopy = GetStringFromUser(newpath);
-	if ( !newpathcopy )
+	char* newpath_copy = GetStringFromUser(newpath);
+	if ( !newpath_copy )
 		return -1;
-	const char* newrelpath = newpathcopy;
-	Ref<Descriptor> newfrom(PrepareLookup(&newrelpath, newdirfd));
-	if ( !newfrom ) { delete[] newpathcopy; return -1; }
+	char* oldpath_copy = GetStringFromUser(oldpath);
+	if ( !oldpath_copy )
+		return delete[] newpath_copy, -1;
 
-	char* final_elem;
-	Ref<Descriptor> dir = OpenDirContainingPath(&ctx, newfrom, newpathcopy,
-	                                            &final_elem);
-	delete[] newpathcopy;
-	if ( !dir )
-		return -1;
+	const char* newrel_path = newpath_copy;
+	Ref<Descriptor> newfrom(PrepareLookup(&newrel_path, newdirfd));
+	if ( !newfrom )
+		return delete[] newpath_copy, -1;
 
-	char* oldpathcopy = GetStringFromUser(oldpath);
-	if ( !oldpathcopy ) { delete[] final_elem; return -1; }
+	int ret = newfrom->symlink(&ctx, oldpath, newrel_path);
 
-	int ret = (errno = EPERM, -1);
-
-	delete[] oldpathcopy;
-	delete[] final_elem;
+	delete[] oldpath_copy;
+	delete[] newpath_copy;
 
 	return ret;
 }
-
 
 static int sys_settermmode(int fd, unsigned mode)
 {
@@ -698,8 +692,7 @@ static ssize_t sys_readlinkat(int dirfd, const char* path, char* buf, size_t siz
 	const char* relpath = pathcopy;
 	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	// TODO: Open the symbolic link, instead of what it points to!
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_READ);
+	Ref<Descriptor> desc = from->open(&ctx, relpath, O_READ | O_SYMLINK_NOFOLLOW);
 	delete[] pathcopy;
 	if ( !desc )
 		return -1;

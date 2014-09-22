@@ -59,6 +59,7 @@ public:
 	Block* GetBlockFromTable(Block* table, uint32_t index);
 	Inode* Open(const char* elem, int flags, mode_t mode);
 	bool Link(const char* elem, Inode* dest, bool directories);
+	bool Symlink(const char* elem, const char* dest);
 	Inode* Unlink(const char* elem, bool directories, bool force=false);
 	ssize_t ReadAt(uint8_t* buffer, size_t count, off_t offset);
 	ssize_t WriteAt(const uint8_t* buffer, size_t count, off_t offset);

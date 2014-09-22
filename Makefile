@@ -113,7 +113,7 @@ sysroot-source: sysroot-fsh
 	cp Makefile -t "$(SYSROOT)/src"
 	cp README -t "$(SYSROOT)/src"
 	cp -RT build-aux "$(SYSROOT)/src/build-aux"
-	(for D in $(MODULES); do (cp -LR $$D -t "$(SYSROOT)/src" && $(MAKE) -C "$(SYSROOT)/src/$$D" clean) || exit $$?; done)
+	(for D in $(MODULES); do (cp -R $$D -t "$(SYSROOT)/src" && $(MAKE) -C "$(SYSROOT)/src/$$D" clean) || exit $$?; done)
 
 .PHONY: sysroot-ports
 sysroot-ports: sysroot-fsh sysroot-base-headers sysroot-system sysroot-source

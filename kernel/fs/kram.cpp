@@ -51,14 +51,15 @@
 namespace Sortix {
 namespace KRAMFS {
 
-File::File(dev_t dev, ino_t ino, uid_t owner, gid_t group, mode_t mode)
+File::File(InodeType inode_type, mode_t type, dev_t dev, ino_t ino, uid_t owner,
+           gid_t group, mode_t mode)
 {
-	inode_type = INODE_TYPE_FILE;
+	this->inode_type = inode_type;
 	if ( !dev )
 		dev = (dev_t) this;
 	if ( !ino )
 		ino = (ino_t) this;
-	this->type = S_IFREG;
+	this->type = type;
 	this->stat_uid = owner;
 	this->stat_gid = group;
 	this->stat_mode = (mode & S_SETABLE) | this->type;
@@ -104,6 +105,15 @@ ssize_t File::pwrite(ioctx_t* ctx, const uint8_t* src, size_t count, off_t off)
 		stat_mtim = Time::Get(CLOCK_REALTIME);
 	}
 	return ret;
+}
+
+ssize_t File::readlink(ioctx_t* ctx, char* buf, size_t bufsize)
+{
+	if ( !S_ISLNK(type) )
+		return errno = EINVAL, -1;
+	if ( (size_t) SSIZE_MAX < bufsize )
+		bufsize = SSIZE_MAX;
+	return fcache.pread(ctx, (uint8_t*) buf, bufsize, 0);
 }
 
 Dir::Dir(dev_t dev, ino_t ino, uid_t owner, gid_t group, mode_t mode)
@@ -234,7 +244,8 @@ Ref<Inode> Dir::open(ioctx_t* ctx, const char* filename, int flags, mode_t mode)
 	}
 	if ( !(flags & O_CREATE) )
 		return errno = ENOENT, Ref<Inode>(NULL);
-	Ref<File> file(new File(dev, 0, ctx->uid, ctx->gid, mode));
+	Ref<File> file(new File(INODE_TYPE_FILE, S_IFREG, dev, 0, ctx->uid,
+	                        ctx->gid, mode));
 	if ( !file )
 		return Ref<Inode>(NULL);
 	if ( !AddChild(filename, file) )
@@ -373,15 +384,36 @@ int Dir::unlink_raw(ioctx_t* /*ctx*/, const char* filename)
 	return 0;
 }
 
-int Dir::symlink(ioctx_t* /*ctx*/, const char* oldname, const char* filename)
+int Dir::symlink(ioctx_t* ctx, const char* oldname, const char* filename)
 {
 	ScopedLock lock(&dir_lock);
 	if ( shut_down )
 		return errno = ENOENT, -1;
-	(void) oldname;
-	(void) filename;
-	errno = ENOSYS;
-	return -1;
+	if ( FindChild(filename) != SIZE_MAX )
+		return errno = EEXIST, -1;
+	Ref<File> file(new File(INODE_TYPE_SYMLINK, S_IFLNK, dev, 0, ctx->uid,
+	                        ctx->gid, 0777));
+	if ( !file )
+		return Ref<Inode>(NULL);
+	ioctx_t kctx;
+	SetupKernelIOCtx(&kctx);
+	size_t oldname_length = strlen(oldname);
+	size_t so_far = 0;
+	while ( so_far < oldname_length )
+	{
+#if OFF_MAX < SIZE_MAX
+		if ( (uintmax_t) OFF_MAX < (uintmax_t) so_far )
+			return Ref<Inode>(NULL);
+#endif
+		ssize_t amount = file->pwrite(&kctx, (const uint8_t*) oldname + so_far,
+		                              oldname_length - so_far, (off_t) so_far);
+		if ( amount <= 0 )
+			return Ref<Inode>(NULL);
+		so_far += (size_t) amount;
+	}
+	if ( !AddChild(filename, file) )
+		return Ref<Inode>(NULL);
+	return 0;
 }
 
 int Dir::rename_here(ioctx_t* ctx, Ref<Inode> from, const char* oldname,

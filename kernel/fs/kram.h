@@ -41,7 +41,8 @@ struct DirEntry
 class File : public AbstractInode
 {
 public:
-	File(dev_t dev, ino_t ino, uid_t owner, gid_t group, mode_t mode);
+	File(InodeType inode_type, mode_t type, dev_t dev, ino_t ino, uid_t owner,
+         gid_t group, mode_t mode);
 	virtual ~File();
 	virtual int truncate(ioctx_t* ctx, off_t length);
 	virtual off_t lseek(ioctx_t* ctx, off_t offset, int whence);
@@ -49,6 +50,7 @@ public:
 	                      off_t off);
 	virtual ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	                       off_t off);
+	virtual ssize_t readlink(ioctx_t* ctx, char* buf, size_t bufsiz);
 
 private:
 	FileCache fcache;

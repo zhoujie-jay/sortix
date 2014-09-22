@@ -110,11 +110,7 @@ int main(int argc, char* argv[])
 	if ( force )
 		unlink(newname);
 
-	if ( symbolic )
-		fprintf(stderr, "%s: symbolic links are not supported, creating hard "
-		                "link instead\n", argv0);
-
-	int ret = link(oldname, newname);
+	int ret = (symbolic ? symlink : link)(oldname, newname);
 	if ( ret == 0  )
 	{
 		if ( verbose )

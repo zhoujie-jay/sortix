@@ -385,6 +385,11 @@ Ref<Descriptor> Descriptor::open(ioctx_t* ctx, const char* filename, int flags,
 	if ( !IsSaneFlagModeCombination(flags, mode) )
 		return errno = EINVAL, Ref<Descriptor>();
 
+	char* filename_mine = NULL;
+
+	size_t symlink_iteration = 0;
+	const size_t MAX_SYMLINK_ITERATION = 20;
+
 	Ref<Descriptor> desc(this);
 	while ( filename[0] )
 	{
@@ -393,7 +398,7 @@ Ref<Descriptor> Descriptor::open(ioctx_t* ctx, const char* filename, int flags,
 		if ( filename[0] == '/' )
 		{
 			if ( !S_ISDIR(desc->type) )
-				return errno = ENOTDIR, Ref<Descriptor>();
+				return delete[] filename_mine, errno = ENOTDIR, Ref<Descriptor>();
 			filename++;
 			continue;
 		}
@@ -402,7 +407,7 @@ Ref<Descriptor> Descriptor::open(ioctx_t* ctx, const char* filename, int flags,
 		size_t slashpos = strcspn(filename, "/");
 		char* elem = String::Substring(filename, 0, slashpos);
 		if ( !elem )
-			return Ref<Descriptor>();
+			return delete[] filename_mine, Ref<Descriptor>();
 
 		// Decide how to open the next element in the path.
 		bool lastelem = IsLastPathElement(filename);
@@ -414,11 +419,68 @@ Ref<Descriptor> Descriptor::open(ioctx_t* ctx, const char* filename, int flags,
 		delete[] elem;
 
 		if ( !next )
-			return Ref<Descriptor>();
+			return delete[] filename_mine, Ref<Descriptor>();
+
+		filename += slashpos;
+
+		bool want_the_symlink_itself = lastelem && (flags & O_SYMLINK_NOFOLLOW);
+		if ( S_ISLNK(next->type) && !want_the_symlink_itself )
+		{
+			if ( (flags & O_NOFOLLOW) && lastelem )
+				return delete[] filename_mine, errno = ELOOP, Ref<Descriptor>();
+
+			if ( symlink_iteration++ == MAX_SYMLINK_ITERATION )
+				return delete[] filename_mine, errno = ELOOP, Ref<Descriptor>();
+
+			ioctx_t kctx;
+			SetupKernelIOCtx(&kctx);
+
+			struct stat st;
+			if ( next->stat(&kctx, &st) < 0 )
+				return delete[] filename_mine, Ref<Descriptor>();
+			assert(0 <= st.st_size);
+
+			if ( (uintmax_t) SIZE_MAX <= (uintmax_t) st.st_size )
+				return delete[] filename_mine, Ref<Descriptor>();
+
+			size_t linkpath_length = (size_t) st.st_size;
+			char* linkpath = new char[linkpath_length + 1];
+			if ( !linkpath )
+				return delete[] filename_mine, Ref<Descriptor>();
+
+			ssize_t linkpath_ret = next->readlink(&kctx, linkpath, linkpath_length);
+			if ( linkpath_ret < 0 )
+				return delete[] linkpath, delete[] filename_mine, Ref<Descriptor>();
+			linkpath[linkpath_length] = '\0';
+
+			linkpath_length = strlen(linkpath);
+			if ( linkpath_length == 0 )
+				return delete[] linkpath, delete[] filename_mine,
+				       errno = ENOENT, Ref<Descriptor>();
+			bool link_from_root = linkpath[0] == '/';
+
+			// Either filename is the empty string or starts with a slash.
+			size_t filename_length = strlen(filename);
+			// TODO: Avoid overflow here.
+			size_t new_filename_length = linkpath_length + filename_length;
+			char* new_filename = new char[new_filename_length + 1];
+			if ( !new_filename )
+				return delete[] linkpath, delete[] filename_mine,
+			           errno = ENOENT, Ref<Descriptor>();
+			stpcpy(stpcpy(new_filename, linkpath), filename);
+			delete[] filename_mine;
+			filename = filename_mine = new_filename;
+
+			if ( link_from_root )
+				desc = CurrentProcess()->GetRoot();
+
+			continue;
+		}
 
 		desc = next;
-		filename += slashpos;
 	}
+
+	delete[] filename_mine;
 
 	// Abort the open if the user wanted a directory but this wasn't.
 	if ( flags & O_DIRECTORY && !S_ISDIR(desc->type) )
