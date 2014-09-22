@@ -1048,11 +1048,30 @@ const char* getenv_safe(const char* name, const char* def = "")
 	return ret ? ret : def;
 }
 
-void update_pwd()
+static bool is_proper_absolute_path(const char* path)
 {
-	char* wd = get_current_dir_name();
-	setenv("PWD", wd ? wd : "?", 1);
-	free(wd);
+	if ( path[0] == '\0' )
+		return false;
+	if ( path[0] != '/' )
+		return false;
+	while ( path[0] )
+	{
+		if ( path[0] == '/' )
+			path++;
+		else if ( path[0] == '.' &&
+		          (path[1] == '\0' || path[1] == '/') )
+			return false;
+		else if ( path[0] == '.' &&
+		          path[1] == '.' &&
+		          (path[2] == '\0' || path[2] == '/') )
+			return false;
+		else
+		{
+			while ( *path && *path != '/' )
+				path++;
+		}
+	}
+	return true;
 }
 
 void update_env()
@@ -1203,6 +1222,126 @@ bool is_shell_input_ready(const char* input)
 	return result;
 }
 
+int lexical_chdir(char* path)
+{
+	assert(path[0] == '/');
+
+	int fd = open("/", O_RDONLY | O_DIRECTORY);
+
+	size_t input_index = 1;
+	size_t output_index = 1;
+	bool last_was_slash = true;
+
+	while ( path[input_index] )
+	{
+		if ( path[input_index] == '/' )
+		{
+			if ( !last_was_slash )
+				path[output_index++] = path[input_index];
+			input_index++;
+			continue;
+		}
+
+		char* elem = path + input_index;
+		size_t elem_length = strcspn(elem, "/");
+		char lc = elem[elem_length];
+		elem[elem_length] = '\0';
+
+		if ( !strcmp(elem, ".") )
+		{
+			elem[elem_length] = lc;
+			input_index += elem_length;
+			continue;
+		}
+
+		if ( !strcmp(elem, "..") )
+		{
+			elem[elem_length] = lc;
+			input_index += elem_length;
+			if ( 2 <= output_index && path[output_index-1] == '/' )
+				output_index--;
+			while ( 2 <= output_index && path[output_index-1] != '/' )
+				output_index--;
+			if ( 2 <= output_index && path[output_index-1] == '/' )
+				output_index--;
+			lc = path[output_index];
+			path[output_index] = '\0';
+			int new_fd = open(path, O_RDONLY | O_DIRECTORY);
+			if ( new_fd < 0 )
+			{
+				close(fd);
+				return -1;
+			}
+			fd = new_fd;
+			path[output_index] = lc;
+			continue;
+		}
+
+		if ( 0 <= fd )
+		{
+			int new_fd = openat(fd, elem, O_RDONLY | O_DIRECTORY);
+			if ( new_fd < 0 )
+				close(fd);
+			fd = new_fd;
+		}
+
+		for ( size_t i = 0; i < elem_length; i++ )
+			path[output_index++] = path[input_index++];
+		last_was_slash = false;
+
+		elem[elem_length] = lc;
+	}
+
+	path[output_index] = '\0';
+	if ( 2 <= output_index && path[output_index-1] == '/' )
+		path[--output_index] = '\0';
+
+	if ( fd < 0 )
+		return -1;
+
+	if ( fchdir(fd) < 0 )
+		return close(fd), -1;
+
+	unsetenv("PWD");
+	setenv("PWD", path, 1);
+
+	return 0;
+}
+
+int perform_chdir(const char* path)
+{
+	if ( !path[0] )
+		return errno = ENOENT, -1;
+
+	char* lexical_path = NULL;
+	if ( path[0] == '/' )
+		lexical_path = strdup(path);
+	else
+	{
+		char* current_pwd = get_current_dir_name();
+		if ( current_pwd )
+		{
+			assert(current_pwd[0] == '/');
+			asprintf(&lexical_path, "%s/%s", current_pwd, path);
+			free(current_pwd);
+		}
+		else if ( getenv("PWD") )
+		{
+			asprintf(&lexical_path, "/%s/%s", getenv("PWD"), path);
+		}
+	}
+
+	if ( lexical_path )
+	{
+		int ret = lexical_chdir(lexical_path);
+		free(lexical_path);
+		if ( ret == 0 )
+			return 0;
+	}
+
+	return chdir(path);
+}
+
 int runcommandline(const char** tokens, bool* script_exited, bool interactive)
 {
 	int result = 127;
@@ -1349,13 +1488,13 @@ readcmd:
 	{
 		internal = true;
 		const char* newdir = getenv_safe("HOME", "/");
-		if ( argv[1] ) { newdir = argv[1]; }
-		if ( chdir(newdir) )
+		if ( argv[1] )
+			newdir = argv[1];
+		if ( perform_chdir(newdir) )
 		{
 			error(0, errno, "cd: %s", newdir);
 			internalresult = 1;
 		}
-		update_pwd();
 	}
 	if ( strcmp(argv[0], "exit") == 0 )
 	{
@@ -1792,7 +1931,6 @@ struct sh_read_command
 
 void read_command_interactive(struct sh_read_command* sh_read_command)
 {
-	update_pwd();
 	update_env();
 
 	static struct edit_line edit_state; // static to preserve command history.
@@ -1805,6 +1943,8 @@ void read_command_interactive(struct sh_read_command* sh_read_command)
 	edit_state.complete_context = NULL;
 	edit_state.complete = do_complete;
 
+	char* current_dir = get_current_dir_name();
+
 	const char* print_username = getlogin();
 	if ( !print_username )
 		print_username = getuid() == 0 ? "root" : "?";
@@ -1812,7 +1952,7 @@ void read_command_interactive(struct sh_read_command* sh_read_command)
 	if ( gethostname(hostname, sizeof(hostname)) < 0 )
 		strlcpy(hostname, "(none)", sizeof(hostname));
 	const char* print_hostname = hostname;
-	const char* print_dir = getenv_safe("PWD", "?");
+	const char* print_dir = current_dir ? current_dir : "?";
 	const char* home_dir = getenv_safe("HOME", "");
 
 	const char* print_dir_1 = print_dir;
@@ -1831,6 +1971,8 @@ void read_command_interactive(struct sh_read_command* sh_read_command)
 		print_hostname,
 		print_dir_1,
 		print_dir_2);
+
+	free(current_dir);
 
 	edit_state.ps1 = ps1;
 	edit_state.ps2 = "> ";
@@ -2065,6 +2207,18 @@ int main(int argc, char* argv[])
 
 	// TODO: Canonicalize argv[0] if it contains a slash and isn't absolute?
 
+	if ( const char* env_pwd = getenv("PWD") )
+	{
+		if ( !is_proper_absolute_path(env_pwd) )
+		{
+			unsetenv("PWD");
+			char* real_pwd = get_current_dir_name();
+			if ( real_pwd )
+				setenv("PWD", real_pwd, 1);
+			free(real_pwd);
+		}
+	}
+
 	bool flag_c_first_operand_is_command = false;
 	bool flag_e_exit_on_error = false;
 	bool flag_i_interactive = false;
@@ -2142,7 +2296,6 @@ int main(int argc, char* argv[])
 	setenv("$", pidstr, 1);
 	setenv("PPID", ppidstr, 1);
 	setenv("?", "0", 1);
-	update_pwd();
 
 	setenv("0", argv[0], 1);
 
