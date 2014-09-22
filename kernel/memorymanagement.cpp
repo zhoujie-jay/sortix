@@ -341,6 +341,12 @@ void* sys_mmap(void* addr_ptr, size_t size, int prot, int flags, int fd,
 	if ( !MapMemory(process, new_segment.addr, new_segment.size, new_segment.prot) )
 		return MAP_FAILED;
 
+	// The pread will copy to user-space right requires this lock to be free.
+	// TODO: This means another thread can concurrently change this memory
+	//       mapping while the memory-mapped contents are being delivered,
+	//       resulting in an odd mix.
+	lock.Reset();
+
 	// Read the file contents into the newly allocated memory.
 	if ( !(flags & MAP_ANONYMOUS) )
 	{
