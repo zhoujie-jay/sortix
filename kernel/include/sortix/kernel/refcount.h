@@ -64,16 +64,30 @@ public:
 
 	Ref& operator=(const Ref r)
 	{
-		if ( obj ) { obj->Unref_Renamed(); obj = NULL; }
-		if ( (obj = r.Get()) ) obj->Refer_Renamed();
+		if ( obj == r.Get() )
+			return *this;
+		if ( obj )
+		{
+			obj->Unref_Renamed();
+			obj = NULL;
+		}
+		if ( (obj = r.Get()) )
+			obj->Refer_Renamed();
 		return *this;
 	}
 
 	template <class U>
 	Ref operator=(const Ref<U> r)
 	{
-		if ( obj ) { obj->Unref_Renamed(); obj = NULL; }
-		if ( (obj = r.Get()) ) obj->Refer_Renamed();
+		if ( obj == r.Get() )
+			return *this;
+		if ( obj )
+		{
+			obj->Unref_Renamed();
+			obj = NULL;
+		}
+		if ( (obj = r.Get()) )
+			obj->Refer_Renamed();
 		return *this;
 	}
 
