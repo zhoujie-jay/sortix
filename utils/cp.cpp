@@ -68,23 +68,29 @@ const int FLAG_VERBOSE = 1 << 1;
 const int FLAG_TARGET_DIR = 1 << 2;
 const int FLAG_NO_TARGET_DIR = 1 << 3;
 const int FLAG_UPDATE = 1 << 4;
-const int FLAG_NO_DEREFERENCE = 1 << 5;
-const int FLAG_DEREFERENCE = 1 << 6;
-const int FLAG_DEREFERENCE_ARGUMENTS = 1 << 7;
+
+enum symbolic_dereference
+{
+	SYMBOLIC_DEREFERENCE_NONE,
+	SYMBOLIC_DEREFERENCE_ARGUMENTS,
+	SYMBOLIC_DEREFERENCE_ALWAYS,
+	SYMBOLIC_DEREFERENCE_DEFAULT,
+};
 
 bool CopyFileContents(int srcfd, const char* srcpath,
                       int dstfd, const char* dstpath, int flags);
 bool CopyDirectoryContents(int srcfd, const char* srcpath,
-                           int dstfd, const char* dstpath, int flags);
+                           int dstfd, const char* dstpath, int flags,
+                           enum symbolic_dereference symbolic_dereference);
 bool CopyToDest(int srcdirfd, const char* srcrel, const char* srcpath,
                 int dstdirfd, const char* dstrel, const char* dstpath,
-                int flags);
+                int flags, enum symbolic_dereference symbolic_dereference);
 bool CopyIntoDirectory(int srcdirfd, const char* srcrel, const char* srcpath,
                        int dstdirfd, const char* dstrel, const char* dstpath,
-                       int flags);
+                       int flags, enum symbolic_dereference symbolic_dereference);
 bool CopyAmbigious(int srcdirfd, const char* srcrel, const char* srcpath,
                    int dstdirfd, const char* dstrel, const char* dstpath,
-                   int flags);
+                   int flags, enum symbolic_dereference symbolic_dereference);
 
 bool CopyFileContents(int srcfd, const char* srcpath,
                       int dstfd, const char* dstpath, int flags)
@@ -152,7 +158,8 @@ bool CopyFileContents(int srcfd, const char* srcpath,
 }
 
 bool CopyDirectoryContentsInner(DIR* srcdir, const char* srcpath,
-                                DIR* dstdir, const char* dstpath, int flags)
+                                DIR* dstdir, const char* dstpath, int flags,
+                                enum symbolic_dereference symbolic_dereference)
 {
 	if ( flags & FLAG_VERBOSE )
 		printf("`%s' -> `%s'\n", srcpath, dstpath);
@@ -166,7 +173,8 @@ bool CopyDirectoryContentsInner(DIR* srcdir, const char* srcpath,
 		char* srcpath_new = AddElemToPath(srcpath, name);
 		char* dstpath_new = AddElemToPath(dstpath, name);
 		bool ok = CopyToDest(dirfd(srcdir), name, srcpath_new,
-		                     dirfd(dstdir), name, dstpath_new, flags);
+		                     dirfd(dstdir), name, dstpath_new, flags,
+                             symbolic_dereference);
 		free(srcpath_new);
 		free(dstpath_new);
 		if ( !ok )
@@ -176,7 +184,8 @@ bool CopyDirectoryContentsInner(DIR* srcdir, const char* srcpath,
 }
 
 bool CopyDirectoryContentsOuter(int srcfd, const char* srcpath,
-                                int dstfd, const char* dstpath, int flags)
+                                int dstfd, const char* dstpath, int flags,
+                                enum symbolic_dereference symbolic_dereference)
 {
 	struct stat srcst, dstst;
 	if ( fstat(srcfd, &srcst) < 0 )
@@ -201,14 +210,15 @@ bool CopyDirectoryContentsOuter(int srcfd, const char* srcpath,
 	if ( !dstdir )
 		return error(0, errno, "fdopendir()"), closedir(srcdir), false;
 	bool ret = CopyDirectoryContentsInner(srcdir, srcpath, dstdir, dstpath,
-	                                      flags);
+	                                      flags, symbolic_dereference);
 	closedir(dstdir);
 	closedir(srcdir);
 	return ret;
 }
 
 bool CopyDirectoryContents(int srcfd, const char* srcpath,
-                           int dstfd, const char* dstpath, int flags)
+                           int dstfd, const char* dstpath, int flags,
+                           enum symbolic_dereference symbolic_dereference)
 {
 	int srcfd_copy = dup(srcfd);
 	if ( srcfd_copy < 0 )
@@ -217,7 +227,8 @@ bool CopyDirectoryContents(int srcfd, const char* srcpath,
 	if ( dstfd_copy < 0 )
 		return error(0, errno, "dup"), close(srcfd_copy), false;
 	bool ret = CopyDirectoryContentsOuter(srcfd_copy, srcpath,
-	                                      dstfd_copy, dstpath, flags);
+	                                      dstfd_copy, dstpath, flags,
+	                                      symbolic_dereference);
 	close(dstfd_copy);
 	close(srcfd_copy);
 	return ret;
@@ -225,11 +236,14 @@ bool CopyDirectoryContents(int srcfd, const char* srcpath,
 
 bool CopyToDest(int srcdirfd, const char* srcrel, const char* srcpath,
                 int dstdirfd, const char* dstrel, const char* dstpath,
-                int flags)
+                int flags, enum symbolic_dereference symbolic_dereference)
 {
 	struct stat srcst;
 	bool ret = false;
-	int srcfd = openat(srcdirfd, srcrel, O_RDONLY);
+	int srcfd_flags = O_RDONLY;
+	if ( symbolic_dereference == SYMBOLIC_DEREFERENCE_NONE )
+		srcfd_flags |= O_SYMLINK_NOFOLLOW;
+	int srcfd = openat(srcdirfd, srcrel, O_RDONLY | srcfd_flags);
 	if ( srcfd < 0 )
 	{
 		error(0, errno, "%s", srcpath);
@@ -240,7 +254,74 @@ bool CopyToDest(int srcdirfd, const char* srcrel, const char* srcpath,
 		error(0, errno, "stat: %s", srcpath);
 		return close(srcfd), false;
 	}
-	if ( S_ISDIR(srcst.st_mode) )
+	if ( symbolic_dereference == SYMBOLIC_DEREFERENCE_ARGUMENTS )
+		symbolic_dereference = SYMBOLIC_DEREFERENCE_NONE;
+	// TODO: I'm really not satisfied with the atomicity properties in this case.
+	if ( S_ISLNK(srcst.st_mode) )
+	{
+		// TODO: How to handle the update flag in this case?
+		struct stat dstst;
+		int dstst_ret = fstatat(dstdirfd, dstrel, &dstst, AT_SYMLINK_NOFOLLOW);
+		if ( dstst_ret < 0 && errno != ENOENT )
+		{
+			error(0, errno, "%s", dstpath);
+			return close(srcfd), false;
+		}
+		bool already_is_symlink = false;
+		if ( dstst_ret == 0 )
+		{
+			if ( S_ISLNK(dstst.st_mode) )
+			{
+				already_is_symlink = true;
+			}
+			else if ( S_ISDIR(dstst.st_mode) )
+			{
+				error(0, 0, "cannot overwrite directory `%s' with non-directory",
+	                  dstpath);
+				return close(srcfd), false;
+			}
+			else
+			{
+				if ( unlinkat(dstdirfd, dstrel, 0) == 0 )
+				{
+					if ( flags & FLAG_VERBOSE )
+						printf("removed `%s'\n", dstpath);
+				}
+				else if ( errno != ENOENT )
+				{
+					error(0, errno, "unlink: %s", dstpath);
+					return close(srcfd), false;
+				}
+			}
+		}
+		if ( !already_is_symlink )
+		{
+			if ( symlinkat("", dstdirfd, dstrel) < 0 )
+			{
+				error(0, errno, "creating symlink: %s", dstpath);
+				return close(srcfd), false;
+			}
+		}
+		int dstfd = openat(dstdirfd, dstrel, O_WRONLY | O_SYMLINK_NOFOLLOW);
+		if ( dstfd < 0 )
+		{
+			error(0, errno, "creating and opening symlink: %s", dstpath);
+			return close(srcfd), false;
+		}
+		if ( fstat(dstfd, &dstst) < 0 )
+		{
+			error(0, errno, "stat of symlink: %s", dstpath);
+			return close(dstfd), close(srcfd), false;
+		}
+		if ( !S_ISLNK(dstst.st_mode) )
+		{
+			error(0, errno, "unexpectedly not a symlink: %s", dstpath);
+			return close(dstfd), close(srcfd), false;
+		}
+		ret = CopyFileContents(srcfd, srcpath, dstfd, dstpath, flags);
+		close(dstfd);
+	}
+	else if ( S_ISDIR(srcst.st_mode) )
 	{
 		if ( !(flags & FLAG_RECURSIVE) )
 		{
@@ -266,7 +347,8 @@ bool CopyToDest(int srcdirfd, const char* srcrel, const char* srcpath,
 				return close(srcfd), false;
 			}
 		}
-		ret = CopyDirectoryContents(srcfd, srcpath, dstfd, dstpath, flags);
+		ret = CopyDirectoryContents(srcfd, srcpath, dstfd, dstpath, flags,
+		                            symbolic_dereference);
 		close(dstfd);
 	}
 	else
@@ -296,7 +378,7 @@ bool CopyToDest(int srcdirfd, const char* srcrel, const char* srcpath,
 
 bool CopyIntoDirectory(int srcdirfd, const char* srcrel, const char* srcpath,
                        int dstdirfd, const char* dstrel, const char* dstpath,
-                       int flags)
+                       int flags, enum symbolic_dereference symbolic_dereference)
 {
 	const char* src_basename = BaseName(srcrel);
 	int dstfd = openat(dstdirfd, dstrel, O_RDONLY | O_DIRECTORY);
@@ -307,14 +389,15 @@ bool CopyIntoDirectory(int srcdirfd, const char* srcrel, const char* srcpath,
 	}
 	char* dstpath_new = AddElemToPath(dstpath, src_basename);
 	bool ret = CopyToDest(srcdirfd, srcrel, srcpath,
-	                      dstfd, src_basename, dstpath_new, flags);
+	                      dstfd, src_basename, dstpath_new,
+                          flags, symbolic_dereference);
 	free(dstpath_new);
 	return ret;
 }
 
 bool CopyAmbigious(int srcdirfd, const char* srcrel, const char* srcpath,
                    int dstdirfd, const char* dstrel, const char* dstpath,
-                   int flags)
+                   int flags, enum symbolic_dereference symbolic_dereference)
 {
 	struct stat dstst;
 	if ( fstatat(dstdirfd, dstrel, &dstst, 0) < 0 )
@@ -328,10 +411,12 @@ bool CopyAmbigious(int srcdirfd, const char* srcrel, const char* srcpath,
 	}
 	if ( S_ISDIR(dstst.st_mode) )
 		return CopyIntoDirectory(srcdirfd, srcrel, srcpath,
-	                             dstdirfd, dstrel, dstpath, flags);
+	                             dstdirfd, dstrel, dstpath,
+		                         flags, symbolic_dereference);
 	else
 		return CopyToDest(srcdirfd, srcrel, srcpath,
-		                  dstdirfd, dstrel, dstpath, flags);
+		                  dstdirfd, dstrel, dstpath,
+		                  flags, symbolic_dereference);
 }
 
 void compact_arguments(int* argc, char*** argv)
@@ -373,6 +458,7 @@ int main(int argc, char* argv[])
 	int flags = 0;
 	const char* target_directory = NULL;
 	const char* preserve_list = NULL;
+	enum symbolic_dereference symbolic_dereference = SYMBOLIC_DEREFERENCE_DEFAULT;
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
@@ -395,8 +481,8 @@ int main(int argc, char* argv[])
 			case 'o': if ( *(arg + 1) ) arg = "o"; else if ( i + 1 != argc ) argv[++i] = NULL; break;
 			case 's': /* ignored */ break;
 #endif
-			case 'H': flags |= FLAG_DEREFERENCE_ARGUMENTS; break;
-			case 'L': flags |= FLAG_DEREFERENCE; break;
+			case 'H': symbolic_dereference = SYMBOLIC_DEREFERENCE_ARGUMENTS; break;
+			case 'L': symbolic_dereference = SYMBOLIC_DEREFERENCE_ALWAYS; break;
 			case 'r':
 			case 'R': flags |= FLAG_RECURSIVE; break;
 			case 'v': flags |= FLAG_VERBOSE; break;
@@ -422,7 +508,7 @@ int main(int argc, char* argv[])
 			case 'T': flags |= FLAG_NO_TARGET_DIR; break;
 			case 'u': flags |= FLAG_UPDATE; break;
 			case 'p': preserve_list = "mode,ownership,timestamps"; break;
-			case 'P': flags |= FLAG_NO_DEREFERENCE; break;
+			case 'P': symbolic_dereference = SYMBOLIC_DEREFERENCE_NONE; break;
 			default:
 #ifdef CP_PRETEND_TO_BE_INSTALL
 				fprintf(stderr, "%s (fake): unknown option, ignoring -- '%c'\n", argv0, c);
@@ -438,7 +524,7 @@ int main(int argc, char* argv[])
 		else if ( !strcmp(arg, "--version") )
 			version(stdout, argv0), exit(0);
 		else if ( !strcmp(arg, "--dereference") )
-			flags |= FLAG_DEREFERENCE;
+			symbolic_dereference = SYMBOLIC_DEREFERENCE_ALWAYS;
 		else if ( !strcmp(arg, "--recursive") )
 			flags |= FLAG_RECURSIVE;
 		else if ( !strcmp(arg, "--verbose") )
@@ -469,7 +555,7 @@ int main(int argc, char* argv[])
 		else if ( !strcmp(arg, "--update") )
 			flags |= FLAG_UPDATE;
 		else if ( !strcmp(arg, "--no-dereference") )
-			flags |= FLAG_NO_DEREFERENCE;
+			symbolic_dereference = SYMBOLIC_DEREFERENCE_NONE;
 		else
 		{
 #ifdef CP_PRETEND_TO_BE_INSTALL
@@ -484,6 +570,14 @@ int main(int argc, char* argv[])
 
 	if ( (flags & FLAG_TARGET_DIR) && (flags & FLAG_NO_TARGET_DIR) )
 		error(1, 0, "cannot combine --target-directory (-t) and --no-target-directory (-T)");
+
+	if ( symbolic_dereference == SYMBOLIC_DEREFERENCE_DEFAULT )
+	{
+		if ( flags & FLAG_RECURSIVE )
+			symbolic_dereference = SYMBOLIC_DEREFERENCE_NONE;
+		else
+			symbolic_dereference = SYMBOLIC_DEREFERENCE_ALWAYS;
+	}
 
 	// TODO: Actually preserve.
 	(void) preserve_list;
@@ -501,7 +595,8 @@ int main(int argc, char* argv[])
 		const char* dst = argv[2];
 		if ( 3 < argc )
 			error(1, 0, "extra operand `%s'", argv[3]);
-		return CopyToDest(AT_FDCWD, src, src, AT_FDCWD, dst, dst, flags) ? 0 : 1;
+		return CopyToDest(AT_FDCWD, src, src, AT_FDCWD, dst, dst, flags,
+		                  symbolic_dereference) ? 0 : 1;
 	}
 
 	if ( !(flags & FLAG_TARGET_DIR) && argc <= 3 )
@@ -512,7 +607,8 @@ int main(int argc, char* argv[])
 		const char* dst = argv[2];
 		if ( 3 < argc )
 			error(1, 0, "extra operand `%s'", argv[3]);
-		return CopyAmbigious(AT_FDCWD, src, src, AT_FDCWD, dst, dst, flags) ? 0 : 1;
+		return CopyAmbigious(AT_FDCWD, src, src, AT_FDCWD, dst, dst, flags,
+		                     symbolic_dereference) ? 0 : 1;
 	}
 
 	if ( !target_directory )
@@ -529,7 +625,8 @@ int main(int argc, char* argv[])
 	{
 		const char* src = argv[i];
 		const char* dst = target_directory;
-		if ( !CopyIntoDirectory(AT_FDCWD, src, src, AT_FDCWD, dst, dst, flags) )
+		if ( !CopyIntoDirectory(AT_FDCWD, src, src, AT_FDCWD, dst, dst, flags,
+		                        symbolic_dereference) )
 			success = false;
 	}
 
