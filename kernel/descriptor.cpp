@@ -149,9 +149,11 @@ bool Descriptor::IsSeekable()
 	if ( !checked_seekable )
 	{
 		// TODO: Is this enough? Check that errno happens to be ESPIPE?
+		int saved_errno = errno;
 		ioctx_t ctx; SetupKernelIOCtx(&ctx);
 		seekable = 0 <= vnode->lseek(&ctx, SEEK_SET, 0) || S_ISDIR(vnode->type);
 		checked_seekable = true;
+		errno = saved_errno;
 	}
 	return seekable;
 }
