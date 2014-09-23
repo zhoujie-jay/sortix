@@ -24,10 +24,12 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+#include <assert.h>
 #include <dirent.h>
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
+#include <libgen.h>
 #include <locale.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -111,7 +113,7 @@ int argv_mtim_compare(const void* a_void, const void* b_void)
 
 	struct stat a_st;
 	struct stat b_st;
-	if ( stat(a, &a_st) == 0 && stat(b, &b_st) == 0 )
+	if ( lstat(a, &a_st) == 0 && lstat(b, &b_st) == 0 )
 	{
 		if ( a_st.st_mtim.tv_sec < b_st.st_mtim.tv_sec )
 			return 1;
@@ -151,67 +153,149 @@ int sort_dirents(const void* a_void, const void* b_void)
 	return strcmp(a->d_name, b->d_name);
 }
 
+static unsigned char mode_to_dt(mode_t mode)
+{
+	if ( S_ISBLK(mode) )
+		return DT_BLK;
+	if ( S_ISCHR(mode) )
+		return DT_CHR;
+	if ( S_ISDIR(mode) )
+		return DT_DIR;
+	if ( S_ISFIFO(mode) )
+		return DT_FIFO;
+	if ( S_ISLNK(mode) )
+		return DT_LNK;
+	if ( S_ISREG(mode) )
+		return DT_REG;
+	if ( S_ISSOCK(mode) )
+		return DT_SOCK;
+	return DT_UNKNOWN;
+}
+
+static void color_entry(bool enable_colors,
+                        const char** pre_ptr,
+                        const char** post_ptr,
+                        unsigned char type,
+                        struct stat* st,
+                        bool error_situation)
+{
+	const char* pre = "";
+	const char* post = "";
+
+	if ( error_situation )
+	{
+		pre = "\e[31m";
+		post = "\e[m";
+	}
+	else if ( enable_colors )
+	{
+		post = "\e[m";
+		switch ( type )
+		{
+		case DT_UNKNOWN: pre = "\e[91m"; break;
+		case DT_BLK: pre = "\e[93m"; break;
+		case DT_CHR: pre = "\e[93m"; break;
+		case DT_DIR: pre = "\e[36m"; break;
+		case DT_FIFO: pre = "\e[33m"; break;
+		case DT_LNK: pre = "\e[96m"; break;
+		case DT_SOCK: pre = "\e[35m"; break;
+		case DT_REG:
+			if ( st && (st->st_mode & 0111) )
+				pre = "\e[32m";
+			else
+				post = "";
+			break;
+		default:
+			post = "";
+		}
+	}
+
+	*pre_ptr = pre;
+	*post_ptr = post;
+}
+
 int handle_entry_internal(const char* fullpath, const char* name, unsigned char type)
 {
 	// TODO: Use openat and fstat.
+
 	struct stat st;
+	memset(&st, 0, sizeof(st));
 	bool stat_error = false;
-	if ( (option_long_format || type == DT_UNKNOWN || type == DT_REG) )
+	if ( option_long_format ||
+	     type == DT_UNKNOWN ||
+	     type == DT_REG ||
+	     type == DT_LNK )
 	{
-		if ( stat(fullpath, &st) == 0 )
+		if ( lstat(fullpath, &st) == 0 )
+			type = mode_to_dt(st.st_mode);
+		else
+			stat_error = true;
+	}
+
+	char* link_dest = NULL;
+	bool link_stat_error = false;
+	struct stat link_st;
+	memset(&link_st, 0, sizeof(link_st));
+	unsigned char link_type = DT_UNKNOWN;
+	if ( type == DT_LNK )
+	{
+		size_t link_dest_length = 0 <= st.st_size ? st.st_size : 256;
+		link_dest = (char*) malloc(link_dest_length + 1);
+		assert(link_dest);
+		ssize_t readlink_ret = readlink(fullpath, link_dest, link_dest_length);
+		if ( readlink_ret <= 0 )
 		{
-			if ( S_ISBLK(st.st_mode) )
-				type = DT_BLK;
-			if ( S_ISCHR(st.st_mode) )
-				type = DT_CHR;
-			if ( S_ISDIR(st.st_mode) )
-				type = DT_DIR;
-			if ( S_ISFIFO(st.st_mode) )
-				type = DT_FIFO;
-			if ( S_ISLNK(st.st_mode) )
-				type = DT_LNK;
-			if ( S_ISREG(st.st_mode) )
-				type = DT_REG;
-			if ( S_ISSOCK(st.st_mode) )
-				type = DT_SOCK;
+			free(link_dest);
+			link_dest = NULL;
+			link_stat_error = true;
 		}
 		else
 		{
-			memset(&st, 0, sizeof(st));
-			stat_error = true;
+			link_dest[readlink_ret] = '\0';
+			const char* next_link_dest = link_dest;
+			char* new_link_dest = NULL;
+			if ( link_dest[0] != '/' )
+			{
+				char* fullpath_dir_raw = strdup(fullpath);
+				const char* fullpath_dir = dirname(fullpath_dir_raw);
+				asprintf(&new_link_dest, "%s/%s", fullpath_dir, link_dest);
+				assert(new_link_dest);
+				free(fullpath_dir_raw);
+				next_link_dest = new_link_dest;
+			}
+			if ( lstat(next_link_dest, &link_st) == 0 )
+				link_type = mode_to_dt(link_st.st_mode);
+			else
+				link_stat_error = true;
+			free(new_link_dest);
 		}
 	}
 
 	const char* color_pre = "";
 	const char* color_post = "";
-	if ( option_colors )
-	{
-		color_post = "\e[m";
-		switch ( type )
-		{
-		case DT_UNKNOWN: color_pre = "\e[91m"; break;
-		case DT_BLK: color_pre = "\e[93m"; break;
-		case DT_CHR: color_pre = "\e[93m"; break;
-		case DT_DIR: color_pre = "\e[36m"; break;
-		case DT_FIFO: color_pre = "\e[33m"; break;
-		case DT_LNK: color_pre = "\e[96m"; break;
-		case DT_SOCK: color_pre = "\e[35m"; break;
-		case DT_REG:
-			if ( type == DT_REG && !stat_error && (st.st_mode & 0111) )
-				color_pre = "\e[32m";
-			else
-				color_post = "";
-			break;
-		default:
-			color_post = "";
-		}
-	}
+	color_entry(option_colors,
+	            &color_pre,
+	            &color_post,
+	            type,
+	            !stat_error ? &st : NULL,
+	            link_stat_error);
+
+	const char* link_color_pre = "";
+	const char* link_color_post = "";
+	if ( type == DT_LNK )
+		color_entry(option_colors,
+		            &link_color_pre,
+		            &link_color_post,
+		            link_type,
+		            !link_stat_error ? &link_st : NULL,
+		            link_stat_error);
 
 	if ( option_inode )
 		printf("%ju ", (uintmax_t) st.st_ino);
 	if ( !option_long_format )
 	{
 		printf("%s%s%s\n", color_pre, name, color_post);
+		free(link_dest);
 		return 0;
 	}
 	char perms[11];
@@ -249,12 +333,16 @@ int handle_entry_internal(const char* fullpath, const char* name, unsigned char 
 		strftime(time_str, 64, "%b %e %H:%M", &mod_tm);
 	else
 		strftime(time_str, 64, "%b %e  %Y", &mod_tm);
-	printf("%s %3ju root root %4ju%s %s %s%s%s\n",
+	printf("%s %3ju root root %4ju%s %s %s%s%s",
 		perms,
 		(uintmax_t) st.st_nlink,
 		(uintmax_t) size, sizeunit,
 		time_str,
 		color_pre, name, color_post);
+	if ( type == DT_LNK && link_dest )
+		printf(" -> %s%s%s", link_color_pre, link_dest, link_color_post);
+	printf("\n");
+	free(link_dest);
 	return 0;
 }
 
