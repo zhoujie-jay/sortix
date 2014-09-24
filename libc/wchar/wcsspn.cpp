@@ -26,19 +26,23 @@
 
 extern "C" size_t wcsspn(const wchar_t* str, const wchar_t* accept)
 {
-	size_t acceptlen = 0;
-	while ( accept[acceptlen] ) { acceptlen++; }
+	size_t accept_length = 0;
+	while ( accept[accept_length] )
+		accept_length++;
 	for ( size_t result = 0; true; result++ )
 	{
 		wchar_t c = str[result];
-		if ( !c ) { return result; }
+		if ( !c )
+			return result;
 		bool matches = false;
-		for ( size_t i = 0; i < acceptlen; i++ )
+		for ( size_t i = 0; i < accept_length; i++ )
 		{
-			if ( str[result] != accept[i] ) { continue; }
+			if ( str[result] != accept[i] )
+				continue;
 			matches = true;
 			break;
 		}
-		if ( !matches ) { return result; }
+		if ( !matches )
+			return result;
 	}
 }
