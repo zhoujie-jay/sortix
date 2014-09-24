@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -28,10 +28,14 @@
 extern "C" wchar_t* wmemmove(wchar_t* dst, const wchar_t* src, size_t n)
 {
 	if ( (uintptr_t) dst < (uintptr_t) src )
+	{
 		for ( size_t i = 0; i < n; i++ )
 			dst[i] = src[i];
+	}
 	else
+	{
 		for ( size_t i = 0; i < n; i++ )
-			dst[n-i] = src[n-i];
+			dst[n-(i+1)] = src[n-(i+1)];
+	}
 	return dst;
 }
