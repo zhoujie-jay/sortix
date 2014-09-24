@@ -26,5 +26,5 @@
 
 extern "C" int iswcntrl(wint_t c)
 {
-	return c < 32;
+	return /*0 <= c [c is unsigned] && */ c < 32;
 }
