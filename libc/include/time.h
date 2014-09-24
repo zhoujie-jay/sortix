@@ -107,7 +107,13 @@ __BEGIN_DECLS
 
 /* getdate_err is omitted, use strptime */
 
+#if !defined(__is_sortix_libc) /* not a warning inside libc */
+__attribute__((__warning__("asctime() is obsolete, use strftime()")))
+#endif
 char* asctime(const struct tm*);
+#if !defined(__is_sortix_libc) /* not a warning inside libc */
+__attribute__((__warning__("asctime_r() is obsolete, use strftime()")))
+#endif
 char* asctime_r(const struct tm* __restrict, char* __restrict);
 clock_t clock(void);
 /* TODO: clock_getcpuclockid */
@@ -115,9 +121,14 @@ int clock_getres(clockid_t, struct timespec*);
 int clock_gettime(clockid_t, struct timespec*);
 int clock_nanosleep(clockid_t, int, const struct timespec*, struct timespec*);
 int clock_settime(clockid_t, const struct timespec*);
+#if !defined(__is_sortix_libc) /* not a warning inside libc */
+__attribute__((__warning__("ctime() is obsolete, use strftime()")))
+#endif
 char* ctime(const time_t* clock);
+#if !defined(__is_sortix_libc) /* not a warning inside libc */
+__attribute__((__warning__("ctime_r() is obsolete, use strftime()")))
+#endif
 char* ctime_r(const time_t* clock, char* buf);
-/* ctime_r is obsolescent */
 double difftime(time_t, time_t);
 /* getdate is omitted, use strptime */
 struct tm* gmtime(const time_t*);
