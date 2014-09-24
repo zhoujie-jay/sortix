@@ -26,8 +26,8 @@
 
 extern "C" wchar_t* wcspbrk(const wchar_t* str, const wchar_t* accept)
 {
-	size_t rejectlen = wcscspn(str, accept);
-	if ( !str[rejectlen] )
+	size_t reject_length = wcscspn(str, accept);
+	if ( !str[reject_length] )
 		return NULL;
-	return (wchar_t*) str + rejectlen;
+	return (wchar_t*) str + reject_length;
 }
