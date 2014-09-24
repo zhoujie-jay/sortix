@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -25,11 +25,12 @@
 #include <string.h>
 #include <ctype.h>
 
-extern "C" int strncasecmp(const char* a, const char* b, size_t maxcount)
+extern "C" int strncasecmp(const char* a, const char* b, size_t max_count)
 {
-	while ( maxcount-- )
+	for ( size_t i = 0; i < max_count; i++ )
 	{
-		char ac = tolower(*a++), bc = tolower(*b++);
+		unsigned char ac = (unsigned char) tolower((unsigned char) a[i]);
+		unsigned char bc = (unsigned char) tolower((unsigned char) b[i]);
 		if ( ac == '\0' && bc == '\0' )
 			return 0;
 		if ( ac < bc )

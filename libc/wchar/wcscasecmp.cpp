@@ -28,9 +28,10 @@
 extern "C"
 int wcscasecmp(const wchar_t* a, const wchar_t* b)
 {
-	while ( true )
+	for ( size_t i = 0; true; i++ )
 	{
-		wchar_t ac = towlower(*a++), bc = towlower(*b++);
+		wint_t ac = towlower((wint_t) a[i]);
+		wint_t bc = towlower((wint_t) b[i]);
 		if ( ac == L'\0' && bc == L'\0' )
 			return 0;
 		if ( ac < bc )

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -24,15 +24,17 @@
 
 #include <wchar.h>
 
-extern "C" int wcsncmp(const wchar_t* a, const wchar_t* b, size_t n)
+extern "C" int wcsncmp(const wchar_t* a, const wchar_t* b, size_t max_count)
 {
-	for ( size_t i = 0; i < n; i++ )
+	for ( size_t i = 0; i < max_count; i++ )
 	{
-		if ( a[i] == L'\0' && b[i] == L'\0' )
+		wint_t ac = (wint_t) a[i];
+		wint_t bc = (wint_t) b[i];
+		if ( ac == L'\0' && bc == L'\0' )
 			return 0;
-		if ( a[i] < b[i] )
+		if ( ac < bc )
 			return -1;
-		if ( a[i] > b[i] )
+		if ( ac > bc )
 			return 1;
 	}
 	return 0;

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -26,9 +26,10 @@
 
 extern "C" int wcscmp(const wchar_t* a, const wchar_t* b)
 {
-	while ( true )
+	for ( size_t i = 0; true; i++ )
 	{
-		wchar_t ac = *a++, bc = *b++;
+		wint_t ac = (wint_t) a[i];
+		wint_t bc = (wint_t) b[i];
 		if ( ac == L'\0' && bc == L'\0' )
 			return 0;
 		if ( ac < bc )

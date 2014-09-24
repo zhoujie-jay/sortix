@@ -26,11 +26,12 @@
 #include <wctype.h>
 
 extern "C"
-int wcsncasecmp(const wchar_t* a, const wchar_t* b, size_t maxcount)
+int wcsncasecmp(const wchar_t* a, const wchar_t* b, size_t max_count)
 {
-	while ( maxcount-- )
+	for ( size_t i = 0; i < max_count; i++ )
 	{
-		wchar_t ac = towlower(*a++), bc = towlower(*b++);
+		wint_t ac = towlower((wint_t) a[i]);
+		wint_t bc = towlower((wint_t) b[i]);
 		if ( ac == L'\0' && bc == L'\0' )
 			return 0;
 		if ( ac < bc )
