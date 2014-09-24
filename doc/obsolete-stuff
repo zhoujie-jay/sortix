@@ -218,6 +218,18 @@ particular problem.
 
 Sortix currently provides this function for compatibility reasons.
 
+sprintf
+-------
+
+The sprintf function is dangerous as it can be hard to predict the length of the
+output string safely. A mistake can easily end in security vulnerabilities and
+undefined behavior. Use the snprintf function instead as it knows the size of
+the destination buffer and safely truncates in the error case. Such truncation
+can be detected by the cacller. Use the asprintf function or another approach
+if determinining the output length is hard.
+
+Sortix currently provides this function for compatibility reasons.
+
 strings.h
 ---------
 

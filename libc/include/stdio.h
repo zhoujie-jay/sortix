@@ -166,6 +166,9 @@ int rename(const char* oldname, const char* newname);
 void rewind(FILE* stream);
 void setbuf(FILE* __restrict stream, char* __restrict buf);
 int setvbuf(FILE* __restrict stream, char* __restrict buf, int type, size_t size);
+#if !defined(__is_sortix_libc) /* not a warning inside libc */
+__attribute__((__warning__("sprintf() is dangerous, use snprintf()")))
+#endif
 int sprintf(char* __restrict s, const char* __restrict format, ...)
 	__attribute__((__format__ (printf, 2, 3)));
 int scanf(const char* __restrict format, ...)
@@ -178,6 +181,9 @@ int vfprintf(FILE* __restrict stream, const char* __restrict format, __gnuc_va_l
 	__attribute__((__format__ (printf, 2, 0)));
 int vprintf(const char* __restrict format, __gnuc_va_list ap)
 	__attribute__((__format__ (printf, 1, 0)));
+#if !defined(__is_sortix_libc) /* not a warning inside libc */
+__attribute__((__warning__("vsprintf() is dangerous, use vsnprintf()")))
+#endif
 int vsprintf(char* __restrict s, const char* __restrict format, __gnuc_va_list ap)
 	__attribute__((__format__ (printf, 2, 0)));
 
