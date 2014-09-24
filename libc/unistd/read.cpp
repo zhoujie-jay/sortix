@@ -24,7 +24,6 @@
 
 #include <sys/syscall.h>
 
-#include <errno.h>
 #include <unistd.h>
 
 DEFN_SYSCALL3(ssize_t, sys_read, SYSCALL_READ, int, void*, size_t);
