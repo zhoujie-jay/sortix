@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -24,8 +24,8 @@
 
 #include <wchar.h>
 
-extern "C" wchar_t* wcschr(const wchar_t* str, wchar_t c)
+extern "C" wchar_t* wcschr(const wchar_t* str, wchar_t uc)
 {
-	wchar_t* ret = wcschrnul(str, c);
-	return ret && c == ret[0] ? ret : NULL;
+	wchar_t* ret = wcschrnul(str, uc);
+	return (wint_t) uc == ((wint_t*) ret)[0] ? ret : NULL;
 }
