@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -26,5 +26,6 @@
 
 extern "C" wchar_t* wcscat(wchar_t* dest, const wchar_t* src)
 {
-	return wcscpy(dest + wcslen(dest), src);
+	wcscpy(dest + wcslen(dest), src);
+	return dest;
 }
