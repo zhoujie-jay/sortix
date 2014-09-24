@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -26,19 +26,23 @@
 
 extern "C" size_t strcspn(const char* str, const char* reject)
 {
-	size_t rejectlen = 0;
-	while ( reject[rejectlen] ) { rejectlen++; }
+	size_t reject_length = 0;
+	while ( reject[reject_length] )
+		reject_length++;
 	for ( size_t result = 0; true; result++ )
 	{
 		char c = str[result];
-		if ( !c ) { return result; }
+		if ( !c )
+			return result;
 		bool matches = false;
-		for ( size_t i = 0; i < rejectlen; i++ )
+		for ( size_t i = 0; i < reject_length; i++ )
 		{
-			if ( str[result] != reject[i] ) { continue; }
+			if ( str[result] != reject[i] )
+				continue;
 			matches = true;
 			break;
 		}
-		if ( matches ) { return result; }
+		if ( matches )
+			return result;
 	}
 }
