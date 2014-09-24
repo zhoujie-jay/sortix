@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -26,8 +26,9 @@
 
 extern "C" char* stpcpy(char* dest, const char* src)
 {
-	while ( *src )
-		*dest++ = *src++;
-	*dest = '\0';
-	return dest;
+	size_t index;
+	for ( index = 0; src[index]; index++ )
+		dest[index] = src[index];
+	dest[index] = '\0';
+	return dest + index;
 }
