@@ -437,7 +437,6 @@ stdio/rename.o \
 stdio/scanf.o \
 stdio/stdio.o \
 stdio/tmpfile.o \
-stdio/tmpnam.o \
 stdio/vfprintf.o \
 stdio/vprintf.o \
 stdio/vscanf.o \

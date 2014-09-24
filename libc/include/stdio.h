@@ -84,7 +84,7 @@ typedef __off_t fpos_t;
 
 #if __USE_SORTIX || __USE_POSIX
 /* TODO: Implement L_ctermid */
-#define L_tmpnam 128
+/* L_tmpnam will not be implemented. */
 #endif
 
 /* The possibilities for the third argument to `setvbuf'. */
@@ -101,7 +101,6 @@ typedef __off_t fpos_t;
 #endif
 
 #if __USE_SORTIX || __USE_POSIX
-/* Default path prefix for `tempnam' and `tmpnam'. */
 #define P_tmpdir "/tmp"
 #endif
 
@@ -212,7 +211,7 @@ int getc_unlocked(FILE* stream);
 int getchar_unlocked(void);
 int putc_unlocked(int c, FILE* stream);
 int putchar_unlocked(int c);
-char* tmpnam(char* s);
+/* tmpnam will not be implemented. */
 #endif
 
 #if __USE_POSIX
