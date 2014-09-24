@@ -26,9 +26,9 @@
 
 extern "C" wchar_t* wcscpy(wchar_t* dest, const wchar_t* src)
 {
-	wchar_t* origdest = dest;
-	while ( *src )
-		*dest++ = *src++;
-	*dest = '\0';
-	return origdest;
+	size_t index;
+	for ( index = 0; src[index]; index++ )
+		dest[index] = src[index];
+	dest[index] = '\0';
+	return dest;
 }

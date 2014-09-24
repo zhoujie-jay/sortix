@@ -26,9 +26,9 @@
 
 extern "C" char* strcpy(char* dest, const char* src)
 {
-	char* origdest = dest;
-	while ( *src )
-		*dest++ = *src++;
-	*dest = '\0';
-	return origdest;
+	size_t index;
+	for ( index = 0; src[index]; index++ )
+		dest[index] = src[index];
+	dest[index] = '\0';
+	return dest;
 }
