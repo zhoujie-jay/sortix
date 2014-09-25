@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -30,7 +30,8 @@ extern "C" int strerror_r(int errnum, char* dest, size_t dest_len)
 	const char* msg = sortix_strerror(errnum);
 	if ( !msg )
 		return -1;
-	if ( strlcpy(dest, msg, dest_len) != strlen(msg) )
-		errno = ERANGE;
+	if ( dest_len < strlen(msg) + 1 )
+		return errno = ERANGE;
+	strcpy(dest, msg);
 	return 0;
 }
