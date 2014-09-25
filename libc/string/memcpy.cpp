@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -25,105 +25,95 @@
 #include <stdint.h>
 #include <string.h>
 
-#if 8 < __SIZEOF_LONG__
-#error unsigned long is bigger than expected, please add support to this file.
-#endif
-
-inline static void* memcpy_slow(void* restrict dstptr,
-                                const void* restrict srcptr, size_t length)
+inline static
+void* memcpy_slow(void* restrict dst_ptr,
+                  const void* restrict src_ptr,
+                  size_t size)
 {
-	uint8_t* restrict dst = (uint8_t* restrict) dstptr;
-	const uint8_t* restrict src = (const uint8_t* restrict) srcptr;
-	for ( size_t i = 0; i < length; i += sizeof(uint8_t) )
+	unsigned char* restrict dst = (unsigned char* restrict) dst_ptr;
+	const unsigned char* restrict src = (const unsigned char* restrict) src_ptr;
+	for ( size_t i = 0; i < size; i++ )
 		dst[i] = src[i];
-	return dstptr;
+	return dst_ptr;
 }
 
-extern "C" void* memcpy(void* restrict dstptr, const void* restrict srcptr,
-                        size_t length)
+extern "C"
+void* memcpy(void* restrict dst_ptr,
+             const void* restrict src_ptr,
+             size_t size)
 {
-	const unsigned long unalignmask = sizeof(unsigned long) - 1;
-	const unsigned long srcunalign = (unsigned long) srcptr & unalignmask;
-	const unsigned long dstunalign = (unsigned long) dstptr & unalignmask;
-	if ( srcunalign != dstunalign )
-		return memcpy_slow(dstptr, srcptr, length);
+#if 8 < __SIZEOF_LONG__
+#warning "you should add support for your unexpectedly large unsigned long."
+	return memcpy_slow(dst_ptr, src_ptr, size);
+#else
+	unsigned long unalign_mask = sizeof(unsigned long) - 1;
+	unsigned long src_unalign = (unsigned long) src_ptr & unalign_mask;
+	unsigned long dst_unalign = (unsigned long) dst_ptr & unalign_mask;
+	if ( src_unalign != dst_unalign )
+		return memcpy_slow(dst_ptr, src_ptr, size);
 
 	union
 	{
 		unsigned long srcval;
-		const uint8_t* restrict src8;
+		const unsigned char* restrict src8;
 		const uint16_t* restrict src16;
 		const uint32_t* restrict src32;
 		const uint64_t* restrict src64;
 		const unsigned long* restrict srcul;
 	};
-	srcval = (unsigned long) srcptr;
+	srcval = (unsigned long) src_ptr;
 
 	union
 	{
 		unsigned long dstval;
-		uint8_t* restrict dst8;
+		unsigned char* restrict dst8;
 		uint16_t* restrict dst16;
 		uint32_t* restrict dst32;
 		uint64_t* restrict dst64;
 		unsigned long* restrict dstul;
 	};
-	dstval = (unsigned long) dstptr;
+	dstval = (unsigned long) dst_ptr;
 
-	if ( dstunalign )
+	if ( dst_unalign )
 	{
-		if ( 1 <= length && !(dstval & (1-1)) && (dstval & (2-1)) )
+		if ( 1 <= size && !(dstval & (1-1)) && (dstval & (2-1)) )
 			*dst8++ = *src8++,
-			length -= 1;
+			size -= 1;
 
-		if ( 2 <= length && !(dstval & (2-1)) && (dstval & (4-1)) )
+		if ( 2 <= size && !(dstval & (2-1)) && (dstval & (4-1)) )
 			*dst16++ = *src16++,
-			length -= 2;
+			size -= 2;
 
 	#if 8 <= __SIZEOF_LONG__
-		if ( 4 <= length && !(dstval & (4-1)) && (dstval & (8-1)) )
+		if ( 4 <= size && !(dstval & (4-1)) && (dstval & (8-1)) )
 			*dst32++ = *src32++,
-			length -= 4;
+			size -= 4;
 	#endif
 	}
 
-	size_t numcopies = length / sizeof(unsigned long);
-#if 0
-#if defined(__x86_64__) || defined(__i386__)
-	unsigned long zeroed_numcopies;
-#if defined(__x86_64__)
-	asm volatile ("rep movsq" : "=c"(zeroed_numcopies), "=S"(srcul), "=D"(dstul)
-	                          : "c"(numcopies), "S"(srcul), "D"(dstul)
-	                          : "memory");
-#elif defined(__i386__)
-	asm volatile ("rep movsd" : "=c"(zeroed_numcopies), "=S"(srcul), "=D"(dstul)
-	                          : "c"(numcopies), "S"(srcul), "D"(dstul)
-	                          : "memory");
-#endif
-#endif
-#else
-	for ( size_t i = 0; i < numcopies; i++ )
+	size_t num_copies = size / sizeof(unsigned long);
+	for ( size_t i = 0; i < num_copies; i++ )
 		*dstul++ = *srcul++;
-#endif
 
-	length -= numcopies * sizeof(unsigned long);
+	size -= num_copies * sizeof(unsigned long);
 
-	if ( length )
+	if ( size )
 	{
 	#if 8 <= __SIZEOF_LONG__
-		if ( 4 <= length  )
+		if ( 4 <= size )
 			*dst32++ = *src32++,
-			length -= 4;
+			size -= 4;
 	#endif
 
-		if ( 2 <= length  )
+		if ( 2 <= size )
 			*dst16++ = *src16++,
-			length -= 2;
+			size -= 2;
 
-		if ( 1 <= length  )
+		if ( 1 <= size )
 			*dst8++ = *src8++,
-			length -= 1;
+			size -= 1;
 	}
 
-	return dstptr;
+	return dst_ptr;
+#endif
 }
