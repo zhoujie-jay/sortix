@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -27,10 +27,10 @@
 
 extern "C" char* strdup(const char* input)
 {
-	size_t inputsize = strlen(input);
-	char* result = (char*) malloc(inputsize + 1);
+	size_t input_length = strlen(input);
+	char* result = (char*) malloc(input_length + 1);
 	if ( !result )
 		return NULL;
-	memcpy(result, input, inputsize + 1);
+	memcpy(result, input, input_length + 1);
 	return result;
 }
