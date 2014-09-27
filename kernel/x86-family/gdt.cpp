@@ -54,8 +54,9 @@ struct gdt_entry64
 	uint8_t base_high;
 	uint32_t base_highest;
 	uint32_t reserved0;
-} __attribute__((packed));
+};
 
+// TODO: Do this in another way that doesn't require a silly structure .
 struct gdt_ptr
 {
 	uint16_t limit;
@@ -96,12 +97,12 @@ struct tss_entry
 	uint32_t ldt; // Unused...
 	uint16_t trap;
 	uint16_t iomap_base;
-} __attribute__((packed));
+};
 #elif defined(__x86_64__)
 struct tss_entry
 {
 	uint32_t reserved0;
-	uint64_t stack0;
+	uint64_t stack0; /* This is not naturally aligned, so packed is needed. */
 	uint64_t stack1;
 	uint64_t stack2;
 	uint64_t reserved2;
