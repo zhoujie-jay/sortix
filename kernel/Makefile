@@ -6,7 +6,6 @@ include ../build-aux/dirs.mak
 
 # Default values in case the user doesn't override these variables.
 OPTLEVEL?=$(DEFAULT_OPTLEVEL)
-DISKWRITE?=1
 CPPFLAGS?=
 CXXFLAGS?=$(OPTLEVEL)
 
@@ -19,7 +18,6 @@ CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -ffreestanding -fbuiltin -std=gnu++11 \
 ifeq ($(PANIC_SHORT),1)
     CPPFLAGS:=$(CPPFLAGS) -DPANIC_SHORT
 endif
-CPPFLAGS:=$(CPPFLAGS) -DENABLE_DISKWRITE=$(DISKWRITE)
 ifdef VERSION
     CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\"
 endif
@@ -81,7 +79,6 @@ OBJS=\
 $(CPUOBJS) \
 addralloc.o \
 alarm.o \
-ata.o \
 clock.o \
 com.o \
 copy.o \
@@ -89,6 +86,10 @@ $(CPUDIR)/kthread.o \
 crc32.o \
 debugger.o \
 descriptor.o \
+disk/ata/ata.o \
+disk/ata/hba.o \
+disk/ata/port.o \
+disk/node.o \
 dtable.o \
 elf.o \
 fcache.o \

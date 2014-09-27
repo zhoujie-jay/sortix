@@ -72,8 +72,8 @@
 #include <sortix/kernel/vnode.h>
 #include <sortix/kernel/worker.h>
 
-#include "ata.h"
 #include "com.h"
+#include "disk/ata/ata.h"
 #include "fs/full.h"
 #include "fs/kram.h"
 #include "fs/null.h"
