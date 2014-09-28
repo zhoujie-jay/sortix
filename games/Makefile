@@ -11,6 +11,7 @@ CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 BINARIES:=\
 asteroids \
+aquatinspitz \
 
 LIBS:=-ldispd
 
