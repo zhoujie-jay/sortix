@@ -331,8 +331,12 @@ readcmd:
 	if ( outputfile )
 	{
 		close(1);
-		int flags = O_CREAT | O_WRONLY | O_APPEND;
-		if ( strcmp(execmode, ">") == 0 ) { flags |= O_TRUNC; }
+		// TODO: Is this logic right or wrong?
+		int flags = O_CREAT | O_WRONLY;
+		if ( strcmp(execmode, ">") == 0 )
+			flags |= O_TRUNC;
+		if ( strcmp(execmode, ">>") == 0 )
+			flags |= O_APPEND;
 		if ( open(outputfile, flags, 0666) < 0 )
 		{
 			error(127, errno, "%s", outputfile);
