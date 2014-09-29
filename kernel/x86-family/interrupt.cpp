@@ -134,16 +134,35 @@ const char* exception_names[] =
 const unsigned int NUM_INTERRUPTS = 256U;
 
 static struct IDT::idt_entry interrupt_table[NUM_INTERRUPTS];
-static Handler interrupt_handlers[NUM_INTERRUPTS];
-static void* interrupt_handler_context[NUM_INTERRUPTS];
+static struct interrupt_handler* interrupt_handlers[NUM_INTERRUPTS];
 
-void RegisterHandler(unsigned int index,
-                     Interrupt::Handler handler,
-                     void* context)
+static struct interrupt_handler Scheduler__InterruptYieldCPU_handler;
+static struct interrupt_handler Signal__DispatchHandler_handler;
+static struct interrupt_handler Signal__ReturnHandler_handler;
+static struct interrupt_handler Scheduler__ThreadExitCPU_handler;
+
+void RegisterHandler(unsigned int index, struct interrupt_handler* handler)
 {
 	assert(index < NUM_INTERRUPTS);
+	bool was_enabled = SetEnabled(false);
+	handler->prev = NULL;
+	if ( (handler->next = interrupt_handlers[index]) )
+		handler->next->prev = handler;
 	interrupt_handlers[index] = handler;
-	interrupt_handler_context[index] = context;
+	SetEnabled(was_enabled);
+}
+
+void UnregisterHandler(unsigned int index, struct interrupt_handler* handler)
+{
+	assert(index < NUM_INTERRUPTS);
+	bool was_enabled = SetEnabled(false);
+	if ( handler->prev )
+		handler->prev->next = handler->next;
+	else
+		interrupt_handlers[index] = handler->next;
+	if ( handler->next )
+		handler->next->prev = handler->prev;
+	SetEnabled(was_enabled);
 }
 
 static void RegisterRawHandler(unsigned int index,
@@ -168,11 +187,7 @@ void Init()
 	// Initialize the interrupt table entries to the null interrupt handler.
 	memset(&interrupt_table, 0, sizeof(interrupt_table));
 	for ( unsigned int i = 0; i < NUM_INTERRUPTS; i++ )
-	{
-		interrupt_handlers[i] = NULL;
-		interrupt_handler_context[i] = NULL;
 		RegisterRawHandler(i, interrupt_handler_null, false, false);
-	}
 
 	// Remap the IRQ table on the PICs.
 	PIC::ReprogramPIC();
@@ -231,10 +246,14 @@ void Init()
 	RegisterRawHandler(131, isr131, true, true);
 	RegisterRawHandler(132, thread_exit_handler, true, false);
 
-	RegisterHandler(129, Scheduler::InterruptYieldCPU, NULL);
-	RegisterHandler(130, Signal::DispatchHandler, NULL);
-	RegisterHandler(131, Signal::ReturnHandler, NULL);
-	RegisterHandler(132, Scheduler::ThreadExitCPU, NULL);
+	Scheduler__InterruptYieldCPU_handler.handler = Scheduler::InterruptYieldCPU;
+	RegisterHandler(129, &Scheduler__InterruptYieldCPU_handler);
+	Signal__DispatchHandler_handler.handler = Signal::DispatchHandler;
+	RegisterHandler(130, &Signal__DispatchHandler_handler);
+	Signal__ReturnHandler_handler.handler = Signal::ReturnHandler;
+	RegisterHandler(131, &Signal__ReturnHandler_handler);
+	Scheduler__ThreadExitCPU_handler.handler = Scheduler::ThreadExitCPU;
+	RegisterHandler(132, &Scheduler__ThreadExitCPU_handler);
 
 	IDT::Set(interrupt_table, NUM_INTERRUPTS);
 
@@ -333,8 +352,13 @@ extern "C" void interrupt_handler(struct interrupt_context* intctx)
 		KernelCrashHandler(intctx);
 	else if ( is_crash && is_in_user )
 		UserCrashHandler(intctx);
-	else if ( interrupt_handlers[int_no] )
-		interrupt_handlers[int_no](intctx, interrupt_handler_context[int_no]);
+	else
+	{
+		for ( struct interrupt_handler* iter = interrupt_handlers[int_no];
+		      iter;
+		      iter = iter->next )
+			iter->handler(intctx, iter->context);
+	}
 
 	// Send an end of interrupt signal to the PICs if we got an IRQ.
 	if ( IRQ0 <= int_no && int_no <= IRQ15 )

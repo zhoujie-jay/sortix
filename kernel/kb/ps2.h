@@ -28,6 +28,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/keyboard.h>
 
@@ -56,6 +57,7 @@ private:
 	void NotifyOwner();
 
 private:
+	struct interrupt_handler interrupt_registration;
 	int* queue;
 	size_t queuelength;
 	size_t queueoffset;

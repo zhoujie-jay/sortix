@@ -76,7 +76,9 @@ PS2Keyboard::PS2Keyboard(uint16_t iobase, uint8_t interrupt)
 	this->leds = 0;
 	this->scancodeescaped = false;
 	this->kblock = KTHREAD_MUTEX_INITIALIZER;
-	Interrupt::RegisterHandler(interrupt, PS2Keyboard__OnInterrupt, this);
+	interrupt_registration.handler = PS2Keyboard__OnInterrupt;
+	interrupt_registration.context = this;
+	Interrupt::RegisterHandler(interrupt, &interrupt_registration);
 
 	// If any scancodes were already pending, our interrupt handler will
 	// never be called. Let's just discard anything pending.
@@ -85,7 +87,7 @@ PS2Keyboard::PS2Keyboard(uint16_t iobase, uint8_t interrupt)
 
 PS2Keyboard::~PS2Keyboard()
 {
-	Interrupt::RegisterHandler(interrupt, NULL, NULL);
+	Interrupt::RegisterHandler(interrupt, &interrupt_registration);
 	delete[] queue;
 }
 

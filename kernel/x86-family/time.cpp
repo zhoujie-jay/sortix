@@ -74,6 +74,8 @@ static void RequestIRQ0(uint16_t divisor)
 extern Clock* realtime_clock;
 extern Clock* uptime_clock;
 
+struct interrupt_handler timer_interrupt_registration;
+
 static struct timespec tick_period;
 static long tick_frequency;
 static uint16_t tick_divisor;
@@ -126,7 +128,9 @@ void InitializeProcessClocks(Process* process)
 void Start()
 {
 	// Handle timer interrupts if they arrive.
-	Interrupt::RegisterHandler(Interrupt::IRQ0, &OnIRQ0, NULL);
+	timer_interrupt_registration.handler = OnIRQ0;
+	timer_interrupt_registration.context = 0;
+	Interrupt::RegisterHandler(Interrupt::IRQ0, &timer_interrupt_registration);
 
 	// Request a timer interrupt now that we can handle them safely.
 	RequestIRQ0(tick_divisor);

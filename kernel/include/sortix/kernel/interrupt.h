@@ -31,6 +31,21 @@
 #include <sortix/kernel/registers.h>
 
 namespace Sortix {
+
+struct interrupt_context;
+
+struct interrupt_handler
+{
+	void (*handler)(struct interrupt_context*, void*);
+	void* context;
+	struct interrupt_handler* next;
+	struct interrupt_handler* prev;
+};
+
+} // namespace Sortix
+
+namespace Sortix {
+
 namespace Interrupt {
 
 #if defined(__i386__) || defined(__x86_64__)
@@ -100,9 +115,8 @@ inline bool SetEnabled(bool is_enabled)
 	return wasenabled;
 }
 
-
-typedef void (*Handler)(struct interrupt_context* intctx, void* user);
-void RegisterHandler(unsigned int index, Handler handler, void* user);
+void RegisterHandler(unsigned int index, struct interrupt_handler* handler);
+void UnregisterHandler(unsigned int index, struct interrupt_handler* handler);
 
 void Init();
 void InitWorker();

@@ -415,6 +415,9 @@ static void UARTIRQHandler(struct interrupt_context* /*intctx*/, void* /*user*/)
 	}
 }
 
+static struct interrupt_handler irq3_handler;
+static struct interrupt_handler irq4_handler;
+
 void Init(const char* devpath, Ref<Descriptor> slashdev)
 {
 	ioctx_t ctx; SetupKernelIOCtx(&ctx);
@@ -434,8 +437,11 @@ void Init(const char* devpath, Ref<Descriptor> slashdev)
 			PanicF("Unable to link %s/%s to COM port driver.", devpath, name);
 	}
 
-	Interrupt::RegisterHandler(Interrupt::IRQ3, UARTIRQHandler, NULL);
-	Interrupt::RegisterHandler(Interrupt::IRQ4, UARTIRQHandler, NULL);
+	irq3_handler.handler = UARTIRQHandler;
+	irq4_handler.handler = UARTIRQHandler;
+
+	Interrupt::RegisterHandler(Interrupt::IRQ3, &irq3_handler);
+	Interrupt::RegisterHandler(Interrupt::IRQ4, &irq4_handler);
 
 	// Initialize the ports so we can transfer data.
 	for ( size_t i = 1; i <= NUMCOMPORTS; i++ )
