@@ -353,7 +353,7 @@ void ChannelDirection::SendClose()
 void ChannelDirection::RecvClose()
 {
 	ScopedLock lock(&transfer_lock);
-	still_writing = false;
+	still_reading = false;
 	kthread_cond_signal(&not_full);
 }
 
@@ -1002,7 +1002,7 @@ int Unode::mkdir(ioctx_t* /*ctx*/, const char* filename, mode_t mode)
 {
 	Channel* channel = server->Connect();
 	if ( !channel )
-		return 0;
+		return -1;
 	size_t filenamelen = strlen(filename);
 	int ret = -1;
 	struct fsm_req_mkdir msg;
@@ -1024,7 +1024,7 @@ int Unode::link(ioctx_t* /*ctx*/, const char* filename, Ref<Inode> node)
 		return errno = EXDEV, -1;
 	Channel* channel = server->Connect();
 	if ( !channel )
-		return 0;
+		return -1;
 	size_t filenamelen = strlen(filename);
 	int ret = -1;
 	struct fsm_req_link msg;
@@ -1049,7 +1049,7 @@ int Unode::unlink(ioctx_t* /*ctx*/, const char* filename)
 	// TODO: Make sure the target is no longer used!
 	Channel* channel = server->Connect();
 	if ( !channel )
-		return 0;
+		return -1;
 	size_t filenamelen = strlen(filename);
 	int ret = -1;
 	struct fsm_req_unlink msg;
@@ -1073,7 +1073,7 @@ int Unode::rmdir(ioctx_t* /*ctx*/, const char* filename)
 	// TODO: Make sure the target is no longer used!
 	Channel* channel = server->Connect();
 	if ( !channel )
-		return 0;
+		return -1;
 	size_t filenamelen = strlen(filename);
 	int ret = -1;
 	struct fsm_req_rmdir msg;
@@ -1096,7 +1096,7 @@ int Unode::symlink(ioctx_t* /*ctx*/, const char* oldname, const char* filename)
 {
 	Channel* channel = server->Connect();
 	if ( !channel )
-		return 0;
+		return -1;
 	size_t oldnamelen = strlen(oldname);
 	size_t filenamelen = strlen(filename);
 	int ret = -1;
