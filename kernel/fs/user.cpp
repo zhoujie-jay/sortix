@@ -293,7 +293,7 @@ size_t ChannelDirection::Send(ioctx_t* ctx, const void* ptr, size_t least, size_
 			available = available_to_end;
 		if ( available < count )
 			count = available;
-		if ( !ctx->copy_to_dest(buffer + use_offset, src + sofar, count) )
+		if ( !ctx->copy_from_src(buffer + use_offset, src + sofar, count) )
 			return sofar;
 		if ( !buffer_used )
 			kthread_cond_signal(&not_empty);
@@ -331,7 +331,7 @@ size_t ChannelDirection::Recv(ioctx_t* ctx, void* ptr, size_t least, size_t max)
 			available = available_to_end;
 		if ( available < count )
 			count = available;
-		if ( !ctx->copy_from_src(dst + sofar, buffer + use_offset, count) )
+		if ( !ctx->copy_to_dest(dst + sofar, buffer + use_offset, count) )
 			return sofar;
 		if ( buffer_used == BUFFER_SIZE )
 			kthread_cond_signal(&not_full);
@@ -960,7 +960,7 @@ ssize_t Unode::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 		entry.d_ino = resp.ino;
 		entry.d_type = resp.type;
 
-		if ( !ctx->copy_from_src(dirent, &entry, sizeof(entry)) )
+		if ( !ctx->copy_to_dest(dirent, &entry, sizeof(entry)) )
 			goto break_if;
 
 		size_t needed = sizeof(*dirent) + resp.namelen + 1;
@@ -969,7 +969,7 @@ ssize_t Unode::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 
 		uint8_t nul = 0;
 		if ( channel->KernelRecv(ctx, dirent->d_name, resp.namelen) &&
-		     ctx->copy_from_src(&dirent->d_name[resp.namelen], &nul, 1) )
+		     ctx->copy_to_dest(&dirent->d_name[resp.namelen], &nul, 1) )
 			ret = (ssize_t) needed;
 	} break_if:
 	channel->KernelClose();
