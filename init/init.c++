@@ -16,13 +16,14 @@
     this program. If not, see <http://www.gnu.org/licenses/>.
 
     init.c++
-    Initializes the system by setting up the terminal and starting the shell.
+    Start the operating system.
 
 *******************************************************************************/
 
 #define __STDC_CONSTANT_MACROS
 #define __STDC_LIMIT_MACROS
 
+#include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -46,15 +47,6 @@
 
 #include <fsmarshall.h>
 
-bool has_descriptor(int fd)
-{
-	struct stat st;
-	int saved_errno = errno;
-	bool ret = fstat(fd, &st) == 0;
-	errno = saved_errno;
-	return ret;
-}
-
 char* read_single_line(FILE* fp)
 {
 	char* ret = NULL;
@@ -67,18 +59,14 @@ char* read_single_line(FILE* fp)
 	return ret;
 }
 
-char* strdup_null(const char* src)
-{
-	return src ? strdup(src) : NULL;
-}
-
 char* print_string(const char* format, ...)
 {
 	char* ret = NULL;
 	va_list ap;
 	va_start(ap, format);
-	vasprintf(&ret, format, ap);
+	int status = vasprintf(&ret, format, ap);
 	va_end(ap);
+	assert(0 <= status);
 	return ret;
 }
 
@@ -86,7 +74,8 @@ char* join_paths(const char* a, const char* b)
 {
 	size_t a_len = strlen(a);
 	bool has_slash = (a_len && a[a_len-1] == '/') || b[0] == '/';
-	return has_slash ? print_string("%s%s", a, b) : print_string("%s/%s", a, b);
+	return has_slash ? print_string("%s%s", a, b)
+	                 : print_string("%s/%s", a, b);
 }
 
 typedef struct
@@ -137,7 +126,7 @@ bool string_array_append(string_array_t* sa, const char* str)
 		sa->strings = new_strings;
 		sa->capacity = new_capacity;
 	}
-	char* copy = strdup_null(str);
+	char* copy = str ? strdup(str) : NULL;
 	if ( str && !copy )
 		return false;
 	sa->strings[sa->length++] = copy;
@@ -186,13 +175,13 @@ int child()
 int runsystem()
 {
 	pid_t childpid = fork();
-	if ( childpid < 0 ) { perror("fork"); return 2; }
+	if ( childpid < 0 )
+		error(2, errno, "fork");
 
 	if ( childpid )
 	{
 		int status;
 		waitpid(childpid, &status, 0);
-		while ( 0 < waitpid(-1, NULL, WNOHANG) );
 		// TODO: Use the proper macro!
 		if ( 128 <= WEXITSTATUS(status) || WIFSIGNALED(status) )
 		{
@@ -205,7 +194,7 @@ int runsystem()
 	exit(child());
 }
 
-int chain_boot_path(const char* path, pid_t fs_pid = -1)
+int chain_boot_path(const char* path)
 {
 	// Run the next init program and restart it in case of a crash.
 try_reboot_system:
@@ -213,14 +202,6 @@ try_reboot_system:
 	{
 		int status;
 		waitpid(child_pid, &status, 0);
-		while ( 0 < waitpid(-1, NULL, WNOHANG) );
-		if ( 0 < fs_pid )
-		{
-			int fs_status;
-			kill(fs_pid, SIGTERM);
-			waitpid(fs_pid, &fs_status, 0);
-		}
-		while ( 0 < waitpid(-1, NULL, WNOHANG) );
 		// TODO: Use the proper macro!
 		if ( 128 <= WEXITSTATUS(status) || WIFSIGNALED(status) )
 		{
@@ -364,7 +345,20 @@ int chain_boot_device(const char* dev_path)
 	close(new_dev_fd);
 	close(old_dev_fd);
 
-	int ret = chain_boot_path(mount_point, fs_pid);
+	int ret = chain_boot_path(mount_point);
+
+	int root_fd = open(mount_point, O_RDONLY);
+	if ( 0 <= root_fd )
+	{
+		fsync(root_fd);
+		close(root_fd);
+	}
+
+	unmount(mount_point, 0);
+
+	int fs_exitstatus;
+	waitpid(fs_pid, &fs_exitstatus, 0);
+
 	if ( ret == 127 )
 		return init_emergency(errno, "Unable to locate the next init program");
 	return ret;
@@ -441,8 +435,42 @@ retry_ask_root_block_device:
 	return chain_boot_device(root_block_devices.strings[index]);
 }
 
-int main(int /*argc*/, char* /*argv*/[])
+void set_hostname()
 {
+	FILE* hostname_fp = fopen("/etc/hostname", "r");
+	if ( !hostname_fp )
+	{
+		if ( errno == ENOENT )
+			return;
+		error(0, errno, "unable to open /etc/hostname, hostname is not set");
+		return;
+	}
+
+	char* hostname = read_single_line(hostname_fp);
+	if ( !hostname )
+	{
+		error(0, errno, "unable to read /etc/hostname, hostname is not set");
+		fclose(hostname_fp);
+		return;
+	}
+
+	fclose(hostname_fp);
+
+	if ( sethostname(hostname, strlen(hostname) + 1) < 0 )
+	{
+		error(0, errno, "unable to set hostname to `%s'", hostname);
+		free(hostname);
+		return;
+	}
+
+	free(hostname);
+}
+
+int init_main(int argc, char* argv[])
+{
+	if ( 3 <= argc && !strcmp(argv[1], "--chain") )
+		return chain_boot_device(argv[2]);
+
 	// Reset the terminal's color and the rest of it.
 	printf(BRAND_INIT_BOOT_MESSAGE);
 	fflush(stdout);
@@ -465,6 +493,9 @@ int main(int /*argc*/, char* /*argv*/[])
 	// Make sure that we have a /tmp directory.
 	mkdir("/tmp", 01777);
 
+	// Set the hostname as found in /etc/hostname.
+	set_hostname();
+
 	// Find the uuid of the root filesystem.
 	const char* root_uuid_file = "/etc/init/rootfs.uuid";
 	FILE* root_uuid_fp = fopen(root_uuid_file, "r");
@@ -484,4 +515,34 @@ int main(int /*argc*/, char* /*argv*/[])
 	fclose(root_uuid_fp);
 
 	return chain_boot_uuid(root_uuid);
+}
+
+int main(int argc, char* argv[])
+{
+	if ( getpid() == 1 )
+	{
+		pid_t direct_child_pid = fork();
+		if ( direct_child_pid < 0 )
+			error(2, errno, "fork");
+		if ( direct_child_pid )
+		{
+			int status;
+			while ( true )
+			{
+				pid_t child_pid = waitpid(-1, &status, 0);
+				if ( child_pid < 0 )
+					error(2, errno, "waitpid");
+				if ( child_pid == direct_child_pid )
+					break;
+			}
+			int exit_value = WEXITSTATUS(status);
+			// TODO: Broadcast SIGKILL and wait for all processes to finish.
+			while ( 0 < waitpid(-1, &status, WNOHANG) )
+			{
+			}
+			return exit_value;
+		}
+	}
+
+	return init_main(argc, argv);
 }
