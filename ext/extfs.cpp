@@ -699,24 +699,26 @@ void HandleIncomingMessage(int svr, int chl, struct fsm_msg_header* hdr,
 	handlers[FSM_REQ_UNREF] = (handler_t) HandleUnref;
 	if ( FSM_MSG_NUM <= hdr->msgtype || !handlers[hdr->msgtype] )
 	{
-		fprintf(stderr, "extfs: message %zu not supported!\n", hdr->msgtype);
+		fprintf(stderr, "extfs: message type %zu not supported!\n", hdr->msgtype);
 		RespondError(svr, chl, ENOTSUP);
 		return;
 	}
 	uint8_t* body = (uint8_t*) malloc(hdr->msgsize);
 	if ( !body )
 	{
-		fprintf(stderr, "extfs: message too large: %zu bytes\n", hdr->msgsize);
+		fprintf(stderr, "extfs: message of type %zu too large: %zu bytes\n", hdr->msgtype, hdr->msgsize);
 		RespondError(svr, chl, errno);
 		return;
 	}
-	if ( fsm_recv(svr, chl, body, hdr->msgsize) == (ssize_t) hdr->msgsize )
-		handlers[hdr->msgtype](svr, chl, body, fs);
-	else
+	ssize_t amount = fsm_recv(svr, chl, body, hdr->msgsize);
+	if ( amount < (ssize_t) hdr->msgsize )
 	{
-		fprintf(stderr, "extfs: incomplete message: expected %zu bytes\n", hdr->msgsize);
+		fprintf(stderr, "extfs: incomplete message of type %zu: got %zi of %zu bytes\n", hdr->msgtype, amount, hdr->msgsize);
 		RespondError(svr, chl, errno);
+		free(body);
+		return;
 	}
+	handlers[hdr->msgtype](svr, chl, body, fs);
 	free(body);
 }
 
@@ -1200,30 +1202,30 @@ int ext2_fuse_utimens(const char* path, const struct timespec tv[2])
 
 #endif
 
-void CompactArguments(int* argc, char*** argv)
+void compact_arguments(int* argc, char*** argv)
 {
 	for ( int i = 0; i < *argc; i++ )
-	while ( i < *argc && !(*argv)[i] )
 	{
-		for ( int n = i; n < *argc; n++ )
-			(*argv)[n] = (*argv)[n+1];
-		(*argc)--;
+		while ( i < *argc && !(*argv)[i] )
+		{
+			for ( int n = i; n < *argc; n++ )
+				(*argv)[n] = (*argv)[n+1];
+			(*argc)--;
+		}
 	}
 }
 
-void Usage(FILE* fp, const char* argv0)
+void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [--probe] [--test-uuid UUID] DEVICE [MOUNT-POINT]\n", argv0);
 }
 
-void Help(FILE* fp, const char* argv0)
+void version(FILE* fp, const char* argv0)
 {
-	Usage(fp, argv0);
-}
-
-void Version(FILE* fp, const char* argv0)
-{
-	Usage(fp, argv0);
+	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
+	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
+	fprintf(fp, "This is free software: you are free to change and redistribute it.\n");
+	fprintf(fp, "There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
 int main(int argc, char* argv[])
@@ -1250,13 +1252,12 @@ int main(int argc, char* argv[])
 			case 'w': write = true; break;
 			default:
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
-				Usage(stderr, argv0);
+				help(stderr, argv0);
 				exit(1);
 			}
 		}
-		else if ( !strcmp(arg, "--help") ) { Help(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--usage") ) { Usage(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--version") ) { Version(stdout, argv0); exit(0); }
+		else if ( !strcmp(arg, "--help") ) { help(stdout, argv0); exit(0); }
+		else if ( !strcmp(arg, "--version") ) { version(stdout, argv0); exit(0); }
 		else if ( !strcmp(arg, "--foreground") )
 			foreground = true;
 		else if ( !strcmp(arg, "--probe") )
@@ -1277,7 +1278,7 @@ int main(int argc, char* argv[])
 		else
 		{
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
-			Usage(stderr, argv0);
+			help(stderr, argv0);
 			exit(1);
 		}
 	}
@@ -1290,18 +1291,18 @@ int main(int argc, char* argv[])
 
 	if ( argc == 1 )
 	{
-		Usage(stderr, argv0);
+		help(stdout, argv0);
 		exit(0);
 	}
 
-	CompactArguments(&argc, &argv);
+	compact_arguments(&argc, &argv);
 
 	const char* device_path = 2 <= argc ? argv[1] : NULL;
 	const char* mount_path = 2 <= argc ? argv[2] : NULL;
 
 	if ( !device_path )
 	{
-		Usage(stderr, argv0);
+		help(stderr, argv0);
 		exit(1);
 	}
 
@@ -1315,13 +1316,15 @@ int main(int argc, char* argv[])
 	{
 		if ( probe )
 			exit(1);
+		else if ( errno == EEOF )
+			error(1, 0, "`%s' isn't a valid extended filecsysten", device_path);
 		else
 			error(1, errno, "read: `%s'", device_path);
 	}
 
 	// Verify the magic value to detect a compatible filesystem.
 	if ( !probe && sb.s_magic != EXT2_SUPER_MAGIC )
-		error(1, 0, "`%s' isn't a valid extended filesysten", device_path);
+		error(1, 0, "`%s' isn't a valid extended filecsysten", device_path);
 
 	if ( probe && sb.s_magic != EXT2_SUPER_MAGIC )
 		exit(1);
@@ -1332,7 +1335,7 @@ int main(int argc, char* argv[])
 		// TODO: Test uuid!
 	}
 
-	// Test whether this revision of the extened filesystem is supported.
+	// Test whether this revision of the extended filesystem is supported.
 	if ( probe && sb.s_rev_level == EXT2_GOOD_OLD_REV )
 		exit(1);
 
@@ -1445,8 +1448,9 @@ int main(int argc, char* argv[])
 		ssize_t amount;
 		if ( (amount = fsm_recv(serverfd, channel, &hdr, sizeof(hdr))) != sizeof(hdr) )
 		{
-			error(0, errno, "got %zi bytes, expected %zu", amount, sizeof(hdr));
-			break;
+			error(0, errno, "incomplete header: got %zi of %zu bytes", amount, sizeof(hdr));
+			errno = 0;
+			continue;
 		}
 		HandleIncomingMessage(serverfd, channel, &hdr, fs);
 		fsm_closechannel(serverfd, channel);
@@ -1454,7 +1458,7 @@ int main(int argc, char* argv[])
 		struct timespec now;
 		clock_gettime(CLOCK_MONOTONIC, &now);
 
-		if ( write && 5 <= timespec_sub(now, last_sync_at).tv_sec)
+		if ( write && 5 <= timespec_sub(now, last_sync_at).tv_sec )
 		{
 			fs->Sync();
 			last_sync_at = now;

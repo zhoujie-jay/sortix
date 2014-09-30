@@ -6,7 +6,7 @@ include ../build-aux/dirs.mak
 OPTLEVEL?=$(DEFAULT_OPTLEVEL)
 CXXFLAGS?=$(OPTLEVEL)
 
-CPPFLAGS:=$(CPPFLAGS)
+CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\"
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 LIBS:=$(LIBS)

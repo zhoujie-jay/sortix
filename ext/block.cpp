@@ -73,7 +73,6 @@ void Block::Sync()
 		return;
 	off_t file_offset = (off_t) device->block_size * (off_t) block_id;
 	pwriteall(device->fd, block_data, device->block_size, file_offset);
-
 }
 
 void Block::Dirty()
