@@ -90,23 +90,23 @@ bool is_extended_partition(const struct partition* partition)
 uint64_t partition_get_start(const struct partition* partition)
 {
 	if ( !is_48bit_lba_partition(partition) )
-		return partition->start_sector * 512;
+		return (uint64_t) partition->start_sector * 512;
 	const struct partition_lba48* partition_lba48 =
 		(const struct partition_lba48*) partition;
 	uint64_t lower = partition_lba48->start_sector;
 	uint64_t higher = partition_lba48->start_sector_high;
-	return ((lower << 48) + higher) * 512;
+	return ((higher << 32) + lower) * 512;
 }
 
 uint64_t partition_get_length(const struct partition* partition)
 {
 	if ( !is_48bit_lba_partition(partition) )
-		return partition->total_sectors * 512;
+		return (uint64_t) partition->total_sectors * 512;
 	const struct partition_lba48* partition_lba48 =
 		(const struct partition_lba48*) partition;
 	uint64_t lower = partition_lba48->total_sectors;
 	uint64_t higher = partition_lba48->total_sectors_high;
-	return ((lower << 48) + higher) * 512;
+	return ((higher << 32) + lower) * 512;
 }
 
 bool is_partition_used(const struct partition* partition)
