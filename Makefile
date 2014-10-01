@@ -58,13 +58,63 @@ INITRD:=$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).initrd
 .PHONY: all
 all: sysroot
 
-ifeq ($(BUILD_IS_SORTIX),1)
 .PHONY: install
 install: sysroot
-	(for ENTRY in $$(ls -A "$(SYSROOT)" | grep -Ev '^src$$'); do \
-		cp -RTv "$(SYSROOT)/$$ENTRY" "$(DESTDIR)/$$ENTRY" || exit $$?; \
-	done)
+	@if test -z '$(INSTALL_ROOTFS)' ; then \
+	  echo "error: You must set INSTALL_ROOTFS to where you want Sortix installed" >&2; \
+	  exit 1; \
+	fi
+	@if test -d '$(INSTALL_ROOTFS)' && test -z '$(STUPIDLY_FORCE_SORTIX_INSTALL_OVERWRITE)'; then \
+	  for ENTRY in $$(ls -A "$(SYSROOT)"); do \
+	    if test -e "$(INSTALL_ROOTFS)/$$ENTRY"; then \
+	      echo "Error: Refusing to corrupt the existing installation at $(INSTALL_ROOTFS)" >&2; \
+	      echo "Use sysmerge to update an existence installation." >&2; \
+	      exit 1; \
+	    fi; \
+	  done; \
+	fi
+	cp -RTv "$(SYSROOT)" "$(INSTALL_ROOTFS)"
+	@if test -n '$(INSTALL_ROOTFS_UUID)'; then \
+	   echo '$(INSTALL_ROOTFS_UUID)' > "$(INSTALL_ROOTFS)/etc/rootfs.uuid"; \
+	   $(MAKE) create-install-rootfs-initrd; \
+	else \
+	   echo "Warning: INSTALL_ROOTFS_UUID was not set"; \
+	   echo "Therefore: /etc/rootfs.uuid was not created"; \
+	   echo "Therefore: No initrd was created and installed"; \
+	fi
+
+.PHONY: create-install-rootfs-initrd
+create-install-rootfs-initrd:
+ifeq ($(BUILD_IS_SORTIX),0)
+	@if test -z '$(INSTALL_ROOTFS)' || test 'x$(INSTALL_ROOTFS)' = 'x/'; then \
+	  echo "error: Refusing to create an initrd for the local non-Sortix operating system" >&2; \
+	  exit 1; \
+	fi
 endif
+	mkdir -p "$(INSTALL_ROOTFS)/boot/$(HOST)"
+	rm -rf "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d"
+	mkdir -p "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d"
+	mkdir -p "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d/$(HOST)/bin"
+	for PROGRAM in init mbrfs extfs; do \
+	  cp "$(INSTALL_ROOTFS)/$(HOST)/bin/$$PROGRAM" "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d/$(HOST)/bin/$$PROGRAM"; \
+	done
+	mkdir -p "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d/etc"
+	mkdir -p "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d/etc/init"
+	cp "$(INSTALL_ROOTFS)/etc/rootfs.uuid" "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d/etc/init/rootfs.uuid"
+	mkinitrd --format=sortix-initrd-2 "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d" -o "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd"
+	rm -rf "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d"
+
+.PHONY: sysmerge
+sysmerge: sysroot
+ifeq ($(BUILD_IS_SORTIX),0)
+	if test -z '$(DESTDIR)' || test 'x$(DESTDIR)' = 'x/'; then \
+	  echo "error: Refusing to corrupt the local operating system by sysmerging it with Sortix" >&2 \
+	  exit 1 \
+	fi
+endif
+	for ENTRY in $$(ls -A "$(SYSROOT)" | grep -Ev '^(src|etc|home|mnt|tmp|var)$$'); do \
+		cp -RTv "$(SYSROOT)/$$ENTRY" "$(DESTDIR)/$$ENTRY" || exit $$?; \
+	done
 
 .PHONY: build-tools
 build-tools:
