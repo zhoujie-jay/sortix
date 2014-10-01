@@ -45,6 +45,7 @@ public:
 	uint32_t num_inodes;
 	Inode* mru_inode;
 	Inode* lru_inode;
+	Inode* dirty_inode;
 	time_t mtime_realtime;
 	time_t mtime_monotonic;
 	bool dirty;

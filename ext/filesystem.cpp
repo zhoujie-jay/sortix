@@ -50,6 +50,7 @@ Filesystem::Filesystem(Device* device)
 	block_size = device->block_size;
 	mru_inode = NULL;
 	lru_inode = NULL;
+	dirty_inode = NULL;
 	inode_size = this->sb->s_inode_size;
 	num_blocks = sb->s_blocks_count;
 	num_groups = divup(this->sb->s_blocks_count, this->sb->s_blocks_per_group);
@@ -90,8 +91,8 @@ void Filesystem::Dirty()
 
 void Filesystem::Sync()
 {
-	for ( Inode* iter = mru_inode; iter; iter = iter->next_inode )
-		iter->Sync();
+	while ( dirty_inode )
+		dirty_inode->Sync();
 	for ( size_t i = 0; i < num_groups; i++ )
 		if ( block_groups && block_groups[i] )
 			block_groups[i]->Sync();

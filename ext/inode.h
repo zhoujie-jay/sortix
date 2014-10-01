@@ -35,6 +35,8 @@ public:
 public:
 	Inode* prev_inode;
 	Inode* next_inode;
+	Inode* prev_dirty;
+	Inode* next_dirty;
 	Block* data_block;
 	struct ext_inode* data;
 	Filesystem* filesystem;

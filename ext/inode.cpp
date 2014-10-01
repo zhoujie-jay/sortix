@@ -53,6 +53,8 @@ Inode::Inode(Filesystem* filesystem, uint32_t inode_id)
 {
 	this->prev_inode = NULL;
 	this->next_inode = NULL;
+	this->prev_dirty = NULL;
+	this->next_dirty = NULL;
 	this->filesystem = filesystem;
 	this->reference_count = 1;
 	this->inode_id = inode_id;
@@ -969,15 +971,29 @@ void Inode::RemoteUnref()
 
 void Inode::Dirty()
 {
-	dirty = true;
+	if ( !dirty )
+	{
+		dirty = true;
+		prev_dirty = NULL;
+		next_dirty = filesystem->dirty_inode;
+		if ( next_dirty )
+			next_dirty->prev_dirty = this;
+		filesystem->dirty_inode = this;
+	}
 	data_block->Dirty();
 	Use();
 }
 
 void Inode::Sync()
 {
-	if ( dirty )
-		data_block->Sync();
+	if ( !dirty )
+		return;
+	data_block->Sync();
+	(prev_dirty ? prev_dirty->next_dirty : filesystem->dirty_inode) = next_dirty;
+	if ( next_dirty )
+		next_dirty->prev_dirty = prev_dirty;
+	prev_dirty = NULL;
+	next_dirty = NULL;
 	dirty = false;
 }
 
