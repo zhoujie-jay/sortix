@@ -237,9 +237,10 @@ int main(int argc, char* argv[])
 		if ( fd < 0 )
 			error(1, errno, "`%s'", path);
 		struct mbr mbr;
-		if ( preadall(fd, &mbr, sizeof(mbr), 0) != sizeof(mbr) )
+		size_t amount = preadall(fd, &mbr, sizeof(mbr), 0);
+		if ( amount < sizeof(mbr) && errno != EEOF )
 			error(1, errno, "read: `%s'", path);
-		if ( !verify_is_mbr(&mbr) )
+		if ( amount < sizeof(mbr) || !verify_is_mbr(&mbr) )
 		{
 			if ( probe )
 				exit(1);
