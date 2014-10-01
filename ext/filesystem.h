@@ -27,6 +27,8 @@ class BlockGroup;
 class Device;
 class Inode;
 
+const size_t INODE_HASH_LENGTH = 1 << 16;
+
 class Filesystem
 {
 public:
@@ -46,6 +48,7 @@ public:
 	Inode* mru_inode;
 	Inode* lru_inode;
 	Inode* dirty_inode;
+	Inode* hash_inodes[INODE_HASH_LENGTH];
 	time_t mtime_realtime;
 	time_t mtime_monotonic;
 	bool dirty;

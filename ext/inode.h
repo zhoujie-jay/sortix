@@ -35,6 +35,8 @@ public:
 public:
 	Inode* prev_inode;
 	Inode* next_inode;
+	Inode* prev_hashed;
+	Inode* next_hashed;
 	Inode* prev_dirty;
 	Inode* next_dirty;
 	Block* data_block;

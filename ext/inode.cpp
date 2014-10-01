@@ -53,6 +53,8 @@ Inode::Inode(Filesystem* filesystem, uint32_t inode_id)
 {
 	this->prev_inode = NULL;
 	this->next_inode = NULL;
+	this->prev_hashed = NULL;
+	this->next_hashed = NULL;
 	this->prev_dirty = NULL;
 	this->next_dirty = NULL;
 	this->filesystem = filesystem;
@@ -1008,6 +1010,9 @@ void Inode::Unlink()
 {
 	(prev_inode ? prev_inode->next_inode : filesystem->mru_inode) = next_inode;
 	(next_inode ? next_inode->prev_inode : filesystem->lru_inode) = prev_inode;
+	size_t bin = inode_id % INODE_HASH_LENGTH;
+	(prev_hashed ? prev_hashed->next_hashed : filesystem->hash_inodes[bin]) = next_hashed;
+	if ( next_hashed ) next_hashed->prev_hashed = prev_hashed;
 }
 
 void Inode::Prelink()
@@ -1019,4 +1024,10 @@ void Inode::Prelink()
 	filesystem->mru_inode = this;
 	if ( !filesystem->lru_inode )
 		filesystem->lru_inode = this;
+	size_t bin = inode_id % INODE_HASH_LENGTH;
+	prev_hashed = NULL;
+	next_hashed = filesystem->hash_inodes[bin];
+	filesystem->hash_inodes[bin] = this;
+	if ( next_hashed )
+		next_hashed->prev_hashed = this;
 }

@@ -51,6 +51,8 @@ Filesystem::Filesystem(Device* device)
 	mru_inode = NULL;
 	lru_inode = NULL;
 	dirty_inode = NULL;
+	for ( size_t i = 0; i < INODE_HASH_LENGTH; i++ )
+		hash_inodes[i] = NULL;
 	inode_size = this->sb->s_inode_size;
 	num_blocks = sb->s_blocks_count;
 	num_groups = divup(this->sb->s_blocks_count, this->sb->s_blocks_per_group);
@@ -140,7 +142,8 @@ Inode* Filesystem::GetInode(uint32_t inode_id)
 	assert(inode_id);
 	assert(inode_id < num_inodes);
 
-	for ( Inode* iter = mru_inode; iter; iter = iter->next_inode )
+	size_t bin = inode_id % INODE_HASH_LENGTH;
+	for ( Inode* iter = hash_inodes[bin]; iter; iter = iter->next_hashed )
 		if ( iter->inode_id == inode_id )
 			return iter->Refer(), iter;
 
