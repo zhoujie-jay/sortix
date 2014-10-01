@@ -1202,6 +1202,66 @@ int ext2_fuse_utimens(const char* path, const struct timespec tv[2])
 
 #endif
 
+static bool is_hex_digit(char c)
+{
+	return ('0' <= c && c <= '9') ||
+	       ('a' <= c && c <= 'f') ||
+	       ('A' <= c && c <= 'F');
+}
+
+static bool is_valid_uuid(const char* uuid)
+{
+	if ( strlen(uuid) != 36 )
+		return false;
+	// Format: 01234567-0123-0123-0123-0123456789AB
+	for ( size_t i = 0; i < 36; i++ )
+	{
+		if ( i == 8 || i == 13 || i == 18 || i == 23 )
+		{
+			if ( uuid[i] != '-' )
+				return false;
+		}
+		else
+		{
+			if ( !is_hex_digit(uuid[i]) )
+				return false;
+		}
+	}
+	return true;
+}
+
+static unsigned char debase(char c)
+{
+	if ( '0' <= c && c <= '9' )
+		return (unsigned char) (c - '0');
+	if ( 'a' <= c && c <= 'f' )
+		return (unsigned char) (c - 'a' + 10);
+	if ( 'A' <= c && c <= 'F' )
+		return (unsigned char) (c - 'A' + 10);
+	return 0;
+}
+
+static void uuid_from_string(uint8_t uuid[16], const char* string)
+{
+	assert(is_valid_uuid(string));
+	size_t output_index = 0;
+	size_t i = 0;
+	while ( i < 36 )
+	{
+		assert(string[i + 0] != '\0');
+		if ( i == 8 || i == 13 || i == 18 || i == 23 )
+		{
+			i++;
+			continue;
+		}
+		assert(string[i + 1] != '\0');
+		uuid[output_index++] = debase(string[i + 0]) << 4 |
+		                       debase(string[i + 1]) << 0;
+		i += 2;
+	}
+	assert(string[i] == '\0');
+}
+
 void compact_arguments(int* argc, char*** argv)
 {
 	for ( int i = 0; i < *argc; i++ )
@@ -1332,7 +1392,22 @@ int main(int argc, char* argv[])
 	// Test whether this was the filesystem the user was looking for.
 	if ( test_uuid )
 	{
-		// TODO: Test uuid!
+		if ( !is_valid_uuid(test_uuid) )
+		{
+			if ( !probe )
+				error(1, 0, "`%s' isn't a valid uuid", test_uuid);
+			exit(1);
+		}
+
+		uint8_t uuid[16];
+		uuid_from_string(uuid, test_uuid);
+
+		if ( memcmp(sb.s_uuid, uuid, 16) != 0 )
+		{
+			if ( !probe )
+				error(1, 0, "uuid `%s' did not match the ext2 filesystem at `%s'", test_uuid, device_path);
+			exit(1);
+		}
 	}
 
 	// Test whether this revision of the extended filesystem is supported.
