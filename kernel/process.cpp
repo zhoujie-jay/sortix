@@ -457,10 +457,11 @@ void Process::NotifyNewZombies()
 		kthread_cond_broadcast(&zombiecond);
 }
 
-pid_t Process::Wait(pid_t thepid, int* user_status, int options)
+pid_t Process::Wait(pid_t thepid, int* status_ptr, int options)
 {
 	// TODO: Process groups are not supported yet.
-	if ( thepid < -1 || thepid == 0 ) { errno = ENOSYS; return -1; }
+	if ( thepid < -1 || thepid == 0 )
+		return errno = ENOSYS, -1;
 
 	ScopedLock lock(&childlock);
 
@@ -530,15 +531,19 @@ pid_t Process::Wait(pid_t thepid, int* user_status, int options)
 	if ( !in_limbo )
 		delete zombie;
 
-	if ( user_status && !CopyToUser(user_status, &status, sizeof(status)) )
-		return -1;
+	if ( status_ptr )
+		*status_ptr = status;
 
 	return thepid;
 }
 
 static pid_t sys_waitpid(pid_t pid, int* user_status, int options)
 {
-	return CurrentProcess()->Wait(pid, user_status, options);
+	int status = 0;
+	pid_t ret = CurrentProcess()->Wait(pid, &status, options);
+	if ( 0 < ret && !CopyToUser(user_status, &status, sizeof(status)) )
+		return -1;
+	return ret;
 }
 
 void Process::ExitThroughSignal(int signal)
