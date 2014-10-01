@@ -36,6 +36,8 @@ public:
 	Block* next_block;
 	Block* prev_hashed;
 	Block* next_hashed;
+	Block* prev_dirty;
+	Block* next_dirty;
 	Device* device;
 	size_t reference_count;
 	uint32_t block_id;

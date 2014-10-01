@@ -35,6 +35,8 @@ Block::Block(Device* device, uint32_t block_id)
 	this->next_block = NULL;
 	this->prev_hashed = NULL;
 	this->next_hashed = NULL;
+	this->prev_dirty = NULL;
+	this->next_dirty = NULL;
 	this->device = device;
 	this->reference_count = 1;
 	this->block_id = block_id;
@@ -69,6 +71,11 @@ void Block::Sync()
 	if ( !dirty )
 		return;
 	dirty = false;
+	(prev_dirty ? prev_dirty->next_dirty : device->dirty_block) = next_dirty;
+	if ( next_dirty )
+		next_dirty->prev_dirty = prev_dirty;
+	prev_dirty = NULL;
+	next_dirty = NULL;
 	if ( !device->write )
 		return;
 	off_t file_offset = (off_t) device->block_size * (off_t) block_id;
@@ -77,7 +84,15 @@ void Block::Sync()
 
 void Block::Dirty()
 {
-	dirty = true;
+	if ( !dirty )
+	{
+		dirty = true;
+		prev_dirty = NULL;
+		next_dirty = device->dirty_block;
+		if ( next_dirty )
+			next_dirty->prev_dirty = this;
+		device->dirty_block = this;
+	}
 	Use();
 }
 

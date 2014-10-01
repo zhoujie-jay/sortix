@@ -36,6 +36,7 @@ public:
 public:
 	Block* mru_block;
 	Block* lru_block;
+	Block* dirty_block;
 	Block* hash_blocks[DEVICE_HASH_LENGTH];
 	off_t device_size;
 	uint32_t block_size;

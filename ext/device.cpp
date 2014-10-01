@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -41,6 +42,7 @@ Device::Device(int fd, uint32_t block_size, bool write)
 	this->device_size = st.st_size;
 	this->mru_block = NULL;
 	this->lru_block = NULL;
+	this->dirty_block = NULL;
 	for ( size_t i = 0; i < DEVICE_HASH_LENGTH; i++ )
 		hash_blocks[i] = NULL;
 }
@@ -91,6 +93,6 @@ Block* Device::GetCachedBlock(uint32_t block_id)
 
 void Device::Sync()
 {
-	for ( Block* iter = mru_block; iter; iter = iter->next_block )
-		iter->Sync();
+	while ( dirty_block )
+		dirty_block->Sync();
 }
