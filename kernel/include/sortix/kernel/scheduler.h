@@ -67,6 +67,7 @@ void SaveInterruptedContext(const struct interrupt_context* intctx,
                             struct thread_registers* registers);
 void LoadInterruptedContext(struct interrupt_context* intctx,
                             const struct thread_registers* registers);
+void ScheduleTrueThread();
 
 } // namespace Scheduler
 } // namespace Sortix

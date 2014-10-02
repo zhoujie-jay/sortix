@@ -78,6 +78,8 @@ void FreeThread(Thread* thread)
 Thread::Thread()
 {
 	assert(!((uintptr_t) registers.fpuenv & 0xFUL));
+	system_tid = (uintptr_t) this;
+	yield_to_tid = 0;
 	id = 0; // TODO: Make a thread id.
 	process = NULL;
 	prevsibling = NULL;

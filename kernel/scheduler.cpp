@@ -193,23 +193,51 @@ void SwitchThread(struct interrupt_context* intctx, Thread* prev, Thread* next)
 
 static Thread* idle_thread;
 static Thread* first_runnable_thread;
+static Thread* true_current_thread;
 static Process* init_process;
 
-static Thread* PopNextThread()
+static Thread* FindRunnableThreadWithSystemTid(uintptr_t system_tid)
 {
-	if ( first_runnable_thread )
+	Thread* begun_thread = current_thread;
+	Thread* iter = begun_thread;
+	do
 	{
-		Thread* result = first_runnable_thread;
-		first_runnable_thread = first_runnable_thread->scheduler_list_next;
-		return result;
-	}
-
-	return idle_thread;
+		if ( iter->system_tid == system_tid )
+			return iter;
+		iter = iter->scheduler_list_next;
+	} while ( iter != begun_thread );
+	return NULL;
 }
 
-void Switch(struct interrupt_context* intctx)
+static Thread* PopNextThread(bool yielded)
 {
-	SwitchThread(intctx, CurrentThread(), PopNextThread());
+	Thread* result;
+
+	uintptr_t yield_to_tid = current_thread->yield_to_tid;
+	if ( yielded && yield_to_tid != 0 )
+	{
+		if ( (result = FindRunnableThreadWithSystemTid(yield_to_tid)) )
+			return result;
+	}
+
+	if ( first_runnable_thread )
+	{
+		result = first_runnable_thread;
+		first_runnable_thread = first_runnable_thread->scheduler_list_next;
+	}
+	else
+	{
+		result = idle_thread;
+	}
+
+	true_current_thread = result;
+
+	return result;
+}
+
+static void RealSwitch(struct interrupt_context* intctx, bool yielded)
+{
+	SwitchThread(intctx, CurrentThread(), PopNextThread(yielded));
 
 	if ( intctx->signal_pending && InUserspace(intctx) )
 	{
@@ -218,15 +246,20 @@ void Switch(struct interrupt_context* intctx)
 	}
 }
 
+void Switch(struct interrupt_context* intctx)
+{
+	RealSwitch(intctx, false);
+}
+
 void InterruptYieldCPU(struct interrupt_context* intctx, void* /*user*/)
 {
-	Switch(intctx);
+	RealSwitch(intctx, true);
 }
 
 void ThreadExitCPU(struct interrupt_context* intctx, void* /*user*/)
 {
 	SetThreadState(current_thread, ThreadState::DEAD);
-	InterruptYieldCPU(intctx, NULL);
+	RealSwitch(intctx, false);
 }
 
 // The idle thread serves no purpose except being an infinite loop that does
@@ -237,6 +270,7 @@ void SetIdleThread(Thread* thread)
 	idle_thread = thread;
 	SetThreadState(thread, ThreadState::NONE);
 	current_thread = thread;
+	true_current_thread = thread;
 }
 
 void SetInitProcess(Process* init)
@@ -304,9 +338,22 @@ static int sys_sched_yield(void)
 	return kthread_yield(), 0;
 }
 
+void ScheduleTrueThread()
+{
+	bool wasenabled = Interrupt::SetEnabled(false);
+	if ( true_current_thread != current_thread )
+	{
+		current_thread->yield_to_tid = 0;
+		first_runnable_thread = true_current_thread;
+		kthread_yield();
+	}
+	Interrupt::SetEnabled(wasenabled);
+}
+
 void Init()
 {
 	first_runnable_thread = NULL;
+	true_current_thread = NULL;
 	idle_thread = NULL;
 
 	Syscall::Register(SYSCALL_SCHED_YIELD, (void*) sys_sched_yield);

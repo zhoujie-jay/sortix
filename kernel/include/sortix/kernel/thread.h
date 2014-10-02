@@ -25,6 +25,8 @@
 #ifndef INCLUDE_SORTIX_KERNEL_THREAD_H
 #define INCLUDE_SORTIX_KERNEL_THREAD_H
 
+#include <stdint.h>
+
 #include <sortix/sigaction.h>
 #include <sortix/signal.h>
 #include <sortix/sigset.h>
@@ -65,6 +67,8 @@ public:
 	~Thread();
 
 public:
+	uintptr_t system_tid;
+	uintptr_t yield_to_tid;
 	struct thread_registers registers;
 	uint8_t* self_allocation;
 	size_t id;
