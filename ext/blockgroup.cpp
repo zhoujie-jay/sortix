@@ -92,6 +92,7 @@ uint32_t BlockGroup::AllocateBlock()
 		uint32_t chunk_offset = block_alloc_chunk * num_chunk_bits;
 		uint8_t* chunk_bits = block_bitmap_chunk->block_data;
 		size_t num_bits = last ? num_blocks - chunk_offset : num_chunk_bits;
+		// TODO: This can be made faster by caching if previous bits were set.
 		for ( ; block_bitmap_chunk_i < num_bits; block_bitmap_chunk_i++ )
 			if ( !checkbit(chunk_bits, block_bitmap_chunk_i) )
 			{
@@ -133,6 +134,7 @@ uint32_t BlockGroup::AllocateInode()
 		uint32_t chunk_offset = inode_alloc_chunk * num_chunk_bits;
 		uint8_t* chunk_bits = inode_bitmap_chunk->block_data;
 		size_t num_bits = last ? num_inodes - chunk_offset : num_chunk_bits;
+		// TODO: This can be made faster by caching if previous bits were set.
 		for ( ; inode_bitmap_chunk_i < num_bits; inode_bitmap_chunk_i++ )
 			if ( !checkbit(chunk_bits, inode_bitmap_chunk_i) )
 			{

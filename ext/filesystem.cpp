@@ -95,6 +95,8 @@ void Filesystem::Sync()
 {
 	while ( dirty_inode )
 		dirty_inode->Sync();
+	// TODO: This can be made faster by maintaining a linked list of dirty block
+	//       groups.
 	for ( size_t i = 0; i < num_groups; i++ )
 		if ( block_groups && block_groups[i] )
 			block_groups[i]->Sync();
@@ -174,9 +176,15 @@ uint32_t Filesystem::AllocateBlock(BlockGroup* preferred)
 	if ( preferred )
 		if ( uint32_t block_id = preferred->AllocateBlock() )
 			return block_id;
+	// TODO: This can be made faster by maintaining a linked list of block
+	//       groups that definitely have free blocks.
 	for ( uint32_t group_id = 0; group_id < num_groups; group_id++ )
 		if ( uint32_t block_id = GetBlockGroup(group_id)->AllocateBlock() )
 			return block_id;
+	// TODO: This case should only be fit in the event of corruption. We should
+	//       rebuild all these values upon filesystem mount instead so we know
+	//       this can't happen. That also allows us to make the linked list
+	//       requested above.
 	sb->s_free_blocks_count--;
 	Dirty();
 	return errno = ENOSPC, 0;
@@ -189,9 +197,15 @@ uint32_t Filesystem::AllocateInode(BlockGroup* preferred)
 	if ( preferred )
 		if ( uint32_t inode_id = preferred->AllocateInode() )
 			return inode_id;
+	// TODO: This can be made faster by maintaining a linked list of block
+	//       groups that definitely have free inodes.
 	for ( uint32_t group_id = 0; group_id < num_groups; group_id++ )
 		if ( uint32_t inode_id = GetBlockGroup(group_id)->AllocateInode() )
 			return inode_id;
+	// TODO: This case should only be fit in the event of corruption. We should
+	//       rebuild all these values upon filesystem mount instead so we know
+	//       this can't happen. That also allows us to make the linked list
+	//       requested above.
 	sb->s_free_inodes_count--;
 	Dirty();
 	return errno = ENOSPC, 0;
