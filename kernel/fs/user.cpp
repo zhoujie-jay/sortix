@@ -49,7 +49,9 @@
 #include <sortix/kernel/mtable.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/refcount.h>
+#include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/thread.h>
 #include <sortix/kernel/vnode.h>
 
 namespace Sortix {
@@ -84,6 +86,10 @@ private:
 	bool still_reading;
 	bool still_writing;
 
+public:
+	uintptr_t sender_system_tid;
+	uintptr_t receiver_system_tid;
+
 };
 
 class Channel
@@ -91,6 +97,9 @@ class Channel
 public:
 	Channel();
 	~Channel();
+
+public:
+	void InformSystemTids(uintptr_t client_tid, uintptr_t server_tid);
 
 public:
 	bool KernelSend(ioctx_t* ctx, const void* ptr, size_t count)
@@ -159,6 +168,8 @@ private:
 	kthread_mutex_t connect_lock;
 	kthread_cond_t connecting_cond;
 	kthread_cond_t connectable_cond;
+	uintptr_t listener_system_tid;
+	uintptr_t connecter_system_tid;
 	Channel* connecting;
 	bool disconnected;
 
@@ -266,6 +277,8 @@ ChannelDirection::ChannelDirection()
 	not_full = KTHREAD_COND_INITIALIZER;
 	still_reading = true;
 	still_writing = true;
+	sender_system_tid = 0;
+	receiver_system_tid = 0;
 }
 
 ChannelDirection::~ChannelDirection()
@@ -276,7 +289,9 @@ size_t ChannelDirection::Send(ioctx_t* ctx, const void* ptr, size_t least, size_
 {
 	const uint8_t* src = (const uint8_t*) ptr;
 	size_t sofar = 0;
+	CurrentThread()->yield_to_tid = receiver_system_tid;
 	ScopedLock inner_lock(&transfer_lock);
+	sender_system_tid = CurrentThread()->system_tid;
 	while ( true )
 	{
 		while ( true )
@@ -314,7 +329,9 @@ size_t ChannelDirection::Recv(ioctx_t* ctx, void* ptr, size_t least, size_t max)
 {
 	uint8_t* dst = (uint8_t*) ptr;
 	size_t sofar = 0;
+	CurrentThread()->yield_to_tid = sender_system_tid;
 	ScopedLock inner_lock(&transfer_lock);
+	receiver_system_tid = CurrentThread()->system_tid;
 	while ( true )
 	{
 		while ( true )
@@ -380,6 +397,14 @@ Channel::~Channel()
 {
 }
 
+void Channel::InformSystemTids(uintptr_t client_tid, uintptr_t server_tid)
+{
+	from_kernel.sender_system_tid = client_tid;
+	from_kernel.receiver_system_tid = server_tid;
+	from_user.sender_system_tid = server_tid;
+	from_user.receiver_system_tid = client_tid;
+}
+
 size_t Channel::KernelSend(ioctx_t* ctx, const void* ptr, size_t least,
                             size_t max)
 {
@@ -387,6 +412,8 @@ size_t Channel::KernelSend(ioctx_t* ctx, const void* ptr, size_t least,
 	if ( !outer_lock.IsAcquired() )
 		return errno = EINTR, 0;
 	size_t ret = from_kernel.Send(ctx, ptr, least, max);
+	CurrentThread()->yield_to_tid = 0;
+	Scheduler::ScheduleTrueThread();
 	return ret;
 }
 
@@ -395,6 +422,8 @@ size_t Channel::KernelRecv(ioctx_t* ctx, void* ptr, size_t least, size_t max)
 	ScopedLockSignal outer_lock(&kernel_lock);
 	if ( !outer_lock.IsAcquired() )
 		return errno = EINTR, 0;
+	CurrentThread()->yield_to_tid = 0;
+	Scheduler::ScheduleTrueThread();
 	return from_user.Recv(ctx, ptr, least, max);
 }
 
@@ -417,7 +446,10 @@ size_t Channel::UserSend(ioctx_t* ctx, const void* ptr, size_t least,
 	ScopedLockSignal outer_lock(&user_lock);
 	if ( !outer_lock.IsAcquired() )
 		return errno = EINTR, 0;
-	return from_user.Send(ctx, ptr, least, max);
+	size_t ret = from_user.Send(ctx, ptr, least, max);
+	CurrentThread()->yield_to_tid = 0;
+	Scheduler::ScheduleTrueThread();
+	return ret;
 }
 
 size_t Channel::UserRecv(ioctx_t* ctx, void* ptr, size_t least, size_t max)
@@ -425,7 +457,10 @@ size_t Channel::UserRecv(ioctx_t* ctx, void* ptr, size_t least, size_t max)
 	ScopedLockSignal outer_lock(&user_lock);
 	if ( !outer_lock.IsAcquired() )
 		return errno = EINTR, 0;
-	return from_kernel.Recv(ctx, ptr, least, max);
+	size_t ret = from_kernel.Recv(ctx, ptr, least, max);
+	CurrentThread()->yield_to_tid = 0;
+	Scheduler::ScheduleTrueThread();
+	return ret;
 }
 
 void Channel::UserClose()
@@ -490,6 +525,7 @@ Server::Server()
 	connect_lock = KTHREAD_MUTEX_INITIALIZER;
 	connecting_cond = KTHREAD_COND_INITIALIZER;
 	connectable_cond = KTHREAD_COND_INITIALIZER;
+	listener_system_tid = 0;
 	connecting = NULL;
 	disconnected = false;
 }
@@ -510,15 +546,21 @@ Channel* Server::Connect()
 	Channel* channel = new Channel();
 	if ( !channel )
 		return NULL;
+	CurrentThread()->yield_to_tid = listener_system_tid;
 	ScopedLock lock(&connect_lock);
 	while ( !disconnected && connecting )
+	{
 		if ( !kthread_cond_wait_signal(&connectable_cond, &connect_lock) )
 		{
+			CurrentThread()->yield_to_tid = 0;
 			delete channel;
 			return errno = EINTR, (Channel*) NULL;
 		}
+	}
+	CurrentThread()->yield_to_tid = 0;
 	if ( disconnected )
 		return delete channel, errno = ECONNREFUSED, (Channel*) NULL;
+	channel->InformSystemTids(CurrentThread()->system_tid, listener_system_tid);
 	connecting = channel;
 	kthread_cond_signal(&connecting_cond);
 	return channel;
@@ -527,6 +569,7 @@ Channel* Server::Connect()
 Channel* Server::Listen()
 {
 	ScopedLock lock(&connect_lock);
+	listener_system_tid = CurrentThread()->system_tid;
 	while ( !connecting )
 		if ( !kthread_cond_wait_signal(&connecting_cond, &connect_lock) )
 			return errno = EINTR, (Channel*) NULL;
