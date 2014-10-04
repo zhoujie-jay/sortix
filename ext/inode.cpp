@@ -714,9 +714,10 @@ bool Inode::Rename(Inode* olddir, const char* oldname, const char* newname)
 		return false;
 	if ( Inode* dst_inode = Open(newname, O_RDONLY, 0) )
 	{
-		if ( src_inode->inode_id == dst_inode->inode_id )
-			return dst_inode->Unref(), src_inode->Unref(), 0;
+		bool same_inode = src_inode->inode_id == dst_inode->inode_id;
 		dst_inode->Unref();
+		if ( same_inode )
+			return src_inode->Unref(), true;
 	}
 	// TODO: Prove that this cannot fail and handle such a situation.
 	if ( EXT2_S_ISDIR(src_inode->Mode()) )

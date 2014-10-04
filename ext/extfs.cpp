@@ -593,7 +593,7 @@ void HandleRename(int svr, int chl, struct fsm_req_rename* msg, Filesystem* fs)
 	const char* oldname = path;
 	const char* newname = path + msg->oldnamelen + 1;
 
-	Inode* olddir = fs->GetInode((uint32_t) msg->newdirino);
+	Inode* olddir = fs->GetInode((uint32_t) msg->olddirino);
 	if ( !olddir ) { free(path); RespondError(svr, chl, errno); return; }
 	Inode* newdir = fs->GetInode((uint32_t) msg->newdirino);
 	if ( !newdir ) { olddir->Unref(); free(path); RespondError(svr, chl, errno); return; }
