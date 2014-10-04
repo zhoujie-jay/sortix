@@ -77,6 +77,7 @@ public:
 	void RemoteUnref();
 	void Sync();
 	void Dirty();
+	void Modified();
 	void Use();
 	void Unlink();
 	void Prelink();

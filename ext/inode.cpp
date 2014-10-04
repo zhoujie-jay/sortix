@@ -152,6 +152,7 @@ void Inode::SetSize(uint64_t new_size)
 	if ( EXT2_S_ISREG(data->i_mode) && largefile )
 		data->i_dir_acl = upper;
 	Dirty();
+	Modified();
 }
 
 void Inode::Linked()
@@ -443,6 +444,8 @@ bool Inode::Link(const char* elem, Inode* dest, bool directories)
 	if ( !directories && EXT2_S_ISDIR(dest->Mode()) )
 		return errno = EISDIR, false;
 
+	Modified();
+
 	// Search for a hole in which we can store the new directory entry and stop
 	// if we meet an existing link with the requested name.
 	size_t elem_length = strlen(elem);
@@ -549,6 +552,7 @@ Inode* Inode::Unlink(const char* elem, bool directories, bool force)
 {
 	if ( !EXT2_S_ISDIR(Mode()) )
 		return errno = ENOTDIR, (Inode*) NULL;
+	Modified();
 	size_t elem_length = strlen(elem);
 	uint32_t block_size = filesystem->block_size;
 	uint64_t filesize = Size();
@@ -697,6 +701,7 @@ ssize_t Inode::WriteAt(const uint8_t* buf, size_t s_count, off_t o_offset)
 		return errno = EINVAL, -1;
 	if ( SSIZE_MAX < s_count )
 		s_count = SSIZE_MAX;
+	Modified();
 	uint64_t sofar = 0;
 	uint64_t count = (uint64_t) s_count;
 	uint64_t offset = (uint64_t) o_offset;
@@ -971,8 +976,19 @@ void Inode::RemoteUnref()
 	}
 }
 
+void Inode::Modified()
+{
+	struct timespec now;
+	clock_gettime(CLOCK_REALTIME, &now);
+	data->i_mtime = now.tv_sec;
+	Dirty();
+}
+
 void Inode::Dirty()
 {
+	struct timespec now;
+	clock_gettime(CLOCK_REALTIME, &now);
+	data->i_ctime = now.tv_sec;
 	if ( !dirty )
 	{
 		dirty = true;
