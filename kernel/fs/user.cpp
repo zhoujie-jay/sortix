@@ -1247,8 +1247,8 @@ int Unode::rename_here(ioctx_t* /*ctx*/, Ref<Inode> from, const char* oldname,
 		return -1;
 	int ret = -1;
 	struct fsm_req_rename msg;
-	msg.olddirino = this->ino;
-	msg.newdirino = from->ino;
+	msg.olddirino = from->ino;
+	msg.newdirino = this->ino;
 	msg.oldnamelen = strlen(oldname);
 	msg.newnamelen = strlen(newname);
 	size_t extra = msg.oldnamelen + msg.newnamelen;
