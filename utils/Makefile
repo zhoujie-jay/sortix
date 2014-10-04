@@ -31,7 +31,6 @@ false \
 find \
 head \
 help \
-init \
 kernelinfo \
 kill \
 ln \

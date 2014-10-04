@@ -14,6 +14,7 @@ carray \
 editor \
 ext \
 games \
+init \
 mbr \
 mkinitrd \
 regress \
