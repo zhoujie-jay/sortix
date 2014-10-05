@@ -79,6 +79,7 @@
 #include "fs/user.h"
 #include "fs/zero.h"
 #include "gpu/bga/bga.h"
+#include "hostname.h"
 #include "identity.h"
 #include "initrd.h"
 #include "io.h"
@@ -612,6 +613,9 @@ static void BootThread(void* /*user*/)
 
 	// Initialize the identity system calls.
 	Identity::Init();
+
+	// Initialize the hostname system calls.
+	Hostname::Init();
 
 	// Initialize the IO system.
 	IO::Init();

@@ -553,6 +553,7 @@ int getdomainname(char*, size_t);
 int getentropy(void*, size_t);
 int pipe2(int [2], int);
 void* sbrk(__intptr_t increment);
+int sethostname(const char*, size_t);
 typedef unsigned int useconds_t;
 int usleep(useconds_t useconds);
 #endif

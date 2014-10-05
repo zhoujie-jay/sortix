@@ -377,14 +377,16 @@ int get_and_run_command(FILE* fp, const char* fpname, bool interactive,
 		const char* print_username = getlogin();
 		if ( !print_username )
 			print_username = getuid() == 0 ? "root" : "?";
-		const char* print_hostname = getenv_safe("HOSTNAME", "sortix");
+		char hostname[256];
+		if ( gethostname(hostname, sizeof(hostname)) < 0 )
+			strlcpy(hostname, "(none)", sizeof(hostname));
 		const char* print_dir = getenv_safe("PWD", "?");
 		const char* home_dir = getenv_safe("HOME", "");
 		size_t home_dir_len = strlen(home_dir);
 		printf("\e[32m");
 		printf("%s", print_username);
 		printf("@");
-		printf("%s", print_hostname);
+		printf("%s", hostname);
 		printf(" ");
 		printf("\e[36m");
 		if ( home_dir_len && strncmp(print_dir, home_dir, home_dir_len) == 0 )

@@ -617,6 +617,7 @@ unistd/sbrk.o \
 unistd/setegid.o \
 unistd/seteuid.o \
 unistd/setgid.o \
+unistd/sethostname.o \
 unistd/setpgid.o \
 unistd/setuid.o \
 unistd/sfork.o \

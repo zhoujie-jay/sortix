@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014.
 
     This file is part of the Sortix C Library.
 
@@ -17,8 +17,8 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    unistd/gethostname.cpp
-    Get the hostname.
+    unistd/sethostname.cpp
+    Set the hostname.
 
 *******************************************************************************/
 
@@ -26,9 +26,9 @@
 
 #include <unistd.h>
 
-DEFN_SYSCALL2(int, sys_gethostname, SYSCALL_GETHOSTNAME, char*, size_t);
+DEFN_SYSCALL2(int, sys_sethostname, SYSCALL_SETHOSTNAME, const char*, size_t);
 
-extern "C" int gethostname(char* name, size_t name_size)
+extern "C" int sethostname(const char* name, size_t name_size)
 {
-	return sys_gethostname(name, name_size);
+	return sys_sethostname(name, name_size);
 }

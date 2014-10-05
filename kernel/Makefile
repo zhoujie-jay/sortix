@@ -92,6 +92,7 @@ fs/user.o \
 fs/util.o \
 fs/zero.o \
 gpu/bga/bga.o \
+hostname.o \
 identity.o \
 initrd.o \
 inode.o \
