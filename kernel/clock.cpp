@@ -277,7 +277,7 @@ struct timespec Clock::SleepUntil(struct timespec expiration)
 		struct timespec now = current_time;
 		UnlockClock();
 
-		if ( timespec_le(now, expiration) )
+		if ( timespec_le(expiration, now) )
 			break;
 
 		if ( Signal::IsPending() )
