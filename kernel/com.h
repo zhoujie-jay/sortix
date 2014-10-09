@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of Sortix.
 
@@ -25,17 +25,16 @@
 #ifndef SORTIX_COM_H
 #define SORTIX_COM_H
 
+#include <sortix/kernel/descriptor.h>
+#include <sortix/kernel/refcount.h>
+
 namespace Sortix {
-
-class Descriptor;
-
 namespace COM {
 
 void EarlyInit();
 void Init(const char* devpath, Ref<Descriptor> slashdev);
 
 } // namespace COM
-
 } // namespace Sortix
 
 #endif
