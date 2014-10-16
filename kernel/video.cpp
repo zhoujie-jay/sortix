@@ -396,8 +396,15 @@ static int ReadMemory(void* ptr, size_t size)
 	return 0;
 }
 
-static int sys_dispmsg_issue(void* ptr, size_t size)
+} // namespace Video
+} // namespace Sortix
+
+namespace Sortix {
+
+int sys_dispmsg_issue(void* ptr, size_t size)
 {
+	using namespace Video;
+
 	struct dispmsg_header hdr;
 	if ( size < sizeof(hdr) )
 		return errno = EINVAL, -1;
@@ -421,10 +428,14 @@ static int sys_dispmsg_issue(void* ptr, size_t size)
 	}
 }
 
+} // namespace Sortix
+
+namespace Sortix {
+namespace Video {
+
 void Init(Ref<TextBufferHandle> thetextbufhandle)
 {
 	textbufhandle = thetextbufhandle;
-	Syscall::Register(SYSCALL_DISPMSG_ISSUE, (void*) sys_dispmsg_issue);
 }
 
 } // namespace Video

@@ -60,9 +60,6 @@ Thread* RunKernelThread(void (*entry)(void*), void* user, size_t stacksize = 0);
 class Thread
 {
 public:
-	static void Init();
-
-public:
 	Thread();
 	~Thread();
 

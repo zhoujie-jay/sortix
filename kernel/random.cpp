@@ -25,11 +25,9 @@
 #include <errno.h>
 
 #include <sortix/kernel/copy.h>
-#include <sortix/kernel/random.h>
 #include <sortix/kernel/syscall.h>
 
 namespace Sortix {
-namespace Random {
 
 int sys_getentropy(void* user_buffer, size_t size)
 {
@@ -44,10 +42,4 @@ int sys_getentropy(void* user_buffer, size_t size)
 	return 0;
 }
 
-void Init()
-{
-	Syscall::Register(SYSCALL_GETENTROPY, (void*) sys_getentropy);
-}
-
-} // namespace Random
 } // namespace Sortix

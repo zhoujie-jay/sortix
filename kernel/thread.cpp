@@ -292,9 +292,9 @@ Thread* RunKernelThread(void (*entry)(void*), void* user, size_t stacksize)
 	return thread;
 }
 
-static int sys_exit_thread(int requested_exit_code,
-                           int flags,
-                           const struct exit_thread* user_extended)
+int sys_exit_thread(int requested_exit_code,
+                    int flags,
+                    const struct exit_thread* user_extended)
 {
 	if ( flags & ~(EXIT_THREAD_ONLY_IF_OTHERS |
 	               EXIT_THREAD_UNMAP |
@@ -404,11 +404,6 @@ static int sys_exit_thread(int requested_exit_code,
 	}
 
 	kthread_exit();
-}
-
-void Thread::Init()
-{
-	Syscall::Register(SYSCALL_EXIT_THREAD, (void*) sys_exit_thread);
 }
 
 } // namespace Sortix

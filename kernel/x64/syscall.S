@@ -22,6 +22,8 @@
 
 *******************************************************************************/
 
+#include <sortix/syscall.h>
+
 .global syscall_handler
 
 .section .text
@@ -33,7 +35,7 @@ syscall_handler:
 	movq %rsp, %rbp
 
 	# Make sure the requested system call is valid, if not, then fix it.
-	cmp SYSCALL_MAX, %rax
+	cmp $SYSCALL_MAX_NUM, %rax
 	jae fix_syscall
 
 valid_syscall:

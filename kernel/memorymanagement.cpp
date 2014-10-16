@@ -43,19 +43,23 @@
 #include <sortix/kernel/syscall.h>
 
 namespace Sortix {
-namespace Memory {
 
-static int sys_memstat(size_t* memused, size_t* memtotal)
+int sys_memstat(size_t* memused, size_t* memtotal)
 {
 	size_t used;
 	size_t total;
-	Statistics(&used, &total);
+	Memory::Statistics(&used, &total);
 	if ( memused && !CopyToUser(memused, &used, sizeof(used)) )
 		return -1;
 	if ( memtotal && !CopyToUser(memtotal, &total, sizeof(total)) )
 		return -1;
 	return 0;
 }
+
+} // namespace Sortix
+
+namespace Sortix {
+namespace Memory {
 
 void UnmapMemory(Process* process, uintptr_t addr, size_t size)
 {
@@ -253,6 +257,11 @@ bool MapMemory(Process* process, uintptr_t addr, size_t size, int prot)
 	return true;
 }
 
+} // namespace Memory
+} // namespace Sortix
+
+namespace Sortix {
+
 const int USER_SETTABLE_PROT = PROT_USER | PROT_HEAP;
 const int UNDERSTOOD_MMAP_FLAGS = MAP_SHARED |
                                   MAP_PRIVATE |
@@ -338,7 +347,7 @@ void* sys_mmap(void* addr_ptr, size_t size, int prot, int flags, int fd,
 	new_segment.prot = prot | PROT_KREAD | PROT_KWRITE | PROT_FORK;
 
 	// Allocate a memory segment with the desired properties.
-	if ( !MapMemory(process, new_segment.addr, new_segment.size, new_segment.prot) )
+	if ( !Memory::MapMemory(process, new_segment.addr, new_segment.size, new_segment.prot) )
 		return MAP_FAILED;
 
 	// The pread will copy to user-space right requires this lock to be free.
@@ -377,7 +386,7 @@ void* sys_mmap(void* addr_ptr, size_t size, int prot, int flags, int fd,
 	return (void*) new_segment.addr;
 }
 
-static int sys_mprotect(const void* addr_ptr, size_t size, int prot)
+int sys_mprotect(const void* addr_ptr, size_t size, int prot)
 {
 	// Verify that that the address is suitable aligned.
 	uintptr_t addr = (uintptr_t) addr_ptr;
@@ -393,13 +402,13 @@ static int sys_mprotect(const void* addr_ptr, size_t size, int prot)
 	Process* process = CurrentProcess();
 	ScopedLock lock(&process->segment_lock);
 
-	if ( !ProtectMemory(process, addr, size, prot) )
+	if ( !Memory::ProtectMemory(process, addr, size, prot) )
 		return -1;
 
 	return 0;
 }
 
-static int sys_munmap(void* addr_ptr, size_t size)
+int sys_munmap(void* addr_ptr, size_t size)
 {
 	// Verify that that the address is suitable aligned.
 	uintptr_t addr = (uintptr_t) addr_ptr;
@@ -414,7 +423,7 @@ static int sys_munmap(void* addr_ptr, size_t size)
 	Process* process = CurrentProcess();
 	ScopedLock lock(&process->segment_lock);
 
-	UnmapMemory(process, addr, size);
+	Memory::UnmapMemory(process, addr, size);
 
 	return 0;
 }
@@ -434,7 +443,7 @@ struct mmap_request /* duplicated in libc/sys/mman/mmap.cpp */
 	off_t offset;
 };
 
-static void* sys_mmap_wrapper(struct mmap_request* user_request)
+void* sys_mmap_wrapper(struct mmap_request* user_request)
 {
 	struct mmap_request request;
 	if ( !CopyFromUser(&request, user_request, sizeof(request)) )
@@ -443,16 +452,16 @@ static void* sys_mmap_wrapper(struct mmap_request* user_request)
 	                request.fd, request.offset);
 }
 
+} // namespace Sortix
+
+namespace Sortix {
+namespace Memory {
+
 void InitCPU(multiboot_info_t* bootinfo);
 
 void Init(multiboot_info_t* bootinfo)
 {
 	InitCPU(bootinfo);
-
-	Syscall::Register(SYSCALL_MEMSTAT, (void*) sys_memstat);
-	Syscall::Register(SYSCALL_MMAP_WRAPPER, (void*) sys_mmap_wrapper);
-	Syscall::Register(SYSCALL_MPROTECT, (void*) sys_mprotect);
-	Syscall::Register(SYSCALL_MUNMAP, (void*) sys_munmap);
 }
 
 } // namespace Memory

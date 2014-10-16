@@ -146,8 +146,6 @@ PollNode* PollNode::CreateSlave()
 	return slave = new_slave;
 }
 
-namespace Poll {
-
 static struct pollfd* CopyFdsFromUser(struct pollfd* user_fds, nfds_t nfds)
 {
 	size_t size = sizeof(struct pollfd) * nfds;
@@ -179,9 +177,9 @@ static bool FetchTimespec(struct timespec* dest, const struct timespec* user)
 	return true;
 }
 
-static int sys_ppoll(struct pollfd* user_fds, nfds_t nfds,
-                     const struct timespec* user_timeout_ts,
-                     const sigset_t* user_sigmask)
+int sys_ppoll(struct pollfd* user_fds, nfds_t nfds,
+              const struct timespec* user_timeout_ts,
+              const sigset_t* user_sigmask)
 {
 	ioctx_t ctx; SetupKernelIOCtx(&ctx);
 
@@ -275,12 +273,5 @@ static int sys_ppoll(struct pollfd* user_fds, nfds_t nfds,
 	delete[] fds;
 	return ret;
 }
-
-void Init()
-{
-	Syscall::Register(SYSCALL_PPOLL, (void*) sys_ppoll);
-}
-
-} // namespace Poll
 
 } // namespace Sortix

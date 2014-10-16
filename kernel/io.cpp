@@ -51,11 +51,9 @@
 #include <sortix/kernel/thread.h>
 #include <sortix/kernel/vnode.h>
 
-#include "io.h"
 #include "partition.h"
 
 namespace Sortix {
-namespace IO {
 
 static Ref<Descriptor> PrepareLookup(const char** path, int dirfd = AT_FDCWD)
 {
@@ -66,7 +64,7 @@ static Ref<Descriptor> PrepareLookup(const char** path, int dirfd = AT_FDCWD)
 	return CurrentProcess()->GetDescriptor(dirfd);
 }
 
-static ssize_t sys_write(int fd, const void* buffer, size_t count)
+ssize_t sys_write(int fd, const void* buffer, size_t count)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -76,7 +74,7 @@ static ssize_t sys_write(int fd, const void* buffer, size_t count)
 	return ret;
 }
 
-static ssize_t sys_pwrite(int fd, const void* buffer, size_t count, off_t off)
+ssize_t sys_pwrite(int fd, const void* buffer, size_t count, off_t off)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -86,7 +84,7 @@ static ssize_t sys_pwrite(int fd, const void* buffer, size_t count, off_t off)
 	return ret;
 }
 
-static ssize_t sys_read(int fd, void* buffer, size_t count)
+ssize_t sys_read(int fd, void* buffer, size_t count)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -96,7 +94,7 @@ static ssize_t sys_read(int fd, void* buffer, size_t count)
 	return ret;
 }
 
-static ssize_t sys_pread(int fd, void* buffer, size_t count, off_t off)
+ssize_t sys_pread(int fd, void* buffer, size_t count, off_t off)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -106,7 +104,7 @@ static ssize_t sys_pread(int fd, void* buffer, size_t count, off_t off)
 	return ret;
 }
 
-static off_t sys_lseek(int fd, off_t offset, int whence)
+off_t sys_lseek(int fd, off_t offset, int whence)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -116,7 +114,7 @@ static off_t sys_lseek(int fd, off_t offset, int whence)
 	return ret;
 }
 
-static int sys_close(int fd)
+int sys_close(int fd)
 {
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
 	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
@@ -127,14 +125,14 @@ static int sys_close(int fd)
 	return desc->sync(&ctx);
 }
 
-static int sys_dup(int fd)
+int sys_dup(int fd)
 {
 	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
 	Ref<Descriptor> desc = dtable->Get(fd);
 	return dtable->Allocate(desc, 0);
 }
 
-static int sys_dup3(int oldfd, int newfd, int flags)
+int sys_dup3(int oldfd, int newfd, int flags)
 {
 	if ( flags & ~(O_CLOEXEC | O_CLOFORK) )
 		return errno = EINVAL, -1;
@@ -145,7 +143,7 @@ static int sys_dup3(int oldfd, int newfd, int flags)
 	return dtable->Copy(oldfd, newfd, fd_flags);
 }
 
-static int sys_dup2(int oldfd, int newfd)
+int sys_dup2(int oldfd, int newfd)
 {
 	if ( oldfd < 0 || newfd < 0 )
 		return errno = EINVAL, -1;
@@ -157,7 +155,7 @@ static int sys_dup2(int oldfd, int newfd)
 
 // TODO: If this function fails the file may still have been created. Does a
 // standard prohibit this and is that the wrong thing?
-static int sys_openat(int dirfd, const char* path, int flags, mode_t mode)
+int sys_openat(int dirfd, const char* path, int flags, mode_t mode)
 {
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
@@ -180,7 +178,7 @@ static int sys_openat(int dirfd, const char* path, int flags, mode_t mode)
 }
 
 // TODO: This is a hack! Stat the file in some manner and check permissions.
-static int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
+int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
 {
 	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
 		return errno = EINVAL, -1;
@@ -197,7 +195,7 @@ static int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
 	return desc ? 0 : -1;
 }
 
-static int sys_unlinkat(int dirfd, const char* path, int flags)
+int sys_unlinkat(int dirfd, const char* path, int flags)
 {
 	if ( !(flags & (AT_REMOVEFILE | AT_REMOVEDIR)) )
 		flags |= AT_REMOVEFILE;
@@ -217,7 +215,7 @@ static int sys_unlinkat(int dirfd, const char* path, int flags)
 	return ret;
 }
 
-static int sys_mkdirat(int dirfd, const char* path, mode_t mode)
+int sys_mkdirat(int dirfd, const char* path, mode_t mode)
 {
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
@@ -231,7 +229,7 @@ static int sys_mkdirat(int dirfd, const char* path, mode_t mode)
 	return ret;
 }
 
-static int sys_truncateat(int dirfd, const char* path, off_t length)
+int sys_truncateat(int dirfd, const char* path, off_t length)
 {
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
@@ -247,7 +245,7 @@ static int sys_truncateat(int dirfd, const char* path, off_t length)
 	return desc->truncate(&ctx, length);
 }
 
-static int sys_ftruncate(int fd, off_t length)
+int sys_ftruncate(int fd, off_t length)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -256,7 +254,7 @@ static int sys_ftruncate(int fd, off_t length)
 	return desc->truncate(&ctx, length);
 }
 
-static int sys_fstatat(int dirfd, const char* path, struct stat* st, int flags)
+int sys_fstatat(int dirfd, const char* path, struct stat* st, int flags)
 {
 	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
 		return errno = EINVAL;
@@ -275,7 +273,7 @@ static int sys_fstatat(int dirfd, const char* path, struct stat* st, int flags)
 	return desc->stat(&ctx, st);
 }
 
-static int sys_fstat(int fd, struct stat* st)
+int sys_fstat(int fd, struct stat* st)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -284,7 +282,7 @@ static int sys_fstat(int fd, struct stat* st)
 	return desc->stat(&ctx, st);
 }
 
-static int sys_fstatvfs(int fd, struct statvfs* stvfs)
+int sys_fstatvfs(int fd, struct statvfs* stvfs)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -293,7 +291,7 @@ static int sys_fstatvfs(int fd, struct statvfs* stvfs)
 	return desc->statvfs(&ctx, stvfs);
 }
 
-static int sys_fstatvfsat(int dirfd, const char* path, struct statvfs* stvfs, int flags)
+int sys_fstatvfsat(int dirfd, const char* path, struct statvfs* stvfs, int flags)
 {
 	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
 		return errno = EINVAL;
@@ -312,7 +310,7 @@ static int sys_fstatvfsat(int dirfd, const char* path, struct statvfs* stvfs, in
 	return desc->statvfs(&ctx, stvfs);
 }
 
-static int sys_fcntl(int fd, int cmd, uintptr_t arg)
+int sys_fcntl(int fd, int cmd, uintptr_t arg)
 {
 	// Operations on the descriptor table.
 	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
@@ -344,7 +342,7 @@ static int sys_fcntl(int fd, int cmd, uintptr_t arg)
 	return errno = EINVAL, -1;
 }
 
-static int sys_ioctl(int fd, int cmd, void* /*ptr*/)
+int sys_ioctl(int fd, int cmd, void* /*ptr*/)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -359,8 +357,7 @@ static int sys_ioctl(int fd, int cmd, void* /*ptr*/)
 	return ret;
 }
 
-static ssize_t sys_readdirents(int fd, kernel_dirent* dirent, size_t size/*,
-                               size_t maxcount*/)
+ssize_t sys_readdirents(int fd, struct kernel_dirent* dirent, size_t size)
 {
 	if ( size < sizeof(kernel_dirent) ) { errno = EINVAL; return -1; }
 	if ( SSIZE_MAX < size )
@@ -372,7 +369,7 @@ static ssize_t sys_readdirents(int fd, kernel_dirent* dirent, size_t size/*,
 	return desc->readdirents(&ctx, dirent, size, 1 /*maxcount*/);
 }
 
-static int sys_fchdir(int fd)
+int sys_fchdir(int fd)
 {
 	Process* process = CurrentProcess();
 	Ref<Descriptor> desc = process->GetDescriptor(fd);
@@ -384,7 +381,7 @@ static int sys_fchdir(int fd)
 	return 0;
 }
 
-static int sys_fchdirat(int dirfd, const char* path)
+int sys_fchdirat(int dirfd, const char* path)
 {
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
@@ -401,7 +398,7 @@ static int sys_fchdirat(int dirfd, const char* path)
 	return 0;
 }
 
-static int sys_fchroot(int fd)
+int sys_fchroot(int fd)
 {
 	Process* process = CurrentProcess();
 	Ref<Descriptor> desc = process->GetDescriptor(fd);
@@ -413,7 +410,7 @@ static int sys_fchroot(int fd)
 	return 0;
 }
 
-static int sys_fchrootat(int dirfd, const char* path)
+int sys_fchrootat(int dirfd, const char* path)
 {
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
@@ -430,7 +427,7 @@ static int sys_fchrootat(int dirfd, const char* path)
 	return 0;
 }
 
-static int sys_fchown(int fd, uid_t owner, gid_t group)
+int sys_fchown(int fd, uid_t owner, gid_t group)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -439,7 +436,7 @@ static int sys_fchown(int fd, uid_t owner, gid_t group)
 	return desc->chown(&ctx, owner, group);
 }
 
-static int sys_fchownat(int dirfd, const char* path, uid_t owner, gid_t group, int flags)
+int sys_fchownat(int dirfd, const char* path, uid_t owner, gid_t group, int flags)
 {
 	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
 		return errno = EINVAL, -1;
@@ -459,7 +456,7 @@ static int sys_fchownat(int dirfd, const char* path, uid_t owner, gid_t group, i
 	return desc->chown(&ctx, owner, group);
 }
 
-static int sys_fchmod(int fd, mode_t mode)
+int sys_fchmod(int fd, mode_t mode)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -468,7 +465,7 @@ static int sys_fchmod(int fd, mode_t mode)
 	return desc->chmod(&ctx, mode);
 }
 
-static int sys_fchmodat(int dirfd, const char* path, mode_t mode, int flags)
+int sys_fchmodat(int dirfd, const char* path, mode_t mode, int flags)
 {
 	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
 		return errno = EINVAL, -1;
@@ -488,7 +485,7 @@ static int sys_fchmodat(int dirfd, const char* path, mode_t mode, int flags)
 	return desc->chmod(&ctx, mode);
 }
 
-static int sys_futimens(int fd, const struct timespec user_times[2])
+int sys_futimens(int fd, const struct timespec user_times[2])
 {
 	struct timespec times[2];
 	if ( !CopyFromUser(times, user_times, sizeof(times)) )
@@ -500,8 +497,8 @@ static int sys_futimens(int fd, const struct timespec user_times[2])
 	return desc->utimens(&ctx, &times[0], NULL, &times[1]);
 }
 
-static int sys_utimensat(int dirfd, const char* path,
-                         const struct timespec user_times[2], int flags)
+int sys_utimensat(int dirfd, const char* path,
+                  const struct timespec user_times[2], int flags)
 {
 	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
 		return errno = EINVAL, -1;
@@ -524,9 +521,9 @@ static int sys_utimensat(int dirfd, const char* path,
 	return desc->utimens(&ctx, &times[0], NULL, &times[1]);
 }
 
-static int sys_linkat(int olddirfd, const char* oldpath,
-                      int newdirfd, const char* newpath,
-                      int flags)
+int sys_linkat(int olddirfd, const char* oldpath,
+               int newdirfd, const char* newpath,
+               int flags)
 {
 	if ( flags & ~(AT_SYMLINK_FOLLOW) )
 		return errno = EINVAL, -1;
@@ -563,7 +560,7 @@ static int sys_linkat(int olddirfd, const char* oldpath,
 	return ret;
 }
 
-static int sys_symlinkat(const char* oldpath, int newdirfd, const char* newpath)
+int sys_symlinkat(const char* oldpath, int newdirfd, const char* newpath)
 {
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
 
@@ -587,7 +584,7 @@ static int sys_symlinkat(const char* oldpath, int newdirfd, const char* newpath)
 	return ret;
 }
 
-static int sys_settermmode(int fd, unsigned mode)
+int sys_settermmode(int fd, unsigned mode)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -596,7 +593,7 @@ static int sys_settermmode(int fd, unsigned mode)
 	return desc->settermmode(&ctx, mode);
 }
 
-static int sys_gettermmode(int fd, unsigned* mode)
+int sys_gettermmode(int fd, unsigned* mode)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -605,7 +602,7 @@ static int sys_gettermmode(int fd, unsigned* mode)
 	return desc->gettermmode(&ctx, mode);
 }
 
-static int sys_isatty(int fd)
+int sys_isatty(int fd)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -614,7 +611,7 @@ static int sys_isatty(int fd)
 	return desc->isatty(&ctx);
 }
 
-static int sys_tcgetwincurpos(int fd, struct wincurpos* wcp)
+int sys_tcgetwincurpos(int fd, struct wincurpos* wcp)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -624,7 +621,7 @@ static int sys_tcgetwincurpos(int fd, struct wincurpos* wcp)
 }
 
 
-static int sys_tcgetwinsize(int fd, struct winsize* ws)
+int sys_tcgetwinsize(int fd, struct winsize* ws)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -633,7 +630,7 @@ static int sys_tcgetwinsize(int fd, struct winsize* ws)
 	return desc->tcgetwinsize(&ctx, ws);
 }
 
-static int sys_tcsetpgrp(int fd, pid_t pgid)
+int sys_tcsetpgrp(int fd, pid_t pgid)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -642,7 +639,7 @@ static int sys_tcsetpgrp(int fd, pid_t pgid)
 	return desc->tcsetpgrp(&ctx, pgid);
 }
 
-static int sys_tcgetpgrp(int fd)
+int sys_tcgetpgrp(int fd)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -668,8 +665,8 @@ static int sys_renameat_inner(int olddirfd, const char* oldpath,
 	return newdir->rename_here(&ctx, olddir, oldrelpath, newrelpath);
 }
 
-static int sys_renameat(int olddirfd, const char* oldpath,
-                        int newdirfd, const char* newpath)
+int sys_renameat(int olddirfd, const char* oldpath,
+                 int newdirfd, const char* newpath)
 {
 	char* oldpathcopy = GetStringFromUser(oldpath);
 	if ( !oldpathcopy ) return -1;
@@ -683,7 +680,7 @@ static int sys_renameat(int olddirfd, const char* oldpath,
 
 // TODO: This should probably be moved into user-space. It'd be nice if
 // user-space could just open the symlink and read/write it like a regular file.
-static ssize_t sys_readlinkat(int dirfd, const char* path, char* buf, size_t size)
+ssize_t sys_readlinkat(int dirfd, const char* path, char* buf, size_t size)
 {
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
@@ -699,7 +696,7 @@ static ssize_t sys_readlinkat(int dirfd, const char* path, char* buf, size_t siz
 	return (int) desc->readlink(&ctx, buf, size);
 }
 
-static int sys_fsync(int fd)
+int sys_fsync(int fd)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -708,7 +705,7 @@ static int sys_fsync(int fd)
 	return desc->sync(&ctx);
 }
 
-static int sys_accept4(int fd, void* addr, size_t* addrlen, int flags)
+int sys_accept4(int fd, void* addr, size_t* addrlen, int flags)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -726,7 +723,7 @@ static int sys_accept4(int fd, void* addr, size_t* addrlen, int flags)
 	return CurrentProcess()->GetDTable()->Allocate(conn, fdflags);
 }
 
-static int sys_bind(int fd, const void* addr, size_t addrlen)
+int sys_bind(int fd, const void* addr, size_t addrlen)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -735,7 +732,7 @@ static int sys_bind(int fd, const void* addr, size_t addrlen)
 	return desc->bind(&ctx, (const uint8_t*) addr, addrlen);
 }
 
-static int sys_connect(int fd, const void* addr, size_t addrlen)
+int sys_connect(int fd, const void* addr, size_t addrlen)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -744,7 +741,7 @@ static int sys_connect(int fd, const void* addr, size_t addrlen)
 	return desc->connect(&ctx, (const uint8_t*) addr, addrlen);
 }
 
-static int sys_listen(int fd, int backlog)
+int sys_listen(int fd, int backlog)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -753,7 +750,7 @@ static int sys_listen(int fd, int backlog)
 	return desc->listen(&ctx, backlog);
 }
 
-static ssize_t sys_recv(int fd, void* buffer, size_t count, int flags)
+ssize_t sys_recv(int fd, void* buffer, size_t count, int flags)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -762,7 +759,7 @@ static ssize_t sys_recv(int fd, void* buffer, size_t count, int flags)
 	return desc->recv(&ctx, (uint8_t*) buffer, count, flags);
 }
 
-static ssize_t sys_send(int fd, const void* buffer, size_t count, int flags)
+ssize_t sys_send(int fd, const void* buffer, size_t count, int flags)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -792,7 +789,7 @@ static struct iovec* FetchIOV(const struct iovec* user_iov, int iovcnt)
 	return ret;
 }
 
-static ssize_t sys_readv(int fd, const struct iovec* user_iov, int iovcnt)
+ssize_t sys_readv(int fd, const struct iovec* user_iov, int iovcnt)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -827,8 +824,7 @@ static ssize_t sys_readv(int fd, const struct iovec* user_iov, int iovcnt)
 	return so_far;
 }
 
-static ssize_t sys_preadv(int fd, const struct iovec* user_iov, int iovcnt,
-                          off_t offset)
+ssize_t sys_preadv(int fd, const struct iovec* user_iov, int iovcnt, off_t offset)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -863,7 +859,7 @@ static ssize_t sys_preadv(int fd, const struct iovec* user_iov, int iovcnt,
 	return so_far;
 }
 
-static ssize_t sys_writev(int fd, const struct iovec* user_iov, int iovcnt)
+ssize_t sys_writev(int fd, const struct iovec* user_iov, int iovcnt)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -898,8 +894,7 @@ static ssize_t sys_writev(int fd, const struct iovec* user_iov, int iovcnt)
 	return so_far;
 }
 
-static ssize_t sys_pwritev(int fd, const struct iovec* user_iov, int iovcnt,
-                          off_t offset)
+ssize_t sys_pwritev(int fd, const struct iovec* user_iov, int iovcnt, off_t offset)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -934,7 +929,7 @@ static ssize_t sys_pwritev(int fd, const struct iovec* user_iov, int iovcnt,
 	return so_far;
 }
 
-static int sys_mkpartition(int fd, off_t start, off_t length, int flags)
+int sys_mkpartition(int fd, off_t start, off_t length, int flags)
 {
 	int fdflags = 0;
 	if ( flags & O_CLOEXEC ) fdflags |= FD_CLOEXEC;
@@ -966,7 +961,7 @@ static int sys_mkpartition(int fd, off_t start, off_t length, int flags)
 	return CurrentProcess()->GetDTable()->Allocate(partition_desc, fdflags);
 }
 
-static ssize_t sys_sendmsg(int fd, const struct msghdr* user_msg, int flags)
+ssize_t sys_sendmsg(int fd, const struct msghdr* user_msg, int flags)
 {
 	struct msghdr msg;
 	if ( !CopyFromUser(&msg, user_msg, sizeof(msg)) )
@@ -981,7 +976,7 @@ static ssize_t sys_sendmsg(int fd, const struct msghdr* user_msg, int flags)
 	return sys_writev(fd, msg.msg_iov, msg.msg_iovlen);
 }
 
-static ssize_t sys_recvmsg(int fd, struct msghdr* user_msg, int flags)
+ssize_t sys_recvmsg(int fd, struct msghdr* user_msg, int flags)
 {
 	struct msghdr msg;
 	if ( !CopyFromUser(&msg, user_msg, sizeof(msg)) )
@@ -1007,8 +1002,8 @@ static ssize_t sys_recvmsg(int fd, struct msghdr* user_msg, int flags)
 	return result;
 }
 
-static int sys_getsockopt(int fd, int level, int option_name,
-                          void* option_value, size_t* option_size_ptr)
+int sys_getsockopt(int fd, int level, int option_name,
+                   void* option_value, size_t* option_size_ptr)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -1018,8 +1013,8 @@ static int sys_getsockopt(int fd, int level, int option_name,
 	return desc->getsockopt(&ctx, level, option_name, option_value, option_size_ptr);
 }
 
-static int sys_setsockopt(int fd, int level, int option_name,
-                          const void* option_value, size_t option_size)
+int sys_setsockopt(int fd, int level, int option_name,
+                   const void* option_value, size_t option_size)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -1029,7 +1024,7 @@ static int sys_setsockopt(int fd, int level, int option_name,
 	return desc->setsockopt(&ctx, level, option_name, option_value, option_size);
 }
 
-static ssize_t sys_tcgetblob(int fd, const char* name, void* buffer, size_t count)
+ssize_t sys_tcgetblob(int fd, const char* name, void* buffer, size_t count)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -1045,7 +1040,7 @@ static ssize_t sys_tcgetblob(int fd, const char* name, void* buffer, size_t coun
 	return result;
 }
 
-static ssize_t sys_tcsetblob(int fd, const char* name, const void* buffer, size_t count)
+ssize_t sys_tcsetblob(int fd, const char* name, const void* buffer, size_t count)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
@@ -1061,7 +1056,7 @@ static ssize_t sys_tcsetblob(int fd, const char* name, const void* buffer, size_
 	return result;
 }
 
-static int sys_getpeername(int fd, struct sockaddr* addr, socklen_t* addrsize)
+int sys_getpeername(int fd, struct sockaddr* addr, socklen_t* addrsize)
 {
 	(void) fd;
 	(void) addr;
@@ -1069,7 +1064,7 @@ static int sys_getpeername(int fd, struct sockaddr* addr, socklen_t* addrsize)
 	return errno = ENOSYS, -1;
 }
 
-static int sys_getsockname(int fd, struct sockaddr* addr, socklen_t* addrsize)
+int sys_getsockname(int fd, struct sockaddr* addr, socklen_t* addrsize)
 {
 	(void) fd;
 	(void) addr;
@@ -1077,80 +1072,11 @@ static int sys_getsockname(int fd, struct sockaddr* addr, socklen_t* addrsize)
 	return errno = ENOSYS, -1;
 }
 
-static int sys_shutdown(int fd, int how)
+int sys_shutdown(int fd, int how)
 {
 	(void) fd;
 	(void) how;
 	return errno = ENOSYS, -1;
 }
 
-void Init()
-{
-	Syscall::Register(SYSCALL_ACCEPT4, (void*) sys_accept4);
-	Syscall::Register(SYSCALL_BIND, (void*) sys_bind);
-	Syscall::Register(SYSCALL_CLOSE, (void*) sys_close);
-	Syscall::Register(SYSCALL_CONNECT, (void*) sys_connect);
-	Syscall::Register(SYSCALL_DUP2, (void*) sys_dup2);
-	Syscall::Register(SYSCALL_DUP3, (void*) sys_dup3);
-	Syscall::Register(SYSCALL_DUP, (void*) sys_dup);
-	Syscall::Register(SYSCALL_FACCESSAT, (void*) sys_faccessat);
-	Syscall::Register(SYSCALL_FCHDIRAT, (void*) sys_fchdirat);
-	Syscall::Register(SYSCALL_FCHDIR, (void*) sys_fchdir);
-	Syscall::Register(SYSCALL_FCHMODAT, (void*) sys_fchmodat);
-	Syscall::Register(SYSCALL_FCHMOD, (void*) sys_fchmod);
-	Syscall::Register(SYSCALL_FCHOWNAT, (void*) sys_fchownat);
-	Syscall::Register(SYSCALL_FCHOWN, (void*) sys_fchown);
-	Syscall::Register(SYSCALL_FCHROOTAT, (void*) sys_fchrootat);
-	Syscall::Register(SYSCALL_FCHROOT, (void*) sys_fchroot);
-	Syscall::Register(SYSCALL_FCNTL, (void*) sys_fcntl);
-	Syscall::Register(SYSCALL_FSTATAT, (void*) sys_fstatat);
-	Syscall::Register(SYSCALL_FSTATVFSAT, (void*) sys_fstatvfsat);
-	Syscall::Register(SYSCALL_FSTATVFS, (void*) sys_fstatvfs);
-	Syscall::Register(SYSCALL_FSTAT, (void*) sys_fstat);
-	Syscall::Register(SYSCALL_FSYNC, (void*) sys_fsync);
-	Syscall::Register(SYSCALL_FTRUNCATE, (void*) sys_ftruncate);
-	Syscall::Register(SYSCALL_FUTIMENS, (void*) sys_futimens);
-	Syscall::Register(SYSCALL_GETPEERNAME, (void*) sys_getpeername);
-	Syscall::Register(SYSCALL_GETSOCKNAME, (void*) sys_getsockname);
-	Syscall::Register(SYSCALL_GETSOCKOPT, (void*) sys_getsockopt);
-	Syscall::Register(SYSCALL_GETTERMMODE, (void*) sys_gettermmode);
-	Syscall::Register(SYSCALL_IOCTL, (void*) sys_ioctl);
-	Syscall::Register(SYSCALL_ISATTY, (void*) sys_isatty);
-	Syscall::Register(SYSCALL_LINKAT, (void*) sys_linkat);
-	Syscall::Register(SYSCALL_LISTEN, (void*) sys_listen);
-	Syscall::Register(SYSCALL_LSEEK, (void*) sys_lseek);
-	Syscall::Register(SYSCALL_MKDIRAT, (void*) sys_mkdirat);
-	Syscall::Register(SYSCALL_MKPARTITION, (void*) sys_mkpartition);
-	Syscall::Register(SYSCALL_OPENAT, (void*) sys_openat);
-	Syscall::Register(SYSCALL_PREAD, (void*) sys_pread);
-	Syscall::Register(SYSCALL_PREADV, (void*) sys_preadv);
-	Syscall::Register(SYSCALL_PWRITE, (void*) sys_pwrite);
-	Syscall::Register(SYSCALL_PWRITEV, (void*) sys_pwritev);
-	Syscall::Register(SYSCALL_READDIRENTS, (void*) sys_readdirents);
-	Syscall::Register(SYSCALL_READLINKAT, (void*) sys_readlinkat);
-	Syscall::Register(SYSCALL_READ, (void*) sys_read);
-	Syscall::Register(SYSCALL_READV, (void*) sys_readv);
-	Syscall::Register(SYSCALL_RECVMSG, (void*) sys_recvmsg);
-	Syscall::Register(SYSCALL_RECV, (void*) sys_recv);
-	Syscall::Register(SYSCALL_RENAMEAT, (void*) sys_renameat);
-	Syscall::Register(SYSCALL_SENDMSG, (void*) sys_sendmsg);
-	Syscall::Register(SYSCALL_SEND, (void*) sys_send);
-	Syscall::Register(SYSCALL_SETSOCKOPT, (void*) sys_setsockopt);
-	Syscall::Register(SYSCALL_SETTERMMODE, (void*) sys_settermmode);
-	Syscall::Register(SYSCALL_SHUTDOWN, (void*) sys_shutdown);
-	Syscall::Register(SYSCALL_SYMLINKAT, (void*) sys_symlinkat);
-	Syscall::Register(SYSCALL_TCGETBLOB, (void*) sys_tcgetblob);
-	Syscall::Register(SYSCALL_TCGETPGRP, (void*) sys_tcgetpgrp);
-	Syscall::Register(SYSCALL_TCGETWINCURPOS, (void*) sys_tcgetwincurpos);
-	Syscall::Register(SYSCALL_TCGETWINSIZE, (void*) sys_tcgetwinsize);
-	Syscall::Register(SYSCALL_TCSETBLOB, (void*) sys_tcsetblob);
-	Syscall::Register(SYSCALL_TCSETPGRP, (void*) sys_tcsetpgrp);
-	Syscall::Register(SYSCALL_TRUNCATEAT, (void*) sys_truncateat);
-	Syscall::Register(SYSCALL_UNLINKAT, (void*) sys_unlinkat);
-	Syscall::Register(SYSCALL_UTIMENSAT, (void*) sys_utimensat);
-	Syscall::Register(SYSCALL_WRITE, (void*) sys_write);
-	Syscall::Register(SYSCALL_WRITEV, (void*) sys_writev);
-}
-
-} // namespace IO
 } // namespace Sortix

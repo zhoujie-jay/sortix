@@ -35,10 +35,7 @@
 #include <sortix/kernel/ptable.h>
 #include <sortix/kernel/syscall.h>
 
-#include "resource.h"
-
 namespace Sortix {
-namespace Resource {
 
 static int GetProcessPriority(pid_t who)
 {
@@ -128,7 +125,7 @@ static int SetUserPriority(uid_t /*who*/, int /*prio*/)
 	return errno = ENOSYS, -1;
 }
 
-static int sys_getpriority(int which, id_t who)
+int sys_getpriority(int which, id_t who)
 {
 	switch ( which )
 	{
@@ -139,7 +136,7 @@ static int sys_getpriority(int which, id_t who)
 	}
 }
 
-static int sys_setpriority(int which, id_t who, int prio)
+int sys_setpriority(int which, id_t who, int prio)
 {
 	switch ( which )
 	{
@@ -150,7 +147,6 @@ static int sys_setpriority(int which, id_t who, int prio)
 	}
 }
 
-static
 int sys_prlimit(pid_t pid,
                 int resource,
                 const struct rlimit* user_new_limit,
@@ -184,12 +180,4 @@ int sys_prlimit(pid_t pid,
 	return 0;
 }
 
-void Init()
-{
-	Syscall::Register(SYSCALL_GETPRIORITY, (void*) sys_getpriority);
-	Syscall::Register(SYSCALL_PRLIMIT, (void*) sys_prlimit);
-	Syscall::Register(SYSCALL_SETPRIORITY, (void*) sys_setpriority);
-}
-
-} // namespace Resource
 } // namespace Sortix

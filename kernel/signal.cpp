@@ -105,7 +105,6 @@ void UpdatePendingSignals(Thread* thread) // thread->process->signal_lock held
 		thread->registers.signal_pending = is_pending;
 }
 
-static
 int sys_sigaction(int signum,
                   const struct sigaction* user_newact,
                   struct sigaction* user_oldact)
@@ -149,7 +148,7 @@ int sys_sigaction(int signum,
 	return 0;
 }
 
-static int sys_sigaltstack(const stack_t* user_newstack, stack_t* user_oldstack)
+int sys_sigaltstack(const stack_t* user_newstack, stack_t* user_oldstack)
 {
 	Thread* thread = CurrentThread();
 
@@ -174,7 +173,7 @@ static int sys_sigaltstack(const stack_t* user_newstack, stack_t* user_oldstack)
 	return 0;
 }
 
-static int sys_sigpending(sigset_t* set)
+int sys_sigpending(sigset_t* set)
 {
 	Process* process = CurrentProcess();
 	Thread* thread = CurrentThread();
@@ -186,7 +185,6 @@ static int sys_sigpending(sigset_t* set)
 	return CopyToUser(set, &thread->signal_pending, sizeof(sigset_t)) ? 0 : -1;
 }
 
-static
 int sys_sigprocmask(int how, const sigset_t* user_set, sigset_t* user_oldset)
 {
 	Process* process = CurrentProcess();
@@ -232,7 +230,7 @@ int sys_sigprocmask(int how, const sigset_t* user_set, sigset_t* user_oldset)
 	return 0;
 }
 
-static int sys_sigsuspend(const sigset_t* set)
+int sys_sigsuspend(const sigset_t* set)
 {
 	Process* process = CurrentProcess();
 	Thread* thread = CurrentThread();
@@ -268,7 +266,7 @@ static int sys_sigsuspend(const sigset_t* set)
 	return errno = EINTR, -1;
 }
 
-static int sys_kill(pid_t pid, int signum)
+int sys_kill(pid_t pid, int signum)
 {
 	// Protect the kernel process.
 	if ( !pid )
@@ -344,7 +342,7 @@ bool Process::DeliverSignal(int signum)
 	return firstthread->DeliverSignal(signum);
 }
 
-static int sys_raise(int signum)
+int sys_raise(int signum)
 {
 	if ( !CurrentThread()->DeliverSignal(signum) && errno != ESIGPENDING )
 		return -1;
@@ -837,14 +835,6 @@ void Init()
 	sigemptyset(&unblockable_signals);
 	sigaddset(&unblockable_signals, SIGKILL);
 	sigaddset(&unblockable_signals, SIGSTOP);
-
-	Syscall::Register(SYSCALL_KILL, (void*) sys_kill);
-	Syscall::Register(SYSCALL_RAISE, (void*) sys_raise);
-	Syscall::Register(SYSCALL_SIGACTION, (void*) sys_sigaction);
-	Syscall::Register(SYSCALL_SIGALTSTACK, (void*) sys_sigaltstack);
-	Syscall::Register(SYSCALL_SIGPENDING, (void*) sys_sigpending);
-	Syscall::Register(SYSCALL_SIGPROCMASK, (void*) sys_sigprocmask);
-	Syscall::Register(SYSCALL_SIGSUSPEND, (void*) sys_sigsuspend);
 }
 
 } // namespace Signal

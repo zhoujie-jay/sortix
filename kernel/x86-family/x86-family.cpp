@@ -77,7 +77,12 @@ void ShutDown()
 	Reboot();
 }
 
-static uint64_t sys_rdmsr(uint32_t msrid)
+} // namespace CPU
+} // namespace Sortix
+
+namespace Sortix {
+
+uint64_t sys_rdmsr(uint32_t msrid)
 {
 	switch ( msrid )
 	{
@@ -98,7 +103,7 @@ static uint64_t sys_rdmsr(uint32_t msrid)
 	};
 }
 
-static uint64_t sys_wrmsr(uint32_t msrid, uint64_t value)
+uint64_t sys_wrmsr(uint32_t msrid, uint64_t value)
 {
 	switch ( msrid )
 	{
@@ -127,11 +132,4 @@ static uint64_t sys_wrmsr(uint32_t msrid, uint64_t value)
 	};
 }
 
-void Init()
-{
-	Syscall::Register(SYSCALL_RDMSR, (void*) sys_rdmsr);
-	Syscall::Register(SYSCALL_WRMSR, (void*) sys_wrmsr);
-}
-
-} // namespace CPU
 } // namespace Sortix

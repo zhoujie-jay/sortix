@@ -54,13 +54,11 @@
 #include <sortix/kernel/pci.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/ptable.h>
-#include <sortix/kernel/random.h>
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
 #include <sortix/kernel/string.h>
 #include <sortix/kernel/symbol.h>
-#include <sortix/kernel/syscall.h>
 #include <sortix/kernel/textbuffer.h>
 #include <sortix/kernel/thread.h>
 #include <sortix/kernel/time.h>
@@ -69,7 +67,6 @@
 #include <sortix/kernel/vnode.h>
 #include <sortix/kernel/worker.h>
 
-#include "alarm.h"
 #include "ata.h"
 #include "com.h"
 #include "elf.h"
@@ -79,19 +76,13 @@
 #include "fs/user.h"
 #include "fs/zero.h"
 #include "gpu/bga/bga.h"
-#include "hostname.h"
-#include "identity.h"
 #include "initrd.h"
-#include "io.h"
 #include "kb/layout/us.h"
 #include "kb/ps2.h"
-#include "kernelinfo.h"
 #include "logterminal.h"
 #include "multiboot.h"
 #include "net/fs.h"
-#include "pipe.h"
 #include "poll.h"
-#include "resource.h"
 #include "textterminal.h"
 #include "uart.h"
 #include "vga.h"
@@ -101,7 +92,6 @@
 #include "x86-family/cmos.h"
 #include "x86-family/float.h"
 #include "x86-family/gdt.h"
-#include "x86-family/x86-family.h"
 #endif
 
 // Keep the stack size aligned with $CPU/base.s
@@ -200,9 +190,6 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	// TODO: Call global constructors using the _init function.
 
-	// Initialize system calls.
-	Syscall::Init();
-
 	// Detect and initialize any serial COM ports in the system.
 	COM::EarlyInit();
 
@@ -298,9 +285,6 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	// Initialize the interrupt handler table and enable interrupts.
 	Interrupt::Init();
-
-	// Initialize entropy gathering.
-	Random::Init();
 
 	// Load the kernel symbols if provided by the bootloader.
 	do if ( bootinfo->flags & MULTIBOOT_INFO_ELF_SHDR )
@@ -417,17 +401,8 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Stage 2. Transition to Multithreaded Environment
 	//
 
-	// Initialize CPU system calls.
-	CPU::Init();
-
 	// Initialize the clocks.
 	Time::Init();
-
-	// Initialize the process system.
-	Process::Init();
-
-	// Initialize the thread system.
-	Thread::Init();
 
 	// Initialize Unix Signals.
 	Signal::Init();
@@ -610,33 +585,6 @@ static void BootThread(void* /*user*/)
 
 	// Initialize the VGA driver.
 	VGA::Init("/dev", slashdev);
-
-	// Initialize the identity system calls.
-	Identity::Init();
-
-	// Initialize the hostname system calls.
-	Hostname::Init();
-
-	// Initialize the IO system.
-	IO::Init();
-
-	// Initialize the pipe system.
-	Pipe::Init();
-
-	// Initialize poll system call.
-	Poll::Init();
-
-	// Initialize per-process timers.
-	UserTimer::Init();
-
-	// Initialize per-process alarm timer.
-	Alarm::Init();
-
-	// Initialize the kernel information query syscall.
-	Info::Init();
-
-	// Initialize resource system calls.
-	Resource::Init();
 
 	// Initialize the Video Driver framework.
 	Video::Init(textbufhandle);

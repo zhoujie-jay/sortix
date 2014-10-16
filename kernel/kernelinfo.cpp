@@ -29,16 +29,13 @@
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/syscall.h>
 
-#include "kernelinfo.h"
-
 #ifndef VERSIONSTR
 #define VERSIONSTR "unknown"
 #endif
 
 namespace Sortix {
-namespace Info {
 
-const char* KernelInfo(const char* req)
+static const char* KernelInfo(const char* req)
 {
 	if ( strcmp(req, "name") == 0 ) { return BRAND_KERNEL_NAME; }
 	if ( strcmp(req, "version") == 0 ) { return VERSIONSTR; }
@@ -47,7 +44,7 @@ const char* KernelInfo(const char* req)
 	return NULL;
 }
 
-static ssize_t sys_kernelinfo(const char* req, char* resp, size_t resplen)
+ssize_t sys_kernelinfo(const char* req, char* resp, size_t resplen)
 {
 	const char* str = KernelInfo(req);
 	if ( !str )
@@ -60,10 +57,4 @@ static ssize_t sys_kernelinfo(const char* req, char* resp, size_t resplen)
 	return 0;
 }
 
-void Init()
-{
-	Syscall::Register(SYSCALL_KERNELINFO, (void*) sys_kernelinfo);
-}
-
-} // namespace Info
 } // namespace Sortix

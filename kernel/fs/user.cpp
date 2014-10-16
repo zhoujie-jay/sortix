@@ -55,7 +55,6 @@
 #include <sortix/kernel/vnode.h>
 
 namespace Sortix {
-
 namespace UserFS {
 
 class ChannelDirection;
@@ -1485,7 +1484,12 @@ Ref<Inode> FactoryNode::open(ioctx_t* /*ctx*/, const char* filename,
 	return errno = ENOENT, Ref<Inode>(NULL);
 }
 
-static int sys_fsm_fsbind(int rootfd, int mpointfd, int /*flags*/)
+} // namespace UserFS
+} // namespace Sortix
+
+namespace Sortix {
+
+int sys_fsm_fsbind(int rootfd, int mpointfd, int /*flags*/)
 {
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(rootfd);
 	if ( !desc ) { return -1; }
@@ -1495,6 +1499,11 @@ static int sys_fsm_fsbind(int rootfd, int mpointfd, int /*flags*/)
 	Ref<Inode> node = desc->vnode->inode;
 	return mtable->AddMount(mpoint->ino, mpoint->dev, node) ? 0 : -1;
 }
+
+} // namespace Sortix
+
+namespace Sortix {
+namespace UserFS {
 
 void Init(const char* devpath, Ref<Descriptor> slashdev)
 {
@@ -1514,8 +1523,6 @@ void Init(const char* devpath, Ref<Descriptor> slashdev)
 	// for this on the file descriptor class!
 	if ( !mtable->AddMount(mpoint->ino, mpoint->dev, node) )
 		PanicF("Unable to mount filesystem on %s/fs", devpath);
-
-	Syscall::Register(SYSCALL_FSM_FSBIND, (void*) sys_fsm_fsbind);
 }
 
 } // namespace UserFS

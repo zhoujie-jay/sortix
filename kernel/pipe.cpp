@@ -50,8 +50,6 @@
 #include <sortix/kernel/thread.h>
 #include <sortix/kernel/vnode.h>
 
-#include "pipe.h"
-
 namespace Sortix {
 
 class PipeChannel
@@ -511,9 +509,7 @@ int PipeNode::poll(ioctx_t* ctx, PollNode* node)
 	return endpoint.poll(ctx, node);
 }
 
-namespace Pipe {
-
-static int sys_pipe2(int pipefd[2], int flags)
+int sys_pipe2(int pipefd[2], int flags)
 {
 	int fdflags = 0;
 	if ( flags & O_CLOEXEC ) fdflags |= FD_CLOEXEC;
@@ -563,10 +559,4 @@ static int sys_pipe2(int pipefd[2], int flags)
 	return -1;
 }
 
-void Init()
-{
-	Syscall::Register(SYSCALL_PIPE2, (void*) sys_pipe2);
-}
-
-} // namespace Pipe
 } // namespace Sortix

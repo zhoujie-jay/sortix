@@ -74,8 +74,9 @@ static Timer* LookupTimer(Process* process, timer_t timerid)
 	return user_timer ? &user_timer->timer : (Timer*) NULL;
 }
 
-static int sys_timer_create(clockid_t clockid, struct sigevent* sigevp,
-                            timer_t* timerid_ptr)
+int sys_timer_create(clockid_t clockid,
+                     struct sigevent* sigevp,
+                     timer_t* timerid_ptr)
 {
 	Process* process = CurrentProcess();
 	ScopedLock lock(&process->user_timers_lock);
@@ -115,7 +116,7 @@ static int sys_timer_create(clockid_t clockid, struct sigevent* sigevp,
 	return 0;
 }
 
-static int sys_timer_delete(timer_t timerid)
+int sys_timer_delete(timer_t timerid)
 {
 	Process* process = CurrentProcess();
 	ScopedLock lock(&process->user_timers_lock);
@@ -130,7 +131,7 @@ static int sys_timer_delete(timer_t timerid)
 	return 0;
 }
 
-static int sys_timer_getoverrun(timer_t timerid)
+int sys_timer_getoverrun(timer_t timerid)
 {
 	Process* process = CurrentProcess();
 	ScopedLock lock(&process->user_timers_lock);
@@ -149,7 +150,7 @@ static int sys_timer_getoverrun(timer_t timerid)
 	return 0;
 }
 
-static int sys_timer_gettime(timer_t timerid, struct itimerspec* user_value)
+int sys_timer_gettime(timer_t timerid, struct itimerspec* user_value)
 {
 	Process* process = CurrentProcess();
 	ScopedLock lock(&process->user_timers_lock);
@@ -180,9 +181,10 @@ static void timer_callback(Clock* /*clock*/, Timer* timer, void* user)
 	}
 }
 
-static int sys_timer_settime(timer_t timerid, int flags,
-                             const struct itimerspec* user_value,
-                             struct itimerspec* user_ovalue)
+int sys_timer_settime(timer_t timerid,
+                      int flags,
+                      const struct itimerspec* user_value,
+                      struct itimerspec* user_ovalue)
 {
 	Process* process = CurrentProcess();
 	ScopedLock lock(&process->user_timers_lock);
@@ -215,8 +217,9 @@ static int sys_timer_settime(timer_t timerid, int flags,
 	return 0;
 }
 
-static int sys_clock_gettimeres(clockid_t clockid, struct timespec* time,
-                                                   struct timespec* res)
+int sys_clock_gettimeres(clockid_t clockid,
+                         struct timespec* time,
+                         struct timespec* res)
 {
 	Clock* clock = Time::GetClock(clockid);
 	if ( !clock )
@@ -229,8 +232,9 @@ static int sys_clock_gettimeres(clockid_t clockid, struct timespec* time,
 	       (!res || CopyToUser(res, &kres, sizeof(kres))) ? 0 : -1;
 }
 
-static int sys_clock_settimeres(clockid_t clockid, const struct timespec* time,
-                                                   const struct timespec* res)
+int sys_clock_settimeres(clockid_t clockid,
+                         const struct timespec* time,
+                         const struct timespec* res)
 {
 	Clock* clock = Time::GetClock(clockid);
 	if ( !clock )
@@ -246,9 +250,10 @@ static int sys_clock_settimeres(clockid_t clockid, const struct timespec* time,
 	return 0;
 }
 
-static int sys_clock_nanosleep(clockid_t clockid, int flags,
-                               const struct timespec* user_duration,
-                               struct timespec* user_remainder)
+int sys_clock_nanosleep(clockid_t clockid,
+                        int flags,
+                        const struct timespec* user_duration,
+                        struct timespec* user_remainder)
 {
 	struct timespec time;
 
@@ -268,7 +273,7 @@ static int sys_clock_nanosleep(clockid_t clockid, int flags,
 	return timespec_eq(time, timespec_nul()) ? 0 : (errno = EINTR, -1);
 }
 
-static int sys_timens(struct tmns* user_tmns)
+int sys_timens(struct tmns* user_tmns)
 {
 	Clock* execute_clock = Time::GetClock(CLOCK_PROCESS_CPUTIME_ID);
 	Clock* system_clock = Time::GetClock(CLOCK_PROCESS_SYSTIME_ID);
@@ -287,19 +292,6 @@ static int sys_timens(struct tmns* user_tmns)
 	Interrupt::Enable();
 
 	return CopyToUser(user_tmns, &tmns, sizeof(tmns)) ? 0 : -1;
-}
-
-void UserTimer::Init()
-{
-	Syscall::Register(SYSCALL_CLOCK_GETTIMERES, (void*) sys_clock_gettimeres);
-	Syscall::Register(SYSCALL_CLOCK_NANOSLEEP, (void*) sys_clock_nanosleep);
-	Syscall::Register(SYSCALL_CLOCK_SETTIMERES, (void*) sys_clock_settimeres);
-	Syscall::Register(SYSCALL_TIMENS, (void*) sys_timens);
-	Syscall::Register(SYSCALL_TIMER_CREATE, (void*) sys_timer_create);
-	Syscall::Register(SYSCALL_TIMER_DELETE, (void*) sys_timer_delete);
-	Syscall::Register(SYSCALL_TIMER_GETOVERRUN, (void*) sys_timer_getoverrun);
-	Syscall::Register(SYSCALL_TIMER_GETTIME, (void*) sys_timer_gettime);
-	Syscall::Register(SYSCALL_TIMER_SETTIME, (void*) sys_timer_settime);
 }
 
 } // namespace Sortix

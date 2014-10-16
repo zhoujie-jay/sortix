@@ -36,7 +36,6 @@
 #include <sortix/kernel/timer.h>
 
 namespace Sortix {
-namespace Alarm {
 
 static void alarm_handler(Clock* /*clock*/, Timer* /*timer*/, void* user)
 {
@@ -45,7 +44,6 @@ static void alarm_handler(Clock* /*clock*/, Timer* /*timer*/, void* user)
 	process->DeliverSignal(SIGALRM);
 }
 
-static
 int sys_alarmns(const struct timespec* user_delay, struct timespec* user_odelay)
 {
 	Process* process = CurrentProcess();
@@ -64,10 +62,4 @@ int sys_alarmns(const struct timespec* user_delay, struct timespec* user_odelay)
 	return 0;
 }
 
-void Init()
-{
-	Syscall::Register(SYSCALL_ALARMNS, (void*) sys_alarmns);
-}
-
-} // namespace Alarm
 } // namespace Sortix

@@ -32,17 +32,14 @@
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/syscall.h>
 
-#include "hostname.h"
-
 namespace Sortix {
-namespace Hostname {
 
 static kthread_mutex_t hostname_lock = KTHREAD_MUTEX_INITIALIZER;
 
 static char hostname[HOST_NAME_MAX + 1] = "sortix";
 static size_t hostname_length = 6;
 
-static int sys_gethostname(char* dst_name, size_t dst_name_size)
+int sys_gethostname(char* dst_name, size_t dst_name_size)
 {
 	if ( dst_name_size == 0 )
 		return errno = EINVAL, -1;
@@ -60,7 +57,7 @@ static int sys_gethostname(char* dst_name, size_t dst_name_size)
 	return 0;
 }
 
-static int sys_sethostname(const char* src_name, size_t src_name_size)
+int sys_sethostname(const char* src_name, size_t src_name_size)
 {
 	char new_hostname[HOST_NAME_MAX + 1];
 	if ( sizeof(new_hostname) < src_name_size )
@@ -77,11 +74,4 @@ static int sys_sethostname(const char* src_name, size_t src_name_size)
 	return 0;
 }
 
-void Init()
-{
-	Syscall::Register(SYSCALL_GETHOSTNAME, (void*) sys_gethostname);
-	Syscall::Register(SYSCALL_SETHOSTNAME, (void*) sys_sethostname);
-}
-
-} // namespace Hostname
 } // namespace Sortix

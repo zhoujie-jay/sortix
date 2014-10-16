@@ -41,10 +41,6 @@ struct UserTimer
 	struct sigevent event;
 	Process* process;
 	timer_t timerid;
-
-public:
-	static void Init();
-
 };
 
 } // namespace Sortix

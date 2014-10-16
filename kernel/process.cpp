@@ -534,7 +534,7 @@ pid_t Process::Wait(pid_t thepid, int* status_ptr, int options)
 	return thepid;
 }
 
-static pid_t sys_waitpid(pid_t pid, int* user_status, int options)
+pid_t sys_waitpid(pid_t pid, int* user_status, int options)
 {
 	int status = 0;
 	pid_t ret = CurrentProcess()->Wait(pid, &status, options);
@@ -1322,7 +1322,6 @@ int sys_execve_kernel(const char* filename,
 	return result;
 }
 
-static
 int sys_execve(const char* user_filename,
                char* const user_argv[],
                char* const user_envp[])
@@ -1418,7 +1417,7 @@ cleanup_done:
 	return result;
 }
 
-static pid_t sys_tfork(int flags, struct tfork* user_regs)
+pid_t sys_tfork(int flags, struct tfork* user_regs)
 {
 	struct tfork regs;
 	if ( !CopyFromUser(&regs, user_regs, sizeof(regs)) )
@@ -1533,7 +1532,7 @@ static pid_t sys_tfork(int flags, struct tfork* user_regs)
 	return child_process->pid;
 }
 
-static pid_t sys_getpid()
+pid_t sys_getpid(void)
 {
 	return CurrentProcess()->pid;
 }
@@ -1546,12 +1545,12 @@ pid_t Process::GetParentProcessId()
 	return parent->pid;
 }
 
-static pid_t sys_getppid()
+pid_t sys_getppid(void)
 {
 	return CurrentProcess()->GetParentProcessId();
 }
 
-static pid_t sys_getpgid(pid_t pid)
+pid_t sys_getpgid(pid_t pid)
 {
 	Process* process = !pid ? CurrentProcess() : CurrentProcess()->GetPTable()->Get(pid);
 	if ( !process )
@@ -1564,7 +1563,7 @@ static pid_t sys_getpgid(pid_t pid)
 	return process->group->pid;
 }
 
-static int sys_setpgid(pid_t pid, pid_t pgid)
+int sys_setpgid(pid_t pid, pid_t pgid)
 {
 	// TODO: Prevent changing the process group of zombies and other volatile
 	//       things that are about to implode.
@@ -1626,7 +1625,7 @@ static int sys_setpgid(pid_t pid, pid_t pgid)
 	return 0;
 }
 
-static void* sys_sbrk(intptr_t increment)
+void* sys_sbrk(intptr_t increment)
 {
 	Process* process = CurrentProcess();
 	ScopedLock lock(&process->segment_lock);
@@ -1682,12 +1681,12 @@ static void* sys_sbrk(intptr_t increment)
 	return (void*) (heap_segment->addr + heap_segment->size);
 }
 
-static size_t sys_getpagesize()
+size_t sys_getpagesize(void)
 {
 	return Page::Size();
 }
 
-static mode_t sys_umask(mode_t newmask)
+mode_t sys_umask(mode_t newmask)
 {
 	Process* process = CurrentProcess();
 	ScopedLock lock(&process->idlock);
@@ -1696,26 +1695,11 @@ static mode_t sys_umask(mode_t newmask)
 	return oldmask;
 }
 
-static mode_t sys_getumask(void)
+mode_t sys_getumask(void)
 {
 	Process* process = CurrentProcess();
 	ScopedLock lock(&process->idlock);
 	return process->umask;
-}
-
-void Process::Init()
-{
-	Syscall::Register(SYSCALL_EXECVE, (void*) sys_execve);
-	Syscall::Register(SYSCALL_GETPAGESIZE, (void*) sys_getpagesize);
-	Syscall::Register(SYSCALL_GETPGID, (void*) sys_getpgid);
-	Syscall::Register(SYSCALL_GETPID, (void*) sys_getpid);
-	Syscall::Register(SYSCALL_GETPPID, (void*) sys_getppid);
-	Syscall::Register(SYSCALL_GETUMASK, (void*) sys_getumask);
-	Syscall::Register(SYSCALL_SBRK, (void*) sys_sbrk);
-	Syscall::Register(SYSCALL_SETPGID, (void*) sys_setpgid);
-	Syscall::Register(SYSCALL_TFORK, (void*) sys_tfork);
-	Syscall::Register(SYSCALL_UMASK, (void*) sys_umask);
-	Syscall::Register(SYSCALL_WAITPID, (void*) sys_waitpid);
 }
 
 } // namespace Sortix

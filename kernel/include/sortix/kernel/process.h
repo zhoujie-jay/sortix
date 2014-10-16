@@ -67,9 +67,6 @@ public:
 	~Process();
 
 public:
-	static void Init();
-
-public:
 	char* string_table;
 	size_t string_table_length;
 	Symbol* symbol_table;

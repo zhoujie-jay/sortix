@@ -333,10 +333,20 @@ ThreadState GetThreadState(Thread* thread)
 	return thread->state;
 }
 
-static int sys_sched_yield(void)
+} // namespace Scheduler
+} // namespace Sortix
+
+namespace Sortix {
+
+int sys_sched_yield(void)
 {
 	return kthread_yield(), 0;
 }
+
+} // namespace Sortix
+
+namespace Sortix {
+namespace Scheduler {
 
 void ScheduleTrueThread()
 {
@@ -355,8 +365,6 @@ void Init()
 	first_runnable_thread = NULL;
 	true_current_thread = NULL;
 	idle_thread = NULL;
-
-	Syscall::Register(SYSCALL_SCHED_YIELD, (void*) sys_sched_yield);
 }
 
 } // namespace Scheduler
