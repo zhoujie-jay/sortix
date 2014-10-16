@@ -52,7 +52,7 @@ static int sys_memstat(size_t* memused, size_t* memtotal)
 	Statistics(&used, &total);
 	if ( memused && !CopyToUser(memused, &used, sizeof(used)) )
 		return -1;
-	if ( memtotal && !CopyToUser(memtotal, &total, sizeof(used)) )
+	if ( memtotal && !CopyToUser(memtotal, &total, sizeof(total)) )
 		return -1;
 	return 0;
 }
