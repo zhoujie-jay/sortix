@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -48,14 +48,7 @@ typedef uint32_t in_addr_t;
 typedef __socklen_t socklen_t;
 #endif
 
-struct hostent
-{
-	char* h_name;
-	char** h_aliases;
-	char** h_addr_list;
-	int h_addrtype;
-	int h_length;
-};
+/* struct hostent will not be implemented. */
 
 struct netent
 {
@@ -126,7 +119,7 @@ struct addrinfo
 #define NI_MAXHOST 1025
 #define NI_MAXSERV 32
 
-void endhostent(void);
+/* endhostent will not be implemented. */
 void endnetent(void);
 void endprotoent(void);
 void endservent(void);
@@ -134,7 +127,7 @@ void freeaddrinfo(struct addrinfo*);
 const char* gai_strerror(int);
 int getaddrinfo(const char* __restrict, const char* __restrict,
                 const struct addrinfo* __restrict, struct addrinfo** __restrict);
-struct hostent* gethostent(void);
+/* gethostent will not be implemented. */
 int getnameinfo(const struct sockaddr* __restrict, socklen_t, char* __restrict,
                 socklen_t, char* __restrict, socklen_t, int);
 struct netent* getnetbyaddr(uint32_t, int);
@@ -146,7 +139,7 @@ struct protoent* getprotoent(void);
 struct servent* getservbyname(const char*, const char*);
 struct servent* getservbyport(int, const char*);
 struct servent* getservent(void);
-void sethostent(int);
+/* sethostent will not be implemented. */
 void setnetent(int);
 void setprotoent(int);
 void setservent(int);

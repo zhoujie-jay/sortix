@@ -360,14 +360,12 @@ locale/localeconv.o \
 locale/setlocale.o \
 msr/rdmsr.o \
 msr/wrmsr.o \
-netdb/endhostent.o \
 netdb/endnetent.o \
 netdb/endprotoent.o \
 netdb/endservent.o \
 netdb/freeaddrinfo.o \
 netdb/gai_strerror.o \
 netdb/getaddrinfo.o \
-netdb/gethostent.o \
 netdb/getnameinfo.o \
 netdb/getnetbyaddr.o \
 netdb/getnetbyname.o \
@@ -378,7 +376,6 @@ netdb/getprotoent.o \
 netdb/getservbyname.o \
 netdb/getservbyport.o \
 netdb/getservent.o \
-netdb/sethostent.o \
 netdb/setnetent.o \
 netdb/setprotoent.o \
 netdb/setservent.o \
