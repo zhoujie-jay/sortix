@@ -71,10 +71,11 @@ signal/sigisemptyset.o \
 signal/sigismember.o \
 signal/signotset.o \
 signal/sigorset.o \
+ssp/__stack_chk_fail.o \
 stdio/asprintf.o \
+stdio/cbprintf.o \
 stdio/clearerr.o \
 stdio/clearerr_unlocked.o \
-stdio/cbprintf.o \
 stdio/dprintf.o \
 stdio_ext/__fbufsize.o \
 stdio_ext/__fpending.o \
