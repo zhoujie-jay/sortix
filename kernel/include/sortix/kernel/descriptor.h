@@ -108,18 +108,20 @@ private:
 	                          mode_t mode);
 	bool IsSeekable();
 
-public: /* These must never change after construction and is read-only. */
+public: /* These must never change after construction. */
 	ino_t ino;
 	dev_t dev;
 	mode_t type; // For use by S_IS* macros.
 
-public /*TODO: private*/:
+public:
 	Ref<Vnode> vnode;
-	kthread_mutex_t curofflock;
+
+private:
+	kthread_mutex_t current_offset_lock;
+	off_t current_offset;
+	int dflags;
 	bool seekable;
 	bool checked_seekable;
-	off_t curoff;
-	int dflags;
 
 };
 

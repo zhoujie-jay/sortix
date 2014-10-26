@@ -48,52 +48,62 @@
 namespace Sortix {
 
 // Flags for the various base modes to open a file in.
-const int ACCESS_FLAGS = O_READ | O_WRITE | O_EXEC | O_SEARCH;
+static const int ACCESS_FLAGS = O_READ | O_WRITE | O_EXEC | O_SEARCH;
 
 // Flags that only make sense at open time.
-const int OPEN_FLAGS = O_CREATE | O_DIRECTORY | O_EXCL | O_TRUNC | O_NOFOLLOW |
-                       O_SYMLINK_NOFOLLOW | O_NOCTTY | O_TTY_INIT;
+static const int OPEN_FLAGS = O_CREATE | O_DIRECTORY | O_EXCL | O_TRUNC |
+                              O_NOFOLLOW | O_SYMLINK_NOFOLLOW | O_NOCTTY |
+                              O_TTY_INIT;
 
 // Flags that only make sense for descriptors.
-const int DESCRIPTOR_FLAGS = O_APPEND | O_NONBLOCK;
+static const int DESCRIPTOR_FLAGS = O_APPEND | O_NONBLOCK;
 
-bool LinkInodeInDir(ioctx_t* ctx, Ref<Descriptor> dir, const char* name,
+bool LinkInodeInDir(ioctx_t* ctx,
+                    Ref<Descriptor> dir,
+                    const char* name,
                     Ref<Inode> inode)
 {
 	Ref<Vnode> vnode(new Vnode(inode, Ref<Vnode>(), 0, 0));
-	if ( !vnode ) return false;
+	if ( !vnode )
+		return false;
 	Ref<Descriptor> desc(new Descriptor(Ref<Vnode>(vnode), 0));
-	if ( !desc ) return false;
+	if ( !desc )
+		return false;
 	return dir->link(ctx, name, desc) != 0;
 }
 
-Ref<Descriptor> OpenDirContainingPath(ioctx_t* ctx, Ref<Descriptor> from,
-                                      const char* path, char** finalp)
+Ref<Descriptor> OpenDirContainingPath(ioctx_t* ctx,
+                                      Ref<Descriptor> from,
+                                      const char* path,
+                                      char** final_ptr)
 {
-	if ( !path[0] ) { errno = EINVAL; return Ref<Descriptor>(); }
+	if ( !path[0] )
+		return errno = EINVAL, Ref<Descriptor>();
 	char* dirpath;
 	char* final;
 	if ( !SplitFinalElem(path, &dirpath, &final) )
 		return Ref<Descriptor>();
 	// TODO: Removing trailing slashes in final may not the right thing.
-	size_t finallen = strlen(final);
-	while ( finallen && final[finallen-1] == '/' )
-		final[--finallen] = 0;
-	// Safe against buffer overflow because final contains at least one
-	// character because we reject the empty string above.
-	if ( !finallen )
-		final[0] = '.',
+	size_t final_length = strlen(final);
+	while ( final_length && final[final_length-1] == '/' )
+		final[--final_length] = 0;
+	// There is room for a single character as final is not the empty string.
+	if ( !final_length )
+	{
+		final[0] = '.';
 		final[1] = '\0';
+	}
 	if ( !dirpath[0] )
 	{
 		delete[] dirpath;
-		*finalp = final;
+		*final_ptr = final;
 		return from;
 	}
 	Ref<Descriptor> ret = from->open(ctx, dirpath, O_READ | O_DIRECTORY, 0);
 	delete[] dirpath;
-	if ( !ret ) { delete[] final; return Ref<Descriptor>(); }
-	*finalp = final;
+	if ( !ret )
+		return delete[] final, Ref<Descriptor>();
+	*final_ptr = final;
 	return ret;
 }
 
@@ -101,7 +111,7 @@ Ref<Descriptor> OpenDirContainingPath(ioctx_t* ctx, Ref<Descriptor> from,
 
 Descriptor::Descriptor(Ref<Vnode> vnode, int dflags)
 {
-	curofflock = KTHREAD_MUTEX_INITIALIZER;
+	current_offset_lock = KTHREAD_MUTEX_INITIALIZER;
 	this->vnode = vnode;
 	this->ino = vnode->ino;
 	this->dev = vnode->dev;
@@ -109,7 +119,7 @@ Descriptor::Descriptor(Ref<Vnode> vnode, int dflags)
 	this->dflags = dflags;
 	checked_seekable = false;
 	seekable = false /* unused */;
-	curoff = 0;
+	current_offset = 0;
 }
 
 Descriptor::~Descriptor()
@@ -138,7 +148,7 @@ Ref<Descriptor> Descriptor::Fork()
 	Ref<Descriptor> ret(new Descriptor(vnode, dflags));
 	if ( !ret )
 		return Ref<Descriptor>();
-	ret->curoff = curoff;
+	ret->current_offset = current_offset;
 	ret->checked_seekable = checked_seekable;
 	ret->seekable = seekable;
 	return ret;
@@ -146,12 +156,13 @@ Ref<Descriptor> Descriptor::Fork()
 
 bool Descriptor::IsSeekable()
 {
+	ScopedLock lock(&current_offset_lock);
 	if ( !checked_seekable )
 	{
 		// TODO: Is this enough? Check that errno happens to be ESPIPE?
 		int saved_errno = errno;
 		ioctx_t ctx; SetupKernelIOCtx(&ctx);
-		seekable = 0 <= vnode->lseek(&ctx, SEEK_SET, 0) || S_ISDIR(vnode->type);
+		seekable = S_ISDIR(vnode->type) || 0 <= vnode->lseek(&ctx, SEEK_SET, 0);
 		checked_seekable = true;
 		errno = saved_errno;
 	}
@@ -192,7 +203,8 @@ int Descriptor::chown(ioctx_t* ctx, uid_t owner, gid_t group)
 
 int Descriptor::truncate(ioctx_t* ctx, off_t length)
 {
-	if ( length < 0 ) { errno = EINVAL; return -1; }
+	if ( length < 0 )
+		return errno = EINVAL, -1;
 	if ( !(dflags & O_WRITE) )
 		return errno = EPERM, -1;
 	return vnode->truncate(ctx, length);
@@ -204,12 +216,13 @@ off_t Descriptor::lseek(ioctx_t* ctx, off_t offset, int whence)
 	//       seek the file and get information about data holes.
 	if ( !IsSeekable() )
 		return vnode->lseek(ctx, offset, whence);
-	ScopedLock lock(&curofflock);
+
+	ScopedLock lock(&current_offset_lock);
 	off_t reloff;
 	if ( whence == SEEK_SET )
 		reloff = 0;
 	else if ( whence == SEEK_CUR )
-		reloff = curoff;
+		reloff = current_offset;
 	else if ( whence == SEEK_END )
 	{
 		if ( (reloff = vnode->lseek(ctx, offset, SEEK_END)) < 0 )
@@ -220,26 +233,27 @@ off_t Descriptor::lseek(ioctx_t* ctx, off_t offset, int whence)
 
 	if ( offset < 0 && reloff + offset < 0 )
 		return errno = EOVERFLOW, -1;
-	if ( OFF_MAX - curoff < offset )
+	if ( OFF_MAX - current_offset < offset )
 		return errno = EOVERFLOW, -1;
 
-	return curoff = reloff + offset;
+	return current_offset = reloff + offset;
 }
 
 ssize_t Descriptor::read(ioctx_t* ctx, uint8_t* buf, size_t count)
 {
 	if ( !(dflags & O_READ) )
 		return errno = EPERM, -1;
-	if ( !count ) { return 0; }
-	if ( (size_t) SSIZE_MAX < count ) { count = SSIZE_MAX; }
+	if ( !count )
+		return 0;
+	if ( SIZE_MAX < count )
+		count = SSIZE_MAX;
 	ctx->dflags = dflags;
 	if ( !IsSeekable() )
 		return vnode->read(ctx, buf, count);
-	// TODO: Locking here only allows one task to read/write at once.
-	ScopedLock lock(&curofflock);
-	ssize_t ret = vnode->pread(ctx, buf, count, curoff);
+	ScopedLock lock(&current_offset_lock);
+	ssize_t ret = vnode->pread(ctx, buf, count, current_offset);
 	if ( 0 <= ret )
-		curoff += ret;
+		current_offset += ret;
 	return ret;
 }
 
@@ -247,9 +261,12 @@ ssize_t Descriptor::pread(ioctx_t* ctx, uint8_t* buf, size_t count, off_t off)
 {
 	if ( !(dflags & O_READ) )
 		return errno = EPERM, -1;
-	if ( off < 0 ) { errno = EINVAL; return -1; }
-	if ( !count ) { return 0; }
-	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
+	if ( off < 0 )
+		return errno = EINVAL, -1;
+	if ( !count )
+		return 0;
+	if ( SSIZE_MAX < count )
+		count = SSIZE_MAX;
 	ctx->dflags = dflags;
 	return vnode->pread(ctx, buf, count, off);
 }
@@ -258,20 +275,24 @@ ssize_t Descriptor::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 {
 	if ( !(dflags & O_WRITE) )
 		return errno = EPERM, -1;
-	if ( !count ) { return 0; }
-	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
+	if ( !count )
+		return 0;
+	if ( SSIZE_MAX < count )
+		count = SSIZE_MAX;
 	ctx->dflags = dflags;
 	if ( !IsSeekable() )
 		return vnode->write(ctx, buf, count);
-	// TODO: Locking here only allows one task to read/write at once.
-	ScopedLock lock(&curofflock);
-	// TODO: What if lseek fails? Sets curoff = -1, which we forward to vnodes
-	// and we are not allowed to do that!
+	ScopedLock lock(&current_offset_lock);
 	if ( dflags & O_APPEND )
-		curoff = vnode->lseek(ctx, 0, SEEK_END);
-	ssize_t ret = vnode->pwrite(ctx, buf, count, curoff);
+	{
+		off_t end = vnode->lseek(ctx, 0, SEEK_END);
+		if ( end < 0 )
+			return -1;
+		current_offset = end;
+	}
+	ssize_t ret = vnode->pwrite(ctx, buf, count, current_offset);
 	if ( 0 <= ret )
-		curoff += ret;
+		current_offset += ret;
 	return ret;
 }
 
@@ -279,14 +300,18 @@ ssize_t Descriptor::pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count, off_t
 {
 	if ( !(dflags & O_WRITE) )
 		return errno = EPERM, -1;
-	if ( off < 0 ) { errno = EINVAL; return -1; }
-	if ( !count ) { return 0; }
-	if ( SSIZE_MAX < count ) { count = SSIZE_MAX; }
+	if ( off < 0 )
+		return errno = EINVAL, -1;
+	if ( !count )
+		return 0;
+	if ( SSIZE_MAX < count )
+		count = SSIZE_MAX;
 	ctx->dflags = dflags;
 	return vnode->pwrite(ctx, buf, count, off);
 }
 
-int Descriptor::utimens(ioctx_t* ctx, const struct timespec* atime,
+int Descriptor::utimens(ioctx_t* ctx,
+                        const struct timespec* atime,
                         const struct timespec* ctime,
                         const struct timespec* mtime)
 {
@@ -298,8 +323,10 @@ int Descriptor::isatty(ioctx_t* ctx)
 	return vnode->isatty(ctx);
 }
 
-ssize_t Descriptor::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
-                                size_t size, size_t maxcount)
+ssize_t Descriptor::readdirents(ioctx_t* ctx,
+                                struct kernel_dirent* dirent,
+                                size_t size,
+                                size_t maxcount)
 {
 	// TODO: COMPATIBILITY HACK: Traditionally, you can open a directory with
 	//       O_RDONLY and pass it to fdopendir and then use it, which doesn't
@@ -317,33 +344,36 @@ ssize_t Descriptor::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 	if ( !(dflags & (O_SEARCH | O_READ | O_WRITE)) )
 		return errno = EPERM, -1;
 
-	if ( !maxcount ) { return 0; }
-	if ( SSIZE_MAX < size ) { size = SSIZE_MAX; }
-	if ( size < sizeof(*dirent) ) { errno = EINVAL; return -1; }
-	// TODO: Locking here only allows one task to read/write at once.
-	ScopedLock lock(&curofflock);
-	ssize_t ret = vnode->readdirents(ctx, dirent, size, curoff, maxcount);
+	if ( !maxcount )
+		return 0;
+	if ( 1 < maxcount )
+		maxcount = 1;
+	if ( SSIZE_MAX < size )
+		size = SSIZE_MAX;
+	if ( size < sizeof(*dirent) )
+		return errno = EINVAL, -1;
+	ScopedLock lock(&current_offset_lock);
+	ssize_t ret = vnode->readdirents(ctx, dirent, size, current_offset, maxcount);
 	if ( ret == 0 )
 	{
 		const char* name = "";
-		size_t namelen = strlen(name);
-		size_t needed = sizeof(*dirent) + namelen + 1;
+		size_t name_length = strlen(name);
+		size_t needed = sizeof(*dirent) + name_length + 1;
 		struct kernel_dirent retdirent;
 		memset(&retdirent, 0, sizeof(retdirent));
 		retdirent.d_reclen = needed;
 		retdirent.d_nextoff = 0;
-		retdirent.d_namlen = namelen;
+		retdirent.d_namlen = name_length;
 		if ( !ctx->copy_to_dest(dirent, &retdirent, sizeof(retdirent)) )
 			return -1;
 		if ( size < needed )
 			return errno = ERANGE, -1;
-		if ( !ctx->copy_to_dest(dirent->d_name, name, namelen+1) )
+		if ( !ctx->copy_to_dest(dirent->d_name, name, name_length+1) )
 			return -1;
 		return needed;
 	}
-	// TODO: Accessing data here is dangerous if it is userspace:
 	if ( 0 < ret )
-		for ( ; dirent; curoff++, dirent = kernel_dirent_next(dirent) );
+		current_offset++;
 	return ret;
 }
 
@@ -355,7 +385,6 @@ static bool IsSaneFlagModeCombination(int flags, mode_t /*mode*/)
 	// error because a directory was opened.
 	if ( (flags & (O_CREATE | O_TRUNC)) && (flags & (O_DIRECTORY)) )
 		return errno = EINVAL, false;
-
 	return true;
 }
 
@@ -376,8 +405,6 @@ Ref<Descriptor> Descriptor::open(ioctx_t* ctx, const char* filename, int flags,
 	mode &= ~process->umask;
 	kthread_mutex_unlock(&process->idlock);
 
-	// Unlike early Unix systems, the empty path does not mean the current
-	// directory on Sortix, so reject it.
 	if ( !filename[0] )
 		return errno = ENOENT, Ref<Descriptor>();
 
@@ -596,11 +623,13 @@ int Descriptor::rename_here(ioctx_t* ctx, Ref<Descriptor> from,
 	char* newdir_elem;
 	Ref<Descriptor> olddir = OpenDirContainingPath(ctx, from, oldpath,
 	                                               &olddir_elem);
-	if ( !olddir ) return -1;
+	if ( !olddir )
+		return -1;
 
 	Ref<Descriptor> newdir = OpenDirContainingPath(ctx, Ref<Descriptor>(this),
 	                                               newpath, &newdir_elem);
-	if ( !newdir ) { delete[] olddir_elem; return -1; }
+	if ( !newdir )
+		return delete[] olddir_elem, -1;
 
 	int ret = newdir->vnode->rename_here(ctx, olddir->vnode, olddir_elem,
 	                                     newdir_elem);
@@ -615,8 +644,8 @@ ssize_t Descriptor::readlink(ioctx_t* ctx, char* buf, size_t bufsize)
 {
 	if ( !(dflags & O_READ) )
 		return errno = EPERM, -1;
-	if ( (size_t) SSIZE_MAX < bufsize )
-		bufsize = (size_t) SSIZE_MAX;
+	if ( SSIZE_MAX < bufsize )
+		bufsize = SSIZE_MAX;
 	return vnode->readlink(ctx, buf, bufsize);
 }
 
@@ -706,8 +735,8 @@ ssize_t Descriptor::tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size
 {
 	if ( name && !name[0] )
 		name = NULL;
-	if ( (size_t) SSIZE_MAX < count )
-		count = (size_t) SSIZE_MAX;
+	if ( SSIZE_MAX < count )
+		count = SSIZE_MAX;
 	return vnode->tcgetblob(ctx, name, buffer, count);
 }
 
@@ -715,7 +744,7 @@ ssize_t Descriptor::tcsetblob(ioctx_t* ctx, const char* name, const void* buffer
 {
 	if ( name && !name[0] )
 		name = NULL;
-	if ( (size_t) SSIZE_MAX < count )
+	if ( SSIZE_MAX < count )
 		return errno = EFBIG, -1;
 	return vnode->tcsetblob(ctx, name, buffer, count);
 }

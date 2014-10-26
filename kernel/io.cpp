@@ -939,7 +939,7 @@ int sys_mkpartition(int fd, off_t start, off_t length, int flags)
 	if ( !desc )
 		return -1;
 
-	int dflags = desc->dflags;
+	int dflags = desc->GetFlags();
 	Ref<Inode> inner_inode = desc->vnode->inode;
 	desc.Reset();
 
