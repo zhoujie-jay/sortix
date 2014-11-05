@@ -424,13 +424,14 @@ int PMLFlagsToProtection(addr_t flags)
 		prot |= PROT_EXEC | PROT_READ;
 	if ( user && write )
 		prot |= PROT_WRITE;
+	if ( flags & PML_FORK )
+		prot |= PROT_FORK;
 	return prot;
 }
 
 int ProvidedProtection(int prot)
 {
-	addr_t flags = ProtectionToPMLFlags(prot);
-	return PMLFlagsToProtection(flags);
+	return PMLFlagsToProtection(ProtectionToPMLFlags(prot));
 }
 
 bool LookUp(addr_t mapto, addr_t* physical, int* protection)
@@ -453,7 +454,7 @@ bool LookUp(addr_t mapto, addr_t* physical, int* protection)
 		addr_t entry = pml->entry[childid];
 		if ( !(entry & PML_PRESENT) )
 			return false;
-		int entryflags = entry & PML_ADDRESS;
+		addr_t entryflags = entry & ~PML_ADDRESS;
 		int entryprot = PMLFlagsToProtection(entryflags);
 		prot &= entryprot;
 
@@ -465,7 +466,7 @@ bool LookUp(addr_t mapto, addr_t* physical, int* protection)
 	if ( !(entry & PML_PRESENT) )
 		return false;
 
-	int entryflags = entry & PML_ADDRESS;
+	addr_t entryflags = entry & ~PML_ADDRESS;
 	int entryprot = PMLFlagsToProtection(entryflags);
 	prot &= entryprot;
 	addr_t phys = entry & PML_ADDRESS;
