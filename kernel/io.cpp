@@ -180,7 +180,7 @@ int sys_openat(int dirfd, const char* path, int flags, mode_t mode)
 // TODO: This is a hack! Stat the file in some manner and check permissions.
 int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
 {
-	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
+	if ( flags & ~(AT_SYMLINK_NOFOLLOW | AT_EACCESS) )
 		return errno = EINVAL, -1;
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
