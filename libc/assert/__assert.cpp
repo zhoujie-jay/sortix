@@ -39,7 +39,7 @@ void __assert(const char* filename,
               const char* expression)
 {
 #if defined(__is_sortix_kernel)
-	Sortix::PanicF("Assertion failure: %s:%lu: %s: %s\n", filename, line,
+	Sortix::PanicF("Assertion failure: %s:%lu: %s: %s", filename, line,
 	               function_name, expression);
 #else
 	fprintf(stderr, "Assertion failure: %s:%lu: %s: %s\n", filename, line,
