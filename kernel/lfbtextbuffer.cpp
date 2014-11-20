@@ -123,8 +123,10 @@ LFBTextBuffer* CreateLFBTextBuffer(uint8_t* lfb, uint32_t lfbformat,
 		memset(lfb + scansize * y, 0, lfbformat/8UL * xres);
 	ret->emergency_state = false;
 
+	ret->queue_thread = true;
 	if ( !RunKernelThread(kernel_process, LFBTextBuffer__RenderThread, ret) )
 	{
+		ret->queue_thread = false;
 		delete ret;
 		return NULL;
 	}
@@ -166,16 +168,16 @@ LFBTextBuffer::LFBTextBuffer()
 
 LFBTextBuffer::~LFBTextBuffer()
 {
-	kthread_mutex_lock(&queue_lock);
 	if ( queue_thread )
 	{
 		TextBufferCmd cmd;
 		cmd.type = TEXTBUFCMD_EXIT;
 		IssueCommand(&cmd);
+		kthread_mutex_lock(&queue_lock);
 		while ( queue_thread )
 			kthread_cond_wait(&queue_exit, &queue_lock);
+		kthread_mutex_unlock(&queue_lock);
 	}
-	kthread_mutex_unlock(&queue_lock);
 	delete[] backbuf;
 	delete[] font;
 	delete[] chars;
