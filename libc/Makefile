@@ -243,6 +243,7 @@ timespec/timespec.o \
 time/strftime_l.o \
 time/strftime.o \
 time/timegm.o \
+ubsan/ubsan.o \
 wchar/btowc.o \
 wchar/mbrlen.o \
 wchar/mbrtowc.o \
