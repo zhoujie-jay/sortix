@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -36,7 +36,8 @@ _start:
 
 	movq %rcx, environ # envp
 
-	# Prepare signals, memory allocation, stdio and such.
+	# Initialize the standard library.
+	subq $8, %rsp
 	pushq %rsi
 	pushq %rdi
 	pushq %rcx
@@ -49,6 +50,7 @@ _start:
 	popq %rdx # Note! envp is now %rdx (previously %rcx)
 	popq %rdi
 	popq %rsi
+	addq $8, %rsp
 	call main
 
 	# Terminate the process with main's exit code.

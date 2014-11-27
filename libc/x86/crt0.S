@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -37,12 +37,18 @@ _start:
 	movl %ecx, environ # envp
 
 	# Arguments for main
-	push %ecx # envp
-	push %ebx # argv
-	push %eax # argc
+	subl $12, %esp
+	push %ecx # envp (to main)
+	push %ebx # argv (to main)
+	push %eax # argc (to main)
+	subl $4, %esp
+	push %ecx # envp (to initialize_standard_library)
+	push %ebx # argv (to initialize_standard_library)
+	push %eax # argc (to initialize_standard_library)
 
-	# Prepare signals, memory allocation, stdio and such.
+	# Initialize the standard library.
 	call initialize_standard_library
+	addl $16, %esp
 
 	# Run the global constructors.
 	call _init
@@ -51,6 +57,7 @@ _start:
 	call main
 
 	# Terminate the process with main's exit code.
+	subl $12, %esp
 	push %eax
 	call exit
 .size _start, .-_start
