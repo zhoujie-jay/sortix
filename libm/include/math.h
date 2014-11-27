@@ -219,7 +219,7 @@ double fabs(double);
 double floor(double);
 double fmod(double, double);
 
-#if __USE_SORTIX || __USE_XOPEN
+#if __USE_SORTIX || 1999 <= __USE_C || __USE_XOPEN
 double erf(double);
 double erfc(double);
 double gamma(double);
@@ -232,9 +232,9 @@ double lgamma(double);
 double y0(double);
 double y1(double);
 double yn(int, double);
-#endif  /* __USE_SORTIX || __USE_XOPEN */
+#endif  /* __USE_SORTIX ||  1999 <= __USE_C || __USE_XOPEN */
 
-#if __USE_SORTIX || 500 <= __USE_XOPEN
+#if __USE_SORTIX || 1999 <= __USE_C || 500 <= __USE_XOPEN
 double acosh(double);
 double asinh(double);
 double atanh(double);
@@ -247,7 +247,7 @@ double nextafter(double, double);
 double remainder(double, double);
 double rint(double);
 double scalb(double, double);
-#endif /* __USE_SORTIX || 500 <= __USE_XOPEN */
+#endif /* __USE_SORTIX || 1999 <= __USE_C || 500 <= __USE_XOPEN */
 
 /*
  * ISO C99
