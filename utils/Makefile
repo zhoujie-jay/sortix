@@ -58,6 +58,7 @@ uniq \
 uptime \
 wc \
 which \
+yes \
 
 BINARIES=\
 $(BINARIES_EXCEPT_INSTALL) \

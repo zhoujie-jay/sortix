@@ -195,6 +195,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `uptime` - time since initialization
 * `wc` - count words and lines
 * `which` - find path to command
+* `yes` - repeatedly output a line
 
 Third Party Software
 --------------------
