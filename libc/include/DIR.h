@@ -59,6 +59,7 @@ struct DIR
 	int (*close_func)(void* user);
 	void (*free_func)(DIR* dir);
 	/* Application writers shouldn't use anything beyond this point. */
+	int (*closedir_indirect)(DIR*);
 	DIR* prev;
 	DIR* next;
 	struct dirent* entry;

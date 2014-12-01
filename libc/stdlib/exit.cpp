@@ -62,7 +62,7 @@ extern "C" void exit(int status)
 	pthread_mutex_lock(&__first_file_lock);
 
 	while ( __first_dir )
-		closedir(__first_dir);
+		__first_dir->closedir_indirect(__first_dir);
 	while ( __first_file )
 		fclose(__first_file);
 

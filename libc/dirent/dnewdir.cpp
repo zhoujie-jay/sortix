@@ -39,6 +39,7 @@ extern "C" DIR* dnewdir(void)
 		return NULL;
 	dir->flags = 0;
 	dir->free_func = dfreedir;
+	dir->closedir_indirect = closedir;
 	dregister(dir);
 	return dir;
 }
