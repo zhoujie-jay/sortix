@@ -63,9 +63,9 @@ void updateenv()
 	struct winsize ws;
 	if ( tcgetwinsize(0, &ws) == 0 )
 	{
-		sprintf(str, "%zu", ws.ws_col);
+		snprintf(str, sizeof(str), "%zu", ws.ws_col);
 		setenv("COLUMNS", str, 1);
-		sprintf(str, "%zu", ws.ws_row);
+		snprintf(str, sizeof(str), "%zu", ws.ws_row);
 		setenv("LINES", str, 1);
 	}
 }
@@ -211,7 +211,7 @@ readcmd:
 
 	updateenv();
 	char statusstr[32];
-	sprintf(statusstr, "%i", status);
+	snprintf(statusstr, sizeof(statusstr), "%i", status);
 	setenv("?", statusstr, 1);
 
 	for ( char** argp = argv; *argp; argp++ )
@@ -559,7 +559,7 @@ void load_argv_variables(int argc, char* argv[])
 {
 	char varname[sizeof(int) * 3];
 	for ( int i = 0; i < argc; i++ )
-		sprintf(varname, "%i", i),
+		snprintf(varname, sizeof(varname), "%i", i),
 		setenv(varname, argv[i], 1);
 }
 
@@ -618,8 +618,8 @@ int main(int argc, char* argv[])
 	}
 	char pidstr[3 * sizeof(pid_t)];
 	char ppidstr[3 * sizeof(pid_t)];
-	sprintf(pidstr, "%ji", (intmax_t) getpid());
-	sprintf(ppidstr, "%ji", (intmax_t) getppid());
+	snprintf(pidstr, sizeof(pidstr), "%ji", (intmax_t) getpid());
+	snprintf(ppidstr, sizeof(ppidstr), "%ji", (intmax_t) getppid());
 	setenv("SHELL", argv[0], 1);
 	setenv("$", pidstr, 1);
 	setenv("PPID", ppidstr, 1);
