@@ -16,6 +16,7 @@ games \
 mbr \
 mkinitrd \
 regress \
+sh \
 tix \
 utils \
 kernel

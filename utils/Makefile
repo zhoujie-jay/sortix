@@ -44,10 +44,8 @@ pager \
 pwd \
 rm \
 rmdir \
-sh \
 sleep \
 sort \
-sortix-sh \
 tail \
 time \
 tr \

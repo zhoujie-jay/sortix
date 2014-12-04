@@ -182,7 +182,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `regress` - run system tests
 * `rm` - remove file
 * `rmdir` - remove empty directory
-* `sh` - alias for the shell
+* `sh` - command shell
 * `sleep` - delay for a specified amount of time
 * `sort` - sort lines of text files
 * `tail` - display end of file
@@ -493,6 +493,12 @@ driver program.
 ### carray ###
 
 This program converts a binary file to an C array.
+
+### sh ###
+
+This is the Sortix shell. Currently the `sh` program is a wrapper that looks for
+a better non-interactive shell if running a script, otherwise it invokes the
+hacky `sortix-sh` program.
 
 ### Sortix Kernel ###
 
