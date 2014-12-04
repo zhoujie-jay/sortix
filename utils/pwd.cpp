@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
 	if ( const char* pwd = getenv("PWD") )
 	{
 		if ( physical || !is_path_absolute(pwd) )
-			unsetenv(pwd);
+			unsetenv("PWD");
 	}
 
 	char* pwd = get_current_dir_name();
@@ -131,6 +131,9 @@ int main(int argc, char* argv[])
 		error(1, errno, "get_current_dir_name");
 
 	printf("%s\n", pwd);
+
+	if ( ferror(stdout) || fflush(stdout) == EOF )
+		error(1, errno, "stdout");
 
 	return 0;
 }
