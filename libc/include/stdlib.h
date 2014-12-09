@@ -110,10 +110,16 @@ char* mktemp(char* templ);
 int on_exit(void (*function)(int, void*), void* arg);
 void qsort(void*, size_t, size_t, int (*)(const void*, const void*));
 void qsort_r(void*, size_t, size_t, int (*)(const void*, const void*, void*), void*);
+#if !defined(__is_sortix_libc) /* not a warning inside libc */
+__attribute__((__warning__("rand() isn't random, use arc4random()")))
+#endif
 int rand(void);
 void* realloc(void*, size_t);
 char* realpath(const char* __restrict, char* __restrict);
 int setenv(const char*, const char*, int);
+#if !defined(__is_sortix_libc) /* not a warning inside libc */
+__attribute__((__warning__("srand() isn't random, use arc4random()")))
+#endif
 void srand(unsigned);
 double strtod(const char* __restrict, char** __restrict);
 float strtof(const char* __restrict, char** __restrict);
