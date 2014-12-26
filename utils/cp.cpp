@@ -537,7 +537,7 @@ int main(int argc, char* argv[])
 		{
 			if ( i + 1 == argc )
 			{
-				error(0, 0, "option '--target-directory 'requires an argument");
+				error(0, 0, "option '--target-directory' requires an argument");
 				fprintf(stderr, "Try '%s --help' for more information\n", argv0);
 				exit(1);
 			}
