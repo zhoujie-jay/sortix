@@ -116,6 +116,74 @@ typedef struct
 	enum build_step end_step;
 } metainfo_t;
 
+bool has_in_path(const char* program)
+{
+	pid_t child_pid = fork();
+	if ( child_pid < 0 )
+		error(1, errno, "fork: which %s", program);
+	if ( child_pid )
+	{
+		int exitstatus;
+		waitpid(child_pid, &exitstatus, 0);
+		return WIFEXITED(exitstatus) && WEXITSTATUS(exitstatus) == 0;
+	}
+	close(0); open("/dev/null", O_RDONLY);
+	close(1); open("/dev/null", O_WRONLY);
+	close(2); open("/dev/null", O_WRONLY);
+	char* argv[] =
+	{
+		(char*) "which",
+		(char*) program,
+		(char*) NULL,
+	};
+	execvp(argv[0], argv);
+	_exit(1);
+}
+
+void emit_compiler_warning_wrapper(metainfo_t* minfo,
+                                   const char* bindir,
+                                   const char* name)
+{
+	(void) minfo;
+	if ( !has_in_path(name) )
+		return;
+	const char* warnings_dir = getenv("TIX_WARNINGS_DIR");
+	char* wrapper_path = print_string("%s/%s", bindir, name);
+	FILE* wrapper = fopen(wrapper_path, "w");
+	if ( !wrapper )
+		error(1, errno, "`%s'", wrapper_path);
+	// TODO: Find a portable shell way of doing this.
+	fprintf(wrapper, "#!/bin/bash\n");
+	fprint_shell_variable_assignment(wrapper, "PATH", getenv("PATH"));
+	fprint_shell_variable_assignment(wrapper, "TIX_WARNINGS_DIR", warnings_dir);
+	fprintf(wrapper, "warnfile=$(mktemp --tmpdir=\"$TIX_WARNINGS_DIR\")\n");
+	fprintf(wrapper, "(%s \"$@\") 2> >(tee $warnfile >&2)\n", name);
+	fprintf(wrapper, "exitstatus=$?\n");
+	fprintf(wrapper, "if test -s \"$warnfile\"; then\n");
+	fprintf(wrapper, "  if test $exitstatus = 0; then\n");
+	fprintf(wrapper, "    (echo \"cd $(pwd) && %s $@\" && cat \"$warnfile\") > \"$warnfile.warn\"\n", name);
+	fprintf(wrapper, "  else\n");
+	fprintf(wrapper, "    (echo \"cd $(pwd) && %s $@\" && cat \"$warnfile\") > \"$warnfile.err\"\n", name);
+	fprintf(wrapper, "  fi\n");
+	fprintf(wrapper, "fi\n");
+	fprintf(wrapper, "rm -f \"$warnfile\"\n");
+	fprintf(wrapper, "exit $exitstatus\n");
+	fflush(wrapper);
+	fchmod_plus_x(fileno(wrapper));
+	fclose(wrapper);
+
+	free(wrapper_path);
+}
+
+void emit_compiler_warning_cross_wrapper(metainfo_t* minfo,
+                                         const char* bindir,
+                                         const char* name)
+{
+	char* cross_name = print_string("%s-%s", minfo->host, name);
+	emit_compiler_warning_wrapper(minfo, bindir, cross_name);
+	free(cross_name);
+}
+
 void emit_pkg_config_wrapper(metainfo_t* minfo)
 {
 	char* bindir = print_string("%s/tmppid.%ju.bin", minfo->tmp, (uintmax_t) getpid());
@@ -174,6 +242,34 @@ void emit_pkg_config_wrapper(metainfo_t* minfo)
 	free(var_pkg_config_libdir);
 	free(var_pkg_config_path);
 	free(var_pkg_config_sysroot_dir);
+
+	if ( getenv("TIX_WARNINGS_DIR") )
+	{
+		char* warnings_dir = print_string("%s/%s", getenv("TIX_WARNINGS_DIR"), minfo->package_name);
+		if ( mkdir(warnings_dir, 0777) == 0 || errno == EEXIST )
+		{
+			setenv("TIX_WARNINGS_DIR", warnings_dir, 1);
+		}
+		else
+		{
+			error(1, errno, "mkdir: `%s': compiler warnings won't be saved", warnings_dir);
+			unsetenv("TIX_WARNINGS_DIR");
+		}
+		free(warnings_dir);
+	}
+
+	if ( getenv("TIX_WARNINGS_DIR") )
+	{
+		emit_compiler_warning_wrapper(minfo, bindir, "cc");
+		emit_compiler_warning_wrapper(minfo, bindir, "gcc");
+		emit_compiler_warning_wrapper(minfo, bindir, "c++");
+		emit_compiler_warning_wrapper(minfo, bindir, "g++");
+
+		emit_compiler_warning_cross_wrapper(minfo, bindir, "cc");
+		emit_compiler_warning_cross_wrapper(minfo, bindir, "gcc");
+		emit_compiler_warning_cross_wrapper(minfo, bindir, "c++");
+		emit_compiler_warning_cross_wrapper(minfo, bindir, "g++");
+	}
 
 	char* new_path = print_string("%s:%s", bindir, getenv("PATH") ? getenv("PATH") : "");
 	setenv("PATH", new_path, 1);
