@@ -35,7 +35,7 @@
 #define BRAND_OPERATING_SYSTEM_NAME "Sortix"
 
 /* The name of the kernel. */
-#define BRAND_KERNEL_NAME "Sortix Kernel"
+#define BRAND_KERNEL_NAME "Sortix"
 
 /* Ascii version of the maxsi logo. */
 #define BRAND_MAXSI \
