@@ -41,7 +41,7 @@
 //         * kernel/process.cpp
 //         * libc/unistd/execvpe.cpp
 //         * utils/which.cpp
-// NOTO: See comments in execvpe() for algorithmic commentary.
+// NOTE: See comments in execvpe() for algorithmic commentary.
 
 bool Which(const char* filename, const char* path, bool all)
 {

@@ -1128,7 +1128,7 @@ static size_t shebang_count_arguments(char* line)
 //         * kernel/process.cpp
 //         * libc/unistd/execvpe.cpp
 //         * utils/which.cpp
-// NOTO: See comments in execvpe() for algorithmic commentary.
+// NOTE: See comments in execvpe() for algorithmic commentary.
 
 static bool sys_execve_alloc(addralloc_t* alloc, size_t size)
 {
