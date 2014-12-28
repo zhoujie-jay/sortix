@@ -115,7 +115,7 @@ void pager_prompt(struct pager* pager)
 			return;
 		}
 
-		if ( KBKEY_DECODE(codepoint) == KBKEY_PGDOWN )
+		if ( codepoint == L' ' || KBKEY_DECODE(codepoint) == KBKEY_PGDOWN )
 		{
 			dprintf(pager->out_fd, "\r\e[J");
 			pager->allowed_lines = pager->out_fd_winsize.ws_row - 1;
