@@ -53,6 +53,7 @@ bool should_highlight_path(const char* path)
 
 size_t recognize_constant(const wchar_t* string, size_t string_length)
 {
+	bool binary = false;
 	bool hex = false;
 	size_t result = 0;
 	if ( result < string_length && string[result] == L'0' )
@@ -64,12 +65,19 @@ size_t recognize_constant(const wchar_t* string, size_t string_length)
 			result++;
 			hex = true;
 		}
+		if ( result < string_length && (string[result] == L'b' ||
+		                                string[result] == L'B') )
+		{
+			result++;
+			binary = true;
+		}
 	}
 	bool floating = false;
 	bool exponent = false;
 	while ( result < string_length )
 	{
-		if ( (L'0' <= string[result] && string[result] <= L'9') ||
+		if ( (binary && L'0' <= string[result] && string[result] <= L'1') ||
+		     (!binary && L'0' <= string[result] && string[result] <= L'9') ||
 		     (hex && L'a' <= string[result] && string[result] <= L'f') ||
 		     (hex && L'A' <= string[result] && string[result] <= L'F') )
 		{
@@ -78,13 +86,14 @@ size_t recognize_constant(const wchar_t* string, size_t string_length)
 		}
 		if ( string[result] == L'.' )
 		{
-			if ( hex || floating )
+			if ( binary || hex || floating )
 				return 0;
 			floating = true;
 			result++;
 			continue;
 		}
-		if ( !hex && (string[result] == L'e' || string[result] == L'E') )
+		if ( !(hex || binary) &&
+		     (string[result] == L'e' || string[result] == L'E') )
 		{
 			if ( !result )
 				return 0;
@@ -96,7 +105,7 @@ size_t recognize_constant(const wchar_t* string, size_t string_length)
 		}
 		break;
 	}
-	if ( result == (hex ? 2 : 0) )
+	if ( result == ((hex || binary) ? 2 : 0) )
 		return 0;
 	if ( floating )
 	{
