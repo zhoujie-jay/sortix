@@ -1,18 +1,21 @@
 The Sortix Operating System
 ===========================
 
-Sortix is a small Unix-like operating system developed since 2011 with emphasis
-on cleaning up traditional Unix design mistakes while retaining compatibility
-with third party software. Much third party software has been ported to Sortix
-and the system is now self-building. The Sortix kernel, standard libraries, and
-most utilities were written entirely from scratch.
+Sortix is a small self-hosting Unix-like operating system developed since 2011
+aiming to be a clean and modern POSIX implementation. There's a lot of technical
+debt that needs to be paid, but it's getting better. Traditional design mistakes
+are avoided or aggressively deprecated by updating the base system and ports as
+needed. The Sortix kernel, standard libraries, and most utilities were written
+entirely from scratch. The system is halfway through becoming multi-user and
+while security vulnerabilities are recognized as bugs, it should be considered
+insecure at this time.
 
 Links
 -----
 
 For more information, documentation and news, please visit the official website:
 
-  http://sortix.org/
+  https://sortix.org/
 
 You can also download the newest release and cutting edge nightly builds at:
 
@@ -26,15 +29,15 @@ System Requirements
 -------------------
 
 Sortix has low system requirements. It also works well under virtual machines
-such as VirtualBox and Qemu - however Bochs is not officially supported:
+such as VirtualBox and Qemu:
 
 * A 32-bit x86 (with SSE) or 64-bit x86_64 CPU.
 * A few dozen megabytes of RAM - or if you are using a cdrom release with ports
   then you likely need at least twice the size of the cdrom image.
 * A harddisk or cdrom drive or support for booting from USB.
 * A multiboot compliant bootloader if booting from harddisk.
-* A Parallel ATA harddisk, if you wish to access it from Sortix. SATA is not
-  supported yet.
+* A Parallel ATA harddisk, if you wish to access it from Sortix. The AHCI driver
+  has not been merged yet.
 
 Documentation
 -------------
@@ -49,7 +52,7 @@ documentation mirror, for instance:
   doc/
 
   The official Sortix website:
-  http://sortix.org/doc/
+  https://sortix.org/doc/
 
 Building Sortix
 ---------------
@@ -74,7 +77,7 @@ License
 -------
 
 Copyright(C) Jonas 'Sortie' Termansen <sortie@maxsi.org> and contributors 2011,
-2012, 2013.
+2012, 2013, 2014.
 
 Sortix is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
@@ -92,12 +95,13 @@ covered by the standard license for the software component they relate to.
 
 Unless the license header in the source code states otherwise, the Sortix
 kernel, the filesystem servers, the initrd tools, the utilities, the games, the
-benchmark programs, and the tix package management programs are licensed under
-the GNU General Public License, either version 3 or (at your option) any later
-version.
+benchmark programs, regression tests, base programs, editors, shell, init, and
+the tix package management programs are licensed under the GNU General Public
+License, either version 3 or (at youroption) any later version.
 
-Unless the license header in the source code states otherwise, the libc library
-and the libdispd library are licensed under the GNU Lesser General Public
-License, either version 3 or (at your option) any later version.
+Unless the license header in the source code states otherwise, the libc library,
+the libpthread library, and the libdispd library are licensed under the GNU
+Lesser General Public License, either version 3 or (at your option) any later
+version.
 
 The Sortix math library (libm) is licensed as described in the libm/LEGAL file.

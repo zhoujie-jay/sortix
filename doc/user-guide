@@ -22,11 +22,10 @@ to those of Unix systems and many common Unix commands are available.
 Keyboard Layout
 ---------------
 
-Only the US Keyboard layout remains supported at this time. Adding new layouts
-to the kernel is simple, but the system only supports ASCII text, making support
-for international keyboard layouts pointless at this time. Eventually, a program
-in user-space will be able to decode the keyboard scancodes, making it no longer
-a kernel problem.
+Only the US Keyboard layout is supported at this time. The whole system uses
+UTF-8 as the standard text encoding. However, the console has limited font data
+at this time and it is not possible to enter many characters. A full keyboard
+layout system has been implemented but was not merged in time for this release.
 
 Changing the Video Mode
 -----------------------
@@ -94,7 +93,7 @@ This as an incomplete list of the common top level directories in Sortix.
 * `/$cputype` - Files for $cputype.
 * `/$cputype/bin` - Programs for $cputype.
 * `/$cputype/lib` - Shared libaries for $cputype.
-* `/$cputype/libexec` - Shared libaries for $cputype.
+* `/$cputype/libexec` - Non-user programs for $cputype.
 
 Some of these directories not be present or empty on your installation.
 
@@ -111,17 +110,16 @@ supported:
 * History.
 * Background tasks ('&').
 * Standard output redirection ('>').
-* Piping stdin from a task to stdin of another ('|').
+* Piping stdout from a task to stdin of another ('|').
 * Stopping the currently running task (Control-C, '^C').
 * Waiting for a task to complete and executing the next (';').
 * Setting environmental variables ('FOO=bar').
 * Using $FOO to insert an environmental variable.
 * Listing all environmental variable ('env').
-* Setting the hostname ('HOSTNAME=sortix-pc').
 * Changing the current directory ('cd /home').
 * Removing an environmental variable ('unset FOO').
 * Clearing all enviromental variables ('clearenv').
-* Executing shell scripts ('sh script param1 param2').
+* Executing shell scripts ('sh script.sh param1 param2').
 * Escaping some special characters ('\').
 * Comments ('#').
 * Exiting the shell ('exit') ('exit 42').
@@ -141,6 +139,9 @@ These features are missing from the shell:
 * Proper shell wildcard support ('*/*.foo').
 * Escaping newline characters.
 * And much more; the shell remains hacky.
+
+If a better shell is installed, and the shell is non-interactive, then the sh
+program will automatically run the superior shell transparently.
 
 Included Programs
 -----------------
@@ -217,31 +218,30 @@ known to work at some level of stability:
 * bison
 * bochs
 * bzip2
-* cairo
-* dbus
+* dash
 * diffutils
-* fontconfig
-* freetype
+* gawk
 * gcc
-* gettext
+* gettext (GNU)
 * git
-* grep
+* grep (GNU)
 * groff
-* groff
-* gzip
+* gzip (GNU)
 * hello (GNU)
 * libassuan
 * libatk
 * libav
 * libcairo
 * libdaala
+* libdbus
 * libexpat
 * libffi
+* libfontconfig
+* libfreetype
 * libgcrypt
 * libgdk-pixbuf
 * libglib
 * libGL (Mesa)
-* libGLU (Mesa)
 * libgmp
 * libgnutls
 * libgpg-error
@@ -252,26 +252,27 @@ known to work at some level of stability:
 * libksba
 * libmpc
 * libmpfr
+* libnettle
 * libogg
 * libpango
+* libpixman
 * libpng
+* libSDL
+* libssl (LibreSSL)
+* libstdc++
 * libtheora
 * libvorbis
 * libwayland
 * libxkbcommon
-* m4
-* make
-* nettle
-* openssl
+* libz (Sortix)
+* m4 (GNU)
+* make (GNU)
 * patch (GNU)
-* pixman
 * python
 * quake
-* sdl
 * sed (GNU)
 * tar (GNU)
 * xz
-* zlib
 * (and more)
 
 More software will be ported in the future as the system matures. Your release
@@ -348,18 +349,21 @@ second extended filesystem and mounts it at an empty directory. The filesystem
 may need to be carefully configured as not all ext2 features are currently
 supported. In particular, only the `large_file` and `filetype` features are
 supported. There is no support for formatting or checking filesystems yet, this
-will have to be done from an external system. You must take care to send the
-filesystem server a SIGTERM signal to shut down when you are unfinished,
-otherwise the data may not have been synced to disk. This will be done
-automatically if the root filesystem was mounted by the initrd. If the device
-`/dev/ata0p1` contasins an ext2 filesystem, then it can be mounted using:
+will have to be done from an external system. If the device `/dev/ata0p1`
+contains an ext2 filesystem, then it can be mounted using:
 
-    mkdir /fs
-    extfs /dev/ata0 /fs
+    mkdir /mnt
+    extfs /dev/ata0 /mnt
 
-You can then access the filesystem at `/fs`. There is no real unmount support
-and if the file system server shuts down, the system may hang trying to
-communicate with a server that isn't there.
+You can then access the filesystem at `/fs`. You can unmount it safely when you
+are done using it:
+
+    unmount /mnt
+
+This will safely shut down the filesystem process and sync to disk. Beware how
+init doesn't know about your personal mount points and powering off the system
+will cause all processes to be destroyed, and such mount points will not be
+shut down gracefully at the moment.
 
 Graphical User Interface
 ------------------------
@@ -376,45 +380,48 @@ Unix sockets are available.
 Building Sortix under Sortix
 ----------------------------
 
-You can build Sortix under itself and made modifications to it. It is not yet
+You can build Sortix under itself and make modifications to it. It is not yet
 possible to build all the the third party software used to build itself, but you
 can use the system to improve it until it is possible to build third party
 software under it.
 
 You need a version of Sortix that ships its own source code in `/src` and
 contains a copy of the GNU Compiler Collection (gcc). Additionally, you should
-be booting from a harddisk so that the new kernel is used after a reboot,
-otherwise you will have to be satisfied with only using a new user-land.
+be booting from a harddisk so that the new kernel is used after a reboot.
+Otherwise you can only update to a new user-land.
 
 You can use the `colormake` program instead of regular `make` if you want
 colored output, which eases spotting compile warnings and errors. This program
 simply invokes the real `make` and colors its output.
 
-The `/src` directory contains a makefile that eases rebuilding the entire
-system automatically. To rebuild the entire system simply run:
+The `/src` directory contains a makefile that eases rebuilding the entire system
+automatically. To rebuild the entire system simply run:
 
     cd /src
     make
-    make install
+    chroot /src/sysroot init   # to test the new user-land
+    make sysmerge              # to update to the new user-land
 
 This will recompile the entire operating system and install it into the staging
 area `/src/sysroot`. This is a full usable image of the root filesystem for a
-Sortix installation and you can successfully execute `chroot /src/sysroot init`.
-The install target does a single `cp -RT /src/sysroot /` command that replaces
-copies all files in `/src/sysroot` onto their root filesystem counterparts, with
-the exception that the precious files in /src are not replaced with their
-/src/system/src counterparts (even though they usually would be equal).
+Sortix installation and you can chroot into it if desired.
+
+The sysmerge target merges the image in `/src/sysroot` onto the current root
+filesystem without changing local files, as opposed to a make install that
+indiscriminately overwrites everything.
 
 You will be running a new version of everything upon completion, except the
-kernel and programs were previously started will still be running the old
-version. If the root filesystem is permanent and the computer has been
-configured to boot from it, then you can reboot the system by exiting the
-initial shell. You will then be running an entirely new system.
+kernel and existing processes will continue to run the old programs. If the root
+filesystem is permanent and the computer has been configured to boot from it,
+then you can reboot the system by exiting the initial shell. You will then be
+running an entirely new system.
+
+### Building System Components ###
 
 The projects that are part of the core system can be easily built and installed
 with the provided makefiles. They can be built with this simple sequence:
 
-    cd /src/<package>
+    cd /src/${package}
     make
     make install
 
@@ -461,6 +468,7 @@ large parts of user-land if you update this library.
 The Pthread Library (libpthread) provides a threading implementation through the
 standard header <pthread.h> as known from POSIX. Like the C library, you will
 likely want to recompile large parts of user-land if you update this library.
+
 ### The Display Daemon ###
 
 The dispd library allows processes to communicate with the dispd server that
@@ -514,7 +522,7 @@ This is the Sortix shell. Currently the `sh` program is a wrapper that looks for
 a better non-interactive shell if running a script, otherwise it invokes the
 hacky `sortix-sh` program.
 
-### Sortix Kernel ###
+### Kernel ###
 
 The Sortix kernel is the core of the Sortix operating system. It provides all
 the primitives libc needs to implement a Unix-like environment.

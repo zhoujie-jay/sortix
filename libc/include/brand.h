@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This file is part of the Sortix C Library.
 
@@ -29,7 +29,7 @@
 #define BRAND_DISTRIBUTION_NAME "Sortix"
 
 /* The website of the distribution. */
-#define BRAND_DISTRIBUTION_WEBSITE "http://sortix.org"
+#define BRAND_DISTRIBUTION_WEBSITE "https://sortix.org"
 
 /* The name of the operating system. */
 #define BRAND_OPERATING_SYSTEM_NAME "Sortix"
