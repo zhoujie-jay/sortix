@@ -26,8 +26,11 @@
 .section .text
 
 .global _start
+.global __start
 .type _start, @function
+.type __start, @function
 _start:
+__start:
 	# Set up end of the stack frame linked list.
 	xorl %ebp, %ebp
 	pushq %rbp # rip=0
@@ -57,3 +60,4 @@ _start:
 	movl %eax, %edi
 	call exit
 .size _start, .-_start
+.size __start, .-__start

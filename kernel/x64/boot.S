@@ -27,9 +27,12 @@
 .text 0x100000
 
 .global _start
+.global __start
 .type _start, @function
+.type __start, @function
 .code32
 _start:
+__start:
 	jmp prepare_kernel_execution
 
 	# Align 32 bits boundary.
@@ -148,6 +151,7 @@ Realm64:
 	# actual 64-bit kernel.
 	jmp Main
 .size _start, . - _start
+.size __start, . - __start
 
 .section .data
 GDT64:                           # Global Descriptor Table (64-bit).
