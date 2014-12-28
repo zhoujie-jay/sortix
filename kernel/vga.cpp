@@ -87,6 +87,8 @@ static void FetchVGAFont(uint8_t* font)
 	// The font data is now at 0xA0000, so fetch it. Note that there is
 	// reserved room for a 8x32 resolution but we are using 8x16.
 	const uint8_t* data = (const uint8_t*) 0xA0000UL;
+	// Patch the replacement chararacter onto character 0.
+	memcpy((uint8_t*) data + ((32*8)/8 * 0), font_replacement_character, VGA_FONT_CHARSIZE);
 	for ( size_t i = 0; i < VGA_FONT_NUMCHARS; i++ )
 	{
 		const uint8_t* src = data + (32*8)/8 * i;

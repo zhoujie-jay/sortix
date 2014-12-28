@@ -55,7 +55,7 @@ static uint16_t CharToTextEntry(TextChar c)
 {
 	int remap = VGA::MapWideToVGAFont(c.c);
 	if ( remap < 0 )
-		return (uint16_t) '?' | (uint16_t) COLOR8_RED << 8U;
+		remap = 0 /* replacement character */;
 	return (uint16_t) remap | (uint16_t) c.vgacolor << 8U;
 }
 
