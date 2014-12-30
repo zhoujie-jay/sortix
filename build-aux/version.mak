@@ -1,1 +1,1 @@
-VERSION=0.9dev
+VERSION=0.9
