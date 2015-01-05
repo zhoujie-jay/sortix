@@ -90,6 +90,8 @@ static int8_t leap_seconds[][12] =
 	DECL_LEAP_SECOND(2011, 0, 0),
 	DECL_LEAP_SECOND(2012, 1, 0),
 	DECL_LEAP_SECOND(2013, 0, 0),
+	DECL_LEAP_SECOND(2014, 0, 0),
+	DECL_LEAP_SECOND(2015, 1, 0),
 };
 
 static time_t get_leap_second(int year, int month)
