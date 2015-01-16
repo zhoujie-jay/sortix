@@ -1376,14 +1376,14 @@ int main(int argc, char* argv[])
 		if ( probe )
 			exit(1);
 		else if ( errno == EEOF )
-			error(1, 0, "`%s' isn't a valid extended filecsysten", device_path);
+			error(1, 0, "`%s' isn't a valid extended filesystem", device_path);
 		else
 			error(1, errno, "read: `%s'", device_path);
 	}
 
 	// Verify the magic value to detect a compatible filesystem.
 	if ( !probe && sb.s_magic != EXT2_SUPER_MAGIC )
-		error(1, 0, "`%s' isn't a valid extended filecsysten", device_path);
+		error(1, 0, "`%s' isn't a valid extended filesystem", device_path);
 
 	if ( probe && sb.s_magic != EXT2_SUPER_MAGIC )
 		exit(1);
