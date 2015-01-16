@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014, 2015.
 
     This file is part of Sortix.
 
@@ -77,6 +77,9 @@ static inline uint32_t inport32(uint16_t port)
 	asm volatile("inl %1, %0" : "=a" (result) : "dN" (port));
 	return result;
 }
+
+bool wait_inport8_clear(uint16_t ioport, uint8_t bits, bool any, unsigned int msecs);
+bool wait_inport8_set(uint16_t ioport, uint8_t bits, bool any, unsigned int msecs);
 
 } // namespace Sortix
 
