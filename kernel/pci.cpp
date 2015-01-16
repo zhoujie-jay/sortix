@@ -56,12 +56,14 @@ void SplitDevAddr(uint32_t devaddr, uint8_t* vals /* bus, slot, func */)
 
 uint32_t ReadRaw32(uint32_t devaddr, uint8_t off)
 {
+	assert((off & 0x3) == 0);
 	outport32(CONFIG_ADDRESS, devaddr + off);
 	return inport32(CONFIG_DATA);
 }
 
 void WriteRaw32(uint32_t devaddr, uint8_t off, uint32_t val)
 {
+	assert((off & 0x3) == 0);
 	outport32(CONFIG_ADDRESS, devaddr + off);
 	outport32(CONFIG_DATA, val);
 }
@@ -76,23 +78,42 @@ void Write32(uint32_t devaddr, uint8_t off, uint32_t val)
 	WriteRaw32(devaddr, off, htole32(val));
 }
 
+void Write16(uint32_t devaddr, uint8_t off, uint16_t val)
+{
+	assert((off & 0x1) == 0);
+	uint8_t alignedoff = off & ~0x3;
+	union { uint8_t val8[4]; uint32_t val32; };
+	val32 = ReadRaw32(devaddr, alignedoff);
+	val8[(off & 0x3) + 0] = val >> 0 & 0xFF;
+	val8[(off & 0x3) + 1] = val >> 8 & 0xFF;
+	WriteRaw32(devaddr, alignedoff, val32);
+}
+
 uint16_t Read16(uint32_t devaddr, uint8_t off)
 {
 	assert((off & 0x1) == 0);
 	uint8_t alignedoff = off & ~0x3;
-	union { uint16_t val16[2]; uint32_t val32; };
+	union { uint8_t val8[4]; uint32_t val32; };
 	val32 = ReadRaw32(devaddr, alignedoff);
-	uint16_t ret = off & 0x2 ? val16[0] : val16[1];
-	return le16toh(ret);
+	return (uint16_t) val8[(off & 0x3) + 0] << 0 |
+	       (uint16_t) val8[(off & 0x3) + 1] << 8;
+}
+
+void Write8(uint32_t devaddr, uint8_t off, uint8_t val)
+{
+	uint8_t alignedoff = off & ~0x3;
+	union { uint8_t val8[4]; uint32_t val32; };
+	val32 = ReadRaw32(devaddr, alignedoff);
+	val8[(off & 0x3)] = val;
+	WriteRaw32(devaddr, alignedoff, val32);
 }
 
 uint8_t Read8(uint32_t devaddr, uint8_t off)
 {
-	uint8_t alignedoff = off & ~0x1;
-	union { uint8_t val8[2]; uint32_t val16; };
-	val16 = htole16(Read16(devaddr, alignedoff));
-	uint8_t ret = off & 0x1 ? val8[0] : val8[1];
-	return ret;
+	uint8_t alignedoff = off & ~0x3;
+	union { uint8_t val8[4]; uint32_t val32; };
+	val32 = ReadRaw32(devaddr, alignedoff);
+	return val8[(off & 0x3)];
 }
 
 uint32_t CheckDevice(uint8_t bus, uint8_t slot, uint8_t func)
@@ -103,18 +124,18 @@ uint32_t CheckDevice(uint8_t bus, uint8_t slot, uint8_t func)
 pciid_t GetDeviceId(uint32_t devaddr)
 {
 	pciid_t ret;
-	ret.deviceid = Read16(devaddr, 0x00);
-	ret.vendorid = Read16(devaddr, 0x02);
+	ret.deviceid = Read16(devaddr, PCIFIELD_DEVICE_ID);
+	ret.vendorid = Read16(devaddr, PCIFIELD_VENDOR_ID);
 	return ret;
 }
 
 pcitype_t GetDeviceType(uint32_t devaddr)
 {
 	pcitype_t ret;
-	ret.classid = Read8(devaddr, 0x08);
-	ret.subclassid = Read8(devaddr, 0x09);
-	ret.progif = Read8(devaddr, 0x0A);
-	ret.revid = Read8(devaddr, 0x0B);
+	ret.classid = Read8(devaddr, PCIFIELD_CLASS);
+	ret.subclassid = Read8(devaddr, PCIFIELD_SUBCLASS);
+	ret.progif = Read8(devaddr, PCIFIELD_PROG_IF);
+	ret.revid = Read8(devaddr, PCIFIELD_REVISION_ID);
 	return ret;
 }
 
@@ -155,12 +176,12 @@ static uint32_t SearchForDevicesOnBus(uint8_t bus, pcifind_t pcifind, uint32_t l
 			     (!found_any_device || devaddr < next_device) &&
 			     MatchesSearchCriteria(devaddr, pcifind) )
 				next_device = devaddr, found_any_device = true;
-			uint8_t header = Read8(devaddr, 0x0D); // Secondary Bus Number.
+			uint8_t header = Read8(devaddr, PCIFIELD_HEADER_TYPE);
 			if ( header & 0x80 ) // Multi function device.
 				num_functions = 8;
 			if ( (header & 0x7F) == 0x01 ) // PCI to PCI bus.
 			{
-				uint8_t subbusid = Read8(devaddr, 0x1A);
+				uint8_t subbusid = Read8(devaddr, PCIFIELD_SECONDARY_BUS_NUMBER);
 				uint32_t recret = SearchForDevicesOnBus(subbusid, pcifind, last);
 				if ( last < recret &&
 				     (!found_any_device || recret < next_device) )
