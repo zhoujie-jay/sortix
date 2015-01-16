@@ -40,13 +40,18 @@ int main(int argc, char* argv[])
 		error(1, errno, "fork");
 	if ( !child_pid )
 	{
+		setpgid(child_pid, child_pid);
+		tcsetpgrp(0, child_pid);
 		if ( argc <= 1 )
 			exit(0);
 		execvp(argv[1], argv+1);
 		error(127, errno, "%s", argv[1]);
 	}
+	setpgid(child_pid, child_pid);
+	tcsetpgrp(0, child_pid);
 	int exit_status = 0;
 	waitpid(child_pid, &exit_status, 0);
+	tcsetpgrp(0, getpgid(0));
 
 	struct timespec end_time;
 	clock_gettime(CLOCK_MONOTONIC, &end_time);
