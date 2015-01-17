@@ -340,6 +340,40 @@ addr_t Get(enum page_usage usage)
 	return GetUnlocked(usage);
 }
 
+// TODO: This competes with the normal allocation for precious 32-bit pages, we
+//       should use different pools for this, and preferably preallocate some
+//       32-bit pages exclusively for driver usage. Also, get proper hardware
+//       without these issues.
+addr_t Get32BitUnlocked(enum page_usage usage)
+{
+	assert(stackreserved <= stackused);
+	if ( unlikely(stackreserved == stackused) )
+		return errno = ENOMEM, 0;
+	for ( size_t ii = stackused; 0 < ii; ii-- )
+	{
+		size_t i = ii - 1;
+		addr_t result = STACK[i];
+		assert(result == AlignDown(result));
+		if ( 4 < sizeof(void*) && UINT32_MAX < result )
+			continue;
+		if ( i + 1 != stackused )
+		{
+			STACK[i] = STACK[stackused - 1];
+			STACK[stackused - 1] = result;
+		}
+		stackused--;
+		PageUsageRegisterUse(result, usage);
+		return result;
+	}
+	return errno = ENOMEM, 0;
+}
+
+addr_t Get32Bit(enum page_usage usage)
+{
+	ScopedLock lock(&pagelock);
+	return Get32BitUnlocked(usage);
+}
+
 void PutUnlocked(addr_t page, enum page_usage usage)
 {
 	assert(page == AlignDown(page));

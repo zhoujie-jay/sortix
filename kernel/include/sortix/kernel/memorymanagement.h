@@ -63,6 +63,8 @@ addr_t GetReserved(size_t* counter, enum page_usage usage);
 addr_t GetReservedUnlocked(size_t* counter, enum page_usage usage);
 addr_t Get(enum page_usage usage);
 addr_t GetUnlocked(enum page_usage usage);
+addr_t Get32Bit(enum page_usage usage);
+addr_t Get32BitUnlocked(enum page_usage usage);
 void Put(addr_t page, enum page_usage usage);
 void PutUnlocked(addr_t page, enum page_usage usage);
 void Lock();
