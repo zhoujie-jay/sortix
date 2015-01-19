@@ -323,6 +323,7 @@ arpa/inet/inet_addr.o \
 arpa/inet/inet_ntoa.o \
 arpa/inet/inet_ntop.o \
 arpa/inet/inet_pton.o \
+blf/blowfish.o \
 $(CPUDIR)/fork.o \
 $(CPUDIR)/setjmp.o \
 $(CPUDIR)/signal.o \
@@ -397,6 +398,7 @@ netdb/setservent.o \
 poll/poll.o \
 poll/ppoll.o \
 psctl/psctl.o \
+pwd/bcrypt_newhash.o \
 pwd/endpwent.o \
 pwd/fgetpwent.o \
 pwd/fgetpwent_r.o \

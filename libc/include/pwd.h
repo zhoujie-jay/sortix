@@ -69,6 +69,8 @@ struct passwd
 extern FILE* __pwd_file;
 #endif
 
+int bcrypt_newhash(const char*, int, char*, size_t);
+int bcrypt_checkpass(const char*, const char*);
 void endpwent(void);
 struct passwd* fgetpwent(FILE*);
 int fgetpwent_r(FILE* __restrict, struct passwd* __restrict, char* __restrict,
