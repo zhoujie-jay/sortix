@@ -39,11 +39,6 @@ SORTIX_REPOSITORY_DIR?=repository
 
 include build-aux/dirs.mak
 
-PREFIX:=
-EXEC_PREFIX:=$(PREFIX)/$(HOST)
-
-export PREFIX
-export EXEC_PREFIX
 export SYSROOT
 
 ifeq ($(BUILD_IS_SORTIX),1)
