@@ -96,6 +96,7 @@ tree into the ~/sortix directory, you can install them by typing the following
 commands:
 
   cd ~/sortix &&
+  make PREFIX="$CROSS_PREFIX" clean-build-tools &&
   make PREFIX="$CROSS_PREFIX" build-tools &&
   make PREFIX="$CROSS_PREFIX" install-build-tools &&
   make distclean

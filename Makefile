@@ -112,6 +112,12 @@ endif
 		cp -RTv "$(SYSROOT)/$$ENTRY" "$(DESTDIR)/$$ENTRY" || exit $$?; \
 	done
 
+.PHONY: clean-build-tools
+clean-build-tools:
+	$(MAKE) -C carray clean
+	$(MAKE) -C mkinitrd clean
+	$(MAKE) -C tix clean
+
 .PHONY: build-tools
 build-tools:
 	$(MAKE) -C carray
