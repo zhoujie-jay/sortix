@@ -17,8 +17,8 @@ all: $(BINARIES)
 
 .PHONY: all install clean
 
-%: %.cpp crc32.cpp rules.cpp
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< crc32.cpp rules.cpp -o $@
+%: %.cpp crc32.cpp rules.cpp serialize.cpp
+	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< crc32.cpp rules.cpp serialize.cpp -o $@
 
 clean:
 	rm -f $(BINARIES)

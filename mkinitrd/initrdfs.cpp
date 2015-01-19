@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2015.
 
     This file is part of Sortix.
 
@@ -35,6 +35,7 @@
 #include <sortix/initrd.h>
 
 #include "crc32.h"
+#include "serialize.h"
 
 char* Substring(const char* str, size_t start, size_t length)
 {
@@ -46,7 +47,10 @@ char* Substring(const char* str, size_t start, size_t length)
 
 bool ReadSuperBlock(int fd, initrd_superblock_t* dest)
 {
-	return preadall(fd, dest, sizeof(*dest), 0) == sizeof(*dest);
+	if ( preadall(fd, dest, sizeof(*dest), 0) != sizeof(*dest) )
+		return false;
+	import_initrd_superblock(dest);
+	return true;
 }
 
 initrd_superblock_t* GetSuperBlock(int fd)
@@ -61,7 +65,9 @@ initrd_superblock_t* GetSuperBlock(int fd)
 bool ReadChecksum(int fd, initrd_superblock_t* sb, uint8_t* dest)
 {
 	uint32_t offset = sb->fssize - sb->sumsize;
-	return preadall(fd, dest, sb->sumsize, offset) == sb->sumsize;
+	if ( preadall(fd, dest, sb->sumsize, offset) != sb->sumsize )
+		return false;
+	return true;
 }
 
 uint8_t* GetChecksum(int fd, initrd_superblock_t* sb)
@@ -76,7 +82,10 @@ bool ReadInode(int fd, initrd_superblock_t* sb, uint32_t ino,
                initrd_inode_t* dest)
 {
 	uint32_t inodepos = sb->inodeoffset + sb->inodesize * ino;
-	return preadall(fd, dest, sizeof(*dest), inodepos) == sizeof(*dest);
+	if ( preadall(fd, dest, sizeof(*dest), inodepos) != sizeof(*dest) )
+		return false;
+	import_initrd_inode(dest);
+	return true;
 }
 
 initrd_inode_t* GetInode(int fd, initrd_superblock_t* sb, uint32_t ino)
@@ -128,12 +137,15 @@ uint32_t Traverse(int fd, initrd_superblock_t* sb, initrd_inode_t* inode,
 	while ( offset < inode->size )
 	{
 		initrd_dirent_t* dirent = (initrd_dirent_t*) (direntries + offset);
+		import_initrd_dirent(dirent);
 		if ( dirent->namelen && !strcmp(dirent->name, name) )
 		{
 			result = dirent->inode;
+			export_initrd_dirent(dirent);
 			break;
 		}
 		offset += dirent->reclen;
+		export_initrd_dirent(dirent);
 	}
 	free(direntries);
 	if ( !result ) { errno = ENOENT; }
@@ -142,9 +154,12 @@ uint32_t Traverse(int fd, initrd_superblock_t* sb, initrd_inode_t* inode,
 
 bool CheckSumCRC32(const char* name, int fd, initrd_superblock_t* sb)
 {
-	uint32_t* checksump = (uint32_t*) GetChecksum(fd, sb);
+	uint8_t* checksump = (uint8_t*) GetChecksum(fd, sb);
 	if ( !checksump ) { return false; }
-	uint32_t checksum = *checksump;
+	uint32_t checksum = (uint32_t) checksump[0] <<  0 |
+	                    (uint32_t) checksump[1] <<  8 |
+	                    (uint32_t) checksump[2] << 16 |
+	                    (uint32_t) checksump[3] << 24;
 	free(checksump);
 	uint32_t amount = sb->fssize - sb->sumsize;
 	uint32_t filesum;

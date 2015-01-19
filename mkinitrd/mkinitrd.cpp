@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -26,6 +26,7 @@
 #include <sys/types.h>
 
 #include <dirent.h>
+#include <endian.h>
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
@@ -46,6 +47,7 @@
 
 #include "crc32.h"
 #include "rules.h"
+#include "serialize.h"
 
 uint32_t HostModeToInitRD(mode_t mode)
 {
@@ -366,7 +368,9 @@ bool WriteNode(struct initrd_superblock* sb, int fd, const char* outputname,
 			dirent.reclen = sizeof(dirent) + dirent.namelen + 1;
 			dirent.reclen = (dirent.reclen+3)/4*4; // Align entries.
 			size_t entsize = sizeof(dirent);
+			export_initrd_dirent(&dirent);
 			ssize_t hdramt = pwriteall(fd, &dirent, entsize, dataoff);
+			import_initrd_dirent(&dirent);
 			ssize_t nameamt = pwriteall(fd, name, namelen+1, dataoff + entsize);
 			if ( hdramt < (ssize_t) entsize || nameamt < (ssize_t) (namelen+1) )
 				return error(0, errno, "write: %s", outputname), false;
@@ -394,8 +398,10 @@ bool WriteNode(struct initrd_superblock* sb, int fd, const char* outputname,
 
 	uint32_t inodepos = sb->inodeoffset + node->ino * sb->inodesize;
 	uint32_t inodesize = sizeof(inode);
+	export_initrd_inode(&inode);
 	if ( pwriteall(fd, &inode, inodesize, inodepos) < inodesize )
 		return error(0, errno, "write: %s", outputname), false;
+	import_initrd_inode(&inode);
 
 	uint32_t increment = dataoff - origfssize;
 	sb->fssize += increment;
@@ -449,18 +455,22 @@ bool Format(const char* outputname, int fd, uint32_t inodecount, Node* root)
 	sb.sumsize = crcsize;
 	sb.fssize += sb.sumsize;
 
+	export_initrd_superblock(&sb);
 	if ( pwriteall(fd, &sb, sizeof(sb), 0) < sizeof(sb) )
 	{
 		error(0, errno, "write: %s", outputname);
 		return false;
 	}
+	import_initrd_superblock(&sb);
 
 	uint32_t checksize = sb.fssize - sb.sumsize;
 	uint32_t crc;
 	if ( !CRC32File(&crc, outputname, fd, 0, checksize) )
 		return false;
+	crc = htole32(crc);
 	if ( pwriteall(fd, &crc, crcsize, checksize) < crcsize )
 		return false;
+	crc = le32toh(crc);
 
 	return true;
 }
