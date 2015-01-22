@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of Tix.
 
@@ -65,6 +65,13 @@ int main(int argc, char* argv[])
 	char* collection = strdup_null(getenv_def("TIX_COLLECTION", NULL));
 	char* platform = NULL;
 	char* prefix = NULL;
+	// TODO: After releasing Sortix 1.0, keep the --disable-multiarch option
+	//       supported (but ignored), delete all uses of --disable-multiarch,
+	//       delete the --enable-multiarch option, delete the use_multiarch=true
+	//       case code. Simplify all of this code, remove the tixdb abstraction.
+	// TODO: After releasing Sortix 1.1, delete the --disable-multiarch option
+	//       compatibility.
+	bool use_multiarch = true;
 
 	const char* argv0 = argv[0];
 	for ( int i = 0; i < argc; i++ )
@@ -91,6 +98,8 @@ int main(int argc, char* argv[])
 		else if ( GET_OPTION_VARIABLE("--collection", &collection) ) { }
 		else if ( GET_OPTION_VARIABLE("--platform", &platform) ) { }
 		else if ( GET_OPTION_VARIABLE("--prefix", &prefix) ) { }
+		else if ( !strcmp(arg, "--enable-multiarch") ) { use_multiarch = true; }
+		else if ( !strcmp(arg, "--disable-multiarch") ) { use_multiarch = false; }
 		else
 		{
 			fprintf(stderr, "%s: unknown option: `%s'\n", argv0, arg);
@@ -130,9 +139,17 @@ int main(int argc, char* argv[])
 		if ( mkdir_p(tix_path, 0777) != 0 )
 			error(1, errno, "mkdir: `%s'", tix_path);
 
-		char* tixdb_path = join_paths(tix_path, platform);
-		if ( mkdir_p(tixdb_path, 0777) != 0 )
-			error(1, errno, "mkdir: `%s'", tixdb_path);
+		char* tixdb_path;
+		if ( use_multiarch )
+		{
+			tixdb_path = join_paths(tix_path, platform);
+			if ( mkdir_p(tixdb_path, 0777) != 0 )
+				error(1, errno, "mkdir: `%s'", tixdb_path);
+		}
+		else
+		{
+			tixdb_path = strdup(tix_path);
+		}
 
 		char* collection_conf_path = join_paths(tixdb_path, "collection.conf");
 		FILE* conf_fp = fopen(collection_conf_path, "wx");

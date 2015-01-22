@@ -215,8 +215,7 @@ try_reboot_system:
 	chroot(path);
 	chdir("/");
 
-	assert(getenv("cputype"));
-	char* init_path = print_string("/%s/bin/init", getenv("cputype"));
+	const char* init_path = "/bin/init";
 	execl(init_path, init_path, NULL);
 	exit(127);
 }
@@ -479,13 +478,7 @@ int init_main(int argc, char* argv[])
 	umask(022);
 
 	// Set up the PATH variable.
-	const char* prefix = "/";
-	const char* cputype = getenv("cputype");
-	const char* suffix = "/bin";
-	char* path = new char[strlen(prefix) + strlen(cputype) + strlen(suffix) + 1];
-	stpcpy(stpcpy(stpcpy(path, prefix), cputype), suffix);
-	setenv("PATH", path, 1);
-	delete[] path;
+	setenv("PATH", "/bin", 1);
 
 	// Set the terminal type.
 	setenv("TERM", "sortix", 1);

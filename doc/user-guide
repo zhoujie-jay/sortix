@@ -80,20 +80,19 @@ Filesystem Structure
 
 This as an incomplete list of the common top level directories in Sortix.
 
+* `/bin` - Programs.
 * `/boot` - Kernel images, initrd images.
 * `/dev` - Device filesystem.
 * `/etc` - System-wide configuration.
 * `/home` - User directories.
 * `/include` - Header files.
+* `/libexec` - Non-user programs.
+* `/lib` - Shared libraries.
 * `/root` - Directory of the root user.
 * `/share` - Architecture independent files.
 * `/share/doc` - Documentation.
 * `/src` - System source code.
 * `/tmp` - Temporary files.
-* `/$cputype` - Files for $cputype.
-* `/$cputype/bin` - Programs for $cputype.
-* `/$cputype/lib` - Shared libaries for $cputype.
-* `/$cputype/libexec` - Non-user programs for $cputype.
 
 Some of these directories not be present or empty on your installation.
 

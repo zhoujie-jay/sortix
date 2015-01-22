@@ -41,12 +41,6 @@ include build-aux/dirs.mak
 
 export SYSROOT
 
-ifeq ($(BUILD_IS_SORTIX),1)
-  export C_INCLUDE_PATH=$(SYSROOT)/include
-  export CPLUS_INCLUDE_PATH=$(SYSROOT)/include
-  export LIBRARY_PATH=$(SYSROOT)/$(HOST)/lib
-endif
-
 BUILD_NAME:=sortix_$(VERSION)_$(MACHINE)
 
 INITRD:=$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).initrd
@@ -87,18 +81,18 @@ ifeq ($(BUILD_IS_SORTIX),0)
 	  exit 1; \
 	fi
 endif
-	mkdir -p "$(INSTALL_ROOTFS)/boot/$(HOST)"
-	rm -rf "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d"
-	mkdir -p "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d"
-	mkdir -p "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d/$(HOST)/bin"
+	mkdir -p "$(INSTALL_ROOTFS)/boot"
+	rm -rf "$(INSTALL_ROOTFS)/boot/sortix.initrd.d"
+	mkdir -p "$(INSTALL_ROOTFS)/boot/sortix.initrd.d"
+	mkdir -p "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/bin"
 	for PROGRAM in init mbrfs extfs; do \
-	  cp "$(INSTALL_ROOTFS)/$(HOST)/bin/$$PROGRAM" "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d/$(HOST)/bin/$$PROGRAM"; \
+	  cp "$(INSTALL_ROOTFS)/bin/$$PROGRAM" "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/bin/$$PROGRAM"; \
 	done
-	mkdir -p "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d/etc"
-	mkdir -p "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d/etc/init"
-	cp "$(INSTALL_ROOTFS)/etc/rootfs.uuid" "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d/etc/init/rootfs.uuid"
-	mkinitrd --format=sortix-initrd-2 "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d" -o "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd"
-	rm -rf "$(INSTALL_ROOTFS)/boot/$(HOST)/sortix.initrd.d"
+	mkdir -p "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/etc"
+	mkdir -p "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/etc/init"
+	cp "$(INSTALL_ROOTFS)/etc/rootfs.uuid" "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/etc/init/rootfs.uuid"
+	mkinitrd --format=sortix-initrd-2 "$(INSTALL_ROOTFS)/boot/sortix.initrd.d" -o "$(INSTALL_ROOTFS)/boot/sortix.initrd"
+	rm -rf "$(INSTALL_ROOTFS)/boot/sortix.initrd.d"
 
 .PHONY: sysmerge
 sysmerge: sysroot
@@ -133,16 +127,14 @@ install-build-tools:
 .PHONY: sysroot-fsh
 sysroot-fsh:
 	mkdir -p "$(SYSROOT)"
-	for DIRNAME in boot etc include; do (\
-	  mkdir -p "$(SYSROOT)/$$DIRNAME" &&\
-	  mkdir -p "$(SYSROOT)/$$DIRNAME/$(HOST)" \
-	) || exit $$?; done;
-	mkdir -p "$(SYSROOT)/$(HOST)"
-	for DIRNAME in bin lib libexec; do (\
-	  mkdir -p "$(SYSROOT)/$(HOST)/$$DIRNAME" \
-	) || exit $$?; done;
+	mkdir -p "$(SYSROOT)/bin"
+	mkdir -p "$(SYSROOT)/boot"
+	mkdir -p "$(SYSROOT)/etc"
 	mkdir -p "$(SYSROOT)/etc/skel"
 	mkdir -p "$(SYSROOT)/home"
+	mkdir -p "$(SYSROOT)/include"
+	mkdir -p "$(SYSROOT)/lib"
+	mkdir -p "$(SYSROOT)/libexec"
 	mkdir -p "$(SYSROOT)/mnt"
 	mkdir -p "$(SYSROOT)/share"
 	mkdir -p "$(SYSROOT)/src"
@@ -293,7 +285,7 @@ release-all-archs:
 kernel: sysroot
 
 sortix.bin: kernel
-	cp "$(SYSROOT)/boot/$(HOST)/sortix.bin" sortix.bin
+	cp "$(SYSROOT)/boot/sortix.bin" sortix.bin
 
 # Initial ramdisk
 
@@ -305,12 +297,6 @@ $(INITRD): sysroot
 	echo "exclude /next" >> $(INITRD).filter
 	echo "exclude /src/sysroot" >> $(INITRD).filter
 	echo "exclude /tmp" >> $(INITRD).filter
-	for OTHER_PLATFORM in $(OTHER_PLATFORMS); do \
-	  echo "exclude /$$OTHER_PLATFORM" >> $(INITRD).filter; \
-	  echo "exclude /etc/$$OTHER_PLATFORM" >> $(INITRD).filter; \
-	  echo "exclude /include/$$OTHER_PLATFORM" >> $(INITRD).filter; \
-	  echo "exclude /tix/$$OTHER_PLATFORM" >> $(INITRD).filter; \
-	done;
 	if ! which mkinitrd; then echo You need to install mkinitrd; fi
 	mkinitrd --format=sortix-initrd-2 --filter=$(INITRD).filter "$(SYSROOT)" -o $(INITRD)
 	rm -f $(INITRD).filter
@@ -330,7 +316,7 @@ $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).tar.xz: sysroot $(INITRD) $(SORTIX_BUILDS_DIR
 	rm -rf $(SORTIX_BUILDS_DIR)/tardir
 	mkdir -p $(SORTIX_BUILDS_DIR)/tardir
 	mkdir -p $(SORTIX_BUILDS_DIR)/tardir/boot
-	cp "$(SYSROOT)/boot/$(HOST)/sortix.bin" $(SORTIX_BUILDS_DIR)/tardir/boot/sortix.bin
+	cp "$(SYSROOT)/boot/sortix.bin" $(SORTIX_BUILDS_DIR)/tardir/boot/sortix.bin
 	cp $(INITRD) $(SORTIX_BUILDS_DIR)/tardir/boot/sortix.initrd
 	tar --create --xz --file $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).tar.xz -C $(SORTIX_BUILDS_DIR)/tardir `ls $(SORTIX_BUILDS_DIR)/tardir`
 	rm -rf $(SORTIX_BUILDS_DIR)/tardir
@@ -344,7 +330,7 @@ $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso: sysroot $(INITRD) $(SORTIX_BUILDS_DIR)
 	rm -rf $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 	mkdir -p $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 	cp -RT isosrc $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
-	cp "$(SYSROOT)/boot/$(HOST)/sortix.bin" $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.bin
+	cp "$(SYSROOT)/boot/sortix.bin" $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.bin
 	cp $(INITRD) $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.initrd
 	grub-mkrescue -o $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 	rm -rf $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso

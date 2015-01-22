@@ -40,12 +40,10 @@ endif
 ifeq ($(HOST),i486-sortix)
     MACHINE:=i486
     CPU:=x86
-    OTHER_PLATFORMS=x86-64-sortix
 endif
 ifeq ($(HOST),x86_64-sortix)
     MACHINE:=x86_64
     CPU:=x64
-    OTHER_PLATFORMS=i486-sortix
 endif
 
 # Determine the prefix for build tools.
@@ -100,6 +98,11 @@ ifndef HOSTLD
 endif
 ifndef HOSTOBJCOPY
   HOSTOBJCOPY:=$(HOST_TOOL_PREFIX)objcopy
+endif
+ifdef SYSROOT
+  HOSTCC:=$(HOSTCC) --sysroot="$(SYSROOT)"
+  HOSTCXX:=$(HOSTCXX) --sysroot="$(SYSROOT)"
+  HOSTLD:=$(HOSTLD) --sysroot="$(SYSROOT)"
 endif
 
 CC:=$(HOSTCC)

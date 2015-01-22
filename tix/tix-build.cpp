@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This file is part of Tix.
 
@@ -107,6 +107,7 @@ typedef struct
 	char* package_info_path;
 	char* package_name;
 	char* prefix;
+	char* exec_prefix;
 	char* sysroot;
 	char* tar;
 	char* target;
@@ -140,11 +141,22 @@ bool has_in_path(const char* program)
 	_exit(1);
 }
 
+void emit_compiler_wrapper_invocation(FILE* wrapper,
+                                      metainfo_t* minfo,
+                                      const char* name)
+{
+	fprintf(wrapper, "%s", name);
+	if ( minfo->sysroot )
+		fprintf(wrapper, " --sysroot=\"$SYSROOT\"");
+	fprintf(wrapper, " \"$@\"");
+}
+
 void emit_compiler_warning_wrapper(metainfo_t* minfo,
                                    const char* bindir,
                                    const char* name)
 {
-	(void) minfo;
+	if ( !minfo->sysroot )
+		return;
 	if ( !has_in_path(name) )
 		return;
 	const char* warnings_dir = getenv("TIX_WARNINGS_DIR");
@@ -156,14 +168,22 @@ void emit_compiler_warning_wrapper(metainfo_t* minfo,
 	fprintf(wrapper, "#!/bin/bash\n");
 	fprint_shell_variable_assignment(wrapper, "PATH", getenv("PATH"));
 	fprint_shell_variable_assignment(wrapper, "TIX_WARNINGS_DIR", warnings_dir);
+	if ( minfo->sysroot )
+		fprint_shell_variable_assignment(wrapper, "SYSROOT", minfo->sysroot);
 	fprintf(wrapper, "warnfile=$(mktemp --tmpdir=\"$TIX_WARNINGS_DIR\")\n");
-	fprintf(wrapper, "(%s \"$@\") 2> >(tee $warnfile >&2)\n", name);
+	fprintf(wrapper, "(");
+	emit_compiler_wrapper_invocation(wrapper, minfo, name);
+	fprintf(wrapper, ") 2> >(tee $warnfile >&2)\n");
 	fprintf(wrapper, "exitstatus=$?\n");
 	fprintf(wrapper, "if test -s \"$warnfile\"; then\n");
 	fprintf(wrapper, "  if test $exitstatus = 0; then\n");
-	fprintf(wrapper, "    (echo \"cd $(pwd) && %s $@\" && cat \"$warnfile\") > \"$warnfile.warn\"\n", name);
+	fprintf(wrapper, "    (echo \"cd $(pwd) && ");
+	emit_compiler_wrapper_invocation(wrapper, minfo, name);
+	fprintf(wrapper, " && cat \"$warnfile\") > \"$warnfile.warn\"\n");
 	fprintf(wrapper, "  else\n");
-	fprintf(wrapper, "    (echo \"cd $(pwd) && %s $@\" && cat \"$warnfile\") > \"$warnfile.err\"\n", name);
+	fprintf(wrapper, "    (echo \"cd $(pwd) && ");
+	emit_compiler_wrapper_invocation(wrapper, minfo, name);
+	fprintf(wrapper, " && cat \"$warnfile\") > \"$warnfile.err\"\n");
 	fprintf(wrapper, "  fi\n");
 	fprintf(wrapper, "fi\n");
 	fprintf(wrapper, "rm -f \"$warnfile\"\n");
@@ -181,6 +201,38 @@ void emit_compiler_warning_cross_wrapper(metainfo_t* minfo,
 {
 	char* cross_name = print_string("%s-%s", minfo->host, name);
 	emit_compiler_warning_wrapper(minfo, bindir, cross_name);
+	free(cross_name);
+}
+
+void emit_compiler_sysroot_wrapper(metainfo_t* minfo,
+                                   const char* bindir,
+                                   const char* name)
+{
+	if ( !has_in_path(name) )
+		return;
+	char* wrapper_path = print_string("%s/%s", bindir, name);
+	FILE* wrapper = fopen(wrapper_path, "w");
+	if ( !wrapper )
+		error(1, errno, "`%s'", wrapper_path);
+	fprint_shell_variable_assignment(wrapper, "PATH", getenv("PATH"));
+	if ( minfo->sysroot )
+		fprint_shell_variable_assignment(wrapper, "SYSROOT", minfo->sysroot);
+	fprintf(wrapper, "exec ");
+	emit_compiler_wrapper_invocation(wrapper, minfo, name);
+	fprintf(wrapper, "\n");
+	fflush(wrapper);
+	fchmod_plus_x(fileno(wrapper));
+	fclose(wrapper);
+
+	free(wrapper_path);
+}
+
+void emit_compiler_sysroot_cross_wrapper(metainfo_t* minfo,
+                                         const char* bindir,
+                                         const char* name)
+{
+	char* cross_name = print_string("%s-%s", minfo->host, name);
+	emit_compiler_sysroot_wrapper(minfo, bindir, cross_name);
 	free(cross_name);
 }
 
@@ -228,8 +280,8 @@ void emit_pkg_config_wrapper(metainfo_t* minfo)
 	char* var_pkg_config = print_string("%s/pkg-config", bindir);
 	char* var_pkg_config_for_build = print_string("%s/build-pkg-config", bindir);
 	char* var_pkg_config_libdir =
-		print_string("%s%s/%s/lib/pkgconfig",
-		             minfo->sysroot, minfo->prefix, minfo->host);
+		print_string("%s%s/lib/pkgconfig",
+		             minfo->sysroot, minfo->exec_prefix);
 	char* var_pkg_config_path = print_string("%s", var_pkg_config_libdir);
 	char* var_pkg_config_sysroot_dir = print_string("%s", minfo->sysroot);
 	setenv("PKG_CONFIG", var_pkg_config, 1);
@@ -257,6 +309,12 @@ void emit_pkg_config_wrapper(metainfo_t* minfo)
 		}
 		free(warnings_dir);
 	}
+
+	emit_compiler_sysroot_cross_wrapper(minfo, bindir, "cc");
+	emit_compiler_sysroot_cross_wrapper(minfo, bindir, "gcc");
+	emit_compiler_sysroot_cross_wrapper(minfo, bindir, "c++");
+	emit_compiler_sysroot_cross_wrapper(minfo, bindir, "g++");
+	emit_compiler_sysroot_cross_wrapper(minfo, bindir, "ld");
 
 	if ( getenv("TIX_WARNINGS_DIR") )
 	{
@@ -297,6 +355,15 @@ void Configure(metainfo_t* minfo)
 		bool with_sysroot =
 			parse_boolean(dictionary_get(pkg_info, "pkg.configure.with-sysroot",
 			                                        "false"));
+		// After releasing Sortix 1.0, remove this and hard-code the default o
+		// false. This allows building Sortix 0.9 with its own ports using this
+		// tix-build version.
+		const char* with_sysroot_ld_bug_default = "false";
+		if ( !strcmp(minfo->package_name, "binutils") )
+			with_sysroot_ld_bug_default = "true";
+		bool with_sysroot_ld_bug =
+			parse_boolean(dictionary_get(pkg_info, "pkg.configure.with-sysroot-ld-bug",
+			                                        with_sysroot_ld_bug_default ));
 		bool with_build_sysroot =
 			parse_boolean(dictionary_get(pkg_info, "pkg.configure.with-build-sysroot",
 			                                        "false"));
@@ -322,7 +389,7 @@ void Configure(metainfo_t* minfo)
 			print_string("--host=%s", minfo->host),
 			print_string("--target=%s", minfo->target),
 			print_string("--prefix=%s", minfo->prefix),
-			print_string("--exec-prefix=%s/%s", minfo->prefix, minfo->host),
+			print_string("--exec-prefix=%s", minfo->exec_prefix),
 			NULL
 		};
 		string_array_t args = string_array_make();
@@ -333,18 +400,20 @@ void Configure(metainfo_t* minfo)
 			string_array_append(&args, print_string("--with-build-sysroot=%s",
 			                                        minfo->sysroot));
 			if ( minfo->sysroot && with_sysroot )
-				string_array_append(&args, "--with-sysroot=/");
-			unsetenv("HOST_SYSTEM_ROOT");
+			{
+				// TODO: Binutils has a bug where the empty string means that
+				//       sysroot support is disabled and ld --sysroot won't work
+				//       so set it to / here for compatibility.
+				if ( with_sysroot_ld_bug )
+					string_array_append(&args, "--with-sysroot=/");
+				else
+					string_array_append(&args, "--with-sysroot=");
+			}
 		}
 		else if ( minfo->sysroot && with_sysroot )
 		{
 			string_array_append(&args, print_string("--with-sysroot=%s",
 			                                        minfo->sysroot));
-			unsetenv("HOST_SYSTEM_ROOT");
-		}
-		else if ( minfo->sysroot )
-		{
-			setenv("HOST_SYSTEM_ROOT", minfo->sysroot, 1);
 		}
 		string_array_append_token_string(&args, conf_extra_args);
 		string_array_append(&args, NULL);
@@ -379,12 +448,6 @@ void Make(metainfo_t* minfo, const char* make_target,
 		if ( dictionary_get(pkg_info, "pkg.make.needed-vars.CXX", NULL) )
 			setenv("CXX", strcmp(minfo->build, minfo->host) ?
 			              print_string("%s-g++", minfo->host) : "g++", 1);
-		bool with_sysroot =
-			parse_boolean(dictionary_get(pkg_info, "pkg.configure.with-sysroot",
-			                                        "false"));
-		bool with_build_sysroot =
-			parse_boolean(dictionary_get(pkg_info, "pkg.configure.with-build-sysroot",
-			                                        "false"));
 		if ( chdir(minfo->build_dir) != 0 )
 			error(1, errno, "chdir: `%s'", minfo->build_dir);
 		if ( subdir && chdir(subdir) != 0 )
@@ -395,13 +458,13 @@ void Make(metainfo_t* minfo, const char* make_target,
 		setenv("HOST", minfo->host, 1);
 		setenv("TARGET", minfo->target, 1);
 		if ( minfo->prefix )
-			setenv("PREFIX", minfo->prefix, 1),
-			setenv("EXEC_PREFIX", join_paths(minfo->prefix, minfo->host), 1);
+			setenv("PREFIX", minfo->prefix, 1);
 		else
-			unsetenv("PREFIX"),
+			unsetenv("PREFIX");
+		if ( minfo->exec_prefix )
+			setenv("EXEC_PREFIX", minfo->exec_prefix, 1);
+		else
 			unsetenv("EXEC_PREFIX");
-		if ( !(with_sysroot || with_build_sysroot) && minfo->sysroot )
-			setenv("HOST_SYSTEM_ROOT", minfo->sysroot, 1);
 		if ( minfo->makeflags )
 			setenv("MAKEFLAGS", minfo->makeflags, 1);
 		setenv("MAKE", minfo->make, 1);
@@ -530,14 +593,20 @@ void BuildPackage(metainfo_t* minfo)
 		setenv("TIX_BUILD_DIR", minfo->build_dir, 1);
 		setenv("TIX_SOURCE_DIR", minfo->package_dir, 1);
 		setenv("TIX_INSTALL_DIR", destdir, 1);
+		if ( minfo->sysroot )
+			setenv("TIX_SYSROOT", minfo->sysroot, 1);
+		else
+			unsetenv("TIX_SYSROOT");
 		setenv("BUILD", minfo->build, 1);
 		setenv("HOST", minfo->host, 1);
 		setenv("TARGET", minfo->target, 1);
 		if ( minfo->prefix )
-			setenv("PREFIX", minfo->prefix, 1),
-			setenv("EXEC_PREFIX", join_paths(minfo->prefix, minfo->host), 1);
+			setenv("PREFIX", minfo->prefix, 1);
 		else
-			unsetenv("PREFIX"),
+			unsetenv("PREFIX");
+		if ( minfo->exec_prefix )
+			setenv("EXEC_PREFIX", minfo->exec_prefix, 1);
+		else
 			unsetenv("EXEC_PREFIX");
 		const char* cmd_argv[] =
 		{
@@ -693,7 +762,8 @@ int main(int argc, char* argv[])
 	minfo.makeflags = strdup_null(getenv_def("MAKEFLAGS", NULL));
 	minfo.make = strdup(getenv_def("MAKE", "make"));
 	minfo.prefix = strdup_null(getenv_def("PREFIX", NULL));
-	minfo.sysroot = strdup_null(getenv_def("HOST_SYSTEM_ROOT", NULL));
+	minfo.exec_prefix = strdup_null(getenv_def("EXEC_PREFIX", NULL));
+	minfo.sysroot = strdup_null(getenv_def("SYSROOT", NULL));
 	minfo.target = NULL;
 	minfo.tar = strdup(getenv_def("TAR", "tar"));
 	minfo.tmp = strdup(getenv_def("BUILDTMP", "."));
@@ -729,6 +799,7 @@ int main(int argc, char* argv[])
 		else if ( GET_OPTION_VARIABLE("--makeflags", &minfo.makeflags) ) { }
 		else if ( GET_OPTION_VARIABLE("--make", &minfo.make) ) { }
 		else if ( GET_OPTION_VARIABLE("--prefix", &minfo.prefix) ) { }
+		else if ( GET_OPTION_VARIABLE("--exec-prefix", &minfo.exec_prefix) ) { }
 		else if ( GET_OPTION_VARIABLE("--start", &start_step_string) ) { }
 		else if ( GET_OPTION_VARIABLE("--sysroot", &minfo.sysroot) ) { }
 		else if ( GET_OPTION_VARIABLE("--target", &minfo.target) ) { }
@@ -786,11 +857,22 @@ int main(int argc, char* argv[])
 		error(1, errno, "canonicalize_file_name: `%s'", argv[1]);
 
 	if ( !minfo.build && !(minfo.build = GetBuildTriplet()) )
-		error(1, errno, "unable to determine host, use --host or BUILD");
+		error(1, errno, "unable to determine build, use --build or BUILD");
 	if ( !minfo.host && !(minfo.host = strdup_null(getenv("HOST"))) )
 		minfo.host = strdup(minfo.build);
 	if ( !minfo.target && !(minfo.target = strdup_null(getenv("TARGET"))) )
 		minfo.target = strdup(minfo.host);
+
+	if ( minfo.prefix && !minfo.exec_prefix )
+	{
+// TODO: After releasing Sortix 1.0, switch to this branch that defaults the
+//       exec-prefix to the prefix.
+#if 0
+		minfo.exec_prefix = strdup(minfo.prefix);
+#else // Sortix 0.9 compatibility.
+		minfo.exec_prefix = print_string("%s/%s", minfo.prefix, minfo.host);
+#endif
+	}
 
 	if ( !IsDirectory(minfo.package_dir) )
 		error(1, errno, "`%s'", minfo.package_dir);

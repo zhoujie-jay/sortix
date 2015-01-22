@@ -134,16 +134,20 @@ mkdir -p "$SYSROOT"
 mkdir -p "$SORTIX_REPOSITORY_DIR"
 
 # Initialize Tix package management in the system root if absent.
-[ -d "$SYSROOT/tix/$HOST" ] ||
-tix-collection "$SYSROOT" create --platform=$HOST --prefix=
+[ -d "$SYSROOT/tix" ] ||
+tix-collection "$SYSROOT" create --platform=$HOST --prefix= --disable-multiarch
 
 # Build all the packages (if needed) and otherwise install them.
 for PACKAGE in $PACKAGES; do
   [ -f "$SORTIX_REPOSITORY_DIR/$PACKAGE.tix.tar.xz" ] ||
+# TODO: After releasing Sortix 1.0, remove the --exec-prefix option after fixing
+#       the tix-build exec-prefix default to just the prefix rather than the
+#       prefix plus a host subdirectory.
   tix-build \
     --sysroot="$SYSROOT" \
     --host=$HOST \
     --prefix= \
+    --exec-prefix= \
     --destination="$SORTIX_REPOSITORY_DIR" \
     "$SORTIX_PORTS_DIR/$PACKAGE"
   tix-install \

@@ -47,13 +47,3 @@ TARGET?=$(HOST)
 BUILD_IS_SORTIX:=$(if $(shell echo $(BUILD) | grep sortix$),1,0)
 HOST_IS_SORTIX:=$(if $(shell echo $(HOST) | grep sortix$),1,0)
 TARGET_IS_SORTIX:=$(if $(shell echo $(TARGET) | grep sortix$),1,0)
-
-# Hack to allow easy filtering in the initrd.
-ifeq ($(HOST),i486-sortix)
-    OTHER_PLATFORMS=x86-64-sortix
-    OTHER_PLATFORM_1=x86-64-sortix
-endif
-ifeq ($(HOST),x86_64-sortix)
-    OTHER_PLATFORMS=i486-sortix
-    OTHER_PLATFORM_1=i486-sortix
-endif

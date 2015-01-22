@@ -214,5 +214,5 @@ install-headers: install-include-dirs headers
 install-kernel: install-kernel-binary
 
 install-kernel-binary: sortix.bin
-	mkdir -p $(DESTDIR)$(BOOTDIR)/$(HOST)
-	cp sortix.bin $(DESTDIR)$(BOOTDIR)/$(HOST)
+	mkdir -p $(DESTDIR)$(BOOTDIR)
+	cp sortix.bin $(DESTDIR)$(BOOTDIR)/sortix.bin

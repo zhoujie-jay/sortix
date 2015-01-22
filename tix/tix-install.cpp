@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of Tix.
 
@@ -52,13 +52,6 @@ void TipTixCollection(const char* prefix)
                 "installing packages.", prefix);
 }
 
-void TipTixWrongPlatform(const char* prefix, const char* platform)
-{
-	error(0, 0, "error: `%s' isn't a tix collection for platform `%s', use "
-                "tix-collection to add this platform before installing "
-                "packages.", prefix, platform);
-}
-
 void VerifyTixCollection(const char* prefix)
 {
 	if ( !IsDirectory(prefix) )
@@ -80,16 +73,10 @@ void VerifyTixDirectory(const char* prefix, const char* tix_dir)
 }
 
 void VerifyTixDatabase(const char* prefix,
-                       const char* tixdb_path,
-                       const char* platform)
+                       const char* tixdb_path)
 {
 	if ( !IsDirectory(tixdb_path) )
-	{
-		if ( errno == ENOENT )
-			TipTixWrongPlatform(prefix, platform);
-		error(1, errno, "error: tix database for platform `%s' unavailable: "
-		                "`%s'", platform, tixdb_path);
-	}
+		error(1, errno, "error: tix database unavailable: `%s'", tixdb_path);
 	char* info_path = join_paths(tixdb_path, "collection.conf");
 	if ( !IsFile(info_path) )
 	{
@@ -277,10 +264,19 @@ int main(int argc, char* argv[])
 	const char* package_platform = dictionary_get(&tixinfo, "tix.platform");
 	assert(package_platform);
 
+	// TODO: After releasing Sortix 1.0, delete this compatibility.
 	char* tixdb_path = join_paths(tix_directory_path, package_platform);
-	free(tix_directory_path);
+	if ( IsDirectory(tixdb_path ) )
+	{
+		free(tix_directory_path);
+	}
+	else
+	{
+		free(tixdb_path);
+		tixdb_path = tix_directory_path;
+	}
 
-	VerifyTixDatabase(collection, tixdb_path, package_platform);
+	VerifyTixDatabase(collection, tixdb_path);
 
 	char* coll_conf_path = join_paths(tixdb_path, "collection.conf");
 	string_array_t coll_conf = string_array_make();

@@ -648,14 +648,6 @@ static void BootThread(void* /*user*/)
 	}
 }
 
-#if defined(__i386__)
-	#define CPUTYPE_STR "i486-sortix"
-#elif defined(__x86_64__)
-	#define CPUTYPE_STR "x86_64-sortix"
-#else
-	#error No cputype environmental variable provided here.
-#endif
-
 static void InitThread(void* /*user*/)
 {
 	// We are the init process's first thread. Let's load the init program from
@@ -681,7 +673,7 @@ static void InitThread(void* /*user*/)
 
 	dtable.Reset();
 
-	const char* initpath = "/" CPUTYPE_STR "/bin/init";
+	const char* initpath = "/bin/init";
 	Ref<Descriptor> init = root->open(&ctx, initpath, O_EXEC | O_READ);
 	if ( !init )
 		PanicF("Could not open %s in early kernel RAM filesystem:\n%s",
@@ -711,9 +703,8 @@ static void InitThread(void* /*user*/)
 
 	int argc = 1;
 	const char* argv[] = { "init", NULL };
-	const char* cputype = "cputype=" CPUTYPE_STR;
-	int envc = 1;
-	const char* envp[] = { cputype, NULL };
+	int envc = 0;
+	const char* envp[] = { NULL };
 	struct thread_registers regs;
 	assert((((uintptr_t) &regs) & (alignof(regs)-1)) == 0);
 
