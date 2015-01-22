@@ -27,7 +27,6 @@
 
 #include <fcntl.h>
 
-// TODO: You cannot currently pass array types to the DEFN_SYSCALL* family.
 DEFN_SYSCALL4(int, sys_utimensat, SYSCALL_UTIMENSAT, int, const char*,
               const struct timespec*, int);
 

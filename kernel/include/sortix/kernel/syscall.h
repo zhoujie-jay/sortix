@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -65,7 +65,7 @@ int sys_dispmsg_issue(void*, size_t);
 int sys_dup(int);
 int sys_dup2(int, int);
 int sys_dup3(int, int, int);
-int sys_execve(const char*, char* const [], char* const []);
+int sys_execve(const char*, char* const*, char* const*);
 int sys_exit_thread(int, int, const struct exit_thread*);
 int sys_faccessat(int, const char*, int, int);
 int sys_fchdir(int);
@@ -85,7 +85,7 @@ int sys_fstatvfs(int, struct statvfs*);
 int sys_fstatvfsat(int, const char*, struct statvfs*, int);
 int sys_fsync(int);
 int sys_ftruncate(int, off_t);
-int sys_futimens(int, const struct timespec [2]);
+int sys_futimens(int, const struct timespec*);
 gid_t sys_getegid(void);
 int sys_getentropy(void*, size_t);
 uid_t sys_geteuid(void);
@@ -116,7 +116,7 @@ void* sys_mmap_wrapper(struct mmap_request*);
 int sys_mprotect(const void*, size_t, int);
 int sys_munmap(void*, size_t);
 int sys_openat(int, const char*, int, mode_t);
-int sys_pipe2(int [2], int);
+int sys_pipe2(int*, int);
 int sys_ppoll(struct pollfd*, nfds_t, const struct timespec*, const sigset_t*);
 ssize_t sys_pread(int, void*, size_t, off_t);
 ssize_t sys_preadv(int, const struct iovec*, int, off_t);
@@ -168,7 +168,7 @@ int sys_truncateat(int, const char*, off_t);
 mode_t sys_umask(mode_t);
 int sys_unlinkat(int, const char*, int);
 int sys_unmountat(int, const char*, int);
-int sys_utimensat(int, const char*, const struct timespec [2], int);
+int sys_utimensat(int, const char*, const struct timespec*, int);
 pid_t sys_waitpid(pid_t, int*, int);
 ssize_t sys_write(int, const void*, size_t);
 ssize_t sys_writev(int, const struct iovec*, int);

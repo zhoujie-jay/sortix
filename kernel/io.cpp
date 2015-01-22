@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -492,7 +492,7 @@ int sys_fchmodat(int dirfd, const char* path, mode_t mode, int flags)
 	return desc->chmod(&ctx, mode);
 }
 
-int sys_futimens(int fd, const struct timespec user_times[2])
+int sys_futimens(int fd, const struct timespec* user_times)
 {
 	struct timespec times[2];
 	if ( !CopyFromUser(times, user_times, sizeof(times)) )
@@ -505,7 +505,7 @@ int sys_futimens(int fd, const struct timespec user_times[2])
 }
 
 int sys_utimensat(int dirfd, const char* path,
-                  const struct timespec user_times[2], int flags)
+                  const struct timespec* user_times, int flags)
 {
 	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
 		return errno = EINVAL, -1;

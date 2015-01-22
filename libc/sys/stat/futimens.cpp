@@ -25,7 +25,6 @@
 #include <sys/stat.h>
 #include <sys/syscall.h>
 
-// TODO: You cannot currently pass array types to the DEFN_SYSCALL* family.
 DEFN_SYSCALL2(int, sys_futimens, SYSCALL_FUTIMENS, int, const struct timespec*);
 
 extern "C" int futimens(int fd, const struct timespec times[2])

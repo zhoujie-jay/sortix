@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -1150,9 +1150,9 @@ static void sys_execve_free(addralloc_t* alloc)
 static
 int sys_execve_kernel(const char* filename,
                       int argc,
-                      char* const argv[],
+                      char* const* argv,
                       int envc,
-                      char* const envp[],
+                      char* const* envp,
                       struct thread_registers* regs)
 {
 	Process* process = CurrentProcess();
@@ -1322,8 +1322,8 @@ int sys_execve_kernel(const char* filename,
 }
 
 int sys_execve(const char* user_filename,
-               char* const user_argv[],
-               char* const user_envp[])
+               char* const* user_argv,
+               char* const* user_envp)
 {
 	char* filename;
 	int argc;

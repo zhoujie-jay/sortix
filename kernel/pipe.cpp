@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -509,7 +509,7 @@ int PipeNode::poll(ioctx_t* ctx, PollNode* node)
 	return endpoint.poll(ctx, node);
 }
 
-int sys_pipe2(int pipefd[2], int flags)
+int sys_pipe2(int* pipefd, int flags)
 {
 	int fdflags = 0;
 	if ( flags & O_CLOEXEC ) fdflags |= FD_CLOEXEC;
