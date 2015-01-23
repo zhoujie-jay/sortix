@@ -1,4 +1,5 @@
 SOFTWARE_MEANT_FOR_SORTIX=1
+include ../build-aux/platform.mak
 include ../build-aux/compiler.mak
 include ../build-aux/version.mak
 include ../build-aux/dirs.mak
