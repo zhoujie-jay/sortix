@@ -49,6 +49,8 @@ if [ -z "${PORTS_CFLAGS+x}" ]; then PORTS_CFLAGS="$PORTS_OPTLEVEL"; fi
 if [ -z "${PORTS_CXXFLAGS+x}" ]; then PORTS_CXXFLAGS="$PORTS_OPTLEVEL"; fi
 if [ -z "${CFLAGS+x}" ]; then CFLAGS="$PORTS_CFLAGS"; fi
 if [ -z "${CXXFLAGS+x}" ]; then CXXFLAGS="$PORTS_CXXFLAGS"; fi
+CFLAGS="$CFLAGS -Werror=format -Wno-error=format-contains-nul"
+CXXFLAGS="$CXXFLAGS -Werror=format -Wno-error=format-contains-nul"
 export CFLAGS
 export CXXFLAGS
 
