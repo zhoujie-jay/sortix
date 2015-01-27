@@ -238,7 +238,7 @@ Ref<Inode> Dir::open(ioctx_t* ctx, const char* filename, int flags, mode_t mode)
 	size_t child_index = FindChild(filename);
 	if ( child_index != SIZE_MAX )
 	{
-		if ( flags & O_EXCL )
+		if ( (flags & O_CREATE) && (flags & O_EXCL) )
 			return errno = EEXIST, Ref<Inode>(NULL);
 		return children[child_index].inode;
 	}

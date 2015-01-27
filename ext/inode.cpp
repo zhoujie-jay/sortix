@@ -390,7 +390,7 @@ Inode* Inode::Open(const char* elem, int flags, mode_t mode)
 			uint32_t inode_id = entry->inode;
 			assert(inode_id);
 			block->Unref();
-			if ( flags & O_EXCL )
+			if ( (flags & O_CREAT) && (flags & O_EXCL) )
 				return errno = EEXIST, (Inode*) NULL;
 			if ( (flags & O_DIRECTORY) &&
 			     file_type != EXT2_FT_UNKNOWN &&
