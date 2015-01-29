@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -600,7 +600,7 @@ void HandleSymlink(int chl, struct fsm_req_symlink* msg, Filesystem* fs)
 		inode->Unref();
 		return;
 	}
-	memcpy(dest, dest_raw, msg->namelen);
+	memcpy(dest, dest_raw, msg->targetlen);
 	dest[msg->targetlen] = '\0';
 
 	char* path_raw = (char*) dest_raw + msg->targetlen;

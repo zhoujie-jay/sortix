@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -389,10 +389,15 @@ Inode* Inode::Open(const char* elem, int flags, mode_t mode)
 			block->Unref();
 			if ( flags & O_EXCL )
 				return errno = EEXIST, (Inode*) NULL;
-			if ( flags & O_DIRECTORY && file_type && file_type != EXT2_FT_DIR )
+			if ( (flags & O_DIRECTORY) &&
+			     file_type != EXT2_FT_UNKNOWN &&
+			     file_type != EXT2_FT_DIR &&
+			     file_type != EXT2_FT_SYMLINK )
 				return errno = EEXIST, (Inode*) NULL;
 			Inode* inode = filesystem->GetInode(inode_id);
-			if ( flags & O_DIRECTORY && !EXT2_S_ISDIR(inode->Mode()) )
+			if ( flags & O_DIRECTORY &&
+			     !EXT2_S_ISDIR(inode->Mode()) &&
+			     !EXT2_S_ISLNK(inode->Mode()) )
 			{
 				inode->Unref();
 				return errno = EEXIST, (Inode*) NULL;
