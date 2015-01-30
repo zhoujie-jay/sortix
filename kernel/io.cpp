@@ -124,7 +124,11 @@ int sys_close(int fd)
 	dtable.Reset();
 	if ( !desc )
 		return -1;
-	return desc->sync(&ctx);
+	// TODO: This can be a significant bottleneck. All we need to do is ask the
+	//       filesystem for whether any errors occurred that should be reported
+	//       at close time.
+	//return desc->sync(&ctx);
+	return 0;
 }
 
 int sys_closefrom(int fd)
