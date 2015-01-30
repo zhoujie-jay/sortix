@@ -27,6 +27,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "block.h"
 #include "device.h"
@@ -52,6 +53,7 @@ Device::~Device()
 	Sync();
 	while ( mru_block )
 		delete mru_block;
+	close(fd);
 }
 
 Block* Device::GetBlock(uint32_t block_id)
