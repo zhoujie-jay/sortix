@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -64,10 +64,11 @@ Filesystem::Filesystem(Device* device)
 	clock_gettime(CLOCK_MONOTONIC, &now_monotonic);
 	mtime_realtime = now_realtime.tv_sec;
 	mtime_monotonic = now_monotonic.tv_sec;
+	BeginWrite();
 	sb->s_mtime = mtime_realtime;
 	sb->s_mnt_count++;
 	sb->s_state = EXT2_ERROR_FS;
-	Dirty();
+	FinishWrite();
 	Sync();
 }
 
@@ -79,16 +80,22 @@ Filesystem::~Filesystem()
 	for ( size_t i = 0; i < num_groups; i++ )
 		delete block_groups[i];
 	delete[] block_groups;
+	BeginWrite();
 	sb->s_state = EXT2_VALID_FS;
-	Dirty();
+	FinishWrite();
 	Sync();
 	sb_block->Unref();
 }
 
-void Filesystem::Dirty()
+void Filesystem::BeginWrite()
+{
+	sb_block->BeginWrite();
+}
+
+void Filesystem::FinishWrite()
 {
 	dirty = true;
-	sb_block->Dirty();
+	sb_block->FinishWrite();
 }
 
 void Filesystem::Sync()
@@ -185,8 +192,9 @@ uint32_t Filesystem::AllocateBlock(BlockGroup* preferred)
 	//       rebuild all these values upon filesystem mount instead so we know
 	//       this can't happen. That also allows us to make the linked list
 	//       requested above.
+	BeginWrite();
 	sb->s_free_blocks_count--;
-	Dirty();
+	FinishWrite();
 	return errno = ENOSPC, 0;
 }
 
@@ -206,8 +214,9 @@ uint32_t Filesystem::AllocateInode(BlockGroup* preferred)
 	//       rebuild all these values upon filesystem mount instead so we know
 	//       this can't happen. That also allows us to make the linked list
 	//       requested above.
+	BeginWrite();
 	sb->s_free_inodes_count--;
-	Dirty();
+	FinishWrite();
 	return errno = ENOSPC, 0;
 }
 

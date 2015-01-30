@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -70,15 +70,17 @@ Block* Device::GetBlockZeroed(uint32_t block_id)
 {
 	if ( Block* block = GetCachedBlock(block_id) )
 	{
+		block->BeginWrite();
 		memset(block->block_data, 0, block_size);
-		block->Dirty();
+		block->FinishWrite();
 		return block;
 	}
 	Block* block = new Block(this, block_id);
 	block->block_data = new uint8_t[block_size];
 	memset(block->block_data, 0, block_size);
 	block->Prelink();
-	block->Dirty();
+	block->BeginWrite();
+	block->FinishWrite();
 	return block;
 }
 

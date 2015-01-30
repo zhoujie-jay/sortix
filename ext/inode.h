@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -76,7 +76,8 @@ public:
 	void RemoteRefer();
 	void RemoteUnref();
 	void Sync();
-	void Dirty();
+	void BeginWrite();
+	void FinishWrite();
 	void Modified();
 	void Use();
 	void Unlink();

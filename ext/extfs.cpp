@@ -305,9 +305,10 @@ void HandleUTimens(int chl, struct fsm_req_utimens* msg, Filesystem* fs)
 	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
 	if ( !inode ) { RespondError(chl, errno); return; }
+	inode->BeginWrite();
 	inode->data->i_atime = msg->times[0].tv_sec;
 	inode->data->i_mtime = msg->times[1].tv_sec;
-	inode->Dirty();
+	inode->FinishWrite();
 	inode->Unref();
 	RespondSuccess(chl);
 }
@@ -1177,7 +1178,6 @@ int ext2_fuse_readdir(const char* /*path*/, void* buf, fuse_fill_dir_t filler,
 	if ( block )
 		block->Unref();
 
-	inode->Sync();
 	inode->Unref();
 	return 0;
 }
@@ -1192,9 +1192,10 @@ int ext2_fuse_utimens(const char* path, const struct timespec tv[2])
 	Inode* inode = ext2_fuse_resolve_path(path);
 	if ( !inode )
 		return -errno;
+	inode->BeginWrite();
 	inode->data->i_atime = tv[0].tv_sec;
 	inode->data->i_mtime = tv[1].tv_sec;
-	inode->Dirty();
+	inode->FinishWrite();
 	inode->Unref();
 	return 0;
 }

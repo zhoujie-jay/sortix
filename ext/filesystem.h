@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -60,7 +60,8 @@ public:
 	uint32_t AllocateInode(BlockGroup* preferred = NULL);
 	void FreeBlock(uint32_t block_id);
 	void FreeInode(uint32_t inode_id);
-	void Dirty();
+	void BeginWrite();
+	void FinishWrite();
 	void Sync();
 
 };

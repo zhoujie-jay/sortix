@@ -82,9 +82,10 @@ uint32_t Inode::Mode()
 
 void Inode::SetMode(uint32_t mode)
 {
+	BeginWrite();
 	// TODO: Use i_mode_high.
 	data->i_mode = (uint16_t) mode;
-	Dirty();
+	FinishWrite();
 }
 
 uint32_t Inode::UserId()
@@ -95,9 +96,10 @@ uint32_t Inode::UserId()
 
 void Inode::SetUserId(uint32_t user)
 {
+	BeginWrite();
 	// TODO: Use i_uid_high.
 	data->i_uid = (uint16_t) user;
-	Dirty();
+	FinishWrite();
 }
 
 uint32_t Inode::GroupId()
@@ -108,9 +110,10 @@ uint32_t Inode::GroupId()
 
 void Inode::SetGroupId(uint32_t group)
 {
+	BeginWrite();
 	// TODO: Use i_gid_high.
 	data->i_gid = (uint16_t) group;
-	Dirty();
+	FinishWrite();
 }
 
 uint64_t Inode::Size()
@@ -150,24 +153,28 @@ void Inode::SetSize(uint64_t new_size)
 		actual_blocks += divup(logical_blocks - max_singly, ENTRIES * ENTRIES);
 	if ( max_doubly <= logical_blocks )
 		actual_blocks += divup(logical_blocks - max_doubly, ENTRIES * ENTRIES * ENTRIES);
-	data->i_blocks = (actual_blocks * filesystem->block_size) / 512;
 
+	BeginWrite();
+	data->i_blocks = (actual_blocks * filesystem->block_size) / 512;
 	if ( EXT2_S_ISREG(data->i_mode) && largefile )
 		data->i_dir_acl = upper;
-	Dirty();
+	FinishWrite();
+
 	Modified();
 }
 
 void Inode::Linked()
 {
+	BeginWrite();
 	data->i_links_count++;
-	Dirty();
+	FinishWrite();
 }
 
 void Inode::Unlinked()
 {
+	BeginWrite();
 	data->i_links_count--;
-	Dirty();
+	FinishWrite();
 }
 
 Block* Inode::GetBlockFromTable(Block* table, uint32_t index)
@@ -182,8 +189,9 @@ Block* Inode::GetBlockFromTable(Block* table, uint32_t index)
 	if ( block_id )
 	{
 		Block* block = filesystem->device->GetBlockZeroed(block_id);
+		table->BeginWrite();
 		((uint32_t*) table->block_data)[index] = block_id;
-		table->Dirty();
+		table->FinishWrite();
 		return block;
 	}
 	return NULL;
@@ -276,6 +284,7 @@ bool Inode::FreeIndirect(uint64_t from, uint64_t offset, uint32_t block_id,
 	Block* block = filesystem->device->GetBlock(block_id);
 	uint32_t* table = (uint32_t*) block->block_data;
 	bool any_children = false;
+	bool begun_writing = false;
 	for ( uint64_t i = 0; i < ENTRIES; i++ )
 	{
 		if ( !table[i] )
@@ -290,9 +299,15 @@ bool Inode::FreeIndirect(uint64_t from, uint64_t offset, uint32_t block_id,
 			continue;
 		}
 		filesystem->FreeBlock(table[i]);
+		if ( !begun_writing )
+		{
+			block->BeginWrite();
+			begun_writing = true;
+		}
 		table[i] = 0;
-		block->Dirty();
 	}
+	if ( begun_writing )
+		block->FinishWrite();
 	return any_children;
 }
 
@@ -319,8 +334,9 @@ void Inode::Truncate(uint64_t new_size)
 	{
 		Block* partial_block = GetBlock(new_num_blocks-1);
 		uint8_t* data = partial_block->block_data;
+		partial_block->BeginWrite();
 		memset(data + partial, 0, filesystem->block_size - partial);
-		partial_block->Dirty();
+		partial_block->FinishWrite();
 	}
 
 	const uint64_t ENTRIES = filesystem->block_size / sizeof(uint32_t);
@@ -332,6 +348,8 @@ void Inode::Truncate(uint64_t new_size)
 	uint64_t max_singly = max_direct + block_singly;
 	uint64_t max_doubly = max_singly + block_doubly;
 	uint64_t max_triply = max_doubly + block_triply;
+
+	BeginWrite();
 
 	for ( uint64_t i = new_num_blocks; i < old_num_blocks && i < 12; i++ )
 	{
@@ -359,7 +377,7 @@ void Inode::Truncate(uint64_t new_size)
 
 	(void) max_triply;
 
-	Dirty();
+	FinishWrite();
 }
 
 Inode* Inode::Open(const char* elem, int flags, mode_t mode)
@@ -520,6 +538,8 @@ bool Inode::Link(const char* elem, Inode* dest, bool directories)
 	if ( !block && !(block = GetBlock(block_id = hole_block_id)) )
 		return NULL;
 
+	block->BeginWrite();
+
 	uint8_t* block_data = block->block_data + hole_block_offset;
 	struct ext_dirent* entry = (struct ext_dirent*) block_data;
 
@@ -528,7 +548,6 @@ bool Inode::Link(const char* elem, Inode* dest, bool directories)
 	{
 		entry->reclen = roundup(sizeof(struct ext_dirent) + entry->name_len, (size_t) 4);
 		assert(entry->reclen);
-		// Block marked dirty below.
 		block_data += entry->reclen;
 		entry = (struct ext_dirent*) block_data;
 	}
@@ -544,7 +563,7 @@ bool Inode::Link(const char* elem, Inode* dest, bool directories)
 
 	assert(entry->reclen);
 
-	block->Dirty();
+	block->FinishWrite();
 
 	dest->Linked();
 
@@ -610,6 +629,9 @@ Inode* Inode::Unlink(const char* elem, bool directories, bool force)
 			}
 
 			inode->Unlinked();
+
+			block->BeginWrite();
+
 			entry->inode = 0;
 			entry->name_len = 0;
 			entry->file_type = 0;
@@ -628,7 +650,6 @@ Inode* Inode::Unlink(const char* elem, bool directories, bool force)
 			strncpy(entry->name + entry->name_len, "",
 			        entry->reclen - sizeof(struct ext_dirent) - entry->name_len);
 			assert(entry->reclen);
-			block->Dirty();
 
 			// If the entire block is empty, we'll need to remove it.
 			if ( !entry->name[0] && entry->reclen == block_size )
@@ -641,11 +662,12 @@ Inode* Inode::Unlink(const char* elem, bool directories, bool force)
 				{
 					Block* last_block = GetBlock(num_blocks-1);
 					memcpy(block->block_data, last_block->block_data, block_size);
-					block->Dirty();
 					last_block->Unref();
 				}
 				Truncate(filesize - block_size);
 			}
+
+			block->FinishWrite();
 
 			block->Unref();
 
@@ -733,8 +755,9 @@ ssize_t Inode::WriteAt(const uint8_t* buf, size_t s_count, off_t o_offset)
 		if ( !block )
 			return sofar ? sofar : -1;
 		size_t amount = count - sofar < block_left ? count - sofar : block_left;
+		block->BeginWrite();
 		memcpy(block->block_data + block_offset, buf + sofar, amount);
-		block->Dirty();
+		block->FinishWrite();
 		sofar += amount;
 		offset += amount;
 		block->Unref();
@@ -835,8 +858,9 @@ Inode* Inode::CreateDirectory(const char* path, mode_t mode)
 	uint32_t group_id = (result->inode_id - 1) / filesystem->sb->s_inodes_per_group;
 	assert(group_id < filesystem->num_groups);
 	BlockGroup* block_group = filesystem->GetBlockGroup(group_id);
+	block_group->BeginWrite();
 	block_group->data->bg_used_dirs_count++;
-	block_group->Dirty();
+	block_group->FinishWrite();
 	block_group->Unref();
 
 	struct timespec now;
@@ -886,8 +910,9 @@ bool Inode::RemoveDirectory(const char* path)
 	uint32_t group_id = (result->inode_id - 1) / filesystem->sb->s_inodes_per_group;
 	assert(group_id < filesystem->num_groups);
 	BlockGroup* block_group = filesystem->GetBlockGroup(group_id);
+	block_group->BeginWrite();
 	block_group->data->bg_used_dirs_count--;
-	block_group->Dirty();
+	block_group->FinishWrite();
 	block_group->Unref();
 
 	result->Unref();
@@ -939,13 +964,14 @@ void Inode::Delete()
 	Truncate(0);
 
 	uint32_t deleted_inode_id = inode_id;
-	memset(data, 0, sizeof(*data));
+
 	struct timespec now;
 	clock_gettime(CLOCK_REALTIME, &now);
-	data->i_dtime = now.tv_sec;
-	Dirty();
 
-	delete this;
+	BeginWrite();
+	memset(data, 0, sizeof(*data));
+	data->i_dtime = now.tv_sec;
+	FinishWrite();
 
 	filesystem->FreeInode(deleted_inode_id);
 }
@@ -962,8 +988,7 @@ void Inode::Unref()
 	{
 		if ( !data->i_links_count )
 			Delete();
-		else
-			delete this;
+		delete this;
 	}
 }
 
@@ -979,8 +1004,7 @@ void Inode::RemoteUnref()
 	{
 		if ( !data->i_links_count )
 			Delete();
-		else
-			delete this;
+		delete this;
 	}
 }
 
@@ -988,11 +1012,17 @@ void Inode::Modified()
 {
 	struct timespec now;
 	clock_gettime(CLOCK_REALTIME, &now);
+	BeginWrite();
 	data->i_mtime = now.tv_sec;
-	Dirty();
+	FinishWrite();
 }
 
-void Inode::Dirty()
+void Inode::BeginWrite()
+{
+	data_block->BeginWrite();
+}
+
+void Inode::FinishWrite()
 {
 	struct timespec now;
 	clock_gettime(CLOCK_REALTIME, &now);
@@ -1006,7 +1036,7 @@ void Inode::Dirty()
 			next_dirty->prev_dirty = this;
 		filesystem->dirty_inode = this;
 	}
-	data_block->Dirty();
+	data_block->FinishWrite();
 	Use();
 }
 
@@ -1015,6 +1045,7 @@ void Inode::Sync()
 	if ( !dirty )
 		return;
 	data_block->Sync();
+	// TODO: The inode contents needs to be sync'd as well!
 	(prev_dirty ? prev_dirty->next_dirty : filesystem->dirty_inode) = next_dirty;
 	if ( next_dirty )
 		next_dirty->prev_dirty = prev_dirty;

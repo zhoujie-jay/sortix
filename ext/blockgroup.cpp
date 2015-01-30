@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -96,22 +96,25 @@ uint32_t BlockGroup::AllocateBlock()
 		for ( ; block_bitmap_chunk_i < num_bits; block_bitmap_chunk_i++ )
 			if ( !checkbit(chunk_bits, block_bitmap_chunk_i) )
 			{
+				block_bitmap_chunk->BeginWrite();
 				setbit(chunk_bits, block_bitmap_chunk_i);
-				block_bitmap_chunk->Dirty();
+				block_bitmap_chunk->FinishWrite();
+				BeginWrite();
 				data->bg_free_blocks_count--;
-				Dirty();
+				FinishWrite();
+				filesystem->BeginWrite();
 				filesystem->sb->s_free_blocks_count--;
-				filesystem->Dirty();
+				filesystem->FinishWrite();
 				uint32_t group_block_id = chunk_offset + block_bitmap_chunk_i++;
 				uint32_t block_id = first_block_id + group_block_id;
 				return block_id;
 			}
-		block_bitmap_chunk->Sync();
 		block_bitmap_chunk->Unref();
 		block_bitmap_chunk = NULL;
 	}
+	BeginWrite();
 	data->bg_free_blocks_count = 0;
-	Dirty();
+	FinishWrite();
 	return errno = ENOSPC, 0;
 }
 
@@ -138,22 +141,25 @@ uint32_t BlockGroup::AllocateInode()
 		for ( ; inode_bitmap_chunk_i < num_bits; inode_bitmap_chunk_i++ )
 			if ( !checkbit(chunk_bits, inode_bitmap_chunk_i) )
 			{
+				inode_bitmap_chunk->BeginWrite();
 				setbit(chunk_bits, inode_bitmap_chunk_i);
-				inode_bitmap_chunk->Dirty();
+				inode_bitmap_chunk->FinishWrite();
+				BeginWrite();
 				data->bg_free_inodes_count--;
-				Dirty();
+				FinishWrite();
+				filesystem->BeginWrite();
 				filesystem->sb->s_free_inodes_count--;
-				filesystem->Dirty();
+				filesystem->FinishWrite();
 				uint32_t group_inode_id = chunk_offset + inode_bitmap_chunk_i++;
 				uint32_t inode_id = first_inode_id + group_inode_id;
 				return inode_id;
 			}
-		inode_bitmap_chunk->Sync();
 		inode_bitmap_chunk->Unref();
 		inode_bitmap_chunk = NULL;
 	}
+	BeginWrite();
 	data->bg_free_inodes_count = 0;
-	Dirty();
+	FinishWrite();
 	return errno = ENOSPC, 0;
 }
 
@@ -166,7 +172,6 @@ void BlockGroup::FreeBlock(uint32_t block_id)
 	if ( !block_bitmap_chunk || chunk_id != block_alloc_chunk )
 	{
 		if ( block_bitmap_chunk )
-			block_bitmap_chunk->Sync(),
 			block_bitmap_chunk->Unref();
 		block_alloc_chunk = chunk_id;
 		uint32_t block_id = data->bg_block_bitmap + block_alloc_chunk;
@@ -174,13 +179,16 @@ void BlockGroup::FreeBlock(uint32_t block_id)
 		block_bitmap_chunk_i = 0;
 	}
 
+	block_bitmap_chunk->BeginWrite();
 	uint8_t* chunk_bits = block_bitmap_chunk->block_data;
 	clearbit(chunk_bits, chunk_bit);
-	block_bitmap_chunk->Dirty();
+	block_bitmap_chunk->FinishWrite();
+	BeginWrite();
 	data->bg_free_blocks_count++;
-	Dirty();
+	FinishWrite();
+	filesystem->BeginWrite();
 	filesystem->sb->s_free_blocks_count++;
-	filesystem->Dirty();
+	filesystem->FinishWrite();
 }
 
 void BlockGroup::FreeInode(uint32_t inode_id)
@@ -192,7 +200,6 @@ void BlockGroup::FreeInode(uint32_t inode_id)
 	if ( !inode_bitmap_chunk || chunk_id != inode_alloc_chunk )
 	{
 		if ( inode_bitmap_chunk )
-			inode_bitmap_chunk->Sync(),
 			inode_bitmap_chunk->Unref();
 		inode_alloc_chunk = chunk_id;
 		uint32_t block_id = data->bg_inode_bitmap + inode_alloc_chunk;
@@ -200,13 +207,16 @@ void BlockGroup::FreeInode(uint32_t inode_id)
 		inode_bitmap_chunk_i = 0;
 	}
 
+	inode_bitmap_chunk->BeginWrite();
 	uint8_t* chunk_bits = inode_bitmap_chunk->block_data;
 	clearbit(chunk_bits, chunk_bit);
-	inode_bitmap_chunk->Dirty();
+	inode_bitmap_chunk->FinishWrite();
+	BeginWrite();
 	data->bg_free_inodes_count++;
-	Dirty();
+	FinishWrite();
+	filesystem->BeginWrite();
 	filesystem->sb->s_free_inodes_count++;
-	filesystem->Dirty();
+	filesystem->FinishWrite();
 }
 
 void BlockGroup::Refer()
@@ -223,15 +233,22 @@ void BlockGroup::Sync()
 {
 	if ( block_bitmap_chunk )
 		block_bitmap_chunk->Sync();
+	if ( inode_bitmap_chunk )
+		inode_bitmap_chunk->Sync();
 	if ( dirty )
 		data_block->Sync();
 	dirty = false;
 }
 
-void BlockGroup::Dirty()
+void BlockGroup::BeginWrite()
+{
+	data_block->BeginWrite();
+}
+
+void BlockGroup::FinishWrite()
 {
 	dirty = true;
-	data_block->Dirty();
+	data_block->FinishWrite();
 	Use();
 }
 
