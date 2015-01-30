@@ -32,6 +32,8 @@ public:
 	~Block();
 
 public:
+	pthread_mutex_t modify_lock;
+	pthread_cond_t transit_done_cond;
 	Block* prev_block;
 	Block* next_block;
 	Block* prev_hashed;
@@ -42,6 +44,7 @@ public:
 	size_t reference_count;
 	uint32_t block_id;
 	bool dirty;
+	bool is_in_transit;
 	uint8_t* block_data;
 
 public:

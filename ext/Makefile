@@ -12,6 +12,7 @@ CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 LIBS:=$(LIBS)
 
 ifeq ($(HOST_IS_SORTIX),0)
+  PTHREAD_OPTION:=-pthread
   LIBS:=$(LIBS) -lfuse
   CPPFLAGS:=$(CPPFLAGS) -D_FILE_OFFSET_BITS=64
 endif
@@ -27,7 +28,7 @@ install: all
 	install $(BINARIES) $(DESTDIR)$(BINDIR)
 
 extfs: *.cpp *.h
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) *.cpp -o $@ $(LIBS)
+	$(CXX) $(PTHREAD_OPTION) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) *.cpp -o $@ $(LIBS)
 
 clean:
 	rm -f $(BINARIES) *.o

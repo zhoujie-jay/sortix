@@ -34,6 +34,10 @@ public:
 	~Device();
 
 public:
+	pthread_t sync_thread;
+	pthread_cond_t sync_thread_cond;
+	pthread_cond_t sync_thread_idle_cond;
+	pthread_mutex_t sync_thread_lock;
 	Block* mru_block;
 	Block* lru_block;
 	Block* dirty_block;
@@ -42,12 +46,17 @@ public:
 	uint32_t block_size;
 	int fd;
 	bool write;
+	bool has_sync_thread;
+	bool sync_thread_should_exit;
+	bool sync_in_transit;
 
 public:
+	void SpawnSyncThread();
 	Block* GetBlock(uint32_t block_id);
 	Block* GetBlockZeroed(uint32_t block_id);
 	Block* GetCachedBlock(uint32_t block_id);
 	void Sync();
+	void SyncThread();
 
 };
 

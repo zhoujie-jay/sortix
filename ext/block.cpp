@@ -22,6 +22,8 @@
 
 #include <sys/types.h>
 
+#include <assert.h>
+#include <pthread.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -31,6 +33,8 @@
 
 Block::Block(Device* device, uint32_t block_id)
 {
+	this->modify_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+	this->transit_done_cond = PTHREAD_COND_INITIALIZER;
 	this->prev_block = NULL;
 	this->next_block = NULL;
 	this->prev_hashed = NULL;
@@ -41,7 +45,8 @@ Block::Block(Device* device, uint32_t block_id)
 	this->reference_count = 1;
 	this->block_id = block_id;
 	this->dirty = false;
-	this->block_data = 0;
+	this->is_in_transit = false;
+	this->block_data = NULL;
 }
 
 Block::~Block()
@@ -68,6 +73,15 @@ void Block::Unref()
 
 void Block::Sync()
 {
+	if ( device->has_sync_thread )
+	{
+		pthread_mutex_lock(&device->sync_thread_lock);
+		while ( dirty || is_in_transit )
+			pthread_cond_wait(&transit_done_cond, &device->sync_thread_lock);
+		pthread_mutex_unlock(&device->sync_thread_lock);
+		return;
+	}
+
 	if ( !dirty )
 		return;
 	dirty = false;
@@ -84,10 +98,14 @@ void Block::Sync()
 
 void Block::BeginWrite()
 {
+	assert(device->write);
+	pthread_mutex_lock(&modify_lock);
 }
 
 void Block::FinishWrite()
 {
+	pthread_mutex_unlock(&modify_lock);
+	pthread_mutex_lock(&device->sync_thread_lock);
 	if ( !dirty )
 	{
 		dirty = true;
@@ -96,7 +114,9 @@ void Block::FinishWrite()
 		if ( next_dirty )
 			next_dirty->prev_dirty = this;
 		device->dirty_block = this;
+		pthread_cond_signal(&device->sync_thread_cond);
 	}
+	pthread_mutex_unlock(&device->sync_thread_lock);
 	Use();
 }
 

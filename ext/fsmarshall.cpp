@@ -668,6 +668,8 @@ int fsmarshall_main(const char* argv0,
 		setpgid(0, 0);
 	}
 
+	dev->SpawnSyncThread();
+
 	// Listen for filesystem messages and sync the filesystem every few seconds.
 	struct timespec last_sync_at;
 	clock_gettime(CLOCK_MONOTONIC, &last_sync_at);
@@ -690,7 +692,8 @@ int fsmarshall_main(const char* argv0,
 		struct timespec now;
 		clock_gettime(CLOCK_MONOTONIC, &now);
 
-		if ( dev->write && 5 <= timespec_sub(now, last_sync_at).tv_sec )
+		if ( dev->write && !dev->has_sync_thread &&
+		     5 <= timespec_sub(now, last_sync_at).tv_sec )
 		{
 			fs->Sync();
 			last_sync_at = now;
