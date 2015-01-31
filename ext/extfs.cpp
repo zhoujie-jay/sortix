@@ -294,6 +294,7 @@ void HandleChangeMode(int chl, struct fsm_req_chmod* msg, Filesystem* fs)
 	uint32_t new_mode = (old_mode & ~S_SETABLE) | (req_mode & S_SETABLE);
 	inode->SetMode(new_mode);
 	inode->Unref();
+	RespondSuccess(chl);
 }
 
 void HandleChangeOwner(int chl, struct fsm_req_chown* msg, Filesystem* fs)
