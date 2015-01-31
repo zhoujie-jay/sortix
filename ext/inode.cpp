@@ -57,8 +57,11 @@ Inode::Inode(Filesystem* filesystem, uint32_t inode_id)
 	this->next_hashed = NULL;
 	this->prev_dirty = NULL;
 	this->next_dirty = NULL;
+	this->data_block = NULL;
+	this->data = NULL;
 	this->filesystem = filesystem;
 	this->reference_count = 1;
+	this->remote_reference_count = 1;
 	this->inode_id = inode_id;
 	this->dirty = false;
 }
