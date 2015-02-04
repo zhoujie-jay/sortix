@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -22,24 +22,28 @@
 
 *******************************************************************************/
 
+#include <assert.h>
 #include <errno.h>
 #include <ioleast.h>
 #include <stdint.h>
 #include <unistd.h>
 
-extern "C" size_t readleast(int fd, void* buf, size_t least, size_t max)
+extern "C"
+size_t readleast(int fd, void* buf_ptr, size_t least, size_t max)
 {
-	ssize_t amount = read(fd, buf, max);
-	if ( amount < 0 )
-		return 0;
-	if ( least && !amount )
-		return errno = EEOF, 0;
-	if ( (size_t) amount < least )
+	assert(least <= max);
+	unsigned char* buf = (unsigned char*) buf_ptr;
+	size_t done = 0;
+	do
 	{
-		void* nextbuf = (uint8_t*) buf + amount;
-		size_t nextleast = least - amount;
-		size_t nextmax = max - amount;
-		amount += readleast(fd, nextbuf, nextleast, nextmax);
-	}
-	return amount;
+		ssize_t amount = read(fd, buf + done, max - done);
+		if ( amount < 0 )
+			return done;
+		if ( !amount && done < least )
+			return errno = EEOF, done;
+		if ( !amount )
+			break;
+		done += amount;
+	} while ( done < least );
+	return done;
 }
