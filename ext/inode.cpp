@@ -396,14 +396,14 @@ Inode* Inode::Open(const char* elem, int flags, mode_t mode)
 			     file_type != EXT2_FT_UNKNOWN &&
 			     file_type != EXT2_FT_DIR &&
 			     file_type != EXT2_FT_SYMLINK )
-				return errno = EEXIST, (Inode*) NULL;
+				return errno = ENOTDIR, (Inode*) NULL;
 			Inode* inode = filesystem->GetInode(inode_id);
 			if ( flags & O_DIRECTORY &&
 			     !EXT2_S_ISDIR(inode->Mode()) &&
 			     !EXT2_S_ISLNK(inode->Mode()) )
 			{
 				inode->Unref();
-				return errno = EEXIST, (Inode*) NULL;
+				return errno = ENOTDIR, (Inode*) NULL;
 			}
 			if ( S_ISREG(inode->Mode()) && flags & O_TRUNC )
 				inode->Truncate(0);
