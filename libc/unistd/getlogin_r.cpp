@@ -38,6 +38,7 @@ extern "C" int getlogin_r(char* buf, size_t size)
 	size_t pwdbuflen = 0;
 	do
 	{
+		// TODO: Potential overflow.
 		size_t new_pwdbuflen = pwdbuflen ? 2 * pwdbuflen : 64;
 		char* new_pwdbuf = (char*) realloc(pwdbuf, new_pwdbuflen);
 		if ( !new_pwdbuf )
@@ -50,10 +51,9 @@ extern "C" int getlogin_r(char* buf, size_t size)
 		return free(pwdbuf), errno = errnum, -1;
 
 	const char* username = passwd->pw_name;
-	size_t username_len = strlen(username);
-	if ( size < (username_len + 1) * sizeof(char) )
+	if ( size <= strlcpy(buf, username, size) )
 		return free(pwdbuf), errno = ERANGE, -1;
-	strcpy(buf, username);
+	free(pwdbuf);
 
 	return 0;
 }
