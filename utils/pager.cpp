@@ -298,7 +298,7 @@ void pager_push_fd(struct pager* pager, int fd, const char* fdpath)
 	if ( !pager->out_fd_tty )
 		return pager_simple_output_fd(pager, fd, fdpath);
 	unsigned char buffer[4096];
-	ssize_t in_amount;
+	ssize_t in_amount = 0;
 	while ( !pager->quiting &&
 	        0 < (in_amount = read(fd, buffer, sizeof(buffer))) )
 	{
