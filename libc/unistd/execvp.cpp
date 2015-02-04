@@ -22,7 +22,6 @@
 
 *******************************************************************************/
 
-#define _WANT_ENVIRON
 #include <unistd.h>
 
 extern "C" int execvp(const char* filename, char* const* argv)
