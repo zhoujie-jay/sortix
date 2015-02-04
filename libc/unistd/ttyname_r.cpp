@@ -31,8 +31,7 @@ extern "C" int ttyname_r(int fd, char* path, size_t path_size)
 	if ( isatty(fd) < 1 )
 		return -1;
 	const char* result = "/dev/tty";
-	size_t result_length = strlen(result);
-	if ( result_length + 1 < path_size )
+	if ( path_size <= strlcpy(path, result, path_size) )
 		return errno = ERANGE, -1;
-	return strcpy(path, result), 0;
+	return 0;
 }
