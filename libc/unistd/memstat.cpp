@@ -23,6 +23,7 @@
 *******************************************************************************/
 
 #include <sys/syscall.h>
+
 #include <unistd.h>
 
 DEFN_SYSCALL2(int, sys_memstat, SYSCALL_MEMSTAT, size_t*, size_t*);

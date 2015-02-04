@@ -23,6 +23,7 @@
 *******************************************************************************/
 
 #include <sys/syscall.h>
+
 #include <unistd.h>
 
 DEFN_SYSCALL2(int, sys_dup2, SYSCALL_DUP2, int, int);

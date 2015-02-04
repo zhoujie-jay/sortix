@@ -23,6 +23,7 @@
 *******************************************************************************/
 
 #include <sys/syscall.h>
+
 #include <unistd.h>
 
 DEFN_SYSCALL1(int, sys_isatty, SYSCALL_ISATTY, int);
