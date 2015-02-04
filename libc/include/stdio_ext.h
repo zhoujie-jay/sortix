@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -38,6 +38,7 @@ int __freadable(FILE* fp);
 int __fwritable(FILE* fp);
 void __fpurge(FILE* fp);
 size_t __fpending(FILE* fp);
+void __fseterr(FILE* fp);
 
 __END_DECLS
 

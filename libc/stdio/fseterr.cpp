@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -29,4 +29,10 @@ extern "C" void fseterr(FILE* fp)
 	flockfile(fp);
 	fseterr_unlocked(fp);
 	funlockfile(fp);
+}
+
+// &%#!ing gnulib compatibility.
+extern "C" void __fseterr(FILE* fp)
+{
+	fseterr(fp);
 }
