@@ -110,10 +110,6 @@ int mkostemp(char*, int);
 int mkostemps(char*, int, int);
 int mkstemp(char*);
 int mkstemps(char*, int);
-#if !defined(__is_sortix_libc) /* not a warning inside libc */
-__attribute__((__warning__("mktemp() is racy, use mkstemp()")))
-#endif
-char* mktemp(char* templ);
 int on_exit(void (*function)(int, void*), void* arg);
 void qsort(void*, size_t, size_t, int (*)(const void*, const void*));
 void qsort_r(void*, size_t, size_t, int (*)(const void*, const void*, void*), void*);

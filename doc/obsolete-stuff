@@ -145,6 +145,15 @@ F_SETLKW) do and should be avoided for the same reasons (see above).
 Use the flock (not to be confused with lockf) call instead as it works at a file
 descriptor level.
 
+mktemp
+------
+
+mktemp(3) (not the mktemp(1) utility) creates a unique path name, but creates no
+file, and thus offers no guarantee that is unique with respect to other threads
+and system processes. The function is racy and dangerous.
+
+Use mkstemp(3) (or for directories mkdtemp(3)) instead.
+
 PATH_MAX
 --------
 

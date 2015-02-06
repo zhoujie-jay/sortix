@@ -455,7 +455,6 @@ stdlib/mkostemp.o \
 stdlib/mkostemps.o \
 stdlib/mkstemp.o \
 stdlib/mkstemps.o \
-stdlib/mktemp.o \
 stdlib/on_exit.o \
 stdlib/rand.o \
 stdlib/realpath.o \
