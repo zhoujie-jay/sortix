@@ -450,6 +450,7 @@ stdlib/clearenv.o \
 stdlib/_Exit.o \
 stdlib/exit.o \
 stdlib/getenv.o \
+stdlib/mkdtemp.o \
 stdlib/mkostemp.o \
 stdlib/mkostemps.o \
 stdlib/mkstemp.o \
