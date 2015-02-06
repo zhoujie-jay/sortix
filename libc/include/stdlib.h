@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -105,7 +105,10 @@ void* malloc(size_t);
 int mblen(const char*, size_t);
 size_t mbstowcs(wchar_t* __restrict, const char* __restrict, size_t);
 int mbtowc(wchar_t *__restrict, const char* __restrict, size_t);
+int mkostemp(char*, int);
+int mkostemps(char*, int, int);
 int mkstemp(char*);
+int mkstemps(char*, int);
 #if !defined(__is_sortix_libc) /* not a warning inside libc */
 __attribute__((__warning__("mktemp() is racy, use mkstemp()")))
 #endif

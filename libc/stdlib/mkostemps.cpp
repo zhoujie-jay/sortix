@@ -17,14 +17,50 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdlib/mkstemp.cpp
+    stdlib/mkostemps.cpp
     Make a unique temporary file path and open it.
 
 *******************************************************************************/
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
+#include <string.h>
 
-extern "C" int mkstemp(char* templ)
+const uint32_t NUM_CHARACTERS = 10 + 26 + 26;
+
+static inline char random_character()
 {
-	return mkostemps(templ, 0, 0);
+	uint32_t index = arc4random_uniform(NUM_CHARACTERS);
+	if ( index < 10 )
+		return '0' + index;
+	if ( index < 10 + 26 )
+		return 'a' + index - 10;
+	if ( index < 10 + 26 + 26 )
+		return 'A' + index - (10 + 26);
+	__builtin_unreachable();
+}
+
+extern "C" int mkostemps(char* templ, int suffixlen, int flags)
+{
+	size_t templ_length = strlen(templ);
+	if ( templ_length < 6 ||
+	     suffixlen < 0 ||
+	     templ_length - 6 < (size_t) suffixlen )
+		return errno = EINVAL, -1;
+	size_t xpos = templ_length - (6 + suffixlen);
+	for ( size_t i = 0; i < 6; i++ )
+		if ( templ[xpos + i] != 'X' )
+			return errno = EINVAL, -1;
+
+	flags &= ~O_ACCMODE;
+	int fd;
+	do
+	{
+		for ( size_t i = 0; i < 6; i++ )
+			templ[xpos + i] = random_character();
+	} while ( (fd = open(templ, flags | O_RDWR | O_EXCL | O_CREAT, 0600)) < 0 &&
+	          (errno == EEXIST) );
+
+	return fd;
 }

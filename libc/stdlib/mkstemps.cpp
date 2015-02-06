@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2015.
 
     This file is part of the Sortix C Library.
 
@@ -17,14 +17,14 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdlib/mkstemp.cpp
+    stdlib/mkstemps.cpp
     Make a unique temporary file path and open it.
 
 *******************************************************************************/
 
 #include <stdlib.h>
 
-extern "C" int mkstemp(char* templ)
+extern "C" int mkstemps(char* templ, int suffixlen)
 {
-	return mkostemps(templ, 0, 0);
+	return mkostemps(templ, suffixlen, 0);
 }

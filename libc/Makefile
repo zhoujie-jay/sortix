@@ -450,7 +450,10 @@ stdlib/clearenv.o \
 stdlib/_Exit.o \
 stdlib/exit.o \
 stdlib/getenv.o \
+stdlib/mkostemp.o \
+stdlib/mkostemps.o \
 stdlib/mkstemp.o \
+stdlib/mkstemps.o \
 stdlib/mktemp.o \
 stdlib/on_exit.o \
 stdlib/rand.o \
