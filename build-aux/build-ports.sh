@@ -132,20 +132,38 @@ BUILD_LIST=$(unset MAKE;
 rm -f "$DEPENDENCY_MAKEFILE"
 PACKAGES="$BUILD_LIST"
 
+# TODO: This adds another decompression and compression to the build time, this
+#       should be done as a tix post installation step.  Also this might miss
+#       programs in unusual locations, so need a thorough search and strip.
+strip_tix() {
+  DIR=$(mktemp -d)
+  tar -C "$DIR" -xf "$1"
+  $HOST-strip -d "$DIR/data/bin/"* 2>/dev/null || true
+  $HOST-strip -d "$DIR/data/lib/"* 2>/dev/null || true
+  $HOST-strip -d "$DIR/data/libexec"* 2>/dev/null || true
+  $HOST-strip -d "$DIR/data/libexec/git-core/"* 2>/dev/null || true
+  $HOST-strip -d "$DIR/data/sbin/"* 2>/dev/null || true
+  (cd "$DIR" && tar -cJf port.tar.tix.xz tix data)
+  cp "$DIR/port.tar.tix.xz" "$1"
+  rm -rf "$DIR"
+}
+
 # Build all the packages (if needed) and otherwise install them.
 for PACKAGE in $PACKAGES; do
-  [ -f "$SORTIX_REPOSITORY_DIR/$PACKAGE.tix.tar.xz" ] ||
-# TODO: After releasing Sortix 1.0, remove the --exec-prefix option after fixing
-#       the tix-build exec-prefix default to just the prefix rather than the
-#       prefix plus a host subdirectory.
-  tix-build \
-    --sysroot="$SYSROOT" \
-    --host=$HOST \
-    --prefix= \
-    --exec-prefix= \
-    --destination="$SORTIX_REPOSITORY_DIR" \
-    --generation=2 \
-    "$SORTIX_PORTS_DIR/$PACKAGE"
+  if ! [ -f "$SORTIX_REPOSITORY_DIR/$PACKAGE.tix.tar.xz" ]; then
+    # TODO: After releasing Sortix 1.0, remove the --exec-prefix option after
+    #       fixing the tix-build exec-prefix default to just the prefix rather
+    #       than the prefix plus a host subdirectory.
+    tix-build \
+      --sysroot="$SYSROOT" \
+      --host=$HOST \
+      --prefix= \
+      --exec-prefix= \
+      --destination="$SORTIX_REPOSITORY_DIR" \
+      --generation=2 \
+      "$SORTIX_PORTS_DIR/$PACKAGE"
+    strip_tix "$SORTIX_REPOSITORY_DIR/$PACKAGE.tix.tar.xz"
+  fi
   tix-install \
     --collection="$SYSROOT" \
     --reinstall \
