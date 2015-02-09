@@ -242,7 +242,7 @@ contains a single directory with the source code for this port. If you have the
 file `libfoo.srctix.tar.xz`, you can extract it into ~/sortix/ports as such:
 
   cd ~/sortix &&
-  make -p ports &&
+  mkdir -p ports &&
   cd ports &&
   tar --extract --file $HOME/Downloads/libfoo.srctix.tar.xz
 
