@@ -100,7 +100,7 @@ static bool would_multiplication_overflow(T_INT a, T_INT b)
 	// unsigned integer case.
 	if ( T_INT_IS_UNSIGNED )
 	{
-		T_INT max_b = a / T_INT_MAX;
+		T_INT max_b = T_INT_MAX / a;
 		return max_b < b;
 	}
 
