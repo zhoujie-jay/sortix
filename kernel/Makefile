@@ -30,26 +30,32 @@ BOOTOBJS:=
 
 ifeq ($(CPU),x86)
     X86FAMILY:=1
-    CPUOBJS:=$(CPU)/boot.o $(CPU)/base.o
+    CPUDIR:=$(CPU)
+    CPUOBJS:=$(CPUDIR)/boot.o $(CPUDIR)/base.o
 endif
 
 ifeq ($(CPU),x64)
     X86FAMILY:=1
+    CPUDIR:=$(CPU)
     CXXFLAGS:=$(CXXFLAGS) -mno-red-zone -mno-mmx -mno-sse -mno-sse2
-    CPUOBJS:=$(CPU)/boot.o $(CPU)/base.o
+    CPUOBJS:=$(CPUDIR)/boot.o $(CPUDIR)/base.o
+endif
+
+ifndef CPUDIR
+    CPUDIR=.
 endif
 
 ifdef X86FAMILY
     CPUOBJS:=$(CPUOBJS) \
-             $(CPU)/memorymanagement.o \
+             $(CPUDIR)/memorymanagement.o \
              x86-family/memorymanagement.o \
-             $(CPU)/interrupt.o \
+             $(CPUDIR)/interrupt.o \
              x86-family/interrupt.o \
              x86-family/ioport.o \
              x86-family/pic.o \
              x86-family/gdt.o \
              x86-family/idt.o \
-             $(CPU)/syscall.o \
+             $(CPUDIR)/syscall.o \
              x86-family/cmos.o \
              x86-family/time.o \
              x86-family/mtrr.o \
@@ -60,10 +66,10 @@ endif
 
 # Object files that constitute the kernel.
 
-CRTI_OBJ:=$(CPU)/crti.o
+CRTI_OBJ:=$(CPUDIR)/crti.o
 CRTBEGIN_OBJ:=$(shell $(HOSTCXX) $(CXXFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(HOSTCXX) $(CXXFLAGS) -print-file-name=crtend.o)
-CRTN_OBJ:=$(CPU)/crtn.o
+CRTN_OBJ:=$(CPUDIR)/crtn.o
 
 LIBS=\
 -nostdlib \
@@ -78,7 +84,7 @@ ata.o \
 clock.o \
 com.o \
 copy.o \
-$(CPU)/kthread.o \
+$(CPUDIR)/kthread.o \
 crc32.o \
 debugger.o \
 descriptor.o \
