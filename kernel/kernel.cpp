@@ -257,10 +257,8 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 #endif
 
 	if ( !bootinfo )
-	{
-		Panic("The bootinfo structure was NULL. Are your bootloader "
-		      "multiboot compliant?");
-	}
+		Panic("The bootinfo structure was NULL. Is your bootloader multiboot "
+		      "compliant?");
 
 	initrd = 0;
 	initrdsize = 0;
