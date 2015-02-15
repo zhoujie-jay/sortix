@@ -482,7 +482,7 @@ int init_main(int argc, char* argv[])
 	umask(022);
 
 	// Set up the PATH variable.
-	setenv("PATH", "/bin", 1);
+	setenv("PATH", "/bin:/sbin", 1);
 
 	// Set the terminal type.
 	setenv("TERM", "sortix", 1);

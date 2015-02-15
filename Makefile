@@ -134,6 +134,7 @@ sysroot-fsh:
 	mkdir -p "$(SYSROOT)/lib"
 	mkdir -p "$(SYSROOT)/libexec"
 	mkdir -p "$(SYSROOT)/mnt"
+	mkdir -p "$(SYSROOT)/sbin"
 	mkdir -p "$(SYSROOT)/share"
 	mkdir -p "$(SYSROOT)/src"
 	mkdir -p "$(SYSROOT)/tmp"
