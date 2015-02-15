@@ -1227,16 +1227,17 @@ int lexical_chdir(char* path)
 	assert(path[0] == '/');
 
 	int fd = open("/", O_RDONLY | O_DIRECTORY);
+	if ( fd < 0 )
+		return -1;
 
 	size_t input_index = 1;
 	size_t output_index = 1;
-	bool last_was_slash = true;
 
 	while ( path[input_index] )
 	{
 		if ( path[input_index] == '/' )
 		{
-			if ( !last_was_slash )
+			if ( output_index && path[output_index-1] != '/' )
 				path[output_index++] = path[input_index];
 			input_index++;
 			continue;
@@ -1267,11 +1268,9 @@ int lexical_chdir(char* path)
 			lc = path[output_index];
 			path[output_index] = '\0';
 			int new_fd = open(path, O_RDONLY | O_DIRECTORY);
+			close(fd);
 			if ( new_fd < 0 )
-			{
-				close(fd);
 				return -1;
-			}
 			fd = new_fd;
 			path[output_index] = lc;
 			continue;
@@ -1287,7 +1286,6 @@ int lexical_chdir(char* path)
 
 		for ( size_t i = 0; i < elem_length; i++ )
 			path[output_index++] = path[input_index++];
-		last_was_slash = false;
 
 		elem[elem_length] = lc;
 	}
@@ -1296,11 +1294,10 @@ int lexical_chdir(char* path)
 	if ( 2 <= output_index && path[output_index-1] == '/' )
 		path[--output_index] = '\0';
 
-	if ( fd < 0 )
+	int fchdir_ret = fchdir(fd);
+	close(fd);
+	if ( fchdir_ret < 0 )
 		return -1;
-
-	if ( fchdir(fd) < 0 )
-		return close(fd), -1;
 
 	unsetenv("PWD");
 	setenv("PWD", path, 1);
