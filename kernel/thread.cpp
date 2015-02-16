@@ -351,6 +351,7 @@ int sys_exit_thread(int requested_exit_code,
 	     extended.unmap_size )
 	{
 		ScopedLock lock(&process->segment_lock);
+		extended.unmap_size = Page::AlignDown(extended.unmap_size);
 		Memory::UnmapMemory(process, (uintptr_t) extended.unmap_from,
 		                                         extended.unmap_size);
 		Memory::Flush();
@@ -362,6 +363,7 @@ int sys_exit_thread(int requested_exit_code,
 	     extended.tls_unmap_size )
 	{
 		ScopedLock lock(&process->segment_lock);
+		extended.tls_unmap_size = Page::AlignDown(extended.tls_unmap_size);
 		Memory::UnmapMemory(process, (uintptr_t) extended.tls_unmap_from,
 		                                         extended.tls_unmap_size);
 		Memory::Flush();
