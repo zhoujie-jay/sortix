@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of Sortix.
 
@@ -27,8 +27,10 @@
 #include <errno.h>
 
 #include <sortix/seek.h>
+#include <sortix/stat.h>
 
 #include <sortix/kernel/inode.h>
+#include <sortix/kernel/ioctx.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/refcount.h>
 
@@ -40,11 +42,11 @@ Partition::Partition(Ref<Inode> inner_inode, off_t start, off_t length)
 {
 	this->dev = (dev_t) this;
 	this->ino = (ino_t) this;
+	this->type = inner_inode->type;
 	this->inode_type = INODE_TYPE_FILE;
 	this->inner_inode = inner_inode;
 	this->start = start;
 	this->length = length;
-	this->stat_size = length;
 }
 
 Partition::~Partition()
@@ -96,6 +98,20 @@ ssize_t Partition::pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	if ( (uintmax_t) available < (uintmax_t) count )
 		count = available;
 	return inner_inode->pwrite(ctx, buf, count, start + off);
+}
+
+int Partition::stat(ioctx_t* ctx, struct stat* st)
+{
+	if ( inner_inode->stat(ctx, st) < 0 )
+		return -1;
+	struct stat myst;
+	if ( !ctx->copy_from_src(&myst, st, sizeof(myst)) )
+		return -1;
+	myst.st_size = length;
+	myst.st_blocks = length / (myst.st_blksize ?  myst.st_blksize : 1);
+	if ( !ctx->copy_to_dest(st, &myst, sizeof(myst)) )
+		return -1;
+	return 0;
 }
 
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of Sortix.
 
@@ -48,6 +48,7 @@ public:
 	virtual ssize_t pread(ioctx_t* ctx, uint8_t* buf, size_t count, off_t off);
 	virtual ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	                       off_t off);
+	virtual int stat(ioctx_t* ctx, struct stat* st);
 
 };
 
