@@ -30,7 +30,7 @@ const size_t DEVICE_HASH_LENGTH = 1 << 16;
 class Device
 {
 public:
-	Device(int fd, uint32_t block_size, bool write);
+	Device(int fd, const char* path, uint32_t block_size, bool write);
 	~Device();
 
 public:
@@ -43,6 +43,7 @@ public:
 	Block* dirty_block;
 	Block* hash_blocks[DEVICE_HASH_LENGTH];
 	off_t device_size;
+	const char* path;
 	uint32_t block_size;
 	int fd;
 	bool write;

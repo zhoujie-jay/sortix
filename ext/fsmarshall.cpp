@@ -150,6 +150,14 @@ bool RespondReadDir(int chl, struct kernel_dirent* dirent)
 	       RespondData(chl, dirent->d_name, dirent->d_namlen);
 }
 
+bool RespondTCGetBlob(int chl, const void* data, size_t data_size)
+{
+	struct fsm_resp_tcgetblob body;
+	body.count = data_size;
+	return RespondMessage(chl, FSM_RESP_TCGETBLOB, &body, sizeof(body)) &&
+	       RespondData(chl, data, data_size);
+}
+
 void HandleRefer(int chl, struct fsm_req_refer* msg, Filesystem* fs)
 {
 	(void) chl;
@@ -577,6 +585,35 @@ void HandleRename(int chl, struct fsm_req_rename* msg, Filesystem* fs)
 	free(path);
 }
 
+void HandleTCGetBlob(int chl, struct fsm_req_tcgetblob* msg, Filesystem* fs)
+{
+	if ( fs->num_inodes <= msg->ino )
+		return (void) RespondError(chl, EBADF);
+
+	char* nameraw = (char*) &(msg[1]);
+	char* name = (char*) malloc(msg->namelen + 1);
+	if ( !name )
+		return (void) RespondError(chl, errno);
+	memcpy(name, nameraw, msg->namelen);
+	name[msg->namelen] = '\0';
+
+	static const char index[] = "device-path\0filesystem-type\0filesystem-uuid\0mount-path\0";
+	if ( !strcmp(name, "") )
+		RespondTCGetBlob(chl, index, sizeof(index) - 1);
+	else if ( !strcmp(name, "device-path") )
+		RespondTCGetBlob(chl, fs->device->path, strlen(fs->device->path));
+	else if ( !strcmp(name, "filesystem-type") )
+		RespondTCGetBlob(chl, "ext2", strlen("ext2"));
+	else if ( !strcmp(name, "filesystem-uuid") )
+		RespondTCGetBlob(chl, fs->sb->s_uuid, sizeof(fs->sb->s_uuid));
+	else if ( !strcmp(name, "mount-path") )
+		RespondTCGetBlob(chl, fs->mount_path, strlen(fs->mount_path));
+	else
+		RespondError(chl, ENOENT);
+
+	free(name);
+}
+
 void HandleIncomingMessage(int chl, struct fsm_msg_header* hdr, Filesystem* fs)
 {
 	typedef void (*handler_t)(int, void*, Filesystem*);
@@ -602,6 +639,7 @@ void HandleIncomingMessage(int chl, struct fsm_msg_header* hdr, Filesystem* fs)
 	handlers[FSM_REQ_RENAME] = (handler_t) HandleRename;
 	handlers[FSM_REQ_REFER] = (handler_t) HandleRefer;
 	handlers[FSM_REQ_UNREF] = (handler_t) HandleUnref;
+	handlers[FSM_REQ_TCGETBLOB] = (handler_t) HandleTCGetBlob;
 	if ( FSM_MSG_NUM <= hdr->msgtype || !handlers[hdr->msgtype] )
 	{
 		fprintf(stderr, "extfs: message type %zu not supported!\n", hdr->msgtype);
@@ -682,7 +720,7 @@ int fsmarshall_main(const char* argv0,
 		size_t amount;
 		if ( (amount = readall(channel, &hdr, sizeof(hdr))) != sizeof(hdr) )
 		{
-			error(0, errno, "incomplete header: got %zi of %zu bytes", amount, sizeof(hdr));
+			//error(0, errno, "incomplete header: got %zi of %zu bytes", amount, sizeof(hdr));
 			errno = 0;
 			continue;
 		}

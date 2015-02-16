@@ -40,10 +40,11 @@ void* Device__SyncThread(void* ctx)
 	return NULL;
 }
 
-Device::Device(int fd, uint32_t block_size, bool write)
+Device::Device(int fd, const char* path, uint32_t block_size, bool write)
 {
 	this->write = write;
 	this->fd = fd;
+	this->path = path;
 	this->block_size = block_size;
 	struct stat st;
 	fstat(fd, &st);

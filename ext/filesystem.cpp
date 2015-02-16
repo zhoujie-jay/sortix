@@ -38,7 +38,7 @@
 #include "inode.h"
 #include "util.h"
 
-Filesystem::Filesystem(Device* device)
+Filesystem::Filesystem(Device* device, const char* mount_path)
 {
 	uint64_t sb_offset = 1024;
 	uint32_t sb_block_id = sb_offset / device->block_size;
@@ -47,6 +47,7 @@ Filesystem::Filesystem(Device* device)
 		(sb_block->block_data + sb_offset % device->block_size);
 	this->device = device;
 	block_groups = NULL;
+	this->mount_path = mount_path;
 	block_size = device->block_size;
 	mru_inode = NULL;
 	lru_inode = NULL;

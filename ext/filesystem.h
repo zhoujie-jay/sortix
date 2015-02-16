@@ -32,7 +32,7 @@ const size_t INODE_HASH_LENGTH = 1 << 16;
 class Filesystem
 {
 public:
-	Filesystem(Device* device);
+	Filesystem(Device* device, const char* mount_path);
 	~Filesystem();
 
 public:
@@ -40,6 +40,7 @@ public:
 	Block* sb_block;
 	Device* device;
 	BlockGroup** block_groups;
+	const char* mount_path;
 	uint32_t block_size;
 	uint32_t inode_size;
 	uint32_t num_blocks;
