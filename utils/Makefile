@@ -42,6 +42,7 @@ mktemp \
 mv \
 pager \
 pwd \
+realpath \
 rm \
 rmdir \
 sleep \

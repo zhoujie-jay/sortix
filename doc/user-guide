@@ -189,6 +189,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `mv` - move a file
 * `pager` - display file page by page
 * `pwd` - print current directory path
+* `realpath` - canonicalize filesystem paths
 * `regress` - run system tests
 * `rm` - remove file
 * `rmdir` - remove empty directory
