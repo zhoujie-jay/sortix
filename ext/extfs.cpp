@@ -848,10 +848,19 @@ int ext2_fuse_fgetattr(const char* /*path*/, struct stat* st,
 
 int ext2_fuse_readlink(const char* path, char* buf, size_t bufsize)
 {
-	(void) path;
-	(void) buf;
-	(void) bufsize;
-	return -(errno = ENOSYS);
+	Inode* inode = ext2_fuse_resolve_path(path);
+	if ( !inode )
+		return -errno;
+	if ( !EXT2_S_ISLNK(inode->Mode()) )
+		return inode->Unref(), -(errno = EINVAL);
+	if ( !bufsize )
+		return inode->Unref(), -(errno = EINVAL);
+	ssize_t amount = inode->ReadAt((uint8_t*) buf, bufsize, 0);
+	if ( amount < 0 )
+		return inode->Unref(), -errno;
+	buf[(size_t) amount < bufsize ? (size_t) bufsize : bufsize - 1] = '\0';
+	inode->Unref();
+	return 0;
 }
 
 int ext2_fuse_mknod(const char* path, mode_t mode, dev_t dev)
@@ -900,9 +909,12 @@ int ext2_fuse_rmdir(const char* path)
 
 int ext2_fuse_symlink(const char* oldname, const char* newname)
 {
-	(void) oldname;
-	(void) newname;
-	return -(errno = ENOSYS);
+	Inode* newdir = ext2_fuse_parent_dir(&newname);
+	if ( !newdir )
+		return -errno;
+	bool success = newdir->Symlink(newname, oldname);
+	newdir->Unref();
+	return success ? 0 : -errno;
 }
 
 int ext2_fuse_rename(const char* oldname, const char* newname)
