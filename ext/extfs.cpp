@@ -630,7 +630,7 @@ void HandleReadlink(int chl, struct fsm_req_readlink* msg, Filesystem* fs)
 	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
 	if ( !inode ) { RespondError(chl, errno); return; }
-	if ( !EXT2_S_ISLNK(inode->Mode()) ) { RespondError(chl, EINVAL); return; }
+	if ( !EXT2_S_ISLNK(inode->Mode()) ) { inode->Unref(); RespondError(chl, EINVAL); return; }
 	size_t count = inode->Size();
 	uint8_t* buf = (uint8_t*) malloc(count);
 	if ( !buf ) { inode->Unref(); RespondError(chl, errno); return; }
