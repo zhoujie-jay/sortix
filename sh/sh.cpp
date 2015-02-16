@@ -1804,7 +1804,7 @@ size_t do_complete(char*** completions_ptr,
 		char* path_input = path;
 		char* saved_ptr;
 		char* component;
-		while ( (component = strtok_r(path_input, " ", &saved_ptr)) )
+		while ( (component = strtok_r(path_input, ":", &saved_ptr)) )
 		{
 			if ( DIR* dir = opendir(component) )
 			{
