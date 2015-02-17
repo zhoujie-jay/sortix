@@ -53,9 +53,8 @@ __BEGIN_DECLS
 #define INITRD_S_IFDIR 0x4000
 #define INITRD_S_IFCHR 0x2000
 #define INITRD_S_IFIFO 0x1000
-/* Intentionally not part of Sortix. */
-/*#define INITRD_S_ISUID 0x0800 */
-/*#define INITRD_S_ISGID 0x0400 */
+#define INITRD_S_ISUID 0x0800
+#define INITRD_S_ISGID 0x0400
 #define INITRD_S_ISVTX 0x0200
 #define INITRD_S_ISSOCK(mode) ((mode & INITRD_S_IFMT) == INITRD_S_IFSOCK)
 #define INITRD_S_ISLNK(mode) ((mode & INITRD_S_IFMT) == INITRD_S_IFLNK)

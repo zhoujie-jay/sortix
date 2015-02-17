@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -75,9 +75,8 @@ struct stat
 #define S_IFDIR __DTTOIF(__DT_DIR)
 #define S_IFCHR __DTTOIF(__DT_CHR)
 #define S_IFIFO __DTTOIF(__DT_FIFO)
-/* Intentionally not part of Sortix. */
-/*#define S_ISUID 0x0800 */
-/*#define S_ISGID 0x0400 */
+#define S_ISUID 0x0800
+#define S_ISGID 0x0400
 #define S_ISVTX 0x0200
 #define S_SETABLE (0777 | 0x0200 | 0x0400 | 0x0800)
 #define S_ISSOCK(mode) (((mode) & S_IFMT) == S_IFSOCK)

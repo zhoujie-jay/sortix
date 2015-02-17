@@ -96,12 +96,8 @@ mode_t HostModeFromExtMode(uint32_t extmode)
 {
 	mode_t hostmode = extmode & 0777;
 	if ( extmode & EXT2_S_ISVTX ) hostmode |= S_ISVTX;
-#if defined(S_ISGID) // Not on Sortix.
 	if ( extmode & EXT2_S_ISGID ) hostmode |= S_ISGID;
-#endif
-#if defined(S_ISUID) // Not on Sortix.
 	if ( extmode & EXT2_S_ISUID ) hostmode |= S_ISUID;
-#endif
 	if ( EXT2_S_ISSOCK(extmode) ) hostmode |= S_IFSOCK;
 	if ( EXT2_S_ISLNK(extmode) ) hostmode |= S_IFLNK;
 	if ( EXT2_S_ISREG(extmode) ) hostmode |= S_IFREG;
@@ -116,12 +112,8 @@ uint32_t ExtModeFromHostMode(mode_t hostmode)
 {
 	uint32_t extmode = hostmode & 0777;
 	if ( hostmode & S_ISVTX ) extmode |= EXT2_S_ISVTX;
-#if defined(S_ISGID) // Not on Sortix.
 	if ( hostmode & S_ISGID ) extmode |= EXT2_S_ISGID;
-#endif
-#if defined(S_ISUID) // Not on Sortix.
-	if ( hostmode & EXT2_S_ISUID ) extmode |= EXT2_S_ISUID;
-#endif
+	if ( hostmode & S_ISUID ) extmode |= EXT2_S_ISUID;
 	if ( S_ISSOCK(hostmode) ) extmode |= EXT2_S_IFSOCK;
 	if ( S_ISLNK(hostmode) ) extmode |= EXT2_S_IFLNK;
 	if ( S_ISREG(hostmode) ) extmode |= EXT2_S_IFREG;

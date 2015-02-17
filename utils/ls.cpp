@@ -306,7 +306,6 @@ int handle_entry_internal(const char* fullpath, const char* name, unsigned char 
 		return 0;
 	}
 	char perms[11];
-	perms[0] = '?';
 	switch ( type )
 	{
 		case DT_UNKNOWN: perms[0] = '?'; break;
@@ -325,6 +324,13 @@ int handle_entry_internal(const char* fullpath, const char* name, unsigned char 
 		bool set = st.st_mode & (1UL<<i);
 		perms[9-i] = stat_error ? '?' : set ? flagnames[i % 3] : '-';
 	}
+	if ( st.st_mode & S_ISUID )
+		perms[3] = st.st_mode & 0100 ? 's' : 'S';
+	if ( st.st_mode & S_ISGID )
+		perms[6] = st.st_mode & 0010 ? 's' : 'S';
+	if ( st.st_mode & S_ISVTX )
+		perms[9] = st.st_mode & 0001 ? 't' : 'T';
+	perms[10] = 0;
 	const char* sizeunit = "B";
 	off_t size = st.st_size;
 	if ( 1023 < size ) { size /= 1024UL; sizeunit = "K"; }
@@ -332,7 +338,6 @@ int handle_entry_internal(const char* fullpath, const char* name, unsigned char 
 	if ( 1023 < size ) { size /= 1024UL; sizeunit = "G"; }
 	if ( 1023 < size ) { size /= 1024UL; sizeunit = "T"; }
 	if ( 1023 < size ) { size /= 1024UL; sizeunit = "P"; }
-	perms[10] = 0;
 	struct tm mod_tm;
 	localtime_r(&st.st_mtim.tv_sec, &mod_tm);
 	char time_str[64];
