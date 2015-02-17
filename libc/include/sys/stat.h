@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -89,14 +89,10 @@ __END_DECLS
 __BEGIN_DECLS
 
 /* POSIX mandates that we define these compatibility macros to support programs
-   that are yet to embrace struct timespec. Nofify users that use the old names
-   by inserting macros that insert annoying warnings. If you really need the
-   old names to be compatible with older systems, you can check whether these
-   names are defined as macros and use the newer names and otherwise using these
-   older names. */
-#define st_atime __PRAGMA_WARNING("st_atime is deprecated in favor of st_atim.tv_sec") st_atim.tv_sec
-#define st_ctime __PRAGMA_WARNING("st_ctime is deprecated in favor of st_ctim.tv_sec") st_ctim.tv_sec
-#define st_mtime __PRAGMA_WARNING("st_mtime is deprecated in favor of st_mtim.tv_sec") st_mtim.tv_sec
+   that are yet to embrace struct timespec. */
+#define st_atime st_atim.tv_sec
+#define st_ctime st_ctim.tv_sec
+#define st_mtime st_mtim.tv_sec
 
 int chmod(const char* path, mode_t mode);
 int fchmod(int fd, mode_t mode);
