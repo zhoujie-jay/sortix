@@ -261,7 +261,7 @@ void render_editor(struct editor* editor, struct terminal_state* state)
 	if ( editor->mode == MODE_SAVE )
 		msg = "File Name to Write: ";
 	if ( editor->mode == MODE_LOAD )
-		msg = "File Name to Read: ";;
+		msg = "File Name to Read: ";
 	if ( editor->mode == MODE_ASK_QUIT )
 		msg = "Exit without saving changes? (Y/N): ";
 	if ( editor->mode == MODE_GOTO_LINE )

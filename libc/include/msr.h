@@ -50,7 +50,7 @@ __attribute__((unused))
 static __inline uint64_t wrmsr_instruction(uint32_t msrid, uint64_t value)
 {
 	uint32_t low = value >> 0 & 0xFFFFFFFF;
-	uint32_t high = value >> 32 & 0xFFFFFFFF;;
+	uint32_t high = value >> 32 & 0xFFFFFFFF;
 	__asm__ __volatile__ ("wrmsr" : : "a"(low), "d"(high), "c"(msrid) : "memory");
 	return value;
 }
