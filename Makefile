@@ -9,6 +9,7 @@ libc \
 libm \
 libpthread \
 dispd \
+libmount \
 bench \
 carray \
 editor \
