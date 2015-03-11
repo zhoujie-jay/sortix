@@ -33,7 +33,7 @@ Source Code
 -----------
 
 You can find the latest Sortix source code at:
-https://gitorious.org/sortix/sortix/
+https://gitlab.com/sortix/sortix
 
 You can find the latest Sortix binutils source code at:
 https://cs.au.dk/~sortie/sortix/toolchain/sortix-binutils-latest.tar.xz

@@ -21,9 +21,9 @@ You can also download the newest release and cutting edge nightly builds at:
 
   https://cs.au.dk/~sortie/sortix/release/
 
-You can retrieve the current git master from our gitorious project page at:
+You can retrieve the current git master from our project page at:
 
-  https://gitorious.org/sortix/
+  https://gitlab.com/sortix/sortix
 
 System Requirements
 -------------------
