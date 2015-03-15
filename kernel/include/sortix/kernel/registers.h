@@ -63,6 +63,8 @@ const uint32_t UCS = 0x18;
 const uint32_t UDS = 0x20;
 const uint32_t URPL = 0x3;
 const uint32_t RPLMASK = 0x3;
+#define GDT_FS_ENTRY 6
+#define GDT_GS_ENTRY 7
 
 struct interrupt_context
 {

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -18,7 +18,7 @@
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
     x86-family/gdt.h
-    Initializes and handles the GDT and TSS.
+    GDT and TSS.
 
 *******************************************************************************/
 
@@ -31,7 +31,6 @@ namespace Sortix {
 namespace GDT {
 
 void Init();
-void WriteTSS(int32_t num, uint16_t ss0, uintptr_t stack0);
 uintptr_t GetKernelStack();
 void SetKernelStack(uintptr_t stack_pointer);
 #if defined(__i386__)

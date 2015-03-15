@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -26,6 +26,12 @@
 .section .text
 .text 0x100000
 
+	# Multiboot header.
+	.align 4
+	.long 0x1BADB002 # Magic.
+	.long 0x00000003 # Flags.
+	.long -(0x1BADB002 + 0x00000003) # Checksum
+
 .global _start
 .global __start
 .type _start, @function
@@ -33,34 +39,31 @@
 .code32
 _start:
 __start:
-	jmp prepare_kernel_execution
+	# Initialize the stack pointer. The magic value is from kernel.cpp.
+	movl $(stack + 65536), %esp # 64 KiB, see kernel.cpp (See below also)
 
-	# Align 32 bits boundary.
-	.align 4
+	# Finish installing the kernel stack into the Task Switch Segment.
+	movl %esp, tss + 4
+	movl $0, tss + 8
 
-	# Multiboot header.
-multiboot_header:
-	# Magic.
-	.long 0x1BADB002
-	# Flags.
-	.long 0x00000003
-	# Checksum.
-	.long -(0x1BADB002 + 0x00000003)
+	# Finish installing the Task Switch Segment into the Global Descriptor Table.
+	movl $tss, %ecx
+	movw %cx, gdt + 0x28 + 2
+	shrl $16, %ecx
+	movb %cl, gdt + 0x28 + 4
+	shrl $8, %ecx
+	movb %cl, gdt + 0x28 + 7
+	movl $0, gdt + 0x28 + 8
 
-prepare_kernel_execution:
-	# We got our multiboot information in various registers. But we are going
-	# to need these registers. But where can we store them then? Oh hey, let's
-	# store then in the code already run!
-
-	# Store the pointer to the Multiboot information structure.
-	mov %ebx, 0x100000
-
-	# Store the magic value.
-	mov %eax, 0x100004
+	# We got our multiboot information in various registers.
+	pushl $0
+	pushl %eax # Multiboot magic value.
+	pushl $0
+	pushl %ebx # Multiboot information structure pointer.
 
 	# Clear the first $0xE000 bytes following 0x21000.
 	movl $0x21000, %edi
-	mov %edi, %cr3
+	movl %edi, %cr3
 	xorl %eax, %eax
 	movl $0xE000, %ecx
 	rep stosl
@@ -88,45 +91,56 @@ prepare_kernel_execution:
 	movl $0x3, %ebx
 	movl $1024, %ecx
 
-SetEntry:
-	mov %ebx, (%edi)
-	add $0x1000, %ebx
-	add $8, %edi
-	loop SetEntry
+1:
+	movl %ebx, (%edi)
+	addl $0x1000, %ebx
+	addl $8, %edi
+	loop 1b
 
 	# Enable PAE.
-	mov %cr4, %eax
+	movl %cr4, %eax
 	orl $0x20, %eax
-	mov %eax, %cr4
+	movl %eax, %cr4
 
 	# Enable long mode.
-	mov $0xC0000080, %ecx
+	movl $0xC0000080, %ecx
 	rdmsr
 	orl $0x100, %eax
 	wrmsr
 
 	# Enable paging and enter long mode (still 32-bit)
-	mov %cr0, %eax
+	movl %cr0, %eax
 	orl $0x80000000, %eax
-	mov %eax, %cr0
+	movl %eax, %cr0
 
-	# Load the long mode GDT.
-	mov GDTPointer, %eax
-	lgdtl GDTPointer
+	# Load the Global Descriptor Table pointer register.
+	subl $6, %esp
+	movw gdt_size_minus_one, %cx
+	movw %cx, 0(%esp)
+	movl $gdt, %ecx
+	movl %ecx, 2(%esp)
+	lgdt 0(%esp)
+	addl $6, %esp
 
 	# Now use the 64-bit code segment, and we are in full 64-bit mode.
-	ljmp $0x10, $Realm64
+	ljmp $0x08, $2f
 
 .code64
-Realm64:
+2:
+	# Switch ds, es, fs, gs, ss to the kernel data segment (0x10).
+	movw $0x10, %cx
+	movw %cx, %ds
+	movw %cx, %es
+	movw %cx, %ss
 
-	# Now, set up the other segment registers.
-	cli
-	mov $0x18, %ax
-	mov %ax, %ds
-	mov %ax, %es
-	mov %ax, %fs
-	mov %ax, %gs
+	# Switch the task switch segment register to the task switch segment (0x28).
+	movw $(0x28 /* TSS */ | 0x3 /* RPL */), %cx
+	ltr %cx
+
+	# Switch to the thread local fs and gs segments.
+	movw $(0x20 /* DS */ | 0x3 /* RPL */), %cx
+	movw %cx, %fs
+	movw %cx, %gs
 
 	# Enable the floating point unit.
 	mov %cr0, %rax
@@ -147,58 +161,18 @@ Realm64:
 	# Store a copy of the initialial floating point registers.
 	fxsave fpu_initialized_regs
 
-	# Alright, that was the bootstrap code. Now begin preparing to run the
-	# actual 64-bit kernel.
-	jmp Main
+	# Enter the high-level kernel proper.
+	pop %rsi # Multiboot information structure pointer.
+	pop %rdi # Multiboot magic value.
+	call KernelInit
+
+	jmp HaltKernel
 .size _start, . - _start
 .size __start, . - __start
-
-.section .data
-GDT64:                           # Global Descriptor Table (64-bit).
-	GDTNull:                       # The null descriptor.
-	.word 0                         # Limit (low).
-	.word 0                         # Base (low).
-	.byte 0                         # Base (middle)
-	.byte 0                         # Access.
-	.byte 0                         # Granularity.
-	.byte 0                         # Base (high).
-	GDTUnused:                       # The null descriptor.
-	.word 0                         # Limit (low).
-	.word 0                         # Base (low).
-	.byte 0                         # Base (middle)
-	.byte 0                         # Access.
-	.byte 0                         # Granularity.
-	.byte 0                         # Base (high).
-	GDTCode:                       # The code descriptor.
-	.word 0xFFFF                    # Limit (low).
-	.word 0                         # Base (low).
-	.byte 0                         # Base (middle)
-	.byte 0x9A                      # Access.
-	.byte 0xAF                      # Granularity.
-	.byte 0                         # Base (high).
-	GDTData:                       # The data descriptor.
-	.word 0xFFFF                    # Limit (low).
-	.word 0                         # Base (low).
-	.byte 0                         # Base (middle)
-	.byte 0x92                      # Access.
-	.byte 0x8F                      # Granularity.
-	.byte 0                         # Base (high).
-	GDTPointer:                    # The GDT-pointer.
-	.word GDTPointer - GDT64 - 1     # Limit.
-	.long GDT64                      # Base.
-	.long 0
-
-Main:
-	# Copy the character B onto the screen so we know it works.
-	movq $0x242, %r15
-	movq %r15, %rax
-	movw %ax, 0xB8000
-
-	# Load the pointer to the Multiboot information structure.
-	mov 0x100000, %ebx
-
-	# Load the magic value.
-	mov 0x100004, %eax
-
-	jmp beginkernel
-.size Main, . - Main
+.global HaltKernel
+.type HaltKernel, @function
+HaltKernel:
+	cli
+	hlt
+	jmp HaltKernel
+.size HaltKernel, . - HaltKernel

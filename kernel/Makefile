@@ -31,14 +31,14 @@ BOOTOBJS:=
 ifeq ($(CPU),x86)
     X86FAMILY:=1
     CPUDIR:=$(CPU)
-    CPUOBJS:=$(CPUDIR)/boot.o $(CPUDIR)/base.o
+    CPUOBJS:=$(CPUDIR)/boot.o
 endif
 
 ifeq ($(CPU),x64)
     X86FAMILY:=1
     CPUDIR:=$(CPU)
     CXXFLAGS:=$(CXXFLAGS) -mno-red-zone -mno-mmx -mno-sse -mno-sse2
-    CPUOBJS:=$(CPUDIR)/boot.o $(CPUDIR)/base.o
+    CPUOBJS:=$(CPUDIR)/boot.o
 endif
 
 ifndef CPUDIR

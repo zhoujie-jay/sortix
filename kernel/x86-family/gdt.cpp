@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -18,7 +18,7 @@
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
     x86-family/gdt.cpp
-    Initializes and handles the GDT and TSS.
+    GDT and TSS.
 
 *******************************************************************************/
 
@@ -44,6 +44,7 @@ struct gdt_entry
 	uint8_t base_high;
 };
 
+#if defined(__x86_64__)
 struct gdt_entry64
 {
 	uint16_t limit_low;
@@ -55,25 +56,15 @@ struct gdt_entry64
 	uint32_t base_highest;
 	uint32_t reserved0;
 };
-
-// TODO: Do this in another way that doesn't require a silly structure .
-struct gdt_ptr
-{
-	uint16_t limit;
-#if defined(__i386__)
-	uint32_t base;
-#else
-	uint64_t base;
 #endif
-} __attribute__((packed));
 
 #if defined(__i386__)
 struct tss_entry
 {
-	uint32_t prev_tss; // The previous TSS - if we used hardware task switching this would form a linked list.
-	uint32_t esp0; // The stack pointer to load when we change to kernel mode.
-	uint32_t ss0; // The stack segment to load when we change to kernel mode.
-	uint32_t esp1; // Unused...
+	uint32_t prev_tss;
+	uint32_t esp0;
+	uint32_t ss0;
+	uint32_t esp1;
 	uint32_t ss1;
 	uint32_t esp2;
 	uint32_t ss2;
@@ -88,13 +79,13 @@ struct tss_entry
 	uint32_t ebp;
 	uint32_t esi;
 	uint32_t edi;
-	uint32_t es; // The value to load into ES when we change to kernel mode.
-	uint32_t cs; // The value to load into CS when we change to kernel mode.
-	uint32_t ss; // The value to load into SS when we change to kernel mode.
-	uint32_t ds; // The value to load into DS when we change to kernel mode.
-	uint32_t fs; // The value to load into FS when we change to kernel mode.
-	uint32_t gs; // The value to load into GS when we change to kernel mode.
-	uint32_t ldt; // Unused...
+	uint32_t es;
+	uint32_t cs;
+	uint32_t ss;
+	uint32_t ds;
+	uint32_t fs;
+	uint32_t gs;
+	uint32_t ldt;
 	uint16_t trap;
 	uint16_t iomap_base;
 };
@@ -105,164 +96,148 @@ struct tss_entry
 	uint64_t stack0; /* This is not naturally aligned, so packed is needed. */
 	uint64_t stack1;
 	uint64_t stack2;
-	uint64_t reserved2;
+	uint64_t reserved1;
 	uint64_t ist[7];
-	uint64_t reserved3;
-	uint16_t reserved4;
+	uint64_t reserved2;
+	uint16_t reserved3;
 	uint16_t iomap_base;
 } __attribute__((packed));
 #endif
 
-#if defined(__i386__)
-const size_t GDT_NUM_ENTRIES = 9;
-const size_t GDT_FS_ENTRY = 7;
-const size_t GDT_GS_ENTRY = 8;
-#else
-const size_t GDT_NUM_ENTRIES = 7;
-#endif
-static struct gdt_entry gdt_entries[GDT_NUM_ENTRIES];
+extern "C" {
 
-static struct tss_entry tss_entry;
+const size_t STACK_SIZE = 64*1024;
+extern size_t stack[STACK_SIZE / sizeof(size_t)];
 
-const uint8_t GRAN_64_BIT_MODE = 1 << 5;
-const uint8_t GRAN_32_BIT_MODE = 1 << 6;
-const uint8_t GRAN_4KIB_BLOCKS = 1 << 7;
-
-void SetGate(int32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran)
+struct tss_entry tss =
 {
-	struct gdt_entry* entry = (struct gdt_entry*) &gdt_entries[num];
+#if defined(__i386__)
+	.prev_tss = 0,                                                     /* c++ */
+	.esp0 = 0 /*(uintptr_t) stack + sizeof(stack)*/,
+	.ss0 = 0x10 /* Kernel Data Segment */,
+	.esp1 = 0,                                                         /* c++ */
+	.ss1 = 0,                                                          /* c++ */
+	.esp2 = 0,                                                         /* c++ */
+	.ss2 = 0,                                                          /* c++ */
+	.cr3 = 0,                                                          /* c++ */
+	.eip = 0,                                                          /* c++ */
+	.eflags = 0,                                                       /* c++ */
+	.eax = 0,                                                          /* c++ */
+	.ecx = 0,                                                          /* c++ */
+	.edx = 0,                                                          /* c++ */
+	.ebx = 0,                                                          /* c++ */
+	.esp = 0,                                                          /* c++ */
+	.ebp = 0,                                                          /* c++ */
+	.esi = 0,                                                          /* c++ */
+	.edi = 0,                                                          /* c++ */
+	.es = 0x13 /* Kernel Data Segment */,
+	.cs = 0x0B /* Kernel Code Segment */,
+	.ss = 0,                                                           /* c++ */
+	.ds = 0x13 /* Kernel Data Segment */,
+	.fs = 0x13 /* Kernel Data Segment */,
+	.gs = 0x13 /* Kernel Data Segment */,
+	.ldt = 0,                                                          /* c++ */
+	.trap = 0,                                                         /* c++ */
+	.iomap_base = 0,                                                   /* c++ */
+#elif defined(__x86_64__)
+	.reserved0 = 0,                                                    /* c++ */
+	.stack0 = 0 /*(uintptr_t) stack + sizeof(stack)*/,
+	.stack1 = 0,                                                       /* c++ */
+	.stack2 = 0,                                                       /* c++ */
+	.reserved1 = 0,                                                    /* c++ */
+	.ist = { 0, 0, 0, 0, 0, 0, 0},
+	.reserved2 = 0,
+	.reserved3 = 0,
+	.iomap_base = 0,
+#endif
+};
 
-	entry->base_low = base >> 0 & 0xFFFF;
-	entry->base_middle = base >> 16 & 0xFF;
-	entry->base_high = base >> 24 & 0xFF;
+} // extern "C"
 
-	entry->limit_low = limit & 0xFFFF;
-	entry->granularity = (limit >> 16 & 0x0F) | (gran & 0xF0);
+#define GRAN_64_BIT_MODE (1 << 5)
+#define GRAN_32_BIT_MODE (1 << 6)
+#define GRAN_4KIB_BLOCKS (1 << 7)
 
-	entry->access = access;
-}
+#define GDT_ENTRY(base, limit, access, granularity) \
+	{ (limit) & 0xFFFF,                                /* limit_low */ \
+	  (uint16_t) ((base) >> 0 & 0xFFFF),               /* base_low */ \
+	  (uint8_t) ((base) >> 16 & 0xFF),                 /* base_middle */ \
+	  (access) & 0xFF,                                 /* access */ \
+	  ((limit) >> 16 & 0x0F) | ((granularity) & 0xF0), /* granularity */ \
+	  (uint8_t) ((base) >> 24 & 0xFF),                 /* base_high */ }
 
-void SetGate64(int32_t num, uint64_t base, uint32_t limit, uint8_t access, uint8_t gran)
+#if defined(__x86_64__)
+#define GDT_ENTRY64(base, limit, access, granularity) \
+	{ (limit) & 0xFFFF,                                /* limit_low */ \
+	  (uint16_t) ((base) >> 0 & 0xFFFF),               /* base_low */ \
+	  (uint8_t) ((base) >> 16 & 0xFF),                 /* base_middle */ \
+	  (access) & 0xFF,                                 /* access */ \
+	  ((limit) >> 16 & 0x0F) | ((granularity) & 0xF0), /* granularity */ \
+	  (uint8_t) ((base) >> 24 & 0xFF),                 /* base_high */ }, \
+	{ (uint16_t) ((base) >> 32 & 0xFFFF),              /* base_highest */ \
+	  (uint16_t) ((base) >> 48 & 0xFFFF),              /* base_highest */ \
+	  0,                                               /* reserved0 */ \
+	  0,                                               /* reserved0 */ \
+	  0,                                               /* reserved0 */ \
+	  0,                                               /* reserved0 */ }
+#endif
+
+extern "C" {
+
+struct gdt_entry gdt[] =
 {
-	struct gdt_entry64* entry = (struct gdt_entry64*) &gdt_entries[num];
-
-	entry->base_low = base >> 0 & 0xFFFF;
-	entry->base_middle = base >> 16 & 0xFF;
-	entry->base_high = base >> 24 & 0xFF;
-	entry->base_highest = base >> 32;
-
-	entry->limit_low = limit & 0xFFFF;
-	entry->granularity = (limit >> 16 & 0x0F) | (gran & 0xF0);
-
-	entry->access = access;
-	entry->reserved0 = 0;
-}
-
-void Init()
-{
+	/* 0x00: Null segment */
+	GDT_ENTRY(0, 0, 0, 0),
 
 #if defined(__i386__)
-	const uint8_t gran = GRAN_4KIB_BLOCKS | GRAN_32_BIT_MODE;
+	/* 0x08: Kernel Code Segment. */
+	GDT_ENTRY(0, 0xFFFFFFFF, 0x9A, GRAN_32_BIT_MODE | GRAN_4KIB_BLOCKS),
+
+	/* 0x10: Kernel Data Segment. */
+	GDT_ENTRY(0, 0xFFFFFFFF, 0x92, GRAN_32_BIT_MODE | GRAN_4KIB_BLOCKS),
+
+	/* 0x18: User Code Segment. */
+	GDT_ENTRY(0, 0xFFFFFFFF, 0xFA, GRAN_32_BIT_MODE | GRAN_4KIB_BLOCKS),
+
+	/* 0x20: User Data Segment. */
+	GDT_ENTRY(0, 0xFFFFFFFF, 0xF2, GRAN_32_BIT_MODE | GRAN_4KIB_BLOCKS),
+
+	/* 0x28: Task Switch Segment. */
+	GDT_ENTRY(0 /*((uintptr_t) &tss)*/, sizeof(tss) - 1, 0xE9, 0x00),
+
+	/* 0x30: F Segment. */
+	GDT_ENTRY(0, 0xFFFFFFFF, 0xF2, GRAN_32_BIT_MODE | GRAN_4KIB_BLOCKS),
+
+	/* 0x38: G Segment. */
+	GDT_ENTRY(0, 0xFFFFFFFF, 0xF2, GRAN_32_BIT_MODE | GRAN_4KIB_BLOCKS),
 #elif defined(__x86_64__)
-	const uint8_t gran = GRAN_4KIB_BLOCKS | GRAN_64_BIT_MODE;
+	/* 0x08: Kernel Code Segment. */
+	GDT_ENTRY(0, 0xFFFFFFFF, 0x9A, GRAN_64_BIT_MODE | GRAN_4KIB_BLOCKS),
+
+	/* 0x10: Kernel Data Segment. */
+	GDT_ENTRY(0, 0xFFFFFFFF, 0x92, GRAN_64_BIT_MODE | GRAN_4KIB_BLOCKS),
+
+	/* 0x18: User Code Segment. */
+	GDT_ENTRY(0, 0xFFFFFFFF, 0xFA, GRAN_64_BIT_MODE | GRAN_4KIB_BLOCKS),
+
+	/* 0x20: User Data Segment. */
+	GDT_ENTRY(0, 0xFFFFFFFF, 0xF2, GRAN_64_BIT_MODE | GRAN_4KIB_BLOCKS),
+
+	/* 0x28: Task Switch Segment. */
+	GDT_ENTRY64((uint64_t) 0 /*((uintptr_t) &tss)*/, sizeof(tss) - 1, 0xE9, 0x00),
 #endif
+};
 
-	SetGate(0, 0, 0, 0, 0); // Null segment
-	SetGate(1, 0, 0xFFFFFFFF, 0x9A, gran); // Code segment
-	SetGate(2, 0, 0xFFFFFFFF, 0x92, gran); // Data segment
-	SetGate(3, 0, 0xFFFFFFFF, 0xFA, gran); // User mode code segment
-	SetGate(4, 0, 0xFFFFFFFF, 0xF2, gran); // User mode data segment
+uint16_t gdt_size_minus_one = sizeof(gdt) - 1;
 
-	WriteTSS(5, 0x10, 0x0);
-
-#if defined(__i386__)
-	SetGate(GDT_FS_ENTRY, 0, 0xFFFFFFFF, 0xF2, gran);
-	SetGate(GDT_GS_ENTRY, 0, 0xFFFFFFFF, 0xF2, gran);
-#endif
-
-	// Reload the Global Descriptor Table.
-	volatile struct gdt_ptr gdt_ptr;
-	gdt_ptr.limit = (sizeof(struct gdt_entry) * GDT_NUM_ENTRIES) - 1;
-	gdt_ptr.base = (uintptr_t) &gdt_entries;
-	asm volatile ("lgdt (%0)" : : "r"(&gdt_ptr));
-
-	// Switch the current data segment.
-	asm volatile ("mov %0, %%ds\n"
-	              "mov %0, %%es\n"
-	              "mov %0, %%ss\n" : :
-	              "r"(KDS));
-
-#if defined(__i386__)
-	asm volatile ("mov %0, %%fs" : : "r"(GDT_FS_ENTRY << 3 | URPL));
-	asm volatile ("mov %0, %%gs" : : "r"(GDT_GS_ENTRY << 3 | URPL));
-#elif defined(__x86_64__)
-	asm volatile ("mov %0, %%fs" : : "r"(UDS | URPL));
-	asm volatile ("mov %0, %%gs" : : "r"(UDS | URPL));
-#endif
-
-	// Switch the current code segment.
-	#if defined(__i386__)
-	asm volatile ("push %0\n"
-	              "push $1f\n"
-	              "retf\n"
-	              "1:\n" : :
-	              "r"(KCS));
-	#elif defined(__x86_64__)
-	asm volatile ("push %0\n"
-	              "push $1f\n"
-	              "retfq\n"
-	              "1:\n" : :
-	              "r"(KCS));
-	#endif
-
-	// Load the task state register - The index is 0x28, as it is the 5th
-	// selector and each is 8 bytes long, but we set the bottom two bits (making
-	// 0x2B) so that it has an RPL of 3, not zero.
-	asm volatile ("ltr %%ax" : : "a"(0x2B));
-}
-
-// Initialise our task state segment structure.
-void WriteTSS(int32_t num, uint16_t ss0, uintptr_t stack0)
-{
-	// First, let's compute the base and limit of our entry in the GDT.
-	uintptr_t base = (uintptr_t) &tss_entry;
-	uint32_t limit = sizeof(tss_entry) - 1;
-
-	// Now, add our TSS descriptor's address to the GDT.
-#if defined(__i386__)
-	SetGate(num, base, limit, 0xE9, 0x00);
-#elif defined(__x86_64__)
-	SetGate64(num, base, limit, 0xE9, 0x00);
-#endif
-
-	// Ensure the descriptor is initially zero.
-	memset(&tss_entry, 0, sizeof(tss_entry));
-
-#if defined(__i386__)
-	tss_entry.ss0  = ss0; // Set the kernel stack segment.
-	tss_entry.esp0 = stack0; // Set the kernel stack pointer.
-
-	// Here we set the cs, ss, ds, es, fs and gs entries in the TSS.
-	// These specify what segments should be loaded when the processor
-	// switches to kernel mode. Therefore they are just our normal
-	// kernel code/data segments - 0x08 and 0x10 respectively, but with
-	// the last two bits set, making 0x0b and 0x13. The setting of these
-	// bits sets the RPL (requested privilege level) to 3, meaning that
-	// this TSS can be used to switch to kernel mode from ring 3.
-	tss_entry.cs = KCS | 0x3;
-	tss_entry.ss = tss_entry.ds = tss_entry.es = tss_entry.fs = tss_entry.gs = KDS | 0x3;
-#elif defined(__x86_64__)
-	(void) ss0;
-	tss_entry.stack0 = stack0;
-#endif
-}
+} // extern "C"
 
 uintptr_t GetKernelStack()
 {
 #if defined(__i386__)
-	return tss_entry.esp0;
+	return tss.esp0;
 #elif defined(__x86_64__)
-	return tss_entry.stack0;
+	return tss.stack0;
 #endif
 }
 
@@ -270,16 +245,16 @@ void SetKernelStack(uintptr_t stack_pointer)
 {
 	assert((stack_pointer & 0xF) == 0);
 #if defined(__i386__)
-	tss_entry.esp0 = (uint32_t) stack_pointer;
+	tss.esp0 = (uint32_t) stack_pointer;
 #elif defined(__x86_64__)
-	tss_entry.stack0 = (uint64_t) stack_pointer;
+	tss.stack0 = (uint64_t) stack_pointer;
 #endif
 }
 
 #if defined(__i386__)
 uint32_t GetFSBase()
 {
-	struct gdt_entry* entry = gdt_entries + GDT_FS_ENTRY;
+	struct gdt_entry* entry = gdt + GDT_FS_ENTRY;
 	return (uint32_t) entry->base_low << 0 |
 	       (uint32_t) entry->base_middle << 16 |
 	       (uint32_t) entry->base_high << 24;
@@ -287,7 +262,7 @@ uint32_t GetFSBase()
 
 uint32_t GetGSBase()
 {
-	struct gdt_entry* entry = gdt_entries + GDT_GS_ENTRY;
+	struct gdt_entry* entry = gdt + GDT_GS_ENTRY;
 	return (uint32_t) entry->base_low << 0 |
 	       (uint32_t) entry->base_middle << 16 |
 	       (uint32_t) entry->base_high << 24;
@@ -295,7 +270,7 @@ uint32_t GetGSBase()
 
 void SetFSBase(uint32_t fsbase)
 {
-	struct gdt_entry* entry = gdt_entries + GDT_FS_ENTRY;
+	struct gdt_entry* entry = gdt + GDT_FS_ENTRY;
 	entry->base_low = fsbase >> 0 & 0xFFFF;
 	entry->base_middle = fsbase >> 16 & 0xFF;
 	entry->base_high = fsbase >> 24 & 0xFF;
@@ -304,7 +279,7 @@ void SetFSBase(uint32_t fsbase)
 
 void SetGSBase(uint32_t gsbase)
 {
-	struct gdt_entry* entry = gdt_entries + GDT_GS_ENTRY;
+	struct gdt_entry* entry = gdt + GDT_GS_ENTRY;
 	entry->base_low = gsbase >> 0 & 0xFFFF;
 	entry->base_middle = gsbase >> 16 & 0xFF;
 	entry->base_high = gsbase >> 24 & 0xFF;

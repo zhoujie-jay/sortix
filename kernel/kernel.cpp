@@ -93,7 +93,7 @@
 #include "x86-family/gdt.h"
 #endif
 
-// Keep the stack size aligned with $CPU/base.s
+// Keep the stack size aligned with $CPU/boot.s
 const size_t STACK_SIZE = 64*1024;
 extern "C" { __attribute__((aligned(16))) size_t stack[STACK_SIZE / sizeof(size_t)]; }
 
@@ -275,10 +275,6 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	// Initialize paging and virtual memory.
 	Memory::Init(bootinfo);
-
-	// Initialize the GDT and TSS structures.
-	GDT::Init();
-	GDT::SetKernelStack((uintptr_t) stack + STACK_SIZE);
 
 	// Initialize the interrupt handler table and enable interrupts.
 	Interrupt::Init();
