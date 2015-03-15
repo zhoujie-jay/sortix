@@ -29,6 +29,9 @@
 
 extern "C" int ungetc_unlocked(int c, FILE* fp)
 {
+	if ( c == EOF )
+		return EOF;
+
 	if ( !(fp->flags & _FILE_READABLE) )
 		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
 
@@ -40,12 +43,6 @@ extern "C" int ungetc_unlocked(int c, FILE* fp)
 		fflush_stop_writing_unlocked(fp);
 
 	fp->flags |= _FILE_LAST_READ;
-
-	if ( c == EOF )
-	{
-		fp->flags &= ~_FILE_STATUS_EOF;
-		return EOF;
-	}
 
 	// TODO: Is this a bug that ungetc doesn't work for unbuffered files?
 	if ( fp->buffer_mode == _IONBF )
