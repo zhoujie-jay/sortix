@@ -44,6 +44,8 @@
 
 #include "com.h"
 
+extern "C" unsigned char nullpage[4096];
+
 namespace Sortix {
 namespace COM {
 
@@ -101,12 +103,6 @@ static const unsigned int UART_16750 = 5;
 
 static const size_t NUM_COM_PORTS = 4;
 
-// The IO base ports of each COM port.
-static uint16_t com_ports[1 + NUM_COM_PORTS];
-
-// The results of running HardwareProbe on each COM port.
-static unsigned int hw_version[1 + NUM_COM_PORTS];
-
 // Uses various characteristics of the UART chips to determine the hardware.
 static unsigned int HardwareProbe(uint16_t port)
 {
@@ -143,20 +139,6 @@ static inline bool IsLineReady(uint16_t port)
 static inline bool CanWriteByte(uint16_t port)
 {
 	return inport8(port + LSR) & LSR_THRE;
-}
-
-void EarlyInit()
-{
-	// We can fetch COM port information from the BIOS Data Area.
-	const uint16_t* bioscom_ports = (const uint16_t*) 0x0400UL;
-
-	for ( size_t i = 1; i <= NUM_COM_PORTS; i++ )
-	{
-		if ( !(com_ports[i] = bioscom_ports[i-1]) )
-			continue;
-		hw_version[i] = HardwareProbe(com_ports[i]);
-		outport8(com_ports[i] + IER, 0x0);
-	}
 }
 
 class DevCOMPort : public AbstractInode
@@ -282,6 +264,21 @@ static Ref<DevCOMPort> com_devices[1 + NUM_COM_PORTS];
 
 void Init(const char* devpath, Ref<Descriptor> slashdev)
 {
+	uint16_t com_ports[1 + NUM_COM_PORTS];
+	unsigned int hw_version[1 + NUM_COM_PORTS];
+
+	const uint16_t* bioscom_ports = (const uint16_t*) (nullpage + 0x400);
+
+	for ( size_t i = 1; i <= NUM_COM_PORTS; i++ )
+	{
+		if ( !(com_ports[i] = bioscom_ports[i-1]) )
+			continue;
+		hw_version[i] = HardwareProbe(com_ports[i]);
+		outport8(com_ports[i] + IER, 0x0);
+	}
+
+	(void) hw_version;
+
 	ioctx_t ctx; SetupKernelIOCtx(&ctx);
 
 	for ( size_t i = 1; i <= NUM_COM_PORTS; i++ )

@@ -32,6 +32,22 @@
 	.long 0x00000003 # Flags.
 	.long -(0x1BADB002 + 0x00000003) # Checksum.
 
+.section .bss, "aw", @nobits
+	.align 4096
+bootpml2:
+	.skip 4096
+bootpml1:
+	.skip 4096
+fracpml1:
+	.skip 4096
+physpml1:
+	.skip 4096
+physpml0:
+	.skip 4096
+nullpage: .global nullpage
+	.skip 4096
+
+.section .text
 .global _start
 .global __start
 .type _start, @function
@@ -51,6 +67,41 @@ __start:
 	movb %cl, gdt + 0x28 + 4
 	shrl $8, %ecx
 	movb %cl, gdt + 0x28 + 7
+
+	movl $bootpml2, %edi
+	movl %edi, %cr3
+
+	# Page Directory.
+	movl $(bootpml1 + 0x003), bootpml2 + 0 * 4
+
+	# Page Table (identity map the first 4 MiB, except NULL).
+	movl $(bootpml1 + 4), %edi
+	movl $0x1003, %esi
+	movl $1023, %ecx
+1:
+	movl %esi, (%edi)
+	addl $0x1000, %esi
+	addl $4, %edi
+	loop 1b
+
+	# Map the null page.
+	movl $nullpage, %edi
+	shrl $12, %edi
+	movl $0x0003, bootpml1(, %edi, 4)
+
+	# Fractal mapping.
+	movl $(bootpml2 + 0x003), bootpml2 + 1023 * 4
+	movl $(fracpml1 + 0x203), bootpml2 + 1022 * 4
+	movl $(bootpml2 + 0x003), fracpml1 + 1023 * 4
+
+	# Physical page allocator.
+	movl $(physpml1 + 0x003), bootpml2 + 1021 * 4
+	movl $(physpml0 + 0x003), physpml1 + 0    * 4
+
+	# Enable paging.
+	movl %cr0, %edi
+	orl $0x80000000, %edi
+	movl %edi, %cr0
 
 	# Load the Global Descriptor Table pointer register.
 	subl $6, %esp

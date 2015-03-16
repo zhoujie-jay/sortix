@@ -189,9 +189,6 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	// TODO: Call global constructors using the _init function.
 
-	// Detect and initialize any serial COM ports in the system.
-	COM::EarlyInit();
-
 	// Setup a text buffer handle for use by the text terminal.
 	uint16_t* const VGAFB = (uint16_t*) 0xB8000;
 	const size_t VGA_WIDTH = 80;
@@ -256,9 +253,8 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 		      "Use a 32-bit OS 3) Use another version of qemu.");
 #endif
 
-	if ( !bootinfo )
-		Panic("The bootinfo structure was NULL. Is your bootloader multiboot "
-		      "compliant?");
+	// Detect available physical memory.
+	Memory::Init(bootinfo);
 
 	initrd = 0;
 	initrdsize = 0;
@@ -271,13 +267,8 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 		break;
 	}
 
-	if ( !initrd ) { PanicF("No init ramdisk provided"); }
-
-	// Initialize paging and virtual memory.
-	Memory::Init(bootinfo);
-
-	// Initialize the interrupt handler table and enable interrupts.
-	Interrupt::Init();
+	if ( !initrd )
+		Panic("No init ramdisk provided");
 
 	// Load the kernel symbols if provided by the bootloader.
 	do if ( bootinfo->flags & MULTIBOOT_INFO_ELF_SHDR )
@@ -386,6 +377,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 		SetKernelSymbolTable(symbols, elf_symbol_count-1);
 	} while ( false );
+
+	// Initialize the interrupt handler table and enable interrupts.
+	Interrupt::Init();
 
 	// Initialize the interrupt worker (before scheduling is enabled).
 	Interrupt::InitWorker();

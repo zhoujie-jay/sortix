@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -49,13 +49,13 @@ namespace Sortix {
 namespace Page {
 
 void InitPushRegion(addr_t position, size_t length);
-size_t pagesnotonstack;
-size_t stackused;
-size_t stackreserved;
-size_t stacklength;
-size_t totalmem;
+size_t pagesnotonstack = 0;
+size_t stackused = 0;
+size_t stackreserved = 0;
+size_t stacklength = 4096 / sizeof(addr_t);
+size_t totalmem = 0;
 size_t page_usage_counts[PAGE_USAGE_NUM_KINDS];
-kthread_mutex_t pagelock;
+kthread_mutex_t pagelock = KTHREAD_MUTEX_INITIALIZER;
 
 } // namespace Page
 } // namespace Sortix
@@ -63,7 +63,6 @@ kthread_mutex_t pagelock;
 namespace Sortix {
 namespace Memory {
 
-void InitCPU();
 void AllocateKernelPMLs();
 int SysMemStat(size_t* memused, size_t* memtotal);
 addr_t PAT2PMLFlags[PAT_NUM];
@@ -80,12 +79,7 @@ void InitCPU(multiboot_info_t* bootinfo)
 		            MAXKERNELEND);
 	}
 
-	Page::stackreserved = 0;
-	Page::pagesnotonstack = 0;
-	Page::totalmem = 0;
-	Page::pagelock = KTHREAD_MUTEX_INITIALIZER;
-
-	if ( !( bootinfo->flags & MULTIBOOT_INFO_MEM_MAP ) )
+	if ( !(bootinfo->flags & MULTIBOOT_INFO_MEM_MAP) )
 		Panic("memorymanagement.cpp: The memory map flag was't set in "
 		      "the multiboot structure. Are your bootloader multiboot "
 		      "specification compliant?");
@@ -98,9 +92,8 @@ void InitCPU(multiboot_info_t* bootinfo)
 		for ( addr_t i = 0; i < PAT_NUM; i++ )
 			PAT2PMLFlags[i] = EncodePATAsPMLFlag(i);
 	}
-	// Otherwise, reroute all requests to the backwards compatible
-	// scheme. TODO: Not all early 32-bit x86 CPUs supports these
-	// values, so we need yet another fallback.
+	// Otherwise, reroute all requests to the backwards compatible scheme.
+	// TODO: Not all early 32-bit x86 CPUs supports these values.
 	else
 	{
 		PAT2PMLFlags[PAT_UC] = PML_WRTHROUGH | PML_NOCACHE;
@@ -112,9 +105,6 @@ void InitCPU(multiboot_info_t* bootinfo)
 		PAT2PMLFlags[PAT_WB] = 0;
 		PAT2PMLFlags[PAT_UCM] = PML_NOCACHE;
 	}
-
-	// Initialize CPU-specific things.
-	InitCPU();
 
 	typedef const multiboot_memory_map_t* mmap_t;
 
@@ -202,8 +192,6 @@ void InitCPU(multiboot_info_t* bootinfo)
 	if ( 0 < Page::pagesnotonstack )
 		Log::PrintF("%zu bytes of RAM aren't used due to technical "
 		            "restrictions.\n", (size_t) (Page::pagesnotonstack * 0x1000UL));
-
-	Memory::Unmap(0x0); // Remove NULL.
 
 	// Finish allocating the top level PMLs for the kernels use.
 	AllocateKernelPMLs();

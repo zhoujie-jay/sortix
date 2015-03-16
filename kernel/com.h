@@ -31,7 +31,6 @@
 namespace Sortix {
 namespace COM {
 
-void EarlyInit();
 void Init(const char* devpath, Ref<Descriptor> slashdev);
 
 } // namespace COM

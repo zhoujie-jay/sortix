@@ -32,6 +32,40 @@
 	.long 0x00000003 # Flags.
 	.long -(0x1BADB002 + 0x00000003) # Checksum
 
+.section .bss, "aw", @nobits
+	.align 4096
+bootpml4:
+	.skip 4096
+bootpml3:
+	.skip 4096
+bootpml2:
+	.skip 4096
+bootpml1_a:
+	.skip 4096
+bootpml1_b:
+	.skip 4096
+fracpml3:
+	.skip 4096
+fracpml2:
+	.skip 4096
+fracpml1:
+	.skip 4096
+forkpml2:
+	.skip 4096
+forkpml1:
+	.skip 4096
+physpml3:
+	.skip 4096
+physpml2:
+	.skip 4096
+physpml1:
+	.skip 4096
+physpml0:
+	.skip 4096
+nullpage: .global nullpage
+	.skip 4096
+
+.section .text
 .global _start
 .global __start
 .type _start, @function
@@ -61,41 +95,52 @@ __start:
 	pushl $0
 	pushl %ebx # Multiboot information structure pointer.
 
-	# Clear the first $0xE000 bytes following 0x21000.
-	movl $0x21000, %edi
+	movl $bootpml4, %edi
 	movl %edi, %cr3
-	xorl %eax, %eax
-	movl $0xE000, %ecx
-	rep stosl
-	movl %cr3, %edi
 
-	# Set the initial page tables.
-	# Note that we OR with 0x7 here to allow user-space access, except in the
-	# first 2 MiB. We also do this with 0x200 to allow forking the page.
+	# Page-Map Level 4.
+	movl $(bootpml3 + 0x207), bootpml4 + 0 * 8
 
-	# Page-Map Level 4
-	movl $0x22207, (%edi)
-	addl $0x1000, %edi
+	# Page Directory Pointer Table.
+	movl $(bootpml2 + 0x207), bootpml3 + 0 * 8
 
-	# Page-Directory Pointer Table
-	movl $0x23207, (%edi)
-	addl $0x1000, %edi
+	# Page Directory (no user-space access here).
+	movl $(bootpml1_a + 0x003), bootpml2 + 0 * 8
+	movl $(bootpml1_b + 0x003), bootpml2 + 1 * 8
 
-	# Page-Directory (no user-space access here)
-	movl $0x24003, (%edi) # (First 2 MiB)
-	movl $0x25003, 8(%edi) # (Second 2 MiB)
-	addl $0x1000, %edi
-
-	# Page-Table
-	# Memory map the first 4 MiB.
-	movl $0x3, %ebx
-	movl $1024, %ecx
-
+	# Page Table (identity map the first 4 MiB, except NULL).
+	movl $(bootpml1_a + 8), %edi
+	movl $0x1003, %esi
+	movl $1023, %ecx
 1:
-	movl %ebx, (%edi)
-	addl $0x1000, %ebx
+	movl %esi, (%edi)
+	addl $0x1000, %esi
 	addl $8, %edi
 	loop 1b
+
+	# Map the null page.
+	movl $nullpage, %edi
+	shrl $12, %edi
+	movl $0x0003, bootpml1_a(, %edi, 8)
+
+	# Fractal mapping.
+	movl $(bootpml4 + 0x003), bootpml4 + 511 * 8
+	movl $(fracpml3 + 0x203), bootpml4 + 510 * 8
+	movl $(bootpml4 + 0x003), fracpml3 + 511 * 8
+	movl $(fracpml2 + 0x203), fracpml3 + 510 * 8
+	movl $(bootpml4 + 0x003), fracpml2 + 511 * 8
+	movl $(fracpml1 + 0x203), fracpml2 + 510 * 8
+	movl $(bootpml4 + 0x003), fracpml1 + 511 * 8
+
+	# Predefined room for forking address spaces.
+	movl $(forkpml2 + 0x203), fracpml3 + 0 * 8
+	movl $(forkpml1 + 0x203), forkpml2 + 0 * 8
+
+	# Physical page allocator.
+	movl $(physpml3 + 0x003), bootpml4 + 509 * 8
+	movl $(physpml2 + 0x003), physpml3 + 0   * 8
+	movl $(physpml1 + 0x003), physpml2 + 0   * 8
+	movl $(physpml0 + 0x003), physpml1 + 0   * 8
 
 	# Enable PAE.
 	movl %cr4, %eax
