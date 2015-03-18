@@ -63,26 +63,14 @@ kthread_mutex_t pagelock = KTHREAD_MUTEX_INITIALIZER;
 namespace Sortix {
 namespace Memory {
 
-void AllocateKernelPMLs();
-int SysMemStat(size_t* memused, size_t* memtotal);
 addr_t PAT2PMLFlags[PAT_NUM];
 
-void InitCPU(multiboot_info_t* bootinfo)
+void Init(multiboot_info_t* bootinfo)
 {
-	const size_t MAXKERNELEND = 0x400000UL; /* 4 MiB */
 	addr_t kernelend = Page::AlignUp((addr_t) &end);
-	if ( MAXKERNELEND < kernelend )
-	{
-		Log::PrintF("Warning: The kernel is too big! It ends at 0x%zx, "
-		            "but the highest ending address supported is 0x%zx. "
-		            "The system may not boot correctly.\n", kernelend,
-		            MAXKERNELEND);
-	}
 
 	if ( !(bootinfo->flags & MULTIBOOT_INFO_MEM_MAP) )
-		Panic("memorymanagement.cpp: The memory map flag was't set in "
-		      "the multiboot structure. Are your bootloader multiboot "
-		      "specification compliant?");
+		Panic("The memory map flag was't set in the multiboot structure.");
 
 	// If supported, setup the Page Attribute Table feature that allows
 	// us to control the memory type (caching) of memory more precisely.
@@ -186,15 +174,25 @@ void InitCPU(multiboot_info_t* bootinfo)
 		}
 	}
 
-	// If the physical allocator couldn't handle the vast amount of
-	// physical pages, it may decide to drop some. This shouldn't happen
-	// until the pebibyte era of RAM.
-	if ( 0 < Page::pagesnotonstack )
-		Log::PrintF("%zu bytes of RAM aren't used due to technical "
-		            "restrictions.\n", (size_t) (Page::pagesnotonstack * 0x1000UL));
+	// Prepare the non-forkable kernel PMLs such that forking the kernel address
+	// space will always keep the kernel mapped.
+	for ( size_t i = ENTRIES / 2; i < ENTRIES; i++ )
+	{
+		PML* const pml = PMLS[TOPPMLLEVEL];
+		if ( pml->entry[i] & PML_PRESENT )
+			continue;
 
-	// Finish allocating the top level PMLs for the kernels use.
-	AllocateKernelPMLs();
+		addr_t page = Page::Get(PAGE_USAGE_PAGING_OVERHEAD);
+		if ( !page )
+			Panic("Out of memory allocating boot PMLs.");
+
+		pml->entry[i] = page | PML_WRITABLE | PML_PRESENT;
+
+		// Invalidate the new PML and reset it to zeroes.
+		addr_t pmladdr = (addr_t) (PMLS[TOPPMLLEVEL-1] + i);
+		InvalidatePage(pmladdr);
+		memset((void*) pmladdr, 0, sizeof(PML));
+	}
 }
 
 void Statistics(size_t* amountused, size_t* totalmem)
@@ -205,35 +203,6 @@ void Statistics(size_t* amountused, size_t* totalmem)
 		*amountused = memused;
 	if ( totalmem )
 		*totalmem = Page::totalmem;
-}
-
-// Prepare the non-forkable kernel PMLs such that forking the kernel
-// address space will always keep the kernel mapped.
-void AllocateKernelPMLs()
-{
-	const addr_t flags = PML_PRESENT | PML_WRITABLE;
-
-	PML* const pml = PMLS[TOPPMLLEVEL];
-
-	size_t start = ENTRIES / 2;
-	size_t end = ENTRIES;
-
-	for ( size_t i = start; i < end; i++ )
-	{
-		if ( pml->entry[i] & PML_PRESENT )
-			continue;
-
-		addr_t page = Page::Get(PAGE_USAGE_PAGING_OVERHEAD);
-		if ( !page )
-			Panic("out of memory allocating boot PMLs");
-
-		pml->entry[i] = page | flags;
-
-		// Invalidate the new PML and reset it to zeroes.
-		addr_t pmladdr = (addr_t) (PMLS[TOPPMLLEVEL-1] + i);
-		InvalidatePage(pmladdr);
-		memset((void*) pmladdr, 0, sizeof(PML));
-	}
 }
 
 } // namespace Memory

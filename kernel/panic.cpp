@@ -59,6 +59,10 @@ void PanicInit()
 	// and the data protected by them may be inconsistent.
 	Interrupt::Disable();
 
+	// Detect if we are really early and we don't even have a log yet.
+	if ( !Log::device_callback )
+		HaltKernel();
+
 	// Detect whether a panic happened during the log recovery.
 	if ( logrecovering )
 	{

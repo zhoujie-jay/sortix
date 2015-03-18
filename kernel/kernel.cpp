@@ -189,6 +189,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 
 	// TODO: Call global constructors using the _init function.
 
+	// Detect available physical memory.
+	Memory::Init(bootinfo);
+
 	// Setup a text buffer handle for use by the text terminal.
 	uint16_t* const VGAFB = (uint16_t*) 0xB8000;
 	const size_t VGA_WIDTH = 80;
@@ -252,9 +255,6 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 		      "x86_64 without KVM.  You have three options: 1) Enable KVM 2) "
 		      "Use a 32-bit OS 3) Use another version of qemu.");
 #endif
-
-	// Detect available physical memory.
-	Memory::Init(bootinfo);
 
 	initrd = 0;
 	initrdsize = 0;

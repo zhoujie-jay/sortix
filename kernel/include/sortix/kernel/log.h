@@ -52,8 +52,6 @@ extern void* emergency_device_pointer;
 
 inline void Flush()
 {
-	if ( !device_callback )
-		return;
 	device_callback(device_pointer, NULL, 0);
 }
 
@@ -79,15 +77,11 @@ inline bool Sync()
 
 inline size_t Print(const char* str)
 {
-	if ( !device_callback )
-		return 0;
 	return device_callback(device_pointer, str, strlen(str));
 }
 
 inline size_t PrintData(const void* ptr, size_t size)
 {
-	if ( !device_callback )
-		return 0;
 	return device_callback(device_pointer, (const char*) ptr, size);
 }
 

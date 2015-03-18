@@ -459,16 +459,3 @@ void* sys_mmap_wrapper(struct mmap_request* user_request)
 }
 
 } // namespace Sortix
-
-namespace Sortix {
-namespace Memory {
-
-void InitCPU(multiboot_info_t* bootinfo);
-
-void Init(multiboot_info_t* bootinfo)
-{
-	InitCPU(bootinfo);
-}
-
-} // namespace Memory
-} // namespace Sortix
