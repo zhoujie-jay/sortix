@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -57,7 +57,6 @@ public:
 namespace Sortix {
 namespace Video {
 
-void Init(Ref<TextBufferHandle> textbufhandle);
 bool RegisterDevice(const char* name, VideoDevice* device);
 
 } // namespace Video

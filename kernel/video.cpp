@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -51,8 +51,6 @@ struct DeviceEntry
 size_t num_devices = 0;
 size_t devices_length = 0;
 DeviceEntry* devices = NULL;
-
-Ref<TextBufferHandle> textbufhandle;
 
 bool RegisterDevice(const char* name, VideoDevice* device)
 {
@@ -241,7 +239,7 @@ static int SetCrtcMode(void* ptr, size_t size)
 	// TODO: This could potentially fail.
 	if ( msg.device == ONE_AND_ONLY_DEVICE &&
 	     msg.connector == ONE_AND_ONLY_CONNECTOR )
-		textbufhandle->Replace(device->CreateTextBuffer(msg.connector));
+		Log::device_textbufhandle->Replace(device->CreateTextBuffer(msg.connector));
 
 	// No need to respond.
 
@@ -428,15 +426,4 @@ int sys_dispmsg_issue(void* ptr, size_t size)
 	}
 }
 
-} // namespace Sortix
-
-namespace Sortix {
-namespace Video {
-
-void Init(Ref<TextBufferHandle> thetextbufhandle)
-{
-	textbufhandle = thetextbufhandle;
-}
-
-} // namespace Video
 } // namespace Sortix

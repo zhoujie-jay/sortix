@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -31,9 +31,18 @@
 #include <stdint.h>
 #include <string.h>
 
+typedef struct multiboot_info multiboot_info_t;
+
+namespace Sortix {
+
+class TextBufferHandle;
+
+} // namespace Sortix
+
 namespace Sortix {
 namespace Log {
 
+extern TextBufferHandle* device_textbufhandle;
 extern size_t (*device_callback)(void*, const char*, size_t);
 extern size_t (*device_width)(void*);
 extern size_t (*device_height)(void*);
@@ -105,6 +114,8 @@ inline size_t PrintFV(const char* format, va_list list)
 		return SIZE_MAX;
 	return (size_t) result;
 }
+
+void Init(multiboot_info_t* bootinfo);
 
 } // namespace Log
 } // namespace Sortix

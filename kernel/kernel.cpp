@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -82,10 +82,8 @@
 #include "multiboot.h"
 #include "net/fs.h"
 #include "poll.h"
-#include "textterminal.h"
 #include "uart.h"
 #include "vga.h"
-#include "vgatextbuffer.h"
 
 #if defined(__i386__) || defined(__x86_64__)
 #include "x86-family/cmos.h"
@@ -99,85 +97,13 @@ extern "C" { __attribute__((aligned(16))) size_t stack[STACK_SIZE / sizeof(size_
 
 namespace Sortix {
 
-void DoWelcome()
-{
-	Log::Print(BRAND_KERNEL_BOOT_MESSAGE);
-}
-
 // Forward declarations.
 static void BootThread(void* user);
 static void InitThread(void* user);
 static void SystemIdleThread(void* user);
 
-static size_t PrintToTextTerminal(void* user, const char* str, size_t len)
-{
-	return ((TextTerminal*) user)->Print(str, len);
-}
-
-static size_t TextTermWidth(void* user)
-{
-	return ((TextTerminal*) user)->Width();
-}
-
-static size_t TextTermHeight(void* user)
-{
-	return ((TextTerminal*) user)->Height();
-}
-
-static void TextTermGetCursor(void* user, size_t* column, size_t* row)
-{
-	((TextTerminal*) user)->GetCursor(column, row);
-}
-
-static bool TextTermSync(void* user)
-{
-	return ((TextTerminal*) user)->Sync();
-}
-
-static bool EmergencyTextTermIsImpaired(void* user)
-{
-	return ((TextTerminal*) user)->EmergencyIsImpaired();
-}
-
-static bool EmergencyTextTermRecoup(void* user)
-{
-	return ((TextTerminal*) user)->EmergencyRecoup();
-}
-
-static void EmergencyTextTermReset(void* user)
-{
-	((TextTerminal*) user)->EmergencyReset();
-}
-
-static
-size_t EmergencyPrintToTextTerminal(void* user, const char* str, size_t len)
-{
-	return ((TextTerminal*) user)->EmergencyPrint(str, len);
-}
-
-static size_t EmergencyTextTermWidth(void* user)
-{
-	return ((TextTerminal*) user)->EmergencyWidth();
-}
-
-static size_t EmergencyTextTermHeight(void* user)
-{
-	return ((TextTerminal*) user)->EmergencyHeight();
-}
-
-static void EmergencyTextTermGetCursor(void* user, size_t* column, size_t* row)
-{
-	((TextTerminal*) user)->EmergencyGetCursor(column, row);
-}
-
-static bool EmergencyTextTermSync(void* user)
-{
-	return ((TextTerminal*) user)->EmergencySync();
-}
-
 addr_t initrd;
 size_t initrdsize;
-Ref<TextBufferHandle> textbufhandle;
 
 extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 {
@@ -192,41 +118,11 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Detect available physical memory.
 	Memory::Init(bootinfo);
 
-	// Setup a text buffer handle for use by the text terminal.
-	uint16_t* const VGAFB = (uint16_t*) 0xB8000;
-	const size_t VGA_WIDTH = 80;
-	const size_t VGA_HEIGHT = 25;
-	static uint16_t vga_attr_buffer[VGA_WIDTH*VGA_HEIGHT];
-	static struct TextCharPOD vga_chars_pod_buffer[VGA_WIDTH*VGA_HEIGHT];
-	TextChar* vga_chars_buffer = (TextChar*) vga_chars_pod_buffer;
-	VGATextBuffer textbuf(VGAFB, vga_chars_buffer, vga_attr_buffer, VGA_WIDTH, VGA_HEIGHT);
-	TextBufferHandle textbufhandlestack(NULL, false, &textbuf, false);
-	textbufhandle = Ref<TextBufferHandle>(&textbufhandlestack);
-
-	// Setup a text terminal instance.
-	TextTerminal textterm(textbufhandle);
-
-	// Register the text terminal as the kernel log.
-	Log::device_callback = PrintToTextTerminal;
-	Log::device_width = TextTermWidth;
-	Log::device_height = TextTermHeight;
-	Log::device_get_cursor = TextTermGetCursor;
-	Log::device_sync = TextTermSync;
-	Log::device_pointer = &textterm;
-
-	// Register the emergency kernel log.
-	Log::emergency_device_is_impaired = EmergencyTextTermIsImpaired;
-	Log::emergency_device_recoup = EmergencyTextTermRecoup;
-	Log::emergency_device_reset = EmergencyTextTermReset;
-	Log::emergency_device_callback = EmergencyPrintToTextTerminal;
-	Log::emergency_device_width = EmergencyTextTermWidth;
-	Log::emergency_device_height = EmergencyTextTermHeight;
-	Log::emergency_device_get_cursor = EmergencyTextTermGetCursor;
-	Log::emergency_device_sync = EmergencyTextTermSync;
-	Log::emergency_device_pointer = &textterm;
+	// Initialize the kernel log.
+	Log::Init(bootinfo);
 
 	// Display the boot welcome screen.
-	DoWelcome();
+	Log::Print(BRAND_KERNEL_BOOT_MESSAGE);
 
 #if defined(__x86_64__)
 	// TODO: Remove this hack when qemu 1.4.x and 1.5.0 are obsolete.
@@ -572,9 +468,6 @@ static void BootThread(void* /*user*/)
 
 	// Initialize the VGA driver.
 	VGA::Init("/dev", slashdev);
-
-	// Initialize the Video Driver framework.
-	Video::Init(textbufhandle);
 
 	// Search for PCI devices and load their drivers.
 	PCI::Init();

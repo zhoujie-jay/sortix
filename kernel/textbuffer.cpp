@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2015.
 
     This file is part of Sortix.
 
@@ -23,6 +23,7 @@
 *******************************************************************************/
 
 #include <assert.h>
+#include <errno.h>
 
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
@@ -31,13 +32,9 @@
 
 namespace Sortix {
 
-TextBufferHandle::TextBufferHandle(TextBuffer* textbuf, bool deletebuf,
-                                   TextBuffer* def, bool deletedef)
+TextBufferHandle::TextBufferHandle(TextBuffer* textbuf)
 {
 	this->textbuf = textbuf;
-	this->deletebuf = deletebuf;
-	this->def = def;
-	this->deletedef = deletedef;
 	this->numused = 0;
 	this->mutex = KTHREAD_MUTEX_INITIALIZER;
 	this->unusedcond = KTHREAD_COND_INITIALIZER;
@@ -45,21 +42,16 @@ TextBufferHandle::TextBufferHandle(TextBuffer* textbuf, bool deletebuf,
 
 TextBufferHandle::~TextBufferHandle()
 {
-	if ( deletebuf )
-		delete textbuf;
-	if ( deletedef )
-		delete def;
+	delete textbuf;
 }
 
 TextBuffer* TextBufferHandle::Acquire()
 {
 	ScopedLock lock(&mutex);
+	if ( !textbuf )
+		return errno = EINIT, (TextBuffer*) NULL;
 	numused++;
-	if ( textbuf )
-		return textbuf;
-	if ( !def )
-		numused--;
-	return def;
+	return textbuf;
 }
 
 void TextBufferHandle::Release(TextBuffer* textbuf)
@@ -67,7 +59,8 @@ void TextBufferHandle::Release(TextBuffer* textbuf)
 	assert(textbuf);
 	ScopedLock lock(&mutex);
 	assert(numused);
-	if ( !--numused )
+	numused--;
+	if ( numused == 0 )
 		kthread_cond_signal(&unusedcond);
 }
 
@@ -95,7 +88,7 @@ TextBuffer* TextBufferHandle::EmergencyAcquire()
 {
 	// This is during a kernel emergency where preemption has been disabled and
 	// this is the only thread running.
-	return textbuf ? textbuf : def;
+	return textbuf;
 }
 
 void TextBufferHandle::EmergencyRelease(TextBuffer* textbuf)
@@ -106,15 +99,13 @@ void TextBufferHandle::EmergencyRelease(TextBuffer* textbuf)
 	(void) textbuf;
 }
 
-void TextBufferHandle::Replace(TextBuffer* newtextbuf, bool deletebuf)
+void TextBufferHandle::Replace(TextBuffer* newtextbuf)
 {
 	ScopedLock lock(&mutex);
-	while ( numused )
+	while ( 0 < numused )
 		kthread_cond_wait(&unusedcond, &mutex);
-	if ( deletebuf )
-		delete textbuf;
-	this->textbuf = newtextbuf;
-	this->deletebuf = deletebuf;
+	delete textbuf;
+	textbuf = newtextbuf;
 }
 
 } // namespace Sortix

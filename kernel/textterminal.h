@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -18,7 +18,7 @@
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
     textterminal.h
-    An indexable text buffer with the VGA text mode framebuffer as backend.
+    Translates a character stream to a 2 dimensional array of characters.
 
 *******************************************************************************/
 
@@ -34,10 +34,10 @@ namespace Sortix {
 
 class TextBufferHandle;
 
-class TextTerminal //: public Printable ?
+class TextTerminal
 {
 public:
-	TextTerminal(Ref<TextBufferHandle> textbufhandle);
+	TextTerminal(TextBufferHandle* textbufhandle);
 	~TextTerminal();
 	size_t Print(const char* string, size_t stringlen);
 	size_t Width() const;
@@ -66,7 +66,7 @@ private:
 
 private:
 	mbstate_t ps;
-	mutable Ref<TextBufferHandle> textbufhandle;
+	mutable TextBufferHandle* textbufhandle;
 	mutable kthread_mutex_t termlock;
 	uint8_t vgacolor;
 	unsigned column;

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -98,15 +98,14 @@ public:
 // the screen resolution or the graphics driver. The backing text buffer can
 // only be changed when there are no references (but our own) to the text buffer
 // so don't forget to release it when you are done.
-class TextBufferHandle : public Refcountable
+class TextBufferHandle
 {
 public:
-	TextBufferHandle(TextBuffer* textbuf = NULL, bool deletebuf = true,
-	                 TextBuffer* def = NULL, bool deletedef = true);
-	virtual ~TextBufferHandle();
+	TextBufferHandle(TextBuffer* textbuf = NULL);
+	~TextBufferHandle();
 	TextBuffer* Acquire();
 	void Release(TextBuffer* textbuf);
-	void Replace(TextBuffer* newtextbuf, bool deletebuf = true);
+	void Replace(TextBuffer* newtextbuf);
 	bool EmergencyIsImpaired();
 	bool EmergencyRecoup();
 	void EmergencyReset();
@@ -117,10 +116,7 @@ private:
 	kthread_mutex_t mutex;
 	kthread_cond_t unusedcond;
 	TextBuffer* textbuf;
-	TextBuffer* def;
 	size_t numused;
-	bool deletedef;
-	bool deletebuf;
 
 };
 

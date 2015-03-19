@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -18,7 +18,7 @@
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
     textterminal.cpp
-    Translates a character stream to a 2 dimensional array of character.
+    Translates a character stream to a 2 dimensional array of characters.
 
 *******************************************************************************/
 
@@ -39,7 +39,7 @@ namespace Sortix {
 const uint16_t DEFAULT_COLOR = COLOR8_LIGHT_GREY << 0U | COLOR8_BLACK << 4U;
 const uint16_t ATTR_CHAR = 1U << 0U;
 
-TextTerminal::TextTerminal(Ref<TextBufferHandle> textbufhandle)
+TextTerminal::TextTerminal(TextBufferHandle* textbufhandle)
 {
 	memset(&ps, 0, sizeof(ps));
 	this->textbufhandle = textbufhandle;
