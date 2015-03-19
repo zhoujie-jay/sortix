@@ -42,6 +42,12 @@ class TextBufferHandle;
 namespace Sortix {
 namespace Log {
 
+extern uint8_t* fallback_framebuffer;
+extern size_t fallback_framebuffer_bpp;
+extern size_t fallback_framebuffer_pitch;
+extern size_t fallback_framebuffer_width;
+extern size_t fallback_framebuffer_height;
+
 extern TextBufferHandle* device_textbufhandle;
 extern size_t (*device_callback)(void*, const char*, size_t);
 extern size_t (*device_width)(void*);

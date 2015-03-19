@@ -29,8 +29,13 @@
 	# Multiboot header.
 	.align 4
 	.long 0x1BADB002 # Magic.
-	.long 0x00000003 # Flags.
-	.long -(0x1BADB002 + 0x00000003) # Checksum.
+	.long 0x00000007 # Flags.
+	.long -(0x1BADB002 + 0x00000007) # Checksum.
+	.skip 32-12
+	.long 0 # Mode
+	.long 0 # Width
+	.long 0 # Height
+	.long 0 # Depth
 
 .section .bss, "aw", @nobits
 	.align 4096

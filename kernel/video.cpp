@@ -29,6 +29,7 @@
 #include <sortix/kernel/copy.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/log.h>
 #include <sortix/kernel/string.h>
 #include <sortix/kernel/syscall.h>
 #include <sortix/kernel/textbuffer.h>
@@ -222,6 +223,20 @@ static int SetDriver(void* ptr, size_t size)
 	return 0;
 }
 
+static struct dispmsg_crtc_mode GetLogFallbackMode()
+{
+	struct dispmsg_crtc_mode mode;
+	memset(&mode, 0, sizeof(mode));
+	mode.control = DISPMSG_CONTROL_VALID;
+	mode.fb_format = Log::fallback_framebuffer_bpp;
+	mode.view_xres = (uint32_t) Log::fallback_framebuffer_width;
+	mode.view_yres = (uint32_t) Log::fallback_framebuffer_height;
+	mode.fb_location = 0;
+	mode.pitch = Log::fallback_framebuffer_width *
+	             Log::fallback_framebuffer_bpp / 8;
+	return mode;
+}
+
 static int SetCrtcMode(void* ptr, size_t size)
 {
 	struct dispmsg_set_crtc_mode msg;
@@ -232,18 +247,32 @@ static int SetCrtcMode(void* ptr, size_t size)
 
 	ScopedLock lock(&video_lock);
 
-	if ( num_devices <= msg.device )
+	if ( msg.device < num_devices )
+	{
+		DeviceEntry* device_entry = &devices[msg.device];
+		VideoDevice* device = device_entry->device;
+		if ( !device->SwitchMode(msg.connector, msg.mode) )
+			return -1;
+		// TODO: This could potentially fail.
+		if ( msg.device == ONE_AND_ONLY_DEVICE &&
+			 msg.connector == ONE_AND_ONLY_CONNECTOR )
+		{
+			Log::fallback_framebuffer = NULL;
+			Log::device_textbufhandle->Replace(device->CreateTextBuffer(msg.connector));
+		}
+	}
+	else if ( Log::fallback_framebuffer &&
+	          msg.device == ONE_AND_ONLY_DEVICE &&
+	          msg.connector == ONE_AND_ONLY_CONNECTOR )
+	{
+		struct dispmsg_crtc_mode fallback_mode = GetLogFallbackMode();
+		if ( memcmp(&msg.mode, &fallback_mode, sizeof(msg.mode)) != 0 )
+			return errno = EINVAL, -1;
+	}
+	else
+	{
 		return errno = ENODEV, -1;
-
-	DeviceEntry* device_entry = &devices[msg.device];
-	VideoDevice* device = device_entry->device;
-	if ( !device->SwitchMode(msg.connector, msg.mode) )
-		return -1;
-
-	// TODO: This could potentially fail.
-	if ( msg.device == ONE_AND_ONLY_DEVICE &&
-	     msg.connector == ONE_AND_ONLY_CONNECTOR )
-		Log::device_textbufhandle->Replace(device->CreateTextBuffer(msg.connector));
+	}
 
 	// No need to respond.
 
@@ -260,17 +289,27 @@ static int GetCrtcMode(void* ptr, size_t size)
 
 	ScopedLock lock(&video_lock);
 
-	if ( num_devices <= msg.device )
+	struct dispmsg_crtc_mode mode;
+	if ( Log::fallback_framebuffer &&
+	     msg.device == ONE_AND_ONLY_DEVICE &&
+	     msg.connector == ONE_AND_ONLY_CONNECTOR )
+	{
+		mode = GetLogFallbackMode();
+	}
+	else if ( msg.device < num_devices )
+	{
+		DeviceEntry* device_entry = &devices[msg.device];
+		VideoDevice* device = device_entry->device;
+		// TODO: There is no real way to detect failure here.
+		errno = 0;
+		mode = device->GetCurrentMode(msg.connector);
+		if ( !(mode.control & DISPMSG_CONTROL_VALID) && errno != 0 )
+			return -1;
+	}
+	else
+	{
 		return errno = ENODEV, -1;
-
-	DeviceEntry* device_entry = &devices[msg.device];
-	VideoDevice* device = device_entry->device;
-
-	// TODO: There is no real way to detect failure here.
-	errno = 0;
-	struct dispmsg_crtc_mode mode = device->GetCurrentMode(msg.connector);
-	if ( !(mode.control & DISPMSG_CONTROL_VALID) && errno != 0 )
-		return -1;
+	}
 
 	msg.mode = mode;
 
@@ -290,16 +329,28 @@ static int GetCrtcModes(void* ptr, size_t size)
 
 	ScopedLock lock(&video_lock);
 
-	if ( num_devices <= msg.device )
+	size_t nummodes = 0;
+	struct dispmsg_crtc_mode* modes = NULL;
+	if ( msg.device < num_devices )
+	{
+		DeviceEntry* device_entry = &devices[msg.device];
+		VideoDevice* device = device_entry->device;
+		modes = device->GetModes(msg.connector, &nummodes);
+		if ( !modes )
+			return -1;
+	}
+	else if ( Log::fallback_framebuffer &&
+	          msg.device == ONE_AND_ONLY_DEVICE &&
+	          msg.connector == ONE_AND_ONLY_CONNECTOR )
+	{
+		if ( !(modes = new struct dispmsg_crtc_mode[1]) )
+			return -1;
+		modes[nummodes++] = GetLogFallbackMode();
+	}
+	else
+	{
 		return errno = ENODEV, -1;
-
-	DeviceEntry* device_entry = &devices[msg.device];
-	VideoDevice* device = device_entry->device;
-
-	size_t nummodes;
-	struct dispmsg_crtc_mode* modes = device->GetModes(msg.connector, &nummodes);
-	if ( !modes )
-		return -1;
+	}
 
 	size_t requested_modes = msg.modes_length;
 	msg.modes_length = nummodes;
@@ -324,7 +375,6 @@ static int GetCrtcModes(void* ptr, size_t size)
 
 	delete[] modes;
 
-
 	return 0;
 }
 
@@ -338,8 +388,23 @@ static int GetMemorySize(void* ptr, size_t size)
 
 	ScopedLock lock(&video_lock);
 
-	if ( num_devices <= msg.device )
+	if ( Log::fallback_framebuffer &&
+	     msg.device == ONE_AND_ONLY_DEVICE )
+	{
+		msg.memory_size = Log::fallback_framebuffer_width *
+		                  Log::fallback_framebuffer_height *
+		                  Log::fallback_framebuffer_bpp / 8;
+	}
+	else if ( msg.device < num_devices )
+	{
+		DeviceEntry* device_entry = &devices[msg.device];
+		VideoDevice* device = device_entry->device;
+		msg.memory_size = device->FrameSize();
+	}
+	else
+	{
 		return errno = ENODEV, -1;
+	}
 
 	DeviceEntry* device_entry = &devices[msg.device];
 	VideoDevice* device = device_entry->device;
@@ -362,15 +427,60 @@ static int WriteMemory(void* ptr, size_t size)
 
 	ScopedLock lock(&video_lock);
 
-	if ( num_devices <= msg.device )
+	if ( Log::fallback_framebuffer &&
+	     msg.device == ONE_AND_ONLY_DEVICE )
+	{
+		size_t ideal_pitch = Log::fallback_framebuffer_width *
+		                     Log::fallback_framebuffer_bpp / 8;
+		if ( ideal_pitch == Log::fallback_framebuffer_pitch )
+		{
+			size_t framesize = Log::fallback_framebuffer_height *
+		                       Log::fallback_framebuffer_pitch;
+			if ( framesize < msg.offset )
+				return 0;
+			size_t count = msg.size;
+			size_t left = framesize - msg.offset;
+			if ( left < count )
+				count = left;
+			const uint8_t* src = msg.src;
+			uint8_t* dst = Log::fallback_framebuffer + msg.offset;
+			if ( !CopyFromUser(dst, src, count) )
+				return -1;
+		}
+		else
+		{
+			const uint8_t* src = msg.src;
+			size_t src_size = msg.size;
+			uint64_t y = msg.offset / ideal_pitch;
+			uint64_t x = msg.offset % ideal_pitch;
+			while ( src_size && y < Log::fallback_framebuffer_height )
+			{
+				size_t count = src_size;
+				if ( ideal_pitch -x < count )
+					count = ideal_pitch - x;
+				uint8_t* dst = Log::fallback_framebuffer +
+				               Log::fallback_framebuffer_pitch * y + x;
+				if ( !CopyFromUser(dst, src, count) )
+					return -1;
+				src += count;
+				src_size -= count;
+				x = 0;
+				y++;
+			}
+		}
+	}
+	else if ( msg.device < num_devices )
+	{
+		DeviceEntry* device_entry = &devices[msg.device];
+		VideoDevice* device = device_entry->device;
+		ioctx_t ctx; SetupUserIOCtx(&ctx);
+		if ( device->WriteAt(&ctx, msg.offset, msg.src, msg.size) < 0 )
+			return -1;
+	}
+	else
+	{
 		return errno = ENODEV, -1;
-
-	DeviceEntry* device_entry = &devices[msg.device];
-	VideoDevice* device = device_entry->device;
-
-	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	if ( device->WriteAt(&ctx, msg.offset, msg.src, msg.size) < 0 )
-		return -1;
+	}
 
 	return 0;
 }
@@ -385,15 +495,60 @@ static int ReadMemory(void* ptr, size_t size)
 
 	ScopedLock lock(&video_lock);
 
-	if ( num_devices <= msg.device )
+	if ( Log::fallback_framebuffer &&
+	     msg.device == ONE_AND_ONLY_DEVICE )
+	{
+		size_t ideal_pitch = Log::fallback_framebuffer_width *
+		                     Log::fallback_framebuffer_bpp / 8;
+		if ( ideal_pitch == Log::fallback_framebuffer_pitch )
+		{
+			size_t framesize = Log::fallback_framebuffer_height *
+		                       Log::fallback_framebuffer_pitch;
+			if ( framesize < msg.offset )
+				return 0;
+			size_t count = msg.size;
+			size_t left = framesize - msg.offset;
+			if ( left < count )
+				count = left;
+			const uint8_t* src = Log::fallback_framebuffer + msg.offset;
+			uint8_t* dst = msg.dst;
+			if ( !CopyToUser(dst, src, count) )
+				return -1;
+		}
+		else
+		{
+			uint8_t* dst = msg.dst;
+			size_t dst_size = msg.size;
+			uint64_t y = msg.offset / ideal_pitch;
+			uint64_t x = msg.offset % ideal_pitch;
+			while ( dst_size && y < Log::fallback_framebuffer_height )
+			{
+				size_t count = dst_size;
+				if ( ideal_pitch -x < count )
+					count = ideal_pitch - x;
+				const uint8_t* src = Log::fallback_framebuffer +
+				                     Log::fallback_framebuffer_pitch * y + x;
+				if ( !CopyToUser(dst, src, count) )
+					return -1;
+				dst += count;
+				dst_size -= count;
+				x = 0;
+				y++;
+			}
+		}
+	}
+	else if ( msg.device < num_devices )
+	{
+		DeviceEntry* device_entry = &devices[msg.device];
+		VideoDevice* device = device_entry->device;
+		ioctx_t ctx; SetupUserIOCtx(&ctx);
+		if ( device->ReadAt(&ctx, msg.offset, msg.dst, msg.size) < 0 )
+			return -1;
+	}
+	else
+	{
 		return errno = ENODEV, -1;
-
-	DeviceEntry* device_entry = &devices[msg.device];
-	VideoDevice* device = device_entry->device;
-
-	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	if ( device->ReadAt(&ctx, msg.offset, msg.dst, msg.size) < 0 )
-		return -1;
+	}
 
 	return 0;
 }

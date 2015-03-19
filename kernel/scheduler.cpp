@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -378,6 +378,8 @@ Process* GetInitProcess()
 
 Process* GetKernelProcess()
 {
+	if ( !idle_thread )
+		return NULL;
 	return idle_thread->process;
 }
 

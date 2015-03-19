@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -123,13 +123,12 @@ LFBTextBuffer* CreateLFBTextBuffer(uint8_t* lfb, uint32_t lfbformat,
 		memset(lfb + scansize * y, 0, lfbformat/8UL * xres);
 	ret->emergency_state = false;
 
-	ret->queue_thread = true;
+	if ( !kernel_process )
+		return ret;
+
+	ret->queue_thread = true; // Visible to new thread.
 	if ( !RunKernelThread(kernel_process, LFBTextBuffer__RenderThread, ret) )
-	{
 		ret->queue_thread = false;
-		delete ret;
-		return NULL;
-	}
 
 	return ret;
 
@@ -145,6 +144,16 @@ cleanup_backbuf:
 	delete[] backbuf;
 cleanup_done:
 	return NULL;
+}
+
+void LFBTextBuffer::SpawnThreads()
+{
+	if ( queue_thread )
+		return;
+	Process* kernel_process = Scheduler::GetKernelProcess();
+	queue_thread = true; // Visible to new thread.
+	if ( !RunKernelThread(kernel_process, LFBTextBuffer__RenderThread, this) )
+		queue_thread = false;
 }
 
 LFBTextBuffer::LFBTextBuffer()
@@ -315,7 +324,7 @@ void LFBTextBuffer::RenderRange(TextPos from, TextPos to)
 
 void LFBTextBuffer::IssueCommand(TextBufferCmd* cmd)
 {
-	if ( emergency_state )
+	if ( !queue_thread || emergency_state )
 	{
 		bool exit_requested = false;
 		bool sync_requested = false;
@@ -337,7 +346,7 @@ void LFBTextBuffer::IssueCommand(TextBufferCmd* cmd)
 
 void LFBTextBuffer::StopRendering()
 {
-	if ( emergency_state )
+	if ( !queue_thread || emergency_state )
 		return;
 	TextBufferCmd cmd;
 	cmd.type = TEXTBUFCMD_PAUSE;
@@ -349,7 +358,7 @@ void LFBTextBuffer::StopRendering()
 
 void LFBTextBuffer::ResumeRendering()
 {
-	if ( emergency_state )
+	if ( !queue_thread || emergency_state )
 		return;
 	ScopedLock lock(&queue_lock);
 	queue_is_paused = false;

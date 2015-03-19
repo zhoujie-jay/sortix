@@ -22,18 +22,30 @@
 
 *******************************************************************************/
 
+#include <assert.h>
 #include <stddef.h>
 #include <string.h>
 
+#include <sortix/kernel/addralloc.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/log.h>
+#include <sortix/kernel/pci.h>
+#include <sortix/kernel/pci-mmio.h>
 #include <sortix/kernel/textbuffer.h>
 
+#include "lfbtextbuffer.h"
+#include "multiboot.h"
 #include "textterminal.h"
 #include "vgatextbuffer.h"
 
 namespace Sortix {
 namespace Log {
+
+uint8_t* fallback_framebuffer = NULL;
+size_t fallback_framebuffer_bpp = 0;
+size_t fallback_framebuffer_pitch = 0;
+size_t fallback_framebuffer_width = 0;
+size_t fallback_framebuffer_height = 0;
 
 TextBufferHandle* device_textbufhandle = NULL;
 size_t (*device_callback)(void*, const char*, size_t) = NULL;
@@ -126,7 +138,34 @@ void Init(multiboot_info_t* bootinfo)
 
 	// Create the backend text buffer.
 	TextBuffer* textbuf;
-	if ( true )
+	if ( (bootinfo->flags & MULTIBOOT_INFO_FRAMEBUFFER_INFO) &&
+	     bootinfo->framebuffer_type != MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT )
+	{
+		assert(bootinfo->framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB);
+		assert(bootinfo->framebuffer_bpp == 32);
+		assert(0 < bootinfo->framebuffer_width);
+		assert(0 < bootinfo->framebuffer_height);
+		pcibar_t fakebar;
+		fakebar.addr_raw = bootinfo->framebuffer_addr;
+		fakebar.size_raw = (uint64_t) bootinfo->framebuffer_pitch * bootinfo->framebuffer_height;
+		fakebar.addr_raw |= PCIBAR_TYPE_64BIT;
+		addralloc_t fb_alloc;
+		if ( !MapPCIBAR(&fb_alloc, fakebar, MAP_PCI_BAR_WRITE_COMBINE) )
+			Panic("Framebuffer setup failure.");
+		uint8_t* lfb = (uint8_t*) fb_alloc.from;
+		uint32_t lfbformat = bootinfo->framebuffer_bpp;
+		size_t scansize = bootinfo->framebuffer_pitch;
+		textbuf = CreateLFBTextBuffer(lfb, lfbformat, bootinfo->framebuffer_width,
+		                              bootinfo->framebuffer_height, scansize);
+		if ( !textbuf )
+			Panic(oom_msg);
+		fallback_framebuffer = lfb;
+		fallback_framebuffer_bpp = lfbformat;
+		fallback_framebuffer_width = bootinfo->framebuffer_width;
+		fallback_framebuffer_height = bootinfo->framebuffer_height;
+		fallback_framebuffer_pitch = bootinfo->framebuffer_pitch;
+	}
+	else
 	{
 		uint16_t* const VGAFB = (uint16_t*) 0xB8000;
 		const size_t VGA_WIDTH = 80;

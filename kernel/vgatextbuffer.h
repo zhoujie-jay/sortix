@@ -48,6 +48,7 @@ public:
 	virtual void SetCursorEnabled(bool enablecursor);
 	virtual TextPos GetCursorPos() const;
 	virtual void SetCursorPos(TextPos cursorpos);
+	virtual void SpawnThreads();
 	virtual bool EmergencyIsImpaired();
 	virtual bool EmergencyRecoup();
 	virtual void EmergencyReset();

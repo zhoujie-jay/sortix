@@ -483,6 +483,15 @@ static void BootThread(void* /*user*/)
 	// Hello, threaded world! You can now regard the kernel as a multi-threaded
 	// process with super-root access to the system. Before we boot the full
 	// system we need to start some worker threads.
+
+	// Spawn worker threads to asyncronously draw the console thread.
+	TextBuffer* textbuf = Log::device_textbufhandle->Acquire();
+	if ( textbuf )
+	{
+		textbuf->SpawnThreads();
+		Log::device_textbufhandle->Release(textbuf);
+	}
+
 	// Let's create the interrupt worker thread that executes additional work
 	// requested by interrupt handlers, where such work isn't safe.
 	Thread* interruptworker = RunKernelThread(Interrupt::WorkerThread, NULL);

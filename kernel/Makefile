@@ -200,7 +200,10 @@ endif
 kb/default-kblayout.h: kb/default-kblayout
 	carray -cgis --uint8_t --guard=SORTIX_KB_DEFAULT_KBLAYOUT_H --identifier=default_kblayout $< -o $@
 
-*.cpp */*.cpp */*/*.cpp: | kb/default-kblayout.h
+vgafont.h: vgafont.f16
+	carray -gis --uint8_t --guard=VGAFONT_H --identifier=vgafont $< -o $@
+
+*.cpp */*.cpp */*/*.cpp: | kb/default-kblayout.h vgafont.h
 
 %.o: %.cpp
 	$(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
@@ -213,6 +216,7 @@ clean:
 	rm -f *.bin *.out *.tmp
 	rm -f *.o */*.o */*/*.o
 	rm -f kb/default-kblayout kb/default-kblayout.h
+	rm -f vgafont.h
 
 # Installation into sysroot
 install: install-headers install-kernel

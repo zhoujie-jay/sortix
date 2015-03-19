@@ -192,6 +192,10 @@ void VGATextBuffer::UpdateCursor()
 		VGA::SetCursor(width, height-1);
 }
 
+void VGATextBuffer::SpawnThreads()
+{
+}
+
 bool VGATextBuffer::EmergencyIsImpaired()
 {
 	return false;

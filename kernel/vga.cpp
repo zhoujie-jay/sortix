@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2015.
 
     This file is part of Sortix.
 
@@ -39,8 +39,7 @@
 
 #include "fs/util.h"
 #include "vga.h"
-
-#define TEST_VGAFONT 0
+#include "vgafont.h"
 
 namespace Sortix {
 namespace VGA {
@@ -49,8 +48,6 @@ uint8_t* const VGA = (uint8_t* const) 0xB8000;
 const unsigned WIDTH = 80;
 const unsigned HEIGHT = 25;
 const size_t VGA_SIZE = sizeof(uint16_t) * WIDTH * HEIGHT;
-size_t vgafontsize;
-uint8_t* vgafont;
 
 static void WriteIndex(uint16_t port, uint8_t index, uint8_t value)
 {
@@ -103,26 +100,6 @@ static void FetchVGAFont(uint8_t* font)
 	WriteIndex(0x03CE, 0x04, old_03ce_04);
 }
 
-#if TEST_VGAFONT
-static void PrintFontChar(const uint8_t* font, unsigned char c)
-{
-	const uint8_t* glyph = font + VGA_FONT_CHARSIZE * (size_t) c;
-	for ( size_t y = 0; y < VGA_FONT_HEIGHT; y++ )
-	{
-		for ( size_t x = 0; x < VGA_FONT_WIDTH; x++ )
-		{
-			size_t bitindex = y * VGA_FONT_WIDTH + x;
-			uint8_t bitmap = glyph[bitindex/8UL];
-			uint8_t bitmod = bitindex % 8UL;
-			uint8_t bitmask = 1U << bitmod;
-			const char* toprint = (bitmap & bitmask) ? "X" : " ";
-			Log::Print(toprint);
-		}
-		Log::Print("\n");
-	}
-}
-#endif
-
 const uint8_t* GetFont()
 {
 	return vgafont;
@@ -130,25 +107,22 @@ const uint8_t* GetFont()
 
 void Init(const char* devpath, Ref<Descriptor> slashdev)
 {
-	vgafontsize = VGA_FONT_NUMCHARS * VGA_FONT_CHARSIZE;
-	if ( !(vgafont = new uint8_t[vgafontsize]) )
-		Panic("Unable to allocate vga font buffer");
-	FetchVGAFont(vgafont);
-#if TEST_VGAFONT
-	PrintFontChar(vgafont, 'A');
-	PrintFontChar(vgafont, 'S');
-#endif
+	if ( !Log::fallback_framebuffer )
+		FetchVGAFont(vgafont);
 
 	ioctx_t ctx; SetupKernelIOCtx(&ctx);
 
 	// Setup the vgafont device.
 	Ref<Inode> vgafontnode(new UtilMemoryBuffer(slashdev->dev, (ino_t) 0, 0, 0,
-	                                            0660, vgafont, vgafontsize,
+	                                            0660, vgafont, sizeof(vgafont),
 	                                            false, false));
 	if ( !vgafontnode )
 		PanicF("Unable to allocate %s/vgafont inode.", devpath);
 	if ( LinkInodeInDir(&ctx, slashdev, "vgafont", vgafontnode) != 0 )
 		PanicF("Unable to link %s/vgafont to vga font.", devpath);
+
+	if ( Log::fallback_framebuffer )
+		return;
 
 	// Setup the vga device.
 	Ref<Inode> vganode(new UtilMemoryBuffer(slashdev->dev, (ino_t) 0, 0, 0,
