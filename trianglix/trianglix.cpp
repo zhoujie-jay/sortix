@@ -558,10 +558,12 @@ public:
 
 class action** games::list_actions(size_t* num_actions)
 {
-	class action** actions = new action*[2 + 1];
+	class action** actions = new action*[3 + 1];
 	size_t index = 0;
 	if ( has_path_executable("asteroids") )
 		actions[index++] = new action("Asteroids", new path_program("asteroids"));
+	if ( has_path_executable("aquatinspitz") )
+		actions[index++] = new action("Aquatinspitz", new path_program("aquatinspitz"));
 	if ( has_path_executable("quake") )
 		actions[index++] = new action("Quake", new path_program("quake"));
 	actions[index++] = new action("Back", parent_object);
