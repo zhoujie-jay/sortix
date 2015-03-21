@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -469,6 +469,48 @@ void set_hostname()
 	free(hostname);
 }
 
+void set_kblayout()
+{
+	FILE* kblayout_fp = fopen("/etc/kblayout", "r");
+	if ( !kblayout_fp )
+	{
+		if ( errno == ENOENT )
+			return;
+		error(0, errno, "unable to open /etc/kblayout, keyboard layout is not set");
+		return;
+	}
+
+	char* kblayout = read_single_line(kblayout_fp);
+	if ( !kblayout )
+	{
+		error(0, errno, "unable to read /etc/kblayout, keyboard layout is not set");
+		fclose(kblayout_fp);
+		return;
+	}
+
+	fclose(kblayout_fp);
+
+	pid_t child_pid = fork();
+	if ( child_pid < 0 )
+	{
+		error(0, errno, "setting keyboard layout: fork");
+		free(kblayout);
+		return;
+	}
+
+	if ( !child_pid )
+	{
+		execlp("chkblayout", "chkblayout", "--", kblayout, (char*) NULL);
+		error(0, errno, "setting keyboard layout: exec: chkblayout");
+		_exit(127);
+	}
+
+	int status;
+	waitpid(child_pid, &status, 0);
+
+	free(kblayout);
+}
+
 int main(int argc, char* argv[])
 {
 	if ( 3 <= argc && !strcmp(argv[1], "--chain") )
@@ -492,6 +534,9 @@ int main(int argc, char* argv[])
 
 	// Set the hostname as found in /etc/hostname.
 	set_hostname();
+
+	// Set the keyboard layout as found in /etc/kblayout.
+	set_kblayout();
 
 	// Find the uuid of the root filesystem.
 	const char* root_uuid_file = "/etc/init/rootfs.uuid";
