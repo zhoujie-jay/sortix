@@ -76,6 +76,12 @@ void update_terminal_entry(FILE* fp, struct terminal_datum entry, int x, int y,
 	size_t count = wcrtomb(mb, entry.character, &ps);
 	if ( count == (size_t) -1 )
 		fputs("�", fp);
+	else if ( entry.character == L'\b' ||
+	          entry.character == L'\e' ||
+	          entry.character == L'\n' ||
+	          entry.character == L'\r' ||
+	          entry.character == L'\t' )
+		fputs("�", fp);
 	else for ( size_t i = 0; i < count; i++ )
 		fputc(mb[i], fp);
 	current->data[index] = entry;
