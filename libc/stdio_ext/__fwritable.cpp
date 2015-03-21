@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -17,14 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/fpending_unlocked.cpp
-    Returns the number of bytes pending in the output buffer.
+    stdio_ext/__fwritable.cpp
+    Returns whether this FILE can be written to.
 
 *******************************************************************************/
 
 #include <stdio.h>
+#include <stdio_ext.h>
 
-extern "C" size_t fpending_unlocked(FILE* fp)
+extern "C" int __fwritable(FILE* fp)
 {
-	return fp->amount_output_buffered;
+	flockfile(fp);
+	int result = fp->flags & _FILE_WRITABLE ? 1 : 0;
+	funlockfile(fp);
+	return result;
 }

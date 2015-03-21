@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -289,14 +289,11 @@ int vfscanf_unlocked(FILE* __restrict stream, const char* __restrict format, __g
 
 /* Functions that are Sortix extensions used for libc internal purposes. */
 #if __USE_SORTIX
-
 int fflush_stop_reading(FILE* fp);
 int fflush_stop_reading_unlocked(FILE* fp);
 int fflush_stop_writing(FILE* fp);
 int fflush_stop_writing_unlocked(FILE* fp);
 void fdeletefile(FILE* fp);
-void fseterr(FILE* fp);
-void fseterr_unlocked(FILE* fp);
 void fregister(FILE* fp);
 void fresetfile(FILE* fp);
 void funregister(FILE* fp);
@@ -304,25 +301,6 @@ FILE* fnewfile(void);
 int fsetdefaultbuf(FILE* fp);
 int fsetdefaultbuf_unlocked(FILE* fp);
 int fshutdown(FILE* fp);
-#endif
-
-/* The <stdio_ext.h> functions. */
-#if __USE_SORTIX && (!defined(__IMPLICIT_SORTIX_SOURCE) || defined(__is_sortix_libc))
-#include <stdio_ext.h>
-#define fbufsize __fbufsize
-size_t fbufsize_unlocked(FILE* fp);
-#define freading __freading
-int freading_unlocked(FILE* fp);
-#define fwriting __fwriting
-int fwriting_unlocked(FILE* fp);
-#define freadable __freadable
-int freadable_unlocked(FILE* fp);
-#define fwritable __fwritable
-int fwritable_unlocked(FILE* fp);
-#define fpurge __fpurge
-void fpurge_unlocked(FILE* fp);
-#define fpending __fpending
-size_t fpending_unlocked(FILE* fp);
 #endif
 
 /* The backends for printf and scanf. */

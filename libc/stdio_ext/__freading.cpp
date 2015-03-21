@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -17,14 +17,22 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/fwritable_unlocked.cpp
-    Returns whether this FILE can be written to.
+    stdio_ext/__freading.cpp
+    Returns whether the last operation was a read or FILE is read only.
 
 *******************************************************************************/
 
 #include <stdio.h>
+#include <stdio_ext.h>
 
-extern "C" int fwritable_unlocked(FILE* fp)
+extern "C" int __freading(FILE* fp)
 {
-	return fp->flags & _FILE_WRITABLE;
+	int result = 0;
+	flockfile(fp);
+	if ( fp->flags & _FILE_LAST_READ )
+		result = 1;
+	else if ( (fp->flags & _FILE_READABLE) && !(fp->flags & _FILE_WRITABLE) )
+		result = 1;
+	funlockfile(fp);
+	return result;
 }

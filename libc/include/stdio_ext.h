@@ -32,13 +32,13 @@
 __BEGIN_DECLS
 
 size_t __fbufsize(FILE* fp);
-int __freading(FILE* fp);
-int __fwriting(FILE* fp);
-int __freadable(FILE* fp);
-int __fwritable(FILE* fp);
-void __fpurge(FILE* fp);
 size_t __fpending(FILE* fp);
+void __fpurge(FILE* fp);
+int __freadable(FILE* fp);
+int __freading(FILE* fp);
 void __fseterr(FILE* fp);
+int __fwritable(FILE* fp);
+int __fwriting(FILE* fp);
 
 __END_DECLS
 

@@ -17,22 +17,19 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/fseterr.cpp
-    Sets the error condition bit on a FILE.
+    stdio_ext/__fpurge.cpp
+    Discards all contents in the FILE's buffer.
 
 *******************************************************************************/
 
 #include <stdio.h>
+#include <stdio_ext.h>
 
-extern "C" void fseterr(FILE* fp)
+extern "C" void __fpurge(FILE* fp)
 {
 	flockfile(fp);
-	fseterr_unlocked(fp);
+	fp->offset_input_buffer = 0;
+	fp->amount_input_buffered = 0;
+	fp->amount_output_buffered = 0;
 	funlockfile(fp);
-}
-
-// &%#!ing gnulib compatibility.
-extern "C" void __fseterr(FILE* fp)
-{
-	fseterr(fp);
 }

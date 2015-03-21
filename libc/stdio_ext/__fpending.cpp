@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -17,14 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/freadable_unlocked.cpp
-    Returns whether this FILE can be read from.
+    stdio_ext/__fpending.cpp
+    Returns the number of bytes pending in the output buffer.
 
 *******************************************************************************/
 
 #include <stdio.h>
+#include <stdio_ext.h>
 
-extern "C" int freadable_unlocked(FILE* fp)
+extern "C" size_t __fpending(FILE* fp)
 {
-	return fp->flags & _FILE_READABLE;
+	flockfile(fp);
+	size_t result = fp->amount_output_buffered;
+	funlockfile(fp);
+	return result;
 }

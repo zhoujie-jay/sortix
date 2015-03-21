@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -17,14 +17,22 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/fbufsize_unlocked.cpp
-    Returns the size of the FILE's buffer.
+    stdio_ext/__fwriting.cpp
+    Returns whether the last operation was a write or FILE is write only.
 
 *******************************************************************************/
 
 #include <stdio.h>
+#include <stdio_ext.h>
 
-extern "C" size_t fbufsize_unlocked(FILE* fp)
+extern "C" int __fwriting(FILE* fp)
 {
-	return fp->buffersize;
+	int result = 0;
+	flockfile(fp);
+	if ( fp->flags & _FILE_LAST_WRITE )
+		result = 1;
+	if ( (fp->flags & _FILE_WRITABLE) && !(fp->flags & _FILE_READABLE) )
+		result = 1;
+	funlockfile(fp);
+	return result;
 }

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -17,18 +17,18 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/freading_unlocked.cpp
-    Returns whether the last operation was a read or FILE is read only.
+    stdio_ext/__fbufsize.cpp
+    Returns the size of the FILE's buffer.
 
 *******************************************************************************/
 
 #include <stdio.h>
+#include <stdio_ext.h>
 
-extern "C" int freading_unlocked(FILE* fp)
+extern "C" size_t __fbufsize(FILE* fp)
 {
-	if ( fp->flags & _FILE_LAST_READ )
-		return 1;
-	if ( (fp->flags & _FILE_READABLE) && !(fp->flags & _FILE_WRITABLE) )
-		return 1;
-	return 0;
+	flockfile(fp);
+	size_t result = fp->buffersize;
+	funlockfile(fp);
+	return result;
 }

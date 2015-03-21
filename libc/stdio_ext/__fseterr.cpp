@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -17,16 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/fpurge.cpp
-    Discards all contents in the FILE's buffer.
+    stdio_ext/__fseterr.cpp
+    Sets the error condition bit on a FILE.
 
 *******************************************************************************/
 
 #include <stdio.h>
+#include <stdio_ext.h>
 
-extern "C" void fpurge(FILE* fp)
+extern "C" void __fseterr(FILE* fp)
 {
 	flockfile(fp);
-	fpurge_unlocked(fp);
+	fp->flags |= _FILE_STATUS_ERROR;
 	funlockfile(fp);
 }
