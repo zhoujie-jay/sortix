@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -146,7 +146,7 @@ PollNode* PollNode::CreateSlave()
 	return slave = new_slave;
 }
 
-static struct pollfd* CopyFdsFromUser(struct pollfd* user_fds, nfds_t nfds)
+static struct pollfd* CopyFdsFromUser(struct pollfd* user_fds, size_t nfds)
 {
 	size_t size = sizeof(struct pollfd) * nfds;
 	struct pollfd* fds = new struct pollfd[nfds];
@@ -161,7 +161,7 @@ static struct pollfd* CopyFdsFromUser(struct pollfd* user_fds, nfds_t nfds)
 }
 
 static bool CopyFdsToUser(struct pollfd* user_fds,
-                          const struct pollfd* kernel_fds, nfds_t nfds)
+                          const struct pollfd* kernel_fds, size_t nfds)
 {
 	size_t size = sizeof(struct pollfd) * nfds;
 	return CopyToUser(user_fds, kernel_fds, size);
@@ -177,7 +177,7 @@ static bool FetchTimespec(struct timespec* dest, const struct timespec* user)
 	return true;
 }
 
-int sys_ppoll(struct pollfd* user_fds, nfds_t nfds,
+int sys_ppoll(struct pollfd* user_fds, size_t nfds,
               const struct timespec* user_timeout_ts,
               const sigset_t* user_sigmask)
 {
@@ -208,7 +208,7 @@ int sys_ppoll(struct pollfd* user_fds, nfds_t nfds,
 	volatile bool remote_woken = false;
 	bool unexpected_error = false;
 
-	nfds_t reqs;
+	size_t reqs;
 	for ( reqs = 0; !unexpected_error && reqs < nfds; )
 	{
 		PollNode* node = nodes + reqs;
@@ -252,14 +252,14 @@ int sys_ppoll(struct pollfd* user_fds, nfds_t nfds,
 
 	kthread_mutex_unlock(&wakeup_mutex);
 
-	for ( nfds_t i = 0; i < reqs; i++ )
+	for ( size_t i = 0; i < reqs; i++ )
 		if ( 0 <= fds[i].fd )
 			nodes[i].Cancel();
 
 	if ( !unexpected_error )
 	{
 		int num_events = 0;
-		for ( nfds_t i = 0; i < reqs; i++ )
+		for ( size_t i = 0; i < reqs; i++ )
 		{
 			if ( fds[i].fd < -1 )
 				continue;

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2015.
 
     This file is part of Sortix.
 
@@ -29,7 +29,7 @@
 
 __BEGIN_DECLS
 
-typedef unsigned long int nfds_t;
+typedef __SIZE_TYPE__ nfds_t;
 
 struct pollfd
 {

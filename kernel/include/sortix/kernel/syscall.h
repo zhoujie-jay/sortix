@@ -117,7 +117,7 @@ int sys_mprotect(const void*, size_t, int);
 int sys_munmap(void*, size_t);
 int sys_openat(int, const char*, int, mode_t);
 int sys_pipe2(int*, int);
-int sys_ppoll(struct pollfd*, nfds_t, const struct timespec*, const sigset_t*);
+int sys_ppoll(struct pollfd*, size_t, const struct timespec*, const sigset_t*);
 ssize_t sys_pread(int, void*, size_t, off_t);
 ssize_t sys_preadv(int, const struct iovec*, int, off_t);
 int sys_prlimit(pid_t, int, const struct rlimit*, struct rlimit*);
