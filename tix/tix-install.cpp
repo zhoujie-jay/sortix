@@ -326,6 +326,7 @@ int main(int argc, char* argv[])
 			"-C", prefix,
 			"--extract",
 			"--file", tix_path,
+			"--keep-directory-symlink",
 			data_and_prefix,
 			NULL
 		};
