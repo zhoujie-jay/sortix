@@ -383,8 +383,23 @@ int ext2_fuse_write(const char* /*path*/, const char* buf, size_t count,
 
 int ext2_fuse_statfs(const char* /*path*/, struct statvfs* stvfs)
 {
-	(void) stvfs;
-	return errno = -ENOSYS, -1;
+	memset(stvfs, 0, sizeof(*stvfs));
+	Filesystem* fs = FUSE_FS;
+	stvfs->f_bsize = fs->block_size;
+	stvfs->f_frsize = fs->block_size;
+	stvfs->f_blocks = fs->num_blocks;
+	stvfs->f_bfree = fs->sb->s_free_blocks_count;
+	stvfs->f_bavail = fs->sb->s_free_blocks_count;
+	stvfs->f_files = fs->num_inodes;
+	stvfs->f_ffree = fs->sb->s_free_inodes_count;
+	stvfs->f_favail = fs->sb->s_free_inodes_count;
+	stvfs->f_ffree = fs->sb->s_free_inodes_count;
+	stvfs->f_fsid = 0;
+	stvfs->f_flag = 0;
+	if ( !fs->device->write )
+		stvfs->f_flag |= ST_RDONLY;
+	stvfs->f_namemax = 255;
+	return 0;
 }
 
 int ext2_fuse_flush(const char* /*path*/, struct fuse_file_info* fi)

@@ -95,6 +95,13 @@ bool RespondStat(int chl, struct stat* st)
 	return RespondMessage(chl, FSM_RESP_STAT, &body, sizeof(body));
 }
 
+bool RespondStatVFS(int chl, struct statvfs* stvfs)
+{
+	struct fsm_resp_statvfs body;
+	body.stvfs = *stvfs;
+	return RespondMessage(chl, FSM_RESP_STATVFS, &body, sizeof(body));
+}
+
 bool RespondSeek(int chl, off_t offset)
 {
 	struct fsm_resp_lseek body;
@@ -585,6 +592,27 @@ void HandleRename(int chl, struct fsm_req_rename* msg, Filesystem* fs)
 	free(path);
 }
 
+void HandleStatVFS(int chl, struct fsm_req_statvfs* msg, Filesystem* fs)
+{
+	(void) msg;
+	struct statvfs stvfs;
+	stvfs.f_bsize = fs->block_size;
+	stvfs.f_frsize = fs->block_size;
+	stvfs.f_blocks = fs->num_blocks;
+	stvfs.f_bfree = fs->sb->s_free_blocks_count;
+	stvfs.f_bavail = fs->sb->s_free_blocks_count;
+	stvfs.f_files = fs->num_inodes;
+	stvfs.f_ffree = fs->sb->s_free_inodes_count;
+	stvfs.f_favail = fs->sb->s_free_inodes_count;
+	stvfs.f_ffree = fs->sb->s_free_inodes_count;
+	stvfs.f_fsid = 0;
+	stvfs.f_flag = 0;
+	if ( !fs->device->write )
+		stvfs.f_flag |= ST_RDONLY;
+	stvfs.f_namemax = 255;
+	RespondStatVFS(chl, &stvfs);
+}
+
 void HandleTCGetBlob(int chl, struct fsm_req_tcgetblob* msg, Filesystem* fs)
 {
 	if ( fs->num_inodes <= msg->ino )
@@ -639,6 +667,7 @@ void HandleIncomingMessage(int chl, struct fsm_msg_header* hdr, Filesystem* fs)
 	handlers[FSM_REQ_RENAME] = (handler_t) HandleRename;
 	handlers[FSM_REQ_REFER] = (handler_t) HandleRefer;
 	handlers[FSM_REQ_UNREF] = (handler_t) HandleUnref;
+	handlers[FSM_REQ_STATVFS] = (handler_t) HandleStatVFS;
 	handlers[FSM_REQ_TCGETBLOB] = (handler_t) HandleTCGetBlob;
 	if ( FSM_MSG_NUM <= hdr->msgtype || !handlers[hdr->msgtype] )
 	{
