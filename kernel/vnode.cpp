@@ -196,11 +196,9 @@ int Vnode::unmount(ioctx_t* ctx, const char* filename, int flags)
 	mp->inode.Reset();
 	for ( size_t n = mp_index; n < mtable->nummounts - 1; n++ )
 	{
-		mtable->mounts[n].inode.Reset();
 		mtable->mounts[n] = mtable->mounts[n+1];
+		mtable->mounts[n+1].inode.Reset();
 	}
-	if ( mp_index + 1 != mtable->nummounts )
-		mtable->mounts[mtable->nummounts].inode.Reset();
 	mtable->nummounts--;
 
 	mtable_lock.Reset();
