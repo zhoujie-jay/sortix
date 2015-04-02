@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -1411,9 +1411,9 @@ readcmd:
 			continue;
 		bool found_slash = false;
 		size_t last_slash = 0;
-		for ( size_t i = 0; i < wildcard_pos; i++ )
-			if ( pattern[i] == '/' )
-				last_slash = i, found_slash = true;
+		for ( size_t n = 0; n < wildcard_pos; n++ )
+			if ( pattern[n] == '/' )
+				last_slash = n, found_slash = true;
 		size_t match_from = found_slash ? last_slash + 1 : 0;
 		DIR* dir;
 		size_t pattern_prefix = 0;
