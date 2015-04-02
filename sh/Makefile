@@ -12,6 +12,12 @@ CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 BINARIES:=sh sortix-sh
 
+SORTIX_SH_SRCS=\
+editline.cpp \
+sh.cpp \
+showline.cpp \
+util.cpp
+
 all: $(BINARIES)
 
 .PHONY: all install clean
@@ -20,8 +26,8 @@ install: all
 	mkdir -p $(DESTDIR)$(BINDIR)
 	install $(BINARIES) $(DESTDIR)$(BINDIR)
 
-sortix-sh: sh.cpp
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@
+sortix-sh: $(SORTIX_SH_SRCS) *.h
+	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $(SORTIX_SH_SRCS) -o $@
 
 sh: proper-sh.cpp
 	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@
