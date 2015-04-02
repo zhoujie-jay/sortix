@@ -25,5 +25,21 @@
 
 char* strdup_safe(const char* string);
 const char* getenv_safe(const char* name, const char* def = "");
+bool array_add(void*** array_ptr,
+               size_t* used_ptr,
+               size_t* length_ptr,
+               void* value);
+bool might_need_shell_quote(char c);
+
+struct stringbuf
+{
+	char* string;
+	size_t length;
+	size_t allocated_size;
+};
+
+void stringbuf_begin(struct stringbuf* buf);
+void stringbuf_append_c(struct stringbuf* buf, char c);
+char* stringbuf_finish(struct stringbuf* buf);
 
 #endif

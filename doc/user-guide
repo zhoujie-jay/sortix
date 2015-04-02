@@ -108,7 +108,7 @@ supported:
 * Line editing.
 * History.
 * Background tasks ('&').
-* Standard output redirection ('>').
+* Standard redirection ('<', '>', '>>').
 * Piping stdout from a task to stdin of another ('|').
 * Stopping the currently running task (Control-C, '^C').
 * Waiting for a task to complete and executing the next (';').
@@ -130,13 +130,27 @@ supported:
 * Go to start of line (Control-A, '^A', Home).
 * Go to end of line (Control-E, '^E', End).
 * Move between words (Control-arrows).
+* Quotes (''') ('"').
 
 These features are missing from the shell:
 
-* Input redirection ('<') ('<<').
-* Quotes (''') ('"').
+* Proper recursive shell grammar parsing.
+* Heredoc sequences.
+* Command substitution ('$(ls)', '`ls`').
+* Arithmetic expansion ('$((2 + 2))').
+* Aliases.
+* Conditions and loops ('if', 'case', 'while', 'until', 'for').
+* Functions.
+* Some special parameters ('$@', '$*', '$#', '$-', '$!).
+* Special shell variables ('$ENV', '$IFS', '$LINENO').
+* Shell prompt customization ('$PS1', '$PS2', '$PS4').
+* Tilde expansion ('~/foo').
+* Any but the simplest variant of Parameter Expansion.
 * Proper shell wildcard support ('*/*.foo').
-* Escaping newline characters.
+* Ability for variables to not be exported.
+* Export keyword ('export FOO', 'export BAR=bar').
+* Subshells.
+* Proper redirection to/from specific file descriptors.
 * And much more; the shell remains hacky.
 
 If a better shell is installed, and the shell is non-interactive, then the sh

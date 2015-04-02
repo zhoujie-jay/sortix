@@ -16,7 +16,7 @@
     this program. If not, see <http://www.gnu.org/licenses/>.
 
     sh.cpp
-    A hacky Sortix shell.
+    Command language interpreter.
 
 *******************************************************************************/
 
@@ -31,7 +31,9 @@
 #include <inttypes.h>
 #include <ioleast.h>
 #include <libgen.h>
+#include <limits.h>
 #include <locale.h>
+#include <sched.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,13 +43,14 @@
 #include <wchar.h>
 #include <wctype.h>
 
+// Sortix libc doesn't have its own proper <limits.h> at this time.
+#if defined(__sortix__)
+#include <sortix/limits.h>
+#endif
+
 #include "editline.h"
 #include "showline.h"
 #include "util.h"
-
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
 
 const char* builtin_commands[] =
 {
@@ -59,6 +62,7 @@ const char* builtin_commands[] =
 };
 
 int status = 0;
+bool foreground_shell;
 
 static bool is_proper_absolute_path(const char* path)
 {
@@ -88,7 +92,7 @@ static bool is_proper_absolute_path(const char* path)
 
 void update_env()
 {
-	char str[128];
+	char str[3 * sizeof(size_t)];
 	struct winsize ws;
 	if ( tcgetwinsize(0, &ws) == 0 )
 	{
@@ -114,6 +118,438 @@ bool matches_simple_pattern(const char* string, const char* pattern)
 	              pattern + wildcard_index + 1) == 0;
 }
 
+void array_shrink_free(void*** array_ptr,
+                       size_t* used_ptr,
+                       size_t* length_ptr,
+                       size_t new_used)
+{
+	void** array;
+	memcpy(&array, array_ptr, sizeof(array)); // Strict aliasing.
+	for ( size_t i = new_used; i < *used_ptr; i++ )
+	{
+		void* value;
+		memcpy(&value, array + i, sizeof(value)); // Strict aliasing.
+		free(value);
+	}
+	*used_ptr = new_used;
+	(void) length_ptr;
+}
+
+char* token_finalize(const char* token)
+{
+	struct stringbuf buf;
+	stringbuf_begin(&buf);
+	bool escape = false;
+	bool single_quote = false;
+	bool double_quote = false;
+	for ( size_t i = 0; token[i]; i++ )
+	{
+		if ( !escape && !single_quote && token[i] == '\\' )
+		{
+			escape = true;
+		}
+		else if ( !escape && !double_quote && token[i] == '\'' )
+		{
+			single_quote = !single_quote;
+		}
+		else if ( !escape && !single_quote && token[i] == '"' )
+		{
+			double_quote = !double_quote;
+		}
+		else if ( escape && token[i] == '\n' )
+		{
+			escape = false;
+		}
+		else
+		{
+			stringbuf_append_c(&buf, token[i]);
+			escape = false;
+		}
+	}
+	return stringbuf_finish(&buf);
+}
+
+bool is_identifier_char(char c)
+{
+	return ('a' <= c && c <= 'z') ||
+	       ('A' <= c && c <= 'Z') ||
+	       ('0' <= c && c <= '9') ||
+	       c == '_';
+}
+
+char* token_expand_variables(const char* token)
+{
+	struct stringbuf buf;
+	stringbuf_begin(&buf);
+	bool escape = false;
+	bool single_quote = false;
+	bool double_quote = false;
+	for ( size_t i = 0; token[i]; i++ )
+	{
+		if ( !escape && !single_quote && token[i] == '\\' )
+		{
+			stringbuf_append_c(&buf, '\\');
+			escape = true;
+		}
+		else if ( !escape && !double_quote && token[i] == '\'' )
+		{
+			stringbuf_append_c(&buf, '\'');
+			single_quote = !single_quote;
+		}
+		else if ( !escape && !single_quote && token[i] == '"' )
+		{
+			stringbuf_append_c(&buf, '"');
+			double_quote = !double_quote;
+		}
+		else if ( !escape && !single_quote && token[i] == '$' && token[i + 1] )
+		{
+			i++;
+			const char* value;
+			if ( token[i] == '{' )
+			{
+				i++;
+				size_t length = 0;
+				while ( token[i + length] && token[i + length] != '}' )
+					length++;
+				char* variable = strndup(token + i, length);
+				if ( !variable )
+					return free(buf.string), (char*) NULL;
+				value = getenv(variable);
+				free(variable);
+				i += length;
+				if ( token[i] == '}' )
+					i++;
+				i--;
+			}
+			else if ( is_identifier_char(token[i]) )
+			{
+				size_t length = 1;
+				while ( is_identifier_char(token[i + length]) )
+					length++;
+				char* variable = strndup(token + i, length);
+				if ( !variable )
+					return free(buf.string), (char*) NULL;
+				value = getenv(variable);
+				free(variable);
+				i += length - 1;
+			}
+			else
+			{
+				char variable[2] = { token[i], '\0' };
+				value = getenv(variable);
+			}
+			for ( size_t n = 0; value && value[n]; n++ )
+			{
+				if ( double_quote && might_need_shell_quote(value[i]) )
+					stringbuf_append_c(&buf, '\\');
+				stringbuf_append_c(&buf, value[n]);
+			}
+		}
+		else
+		{
+			stringbuf_append_c(&buf, token[i]);
+			escape = false;
+		}
+	}
+	return stringbuf_finish(&buf);
+}
+
+bool token_split(void*** out,
+                 size_t* out_used,
+                 size_t* out_length,
+                 const char* token)
+{
+	size_t old_used = *out_used;
+	size_t index = 0;
+	while ( true )
+	{
+		while ( token[index] && isspace((unsigned char) token[index]) )
+			index++;
+		if ( !token[index] )
+			break;
+		struct stringbuf buf;
+		stringbuf_begin(&buf);
+		bool escape = false;
+		bool single_quote = false;
+		bool double_quote = false;
+		for ( ; token[index]; index++ )
+		{
+			if ( !escape && !single_quote && token[index] == '\\' )
+			{
+				stringbuf_append_c(&buf, '\\');
+				escape = true;
+			}
+			else if ( !escape && !double_quote && token[index] == '\'' )
+			{
+				stringbuf_append_c(&buf, '\'');
+				single_quote = !single_quote;
+			}
+			else if ( !escape && !single_quote && token[index] == '"' )
+			{
+				stringbuf_append_c(&buf, '"');
+				double_quote = !double_quote;
+			}
+			else if ( !(escape || single_quote || double_quote) &&
+			          isspace((unsigned char) token[index]) )
+			{
+				break;
+			}
+			else if ( escape && token[index] == '\n' )
+			{
+				escape = false;
+			}
+			else
+			{
+				stringbuf_append_c(&buf, token[index]);
+				escape = false;
+			}
+		}
+		char* value = stringbuf_finish(&buf);
+		if ( !value )
+		{
+			array_shrink_free(out, out_used, out_length, old_used);
+			return false;
+		}
+		if ( !array_add(out, out_used, out_length, value) )
+		{
+			array_shrink_free(out, out_used, out_length, old_used);
+			return false;
+		}
+	}
+	return true;
+}
+
+bool token_expand_variables_split(void*** out,
+                                  size_t* out_used,
+                                  size_t* out_length,
+                                  const char* token)
+{
+	char* expanded = token_expand_variables(token);
+	if ( !expanded )
+		return false;
+	bool result = token_split(out, out_used, out_length, expanded);
+	free(expanded);
+	return result;
+}
+
+static int strcoll_indirect(const void* a_ptr, const void* b_ptr)
+{
+	const char* a = *(const char* const*) a_ptr;
+	const char* b = *(const char* const*) b_ptr;
+	return strcoll(a, b);
+}
+
+bool token_expand_wildcards(void*** out,
+                            size_t* out_used,
+                            size_t* out_length,
+                            const char* token)
+{
+	size_t old_used = *out_used;
+
+	size_t index = 0;
+	size_t num_escaped_wildcards = 0; // We don't properly support them yet.
+
+	stringbuf buf;
+	stringbuf_begin(&buf);
+
+	bool escape = false;
+	bool single_quote = false;
+	bool double_quote = false;
+	for ( ; token[index]; index++ )
+	{
+		if ( !escape && !single_quote && token[index] == '\\' )
+		{
+			escape = true;
+		}
+		else if ( !escape && !double_quote && token[index] == '\'' )
+		{
+			single_quote = !single_quote;
+		}
+		else if ( !escape && !single_quote && token[index] == '"' )
+		{
+			double_quote = !double_quote;
+		}
+		else if ( !(escape || single_quote || double_quote) &&
+		          token[index] == '*' )
+		{
+			break;
+		}
+		else
+		{
+			if ( token[index] == '*' )
+				num_escaped_wildcards++;
+			stringbuf_append_c(&buf, token[index]);
+			escape = false;
+		}
+	}
+
+	if ( token[index] != '*' || num_escaped_wildcards )
+	{
+		free(stringbuf_finish(&buf));
+	just_return_input:
+		char* value = strdup(token);
+		if ( !value )
+			return false;
+		if ( !array_add(out, out_used, out_length, value) )
+			return free(value), false;
+		return true;
+	}
+
+	char* before = stringbuf_finish(&buf);
+	if ( !before )
+		return false;
+	stringbuf_begin(&buf);
+
+	index++;
+
+	for ( ; token[index]; index++ )
+	{
+		if ( !escape && !single_quote && token[index] == '\\' )
+		{
+			escape = true;
+		}
+		else if ( !escape && !double_quote && token[index] == '\'' )
+		{
+			single_quote = !single_quote;
+		}
+		else if ( !escape && !single_quote && token[index] == '"' )
+		{
+			double_quote = !double_quote;
+		}
+		else if ( !(escape || single_quote || double_quote) &&
+		          token[index] == '*' )
+		{
+			break;
+		}
+		else
+		{
+			if ( token[index] == '*' )
+				num_escaped_wildcards++;
+			stringbuf_append_c(&buf, token[index]);
+			escape = false;
+		}
+	}
+
+	if ( token[index] == '*' )
+	{
+		// TODO: We don't support double use of wildcards yet.
+		free(stringbuf_finish(&buf));
+		free(before);
+		goto just_return_input;
+	}
+
+	char* after = stringbuf_finish(&buf);
+	if ( !after )
+		return free(before), false;
+
+	char* pattern;
+	if ( asprintf(&pattern, "%s*%s", before, after) < 0 )
+		return free(after), free(before), false;
+	free(after);
+	free(before);
+
+	size_t wildcard_pos = strcspn(pattern, "*");
+	bool found_slash = false;
+	size_t last_slash = 0;
+	for ( size_t n = 0; n < wildcard_pos; n++ )
+		if ( pattern[n] == '/' )
+			last_slash = n, found_slash = true;
+	size_t match_from = found_slash ? last_slash + 1 : 0;
+
+	size_t pattern_prefix = 0;
+	DIR* dir = NULL;
+	if ( !found_slash )
+	{
+		if ( !(dir = opendir(".")) )
+		{
+			free(pattern);
+			goto just_return_input;
+		}
+	}
+	else
+	{
+		char* dirpath = strdup(pattern);
+		if ( !dirpath )
+		{
+			free(pattern);
+			goto just_return_input;
+		}
+		dirpath[last_slash] = '\0';
+		pattern_prefix = last_slash + 1;
+		dir = opendir(dirpath);
+		free(dirpath);
+		if ( !dir )
+		{
+			free(pattern);
+			goto just_return_input;
+		}
+	}
+	size_t num_inserted = 0;
+	while ( struct dirent* entry = readdir(dir) )
+	{
+		if ( !matches_simple_pattern(entry->d_name, pattern + match_from) )
+			continue;
+		stringbuf_begin(&buf);
+		for ( size_t i = 0; i < pattern_prefix; i++ )
+		{
+			if ( pattern[i] == '\n' )
+			{
+				stringbuf_append_c(&buf, '\'');
+				stringbuf_append_c(&buf, '\n');
+				stringbuf_append_c(&buf, '\'');
+			}
+			else
+			{
+				if ( might_need_shell_quote(pattern[i]) )
+					stringbuf_append_c(&buf, '\\');
+				stringbuf_append_c(&buf, pattern[i]);
+			}
+		}
+		for ( size_t i = 0; entry->d_name[i]; i++ )
+		{
+			if ( entry->d_name[i] == '\n' )
+			{
+				stringbuf_append_c(&buf, '\'');
+				stringbuf_append_c(&buf, '\n');
+				stringbuf_append_c(&buf, '\'');
+			}
+			else
+			{
+				if ( might_need_shell_quote(entry->d_name[i]) )
+					stringbuf_append_c(&buf, '\\');
+				stringbuf_append_c(&buf, entry->d_name[i]);
+			}
+		}
+		char* name = stringbuf_finish(&buf);
+		if ( !name )
+		{
+			free(pattern);
+			closedir(dir);
+			array_shrink_free(out, out_used, out_length, old_used);
+			return false;
+		}
+		if ( !array_add(out, out_used, out_length, name) )
+		{
+			free(name);
+			free(pattern);
+			closedir(dir);
+			array_shrink_free(out, out_used, out_length, old_used);
+			return false;
+		}
+		num_inserted++;
+	}
+	closedir(dir);
+	free(pattern);
+	if ( num_inserted == 0 )
+		goto just_return_input;
+	char** out_tokens;
+	memcpy(&out_tokens, out, sizeof(out_tokens));
+	char** sort_from = out_tokens + old_used;
+	size_t sort_count = *out_used - old_used;
+	qsort(sort_from, sort_count, sizeof(char*), strcoll_indirect);
+	return true;
+}
+
 enum sh_tokenize_result
 {
 	SH_TOKENIZE_RESULT_OK,
@@ -121,6 +557,28 @@ enum sh_tokenize_result
 	SH_TOKENIZE_RESULT_INVALID,
 	SH_TOKENIZE_RESULT_ERROR,
 };
+
+bool can_continue_operator(const char* op, char c)
+{
+	if ( !op )
+		return false;
+	if ( op[0] == '<' && op[1] == '<' && op[2] == '\0' )
+		return c == '-';
+	if ( op[0] == '|' && op[1] == '\0' )
+		return c == '|';
+	if ( op[0] == '&' && op[1] == '\0' )
+		return c == '&';
+	if ( op[0] == ';' && op[1] == '\0' )
+		return c == ';';
+	if ( op[0] == '<' && op[1] == '\0' )
+		return c == '<' || c == '&' || c == '>';
+	if ( op[0] == '>' && op[1] == '\0' )
+		return c == '>' || c == '&' || c == '|';
+	if ( op[0] == '\0' )
+		return c == '|' || c == '&' || c == ';' || c == '>' || c == '<' ||
+		       c == '(' || c == ')';
+	return false;
+}
 
 enum sh_tokenize_result sh_tokenize(const char* command,
                                     char*** tokens_ptr,
@@ -153,57 +611,97 @@ enum sh_tokenize_result sh_tokenize(const char* command,
 			continue;
 		}
 
-		size_t token_start = command_index;
+		struct stringbuf buf;
+		stringbuf_begin(&buf);
+
 		bool escaped = false;
+		bool single_quote = false;
+		bool double_quote = false;
 		bool stop = false;
+		bool making_operator = false;
 		while ( true )
 		{
 			if ( command[command_index] == '\0' )
 			{
-				if ( escaped )
+				if ( escaped || single_quote || double_quote )
 					result = SH_TOKENIZE_RESULT_PARTIAL;
 				stop = true;
 				break;
 			}
-			else if ( !escaped && command[command_index] == '\\' )
+			else if ( making_operator )
 			{
+				if ( can_continue_operator(buf.string, command[command_index]) )
+				{
+					stringbuf_append_c(&buf, command[command_index]);
+					command_index++;
+				}
+				else
+				{
+					break;
+				}
+			}
+			else if ( buf.string && buf.length == 0 &&
+			          can_continue_operator("", command[command_index]) )
+			{
+				stringbuf_append_c(&buf, command[command_index]);
+				making_operator = true;
+				command_index++;
+			}
+			else if ( !escaped && !single_quote && command[command_index] == '\\' )
+			{
+				stringbuf_append_c(&buf, '\\');
 				escaped = true;
 				command_index++;
 			}
-			else if ( !escaped && isspace((unsigned char) command[command_index]) )
+			else if ( !escaped && !double_quote && command[command_index] == '\'' )
+			{
+				stringbuf_append_c(&buf, '\'');
+				single_quote = !single_quote;
+				command_index++;
+			}
+			else if ( !escaped && !single_quote && command[command_index] == '"' )
+			{
+				stringbuf_append_c(&buf, '"');
+				double_quote = !double_quote;
+				command_index++;
+			}
+			else if ( !(escaped || single_quote || double_quote) &&
+			          (isspace((unsigned char) command[command_index]) ||
+			           can_continue_operator("", command[command_index])) )
 			{
 				break;
 			}
+			else if ( escaped && command[command_index] == '\n' )
+			{
+				if ( buf.string && buf.length && buf.string[buf.length - 1] == '\\' )
+					buf.string[--buf.length] = '\0';
+				command_index++;
+				escaped = false;
+			}
 			else
 			{
+				stringbuf_append_c(&buf, command[command_index]);
 				command_index++;
 				escaped = false;
 			}
 		}
 
-		if ( tokens_used == tokens_length )
-		{
-			size_t new_length = tokens_length ? 2 * tokens_length : 16;
-			size_t new_size = new_length * sizeof(char*);
-			char** new_tokens = (char**) realloc(tokens, new_size);
-			if ( !new_tokens )
-			{
-				result = SH_TOKENIZE_RESULT_ERROR;
-				break;
-			}
-			tokens_length = new_length;
-			tokens = new_tokens;
-		}
-
-		size_t token_length = command_index - token_start;
-		char* token = strndup(command + token_start, token_length);
+		char* token = stringbuf_finish(&buf);
 		if ( !token )
 		{
 			result = SH_TOKENIZE_RESULT_ERROR;
 			break;
 		}
 
-		tokens[tokens_used++] = token;
+		if ( !array_add((void***) &tokens,
+		                &tokens_used,
+		                &tokens_length,
+		                token) )
+		{
+			free(token);
+			result = SH_TOKENIZE_RESULT_ERROR;
+			break;
+		}
 
 		if ( stop )
 			break;
@@ -351,280 +849,608 @@ int perform_chdir(const char* path)
 	return chdir(path);
 }
 
-int runcommandline(const char** tokens, bool* script_exited, bool interactive)
+bool is_variable_assignment_token(const char* token)
 {
-	int result = 127;
-	size_t cmdnext = 0;
-	size_t cmdstart;
-	size_t cmdend;
-	bool lastcmd = false;
-	int pipein = 0;
-	int pipeout = 1;
-	int pipeinnext = 0;
-	char** argv;
-	size_t cmdlen;
-	const char* execmode;
-	const char* outputfile;
-	pid_t childpid;
-	pid_t pgid = -1;
+	size_t i = 0;
+	while ( is_identifier_char(token[i]) )
+		i++;
+	return i != 0 && token[i] == '=';
+}
+
+struct execute_result
+{
+	pid_t pid;
+	int internal_status;
+	bool failure;
+	bool critical;
 	bool internal;
-	int internalresult;
-	size_t num_tokens = 0;
-	while ( tokens[num_tokens] )
-		num_tokens++;
-readcmd:
-	// Collect any pending zombie processes.
-	while ( 0 < waitpid(-1, NULL, WNOHANG) );
+	bool exited;
+};
 
-	cmdstart = cmdnext;
-	for ( cmdend = cmdstart; true; cmdend++ )
-	{
-		const char* token = tokens[cmdend];
-		if ( !token ||
-		     strcmp(token, ";") == 0 ||
-		     strcmp(token, "&") == 0 ||
-		     strcmp(token, "|") == 0 ||
-		     strcmp(token, ">") == 0 ||
-		     strcmp(token, ">>") == 0 ||
-		     false )
-		{
-			break;
-		}
-	}
-
-	cmdlen = cmdend - cmdstart;
-	if ( !cmdlen ) { fprintf(stderr, "expected command\n"); goto out; }
-	execmode = tokens[cmdend];
-	if ( !execmode ) { lastcmd = true; execmode = ";"; }
-	tokens[cmdend] = NULL;
-
-	if ( strcmp(execmode, "|") == 0 )
-	{
-		int pipes[2];
-		if ( pipe(pipes) ) { perror("pipe"); goto out; }
-		if ( pipeout != 1 ) { close(pipeout); } pipeout = pipes[1];
-		if ( pipeinnext != 0 ) { close(pipeinnext); } pipeinnext = pipes[0];
-	}
-
-	outputfile = NULL;
-	if ( strcmp(execmode, ">") == 0 || strcmp(execmode, ">>") == 0 )
-	{
-		outputfile = tokens[cmdend+1];
-		if ( !outputfile ) { fprintf(stderr, "expected filename\n"); goto out; }
-		const char* nexttok = tokens[cmdend+2];
-		if ( nexttok ) { fprintf(stderr, "too many filenames\n"); goto out; }
-	}
-
-	for ( size_t i = cmdstart; i < cmdend; i++ )
-	{
-		const char* pattern = tokens[i];
-		size_t wildcard_pos = strcspn(pattern, "*");
-		if ( !pattern[wildcard_pos] )
-			continue;
-		bool found_slash = false;
-		size_t last_slash = 0;
-		for ( size_t n = 0; n < wildcard_pos; n++ )
-			if ( pattern[n] == '/' )
-				last_slash = n, found_slash = true;
-		size_t match_from = found_slash ? last_slash + 1 : 0;
-		DIR* dir;
-		size_t pattern_prefix = 0;
-		if ( !found_slash )
-		{
-			if ( !(dir = opendir(".")) )
-				continue;
-		}
-		else
-		{
-			char* dirpath = strdup(pattern);
-			if ( !dirpath )
-				continue;
-			dirpath[last_slash] = '\0';
-			pattern_prefix = last_slash + 1;
-			dir = opendir(dirpath);
-			free(dirpath);
-			if ( !dir )
-				continue;
-		}
-		size_t num_inserted = 0;
-		size_t last_inserted_index = i;
-		while ( struct dirent* entry = readdir(dir) )
-		{
-			if ( !matches_simple_pattern(entry->d_name, pattern + match_from) )
-				continue;
-			// TODO: Memory leak.
-			char* name = (char*) malloc(pattern_prefix + strlen(entry->d_name) + 1);
-			memcpy(name, pattern, pattern_prefix);
-			strcpy(name + pattern_prefix, entry->d_name);
-			if ( !name )
-				continue;
-			if ( num_inserted )
-			{
-				// TODO: Reckless modification of the tokens array.
-				for ( size_t n = num_tokens; n != last_inserted_index; n-- )
-					tokens[n+1] = tokens[n];
-				num_tokens++;
-				cmdend++;
-			}
-			// TODO: Reckless modification of the tokens array.
-			tokens[last_inserted_index = i + num_inserted++] = name;
-		}
-		closedir(dir);
-	}
-
-	cmdnext = cmdend + 1;
-	argv = (char**) (tokens + cmdstart);
+struct execute_result execute(const char* const* tokens,
+                              size_t tokens_count,
+                              bool interactive,
+                              int pipein,
+                              int pipeout,
+                              pid_t pgid)
+{
+	char** varsv;
+	size_t varsc;
+	size_t varsv_allocated;
+	char** expandv;
+	size_t expandc;
+	size_t expandv_allocated;
+	char** argv;
+	size_t argc;
+	size_t argv_allocated;
+	bool internal;
+	bool failure = false;
+	bool critical = false;
+	bool do_exit = false;
+	bool set_pipein = false;
+	bool set_pipeout = false;
+	bool had_not_varassign = false;
+	pid_t childpid;
 
 	update_env();
-	char statusstr[32];
+	char statusstr[sizeof(int) * 3];
 	snprintf(statusstr, sizeof(statusstr), "%i", status);
 	setenv("?", statusstr, 1);
 
-	for ( char** argp = argv; *argp; argp++ )
-	{
-		char* arg = *argp;
-		if ( arg[0] != '$' )
-			continue;
-		arg = getenv(arg+1);
-		if ( !arg )
-			arg = (char*) "";
-		*argp = arg;
-	}
+	varsv = NULL;
+	varsc = 0;
+	varsv_allocated = 0;
 
-	internal = false;
-	internalresult = 0;
-	if ( strcmp(argv[0], "cd") == 0 )
+	expandv = NULL;
+	expandc = 0;
+	expandv_allocated = 0;
+
+	for ( size_t i = 0; !failure && i < tokens_count; i++ )
 	{
-		internal = true;
-		const char* newdir = getenv_safe("HOME", "/");
-		if ( argv[1] )
-			newdir = argv[1];
-		if ( perform_chdir(newdir) )
+		if ( !had_not_varassign && is_variable_assignment_token(tokens[i]))
 		{
-			error(0, errno, "cd: %s", newdir);
-			internalresult = 1;
+			char* value = token_expand_variables(tokens[i]);
+			if ( !value )
+			{
+				error(0, errno, "variable expansion");
+				failure = true;
+				critical = true;
+				break;
+			}
+			if ( !array_add((void***) &varsv,
+			                &varsc,
+			                &varsv_allocated,
+			                value) )
+			{
+				free(value);
+				error(0, errno, "variable expansion");
+				failure = true;
+				critical = true;
+				break;
+			}
+		}
+		else
+		{
+			had_not_varassign = true;
+			if ( !token_expand_variables_split((void***) &expandv,
+				                               &expandc,
+				                               &expandv_allocated,
+				                               tokens[i]) )
+			{
+				error(0, errno, "variable expansion");
+				failure = true;
+				critical = true;
+				break;
+			}
 		}
 	}
-	if ( strcmp(argv[0], "exit") == 0 )
+
+	argv = NULL;
+	argc = 0;
+	argv_allocated = 0;
+
+	for ( size_t i = 0; !failure && i < expandc; i++ )
 	{
-		int exitcode = argv[1] ? atoi(argv[1]) : 0;
-		*script_exited = true;
-		return exitcode;
+		if ( !strcmp(expandv[i], "<") ||
+		     !strcmp(expandv[i], ">") ||
+		   /*!strcmp(expandv[i], "<<") ||*/
+		     !strcmp(expandv[i], ">>") )
+		{
+			const char* type = expandv[i++];
+
+			if ( i == expandc )
+			{
+				error(0, errno, "%s: expected argument", type);
+				failure = true;
+				critical = true;
+				break;
+			}
+
+			char** targets = NULL;
+			size_t targets_used = 0;
+			size_t targets_length = 0;
+
+			if ( !token_expand_wildcards((void***) &targets,
+				                         &targets_used,
+				                         &targets_length,
+				                         expandv[i]) )
+			{
+				error(0, errno, "wildcard expansion");
+				failure = true;
+				critical = true;
+				break;
+			}
+
+			if ( targets_used != 1 )
+			{
+				error(0, 0, "%s: ambiguous redirect: %s", type, expandv[i]);
+				for ( size_t i = 0; i < targets_used; i++ )
+					free(targets[i]);
+				free(targets);
+				failure = true;
+				break;
+			}
+
+			char* target = token_finalize(targets[0]);
+			free(targets[0]);
+			free(targets);
+			if ( !target )
+			{
+				error(0, errno, "token finalization");
+				failure = true;
+				break;
+			}
+
+			int fd = -1;
+			if ( !strcmp(type, "<") )
+				fd = open(target, O_RDONLY | O_CLOEXEC);
+			else if ( !strcmp(type, ">") )
+				fd = open(target, O_WRONLY | O_CREATE | O_TRUNC | O_CLOEXEC, 0666);
+			else if ( !strcmp(type, ">>") )
+				fd = open(target, O_WRONLY | O_CREATE | O_APPEND | O_CLOEXEC, 0666);
+
+			if ( fd < 0 )
+			{
+				error(0, errno, "%s", target);
+				free(target);
+				failure = true;
+				break;
+			}
+
+			if ( !strcmp(type, "<") )
+			{
+				pipein = fd;
+				set_pipein = true;
+			}
+			else if ( !strcmp(type, ">") || !strcmp(type, ">>") )
+			{
+				pipeout = fd;
+				set_pipeout = true;
+			}
+
+			free(target);
+		}
+		else
+		{
+			if ( !token_expand_wildcards((void***) &argv,
+				                         &argc,
+				                         &argv_allocated,
+				                         expandv[i]) )
+			{
+				error(0, errno, "wildcard expansion");
+				failure = true;
+				critical = true;
+				break;
+			}
+		}
 	}
-	if ( strcmp(argv[0], "unset") == 0 )
+
+	for ( size_t i = 0; i < expandc; i++ )
+		free(expandv[i]);
+	free(expandv);
+
+	if ( !array_add((void***) &argv, &argc, &argv_allocated, (char*) NULL) )
+	{
+		failure = true;
+		critical = true;
+	}
+	else
+	{
+		argc--; // Don't count the NULL.
+	}
+
+	for ( size_t i = 0; i < varsc; i++ )
+	{
+		char* var = token_finalize(varsv[i]);
+		if ( !var )
+		{
+			error(0, errno, "token finalization");
+			failure = true;
+			break;
+		}
+		free(varsv[i]);
+		varsv[i] = var;
+	}
+
+	for ( size_t i = 0; i < argc; i++ )
+	{
+		char* arg = token_finalize(argv[i]);
+		if ( !arg )
+		{
+			error(0, errno, "token finalization");
+			failure = true;
+			break;
+		}
+		free(argv[i]);
+		argv[i] = arg;
+	}
+
+	// TODO: Builtins should be run in a child process if & or |.
+	int internal_status = status;
+	if ( failure )
+	{
+		internal = true;
+		internal_status = 1;
+	}
+	else if ( argc == 0 )
+	{
+		internal = true;
+		for ( size_t i = 0; i < varsc; i++ )
+		{
+			char* key = varsv[i];
+			char* eq = strchr(key, '=');
+			if ( !eq )
+				continue;
+			*eq = '\0';
+			char* value = eq + 1;
+			int ret = setenv(key, value, 1);
+			*eq = '=';
+			if ( ret < 0 )
+			{
+				error(0, errno, "setenv");
+				internal_status = 1;
+			}
+		}
+	}
+	else if ( strcmp(argv[0], "cd") == 0 )
+	{
+		internal = true;
+		const char* newdir = argv[1];
+		if ( !newdir )
+			newdir = getenv_safe("HOME", "/");
+		internal_status = 0;
+		if ( perform_chdir(newdir) < 0 )
+		{
+			error(0, errno, "cd: %s", newdir);
+			internal_status = 1;
+		}
+	}
+	else if ( strcmp(argv[0], "exit") == 0 )
+	{
+		internal = true;
+		int exitcode = argv[1] ? atoi(argv[1]) : 0;
+		exitcode = (unsigned char) exitcode;
+		do_exit = true;
+		internal_status = exitcode;
+	}
+	else if ( strcmp(argv[0], "unset") == 0 )
 	{
 		internal = true;
 		unsetenv(argv[1] ? argv[1] : "");
+		internal_status = 0;
 	}
-	if ( strcmp(argv[0], "clearenv") == 0 )
+	else if ( strcmp(argv[0], "clearenv") == 0 )
 	{
 		internal = true;
 		clearenv();
+		internal_status = 0;
+	}
+	else
+	{
+		internal = false;
 	}
 
-	childpid = internal ? getpid() : fork();
-	if ( childpid < 0 ) { perror("fork"); goto out; }
+	if ( (childpid = internal ? getpid() : fork()) < 0 )
+	{
+		error(0, errno, "fork");
+		internal_status = 1;
+		failure = true;
+		internal = true;
+		childpid = getpid();
+	}
+
 	if ( childpid )
 	{
-		if ( !internal )
+		if ( set_pipein )
+			close(pipein);
+
+		if ( set_pipeout )
+			close(pipeout);
+
+		for ( size_t i = 0; i < varsc; i++ )
+			free(varsv[i]);
+		free(varsv);
+
+		for ( size_t i = 0; i < argc; i++ )
+			free(argv[i]);
+		free(argv);
+
+		if ( internal )
 		{
-			if ( pgid == -1 )
-				pgid = childpid;
-			setpgid(childpid, pgid);
+			struct execute_result result;
+			memset(&result, 0, sizeof(result));
+			result.internal_status = internal_status;
+			result.failure = failure;
+			result.critical = critical;
+			result.internal = true;
+			result.exited = do_exit;
+			return result;
 		}
 
-		if ( pipein != 0 ) { close(pipein); pipein = 0; }
-		if ( pipeout != 1 ) { close(pipeout); pipeout = 1; }
-		if ( pipeinnext != 0 ) { pipein = pipeinnext; pipeinnext = 0; }
+		setpgid(childpid, pgid != -1 ? pgid : childpid);
+		// TODO: This is an inefficient manner to avoid a race condition where
+		//       a pipeline foo | bar is running in its own process group and
+		//       foo is the process group leader that sets itself as the
+		//       foreground process group, but bar dies prior to foo's tcsetpgrp
+		//       call, because then the shell would run tcsetpgrp to take back
+		//       control, and only then would foo do its tcsetpgrp call.
+		while ( foreground_shell && pgid == -1 && tcgetpgrp(0) != childpid )
+			sched_yield();
 
-		if ( strcmp(execmode, "&") == 0 && !tokens[cmdnext] )
-		{
-			result = 0; goto out;
-		}
-
-		if ( strcmp(execmode, "&") == 0 )
-			pgid = -1;
-
-		if ( strcmp(execmode, "&") == 0 || strcmp(execmode, "|") == 0 )
-		{
-			goto readcmd;
-		}
-
-		status = internalresult;
-		int exitstatus;
-		tcsetpgrp(0, pgid);
-		if ( !internal && waitpid(childpid, &exitstatus, 0) < 0 )
-		{
-			perror("waitpid");
-			return 127;
-		}
-		tcsetpgrp(0, getpgid(0));
-
-		// TODO: HACK: Most signals can't kill processes yet.
-		if ( WEXITSTATUS(exitstatus) == 128 + SIGINT )
-			printf("^C\n");
-		if ( WTERMSIG(status) == SIGKILL )
-			printf("Killed\n");
-
-		status = WEXITSTATUS(exitstatus);
-
-		if ( strcmp(execmode, ";") == 0 && tokens[cmdnext] && !lastcmd )
-		{
-			goto readcmd;
-		}
-
-		result = status;
-		goto out;
+		struct execute_result result;
+		memset(&result, 0, sizeof(result));
+		result.pid = childpid;
+		result.internal = false;
+		return result;
 	}
 
 	setpgid(0, pgid != -1 ? pgid : 0);
-
-	if ( pipeinnext != 0 ) { close(pipeinnext); }
+	if ( foreground_shell && pgid == -1 )
+	{
+		sigset_t oldset, sigttou;
+		sigemptyset(&sigttou);
+		sigaddset(&sigttou, SIGTTOU);
+		sigprocmask(SIG_BLOCK, &sigttou, &oldset);
+		tcsetpgrp(0, getpgid(0));
+		sigprocmask(SIG_SETMASK, &oldset, NULL);
+	}
 
 	if ( pipein != 0 )
-	{
-		close(0);
-		dup(pipein);
-		close(pipein);
-	}
+		dup2(pipein, 0);
 
 	if ( pipeout != 1 )
-	{
-		close(1);
-		dup(pipeout);
-		close(pipeout);
-	}
+		dup2(pipeout, 1);
 
-	if ( outputfile )
+	for ( size_t i = 0; i < varsc; i++ )
 	{
-		close(1);
-		// TODO: Is this logic right or wrong?
-		int flags = O_CREAT | O_WRONLY;
-		if ( strcmp(execmode, ">") == 0 )
-			flags |= O_TRUNC;
-		if ( strcmp(execmode, ">>") == 0 )
-			flags |= O_APPEND;
-		if ( open(outputfile, flags, 0666) < 0 )
+		char* key = varsv[i];
+		char* eq = strchr(key, '=');
+		if ( !eq )
+			continue;
+		*eq = '\0';
+		char* value = eq + 1;
+		int ret = setenv(key, value, 1);
+		*eq = '=';
+		if ( ret < 0 )
 		{
-			error(127, errno, "%s", outputfile);
+			error(0, errno, "setenv");
+			status = 1;
 		}
 	}
 
 	execvp(argv[0], argv);
+
 	if ( interactive && errno == ENOENT )
 	{
 		int errno_saved = errno;
 		execlp("command-not-found", "command-not-found", argv[0], NULL);
 		errno = errno_saved;
 	}
-	error(127, errno, "%s", argv[0]);
-	return 127;
 
-out:
-	if ( pipein != 0 ) { close(pipein); }
-	if ( pipeout != 1 ) { close(pipeout); }
-	if ( pipeinnext != 0 ) { close(pipeout); }
-	return result;
+	error(127, errno, "%s", argv[0]);
+
+	__builtin_unreachable();
+}
+
+int run_tokens(const char* const* tokens,
+               size_t tokens_count,
+               bool interactive,
+               bool exit_on_error,
+               bool* script_exited)
+{
+	size_t cmdnext = 0;
+	size_t cmdstart;
+	size_t cmdend;
+	int pipein = 0;
+	int pipeout = 1;
+	int pipeinnext = 0;
+	const char* execmode;
+	pid_t pgid = -1;
+	bool short_circuited_and = false;
+	bool short_circuited_or = false;
+
+	// Collect any pending zombie processes.
+	while ( 0 < waitpid(-1, NULL, WNOHANG) );
+
+readcmd:
+	cmdstart = cmdnext;
+
+	if ( cmdstart == tokens_count )
+		return status;
+
+	for ( cmdend = cmdstart; cmdend < tokens_count; cmdend++ )
+	{
+		const char* token = tokens[cmdend];
+		if ( strcmp(token, ";") == 0 ||
+		     strcmp(token, "&") == 0 ||
+		     strcmp(token, "&&") == 0 ||
+		     strcmp(token, "|") == 0 ||
+		     strcmp(token, "||") == 0 ||
+		     false )
+			break;
+	}
+
+	if ( cmdend < tokens_count )
+	{
+		execmode = tokens[cmdend];
+		cmdnext = cmdend + 1;
+	}
+	else
+	{
+		execmode = ";";
+		cmdnext = cmdend;
+	}
+
+	if ( short_circuited_or )
+	{
+		if ( !strcmp(execmode, ";") ||
+		     !strcmp(execmode, "&") )
+		{
+			short_circuited_and = false;
+			short_circuited_or = false;
+		}
+		goto readcmd;
+	}
+
+	if ( short_circuited_and )
+	{
+		if ( !strcmp(execmode, ";") ||
+		     !strcmp(execmode, "&") ||
+		     !strcmp(execmode, "||") )
+			short_circuited_and = false;
+		goto readcmd;
+	}
+
+	if ( strcmp(execmode, "|") == 0 )
+	{
+		int pipes[2];
+		if ( pipe2(pipes, O_CLOEXEC) < 0 )
+		{
+			error(0, errno, "pipe");
+			if ( !interactive || exit_on_error )
+				*script_exited = true;
+			return status = 1;
+		}
+		else
+		{
+			if ( pipeout != 1 )
+				close(pipeout);
+			pipeout = pipes[1];
+			if ( pipeinnext != 0 )
+				close(pipeinnext);
+			pipeinnext = pipes[0];
+		}
+	}
+
+	struct execute_result result =
+		execute(tokens + cmdstart,
+		        cmdend - cmdstart,
+		        interactive,
+		        pipein,
+		        pipeout,
+		        pgid);
+
+	if ( !result.internal && pgid == -1 )
+		pgid = result.pid;
+
+	if ( pipein != 0 )
+	{
+		close(pipein);
+		pipein = 0;
+	}
+
+	if ( pipeout != 1 )
+	{
+		close(pipeout);
+		pipeout = 1;
+	}
+
+	if ( pipeinnext != 0 )
+	{
+		pipein = pipeinnext;
+		pipeinnext = 0;
+	}
+
+	if ( result.critical )
+	{
+		if ( !interactive || exit_on_error )
+			*script_exited = true;
+		return status = result.internal_status;
+	}
+
+	if ( result.exited )
+	{
+		*script_exited = true;
+		return status = result.internal_status;
+	}
+
+	if ( strcmp(execmode, "&") == 0 )
+	{
+		// TODO: We probably shouldn't have made the progress group foreground
+		//       as that may have side effects if a process checks for this
+		//       behavior and then unexpectedly the shell takes back support
+		//       without the usual ^Z mechanism.
+		sigset_t oldset, sigttou;
+		sigemptyset(&sigttou);
+		sigaddset(&sigttou, SIGTTOU);
+		sigprocmask(SIG_BLOCK, &sigttou, &oldset);
+		tcsetpgrp(0, getpgid(0));
+		sigprocmask(SIG_SETMASK, &oldset, NULL);
+		pgid = -1;
+		status = 0;
+		goto readcmd;
+	}
+
+	if ( strcmp(execmode, "|") == 0 )
+		goto readcmd;
+
+	if ( result.internal )
+	{
+		status = result.internal_status;
+	}
+	else
+	{
+		int exitstatus;
+		if ( waitpid(result.pid, &exitstatus, 0) < 0 )
+		{
+			error(0, errno, "waitpid");
+			if ( !interactive || exit_on_error )
+				*script_exited = true;
+			status = 1;
+			return status;
+		}
+		sigset_t oldset, sigttou;
+		sigemptyset(&sigttou);
+		sigaddset(&sigttou, SIGTTOU);
+		sigprocmask(SIG_BLOCK, &sigttou, &oldset);
+		tcsetpgrp(0, getpgid(0));
+		sigprocmask(SIG_SETMASK, &oldset, NULL);
+		if ( WIFSIGNALED(exitstatus) && WTERMSIG(exitstatus) == SIGINT )
+			printf("^C\n");
+		else if ( WIFSIGNALED(exitstatus) && WTERMSIG(exitstatus) != SIGPIPE )
+			printf("%s\n", strsignal(WTERMSIG(exitstatus)));
+		status = WEXITSTATUS(exitstatus);
+	}
+
+	pgid = -1;
+
+	if ( !strcmp(execmode, "&&") )
+	{
+		if ( status != 0 )
+			short_circuited_and = true;
+	}
+	else if ( !strcmp(execmode, "||") )
+	{
+		if ( status == 0 )
+			short_circuited_or = true;
+	}
+	else if ( exit_on_error && status != 0 )
+	{
+		*script_exited = true;
+		return status;
+	}
+
+	goto readcmd;
 }
 
 int run_command(char* command,
@@ -632,76 +1458,32 @@ int run_command(char* command,
                 bool exit_on_error,
                 bool* script_exited)
 {
-	size_t commandused = strlen(command);
+	int result;
 
-	if ( command[0] == '\0' )
-		return status;
+	char** tokens = NULL;
+	size_t tokens_used = 0;
+	size_t tokens_length = 0;
 
-	if ( strchr(command, '=') && !strchr(command, ' ') && !strchr(command, '\t') )
+	enum sh_tokenize_result tokenize_result =
+		sh_tokenize(command, &tokens, &tokens_used, &tokens_length);
+
+	if ( tokenize_result == SH_TOKENIZE_RESULT_OK )
 	{
-		const char* key = command;
-		char* equal = strchr(command, '=');
-		*equal = '\0';
-		const char* value = equal + 1;
-		if ( setenv(key, value, 1) < 0 )
-			error(1, errno, "setenv");
-		return status = 0;
+		result = run_tokens(tokens, tokens_used, interactive, exit_on_error,
+		                    script_exited);
+	}
+	else
+	{
+		if ( !interactive )
+			*script_exited = true;
+		result = 255;
 	}
 
-	int argc = 0;
-	const size_t ARGV_MAX_LENGTH = 2048;
-	const char* argv[ARGV_MAX_LENGTH];
-	argv[0] = NULL;
+	for ( size_t i = 0; i < tokens_used; i++ )
+		free(tokens[i]);
+	free(tokens);
 
-	bool lastwasspace = true;
-	bool escaped = false;
-	for ( size_t i = 0; i <= commandused; i++ )
-	{
-		switch ( command[i] )
-		{
-			case '\\':
-				if ( !escaped )
-				{
-					memmove(command + i, command + i + 1, commandused+1 - (i-1));
-					i--;
-					commandused--;
-					escaped = true;
-					break;
-				}
-			case '\0':
-			case ' ':
-			case '\t':
-			case '\n':
-				if ( !command[i] || !escaped )
-				{
-					command[i] = 0;
-					lastwasspace = true;
-					break;
-				}
-			default:
-				escaped = false;
-				if ( lastwasspace )
-				{
-					if ( argc == ARGV_MAX_LENGTH  )
-					{
-						fprintf(stderr, "argv max length of %zu entries hit!\n",
-						        ARGV_MAX_LENGTH);
-						abort();
-					}
-					argv[argc++] = command + i;
-				}
-				lastwasspace = false;
-		}
-	}
-
-	if ( !argv[0] )
-		return status;
-
-	argv[argc] = NULL;
-	status = runcommandline(argv, script_exited, interactive);
-	if ( status && exit_on_error )
-		*script_exited = true;
-	return status;
+	return result;
 }
 
 bool does_line_editing_need_another_line(void*, const char* line)
@@ -793,9 +1575,9 @@ size_t do_complete(char*** completions_ptr,
 		}
 	}
 
-	// TODO: Use reallocarray.
-	char** completions = (char**) malloc(sizeof(char**) * 1024 /* TODO: HARD-CODED! */);
-	size_t num_completions = 0;
+	char** completions = NULL;
+	size_t completions_count = 0;
+	size_t completions_length = 0;
 
 	if ( complete_type == COMPLETE_TYPE_PROGRAM ) do
 	{
@@ -805,7 +1587,10 @@ size_t do_complete(char*** completions_ptr,
 			if ( strncmp(builtin, partial + complete_at - used_before, used_before) != 0 )
 				continue;
 			// TODO: Add allocation check!
-			completions[num_completions++] = strdup(builtin + used_before);
+			array_add((void***) &completions,
+			          &completions_count,
+			          &completions_length,
+			          strdup(builtin + used_before));
 		}
 		char* path = strdup_safe(getenv("PATH"));
 		if ( !path )
@@ -826,7 +1611,10 @@ size_t do_complete(char*** completions_ptr,
 					if ( used_before == 0 &&  entry->d_name[0] == '.' )
 						continue;
 					// TODO: Add allocation check!
-					completions[num_completions++] = strdup(entry->d_name + used_before);
+					array_add((void***) &completions,
+					          &completions_count,
+					          &completions_length,
+					          strdup(entry->d_name + used_before));
 				}
 				closedir(dir);
 			}
@@ -898,7 +1686,11 @@ size_t do_complete(char*** completions_ptr,
 			strcpy(completion, entry->d_name + pattern_length);
 			if ( is_directory )
 				strcat(completion, "/");
-			completions[num_completions++] = completion;
+			// TODO: Add allocation check!
+			array_add((void***) &completions,
+			          &completions_count,
+			          &completions_length,
+			          completion);
 		}
 		closedir(dir);
 		free(dirpath_alloc);
@@ -918,14 +1710,18 @@ size_t do_complete(char*** completions_ptr,
 			size_t equal_offset = strcspn(rest, "=");
 			if ( rest[equal_offset] != '=' )
 				continue;
-			completions[num_completions++] = strndup(rest, equal_offset);
+			// TODO: Add allocation check!
+			array_add((void***) &completions,
+			          &completions_count,
+			          &completions_length,
+			          strndup(rest, equal_offset));
 		}
 	} while ( false );
 
 	*used_before_ptr = used_before;
 	*used_after_ptr = used_after;
 
-	return *completions_ptr = completions, num_completions;
+	return *completions_ptr = completions, completions_count;
 }
 
 struct sh_read_command
@@ -955,7 +1751,7 @@ void read_command_interactive(struct sh_read_command* sh_read_command)
 	const char* print_username = getlogin();
 	if ( !print_username )
 		print_username = getuid() == 0 ? "root" : "?";
-	char hostname[256];
+	char hostname[HOST_NAME_MAX + 1];
 	if ( gethostname(hostname, sizeof(hostname)) < 0 )
 		strlcpy(hostname, "(none)", sizeof(hostname));
 	const char* print_hostname = hostname;
@@ -1002,10 +1798,6 @@ void read_command_interactive(struct sh_read_command* sh_read_command)
 
 	char* command = edit_line_result(&edit_state);
 	assert(command);
-	for ( size_t i = 0; command[i]; i++ )
-		if ( command[i + 0] == '\\' && command[i + 1] == '\n' )
-			command[i + 0] = ' ',
-			command[i + 1] = ' ';
 	sh_read_command->command = command;
 }
 
@@ -1110,7 +1902,7 @@ int run(FILE* fp,
 	// TODO: The interactive read code should cope when the input is not a
 	//       terminal; it should print the prompt and then read normally without
 	//       any line editing features.
-	if ( !isatty(fileno(fp)) )
+	if ( !isatty(fileno(fp)) || !foreground_shell )
 		interactive = false;
 
 	while ( true )
@@ -1154,7 +1946,7 @@ int run(FILE* fp,
 	return status;
 }
 
-void compact_arguments(int* argc, char*** argv)
+static void compact_arguments(int* argc, char*** argv)
 {
 	for ( int i = 0; i < *argc; i++ )
 	{
@@ -1167,7 +1959,7 @@ void compact_arguments(int* argc, char*** argv)
 	}
 }
 
-void help(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION...] [SCRIPT [ARGUMENT...]]\n", argv0);
 	fprintf(fp, "  or:  %s [OPTION...] -c COMMAND [ARGUMENT...]\n", argv0);
@@ -1200,7 +1992,7 @@ void help(FILE* fp, const char* argv0)
 	fprintf(fp, "      --version  output version information and exit\n");
 }
 
-void version(FILE* fp, const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
 	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
@@ -1211,6 +2003,8 @@ void version(FILE* fp, const char* argv0)
 int main(int argc, char* argv[])
 {
 	setlocale(LC_ALL, "");
+
+	foreground_shell = isatty(0) && tcgetpgrp(0) == getpgid(0);
 
 	// TODO: Canonicalize argv[0] if it contains a slash and isn't absolute?
 
@@ -1236,7 +2030,7 @@ int main(int argc, char* argv[])
 	{
 		const char* arg = argv[i];
 		if ( (arg[0] != '-' && arg[0] != '+') || !arg[1] )
-			break;
+			break;  // Intentionally not continue and note '+' support.
 		argv[i] = NULL;
 		if ( !strcmp(arg, "--") )
 			break;
@@ -1284,7 +2078,7 @@ int main(int argc, char* argv[])
 		long shlvl = atol(getenv("SHLVL"));
 		if ( shlvl < 1 )
 			shlvl = 1;
-		else
+		else if ( shlvl < LONG_MAX )
 			shlvl++;
 		char shlvl_string[sizeof(long) * 3];
 		snprintf(shlvl_string, sizeof(shlvl_string), "%li", shlvl);
