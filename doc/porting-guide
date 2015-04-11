@@ -307,25 +307,6 @@ correctly:
 	LIBDIR?=$(EXEC_PREFIX)/lib
 	LOCALEDIR?=$(DATAROOTDIR/locale
 	MANDIR?=$(DATAROOTDIR)/man
-	MAN1DIR?=$(MANDIR)/man1
-	MAN2DIR?=$(MANDIR)/man2
-	MAN3DIR?=$(MANDIR)/man3
-	MAN4DIR?=$(MANDIR)/man4
-	MAN5DIR?=$(MANDIR)/man5
-	MAN6DIR?=$(MANDIR)/man6
-	MAN7DIR?=$(MANDIR)/man7
-	MAN8DIR?=$(MANDIR)/man8
-	MAN9DIR?=$(MANDIR)/man9
-	MANEXT?=.1
-	MAN1EXT?=.1
-	MAN2EXT?=.2
-	MAN3EXT?=.3
-	MAN4EXT?=.4
-	MAN5EXT?=.5
-	MAN6EXT?=.6
-	MAN7EXT?=.7
-	MAN8EXT?=.8
-	MAN9EXT?=.9
 
 	# An additional prefix during the installation.
 	DESTDIR?=
@@ -358,10 +339,10 @@ correctly:
 	.PHONY: all install clean distclean
 
 	%: %.c
-		$(CC) (CPPFLAGS) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
+		$(CC) $(CPPFLAGS) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
 
 	%: %.c++
-		$(CXX) (CPPFLAGS) $(CXXFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
+		$(CXX) $(CPPFLAGS) $(CXXFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
 
 	install: all
 		install $(PROGRAMS) $(DESTDIR)$(BINDIR)
