@@ -101,8 +101,8 @@ get_package_dependencies() {(
         continue
       fi
     fi
-    if $PRINTED_ANY; then echo -n ' '; fi
-    echo -n "$DEPENDENCY"
+    if $PRINTED_ANY; then printf ' '; fi
+    printf "%s" "$DEPENDENCY"
     PRINTED_ANY=true
   done
   if $PRINTED_ANY; then echo; fi
@@ -114,9 +114,9 @@ DEPENDENCY_MAKEFILE=$(mktemp)
    echo "$PACKAGE: $(get_package_dependencies $PACKAGE)"
    echo "	@echo $PACKAGE"
  done;
- echo -n ".PHONY:"
+ printf ".PHONY:"
  for PACKAGE in $PACKAGES; do
-   echo -n " $PACKAGE"
+   printf " $PACKAGE"
  done;
  echo) > "$DEPENDENCY_MAKEFILE"
 

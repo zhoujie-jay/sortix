@@ -293,7 +293,7 @@ sortix.bin: kernel
 
 $(INITRD): sysroot
 	mkdir -p `dirname $(INITRD)`
-	echo -n > $(INITRD).filter
+	printf '' > $(INITRD).filter
 	echo "exclude /boot" >> $(INITRD).filter
 	echo "exclude /dev" >> $(INITRD).filter
 	echo "exclude /next" >> $(INITRD).filter
