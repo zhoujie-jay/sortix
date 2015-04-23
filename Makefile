@@ -39,8 +39,6 @@ SORTIX_REPOSITORY_DIR?=repository
 
 include build-aux/dirs.mak
 
-export SYSROOT
-
 BUILD_NAME:=sortix_$(VERSION)_$(MACHINE)
 
 INITRD:=$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).initrd
@@ -66,7 +64,7 @@ install: sysroot
 	cp -RTv "$(SYSROOT)" "$(INSTALL_ROOTFS)"
 	@if test -n '$(INSTALL_ROOTFS_UUID)'; then \
 	   echo '$(INSTALL_ROOTFS_UUID)' > "$(INSTALL_ROOTFS)/etc/rootfs.uuid"; \
-	   $(MAKE) create-install-rootfs-initrd; \
+	   SYSROOT="$(SYSROOT)" $(MAKE) create-install-rootfs-initrd; \
 	else \
 	   echo "Warning: INSTALL_ROOTFS_UUID was not set"; \
 	   echo "Therefore: /etc/rootfs.uuid was not created"; \
@@ -146,10 +144,12 @@ sysroot-fsh:
 
 .PHONY: sysroot-base-headers
 sysroot-base-headers: sysroot-fsh
+	export SYSROOT="$(SYSROOT)" && \
 	(for D in libc libm libpthread kernel; do ($(MAKE) -C $$D install-headers DESTDIR="$(SYSROOT)") || exit $$?; done)
 
 .PHONY: sysroot-system
 sysroot-system: sysroot-fsh sysroot-base-headers
+	export SYSROOT="$(SYSROOT)" && \
 	(for D in $(MODULES); do ($(MAKE) -C $$D && $(MAKE) -C $$D install DESTDIR="$(SYSROOT)") || exit $$?; done)
 
 .PHONY: sysroot-source
