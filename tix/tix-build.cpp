@@ -533,8 +533,7 @@ void BuildPackage(metainfo_t* minfo)
 	const char* clean_target = dictionary_get(pinfo, "pkg.make.clean-target",
 	                                          default_clean_target);
 	const char* ignore_clean_failure_var =
-		dictionary_get(pinfo, "pkg.make.ignore-clean-failure",
-		               !strcmp(build_system, "configure") ? "true" : "false");
+		dictionary_get(pinfo, "pkg.make.ignore-clean-failure", "true");
 	bool ignore_clean_failure = parse_boolean(ignore_clean_failure_var);
 
 	if ( SHOULD_DO_BUILD_STEP(BUILD_STEP_PRE_CLEAN, minfo) && !use_build_dir )
