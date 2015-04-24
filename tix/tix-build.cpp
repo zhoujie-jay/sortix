@@ -859,6 +859,13 @@ int main(int argc, char* argv[])
 	if ( !minfo.package_dir )
 		error(1, errno, "canonicalize_file_name: `%s'", argv[1]);
 
+	if ( minfo.build && !minfo.build[0] )
+		free(minfo.build), minfo.build = NULL;
+	if ( minfo.host && !minfo.host[0] )
+		free(minfo.host), minfo.host = NULL;
+	if ( minfo.target && !minfo.target[0] )
+		free(minfo.target), minfo.target = NULL;
+
 	if ( !minfo.build && !(minfo.build = GetBuildTriplet()) )
 		error(1, errno, "unable to determine build, use --build or BUILD");
 	if ( !minfo.host && !(minfo.host = strdup_null(getenv("HOST"))) )
