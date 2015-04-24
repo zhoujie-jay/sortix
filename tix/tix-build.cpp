@@ -355,11 +355,12 @@ void Configure(metainfo_t* minfo)
 		bool with_sysroot =
 			parse_boolean(dictionary_get(pkg_info, "pkg.configure.with-sysroot",
 			                                        "false"));
-		// After releasing Sortix 1.0, remove this and hard-code the default o
+		// After releasing Sortix 1.0, remove this and hard-code the default to
 		// false. This allows building Sortix 0.9 with its own ports using this
 		// tix-build version.
 		const char* with_sysroot_ld_bug_default = "false";
-		if ( !strcmp(minfo->package_name, "binutils") )
+		if ( !strcmp(minfo->package_name, "binutils") ||
+		     !strcmp(minfo->package_name, "gcc") )
 			with_sysroot_ld_bug_default = "true";
 		bool with_sysroot_ld_bug =
 			parse_boolean(dictionary_get(pkg_info, "pkg.configure.with-sysroot-ld-bug",
@@ -404,6 +405,9 @@ void Configure(metainfo_t* minfo)
 				// TODO: Binutils has a bug where the empty string means that
 				//       sysroot support is disabled and ld --sysroot won't work
 				//       so set it to / here for compatibility.
+				// TODO: GCC has a bug where it doesn't use the
+				//       --with-build-sysroot value when --with-sysroot= when
+				//       locating standard library headers.
 				if ( with_sysroot_ld_bug )
 					string_array_append(&args, "--with-sysroot=/");
 				else
