@@ -75,6 +75,13 @@ char* strdup_null(const char* src)
 	return src ? strdup(src) : NULL;
 }
 
+char* strdup_null_if_content(const char* src)
+{
+	if ( src && !src[0] )
+		return NULL;
+	return strdup_null(src);
+}
+
 const char* non_modify_basename(const char* path)
 {
 	const char* last_slash = (char*) strrchr((char*) path, '/');

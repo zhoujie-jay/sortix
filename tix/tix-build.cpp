@@ -868,9 +868,9 @@ int main(int argc, char* argv[])
 
 	if ( !minfo.build && !(minfo.build = GetBuildTriplet()) )
 		error(1, errno, "unable to determine build, use --build or BUILD");
-	if ( !minfo.host && !(minfo.host = strdup_null(getenv("HOST"))) )
+	if ( !minfo.host && !(minfo.host = strdup_null_if_content(getenv("HOST"))) )
 		minfo.host = strdup(minfo.build);
-	if ( !minfo.target && !(minfo.target = strdup_null(getenv("TARGET"))) )
+	if ( !minfo.target && !(minfo.target = strdup_null_if_content(getenv("TARGET"))) )
 		minfo.target = strdup(minfo.host);
 
 	if ( minfo.prefix && !minfo.exec_prefix )
