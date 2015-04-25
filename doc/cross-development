@@ -57,7 +57,7 @@ typically decide to set them up somewhat like this:
 
   SORTIX_PLATFORM=x86_64-sortix
   CROSS_PREFIX=/home/user/opt/x86_64-sortix
-  SYSROOT=/home/user/sortix/sysroot
+  SORTIX_SYSROOT=/home/user/sortix/sysroot
   export PATH="/home/user/opt/x86_64-sortix/bin:$PATH"
 
 The following sections describe these variables in detail.
@@ -118,7 +118,7 @@ libm, and other core library headers into this directory. Run the following:
 
 This will automatically set up a basic system root in ~/sortix/sysroot. We will
 use this when we build the cross-compiler in a moment. Let's call the system
-root directory $SYSROOT.
+root directory $SORTIX_SYSROOT.
 
 Cross-Toolchain Dependencies
 ----------------------------
@@ -147,7 +147,7 @@ you can build binutils out-of-directory using these commands:
   cd ~/src/binutils-build &&
   ../sortix-binutils/configure \
     --target=$SORTIX_PLATFORM \
-    --with-sysroot="$SYSROOT" \
+    --with-sysroot="$SORTIX_SYSROOT" \
     --prefix="$CROSS_PREFIX" \
     --disable-werror &&
   make &&
@@ -168,7 +168,7 @@ you can build gcc out-of-directory using these commands.
   cd ~/src/gcc-build &&
   ../sortix-gcc/configure \
     --target=$SORTIX_PLATFORM \
-    --with-sysroot=$SYSROOT \
+    --with-sysroot=$SORTIX_SYSROOT \
     --prefix="$CROSS_PREFIX" \
     --enable-languages=c,c++ &&
   make all-gcc all-target-libgcc &&
