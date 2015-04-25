@@ -246,37 +246,37 @@ everything: most-things iso.xz
 
 .PHONY: sysroot-base-headers-all-archs
 sysroot-base-headers-all-archs:
-	$(MAKE) clean
+	$(MAKE) clean clean-sysroot
 	$(MAKE) sysroot-base-headers HOST=i486-sortix
-	$(MAKE) clean
+	$(MAKE) clean clean-sysroot
 	$(MAKE) sysroot-base-headers HOST=x86_64-sortix
 
 .PHONY: all-archs
 all-archs:
-	$(MAKE) clean
+	$(MAKE) clean clean-sysroot
 	$(MAKE) all HOST=i486-sortix
-	$(MAKE) clean
+	$(MAKE) clean clean-sysroot
 	$(MAKE) all HOST=x86_64-sortix
 
 .PHONY: most-things-all-archs
 most-things-all-archs:
-	$(MAKE) clean
+	$(MAKE) clean clean-sysroot
 	$(MAKE) most-things HOST=i486-sortix
-	$(MAKE) clean
+	$(MAKE) clean clean-sysroot
 	$(MAKE) most-things HOST=x86_64-sortix
 
 .PHONY: everything-all-archs
 everything-all-archs:
-	$(MAKE) clean
+	$(MAKE) clean clean-sysroot
 	$(MAKE) everything HOST=i486-sortix
-	$(MAKE) clean
+	$(MAKE) clean clean-sysroot
 	$(MAKE) everything HOST=x86_64-sortix
 
 .PHONY: release-all-archs
 release-all-archs:
-	$(MAKE) clean
+	$(MAKE) clean clean-sysroot
 	$(MAKE) release HOST=i486-sortix
-	$(MAKE) clean
+	$(MAKE) clean clean-sysroot
 	$(MAKE) release HOST=x86_64-sortix
 
 # Kernel
