@@ -36,10 +36,10 @@ You can find the latest Sortix source code at:
 https://gitlab.com/sortix/sortix
 
 You can find the latest Sortix binutils source code at:
-https://cs.au.dk/~sortie/sortix/toolchain/sortix-binutils-latest.tar.xz
+https://users-cs.au.dk/sortie/sortix/toolchain/sortix-binutils-latest.tar.xz
 
 You can find the latest Sortix gcc source code at:
-https://cs.au.dk/~sortie/sortix/toolchain/sortix-gcc-latest.tar.xz
+https://users-cs.au.dk/sortie/sortix/toolchain/sortix-gcc-latest.tar.xz
 
 It is only possible to build Sortix with this blessed toolchain or a derivative
 thereof as it has been customized to understand Sortix and provide a number of
