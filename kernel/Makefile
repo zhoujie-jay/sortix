@@ -120,6 +120,7 @@ linebuffer.o \
 log.o \
 logterminal.o \
 memorymanagement.o \
+mouse/ps2.o \
 mtable.o \
 net/fs.o \
 op-new.o \

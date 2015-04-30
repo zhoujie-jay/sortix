@@ -85,6 +85,7 @@
 #include "kb/kblayout.h"
 #include "kb/ps2.h"
 #include "logterminal.h"
+#include "mouse/ps2.h"
 #include "multiboot.h"
 #include "net/fs.h"
 #include "poll.h"
@@ -571,7 +572,14 @@ static void BootThread(void* /*user*/)
 		Panic("Could not allocate keyboard layout executor");
 	if ( !kblayout->Upload(default_kblayout, sizeof(default_kblayout)) )
 		Panic("Could not load the default keyboard layout into the executor");
-	PS2::Init(keyboard, NULL);
+
+	// Initialize the mouse.
+	PS2Mouse* mouse = new PS2Mouse();
+	if ( !mouse )
+		Panic("Could not allocate PS2 Mouse driver");
+
+	// Initialize the PS/2 controller.
+	PS2::Init(keyboard, mouse);
 
 	// Register the kernel terminal as /dev/tty.
 	Ref<Inode> tty(new LogTerminal(slashdev->dev, 0666, 0, 0, keyboard, kblayout));
@@ -579,6 +587,13 @@ static void BootThread(void* /*user*/)
 		Panic("Could not allocate a kernel terminal");
 	if ( LinkInodeInDir(&ctx, slashdev, "tty", tty) != 0 )
 		Panic("Unable to link /dev/tty to kernel terminal.");
+
+	// Register the mouse as /dev/mouse.
+	Ref<Inode> mousedev(new PS2MouseDevice(slashdev->dev, 0666, 0, 0, mouse));
+	if ( !mousedev )
+		Panic("Could not allocate a mouse device");
+	if ( LinkInodeInDir(&ctx, slashdev, "mouse", mousedev) != 0 )
+		Panic("Unable to link /dev/mouse to mouse.");
 
 	// Register the null device as /dev/null.
 	Ref<Inode> null_device(new Null(slashdev->dev, (ino_t) 0, (uid_t) 0,
