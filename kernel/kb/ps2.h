@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -18,7 +18,7 @@
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
     kb/ps2.h
-    A driver for the PS2 Keyboard.
+    PS2 Keyboard.
 
 *******************************************************************************/
 
@@ -28,47 +28,55 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/keyboard.h>
+#include <sortix/kernel/ps2.h>
 
 namespace Sortix {
 
-class PS2Keyboard : public Keyboard
+class PS2Keyboard : public Keyboard, public PS2Device
 {
 public:
-	PS2Keyboard(uint16_t iobase, uint8_t interrupt);
+	PS2Keyboard();
 	virtual ~PS2Keyboard();
 	virtual int Read();
 	virtual size_t GetPending() const;
 	virtual bool HasPending() const;
 	virtual void SetOwner(KeyboardOwner* owner, void* user);
-
-public:
-	void OnInterrupt(struct interrupt_context* intctx);
-	void InterruptWork(uint8_t scancode);
+	virtual void PS2DeviceInitialize(void* send_ctx, bool (*send)(void*, uint8_t),
+                                     uint8_t* id, size_t id_size);
+	virtual void PS2DeviceOnByte(uint8_t byte);
 
 private:
-	uint8_t PopScancode();
-	int DecodeScancode(uint8_t scancode);
+	void OnKeyboardKey(int kbkey);
 	void UpdateLEDs(int ledval);
 	bool PushKey(int key);
 	int PopKey();
 	void NotifyOwner();
 
 private:
-	struct interrupt_handler interrupt_registration;
+	mutable kthread_mutex_t kblock;
 	int* queue;
 	size_t queuelength;
 	size_t queueoffset;
 	size_t queueused;
 	KeyboardOwner* owner;
 	void* ownerptr;
-	uint16_t iobase;
-	uint8_t interrupt;
-	bool scancodeescaped;
+	void* send_ctx;
+	bool (*send)(void*, uint8_t);
+	enum
+	{
+		STATE_INIT = 0,
+		STATE_RESET_LED,
+		STATE_RESET_TYPEMATIC,
+		STATE_ENABLE_SCAN,
+		STATE_NORMAL,
+		STATE_NORMAL_ESCAPED,
+	} state;
+	size_t tries;
 	uint8_t leds;
-	mutable kthread_mutex_t kblock;
+	uint8_t id[2];
+	size_t id_size;
 
 };
 

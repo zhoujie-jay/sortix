@@ -95,6 +95,7 @@
 #include "x86-family/cmos.h"
 #include "x86-family/float.h"
 #include "x86-family/gdt.h"
+#include "x86-family/ps2.h"
 #endif
 
 // Keep the stack size aligned with $CPU/boot.s
@@ -562,7 +563,7 @@ static void BootThread(void* /*user*/)
 		Panic("Unable to create descriptor for RAM filesystem /dev directory.");
 
 	// Initialize the keyboard.
-	Keyboard* keyboard = new PS2Keyboard(0x60, Interrupt::IRQ1);
+	PS2Keyboard* keyboard = new PS2Keyboard();
 	if ( !keyboard )
 		Panic("Could not allocate PS2 Keyboard driver");
 	KeyboardLayoutExecutor* kblayout = new KeyboardLayoutExecutor;
@@ -570,6 +571,7 @@ static void BootThread(void* /*user*/)
 		Panic("Could not allocate keyboard layout executor");
 	if ( !kblayout->Upload(default_kblayout, sizeof(default_kblayout)) )
 		Panic("Could not load the default keyboard layout into the executor");
+	PS2::Init(keyboard, NULL);
 
 	// Register the kernel terminal as /dev/tty.
 	Ref<Inode> tty(new LogTerminal(slashdev->dev, 0666, 0, 0, keyboard, kblayout));

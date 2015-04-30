@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -18,52 +18,47 @@
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
     kb/ps2.cpp
-    A driver for the PS2 Keyboard.
+    PS2 Keyboard.
 
 *******************************************************************************/
 
-#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
-#if defined(__x86_64__)
-#include <msr.h>
-#endif
-
 #include <sortix/keycodes.h>
 
-#include <sortix/kernel/cpu.h>
-#include <sortix/kernel/debugger.h>
-#include <sortix/kernel/interrupt.h>
-#include <sortix/kernel/ioport.h>
-#include <sortix/kernel/kernel.h>
 #include <sortix/kernel/keyboard.h>
-#include <sortix/kernel/scheduler.h>
-#include <sortix/kernel/thread.h>
-
-#if defined(__i386__)
-#include "../x86-family/gdt.h"
-#endif
+#include <sortix/kernel/ps2.h>
+#include <sortix/kernel/kthread.h>
 
 #include "ps2.h"
 
+// TODO: This driver doesn't deal with keyboard scancode sets yet.
+
 namespace Sortix {
 
-const uint16_t DATA = 0x0;
-const uint16_t COMMAND = 0x0;
-const uint16_t STATUS = 0x4;
-const uint8_t CMD_SETLED = 0xED;
-const uint8_t LED_SCRLCK = 1 << 0;
-const uint8_t LED_NUMLCK = 1 << 1;
-const uint8_t LED_CAPSLCK = 1 << 2;
+static const uint8_t DEVICE_RESET_OK = 0xAA;
+static const uint8_t DEVICE_SCANCODE_ESCAPE = 0xE0;
+static const uint8_t DEVICE_ECHO = 0xEE;
+static const uint8_t DEVICE_ACK = 0xFA;
+static const uint8_t DEVICE_RESEND = 0xFE;
+static const uint8_t DEVICE_ERROR = 0xFF;
 
-void PS2Keyboard__OnInterrupt(struct interrupt_context* intctx, void* user)
-{
-	((PS2Keyboard*) user)->OnInterrupt(intctx);
-}
+static const uint8_t DEVICE_CMD_SET_LED = 0xED;
+static const uint8_t DEVICE_CMD_SET_TYPEMATIC = 0xF3;
+static const uint8_t DEVICE_CMD_ENABLE_SCAN = 0xF4;
+static const uint8_t DEVICE_CMD_DISABLE_SCAN = 0xF5;
+static const uint8_t DEVICE_CMD_IDENTIFY = 0xF2;
+static const uint8_t DEVICE_CMD_RESET = 0xFF;
 
-PS2Keyboard::PS2Keyboard(uint16_t iobase, uint8_t interrupt)
+static const uint8_t DEVICE_LED_SCRLCK = 1 << 0;
+static const uint8_t DEVICE_LED_NUMLCK = 1 << 1;
+static const uint8_t DEVICE_LED_CAPSLCK = 1 << 2;
+
+static const size_t DEVICE_RETRIES = 5;
+
+PS2Keyboard::PS2Keyboard()
 {
 	this->queue = NULL;
 	this->queuelength = 0;
@@ -71,124 +66,142 @@ PS2Keyboard::PS2Keyboard(uint16_t iobase, uint8_t interrupt)
 	this->queueused = 0;
 	this->owner = NULL;
 	this->ownerptr = NULL;
-	this->iobase = iobase;
-	this->interrupt = interrupt;
+	// TODO: Initial LED status can be read from the BIOS data area. If so, we
+	//       need to emulate fake presses of the modifier keys to keep the
+	//       keyboard layout in sync.
 	this->leds = 0;
-	this->scancodeescaped = false;
 	this->kblock = KTHREAD_MUTEX_INITIALIZER;
-	interrupt_registration.handler = PS2Keyboard__OnInterrupt;
-	interrupt_registration.context = this;
-	Interrupt::RegisterHandler(interrupt, &interrupt_registration);
-
-	// If any scancodes were already pending, our interrupt handler will
-	// never be called. Let's just discard anything pending.
-	PopScancode();
 }
 
 PS2Keyboard::~PS2Keyboard()
 {
-	Interrupt::RegisterHandler(interrupt, &interrupt_registration);
 	delete[] queue;
 }
 
-struct PS2KeyboardWork
+void PS2Keyboard::PS2DeviceInitialize(void* send_ctx, bool (*send)(void*, uint8_t),
+                                      uint8_t* id, size_t id_size)
 {
-	uint8_t scancode;
-};
-
-static void PS2Keyboard__InterruptWork(void* kb_ptr, void* payload, size_t size)
-{
-	assert(size == sizeof(PS2KeyboardWork));
-	PS2KeyboardWork* work = (PS2KeyboardWork*) payload;
-	((PS2Keyboard*) kb_ptr)->InterruptWork(work->scancode);
+	if ( sizeof(this->id) < id_size )
+		id_size = sizeof(this->id);
+	this->send_ctx = send_ctx;
+	this->send = send;
+	this->state = STATE_INIT;
+	this->tries = 0;
+	memcpy(this->id, id, id_size);
+	this->id_size = id_size;
+	PS2DeviceOnByte(DEVICE_RESEND);
 }
 
-void PS2Keyboard::OnInterrupt(struct interrupt_context* intctx)
+void PS2Keyboard::PS2DeviceOnByte(uint8_t byte)
 {
-	uint8_t scancode = PopScancode();
-	if ( scancode == KBKEY_F10 )
+	ScopedLock lock(&kblock);
+
+	if ( state == STATE_INIT )
 	{
-		Scheduler::SaveInterruptedContext(intctx, &CurrentThread()->registers);
-		Debugger::Run(true);
+		state = STATE_RESET_LED;
+		tries = DEVICE_RETRIES;
+		byte = DEVICE_RESEND;
 	}
-	PS2KeyboardWork work;
-	work.scancode = scancode;
-	Interrupt::ScheduleWork(PS2Keyboard__InterruptWork, this, &work, sizeof(work));
-}
 
-void PS2Keyboard::InterruptWork(uint8_t scancode)
-{
-	kthread_mutex_lock(&kblock);
-	int kbkey = DecodeScancode(scancode);
-	if ( !kbkey )
+	if ( state == STATE_RESET_LED )
 	{
-		kthread_mutex_unlock(&kblock);
+		if ( byte == DEVICE_RESEND && tries-- )
+		{
+			if ( send(send_ctx, DEVICE_CMD_SET_LED) &&
+			     send(send_ctx, leds & 0x07) )
+				return;
+		}
+		state = STATE_RESET_TYPEMATIC;
+		tries = DEVICE_RETRIES;
+		byte = DEVICE_RESEND;
+	}
+
+	if ( state == STATE_RESET_TYPEMATIC )
+	{
+		if ( byte == DEVICE_RESEND && tries-- )
+		{
+			uint8_t rate = 0b00000; // 33.36 ms/repeat.
+			uint8_t delay = 0b01; // 500 ms.
+			uint8_t typematic = delay << 3 | rate << 0;
+			if ( send(send_ctx, DEVICE_CMD_SET_TYPEMATIC) &&
+			     send(send_ctx, typematic) )
+				return;
+		}
+		state = STATE_ENABLE_SCAN;
+		tries = DEVICE_RETRIES;
+		byte = DEVICE_RESEND;
+	}
+
+	if ( state == STATE_ENABLE_SCAN )
+	{
+		if ( byte == DEVICE_RESEND && tries-- )
+		{
+			if ( send(send_ctx, DEVICE_CMD_ENABLE_SCAN) )
+				return;
+		}
+		state = STATE_NORMAL;
+		tries = DEVICE_RETRIES;
+		byte = DEVICE_RESEND;
+	}
+
+	if ( byte == DEVICE_RESEND || byte == DEVICE_ACK )
+		return;
+
+	if ( byte == DEVICE_SCANCODE_ESCAPE )
+	{
+		state = STATE_NORMAL_ESCAPED;
 		return;
 	}
 
+	if ( state == STATE_NORMAL )
+	{
+		int kbkey = byte & 0x7F;
+		OnKeyboardKey(byte & 0x80 ? -kbkey : kbkey);
+		lock.Reset();
+		NotifyOwner();
+		return;
+	}
+
+	if ( state == STATE_NORMAL_ESCAPED )
+	{
+		state = STATE_NORMAL;
+		int kbkey = (byte & 0x7F) + 0x80;
+		OnKeyboardKey(byte & 0x80 ? -kbkey : kbkey);
+		lock.Reset();
+		NotifyOwner();
+		return;
+	}
+}
+
+void PS2Keyboard::OnKeyboardKey(int kbkey)
+{
 	if ( !PushKey(kbkey) )
-	{
-		Log::PrintF("Warning: dropping keystroke due to insufficient "
-		            "storage space in PS2 keyboard driver.\n");
-		kthread_mutex_unlock(&kblock);
 		return;
-	}
 
 	uint8_t newleds = leds;
 
 	if ( kbkey == KBKEY_CAPSLOCK )
-		newleds ^= LED_CAPSLCK;
+		newleds ^= DEVICE_LED_CAPSLCK;
 	if ( kbkey == KBKEY_SCROLLLOCK )
-		newleds ^= LED_SCRLCK;
+		newleds ^= DEVICE_LED_SCRLCK;
 	if ( kbkey == KBKEY_NUMLOCK )
-		newleds ^= LED_NUMLCK;
+		newleds ^= DEVICE_LED_NUMLCK;
 
 	if ( newleds != leds )
 		UpdateLEDs(leds = newleds);
-
-	kthread_mutex_unlock(&kblock);
-
-	NotifyOwner();
 }
 
 void PS2Keyboard::NotifyOwner()
 {
-	if ( !owner)
+	if ( !owner )
 		return;
 	owner->OnKeystroke(this, ownerptr);
 }
 
-int PS2Keyboard::DecodeScancode(uint8_t scancode)
-{
-	const uint8_t SCANCODE_ESCAPE = 0xE0;
-	if ( scancode == SCANCODE_ESCAPE )
-	{
-		scancodeescaped = true;
-		return 0;
-	}
-
-	int offset = scancodeescaped ? 0x80 : 0;
-	int kbkey = scancode & 0x7F;
-	kbkey = scancode & 0x80 ? -kbkey - offset : kbkey + offset;
-
-	scancodeescaped = false;
-
-	// kbkey is now in the format specified in <sortix/keycodes.h>.
-
-	return kbkey;
-}
-
-uint8_t PS2Keyboard::PopScancode()
-{
-	return inport8(iobase + DATA);
-}
-
 void PS2Keyboard::UpdateLEDs(int ledval)
 {
-	while ( (inport8(iobase + STATUS) & (1<<1)) );
-	outport8(iobase + COMMAND, CMD_SETLED);
-	while ( (inport8(iobase + STATUS) & (1<<1)) );
-	outport8(iobase + COMMAND, ledval);
+	send(send_ctx, DEVICE_CMD_SET_LED) &&
+	send(send_ctx, ledval);
 }
 
 void PS2Keyboard::SetOwner(KeyboardOwner* owner, void* user)
@@ -206,15 +219,17 @@ bool PS2Keyboard::PushKey(int key)
 	// Check if we need to allocate or resize the circular queue.
 	if ( queueused == queuelength )
 	{
-		size_t newqueuelength = (queuelength) ? queuelength * 2 : 32UL;
+		size_t newqueuelength = queuelength ? 2 * queuelength : 32UL;
+		if ( 16 * 1024 < newqueuelength )
+			return false;
 		int* newqueue = new int[newqueuelength];
 		if ( !newqueue )
 			return false;
 		if ( queue )
 		{
 			size_t elemsize = sizeof(*queue);
-			size_t leadingavai = queuelength-queueoffset;
-			size_t leading = (leadingavai < queueused) ? leadingavai : queueused;
+			size_t leadingavai = queuelength - queueoffset;
+			size_t leading = leadingavai < queueused ? leadingavai : queueused;
 			size_t trailing = queueused - leading;
 			memcpy(newqueue, queue + queueoffset, leading * elemsize);
 			memcpy(newqueue + leading, queue, trailing * elemsize);
