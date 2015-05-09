@@ -463,11 +463,13 @@ class PipeNode : public AbstractInode
 {
 public:
 	PipeNode(dev_t dev, uid_t owner, gid_t group, mode_t mode);
-	~PipeNode();
-	bool Connect(PipeNode* destination);
+	virtual ~PipeNode();
 	virtual ssize_t read(ioctx_t* ctx, uint8_t* buf, size_t count);
 	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
 	virtual int poll(ioctx_t* ctx, PollNode* node);
+
+public:
+	bool Connect(PipeNode* destination);
 
 private:
 	PipeEndpoint endpoint;
