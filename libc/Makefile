@@ -153,6 +153,9 @@ stdio/vsprintf.o \
 stdio/vsscanf.o \
 stdlib/abort.o \
 stdlib/abs.o \
+stdlib/arc4random_buf.o \
+stdlib/arc4random.o \
+stdlib/arc4random_uniform.o \
 stdlib/atof.o \
 stdlib/atoi.o \
 stdlib/atoll.o \
@@ -432,9 +435,6 @@ stdio/tmpfile.o \
 stdio/vfprintf.o \
 stdio/vprintf.o \
 stdio/vscanf.o \
-stdlib/arc4random_buf.o \
-stdlib/arc4random.o \
-stdlib/arc4random_uniform.o \
 stdlib/atexit.o \
 stdlib/canonicalize_file_name_at.o \
 stdlib/canonicalize_file_name.o \

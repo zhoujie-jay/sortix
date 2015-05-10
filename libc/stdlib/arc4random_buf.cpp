@@ -26,15 +26,31 @@
  * Public domain.
  */
 
-/* Adapted for Sortix libc by Jonas 'Sortie' Termansen in 2014. */
+/* Adapted for Sortix libc by Jonas 'Sortie' Termansen in 2014, 2015. */
 
 #include <assert.h>
 #include <endian.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#if !defined(__is_sortix_kernel)
 #include <pthread.h>
+#endif
 #include <unistd.h>
+
+#if defined(__is_sortix_kernel)
+#include <sortix/kernel/kthread.h>
+#include <sortix/kernel/random.h>
+#endif
+
+#if defined(__is_sortix_kernel)
+#define PTHREAD_MUTEX_INITIALIZER Sortix::KTHREAD_MUTEX_INITIALIZER
+#define pthread_mutex_t Sortix::kthread_mutex_t
+#define pthread_mutex_lock Sortix::kthread_mutex_lock
+#define pthread_mutex_unlock Sortix::kthread_mutex_unlock
+#define getpid() 0
+#define getentropy Sortix::Random::GetEntropy
+#endif
 
 struct chacha
 {
@@ -162,6 +178,15 @@ extern "C" void arc4random_buf(void* buffer_ptr, size_t size)
 	unsigned char* buffer = (unsigned char*) buffer_ptr;
 
 	pthread_mutex_lock(&arc4random_mutex);
+
+#if defined(__is_sortix_kernel)
+	if ( Sortix::Random::HasEntropy() )
+	{
+		rs_count = 0;
+		rs_have = 0;
+		memset(rs_buf, 0, sizeof(rs_buf));
+	}
+#endif
 
 	/* TODO: Employ zero-memory-on-fork semantics instead. */
 	/* pid_t are never reused on Sortix at the moment. */

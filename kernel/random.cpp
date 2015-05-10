@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014, 2015.
 
     This file is part of Sortix.
 
@@ -23,6 +23,8 @@
 *******************************************************************************/
 
 #include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <sortix/clock.h>
 
@@ -32,10 +34,17 @@
 #include <sortix/kernel/time.h>
 
 namespace Sortix {
+namespace Random {
 
 static unsigned long sequence = 0;
 
-int sys_getentropy(void* user_buffer, size_t size)
+bool HasEntropy()
+{
+	// We only have new entropy once and that's at boot.
+	return sequence == 0;
+}
+
+void GetEntropy(void* result, size_t size)
 {
 	union
 	{
@@ -48,7 +57,7 @@ int sys_getentropy(void* user_buffer, size_t size)
 		} seed;
 	};
 	if ( sizeof(buffer) < size )
-		return errno = EIO, -1;
+		size = sizeof(buffer);
 	// TODO: SECURITY: We need to actually gather entropy and deliver it.
 	for ( size_t i = 0; i < size; i++ )
 		buffer[i] = i;
@@ -60,6 +69,20 @@ int sys_getentropy(void* user_buffer, size_t size)
 	seed.realtime = Time::Get(CLOCK_REALTIME);
 	seed.monotonic = Time::Get(CLOCK_MONOTONIC);
 	seed.sequence = InterlockedIncrement(&sequence).o;
+	memcpy(result, buffer, size);
+}
+
+} // namespace Random
+} // namespace Sortix
+
+namespace Sortix {
+
+int sys_getentropy(void* user_buffer, size_t size)
+{
+	unsigned char buffer[256];
+	if ( sizeof(buffer) < size )
+		return errno = EIO, -1;
+	arc4random_buf(buffer, sizeof(buffer));
 	if ( !CopyToUser(user_buffer, buffer, size) )
 		return -1;
 	return 0;
