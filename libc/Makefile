@@ -514,6 +514,7 @@ sys/statvfs/statvfs.o \
 sys/termmode/gettermmode.o \
 sys/termmode/settermmode.o \
 sys/time/gettimeofday.o \
+sys/times/times.o \
 sys/uio/preadv.o \
 sys/uio/pwritev.o \
 sys/uio/readv.o \
@@ -545,7 +546,6 @@ time/timer_delete.o \
 time/timer_getoverrun.o \
 time/timer_gettime.o \
 time/timer_settime.o \
-time/times.o \
 time/tzset.o \
 unistd/access.o \
 unistd/alarmns.o \
