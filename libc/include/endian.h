@@ -38,7 +38,6 @@ __BEGIN_DECLS
 
 /* Easy access to the current endian. */
 #define BYTE_ORDER __BYTE_ORDER
-#define FLOAT_WORD_ORDER __FLOAT_WORD_ORDER
 
 /* Easy conversion of 16-bit integers. */
 #define htobe16(x) __htobe16(x)

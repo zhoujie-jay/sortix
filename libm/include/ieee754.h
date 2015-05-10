@@ -34,13 +34,7 @@
 
 #include <endian.h>
 
-/* glibc compatibility */
-#if !defined(FLOAT_WORD_ORDER) && defined(__FLOAT_WORD_ORDER)
-#define FLOAT_WORD_ORDER __FLOAT_WORD_ORDER
-#endif
-
-#if FLOAT_WORD_ORDER != BYTE_ORDER || \
-    !(BYTE_ORDER == LITTLE_ENDIAN || BYTE_ORDER == BIG_ENDIAN)
+#if !(BYTE_ORDER == LITTLE_ENDIAN || BYTE_ORDER == BIG_ENDIAN)
 #error "Please add support for the endianness on your platform"
 #endif
 

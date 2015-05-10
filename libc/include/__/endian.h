@@ -38,7 +38,6 @@ __BEGIN_DECLS
 
 /* The compiler also provides the local endianness as one of the above. */
 #define __BYTE_ORDER __BYTE_ORDER__
-#define __FLOAT_WORD_ORDER __FLOAT_WORD_ORDER__
 
 /* Declare conversion macros to allow easy endian conversion. */
 
