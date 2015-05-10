@@ -95,6 +95,7 @@ fs/full.o \
 fsfunc.o \
 fs/kram.o \
 fs/null.o \
+fs/random.o \
 fs/user.o \
 fs/util.o \
 fs/zero.o \

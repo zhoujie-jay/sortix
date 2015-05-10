@@ -73,6 +73,7 @@
 #include "fs/full.h"
 #include "fs/kram.h"
 #include "fs/null.h"
+#include "fs/random.h"
 #include "fs/zero.h"
 #include "gpu/bga/bga.h"
 #include "initrd.h"
@@ -462,6 +463,16 @@ static void BootThread(void* /*user*/)
 		Panic("Could not allocate a full device");
 	if ( LinkInodeInDir(&ctx, slashdev, "full", full_device) != 0 )
 		Panic("Unable to link /dev/full to the full device.");
+
+	// Register the random device as /dev/random.
+	Ref<Inode> random_device(new DevRandom(slashdev->dev, (ino_t) 0, (uid_t) 0,
+	                                       (gid_t) 0, (mode_t) 0666));
+	if ( !random_device )
+		Panic("Could not allocate a random device");
+	if ( LinkInodeInDir(&ctx, slashdev, "random", random_device) != 0 )
+		Panic("Unable to link /dev/random to the random device.");
+	if ( LinkInodeInDir(&ctx, slashdev, "urandom", random_device) != 0 )
+		Panic("Unable to link /dev/urandom to the random device.");
 
 	// Initialize the COM ports.
 	COM::Init("/dev", slashdev);
