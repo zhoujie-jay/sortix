@@ -5,7 +5,7 @@ include ../build-aux/version.mak
 include ../build-aux/dirs.mak
 
 # Default values in case the user doesn't override these variables.
-OPTLEVEL?=$(DEFAULT_HOST_OPTLEVEL)
+OPTLEVEL?=$(DEFAULT_OPTLEVEL)
 DISKWRITE?=1
 CPPFLAGS?=
 CXXFLAGS?=$(OPTLEVEL)
@@ -67,8 +67,8 @@ endif
 # Object files that constitute the kernel.
 
 CRTI_OBJ:=$(CPUDIR)/crti.o
-CRTBEGIN_OBJ:=$(shell $(HOSTCXX) $(CXXFLAGS) -print-file-name=crtbegin.o)
-CRTEND_OBJ:=$(shell $(HOSTCXX) $(CXXFLAGS) -print-file-name=crtend.o)
+CRTBEGIN_OBJ:=$(shell $(CXX) $(CXXFLAGS) -print-file-name=crtbegin.o)
+CRTEND_OBJ:=$(shell $(CXX) $(CXXFLAGS) -print-file-name=crtend.o)
 CRTN_OBJ:=$(CPUDIR)/crtn.o
 
 LIBS=\
@@ -176,10 +176,10 @@ headers:
 ifeq ($(CPU),x64)
 
 sortix-x86_64.bin: $(ALLOBJS)
-	$(HOSTCXX) $(CXXFLAGS) -Wl,-Ttext -Wl,100000 -Wl,-z -Wl,max-page-size=0x1000 $(LINK_OBJECTS) -o $@
+	$(CXX) $(CXXFLAGS) -Wl,-Ttext -Wl,100000 -Wl,-z -Wl,max-page-size=0x1000 $(LINK_OBJECTS) -o $@
 
 sortix.bin: sortix-x86_64.bin
-	$(HOSTOBJCOPY) $< -O elf32-i386-sortix $@
+	$(OBJCOPY) $< -O elf32-i386-sortix $@
 
 endif
 
@@ -187,15 +187,15 @@ endif
 ifeq ($(CPU),x86)
 
 sortix.bin: $(ALLOBJS)
-	$(HOSTCXX) $(CXXFLAGS) -Wl,-Ttext -Wl,100000 $(LINK_OBJECTS) -o $@
+	$(CXX) $(CXXFLAGS) -Wl,-Ttext -Wl,100000 $(LINK_OBJECTS) -o $@
 
 endif
 
 %.o: %.cpp
-	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
+	$(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 
 %.o: %.S
-	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
+	$(CXX) -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 
 clean:
 	rm -f $(ALLOBJS) sortix.bin

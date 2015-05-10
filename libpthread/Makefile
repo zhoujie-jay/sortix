@@ -4,7 +4,7 @@ include ../build-aux/compiler.mak
 include ../build-aux/version.mak
 include ../build-aux/dirs.mak
 
-OPTLEVEL?=$(DEFAULT_HOST_OPTLEVEL)
+OPTLEVEL?=$(DEFAULT_OPTLEVEL)
 CXXFLAGS?=$(OPTLEVEL)
 CPPFLAGS?=
 
@@ -77,10 +77,10 @@ headers:
 libs: $(BINS)
 
 libpthread.a: $(OBJS)
-	$(HOSTAR) rcs $@ $(OBJS)
+	$(AR) rcs $@ $(OBJS)
 
 %.o: %.c++
-	$(HOSTCXX) -std=gnu++11 -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
+	$(CXX) -std=gnu++11 -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
 
 clean:
 	rm -f $(BINS) $(OBJS) *.o

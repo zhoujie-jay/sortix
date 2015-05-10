@@ -36,6 +36,9 @@ software_meant_for_sortix:
   endif
 endif
 
+# Determine whether a function is unset or is a Make default.
+is_unset_or_default = $(filter undefined default,$(origin $(1)))
+
 # Provide deprecated CPU variable so makefiles can select CPU-specific dirs.
 ifeq ($(HOST),i486-sortix)
     MACHINE:=i486
@@ -61,66 +64,57 @@ ifndef HOST_TOOL_PREFIX
 endif
 
 # Determine the names of the tools that target the build platform.
-ifndef BUILDCC
-  BUILDCC:=$(BUILD_TOOL_PREFIX)gcc
+ifndef CC_FOR_BUILD
+  CC_FOR_BUILD:=$(BUILD_TOOL_PREFIX)gcc
 endif
-ifndef BUILDCXX
-  BUILDCXX:=$(BUILD_TOOL_PREFIX)g++
+ifndef CXX_FOR_BUILD
+  CXX_FOR_BUILD:=$(BUILD_TOOL_PREFIX)g++
 endif
-ifndef BUILDAR
-  BUILDAR:=$(BUILD_TOOL_PREFIX)ar
+ifndef AR_FOR_BUILD
+  AR_FOR_BUILD:=$(BUILD_TOOL_PREFIX)ar
 endif
-ifndef BUILDAS
-  BUILDAS:=$(BUILD_TOOL_PREFIX)as
+ifndef AS_FOR_BUILD
+  AS_FOR_BUILD:=$(BUILD_TOOL_PREFIX)as
 endif
-ifndef BUILDLD
-  BUILDAS:=$(BUILD_TOOL_PREFIX)ld
+ifndef LD_FOR_BUILD
+  LD_FOR_BUILD:=$(BUILD_TOOL_PREFIX)ld
 endif
-ifndef BUILDOBJCOPY
-  BUILDOBJCOPY:=$(BUILD_TOOL_PREFIX)objcopy
+ifndef OBJCOPY_FOR_BUILD
+  OBJCOPY_FOR_BUILD:=$(BUILD_TOOL_PREFIX)objcopy
 endif
 
 # Determine the names of the tools that target the host platform.
-ifndef HOSTCC
-  HOSTCC:=$(HOST_TOOL_PREFIX)gcc
+ifneq ($(call is_unset_or_default,CC),)
+  CC:=$(HOST_TOOL_PREFIX)gcc
 endif
-ifndef HOSTCXX
-  HOSTCXX:=$(HOST_TOOL_PREFIX)g++
+ifneq ($(call is_unset_or_default,CXX),)
+  CXX:=$(HOST_TOOL_PREFIX)g++
 endif
-ifndef HOSTAR
-  HOSTAR:=$(HOST_TOOL_PREFIX)ar
+ifneq ($(call is_unset_or_default,AR),)
+  AR:=$(HOST_TOOL_PREFIX)ar
 endif
-ifndef HOSTAS
-  HOSTAS:=$(HOST_TOOL_PREFIX)as
+ifneq ($(call is_unset_or_default,AS),)
+  AS:=$(HOST_TOOL_PREFIX)as
 endif
-ifndef HOSTLD
-  HOSTLD:=$(HOST_TOOL_PREFIX)ld
+ifneq ($(call is_unset_or_default,LD),)
+  LD:=$(HOST_TOOL_PREFIX)ld
 endif
-ifndef HOSTOBJCOPY
-  HOSTOBJCOPY:=$(HOST_TOOL_PREFIX)objcopy
+ifneq ($(call is_unset_or_default,OBJCOPY),)
+  OBJCOPY:=$(HOST_TOOL_PREFIX)objcopy
 endif
 ifdef SYSROOT
-  HOSTCC:=$(HOSTCC) --sysroot="$(SYSROOT)"
-  HOSTCXX:=$(HOSTCXX) --sysroot="$(SYSROOT)"
-  HOSTLD:=$(HOSTLD) --sysroot="$(SYSROOT)"
+  CC:=$(CC) --sysroot="$(SYSROOT)"
+  CXX:=$(CXX) --sysroot="$(SYSROOT)"
+  LD:=$(LD) --sysroot="$(SYSROOT)"
 endif
-
-CC:=$(HOSTCC)
-CXX:=$(HOSTCXX)
-AR:=$(HOSTAR)
-AS:=$(HOSTAS)
-LD:=$(HOSTLD)
-OBJCOPY:=$(HOSTOBJCOPY)
 
 # Determine default optimization level.
 DEFAULT_GENERIC_OPTLEVEL_BASE:=-O2 -g
-DEFAULT_BUILD_OPTLEVEL:=$(DEFAULT_GENERIC_OPTLEVEL_BASE)
+DEFAULT_OPTLEVEL_FOR_BUILD:=$(DEFAULT_GENERIC_OPTLEVEL_BASE)
 ifeq ($(BUILD_IS_SORTIX),1)
-  DEFAULT_BUILD_OPTLEVEL+=
+  DEFAULT_OPTLEVEL_FOR_BUILD+=
 endif
-DEFAULT_HOST_OPTLEVEL:=$(DEFAULT_GENERIC_OPTLEVEL_BASE)
 DEFAULT_OPTLEVEL:=$(DEFAULT_GENERIC_OPTLEVEL_BASE)
 ifeq ($(HOST_IS_SORTIX),1)
-  DEFAULT_HOST_OPTLEVEL+=
   DEFAULT_OPTLEVEL+=
 endif

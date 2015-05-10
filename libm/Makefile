@@ -3,7 +3,7 @@ include ../build-aux/compiler.mak
 include ../build-aux/version.mak
 include ../build-aux/dirs.mak
 
-OPTLEVEL?=$(DEFAULT_HOST_OPTLEVEL)
+OPTLEVEL?=$(DEFAULT_OPTLEVEL)
 CFLAGS?=$(OPTLEVEL)
 
 # TODO: Better detection of the proper subdirectory here!
@@ -383,13 +383,13 @@ arch/i387/s_modf.o: src/s_modf.c
 headers:
 
 libm.a: $(OBJS)
-	$(HOSTAR) rcs $@ $(OBJS)
+	$(AR) rcs $@ $(OBJS)
 
 %.o: %.S
-	$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
+	$(CC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
 
 %.o: %.c
-	$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
+	$(CC) -c $< -o $@ $(CPPFLAGS) $(CFLAGS)
 
 clean:
 	rm -f $(BINS) $(OBJS) $(ARCH_SUBDIR)/*.o src/*.o */*.o arch/*/*.o

@@ -4,7 +4,7 @@ include ../build-aux/compiler.mak
 include ../build-aux/version.mak
 include ../build-aux/dirs.mak
 
-OPTLEVEL?=$(DEFAULT_HOST_OPTLEVEL)
+OPTLEVEL?=$(DEFAULT_OPTLEVEL)
 
 CPUDIR:=$(CPU)
 
@@ -684,19 +684,19 @@ libs-kernel: $(BINSKERNEL)
 FORCE:
 
 libc.a: $(OBJS)
-	$(HOSTAR) rcs $@ $(OBJS)
+	$(AR) rcs $@ $(OBJS)
 
 libdl.a:
-	$(HOSTAR) rcs $@
+	$(AR) rcs $@
 
 libg.a:
-	$(HOSTAR) rcs $@
+	$(AR) rcs $@
 
 libk.a: $(LIBK_OBJS)
-	$(HOSTAR) rcs $@ $(LIBK_OBJS)
+	$(AR) rcs $@ $(LIBK_OBJS)
 
 librt.a:
-	$(HOSTAR) rcs $@
+	$(AR) rcs $@
 
 crt0.o: $(CPUDIR)/crt0.o
 	ln -f $< $@
@@ -717,23 +717,23 @@ headers:
 
 # standard library
 %.o: %.c
-	$(HOSTCC) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CFLAGS)
+	$(CC) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CFLAGS)
 
 %.o: %.cpp
-	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CXXFLAGS)
+	$(CXX) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CXXFLAGS)
 
 %.o: %.S
-	$(HOSTCXX) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CFLAGS)
+	$(CXX) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CFLAGS)
 
 # libk
 %.libk.o: %.c
-	$(HOSTCC) -c $< -o $@ $(LIBK_CPPFLAGS) $(LIBK_FLAGS) $(LIBK_CFLAGS)
+	$(CC) -c $< -o $@ $(LIBK_CPPFLAGS) $(LIBK_FLAGS) $(LIBK_CFLAGS)
 
 %.libk.o: %.cpp
-	$(HOSTCXX) -c $< -o $@ $(LIBK_CPPFLAGS) $(LIBK_FLAGS) $(LIBK_CXXFLAGS)
+	$(CXX) -c $< -o $@ $(LIBK_CPPFLAGS) $(LIBK_FLAGS) $(LIBK_CXXFLAGS)
 
 %.libk.o: %.S
-	$(HOSTCC) -c $< -o $@ $(LIBK_CPPFLAGS) $(LIBK_FLAGS) $(LIBK_CFLAGS)
+	$(CC) -c $< -o $@ $(LIBK_CPPFLAGS) $(LIBK_FLAGS) $(LIBK_CFLAGS)
 
 clean:
 	rm -f *.o */*.o */*/*.o *.a
