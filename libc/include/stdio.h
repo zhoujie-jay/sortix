@@ -73,7 +73,7 @@ typedef __ssize_t ssize_t;
 
 #ifndef __FILE_defined
 #define __FILE_defined
-typedef struct FILE FILE;
+typedef struct __FILE FILE;
 #endif
 
 #if __USE_SORTIX || 2008 <= __USE_POSIX

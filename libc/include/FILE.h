@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -51,7 +51,7 @@ typedef __ssize_t ssize_t;
 
 #ifndef __FILE_defined
 #define __FILE_defined
-typedef struct FILE FILE;
+typedef struct __FILE FILE;
 #endif
 
 #define _FILE_REGISTERED (1<<0)
@@ -68,7 +68,7 @@ typedef struct FILE FILE;
 
 /* Note stdio/stdio.cpp's declarations of stdin/stdout/stderr also needs to be
    changed if you make changes to this structure. */
-struct FILE
+struct __FILE
 {
 	/* This is non-standard, but useful. If you allocate your own FILE and
 	   register it with fregister, feel free to use modify the following members
@@ -84,13 +84,13 @@ struct FILE
 	off_t (*seek_func)(void* user, off_t offset, int whence);
 	int (*fileno_func)(void* user);
 	int (*close_func)(void* user);
-	void (*free_func)(void* free_user, struct FILE* fp);
+	void (*free_func)(void* free_user, FILE* fp);
 	/* Application writers shouldn't use anything beyond this point. */
 	pthread_mutex_t file_lock;
 	int (*fflush_indirect)(FILE*);
 	void (*buffer_free_indirect)(void*);
-	struct FILE* prev;
-	struct FILE* next;
+	FILE* prev;
+	FILE* next;
 	int flags;
 	int buffer_mode;
 	size_t offset_input_buffer;

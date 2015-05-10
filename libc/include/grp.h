@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -33,7 +33,7 @@ __BEGIN_DECLS
 
 #ifndef __FILE_defined
 #define __FILE_defined
-typedef struct FILE FILE;
+typedef struct __FILE FILE;
 #endif
 
 #ifndef __gid_t_defined

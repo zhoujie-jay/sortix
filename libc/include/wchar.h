@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -71,7 +71,7 @@ typedef __off_t off_t;
 #if !(__USE_SORTIX || __USE_POSIX)
 /* Intentional namespace pollution due to ISO C stupidity: */
 #endif
-typedef struct FILE FILE;
+typedef struct __FILE FILE;
 #endif
 
 #if __USE_SORTIX || 200809L <= __USE_POSIX
