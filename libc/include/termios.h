@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -31,21 +31,32 @@
 
 #include <sys/__/types.h>
 
-#include <stddef.h>
-
+#if __USE_SORTIX
 #include <sortix/termios.h>
+#endif
 
 __BEGIN_DECLS
+
+#if __USE_SORTIX
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
 
 #ifndef __ssize_t_defined
 #define __ssize_t_defined
 typedef __ssize_t ssize_t;
 #endif
+#endif
 
-ssize_t tcgetblob(int fd, const char* name, void* buffer, size_t count);
-ssize_t tcsetblob(int fd, const char* name, const void* buffer, size_t count);
-int tcgetwincurpos(int fd, struct wincurpos* wcp);
-int tcgetwinsize(int fd, struct winsize* ws);
+/* Functions that are Sortix extensions. */
+#if __USE_SORTIX
+ssize_t tcgetblob(int, const char*, void*, size_t);
+ssize_t tcsetblob(int, const char*, const void*, size_t);
+int tcgetwincurpos(int, struct wincurpos*);
+int tcgetwinsize(int, struct winsize*);
+#endif
 
 __END_DECLS
 
