@@ -196,6 +196,10 @@ void VGATextBuffer::SpawnThreads()
 {
 }
 
+void VGATextBuffer::Invalidate()
+{
+}
+
 bool VGATextBuffer::EmergencyIsImpaired()
 {
 	return false;

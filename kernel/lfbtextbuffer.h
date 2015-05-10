@@ -42,6 +42,7 @@ enum TextBufferCmdType
 	TEXTBUFCMD_MOVE,
 	TEXTBUFCMD_FILL,
 	TEXTBUFCMD_SCROLL,
+	TEXTBUFCMD_REDRAW,
 };
 
 struct TextBufferCmd
@@ -84,6 +85,7 @@ public:
 	virtual TextPos GetCursorPos() const;
 	virtual void SetCursorPos(TextPos newcursorpos);
 	virtual void SpawnThreads();
+	virtual void Invalidate();
 	virtual bool EmergencyIsImpaired();
 	virtual bool EmergencyRecoup();
 	virtual void EmergencyReset();
@@ -144,6 +146,7 @@ private:
 	bool cursorenabled;
 	TextPos cursorpos;
 	bool emergency_state;
+	bool invalidated;
 	size_t execute_amount;
 
 };

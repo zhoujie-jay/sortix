@@ -49,6 +49,7 @@ public:
 	virtual TextPos GetCursorPos() const;
 	virtual void SetCursorPos(TextPos cursorpos);
 	virtual void SpawnThreads();
+	virtual void Invalidate();
 	virtual bool EmergencyIsImpaired();
 	virtual bool EmergencyRecoup();
 	virtual void EmergencyReset();

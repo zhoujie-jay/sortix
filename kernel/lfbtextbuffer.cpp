@@ -122,6 +122,7 @@ LFBTextBuffer* CreateLFBTextBuffer(uint8_t* lfb, uint32_t lfbformat,
 	for ( size_t y = 0; y < yres; y++ )
 		memset(lfb + scansize * y, 0, lfbformat/8UL * xres);
 	ret->emergency_state = false;
+	ret->invalidated = false;
 
 	if ( !kernel_process )
 		return ret;
@@ -288,7 +289,6 @@ void LFBTextBuffer::RenderRange(TextPos from, TextPos to)
 {
 	from = CropPosition(from);
 	to = CropPosition(to);
-#if !defined(HAS_FAST_VIDEO_MEMORY)
 	uint8_t* orig_lfb = lfb;
 	bool backbuffered = from.y != to.y;
 	if ( backbuffered )
@@ -297,7 +297,6 @@ void LFBTextBuffer::RenderRange(TextPos from, TextPos to)
 		from.x = 0;
 		to.x = columns - 1;
 	}
-#endif
 	TextPos i = from;
 	RenderChar(chars[i.y * columns + i.x], i.x, i.y);
 	while ( !(i.x==to.x && i.y==to.y) )
@@ -305,7 +304,6 @@ void LFBTextBuffer::RenderRange(TextPos from, TextPos to)
 		i = AddToPosition(i, 1);
 		RenderChar(chars[i.y * columns + i.x], i.x, i.y);
 	}
-#if !defined(HAS_FAST_VIDEO_MEMORY)
 	if ( backbuffered )
 	{
 		lfb = orig_lfb;
@@ -319,11 +317,17 @@ void LFBTextBuffer::RenderRange(TextPos from, TextPos to)
 			memcpy(lfb + offset, backbuf + offset, pixelsx * sizeof(uint32_t));
 		}
 	}
-#endif
 }
 
 void LFBTextBuffer::IssueCommand(TextBufferCmd* cmd)
 {
+	if ( invalidated )
+	{
+		invalidated = false;
+		TextBufferCmd newcmd;
+		newcmd.type = TEXTBUFCMD_REDRAW;
+		IssueCommand(&newcmd);
+	}
 	if ( !queue_thread || emergency_state )
 	{
 		bool exit_requested = false;
@@ -446,6 +450,11 @@ void LFBTextBuffer::SetCursorPos(TextPos newcursorpos)
 	IssueCommand(&cmd);
 }
 
+void LFBTextBuffer::Invalidate()
+{
+	invalidated = true;
+}
+
 size_t LFBTextBuffer::OffsetOfPos(TextPos pos) const
 {
 	return pos.y * columns + pos.x;
@@ -545,6 +554,7 @@ bool LFBTextBuffer::IsCommandIdempotent(const TextBufferCmd* cmd) const
 		case TEXTBUFCMD_MOVE: return false;
 		case TEXTBUFCMD_FILL: return true;
 		case TEXTBUFCMD_SCROLL: return false;
+		case TEXTBUFCMD_REDRAW: return true;
 		default: return false;
 	}
 }
@@ -633,6 +643,11 @@ void LFBTextBuffer::ExecuteCommand(TextBufferCmd* cmd,
 		{
 			ssize_t off = cmd->scroll_offset;
 			DoScroll(off, cmd->c);
+			render_from = {0, 0};
+			render_to = {columns-1, rows-1};
+		} break;
+		case TEXTBUFCMD_REDRAW:
+		{
 			render_from = {0, 0};
 			render_to = {columns-1, rows-1};
 		} break;

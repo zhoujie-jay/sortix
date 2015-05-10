@@ -53,6 +53,7 @@ size_t (*device_width)(void*) = NULL;
 size_t (*device_height)(void*) = NULL;
 void (*device_get_cursor)(void*, size_t*, size_t*) = NULL;
 bool (*device_sync)(void*) = NULL;
+void (*device_invalidate)(void*) = NULL;
 void* device_pointer = NULL;
 bool (*emergency_device_is_impaired)(void*) = NULL;
 bool (*emergency_device_recoup)(void*) = NULL;
@@ -87,6 +88,11 @@ static void TextTermGetCursor(void* user, size_t* column, size_t* row)
 static bool TextTermSync(void* user)
 {
 	return ((TextTerminal*) user)->Sync();
+}
+
+static void TextTermInvalidate(void* user)
+{
+	((TextTerminal*) user)->Invalidate();
 }
 
 static bool EmergencyTextTermIsImpaired(void* user)
@@ -196,6 +202,7 @@ void Init(multiboot_info_t* bootinfo)
 	Log::device_height = TextTermHeight;
 	Log::device_get_cursor = TextTermGetCursor;
 	Log::device_sync = TextTermSync;
+	Log::device_invalidate = TextTermInvalidate;
 	Log::device_pointer = textterm;
 
 	// Register the emergency kernel log.

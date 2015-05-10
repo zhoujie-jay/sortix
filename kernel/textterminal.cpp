@@ -114,6 +114,15 @@ bool TextTerminal::Sync()
 	return true;
 }
 
+bool TextTerminal::Invalidate()
+{
+	ScopedLock lock(&termlock);
+	TextBuffer* textbuf = textbufhandle->Acquire();
+	textbuf->Invalidate();
+	textbufhandle->Release(textbuf);
+	return true;
+}
+
 bool TextTerminal::EmergencyIsImpaired()
 {
 	// This is during a kernel emergency where preemption has been disabled and

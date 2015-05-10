@@ -44,6 +44,7 @@ public:
 	size_t Height() const;
 	void GetCursor(size_t* column, size_t* row) const;
 	bool Sync();
+	bool Invalidate();
 	bool EmergencyIsImpaired();
 	bool EmergencyRecoup();
 	void EmergencyReset();

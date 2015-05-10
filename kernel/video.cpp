@@ -482,6 +482,8 @@ static int WriteMemory(void* ptr, size_t size)
 		return errno = ENODEV, -1;
 	}
 
+	Log::Invalidate();
+
 	return 0;
 }
 

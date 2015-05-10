@@ -54,6 +54,7 @@ extern size_t (*device_width)(void*);
 extern size_t (*device_height)(void*);
 extern void (*device_get_cursor)(void*, size_t*, size_t*);
 extern bool (*device_sync)(void*);
+extern void (*device_invalidate)(void*);
 extern void* device_pointer;
 extern bool (*emergency_device_is_impaired)(void*);
 extern bool (*emergency_device_recoup)(void*);
@@ -88,6 +89,11 @@ inline void GetCursor(size_t* col, size_t* row)
 inline bool Sync()
 {
 	return device_sync(device_pointer);
+}
+
+inline void Invalidate()
+{
+	return device_invalidate(device_pointer);
 }
 
 inline size_t Print(const char* str)
