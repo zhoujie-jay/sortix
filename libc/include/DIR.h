@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -43,14 +43,14 @@ struct dirent;
 
 #ifndef __DIR_defined
 #define __DIR_defined
-typedef struct DIR DIR;
+typedef struct __DIR DIR;
 #endif
 
 #define _DIR_REGISTERED (1<<0)
 #define _DIR_ERROR (1<<1)
 #define _DIR_EOF (1<<2)
 
-struct DIR
+struct __DIR
 {
 	void* user;
 	int (*read_func)(void* user, struct dirent* dirent, size_t* size);

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -55,7 +55,7 @@ typedef __ino_t ino_t;
 
 #ifndef __DIR_defined
 #define __DIR_defined
-typedef struct DIR DIR;
+typedef struct __DIR DIR;
 #endif
 
 #if __USE_SORTIX
