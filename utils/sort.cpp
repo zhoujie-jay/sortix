@@ -102,6 +102,7 @@ char* read_line(FILE* fp, const char* fpname, int delim)
 	ssize_t amount = getdelim(&line, &line_size, delim, fp);
 	if ( amount < 0 )
 	{
+		free(line);
 		if ( ferror(fp) )
 			error(0, errno, "read: `%s'", fpname);
 		return NULL;

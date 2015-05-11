@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <error.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -96,6 +97,7 @@ int main(int /*argc*/, char* argv[])
 		fflush(stdout);
 		mode = next_mode;
 	}
+	free(line);
 	int status;
 	waitpid(child_pid, &status, 0);
 	return WEXITSTATUS(status);

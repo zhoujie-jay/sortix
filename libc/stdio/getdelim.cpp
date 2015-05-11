@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -22,58 +22,55 @@
 
 *******************************************************************************/
 
+#include <sys/types.h>
+
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+static const size_t DEFAULT_BUFSIZE = 32UL;
+
 extern "C" ssize_t getdelim(char** lineptr, size_t* n, int delim, FILE* fp)
 {
-	if ( !lineptr || (*lineptr && !n) || !fp )
-		return errno = EINVAL, -1;
-	const size_t DEFAULT_BUFSIZE = 32UL;
-	bool malloced = !*lineptr;
-	if ( malloced )
-		*lineptr = (char*) malloc(DEFAULT_BUFSIZE);
-	if ( !*lineptr )
-		return -1;
-	size_t bufsize = malloced ? DEFAULT_BUFSIZE : *n;
-	if ( n )
-		*n = bufsize;
-	ssize_t written = 0;
-	int c;
+	int err = EINVAL;
 	flockfile(fp);
+	if ( !lineptr || !n )
+	{
+	failure:
+		fp->flags |= _FILE_STATUS_ERROR;
+		funlockfile(fp);
+		return errno = err, -1;
+	}
+	err = ENOMEM;
+	if ( !*lineptr )
+		*n = 0;
+	size_t written = 0;
+	int c;
 	do
 	{
-		if ( (c = getc_unlocked(fp)) == EOF )
+		if ( written == (size_t) SSIZE_MAX )
+			goto failure;
+		if ( *n <= (size_t) written + 1UL )
 		{
-			if ( written )
-				break;
-			else
-				goto cleanup;
-		}
-		if ( bufsize <= (size_t) written + 1UL )
-		{
-			size_t newbufsize = 2UL * bufsize;
+			size_t newbufsize = *n ? 2UL * *n : DEFAULT_BUFSIZE;
 			char* newbuf = (char*) realloc(*lineptr, newbufsize);
 			if ( !newbuf )
-				goto cleanup;
-			bufsize = newbufsize;
-			if ( n )
-				*n = bufsize;
+				goto failure;
 			*lineptr = newbuf;
+			*n = newbufsize;
+		}
+		if ( (c = getc_unlocked(fp)) == EOF )
+		{
+			if ( !written || feof_unlocked(fp) )
+			{
+				funlockfile(fp);
+				return -1;
+			}
 		}
 		(*lineptr)[written++] = c;
 	} while ( c != delim );
 	funlockfile(fp);
 	(*lineptr)[written] = 0;
-	return written;
-
-cleanup:
-	funlockfile(fp);
-	if ( malloced )
-	{
-		free(*lineptr);
-		*lineptr = NULL;
-	}
-	return -1;
+	return (ssize_t) written;
 }

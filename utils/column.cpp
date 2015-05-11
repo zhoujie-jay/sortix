@@ -100,10 +100,9 @@ bool append_lines_from_file(FILE* fp,
 		ssize_t string_length = getline(&string, &string_size, fp);
 		if ( string_length < 0 )
 		{
+			free(string);
 			if ( feof(stdin) )
 				return true;
-			// TODO: HACK: Unfortunately feof(stdin) isn't always true in the
-			//             normal EOF case due to a getline/getdelim bug.
 			if ( errno == 0 )
 				return true;
 			error(0, errno, "getline: `%s'", fpname);

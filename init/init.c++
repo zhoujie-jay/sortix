@@ -53,7 +53,10 @@ char* read_single_line(FILE* fp)
 	size_t ret_size = 0;
 	ssize_t ret_length = getline(&ret, &ret_size, fp);
 	if ( ret_length < 0 )
+	{
+		free(ret);
 		return NULL;
+	}
 	if ( ret_length && ret[ret_length-1] == '\n' )
 		ret[--ret_length] = '\0';
 	return ret;

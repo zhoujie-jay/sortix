@@ -67,6 +67,7 @@ bool processfp(const char* inputname, FILE* fp)
 		ssize_t linelen = getline(&line, &linesize, fp);
 		if ( linelen < 0 )
 		{
+			free(line);
 			if ( feof(fp) ) { break; }
 			error(1, errno, "error reading line: %s", inputname);
 		}

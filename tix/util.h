@@ -270,6 +270,7 @@ void string_array_append_file(string_array_t* sa, FILE* fp)
 			entry[entry_length-1] = '\0';
 		string_array_append(sa, entry);
 	}
+	free(entry);
 }
 
 bool string_array_append_file_path(string_array_t* sa, const char* path)
@@ -355,6 +356,7 @@ void dictionary_append_file(string_array_t* sa, FILE* fp)
 			continue;
 		string_array_append(sa, entry);
 	}
+	free(entry);
 }
 
 bool dictionary_append_file_path(string_array_t* sa, const char* path)
@@ -384,7 +386,10 @@ char* read_single_line(FILE* fp)
 	size_t ret_size = 0;
 	ssize_t ret_len = getline(&ret, &ret_size, fp);
 	if ( ret_len < 0 )
+	{
+		free(ret);
 		return NULL;
+	}
 	if ( ret_len && ret[ret_len-1] == '\n' )
 		ret[ret_len-1] = '\0';
 	return ret;
