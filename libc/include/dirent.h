@@ -84,16 +84,6 @@ struct dirent
 	__extension__ char d_name[];
 };
 
-#define _DIRENT_HAVE_D_RECLEN
-#define _DIRENT_HAVE_D_NAMLEN
-#undef  _DIRENT_HAVE_D_OFF
-#define _DIRENT_HAVE_D_INO
-#define _DIRENT_HAVE_D_DEV
-#define _DIRENT_HAVE_D_TYPE
-
-#define _D_EXACT_NAMLEN(d) ((d)->d_namlen)
-#define _D_ALLOC_NAMLEN(d) (_D_EXACT_NAMLEN(d) + 1)
-
 int closedir(DIR* dir);
 DIR* opendir(const char* path);
 struct dirent* readdir(DIR* dir);
