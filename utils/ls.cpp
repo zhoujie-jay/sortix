@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -54,6 +54,7 @@ bool option_show_dotdot = false;
 bool option_show_dotfiles = false;
 bool option_time_modified = false;
 
+int stdout_copy_fd;
 pid_t child_pid;
 
 static struct dirent* dirent_dup(struct dirent* entry)
@@ -65,18 +66,24 @@ static struct dirent* dirent_dup(struct dirent* entry)
 	return copy;
 }
 
-void finish_output()
+bool finish_output()
 {
+	bool result = true;
 	int errnum = errno;
-	fflush(stdout);
+	if ( fflush(stdout) == EOF )
+		result = false;
 	if ( child_pid )
 	{
 		int status;
 		close(1);
-		wait(&status);
+		dup2(stdout_copy_fd, 1);
+		waitpid(child_pid, &status, 0);
 		child_pid = 0;
+		if ( !WIFEXITED(status) || WEXITSTATUS(status) != 0 )
+			result = false;
 	}
 	errno = errnum;
+	return result;
 }
 
 void ls_error(int status, int errnum, const char* format, ...)
@@ -542,6 +549,7 @@ int main(int argc, char** argv)
 			error(1, errno, "fork");
 		if ( child_pid )
 		{
+			stdout_copy_fd = dup(1);
 			close(1);
 			dup(pipes[1]);
 			close(pipes[0]);
