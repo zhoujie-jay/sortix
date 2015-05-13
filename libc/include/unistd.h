@@ -39,7 +39,9 @@
 #include <sortix/timespec.h>
 #endif
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* If a POSIX revision was already decided by feature macros. */
 #if __USE_POSIX
@@ -571,6 +573,8 @@ pid_t tfork(int flags, struct tfork* regs);
 int truncateat(int dirfd, const char*, off_t);
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

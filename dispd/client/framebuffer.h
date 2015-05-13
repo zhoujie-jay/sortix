@@ -41,7 +41,7 @@ struct dispd_framebuffer
 };
 
 #if defined(__cplusplus)
-} // extern "C"
+} /* extern "C" */
 #endif
 
 #endif

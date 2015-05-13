@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define COLOR8_BLACK 0
 #define COLOR8_BLUE 1
@@ -46,6 +48,8 @@ __BEGIN_DECLS
 #define COLOR8_LIGHT_BROWN 14
 #define COLOR8_WHITE 15
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -32,7 +32,9 @@
 
 #include <inttypes.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __in_port_t_defined
 #define __in_port_t_defined
@@ -140,6 +142,8 @@ IN6_IS_ADDR_MC_GLOBAL
 	 && (((__const uint32_t *) (a))[2] == ((__const uint32_t *) (b))[2])  \
 	 && (((__const uint32_t *) (a))[3] == ((__const uint32_t *) (b))[3]))
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

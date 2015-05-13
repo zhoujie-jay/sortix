@@ -29,7 +29,9 @@
 
 #include <__/byteswap.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* The compiler provides the type constants. */
 #define __LITTLE_ENDIAN __ORDER_LITTLE_ENDIAN__
@@ -81,7 +83,9 @@ __BEGIN_DECLS
 
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 /* Sortix specific extensions only available in C++. */
 #if defined(__cplusplus)

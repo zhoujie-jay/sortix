@@ -16,7 +16,9 @@
 
 #include <machine/fenv.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if defined(__i386__) || defined(__x86_64__)
 
@@ -61,6 +63,8 @@ fp_except_t fpgetsticky(void);
 fp_except_t fpsetsticky(fp_except_t);
 fp_except_t fpresetsticky(fp_except_t);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* INCLUDE_IEEEFP_H */

@@ -35,7 +35,9 @@
 #include <stddef.h>
 #endif
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define UTHREAD_FLAG_INITIAL (1UL << 0UL)
 
@@ -56,6 +58,8 @@ struct uthread
 	size_t __uthread_reserved[4];
 };
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -27,11 +27,15 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Options at the IPPROTO_TCP socket level. */
 #define TCP_NODELAY 1
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

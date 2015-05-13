@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef __SIZE_TYPE__ nfds_t;
 
@@ -52,6 +54,8 @@ struct pollfd
 
 #define POLL__ONLY_REVENTS (POLLERR | POLLHUP | POLLNVAL)
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

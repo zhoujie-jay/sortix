@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define __DT_UNKNOWN 0x0
 #define __DT_FIFO 0x1
@@ -39,6 +41,8 @@ __BEGIN_DECLS
 #define __DT_SOCK 0xC
 #define __DT_BITS 0xF
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

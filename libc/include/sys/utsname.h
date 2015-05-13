@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define _UTSNAME_LENGTH 65
 
@@ -46,6 +48,8 @@ struct utsname
 
 int uname(struct utsname*);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

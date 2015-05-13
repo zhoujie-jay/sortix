@@ -33,7 +33,9 @@
 
 #include <sortix/sigval.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if __STDC_HOSTED__
 #ifndef __pthread_attr_t_defined
@@ -59,6 +61,8 @@ struct sigevent
 #endif
 };
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

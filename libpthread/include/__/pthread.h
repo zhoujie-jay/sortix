@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define __sortix_libpthread__ 1
 
@@ -167,6 +169,8 @@ typedef struct pthread* __pthread_t;
 typedef struct __pthread* __pthread_t;
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

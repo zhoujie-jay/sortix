@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __size_t_defined
 #define __size_t_defined
@@ -52,6 +54,8 @@ void* alloca(size_t);
    error if -fno-builtin is passed. */
 #define alloca(size) __builtin_alloca(size)
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

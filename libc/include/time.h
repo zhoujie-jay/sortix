@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __clock_t_defined
 #define __clock_t_defined
@@ -85,13 +87,17 @@ struct tm
 	int tm_isdst;
 };
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 #include <sortix/timespec.h>
 #include <sortix/itimerspec.h>
 #if __USE_SORTIX
 #include <sortix/tmns.h>
 #endif
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef NULL
 #define __need_NULL
@@ -100,10 +106,14 @@ __BEGIN_DECLS
 
 #define CLOCKS_PER_SEC 1000000l
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 #include <sortix/clock.h>
 #include <sortix/time.h>
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* getdate_err is omitted, use strptime */
 
@@ -163,6 +173,8 @@ int timens(struct tmns* tmns);
 
 extern char* tzname[2];
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

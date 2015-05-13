@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 union sigval
 {
@@ -35,6 +37,8 @@ union sigval
 	void* sival_ptr;
 };
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

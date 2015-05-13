@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define CLOCK_REALTIME 0 /* Current real time. */
 #define CLOCK_MONOTONIC 1 /* Always increasing time. */
@@ -40,6 +42,8 @@ __BEGIN_DECLS
 #define CLOCK_THREAD_CPUTIME_ID 8
 #define CLOCK_THREAD_SYSTIME_ID 9
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

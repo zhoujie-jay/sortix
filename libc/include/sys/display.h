@@ -31,10 +31,14 @@
 #include <stdint.h>
 #include <sortix/display.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int dispmsg_issue(void* ptr, size_t size);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

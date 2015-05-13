@@ -35,7 +35,9 @@
 #include <sortix/termios.h>
 #endif
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if __USE_SORTIX
 #ifndef __size_t_defined
@@ -58,6 +60,8 @@ int tcgetwincurpos(int, struct wincurpos*);
 int tcgetwinsize(int, struct winsize*);
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

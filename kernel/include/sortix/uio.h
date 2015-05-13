@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __size_t_defined
 #define __size_t_defined
@@ -43,6 +45,8 @@ struct iovec
 	size_t iov_len;
 };
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

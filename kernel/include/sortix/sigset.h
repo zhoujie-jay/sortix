@@ -29,13 +29,17 @@
 
 #include <sortix/__/sigset.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct
 {
 	unsigned long __val[__SIGSET_NUM_SIGNALS / (8 * sizeof(unsigned long int))];
 } sigset_t;
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

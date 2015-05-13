@@ -118,4 +118,4 @@ FILE* stdin = &__stdin_file;
 FILE* stdout = &__stdout_file;
 FILE* stderr = &__stderr_file;
 
-} // extern "C"
+} /* extern "C" */

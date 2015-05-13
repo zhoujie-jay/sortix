@@ -35,7 +35,9 @@
 
 #include <sortix/wait.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define EXIT_SUCCESS (0)
 #define EXIT_FAILURE (1)
@@ -181,6 +183,8 @@ uint32_t arc4random_uniform(uint32_t);
 void* reallocarray(void*, size_t, size_t);
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -29,11 +29,15 @@
 
 #include <sortix/mount.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int unmount(const char*, int);
 int unmountat(int, const char*, int);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

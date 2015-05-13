@@ -29,7 +29,9 @@
 
 #include <sortix/__/wait.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define WCONTINUED (1<<0)
 #define WNOHANG (1<<1)
@@ -54,6 +56,8 @@ __BEGIN_DECLS
 #define WCONSTRUCT(nature, exitcode, signal) \
         __WCONSTRUCT(nature, exitcode, signal)
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

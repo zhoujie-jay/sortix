@@ -29,7 +29,9 @@
 
 #include <stdarg.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define LOG_PRISHIFT 0
 #define LOG_PRIBITS 3
@@ -102,6 +104,8 @@ void syslog(int, const char*, ...);
 __attribute__ ((__format__ (__printf__, 2, 0)))
 void vsyslog(int, const char*, va_list);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

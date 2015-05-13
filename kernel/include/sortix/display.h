@@ -30,7 +30,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 const uint32_t DISPMSG_CONTROL_VALID = 1 << 0;
 const uint32_t DISPMSG_CONTROL_VGA = 1 << 1;
@@ -163,6 +165,8 @@ struct dispmsg_read_memory
 	uint8_t* dst; // in, *out
 };
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

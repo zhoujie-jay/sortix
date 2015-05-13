@@ -33,18 +33,24 @@
 #include <stdbool.h>
 #endif
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __time_t_defined
 #define __time_t_defined
 typedef __time_t time_t;
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #include <sortix/timespec.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 static __inline bool timespec_eq(struct timespec a, struct timespec b)
 {
@@ -104,6 +110,8 @@ struct timespec timespec_canonalize(struct timespec t);
 struct timespec timespec_add(struct timespec a, struct timespec b);
 struct timespec timespec_sub(struct timespec a, struct timespec b);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

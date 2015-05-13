@@ -29,7 +29,9 @@
 
 #include <sortix/__/sigset.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if defined(__x86_64__)
 typedef unsigned long sigjmp_buf[8 + 1 + __SIGSET_NUM_SIGNALS / (sizeof(unsigned long int) * 8)];
@@ -46,6 +48,8 @@ int setjmp(jmp_buf);
 void siglongjmp(sigjmp_buf, int);
 int sigsetjmp(sigjmp_buf, int);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

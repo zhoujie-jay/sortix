@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define ENOTBLK 12
 #define ENODEV 13
@@ -145,6 +147,8 @@ extern char* program_invocation_short_name;
 #define program_invocation_name program_invocation_name
 #define program_invocation_short_name program_invocation_short_name
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

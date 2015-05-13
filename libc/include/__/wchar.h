@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef __WCHAR_TYPE__ __wchar_t;
 #define __WCHAR_MIN __WCHAR_MIN__
@@ -39,6 +41,8 @@ typedef __WINT_TYPE__ __wint_t;
 
 #define __WEOF __WINT_MAX
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

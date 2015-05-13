@@ -30,7 +30,9 @@
 #include <sortix/siginfo.h>
 #include <sortix/sigset.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define SA_NOCLDSTOP (1<<0)
 #define SA_ONSTACK (1<<1)
@@ -58,6 +60,8 @@ struct sigaction
 	int sa_flags;
 };
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

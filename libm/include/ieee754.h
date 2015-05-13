@@ -38,7 +38,9 @@
 #error "Please add support for the endianness on your platform"
 #endif
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define SNG_EXPBITS 8
 #define SNG_FRACBITS 23
@@ -183,6 +185,8 @@ union ieee754_long_double
 	struct ieee754_float_long_double_nan ieee_nan;
 };
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

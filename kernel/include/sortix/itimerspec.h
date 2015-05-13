@@ -29,7 +29,9 @@
 
 #include <sortix/timespec.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct itimerspec
 {
@@ -37,6 +39,8 @@ struct itimerspec
 	struct timespec it_value;
 };
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

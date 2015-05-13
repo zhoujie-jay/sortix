@@ -152,7 +152,7 @@ struct tss_entry tss =
 #endif
 };
 
-} // extern "C"
+} /* extern "C" */
 
 #define GRAN_64_BIT_MODE (1 << 5)
 #define GRAN_32_BIT_MODE (1 << 6)
@@ -230,7 +230,7 @@ struct gdt_entry gdt[] =
 
 uint16_t gdt_size_minus_one = sizeof(gdt) - 1;
 
-} // extern "C"
+} /* extern "C" */
 
 uintptr_t GetKernelStack()
 {

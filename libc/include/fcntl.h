@@ -34,7 +34,9 @@
 #include <sortix/fcntl.h>
 #include <sortix/seek.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* The kernel would like to simply deal with one bit for each base access mode,
    but using the traditional names O_RDONLY, O_WRONLY and O_RDWR for this would
@@ -59,6 +61,8 @@ int fcntl(int fd, int cmd, ...);
 int open(const char* path, int oflag, ...);
 int openat(int fd, const char* path, int oflag, ...);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

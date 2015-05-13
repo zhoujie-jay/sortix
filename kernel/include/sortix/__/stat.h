@@ -30,11 +30,15 @@
 
 #include <sortix/__/dt.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define __S_IFMT_SHIFT 12
 #define __S_IFMT_MASK __DT_BITS
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -42,7 +42,9 @@
 #include <FILE.h>
 #endif
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef NULL
 #define __need_NULL
@@ -234,6 +236,8 @@ size_t wcslcpy(wchar_t* __restrict, const wchar_t* __restrict, size_t);
 /* TODO: wcstoull_l */
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

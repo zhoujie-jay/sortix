@@ -29,23 +29,31 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __time_t_defined
 #define __time_t_defined
 typedef __time_t time_t;
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 #include <sortix/poll.h>
 #include <sortix/sigset.h>
 #include <sortix/timespec.h>
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int poll(struct pollfd* fds, nfds_t nfds, int timeout);
 int ppoll(struct pollfd* fds, nfds_t nfds, const struct timespec* timeout,
           const sigset_t* sigmask);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

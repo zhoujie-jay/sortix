@@ -29,7 +29,9 @@
 
 #include <sortix/timespec.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct tmns
 {
@@ -39,6 +41,8 @@ struct tmns
 	struct timespec tmns_cstime;
 };
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

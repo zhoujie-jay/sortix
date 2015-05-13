@@ -31,7 +31,9 @@
 
 #include <sortix/socket.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __socklen_t_defined
 #define __socklen_t_defined
@@ -54,11 +56,15 @@ typedef __ssize_t ssize_t;
 typedef unsigned short int sa_family_t;
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #include <sortix/uio.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct sockaddr
 {
@@ -181,6 +187,8 @@ int sockatmark(int);
 int socket(int, int, int);
 int socketpair(int, int, int, int[2]);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __clock_t_defined
 #define __clock_t_defined
@@ -46,6 +48,8 @@ struct tms
 
 clock_t times(struct tms*);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

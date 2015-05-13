@@ -31,7 +31,9 @@
 
 #include <sortix/wait.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __pid_t_defined
 #define __pid_t_defined
@@ -42,6 +44,8 @@ pid_t wait(int* stat_loc);
 /* TODO: int waitid(idtype_t, id_t, siginfo_t*, int); */
 pid_t waitpid(pid_t pid, int *stat_loc, int options);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

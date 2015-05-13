@@ -203,7 +203,9 @@
 
 #endif
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __wchar_t_defined
 #define __wchar_t_defined
@@ -224,6 +226,8 @@ uintmax_t strtoumax(const char* __restrict, char** __restrict, int);
 intmax_t wcstoimax(const wchar_t* __restrict, wchar_t** __restrict, int);
 uintmax_t wcstoumax(const wchar_t* __restrict, wchar_t** __restrict, int);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

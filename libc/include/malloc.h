@@ -41,7 +41,9 @@
 #include <stdint.h>
 #endif
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int heap_get_paranoia(void);
 /* TODO: Operations to verify pointers and consistency check the heap. */
@@ -632,7 +634,9 @@ struct heap_chunk* heap_chunk_combine_neighbors(struct heap_chunk* chunk)
 
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #if __is_sortix_libc
 #include <assert.h>

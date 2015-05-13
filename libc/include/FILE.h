@@ -31,7 +31,9 @@
 
 #include <pthread.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __off_t_defined
 #define __off_t_defined
@@ -104,6 +106,8 @@ extern FILE* __first_file;
 extern __pthread_mutex_t __first_file_lock;
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

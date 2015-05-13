@@ -31,7 +31,9 @@
 
 #include <__/wordsize.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if __WORDSIZE == 32
 typedef Elf32_Half Elf_Half;
@@ -89,6 +91,8 @@ typedef Elf64_Lib Elf_Lib;
 #error "You need to typedef these to the types of your platform."
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -31,7 +31,9 @@
 
 #include <sortix/mman.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __mode_t_defined
 #define __mode_t_defined
@@ -53,6 +55,8 @@ void* mmap(void*, size_t, int, int, int, off_t);
 int mprotect(const void*, size_t, int);
 int munmap(void*, size_t);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

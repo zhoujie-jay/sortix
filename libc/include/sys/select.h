@@ -32,7 +32,9 @@
 
 #include <string.h> /* TODO: HACK: for FD_ZERO */
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __time_t_defined
 #define __time_t_defined
@@ -53,10 +55,14 @@ struct timeval
 };
 #endif
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <sortix/sigset.h>
 #include <sortix/timespec.h>
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #define FD_SETSIZE 1024
 #define __FD_ELEM_SIZE ((int) sizeof(__fd_mask))
@@ -81,6 +87,8 @@ typedef struct
 int select(int, fd_set* __restrict, fd_set* __restrict, fd_set* __restrict,
            struct timeval* __restrict);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __blkcnt_t_defined
 #define __blkcnt_t_defined
@@ -81,12 +83,16 @@ typedef __off_t off_t;
 typedef __time_t time_t;
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #include <sortix/timespec.h>
 #include <sortix/stat.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* POSIX mandates that we define these compatibility macros to support programs
    that are yet to embrace struct timespec. */
@@ -114,6 +120,8 @@ int utimens(const char* path, const struct timespec times[2]);
 int utimensat(int dirfd, const char* path, const struct timespec times[2],
               int flags);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -37,15 +37,6 @@
    string that contains the warning. */
 #define __PRAGMA_WARNING(msg) _Pragma(__STRINGIFY(GCC warning msg))
 
-/* C++ needs to know that types and declarations are C, not C++. */
-#ifdef __cplusplus
-	#define __BEGIN_DECLS   extern "C" {
-	#define __END_DECLS     }
-#else
-	#define __BEGIN_DECLS
-	#define __END_DECLS
-#endif
-
 /* Use the real restrict keyword if it is available. Not that this really
    matters as gcc uses __restrict and __restrict__ as aliases for restrict, but
    it will look nicer after preprocessing. */

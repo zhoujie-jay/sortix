@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __FILE_defined
 #define __FILE_defined
@@ -83,6 +85,8 @@ int getpwuid_r(uid_t, struct passwd* __restrict, char* __restrict, size_t,
 FILE* openpw(void);
 void setpwent(void);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

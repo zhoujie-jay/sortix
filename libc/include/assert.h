@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Determine how the value should be cast to void. */
 #if defined __cplusplus
@@ -45,7 +47,9 @@ __BEGIN_DECLS
 __attribute__((noreturn))
 void __assert(const char*, unsigned long, const char*, const char*);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif
 

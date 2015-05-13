@@ -30,7 +30,9 @@
 #include <sortix/sigset.h>
 #include <sortix/stack.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Register declarations for i386 */
 #if defined(__i386__)
@@ -150,6 +152,8 @@ typedef struct ucontext
 	mcontext_t uc_mcontext;
 } ucontext_t;
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

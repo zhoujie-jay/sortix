@@ -29,7 +29,9 @@
 
 #include <__/endian.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Constans for each kind of known endian. */
 #define LITTLE_ENDIAN __LITTLE_ENDIAN
@@ -57,7 +59,9 @@ __BEGIN_DECLS
 #define be64toh(x) __be64toh(x)
 #define le64toh(x) __le64toh(x)
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 /* Sortix specific extensions only available in C++. */
 #if defined(__cplusplus)

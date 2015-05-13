@@ -31,7 +31,9 @@
 
 #include <pthread.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __size_t_defined
 #define __size_t_defined
@@ -72,6 +74,8 @@ extern DIR* __first_dir;
 extern __pthread_mutex_t __first_dir_lock;
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -31,7 +31,9 @@
 #include <__/stdint.h>
 #include <__/wordsize.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef __intmax_t __blkcnt_t;
 /*#define __BLKCNT_UNSIGNED*/
@@ -400,6 +402,8 @@ typedef __uint64_t __uid_t;
 #define __SCNuUID __SCNu64
 #define __SCNxUID __SCNx64
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

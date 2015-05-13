@@ -31,7 +31,9 @@
 
 #include <__/wchar.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __wint_t_defined
 #define __wint_t_defined
@@ -97,6 +99,8 @@ wctrans_t wctrans_l(const char *, locale_t);
 wctype_t wctype_l(const char *, locale_t);
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

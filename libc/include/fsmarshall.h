@@ -29,13 +29,17 @@
 
 #include <fsmarshall-msg.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct stat;
 
 int fsm_fsbind(int, int, int);
 int fsm_mountat(int, const char*, const struct stat*, int);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -29,7 +29,9 @@
 
 #include <sortix/timespec.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct
 {
@@ -53,6 +55,8 @@ int sem_trywait(sem_t*);
 /*int sem_unlink(const char*);*/
 int sem_wait(sem_t*);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

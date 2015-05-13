@@ -29,7 +29,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define INITRD_ALGO_CRC32 0
 
@@ -97,6 +99,8 @@ typedef struct initrd_dirent
 	char name[0];
 } initrd_dirent_t;
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

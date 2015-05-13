@@ -34,7 +34,9 @@
 #include <sortix/__/dirent.h>
 #include <sortix/__/dt.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __dev_t_defined
 #define __dev_t_defined
@@ -87,6 +89,8 @@ static __inline struct kernel_dirent* kernel_dirent_next(struct kernel_dirent* e
 	return (struct kernel_dirent*) ((uint8_t*) ent + ent->d_nextoff);
 }
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

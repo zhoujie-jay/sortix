@@ -34,7 +34,9 @@
 #endif
 #include <stdio.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct fdio_state
 {
@@ -52,6 +54,8 @@ int fdio_close(void* user);
 bool fdio_install_fd(FILE* fp, int fd, const char* mode);
 bool fdio_install_path(FILE* fp, const char* path, const char* mode);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

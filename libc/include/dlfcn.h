@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define RTLD_LAZY (1<<0)
 #define RTLD_NOW (1<<1)
@@ -39,6 +41,8 @@ char* dlerror();
 void* dlopen(const char* filename, int mode);
 void* dlsym(void* handle, const char* name);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

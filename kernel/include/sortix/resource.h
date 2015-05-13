@@ -29,7 +29,9 @@
 
 #include <__/stdint.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define PRIO_PROCESS 0
 #define PRIO_PGRP 1
@@ -60,6 +62,8 @@ struct rlimit
 #define RLIMIT_NUM_DECLARED __RLIMIT_NUM_DECLARED
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

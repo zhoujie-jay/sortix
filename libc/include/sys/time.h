@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __time_t_defined
 #define __time_t_defined
@@ -52,6 +54,8 @@ struct timeval
 
 int gettimeofday(struct timeval* __restrict tp, void* __restrict tzp);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* These declarations are repeated in <unistd.h>. */
 #ifndef __getopt_unistd_shared_declared
@@ -54,6 +56,8 @@ struct option
 
 int getopt_long(int, char* const*, const char*, const struct option*, int*);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

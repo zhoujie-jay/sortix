@@ -32,7 +32,9 @@
 #include <sortix/sigset.h>
 #include <sortix/stack.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* The sfork system call is much like the rfork system call found in Plan 9 and
    BSD systems, however it works slightly differently and was renamed to avoid
@@ -122,6 +124,8 @@ struct tfork
 	stack_t altstack;
 };
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Archive files start with the ARMAG identifying string. Then follows a
    `struct ar_hdr', and as many bytes of member file data as its `ar_size'
@@ -53,6 +55,8 @@ struct ar_hdr
 	char ar_fmag[2];    /* Always contains ARFMAG. */
 };
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

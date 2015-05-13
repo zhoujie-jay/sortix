@@ -31,7 +31,9 @@
 
 #include <sortix/sigval.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __pid_t_defined
 #define __pid_t_defined
@@ -91,6 +93,8 @@ typedef struct
 #define SI_ASYNCIO 34
 #define SI_MSGQ 35
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

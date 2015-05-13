@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __sa_family_t_defined
 #define __sa_family_t_defined
@@ -42,6 +44,8 @@ struct sockaddr_un
 	char sun_path[128 - sizeof(sa_family_t)];
 };
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

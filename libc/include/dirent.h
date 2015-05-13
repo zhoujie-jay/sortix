@@ -35,7 +35,9 @@
 #include <DIR.h>
 #endif
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __dev_t_defined
 #define __dev_t_defined
@@ -130,6 +132,8 @@ void dunregister(DIR* dir);
 int versionsort_r(const struct dirent**, const struct dirent**, void*);
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

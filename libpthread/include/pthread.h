@@ -43,7 +43,9 @@
 
 #include <__/pthread.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* TODO: #define PTHREAD_BARRIER_SERIAL_THREAD */
 /* TODO: #define PTHREAD_CANCEL_ASYNCHRONOUS */
@@ -298,6 +300,8 @@ int pthread_setspecific(pthread_key_t, const void*);
 /* TODO: pthread_spin_unlock */
 /* TODO: pthread_testcancel */
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

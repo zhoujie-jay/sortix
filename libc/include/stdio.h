@@ -44,7 +44,9 @@
 #include <FILE.h>
 #endif
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #if __USE_SORTIX || 2008 <= __USE_POSIX
 #ifndef __off_t_defined
@@ -317,6 +319,8 @@ int vscanf_callback(void* fp,
 	__attribute__((__format__ (scanf, 4, 0)));
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -29,11 +29,15 @@
 
 #include <sortix/termmode.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int settermmode(int fd, unsigned mode);
 int gettermmode(int fd, unsigned* mode);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

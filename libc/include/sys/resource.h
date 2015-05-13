@@ -31,7 +31,9 @@
 
 #include <sortix/resource.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __id_t_defined
 #define __id_t_defined
@@ -78,6 +80,8 @@ int prlimit(pid_t, int, const struct rlimit*, struct rlimit*);
 int setpriority(int, id_t, int);
 int setrlimit(int, const struct rlimit*);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

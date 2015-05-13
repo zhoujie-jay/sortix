@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __FILE_defined
 #define __FILE_defined
@@ -74,6 +76,8 @@ int getgrnam_r(const char*, struct group*, char*, size_t, struct group**);
 FILE* opengr(void);
 void setgrent(void);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

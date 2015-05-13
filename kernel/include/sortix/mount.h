@@ -27,12 +27,16 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define UNMOUNT_FORCE (1 << 0)
 #define UNMOUNT_DETACH (1 << 1)
 #define UNMOUNT_NOFOLLOW (1 << 2)
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

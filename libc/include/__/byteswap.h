@@ -27,13 +27,17 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Use compiler builtins for efficient byte swapping. */
 #define __bswap_16(x) __builtin_bswap16(x)
 #define __bswap_32(x) __builtin_bswap32(x)
 #define __bswap_64(x) __builtin_bswap64(x)
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

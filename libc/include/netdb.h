@@ -31,7 +31,9 @@
 
 #include <inttypes.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __in_port_t_defined
 #define __in_port_t_defined
@@ -144,6 +146,8 @@ void setnetent(int);
 void setprotoent(int);
 void setservent(int);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

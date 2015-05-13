@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define FNM_NOMATCH 1
 
@@ -37,6 +39,8 @@ __BEGIN_DECLS
 
 int fnmatch(const char*, const char*, int);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

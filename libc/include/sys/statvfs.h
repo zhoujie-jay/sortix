@@ -31,12 +31,16 @@
 
 #include <sortix/statvfs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int fstatvfs(int, struct statvfs*);
 int fstatvfsat(int, const char* __restrict, struct statvfs* __restrict, int);
 int statvfs(const char* __restrict, struct statvfs* __restrict);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

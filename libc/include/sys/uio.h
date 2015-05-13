@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __size_t_defined
 #define __size_t_defined
@@ -47,17 +49,23 @@ typedef __ssize_t ssize_t;
 typedef __off_t off_t;
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #include <sortix/uio.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 ssize_t readv(int, const struct iovec*, int);
 ssize_t writev(int, const struct iovec*, int);
 ssize_t preadv(int, const struct iovec*, int, off_t);
 ssize_t pwritev(int, const struct iovec*, int, off_t);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

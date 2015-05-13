@@ -190,7 +190,7 @@ void* syscall_list[SYSCALL_MAX_NUM + 1] =
 	[SYSCALL_CLOSEFROM] = (void*) sys_closefrom,
 	[SYSCALL_MAX_NUM] = (void*) sys_bad_syscall,
 };
-} // extern "C"
+} /* extern "C" */
 
 int sys_bad_syscall(void)
 {

@@ -29,7 +29,9 @@
 
 #include <__/wordsize.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* TODO: Make the compiler provide all this information using __ prefix. */
 /* TODO: Use __XINTXX_TYPE__ constants when switching to gcc 4.7.x or newer. */
@@ -500,6 +502,8 @@ typedef long long unsigned int __uintmax_t;
 /* TODO: Should these come from a <__stddef.h>? */
 #define __SIZE_MAX __SIZE_MAX__
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

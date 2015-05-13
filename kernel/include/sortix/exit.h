@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __size_t_defined
 #define __size_t_defined
@@ -55,6 +57,8 @@ struct exit_thread
 #define EXIT_THREAD_PROCESS (1<<4)
 #define EXIT_THREAD_DUMP_CORE (1<<5)
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -30,11 +30,15 @@
 #include <sortix/__/dt.h>
 #include <sortix/__/stat.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define __IFTODT(mode) (((mode) & __S_IFMT) >> __S_IFMT_SHIFT)
 #define __DTTOIF(dirtype) ((dirtype) << __S_IFMT_SHIFT)
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

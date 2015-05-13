@@ -45,7 +45,9 @@
 #include <sortix/timespec.h>
 #include <sortix/ucontext.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __uid_t_defined
 #define __uid_t_defined
@@ -112,6 +114,8 @@ int sigsuspend(const sigset_t*);
 /* TODO: int sigwait(const sigset_t* __restrict, int* __restrict); */
 /* TODO: int sigwaitinfo(const sigset_t* __restrict, siginfo_t* __restrict); */
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct lconv
 {
@@ -76,6 +78,8 @@ char* setlocale(int category, const char* locale);
 #endif
 struct lconv* localeconv(void);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

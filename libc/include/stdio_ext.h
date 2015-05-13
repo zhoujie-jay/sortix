@@ -29,7 +29,9 @@
 
 #include <stdio.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 size_t __fbufsize(FILE* fp);
 size_t __fpending(FILE* fp);
@@ -40,6 +42,8 @@ void __fseterr(FILE* fp);
 int __fwritable(FILE* fp);
 int __fwriting(FILE* fp);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -41,7 +41,7 @@ struct dispd_session
 bool dispd__session_initialize(int* argc, char*** argv);
 
 #if defined(__cplusplus)
-} // extern "C"
+} /* extern "C" */
 #endif
 
 #endif

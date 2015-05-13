@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __locale_t_defined
 #define __locale_t_defined
@@ -68,6 +70,8 @@ int tolower(int c);
 int toupper(int c);
 /* TODO: toupper_l */
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -36,7 +36,9 @@
 
 #include <machine/fenv.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Function prototypes */
 int feclearexcept(int);
@@ -59,6 +61,8 @@ int fegetexcept(void);
 
 #endif /* __USE_SORTIX */
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* ! INCLUDE_FENV_H */

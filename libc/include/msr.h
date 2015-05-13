@@ -32,7 +32,9 @@
 
 #if defined(__i386__) || defined(__x86_64__)
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define MSRID_FSBASE __UINT32_C(0xC0000100)
 #define MSRID_GSBASE __UINT32_C(0xC0000101)
@@ -90,7 +92,9 @@ static __inline void wrmsr_split(uint32_t msrid, uint32_t low, uint32_t high)
 	wrmsr(msrid, (uint64_t) low << 0 | (uint64_t) high << 32);
 }
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif
 

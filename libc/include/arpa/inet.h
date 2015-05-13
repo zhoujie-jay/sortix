@@ -29,7 +29,9 @@
 
 #include <netinet/in.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Functions from POSIX that is considered obsolete due to bad design. */
 #if __USE_POSIX
@@ -49,6 +51,8 @@ int inet_pton(int, const char* __restrict, void* __restrict);
 /* TODO: char* inet_neta(in_addr_t, char*, size_t); */
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

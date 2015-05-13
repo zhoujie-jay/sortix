@@ -34,7 +34,9 @@
 #include <stdint.h>
 #include <sortix/dirent.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __size_t_defined
 #define __size_t_defined
@@ -44,6 +46,8 @@ __BEGIN_DECLS
 
 ssize_t readdirents(int fd, struct kernel_dirent* dirent, size_t size);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -18,7 +18,9 @@
 #define _Complex_I 1.0fi
 #define I _Complex_I
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* 7.3.5 Trigonometric functions */
 /* 7.3.5.1 The cacos functions */
@@ -117,6 +119,8 @@ double creal(double complex);
 float crealf(float complex);
 long double creall(long double complex);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* !INCLUDE_COMPLEX_H */

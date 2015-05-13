@@ -41,7 +41,9 @@
 
 #include <__/math.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define __fpmacro_unary_floating(__name, __arg0)                        \
         /* LINTED */                                                    \
@@ -477,6 +479,8 @@ int ilogbl(long double);
 long double logbl(long double);
 long double scalbnl(long double, int);
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

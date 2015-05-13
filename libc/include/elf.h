@@ -29,7 +29,9 @@
 
 #include <stdint.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Standard ELF types.  */
 
@@ -3086,6 +3088,8 @@ typedef Elf32_Addr Elf32_Conflict;
 
 #define R_TILEGX_NUM		130
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

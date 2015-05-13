@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define __WNATURE_EXITED 0
 #define __WNATURE_SIGNALED 1
@@ -50,6 +52,8 @@ __BEGIN_DECLS
          ((exitcode) & 0xFF) << 8 | \
          ((signal) & 0x7F) << 0)
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

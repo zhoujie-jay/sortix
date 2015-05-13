@@ -34,7 +34,9 @@
 #include <sortix/termios.h>
 #include <sortix/timespec.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define FSM_MOUNT_CLOEXEC (1 << 0)
 #define FSM_MOUNT_CLOFORK (1 << 1)
@@ -433,6 +435,8 @@ struct fsm_resp_tcgetwincurpos
 
 #define FSM_MSG_NUM 53
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

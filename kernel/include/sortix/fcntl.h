@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Remember to update the flag classifications at the top of descriptor.cpp if
    you add new flags here. */
@@ -114,6 +116,8 @@ __BEGIN_DECLS
 #define AT_REMOVEFILE (1<<3)
 #define AT_SYMLINK_FOLLOW (1<<4)
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -27,7 +27,9 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* TODO: Nicely wrap this in an enum, as in glibc's header? */
 #define SOCK_TYPE_MASK ((1<<20)-1)
@@ -40,6 +42,8 @@ __BEGIN_DECLS
 #define SOCK_CLOEXEC (1<<21)
 #define SOCK_CLOFORK (1<<22)
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

@@ -30,7 +30,9 @@
 #include <__/stdint.h>
 #include <__/wchar.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Only define these constant macros in C++ if requested. */
 #if __USE_SORTIX || defined(__STDC_CONSTANT_MACROS) || !defined(__cplusplus)
@@ -168,6 +170,8 @@ typedef __uintptr_t uintptr_t;
 typedef __intmax_t intmax_t;
 typedef __uintmax_t uintmax_t;
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

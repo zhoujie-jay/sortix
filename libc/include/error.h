@@ -27,13 +27,17 @@
 
 #include <sys/cdefs.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void gnu_error(int status, int errnum, const char* format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
 void error(int status, int errnum, const char* format, ...) __asm__ ("gnu_error")
 	__attribute__((__format__(__printf__, 3, 4)));
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

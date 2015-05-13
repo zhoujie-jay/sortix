@@ -36,7 +36,9 @@
 
 #include <sortix/timespec.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct stat
 {
@@ -87,6 +89,8 @@ struct stat
 #define S_ISCHR(mode) (((mode) & S_IFMT) == S_IFCHR)
 #define S_ISFIFO(mode) (((mode) & S_IFMT) == S_IFIFO)
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

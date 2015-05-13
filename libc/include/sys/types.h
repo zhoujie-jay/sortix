@@ -32,7 +32,9 @@
 #include <__/pthread.h>
 #endif
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __blkcnt_t_defined
 #define __blkcnt_t_defined
@@ -531,6 +533,8 @@ typedef __pthread_t pthread_t;
 
 #endif
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif

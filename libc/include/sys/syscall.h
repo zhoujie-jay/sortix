@@ -76,11 +76,15 @@ SYSCALL_FUNCTION_BODY(syscall_index) \
 /* Create a function that performs the system call by injecting the right
    instructions into the compiler assembly output. Then provide a declaration of
    the function that looks just like the caller wants it. */
+#ifdef __cplusplus
 #define DEFINE_SYSCALL(syscall_type, syscall_name, syscall_index, syscall_formals) \
 SYSCALL_FUNCTION(syscall_name, syscall_index) \
-__BEGIN_DECLS \
-syscall_type syscall_name syscall_formals; \
-__END_DECLS \
+extern "C" { syscall_type syscall_name syscall_formals; }
+#else
+#define DEFINE_SYSCALL(syscall_type, syscall_name, syscall_index, syscall_formals) \
+SYSCALL_FUNCTION(syscall_name, syscall_index) \
+syscall_type syscall_name syscall_formals;
+#endif
 
 /* System call accepting no parameters. */
 #define DEFN_SYSCALL0(type, fn, num) \

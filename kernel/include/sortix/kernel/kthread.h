@@ -55,7 +55,7 @@ unsigned long kthread_cond_wait_signal(kthread_cond_t* cond, kthread_mutex_t* mu
 void kthread_cond_signal(kthread_cond_t* cond);
 void kthread_cond_broadcast(kthread_cond_t* cond);
 
-} // extern "C"
+} /* extern "C" */
 
 class ScopedLock
 {

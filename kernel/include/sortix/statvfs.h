@@ -29,7 +29,9 @@
 
 #include <sys/__/types.h>
 
-__BEGIN_DECLS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef __dev_t_defined
 #define __dev_t_defined
@@ -64,6 +66,8 @@ struct statvfs
 #define ST_RDONLY (1 << 0)
 #define ST_NOSUID (1 << 1)
 
-__END_DECLS
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif
