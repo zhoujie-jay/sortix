@@ -606,26 +606,22 @@ int Descriptor::link(ioctx_t* ctx, const char* filename, Ref<Descriptor> node)
 	return ret;
 }
 
-int Descriptor::unlink(ioctx_t* ctx, const char* filename)
+int Descriptor::unlinkat(ioctx_t* ctx, const char* filename, int flags)
 {
+	if ( flags & ~(AT_REMOVEFILE | AT_REMOVEDIR) )
+		return errno = EINVAL, -1;
+	if ( !(flags & (AT_REMOVEFILE | AT_REMOVEDIR)) )
+		flags |= AT_REMOVEFILE;
 	char* final;
 	Ref<Descriptor> dir = OpenDirContainingPath(ctx, Ref<Descriptor>(this),
 	                                            filename, &final);
 	if ( !dir )
 		return -1;
-	int ret = dir->vnode->unlink(ctx, final);
-	delete[] final;
-	return ret;
-}
-
-int Descriptor::rmdir(ioctx_t* ctx, const char* filename)
-{
-	char* final;
-	Ref<Descriptor> dir = OpenDirContainingPath(ctx, Ref<Descriptor>(this),
-	                                            filename, &final);
-	if ( !dir )
-		return -1;
-	int ret = dir->vnode->rmdir(ctx, final);
+	int ret = -1;
+	if ( ret < 0 && (flags & AT_REMOVEFILE) )
+		ret = dir->vnode->unlink(ctx, final);
+	if ( ret < 0 && (flags & AT_REMOVEDIR) )
+		ret = dir->vnode->rmdir(ctx, final);
 	delete[] final;
 	return ret;
 }

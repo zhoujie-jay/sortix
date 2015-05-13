@@ -80,8 +80,7 @@ public:
 	                     mode_t mode = 0);
 	int mkdir(ioctx_t* ctx, const char* filename, mode_t mode);
 	int link(ioctx_t* ctx, const char* filename, Ref<Descriptor> node);
-	int unlink(ioctx_t* ctx, const char* filename);
-	int rmdir(ioctx_t* ctx, const char* filename);
+	int unlinkat(ioctx_t* ctx, const char* filename, int flags);
 	int symlink(ioctx_t* ctx, const char* oldname, const char* filename);
 	ssize_t readlink(ioctx_t* ctx, char* buf, size_t bufsiz);
 	int tcgetwincurpos(ioctx_t* ctx, struct wincurpos* wcp);

@@ -204,8 +204,6 @@ int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
 
 int sys_unlinkat(int dirfd, const char* path, int flags)
 {
-	if ( !(flags & (AT_REMOVEFILE | AT_REMOVEDIR)) )
-		flags |= AT_REMOVEFILE;
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
 		return -1;
@@ -213,11 +211,7 @@ int sys_unlinkat(int dirfd, const char* path, int flags)
 	const char* relpath = pathcopy;
 	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	int ret = -1;
-	if ( ret < 0 && (flags & AT_REMOVEFILE) )
-		ret = from->unlink(&ctx, relpath);
-	if ( ret < 0 && (flags & AT_REMOVEDIR) )
-		ret = from->rmdir(&ctx, relpath);
+	int ret = from->unlinkat(&ctx, relpath, flags);
 	delete[] pathcopy;
 	return ret;
 }

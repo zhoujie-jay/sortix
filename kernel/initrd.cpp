@@ -392,13 +392,13 @@ bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc)
 	{
 		if ( ((const char*) dirent.d_name)[0] == '.' )
 			continue;
-		ctx.links->unlink(&ctx.ioctx, dirent.d_name);
+		ctx.links->unlinkat(&ctx.ioctx, dirent.d_name, AT_REMOVEFILE);
 		ctx.links->lseek(&ctx.ioctx, 0, SEEK_SET);
 	}
 
 	ctx.links.Reset();
 
-	desc->rmdir(&ctx.ioctx, ".initrd-links");
+	desc->unlinkat(&ctx.ioctx, ".initrd-links", AT_REMOVEDIR);
 
 	// Unmap the pages and return the physical frames for reallocation.
 	for ( size_t i = 0; i < initrd_addr_alloc.size; i += Page::Size() )
