@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -25,6 +25,7 @@
 #ifndef STRTOL
 #define STRTOL strtol
 #define STRTOL_CHAR char
+#define STRTOL_UCHAR unsigned char
 #define STRTOL_L(x) x
 #define STRTOL_ISSPACE isspace
 #define STRTOL_INT long
@@ -138,7 +139,7 @@ STRTOL_INT STRTOL(const STRTOL_CHAR* restrict str,
 	const STRTOL_CHAR* original_str = str;
 
 	// Skip any leading white space.
-	while ( STRTOL_ISSPACE(*str) )
+	while ( STRTOL_ISSPACE((STRTOL_UCHAR) *str) )
 		str++;
 
 	bool negative = false;

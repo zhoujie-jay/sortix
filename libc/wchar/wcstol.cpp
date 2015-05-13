@@ -24,6 +24,7 @@
 
 #define STRTOL wcstol
 #define STRTOL_CHAR wchar_t
+#define STRTOL_UCHAR wint_t
 #define STRTOL_L(x) L##x
 #define STRTOL_ISSPACE iswspace
 #define STRTOL_INT long
