@@ -60,6 +60,7 @@ int sys_clock_gettimeres(clockid_t, struct timespec*, struct timespec*);
 int sys_clock_nanosleep(clockid_t, int, const struct timespec*, struct timespec*);
 int sys_clock_settimeres(clockid_t, const struct timespec*, const struct timespec*);
 int sys_close(int);
+int sys_closefrom(int);
 int sys_connect(int, const void*, size_t);
 int sys_dispmsg_issue(void*, size_t);
 int sys_dup(int);

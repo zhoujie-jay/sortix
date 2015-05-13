@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -545,6 +545,7 @@ size_t getpagesize(void);
 /* Functions copied from elsewhere. */
 #if __USE_SORTIX
 int chroot(const char*);
+int closefrom(int);
 int dup3(int, int, int);
 int execvpe(const char*, char* const [], char* const []);
 char* get_current_dir_name(void);

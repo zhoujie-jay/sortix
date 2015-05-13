@@ -553,6 +553,7 @@ unistd/alarm.o \
 unistd/chdir.o \
 unistd/chown.o \
 unistd/chroot.o \
+unistd/closefrom.o \
 unistd/close.o \
 unistd/confstr.o \
 unistd/dup2.o \

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -177,6 +177,7 @@
 #define SYSCALL_SETHOSTNAME 149
 #define SYSCALL_UNMOUNTAT 150
 #define SYSCALL_FSM_MOUNTAT 151
-#define SYSCALL_MAX_NUM 152 /* index of highest constant + 1 */
+#define SYSCALL_CLOSEFROM 152
+#define SYSCALL_MAX_NUM 153 /* index of highest constant + 1 */
 
 #endif

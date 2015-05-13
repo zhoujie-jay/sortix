@@ -126,6 +126,15 @@ int sys_close(int fd)
 	return desc->sync(&ctx);
 }
 
+int sys_closefrom(int fd)
+{
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
+	int ret = dtable->CloseFrom(fd);
+	dtable.Reset();
+	return ret;
+}
+
 int sys_dup(int fd)
 {
 	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();

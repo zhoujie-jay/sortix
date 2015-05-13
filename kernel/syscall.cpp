@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -187,6 +187,7 @@ void* syscall_list[SYSCALL_MAX_NUM + 1] =
 	[SYSCALL_SETHOSTNAME] = (void*) sys_sethostname,
 	[SYSCALL_UNMOUNTAT] = (void*) sys_unmountat,
 	[SYSCALL_FSM_MOUNTAT] = (void*) sys_fsm_mountat,
+	[SYSCALL_CLOSEFROM] = (void*) sys_closefrom,
 	[SYSCALL_MAX_NUM] = (void*) sys_bad_syscall,
 };
 } // extern "C"

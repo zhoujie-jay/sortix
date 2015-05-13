@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -181,15 +181,20 @@ int DescriptorTable::Copy(int from, int to, int flags)
 	return to;
 }
 
-Ref<Descriptor> DescriptorTable::FreeKeep(int index)
+Ref<Descriptor> DescriptorTable::FreeKeepInternal(int index)
 {
-	ScopedLock lock(&dtablelock);
 	if ( !IsGoodEntry(index) ) { errno = EBADF; return Ref<Descriptor>(NULL); }
 	Ref<Descriptor> ret = entries[index].desc;
 	entries[index].desc.Reset();
 	if ( index < first_not_taken )
 		first_not_taken = index;
 	return ret;
+}
+
+Ref<Descriptor> DescriptorTable::FreeKeep(int index)
+{
+	ScopedLock lock(&dtablelock);
+	return FreeKeepInternal(index);
 }
 
 void DescriptorTable::Free(int index)
@@ -271,6 +276,26 @@ int DescriptorTable::Next(int index)
 		return errno = EBADF, -1;
 
 	return index;
+}
+
+int DescriptorTable::CloseFrom(int index)
+{
+	if ( index < 0 )
+		return errno = EBADF, -1;
+
+	ScopedLock lock(&dtablelock);
+
+	bool any = false;
+
+	while ( index < numentries )
+	{
+		if ( !IsGoodEntry(index) )
+			continue;
+		FreeKeepInternal(index);
+		any = true;
+	}
+
+	return any ? 0 : (errno = EBADF, -1);
 }
 
 } // namespace Sortix

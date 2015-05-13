@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -54,12 +54,14 @@ public:
 	int GetFlags(int index);
 	int Previous(int index);
 	int Next(int index);
+	int CloseFrom(int index);
 
 private:
 	void Reset(); // Hey, reference counted. Don't call this.
 	bool IsGoodEntry(int i);
 	bool Enlargen(int atleast);
 	int AllocateInternal(Ref<Descriptor> desc, int flags, int min_index);
+	Ref<Descriptor> FreeKeepInternal(int index);
 
 private:
 	kthread_mutex_t dtablelock;
