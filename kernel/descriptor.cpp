@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -171,6 +171,7 @@ int Descriptor::GetFlags()
 
 Ref<Descriptor> Descriptor::Fork()
 {
+	ScopedLock lock(&current_offset_lock);
 	Ref<Descriptor> ret(new Descriptor(vnode, dflags));
 	if ( !ret )
 		return Ref<Descriptor>();
