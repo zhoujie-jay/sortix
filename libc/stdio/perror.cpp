@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -22,11 +22,12 @@
 
 *******************************************************************************/
 
-#include <errno.h>
-#include <error.h>
 #include <stdio.h>
 
 extern "C" void perror(const char* s)
 {
-	error(0, errno, "%s", s);
+	if ( s && s[0] )
+		fprintf(stderr, "%s: %m\n", s);
+	else
+		fprintf(stderr, "%m\n");
 }
