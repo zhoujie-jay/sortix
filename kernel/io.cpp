@@ -56,9 +56,9 @@
 
 namespace Sortix {
 
-static Ref<Descriptor> PrepareLookup(const char** path, int dirfd = AT_FDCWD)
+static Ref<Descriptor> PrepareLookup(const char* path, int dirfd)
 {
-	if ( (*path)[0] == '/' )
+	if ( path[0] == '/' )
 		return CurrentProcess()->GetRoot();
 	if ( dirfd == AT_FDCWD )
 		return CurrentProcess()->GetCWD();
@@ -166,10 +166,9 @@ int sys_openat(int dirfd, const char* path, int flags, mode_t mode)
 	if ( flags & O_CLOEXEC ) fdflags |= FD_CLOEXEC;
 	if ( flags & O_CLOFORK ) fdflags |= FD_CLOFORK;
 	flags &= ~(O_CLOEXEC | O_CLOFORK);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	Ref<Descriptor> desc = from->open(&ctx, relpath, flags, mode);
+	Ref<Descriptor> desc = from->open(&ctx, pathcopy, flags, mode);
 	from.Reset();
 	delete[] pathcopy;
 	if ( !desc )
@@ -193,11 +192,10 @@ int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
 	int open_flags = O_READ | (flags & AT_SYMLINK_NOFOLLOW ? O_SYMLINK_NOFOLLOW : 0);
-	Ref<Descriptor> desc = from->open(&ctx, relpath, open_flags);
+	Ref<Descriptor> desc = from->open(&ctx, pathcopy, open_flags);
 	delete[] pathcopy;
 	return desc ? 0 : -1;
 }
@@ -208,10 +206,9 @@ int sys_unlinkat(int dirfd, const char* path, int flags)
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	int ret = from->unlinkat(&ctx, relpath, flags);
+	int ret = from->unlinkat(&ctx, pathcopy, flags);
 	delete[] pathcopy;
 	return ret;
 }
@@ -222,10 +219,9 @@ int sys_mkdirat(int dirfd, const char* path, mode_t mode)
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	int ret = from->mkdir(&ctx, relpath, mode);
+	int ret = from->mkdir(&ctx, pathcopy, mode);
 	delete[] pathcopy;
 	return ret;
 }
@@ -236,10 +232,9 @@ int sys_truncateat(int dirfd, const char* path, off_t length)
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_WRITE);
+	Ref<Descriptor> desc = from->open(&ctx, pathcopy, O_WRITE);
 	delete[] pathcopy;
 	if ( !desc )
 		return -1;
@@ -263,11 +258,10 @@ int sys_fstatat(int dirfd, const char* path, struct stat* st, int flags)
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
 	int open_flags = O_READ | (flags & AT_SYMLINK_NOFOLLOW ? O_SYMLINK_NOFOLLOW : 0);
-	Ref<Descriptor> desc = from->open(&ctx, relpath, open_flags);
+	Ref<Descriptor> desc = from->open(&ctx, pathcopy, open_flags);
 	delete[] pathcopy;
 	if ( !desc )
 		return -1;
@@ -300,11 +294,10 @@ int sys_fstatvfsat(int dirfd, const char* path, struct statvfs* stvfs, int flags
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
 	int open_flags = O_READ | (flags & AT_SYMLINK_NOFOLLOW ? O_SYMLINK_NOFOLLOW : 0);
-	Ref<Descriptor> desc = from->open(&ctx, relpath, open_flags);
+	Ref<Descriptor> desc = from->open(&ctx, pathcopy, open_flags);
 	delete[] pathcopy;
 	if ( !desc )
 		return -1;
@@ -388,9 +381,8 @@ int sys_fchdirat(int dirfd, const char* path)
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_READ | O_DIRECTORY);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
+	Ref<Descriptor> desc = from->open(&ctx, pathcopy, O_READ | O_DIRECTORY);
 	from.Reset();
 	delete[] pathcopy;
 	if ( !desc )
@@ -417,9 +409,8 @@ int sys_fchrootat(int dirfd, const char* path)
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_READ | O_DIRECTORY);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
+	Ref<Descriptor> desc = from->open(&ctx, pathcopy, O_READ | O_DIRECTORY);
 	from.Reset();
 	delete[] pathcopy;
 	if ( !desc )
@@ -445,11 +436,10 @@ int sys_fchownat(int dirfd, const char* path, uid_t owner, gid_t group, int flag
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
 	int open_flags = O_WRITE | (flags & AT_SYMLINK_NOFOLLOW ? O_SYMLINK_NOFOLLOW : 0);
-	Ref<Descriptor> desc = from->open(&ctx, relpath, open_flags);
+	Ref<Descriptor> desc = from->open(&ctx, pathcopy, open_flags);
 	from.Reset();
 	delete[] pathcopy;
 	if ( !desc )
@@ -474,11 +464,10 @@ int sys_fchmodat(int dirfd, const char* path, mode_t mode, int flags)
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
 	int open_flags = O_WRITE | (flags & AT_SYMLINK_NOFOLLOW ? O_SYMLINK_NOFOLLOW : 0);
-	Ref<Descriptor> desc = from->open(&ctx, relpath, open_flags);
+	Ref<Descriptor> desc = from->open(&ctx, pathcopy, open_flags);
 	from.Reset();
 	delete[] pathcopy;
 	if ( !desc )
@@ -510,11 +499,10 @@ int sys_utimensat(int dirfd, const char* path,
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
 	int open_flags = O_WRITE | (flags & AT_SYMLINK_NOFOLLOW ? O_SYMLINK_NOFOLLOW : 0);
-	Ref<Descriptor> desc = from->open(&ctx, relpath, open_flags);
+	Ref<Descriptor> desc = from->open(&ctx, pathcopy, open_flags);
 	from.Reset();
 	delete[] pathcopy;
 	if ( !desc )
@@ -534,8 +522,7 @@ int sys_linkat(int olddirfd, const char* oldpath,
 	char* newpathcopy = GetStringFromUser(newpath);
 	if ( !newpathcopy )
 		return -1;
-	const char* newrelpath = newpathcopy;
-	Ref<Descriptor> newfrom(PrepareLookup(&newrelpath, newdirfd));
+	Ref<Descriptor> newfrom(PrepareLookup(newpathcopy, newdirfd));
 	if ( !newfrom ) { delete[] newpathcopy; return -1; }
 
 	char* final_elem;
@@ -547,12 +534,11 @@ int sys_linkat(int olddirfd, const char* oldpath,
 
 	char* oldpathcopy = GetStringFromUser(oldpath);
 	if ( !oldpathcopy ) { delete[] final_elem; return -1; }
-	const char* oldrelpath = oldpathcopy;
-	Ref<Descriptor> oldfrom = PrepareLookup(&oldrelpath, olddirfd);
+	Ref<Descriptor> oldfrom = PrepareLookup(oldpathcopy, olddirfd);
 	if ( !oldfrom ) { delete[] oldpathcopy; delete[] final_elem; return -1; }
 
 	int open_flags = O_READ | (flags & AT_SYMLINK_FOLLOW ? 0 : O_SYMLINK_NOFOLLOW);
-	Ref<Descriptor> file = oldfrom->open(&ctx, oldrelpath, open_flags);
+	Ref<Descriptor> file = oldfrom->open(&ctx, oldpathcopy, open_flags);
 	delete[] oldpathcopy;
 	if ( !file ) { delete[] final_elem; return -1; }
 
@@ -572,12 +558,11 @@ int sys_symlinkat(const char* oldpath, int newdirfd, const char* newpath)
 	if ( !oldpath_copy )
 		return delete[] newpath_copy, -1;
 
-	const char* newrel_path = newpath_copy;
-	Ref<Descriptor> newfrom(PrepareLookup(&newrel_path, newdirfd));
+	Ref<Descriptor> newfrom(PrepareLookup(newpath_copy, newdirfd));
 	if ( !newfrom )
 		return delete[] newpath_copy, -1;
 
-	int ret = newfrom->symlink(&ctx, oldpath, newrel_path);
+	int ret = newfrom->symlink(&ctx, oldpath, newpath_copy);
 
 	delete[] oldpath_copy;
 	delete[] newpath_copy;
@@ -652,18 +637,16 @@ int sys_tcgetpgrp(int fd)
 static int sys_renameat_inner(int olddirfd, const char* oldpath,
                               int newdirfd, const char* newpath)
 {
-	const char* oldrelpath = oldpath;
-	Ref<Descriptor> olddir(PrepareLookup(&oldrelpath, olddirfd));
+	Ref<Descriptor> olddir(PrepareLookup(oldpath, olddirfd));
 	if ( !olddir )
 		return -1;
 
-	const char* newrelpath = newpath;
-	Ref<Descriptor> newdir(PrepareLookup(&newrelpath, newdirfd));
+	Ref<Descriptor> newdir(PrepareLookup(newpath, newdirfd));
 	if ( !newdir )
 		return -1;
 
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	return newdir->rename_here(&ctx, olddir, oldrelpath, newrelpath);
+	return newdir->rename_here(&ctx, olddir, oldpath, newpath);
 }
 
 int sys_renameat(int olddirfd, const char* oldpath,
@@ -687,10 +670,9 @@ ssize_t sys_readlinkat(int dirfd, const char* path, char* buf, size_t size)
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
 	if ( !from ) { delete[] pathcopy; return -1; }
-	Ref<Descriptor> desc = from->open(&ctx, relpath, O_READ | O_SYMLINK_NOFOLLOW);
+	Ref<Descriptor> desc = from->open(&ctx, pathcopy, O_READ | O_SYMLINK_NOFOLLOW);
 	delete[] pathcopy;
 	if ( !desc )
 		return -1;
@@ -1086,11 +1068,10 @@ int sys_unmountat(int dirfd, const char* path, int flags)
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
 	if ( !from )
 		return delete[] pathcopy, -1;
-	int ret = from->unmount(&ctx, relpath, flags);
+	int ret = from->unmount(&ctx, pathcopy, flags);
 	delete[] pathcopy;
 	return ret;
 }
@@ -1122,11 +1103,10 @@ int sys_fsm_mountat(int dirfd, const char* path, const struct stat* rootst, int 
 	if ( !pathcopy )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	const char* relpath = pathcopy;
-	Ref<Descriptor> from = PrepareLookup(&relpath, dirfd);
+	Ref<Descriptor> from = PrepareLookup(pathcopy, dirfd);
 	if ( !from )
 		return delete[] pathcopy, -1;
-	Ref<Descriptor> desc = from->fsm_mount(&ctx, relpath, rootst, flags);
+	Ref<Descriptor> desc = from->fsm_mount(&ctx, pathcopy, rootst, flags);
 	delete[] pathcopy;
 	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
 	int ret = dtable->Allocate(desc, fdflags);
@@ -1135,7 +1115,7 @@ int sys_fsm_mountat(int dirfd, const char* path, const struct stat* rootst, int 
 		// TODO: We should use a fail-safe dtable reservation mechanism that
 		//       causes this error earlier before we have side effects.
 		int errnum = errno;
-		from->unmount(&ctx, relpath, 0);
+		from->unmount(&ctx, pathcopy, 0);
 		return errno = errnum, -1;
 	}
 	return ret;
