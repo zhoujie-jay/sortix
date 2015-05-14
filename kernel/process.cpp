@@ -149,6 +149,7 @@ Process::Process()
 	segments = NULL;
 	segments_used = 0;
 	segments_length = 0;
+	segment_write_lock = KTHREAD_MUTEX_INITIALIZER;
 	segment_lock = KTHREAD_MUTEX_INITIALIZER;
 
 	user_timers_lock = KTHREAD_MUTEX_INITIALIZER;
@@ -376,7 +377,8 @@ void Process::LastPrayer()
 
 void Process::ResetAddressSpace()
 {
-	ScopedLock lock(&segment_lock);
+	ScopedLock lock1(&segment_write_lock);
+	ScopedLock lock2(&segment_lock);
 
 	assert(Memory::GetAddressSpace() == addrspace);
 
@@ -798,6 +800,7 @@ void Process::ResetForExecute()
 bool Process::MapSegment(struct segment* result, void* hint, size_t size,
                          int flags, int prot)
 {
+	// process->segment_write_lock is held at this point.
 	// process->segment_lock is held at this point.
 
 	if ( !size )
@@ -908,6 +911,7 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	struct segment tls_segment;
 	struct segment auxcode_segment;
 
+	kthread_mutex_lock(&segment_write_lock);
 	kthread_mutex_lock(&segment_lock);
 
 	if ( !(MapSegment(&arg_segment, stack_hint, arg_size, 0, stack_prot) &&
@@ -917,11 +921,13 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	       MapSegment(&auxcode_segment, auxcode_hint, auxcode_size, 0, auxcode_prot)) )
 	{
 		kthread_mutex_unlock(&segment_lock);
+		kthread_mutex_unlock(&segment_write_lock);
 		ResetForExecute();
 		return errno = ENOMEM, -1;
 	}
 
 	kthread_mutex_unlock(&segment_lock);
+	kthread_mutex_unlock(&segment_write_lock);
 
 	char** target_argv = (char**) (arg_segment.addr + 0);
 	char** target_envp = (char**) (arg_segment.addr + argv_size);

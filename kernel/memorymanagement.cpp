@@ -63,6 +63,7 @@ namespace Memory {
 
 void UnmapMemory(Process* process, uintptr_t addr, size_t size)
 {
+	// process->segment_write_lock is held.
 	// process->segment_lock is held.
 	assert(Page::IsAligned(addr));
 	assert(Page::IsAligned(size));
@@ -133,6 +134,7 @@ void UnmapMemory(Process* process, uintptr_t addr, size_t size)
 
 bool ProtectMemory(Process* process, uintptr_t addr, size_t size, int prot)
 {
+	// process->segment_write_lock is held.
 	// process->segment_lock is held.
 	assert(Page::IsAligned(addr));
 	assert(Page::IsAligned(size));
@@ -224,6 +226,7 @@ bool ProtectMemory(Process* process, uintptr_t addr, size_t size, int prot)
 
 bool MapMemory(Process* process, uintptr_t addr, size_t size, int prot)
 {
+	// process->segment_write_lock is held.
 	// process->segment_lock is held.
 	assert(Page::IsAligned(addr));
 	assert(Page::IsAligned(size));
@@ -247,8 +250,8 @@ bool MapMemory(Process* process, uintptr_t addr, size_t size, int prot)
 		return false;
 	}
 
-	// We have process->segment_lock locked, so we know that the memory in user
-	// space exists and we can safely zero it here.
+	// We have process->segment_write_lock locked, so we know that the memory in
+	// user space exists and we can safely zero it here.
 	// TODO: Another thread is able to see the old contents of the memory before
 	//       we zero it causing potential information leaks.
 	// TODO: SECURITY: Information leak.
@@ -335,7 +338,8 @@ void* sys_mmap(void* addr_ptr, size_t size, int prot, int flags, int fd,
 			return errno = EACCES, MAP_FAILED;
 	}
 
-	ScopedLock lock(&process->segment_lock);
+	ScopedLock lock1(&process->segment_write_lock);
+	ScopedLock lock2(&process->segment_lock);
 
 	// Determine where to put the new segment and its protection.
 	struct segment new_segment;
@@ -351,20 +355,18 @@ void* sys_mmap(void* addr_ptr, size_t size, int prot, int flags, int fd,
 		return MAP_FAILED;
 
 	// The pread will copy to user-space right requires this lock to be free.
-	// TODO: This means another thread can concurrently change this memory
-	//       mapping while the memory-mapped contents are being delivered,
-	//       resulting in an odd mix.
-	lock.Reset();
+	lock2.Reset();
 
 	// Read the file contents into the newly allocated memory.
 	if ( !(flags & MAP_ANONYMOUS) )
 	{
+		ioctx_t kctx; SetupKernelIOCtx(&kctx);
 		for ( size_t so_far = 0; so_far < aligned_size; )
 		{
 			uint8_t* ptr = (uint8_t*) (new_segment.addr + so_far);
 			size_t left = aligned_size - so_far;
 			off_t pos = offset + so_far;
-			ssize_t num_bytes = desc->pread(&ctx, ptr, left, pos);
+			ssize_t num_bytes = desc->pread(&kctx, ptr, left, pos);
 			if ( num_bytes < 0 )
 			{
 				// TODO: How should this situation be handled? For now we'll
@@ -383,6 +385,8 @@ void* sys_mmap(void* addr_ptr, size_t size, int prot, int flags, int fd,
 		}
 	}
 
+	lock1.Reset();
+
 	return (void*) new_segment.addr;
 }
 
@@ -400,7 +404,8 @@ int sys_mprotect(const void* addr_ptr, size_t size, int prot)
 	prot |= PROT_KREAD | PROT_KWRITE | PROT_FORK;
 
 	Process* process = CurrentProcess();
-	ScopedLock lock(&process->segment_lock);
+	ScopedLock lock1(&process->segment_write_lock);
+	ScopedLock lock2(&process->segment_lock);
 
 	if ( !Memory::ProtectMemory(process, addr, size, prot) )
 		return -1;
@@ -421,7 +426,8 @@ int sys_munmap(void* addr_ptr, size_t size)
 	size = Page::AlignUp(size);
 
 	Process* process = CurrentProcess();
-	ScopedLock lock(&process->segment_lock);
+	ScopedLock lock1(&process->segment_write_lock);
+	ScopedLock lock2(&process->segment_lock);
 
 	Memory::UnmapMemory(process, addr, size);
 

@@ -153,6 +153,7 @@ public:
 	struct segment* segments;
 	size_t segments_used;
 	size_t segments_length;
+	kthread_mutex_t segment_write_lock;
 	kthread_mutex_t segment_lock;
 
 public:

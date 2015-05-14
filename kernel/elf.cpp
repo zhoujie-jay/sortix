@@ -285,17 +285,20 @@ uintptr_t Load(const void* file_ptr, size_t file_size, Auxiliary* aux)
 
 			assert(IsUserspaceSegment(&segment));
 
+			kthread_mutex_lock(&process->segment_write_lock);
 			kthread_mutex_lock(&process->segment_lock);
 
 			if ( IsSegmentOverlapping(process, &segment) )
 			{
 				kthread_mutex_unlock(&process->segment_lock);
+				kthread_mutex_unlock(&process->segment_write_lock);
 				return errno = EINVAL, 0;
 			}
 
 			if ( !Memory::MapRange(segment.addr, segment.size, prot, PAGE_USAGE_USER_SPACE) )
 			{
 				kthread_mutex_unlock(&process->segment_lock);
+				kthread_mutex_unlock(&process->segment_write_lock);
 				return errno = EINVAL, 0;
 			}
 
@@ -303,10 +306,12 @@ uintptr_t Load(const void* file_ptr, size_t file_size, Auxiliary* aux)
 			{
 				Memory::UnmapRange(segment.addr, segment.size, PAGE_USAGE_USER_SPACE);
 				kthread_mutex_unlock(&process->segment_lock);
+				kthread_mutex_unlock(&process->segment_write_lock);
 				return errno = EINVAL, 0;
 			}
 
 			kthread_mutex_unlock(&process->segment_lock);
+			kthread_mutex_unlock(&process->segment_write_lock);
 
 			memset((void*) segment.addr, 0, segment.size);
 			memcpy((void*) pheader->p_vaddr, file + pheader->p_offset, pheader->p_filesz);
