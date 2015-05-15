@@ -260,6 +260,9 @@ void ReadCommand(char* buffer, size_t buffer_length)
 		{
 			if ( !ignore_next_f10 )
 			{
+				if ( !written )
+					PrintString("exit");
+				PrintString("\n");
 				strncpy(buffer, "exit", buffer_length);
 				break;
 			}
