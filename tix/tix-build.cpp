@@ -336,6 +336,67 @@ void emit_pkg_config_wrapper(metainfo_t* minfo)
 	free(bindir);
 }
 
+void SetNeedVariableBuildTool(metainfo_t* minfo,
+                              const char* variable,
+                              const char* value)
+{
+	string_array_t* pkg_info = &minfo->package_info;
+	const char* needed_vars = dictionary_get(pkg_info, "pkg.make.needed-vars", "true");
+	char* key = print_string("pkg.make.needed-vars.%s", variable);
+	const char* needed_var = dictionary_get(pkg_info, key, needed_vars);
+	free(key);
+	if ( !parse_boolean(needed_var) )
+		return;
+	setenv(variable, value, 1);
+}
+
+void SetNeedVariableCrossTool(metainfo_t* minfo,
+                              const char* variable,
+                              const char* value)
+{
+	if ( strcmp(minfo->build, minfo->host) == 0 )
+	{
+		SetNeedVariableBuildTool(minfo, variable, value);
+	}
+	else
+	{
+		char* newvalue = print_string("%s-%s", minfo->host, value);
+		SetNeedVariableBuildTool(minfo, variable, newvalue);
+		free(newvalue);
+	}
+}
+
+void SetNeededVariables(metainfo_t* minfo)
+{
+	SetNeedVariableBuildTool(minfo, "AR_FOR_BUILD", "ar");
+	SetNeedVariableBuildTool(minfo, "AS_FOR_BUILD", "as");
+	SetNeedVariableBuildTool(minfo, "CC_FOR_BUILD", "gcc");
+	SetNeedVariableBuildTool(minfo, "CPP_FOR_BUILD", "gcc -E");
+	SetNeedVariableBuildTool(minfo, "CXXFILT_FOR_BUILD", "c++filt");
+	SetNeedVariableBuildTool(minfo, "CXX_FOR_BUILD", "g++");
+	SetNeedVariableBuildTool(minfo, "LD_FOR_BUILD", "ld");
+	SetNeedVariableBuildTool(minfo, "NM_FOR_BUILD", "nm");
+	SetNeedVariableBuildTool(minfo, "OBJCOPY_FOR_BUILD", "objcopy");
+	SetNeedVariableBuildTool(minfo, "OBJDUMP_FOR_BUILD", "objdump");
+	SetNeedVariableBuildTool(minfo, "RANLIB_FOR_BUILD", "ranlib");
+	SetNeedVariableBuildTool(minfo, "READELF_FOR_BUILD", "readelf");
+	SetNeedVariableBuildTool(minfo, "STRIP_FOR_BUILD", "strip");
+
+	SetNeedVariableCrossTool(minfo, "AR", "ar");
+	SetNeedVariableCrossTool(minfo, "AS", "as");
+	SetNeedVariableCrossTool(minfo, "CC", "gcc");
+	SetNeedVariableCrossTool(minfo, "CPP", "gcc -E");
+	SetNeedVariableCrossTool(minfo, "CXXFILT", "c++filt");
+	SetNeedVariableCrossTool(minfo, "CXX", "g++");
+	SetNeedVariableCrossTool(minfo, "LD", "ld");
+	SetNeedVariableCrossTool(minfo, "NM", "nm");
+	SetNeedVariableCrossTool(minfo, "OBJCOPY", "objcopy");
+	SetNeedVariableCrossTool(minfo, "OBJDUMP", "objdump");
+	SetNeedVariableCrossTool(minfo, "RANLIB", "ranlib");
+	SetNeedVariableCrossTool(minfo, "READELF", "readelf");
+	SetNeedVariableCrossTool(minfo, "STRIP", "strip");
+}
+
 void Configure(metainfo_t* minfo)
 {
 	if ( fork_and_wait_or_recovery() )
@@ -370,6 +431,7 @@ void Configure(metainfo_t* minfo)
 			                                        "false"));
 		if ( chdir(minfo->build_dir) != 0 )
 			error(1, errno, "chdir: `%s'", minfo->build_dir);
+		SetNeededVariables(minfo);
 		string_array_t env_vars = string_array_make();
 		string_array_append_token_string(&env_vars, conf_extra_vars);
 		for ( size_t i = 0; i < env_vars.length; i++ )
@@ -443,15 +505,7 @@ void Make(metainfo_t* minfo, const char* make_target,
 			free(make);
 			make = join_paths(minfo->package_dir, override_make);
 		}
-		if ( dictionary_get(pkg_info, "pkg.make.needed-vars.AR", NULL) )
-			setenv("AR", strcmp(minfo->build, minfo->host) ?
-			             print_string("%s-ar", minfo->host) : "ar", 1);
-		if ( dictionary_get(pkg_info, "pkg.make.needed-vars.CC", NULL) )
-			setenv("CC", strcmp(minfo->build, minfo->host) ?
-			             print_string("%s-gcc", minfo->host) : "gcc", 1);
-		if ( dictionary_get(pkg_info, "pkg.make.needed-vars.CXX", NULL) )
-			setenv("CXX", strcmp(minfo->build, minfo->host) ?
-			              print_string("%s-g++", minfo->host) : "g++", 1);
+		SetNeededVariables(minfo);
 		if ( chdir(minfo->build_dir) != 0 )
 			error(1, errno, "chdir: `%s'", minfo->build_dir);
 		if ( subdir && chdir(subdir) != 0 )
