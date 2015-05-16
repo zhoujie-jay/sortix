@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -45,9 +45,9 @@ syscall_handler:
 
 	# Make sure the requested system call is valid.
 	cmp $SYSCALL_MAX_NUM, %eax
-	jae fix_syscall
+	jae 3f
 
-valid_syscall:
+1:
 	# Read a system call function pointer.
 	xorl %ebp, %ebp
 	movl syscall_list(%ebp,%eax,4), %eax
@@ -76,19 +76,28 @@ valid_syscall:
 	popl %ebp
 	movl global_errno, %ecx
 
+	# Zero registers to avoid information leaks.
+	# eax is the return value.
+	# ecx is errno.
+	# edx is the return value (MIGHT NOT BE INITIALIZED, CAN LEAK!).
+	# ebx is set in a moment.
+	xor %esi, %esi
+	xor %edi, %edi
 	# If any signals are pending, fire them now.
 	movl asm_signal_is_pending, %ebx
 	testl %ebx, %ebx
-	jnz call_signal_dispatcher
+	jnz 4f
+	# ebx is zero in this branch.
 
+2:
 	iretl
 
-fix_syscall:
+3:
 	# Call the null system call instead.
 	xorl %eax, %eax
-	jmp valid_syscall
+	jmp 1b
 
-call_signal_dispatcher:
+4:
 	# We can't return to this location after the signal, since if any system
 	# call is made this stack will get reused and all our nice temporaries wil
 	# be garbage. We therefore pass the kernel the state to return to and it'll
@@ -97,6 +106,7 @@ call_signal_dispatcher:
 	int $130 # Deliver pending signals.
 	# If we end up here, it means that the signal didn't override anything and
 	# that we should just go ahead and return to userspace ourselves.
-	iretl
+	xor %ebx, %ebx
+	jmp 2b
 
 .size syscall_handler, .-syscall_handler

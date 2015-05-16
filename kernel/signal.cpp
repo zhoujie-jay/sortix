@@ -617,6 +617,7 @@ retry_another_signal:
 		intctx->cs = UCS | URPL;
 		intctx->ds = UDS | URPL;
 		intctx->ss = UDS | URPL;
+		intctx->ebx = 0;
 #elif defined(__x86_64__)
 		intctx->rip = intctx->rdi;
 		intctx->rflags = intctx->rsi;
@@ -624,6 +625,9 @@ retry_another_signal:
 		intctx->cs = UCS | URPL;
 		intctx->ds = UDS | URPL;
 		intctx->ss = UDS | URPL;
+		intctx->rdi = 0;
+		intctx->rsi = 0;
+		intctx->r8 = 0;
 #else
 #error "You may need to fix the registers"
 #endif

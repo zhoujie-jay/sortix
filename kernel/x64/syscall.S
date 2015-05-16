@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -36,9 +36,9 @@ syscall_handler:
 
 	# Make sure the requested system call is valid, if not, then fix it.
 	cmp $SYSCALL_MAX_NUM, %rax
-	jae fix_syscall
+	jae 3f
 
-valid_syscall:
+1:
 	# Read a system call function pointer.
 	xorq %r11, %r11
 	movq syscall_list(%r11,%rax,8), %rax
@@ -52,19 +52,33 @@ valid_syscall:
 	popq %rbp
 	movl global_errno, %ecx
 
+	# Zero registers to avoid information leaks.
+	# rax is return value.
+	# rdi is set in a moment.
+	xor %rsi, %rsi
+	# rdx is return value (MIGHT NOT BE INITIALIZED, CAN LEAK!).
+	# rcx is errno.
+	xor %r8, %r8
+	xor %r9, %r9
+	xor %r10, %r10
+	xor %r11, %r11
+	# The rest of the registers are preserved by the ABI and syscall ABI.
+
 	# If any signals are pending, fire them now.
 	movq asm_signal_is_pending, %rdi
 	testq %rdi, %rdi
-	jnz call_signal_dispatcher
+	jnz 4f
+	# rdi is zero in this branch.
 
+2:
 	iretq
 
-fix_syscall:
+3:
 	# Call the null system call instead.
 	xorq %rax, %rax
-	jmp valid_syscall
+	jmp 1b
 
-call_signal_dispatcher:
+4:
 	# We can't return to this location after the signal, since if any system
 	# call is made this stack will get reused and all our nice temporaries wil
 	# be garbage. We therefore pass the kernel the state to return to and it'll
@@ -74,7 +88,11 @@ call_signal_dispatcher:
 	movq 24(%rsp), %r8 # userspace rsp, note %rcx is used for errno
 	int $130 # Deliver pending signals.
 	# If we end up here, it means that the signal didn't override anything and
-	# that we should just go ahead and return to userspace ourselves.
-	iretq
+	# that we should just go ahead and return to userspace ourselves. Zero the
+	# scratch registers to avoid information leaks.
+	xor %rdi, %rdi
+	xor %rsi, %rsi
+	xor %r8, %r8
+	jmp 2b
 
 .size syscall_handler, .-syscall_handler
