@@ -440,7 +440,11 @@ void Configure(metainfo_t* minfo)
 			assert(key);
 			char* assignment = strchr((char*) key, '=');
 			if ( !assignment )
+			{
+				if ( !strncmp(key, "unset ", strlen("unset ")) )
+					unsetenv(key + strlen("unset "));
 				continue;
+			}
 			*assignment = '\0';
 			char* value = assignment+1;
 			setenv(key, value, 1);
@@ -534,7 +538,11 @@ void Make(metainfo_t* minfo, const char* make_target,
 			assert(key);
 			char* assignment = strchr((char*) key, '=');
 			if ( !assignment )
+			{
+				if ( !strncmp(key, "unset ", strlen("unset ")) )
+					unsetenv(key + strlen("unset "));
 				continue;
+			}
 			*assignment = '\0';
 			char* value = assignment+1;
 			setenv(key, value, 1);
