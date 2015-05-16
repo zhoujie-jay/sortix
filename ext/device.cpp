@@ -133,11 +133,13 @@ void Device::Sync()
 		while ( dirty_block || sync_in_transit )
 			pthread_cond_wait(&sync_thread_cond, &sync_thread_lock);
 		pthread_mutex_unlock(&sync_thread_lock);
+		fsync(fd);
 		return;
 	}
 
 	while ( dirty_block )
 		dirty_block->Sync();
+	fsync(fd);
 }
 
 void Device::SyncThread()
