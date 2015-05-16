@@ -160,6 +160,7 @@ sysroot-source: sysroot-fsh
 	cp Makefile -t "$(SYSROOT)/src"
 	cp README -t "$(SYSROOT)/src"
 	cp -RT build-aux "$(SYSROOT)/src/build-aux"
+	cp -RT isosrc "$(SYSROOT)/src/isosrc"
 	(for D in $(MODULES); do (cp -R $$D -t "$(SYSROOT)/src" && $(MAKE) -C "$(SYSROOT)/src/$$D" clean) || exit $$?; done)
 
 .PHONY: sysroot-ports
