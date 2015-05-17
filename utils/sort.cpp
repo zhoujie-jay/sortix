@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -61,7 +61,7 @@ int compare_line_reverse(const char* a, const char* b)
 
 int indirect_compare_line_reverse(const void* a_ptr, const void* b_ptr)
 {
-	return indirect_compare(compare_line, a_ptr, b_ptr);
+	return indirect_compare(compare_line_reverse, a_ptr, b_ptr);
 }
 
 int compare_version(const char* a, const char* b)
@@ -81,7 +81,7 @@ int compare_version_reverse(const char* a, const char* b)
 
 int indirect_compare_version_reverse(const void* a_ptr, const void* b_ptr)
 {
-	return indirect_compare(compare_version, a_ptr, b_ptr);
+	return indirect_compare(compare_version_reverse, a_ptr, b_ptr);
 }
 
 struct input_stream
