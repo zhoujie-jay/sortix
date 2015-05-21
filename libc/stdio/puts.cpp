@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -23,8 +23,16 @@
 *******************************************************************************/
 
 #include <stdio.h>
+#include <string.h>
 
 extern "C" int puts(const char* str)
 {
-	return printf("%s\n", str) < 0 ? EOF : 1;
+	int ret = 0;
+	flockfile(stdout);
+	size_t stringlen = strlen(str);
+	if ( fwrite_unlocked(str, 1, stringlen, stdout) < stringlen ||
+	     fputc_unlocked('\n', stdout) == EOF )
+		ret = EOF;
+	funlockfile(stdout);
+	return ret;
 }
