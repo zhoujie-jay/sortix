@@ -313,14 +313,34 @@ bool Inode::FreeIndirect(uint64_t from, uint64_t offset, uint32_t block_id,
 
 void Inode::Truncate(uint64_t new_size)
 {
-	if ( 0 < Size() && Size() <= 60 && !data->i_blocks )
-	{
-		fprintf(stderr, "extfs: Truncating optimized symlinks is not implemented!\n");
-		return;
-	}
-
-	// TODO: Enforce a filesize limit!
 	uint64_t old_size = Size();
+	bool could_be_embedded = old_size == 0 && EXT2_S_ISLNK(Mode()) && !data->i_blocks;
+	bool is_embedded = 0 < old_size && old_size <= 60 && !data->i_blocks;
+	if ( could_be_embedded || is_embedded )
+	{
+		if ( new_size <= 60 )
+		{
+			data_block->BeginWrite();
+			unsigned char* block_data = (unsigned char*) &data->i_block[0];
+			if ( old_size < new_size )
+				memset(block_data + old_size, 0, new_size - old_size);
+			if ( new_size < old_size )
+				memset(block_data + new_size, 0, old_size - new_size);
+			data->i_size = new_size;
+			data_block->FinishWrite();
+			return;
+		}
+		if ( is_embedded && !UnembedInInode() )
+		{
+			// Truncate() can't fail ATM so lose data instead of worse stuff.
+			data_block->BeginWrite();
+			unsigned char* block_data = (unsigned char*) &data->i_block[0];
+			memset(block_data, 0, 60);
+			data->i_size = 0;
+			data_block->FinishWrite();
+		}
+	}
+	// TODO: Enforce a filesize limit!
 	SetSize(new_size);
 	if ( old_size <= new_size )
 		return;
@@ -701,8 +721,8 @@ ssize_t Inode::ReadAt(uint8_t* buf, size_t s_count, off_t o_offset)
 	//       and so on.
 	if ( 0 < file_size && file_size <= 60 && !data->i_blocks )
 	{
-		assert(count <= 60);
-		unsigned char* block_data = (unsigned char*) &(data->i_block[0]);
+		assert(offset + count <= 60);
+		unsigned char* block_data = (unsigned char*) &data->i_block[0];
 		memcpy(buf, block_data + offset, count);
 		return (ssize_t) count;
 	}
@@ -739,13 +759,18 @@ ssize_t Inode::WriteAt(const uint8_t* buf, size_t s_count, off_t o_offset)
 	uint64_t end_at = offset + count;
 	if ( offset < end_at )
 		/* TODO: Overflow! off_t overflow? */{};
-	if ( 0 < file_size && file_size <= 60 && !data->i_blocks )
-	{
-		fprintf(stderr, "extfs: Writing to optimized symlinks is not implemented!\n");
-		return errno = EROFS, -1;
-	}
 	if ( file_size < end_at )
 		Truncate(end_at);
+	if ( 0 < end_at && end_at <= 60 && !data->i_blocks )
+	{
+		data_block->BeginWrite();
+		unsigned char* block_data = (unsigned char*) &data->i_block[0];
+		memcpy(block_data + offset, buf, count);
+		if ( data->i_size < end_at )
+			data->i_size = end_at;
+		data_block->FinishWrite();
+		return (ssize_t) count;
+	}
 	while ( sofar < count )
 	{
 		uint64_t block_id = offset / filesystem->block_size;
@@ -763,6 +788,30 @@ ssize_t Inode::WriteAt(const uint8_t* buf, size_t s_count, off_t o_offset)
 		block->Unref();
 	}
 	return (ssize_t) sofar;
+}
+
+bool Inode::UnembedInInode()
+{
+	assert(data->i_blocks == 0 && 0 < data->i_size && data->i_size <= 60);
+	unsigned char* block_data = (unsigned char*) &data->i_block[0];
+	size_t content_size = Size();
+	unsigned char content[60];
+	memcpy(content, block_data, content_size);
+	data_block->BeginWrite();
+	memset(block_data, 0, 60);
+	data->i_size = 0;
+	data_block->FinishWrite();
+	if ( WriteAt(content, content_size, 0) != (ssize_t) content_size )
+	{
+		Truncate(0);
+		data_block->BeginWrite();
+		memcpy(block_data, content, content_size);
+		data->i_size = content_size;
+		data->i_blocks = 0;
+		data_block->FinishWrite();
+		return false;
+	}
+	return true;
 }
 
 bool Inode::Rename(Inode* olddir, const char* oldname, const char* newname)
@@ -823,7 +872,10 @@ bool Inode::Symlink(const char* elem, const char* dest)
 	result->data->i_mtime = now.tv_sec;
 	// TODO: Set all the other inode properties!
 
-	if ( result->WriteAt((const uint8_t*) dest, strlen(dest), 0) < 0 )
+	size_t dest_length = strlen(dest);
+	if ( SSIZE_MAX < dest_length )
+		return errno = EFBIG, -1;
+	if ( result->WriteAt((const uint8_t*) dest, dest_length, 0) < (ssize_t) dest_length )
 	{
 	error:
 		memset(result->data, 0, sizeof(*result->data));

@@ -67,6 +67,7 @@ public:
 	Inode* Unlink(const char* elem, bool directories, bool force=false);
 	ssize_t ReadAt(uint8_t* buffer, size_t count, off_t offset);
 	ssize_t WriteAt(const uint8_t* buffer, size_t count, off_t offset);
+	bool UnembedInInode();
 	bool Rename(Inode* olddir, const char* oldname, const char* newname);
 	Inode* CreateDirectory(const char* path, mode_t mode);
 	bool RemoveDirectory(const char* path);
