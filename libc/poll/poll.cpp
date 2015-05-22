@@ -28,7 +28,7 @@
 extern "C" int poll(struct pollfd* fds, nfds_t nfds, int timeout)
 {
 	struct timespec ts;
-	ts.tv_sec = timeout;
-	ts.tv_nsec = 0;
-	return ppoll(fds, nfds, &ts, NULL);
+	ts.tv_sec = timeout / 1000;
+	ts.tv_nsec = timeout % 1000;
+	return ppoll(fds, nfds, timeout < 0 ? NULL : &ts, NULL);
 }
