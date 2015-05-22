@@ -1784,7 +1784,7 @@ static void HandleEvents(int kbfd, struct Desktop* desktop)
 	fds[0].fd = kbfd;
 	fds[0].events = POLLIN;
 	fds[0].revents = 0;
-	if ( 0 < poll(fds, NFDS, -1) )
+	if ( 0 < poll(fds, NFDS, 0) )
 	{
 		if ( fds[0].revents )
 			HandleKeyboardEvents(kbfd, desktop);

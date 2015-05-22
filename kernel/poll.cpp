@@ -208,7 +208,7 @@ int sys_ppoll(struct pollfd* user_fds, nfds_t nfds,
 	volatile bool remote_woken = false;
 	bool unexpected_error = false;
 
-	nfds_t reqs = nfds;
+	nfds_t reqs;
 	for ( reqs = 0; !unexpected_error && reqs < nfds; )
 	{
 		PollNode* node = nodes + reqs;
@@ -234,11 +234,13 @@ int sys_ppoll(struct pollfd* user_fds, nfds_t nfds,
 		// TODO: How should errors be handled?
 		if ( desc->poll(&ctx, node) == 0 )
 			self_woken = true;
-		else if ( errno != EAGAIN )
+		else if ( errno == EAGAIN )
+			errno = 0;
+		else
 			unexpected_error = self_woken = true;
 	}
 
-	if ( timeout_ts.tv_sec < 0 )
+	if ( timeout_ts.tv_sec == 0 )
 		self_woken = true;
 
 	while ( !(self_woken || remote_woken) )
