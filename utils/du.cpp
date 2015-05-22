@@ -197,7 +197,9 @@ bool disk_usage_file_at(int relfd,
 	else if ( flag_same_device && st.st_dev != expected_dev )
 		return true;
 
-	uintmax_t num_bytes = flags & FLAG_APPARENT_SIZE ?
+	uintmax_t num_bytes = S_ISBLK(st.st_mode) ?
+	                      0 :
+	                      flags & FLAG_APPARENT_SIZE ?
 	                      (uintmax_t) st.st_size :
 	                      st.st_blocks * 512;
 
@@ -252,7 +254,7 @@ bool disk_usage_file_at(int relfd,
 		*num_bytes_ptr = num_bytes;
 
 #if defined(__sortix__)
-	if ( derror(dir) )
+	if ( derror(dir) && errno != ENOTDIR )
 	{
 		error(0, errno, "reading directory `%s'", path);
 		closedir(dir);
