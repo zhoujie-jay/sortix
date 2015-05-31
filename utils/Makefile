@@ -37,6 +37,7 @@ ln \
 ls \
 memstat \
 mkdir \
+mktemp \
 mv \
 pager \
 pwd \

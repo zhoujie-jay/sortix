@@ -184,6 +184,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `memstat` - print memory information
 * `mkdir` - create directory
 * `mkinitrd` - create an initrd
+* `mktemp` - create temporary file or directory
 * `mv` - move a file
 * `pager` - display file page by page
 * `pwd` - print current directory path
