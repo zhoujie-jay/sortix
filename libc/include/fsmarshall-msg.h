@@ -355,12 +355,6 @@ struct fsm_req_tcgetwincurpos
 	ino_t ino;
 };
 
-#define FSM_RESP_TCGETWINCURPOS 44
-struct fsm_resp_tcgetwincurpos
-{
-	struct wincurpos pos;
-};
-
 #define FSM_REQ_STATVFS 44
 struct fsm_req_statvfs
 {
@@ -429,6 +423,13 @@ struct fsm_resp_tcsetblob
 {
 	size_t count;
 };
+
+#define FSM_RESP_TCGETWINCURPOS 53
+struct fsm_resp_tcgetwincurpos
+{
+	struct wincurpos pos;
+};
+
 
 #define FSM_MSG_NUM 53
 
