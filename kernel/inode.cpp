@@ -114,7 +114,8 @@ int AbstractInode::statvfs(ioctx_t* ctx, struct statvfs* stvfs)
 	retstvfs.f_bavail = 0;
 	retstvfs.f_files = 0;
 	retstvfs.f_ffree = 0;
-	retstvfs.f_fsid = (dev_t) dev;
+	retstvfs.f_favail = 0;
+	retstvfs.f_fsid = dev;
 	retstvfs.f_flag = ST_NOSUID;
 	retstvfs.f_namemax = ULONG_MAX;
 	if ( !ctx->copy_to_dest(stvfs, &retstvfs, sizeof(retstvfs)) )
