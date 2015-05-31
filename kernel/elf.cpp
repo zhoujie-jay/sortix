@@ -255,6 +255,8 @@ uintptr_t Load(const void* file_ptr, size_t file_size, Auxiliary* aux)
 
 		if ( pheader->p_type == PT_LOAD )
 		{
+			if ( pheader->p_memsz < pheader->p_filesz )
+				return errno = EINVAL, 0;
 			if ( pheader->p_filesz &&
 			     pheader->p_vaddr % pheader->p_align !=
 			     pheader->p_offset % pheader->p_align )
