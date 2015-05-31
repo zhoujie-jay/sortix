@@ -23,6 +23,7 @@ column \
 command-not-found \
 cp \
 date \
+df \
 dirname \
 du \
 echo \

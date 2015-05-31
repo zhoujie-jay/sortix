@@ -199,6 +199,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `column` - format lines nicely in columns
 * `cp` - copy file
 * `date` - display current time and date
+* `df` - report file system disk space usage.
 * `dirname` - strip last component from file name
 * `dispd` - non-existent display server
 * `du` - report file and directory disk usage
