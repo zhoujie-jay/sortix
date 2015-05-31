@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -26,6 +26,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -35,6 +36,7 @@
 #include <sortix/fcntl.h>
 #include <sortix/seek.h>
 #include <sortix/stat.h>
+#include <sortix/statvfs.h>
 
 #include <sortix/kernel/fsfunc.h>
 #include <sortix/kernel/inode.h>
@@ -42,6 +44,7 @@
 #include <sortix/kernel/ioctx.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/refcount.h>
 #include <sortix/kernel/string.h>
 #include <sortix/kernel/time.h>
@@ -50,6 +53,65 @@
 
 namespace Sortix {
 namespace KRAMFS {
+
+static ssize_t common_tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count)
+{
+	if ( !name )
+	{
+		static const char index[] = "device-path\0filesystem-type\0";
+		size_t index_size = sizeof(index) - 1;
+		if ( buffer && count < index_size )
+			return errno = ERANGE, -1;
+		if ( buffer && !ctx->copy_to_dest(buffer, &index, index_size) )
+			return -1;
+		return (ssize_t) index_size;
+	}
+	else if ( !strcmp(name, "device-path") )
+	{
+		const char* data = "none";
+		size_t size = strlen(data);
+		if ( buffer && count < size )
+			return errno = ERANGE, -1;
+		if ( buffer && !ctx->copy_to_dest(buffer, data, size) )
+			return -1;
+		return (ssize_t) size;
+	}
+	else if ( !strcmp(name, "filesystem-type") )
+	{
+		const char* data = "kram";
+		size_t size = strlen(data);
+		if ( buffer && count < size )
+			return errno = ERANGE, -1;
+		if ( buffer && !ctx->copy_to_dest(buffer, data, size) )
+			return -1;
+		return (ssize_t) size;
+	}
+	else
+		return errno = ENOENT, -1;
+}
+
+int common_statvfs(ioctx_t* ctx, struct statvfs* stvfs, dev_t dev)
+{
+	size_t memory_used;
+	size_t memory_total;
+	Memory::Statistics(&memory_used, &memory_total);
+	struct statvfs retstvfs;
+	memset(&retstvfs, 0, sizeof(retstvfs));
+	retstvfs.f_bsize = Page::Size();
+	retstvfs.f_frsize = Page::Size();
+	retstvfs.f_blocks = memory_total / Page::Size();
+	retstvfs.f_bfree = (memory_total - memory_used) / Page::Size();
+	retstvfs.f_bavail = (memory_total - memory_used) / Page::Size();
+	retstvfs.f_files = 0;
+	retstvfs.f_ffree = 0;
+	retstvfs.f_favail = 0;
+	retstvfs.f_fsid = dev;
+	retstvfs.f_flag = ST_NOSUID;
+	retstvfs.f_namemax = ULONG_MAX;
+	if ( !ctx->copy_to_dest(stvfs, &retstvfs, sizeof(retstvfs)) )
+		return -1;
+	return 0;
+}
 
 File::File(InodeType inode_type, mode_t type, dev_t dev, ino_t ino, uid_t owner,
            gid_t group, mode_t mode)
@@ -114,6 +176,16 @@ ssize_t File::readlink(ioctx_t* ctx, char* buf, size_t bufsize)
 	if ( (size_t) SSIZE_MAX < bufsize )
 		bufsize = SSIZE_MAX;
 	return fcache.pread(ctx, (uint8_t*) buf, bufsize, 0);
+}
+
+ssize_t File::tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count)
+{
+	return common_tcgetblob(ctx, name, buffer, count);
+}
+
+int File::statvfs(ioctx_t* ctx, struct statvfs* stvfs)
+{
+	return common_statvfs(ctx, stvfs, dev);
 }
 
 Dir::Dir(dev_t dev, ino_t ino, uid_t owner, gid_t group, mode_t mode)
@@ -487,6 +559,16 @@ int Dir::rename_here(ioctx_t* ctx, Ref<Inode> from, const char* oldname,
 		the_inode->link_raw(ctx, "..", Ref<Inode>(this));
 
 	return 0;
+}
+
+ssize_t Dir::tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count)
+{
+	return common_tcgetblob(ctx, name, buffer, count);
+}
+
+int Dir::statvfs(ioctx_t* ctx, struct statvfs* stvfs)
+{
+	return common_statvfs(ctx, stvfs, dev);
 }
 
 } // namespace KRAMFS

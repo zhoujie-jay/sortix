@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -51,6 +51,9 @@ public:
 	virtual ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	                       off_t off);
 	virtual ssize_t readlink(ioctx_t* ctx, char* buf, size_t bufsiz);
+	virtual ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer,
+	                          size_t count);
+	virtual int statvfs(ioctx_t* ctx, struct statvfs* stvfs);
 
 private:
 	FileCache fcache;
@@ -77,6 +80,9 @@ public:
 	                    const char* filename);
 	virtual int rename_here(ioctx_t* ctx, Ref<Inode> from, const char* oldname,
 	                        const char* newname);
+	virtual ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer,
+	                          size_t count);
+	virtual int statvfs(ioctx_t* ctx, struct statvfs* stvfs);
 
 private:
 	size_t FindChild(const char* filename);
