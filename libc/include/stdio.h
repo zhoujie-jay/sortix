@@ -103,7 +103,7 @@ typedef __off_t fpos_t;
 #endif
 
 #if __USE_SORTIX || __USE_POSIX
-#define P_tmpdir "/tmp"
+/* P_tmpdir will not be implemented. */
 #endif
 
 /* Size of <stdio.h> buffers. */
