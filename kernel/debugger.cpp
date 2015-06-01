@@ -579,9 +579,9 @@ bool RunCommand()
 
 	int argc = 0;
 	char* input = buffer;
-	char* saved = NULL;
-	while ( (argv[argc] = strtok_r(input, " \t\n", &saved)) )
-		argc++, input = NULL;
+	while ( (argv[argc] = strsep(&input, " \t\n")) )
+		if ( argv[argc][0] )
+			argc++;
 
 	if ( !argc )
 		return true;

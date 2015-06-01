@@ -93,10 +93,8 @@ bool has_path_executable(const char* name)
 	if ( !path_copy )
 		return false;
 	char* input = path_copy;
-	char* saved_ptr;
-	while ( char* component = strtok_r(input, ":", &saved_ptr) )
+	while ( char* component = strsep(&input, ":") )
 	{
-		input = NULL;
 		char* fullpath = print_string("%s/%s", component, name);
 		if ( !fullpath )
 			return free(fullpath), free(path_copy), false;

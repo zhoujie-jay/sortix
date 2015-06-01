@@ -1802,9 +1802,8 @@ size_t do_complete(char*** completions_ptr,
 			break;
 		}
 		char* path_input = path;
-		char* saved_ptr;
 		char* component;
-		while ( (component = strtok_r(path_input, ":", &saved_ptr)) )
+		while ( (component = strsep(&path_input, ":")) )
 		{
 			if ( DIR* dir = opendir(component) )
 			{
@@ -1819,7 +1818,6 @@ size_t do_complete(char*** completions_ptr,
 				}
 				closedir(dir);
 			}
-			path_input = NULL;
 		}
 		free(path);
 	} while ( false );
