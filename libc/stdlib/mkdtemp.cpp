@@ -59,5 +59,7 @@ extern "C" char* mkdtemp(char* templ)
 			return templ;
 	} while ( errno == EEXIST );
 
+	memcpy(templ + xpos, "XXXXXX", 6);
+
 	return NULL;
 }

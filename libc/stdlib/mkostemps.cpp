@@ -54,13 +54,16 @@ extern "C" int mkostemps(char* templ, int suffixlen, int flags)
 			return errno = EINVAL, -1;
 
 	flags &= ~O_ACCMODE;
-	int fd;
 	do
 	{
 		for ( size_t i = 0; i < 6; i++ )
 			templ[xpos + i] = random_character();
-	} while ( (fd = open(templ, flags | O_RDWR | O_EXCL | O_CREAT, 0600)) < 0 &&
-	          (errno == EEXIST) );
+		int fd = open(templ, flags | O_RDWR | O_EXCL | O_CREAT, 0600);
+		if ( 0 <= fd )
+			return fd;
+	} while ( errno == EEXIST );
 
-	return fd;
+	memcpy(templ + xpos, "XXXXXX", 6);
+
+	return -1;
 }
