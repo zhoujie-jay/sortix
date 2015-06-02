@@ -108,6 +108,7 @@ int mblen(const char*, size_t);
 size_t mbstowcs(wchar_t* __restrict, const char* __restrict, size_t);
 int mbtowc(wchar_t *__restrict, const char* __restrict, size_t);
 char* mkdtemp(char*);
+char* mkdtemps(char*, size_t);
 int mkostemp(char*, int);
 int mkostemps(char*, int, int);
 int mkstemp(char*);

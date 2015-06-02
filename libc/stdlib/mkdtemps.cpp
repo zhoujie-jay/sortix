@@ -17,14 +17,50 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdlib/mkdtemp.cpp
+    stdlib/mkdtemps.cpp
     Make a unique temporary directory path and create it.
 
 *******************************************************************************/
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
+#include <string.h>
 
-extern "C" char* mkdtemp(char* templ)
+const uint32_t NUM_CHARACTERS = 10 + 26 + 26;
+
+static inline char random_character()
 {
-	return mkdtemps(templ, 0);
+	uint32_t index = arc4random_uniform(NUM_CHARACTERS);
+	if ( index < 10 )
+		return '0' + index;
+	if ( index < 10 + 26 )
+		return 'a' + index - 10;
+	if ( index < 10 + 26 + 26 )
+		return 'A' + index - (10 + 26);
+	__builtin_unreachable();
+}
+
+extern "C" char* mkdtemps(char* templ, size_t suffixlen)
+{
+	size_t templ_length = strlen(templ);
+	if ( templ_length < 6 ||
+	     templ_length - 6 < (size_t) suffixlen )
+		return errno = EINVAL, (char*) NULL;
+	size_t xpos = templ_length - (6 + suffixlen);
+	for ( size_t i = 0; i < 6; i++ )
+		if ( templ[xpos + i] != 'X' )
+			return errno = EINVAL, (char*) NULL;
+
+	do
+	{
+		for ( size_t i = 0; i < 6; i++ )
+			templ[xpos + i] = random_character();
+		if ( mkdir(templ, 0700) == 0 )
+			return templ;
+	} while ( errno == EEXIST );
+
+	memcpy(templ + xpos, "XXXXXX", 6);
+
+	return NULL;
 }
