@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -39,36 +39,34 @@
 
 #include <dispd.h>
 
-const float PI = 3.1415926532f;
-
-inline float RandomFloat()
+static inline float RandomFloat()
 {
 	return arc4random() / (float) UINT32_MAX;
 }
 
-inline float RandomFloat(float min, float max)
+static inline float RandomFloat(float min, float max)
 {
 	return min + RandomFloat() * (max - min);
 }
 
-inline float DegreeToRadian(float degree)
+static inline float DegreeToRadian(float degree)
 {
-	return degree / 180 * PI;
+	return degree / 180 * M_PI;
 }
 
-inline float RandomAngle()
+static inline float RandomAngle()
 {
 	return RandomFloat() * DegreeToRadian(360);
 }
 
-inline uint32_t MakeColor(uint8_t r, uint8_t g, uint8_t b)
+static inline uint32_t MakeColor(uint8_t r, uint8_t g, uint8_t b)
 {
 	return b << 0UL | g << 8UL | r << 16UL;
 }
 
-const size_t STARFIELD_WIDTH = 512UL;
-const size_t STARFIELD_HEIGHT = 512UL;
-uint32_t starfield[STARFIELD_WIDTH * STARFIELD_HEIGHT];
+static const size_t STARFIELD_WIDTH = 512UL;
+static const size_t STARFIELD_HEIGHT = 512UL;
+static uint32_t starfield[STARFIELD_WIDTH * STARFIELD_HEIGHT];
 
 void GenerateStarfield(uint32_t* bitmap, size_t width, size_t height)
 {
@@ -85,10 +83,10 @@ void GenerateStarfield(uint32_t* bitmap, size_t width, size_t height)
 	}
 }
 
-const size_t MAXKEYNUM = 512UL;
-bool keysdown[MAXKEYNUM] = { false };
-bool keyspending[MAXKEYNUM] = { false };
-struct timespec key_handled_last[MAXKEYNUM];
+static const size_t MAXKEYNUM = 512UL;
+static bool keysdown[MAXKEYNUM] = { false };
+static bool keyspending[MAXKEYNUM] = { false };
+static struct timespec key_handled_last[MAXKEYNUM];
 
 bool pop_is_key_just_down(int abskbkey)
 {
@@ -119,7 +117,8 @@ void FetchKeyboardInput()
 	const unsigned termmode = TERMMODE_KBKEY
 	                        | TERMMODE_SIGNAL
 	                        | TERMMODE_NONBLOCK;
-	if ( settermmode(0, termmode) ) { error(1, errno, "settermmode"); }
+	if ( settermmode(0, termmode) )
+		error(1, errno, "settermmode");
 	uint32_t codepoint;
 	ssize_t numbytes;
 	while ( 0 < (numbytes = read(0, &codepoint, sizeof(codepoint))) )
@@ -137,15 +136,14 @@ void FetchKeyboardInput()
 	}
 }
 
-size_t xres;
-size_t yres;
-int fb;
-size_t bpp;
-size_t linesize;
-size_t framesize;
-uint32_t* buf;
-bool gamerunning;
-unsigned long framenum;
+static size_t xres;
+static size_t yres;
+static size_t bpp;
+static size_t linesize;
+static size_t framesize;
+static uint32_t* buf;
+static bool gamerunning;
+static unsigned long framenum;
 
 void DrawLine(uint32_t color, long x0, long y0, long x1, long y1)
 {
@@ -162,10 +160,19 @@ void DrawLine(uint32_t color, long x0, long y0, long x1, long y1)
 			size_t index = y0 * linesize + x0;
 			buf[index] = color;
 		}
-		if ( x0 == x1 && y0 == y1 ) { break; }
+		if ( x0 == x1 && y0 == y1 )
+			break;
 		e2 = err;
-		if ( e2 > -dx ) { err -= dy; x0 += sx; }
-		if ( e2 <  dy ) { err += dx; y0 += sy; }
+		if ( e2 > -dx )
+		{
+			err -= dy;
+			x0 += sx;
+		}
+		if ( e2 < dy )
+		{
+			err += dx;
+			y0 += sy;
+		}
 	}
 }
 
@@ -180,7 +187,11 @@ public:
 
 	Vector& operator=(const Vector& rhs)
 	{
-		if ( this != &rhs ) { x = rhs.x; y = rhs.y; }
+		if ( this != &rhs )
+		{
+			x = rhs.x;
+			y = rhs.y;
+		}
 		return *this;
 	}
 
@@ -265,7 +276,8 @@ public:
 	const Vector Normalize() const
 	{
 		float size = Size();
-		if ( size == 0.0 ) { size = 1.0f; }
+		if ( size == 0.0 )
+			size = 1.0f;
 		return *this / size;
 	}
 
@@ -302,10 +314,10 @@ class Object;
 class Actor;
 class Spaceship;
 
-Object* firstobject = NULL;
-Object* lastobject = NULL;
-Vector screenoff;
-Spaceship* playership = NULL;
+static Object* firstobject = NULL;
+static Object* lastobject = NULL;
+static Vector screenoff;
+static Spaceship* playership = NULL;
 
 class Object
 {
@@ -330,10 +342,14 @@ public:
 
 	virtual ~Object()
 	{
-		if ( !prevobj ) { firstobject = nextobj; }
-		else { prevobj->nextobj = nextobj; }
-		if ( !nextobj ) { lastobject = prevobj; }
-		else { nextobj->prevobj = prevobj; }
+		if ( !prevobj )
+			firstobject = nextobj;
+		else
+			prevobj->nextobj = nextobj;
+		if ( !nextobj )
+			lastobject = prevobj;
+		else
+			nextobj->prevobj = prevobj;
 	}
 
 public:
@@ -405,7 +421,7 @@ public:
 
 void Actor::Move(float deltatime)
 {
-	acc = (force+otherforce) / mass;
+	acc = (force + otherforce) / mass;
 	vel += acc * deltatime;
 	pos += vel * deltatime;
 }
@@ -497,7 +513,8 @@ bool Asteroid::InsideMe(const Vector& p)
 	{
 		Vector from = Point(i) + pos;
 		Vector to = Point(i+1) + pos;
-		if ( InsideTriangle(from, to, center, p) ) { return true; }
+		if ( InsideTriangle(from, to, center, p) )
+			return true;
 	}
 	return false;
 }
@@ -518,7 +535,8 @@ void Asteroid::Render()
 
 void Asteroid::OnHit()
 {
-	if ( !GCIsAlive() ) { return; }
+	if ( !GCIsAlive() )
+		return;
 	Vector axis = Vector(size/2.0f, 0.0f).Rotate(RandomAngle());
 	float sizea = RandomFloat(size*0.3, size*0.7);
 	float sizeb = RandomFloat(size*0.3, size*0.7);
@@ -561,7 +579,8 @@ void AsteroidField::Think(float /*deltatime*/)
 	Vector center = ((Actor*)playership)->pos;
 	for ( Object* obj = firstobject; obj; obj = obj->NextObj() )
 	{
-		if ( !obj->IsA("Asteroid") ) { continue; }
+		if ( !obj->IsA("Asteroid") )
+			continue;
 		Asteroid* ast = (Asteroid*) obj;
 		numasteroids++;
 		float dist = ast->pos.DistanceTo(center);
@@ -613,10 +632,13 @@ void Missile::Think(float deltatime)
 	if ( ttl < 0 ) { GCDie(); }
 	for ( Object* obj = firstobject; obj; obj = obj->NextObj() )
 	{
-		if ( !obj->GCIsAlive() ) { continue; }
-		if ( !obj->IsA("Asteroid") ) { continue; }
+		if ( !obj->GCIsAlive() )
+			continue;
+		if ( !obj->IsA("Asteroid") )
+			continue;
 		Asteroid* ast = (Asteroid*) obj;
-		if ( !ast->InsideMe(pos) ) { continue; }
+		if ( !ast->InsideMe(pos) )
+			continue;
 		ast->OnHit();
 		GCDie();
 	}
@@ -680,14 +702,23 @@ void Attractor::Think(float deltatime)
 	float sofar = 2.5 * age;
 	mass = sofar*sofar*sofar*sofar;
 	size = age*age;
-	if ( 1.5*60 <= age ) { GCDie(); return; }
+	if ( 1.5*60 <= age )
+	{
+		GCDie();
+		return;
+	}
 	for ( Object* obj = firstobject; obj; obj = obj->NextObj() )
 	{
-		if ( obj == this ) { continue; }
-		if ( !obj->GCIsAlive() ) { continue; }
-		if ( !obj->IsA("Actor") ) { continue; }
-		if ( obj->IsA("Attractor") ) { continue; }
-		//if ( obj->IsA("Spaceship") ) { continue; }
+		if ( obj == this )
+			continue;
+		if ( !obj->GCIsAlive() )
+			continue;
+		if ( !obj->IsA("Actor") )
+			continue;
+		if ( obj->IsA("Attractor") )
+			continue;
+		//if ( obj->IsA("Spaceship") )
+		//	continue;
 		Actor* other = (Actor*) obj;
 		Vector relative = pos - other->pos;
 		float distsq = relative.SquaredSize();
@@ -785,8 +816,10 @@ void Spaceship::Think(float deltatime)
 {
 	for ( Object* obj = firstobject; obj; obj = obj->NextObj() )
 	{
-		if ( !obj->GCIsAlive() ) { continue; }
-		if ( !obj->IsA("Asteroid") ) { continue; }
+		if ( !obj->GCIsAlive() )
+			continue;
+		if ( !obj->IsA("Asteroid") )
+			continue;
 		Asteroid* ast = (Asteroid*) obj;
 		bool iscrystal = ast->Type() == TYPE_CRYSTAL;
 		bool isinside = false;
@@ -794,8 +827,10 @@ void Spaceship::Think(float deltatime)
 		{
 			Vector relative = pos - ast->pos;
 			float distsq = relative.SquaredSize();
-			if ( distsq < 4.0 * 4.0 ) { isinside = true; }
-			if ( distsq < 100 ) { distsq = 100; }
+			if ( distsq < 4.0 * 4.0 )
+				isinside = true;
+			if ( distsq < 100 )
+				distsq = 100;
 			float constant = 2000.0;
 			float forcesize = constant * mass * ast->mass / distsq;
 			Vector force = relative.Normalize() * forcesize;
@@ -823,16 +858,21 @@ void Spaceship::Think(float deltatime)
 	}
 	const float turnspeed = 100.0;
 	const float turnamount = turnspeed * deltatime;
-	if ( turnleft  ) { shipangle -= DegreeToRadian(turnamount); }
-	if ( turnright ) { shipangle += DegreeToRadian(turnamount); }
+	if ( turnleft )
+		shipangle -= DegreeToRadian(turnamount);
+	if ( turnright )
+		shipangle += DegreeToRadian(turnamount);
 	float shipaccelamount = 15.0;
 	float shipaccel = 0.0;
-	if ( moveforward  ) { shipaccel += shipaccelamount; }
-	if ( movebackward ) { shipaccel -= shipaccelamount; }
+	if ( moveforward )
+		shipaccel += shipaccelamount;
+	if ( movebackward )
+		shipaccel -= shipaccelamount;
 	force += Vector(shipaccel, 0.0).Rotate(shipangle) * mass;
 	float shipspeed = vel.Size();
 	float maxspeed = 50.0f;
-	//if ( maxspeed < shipspeed ) { vel *= maxspeed / shipspeed; }
+	//if ( maxspeed < shipspeed )
+	//	vel *= maxspeed / shipspeed;
 	if ( maxspeed < shipspeed )
 	{
 		Vector backforce = vel.Normalize() * -shipaccelamount * mass;
@@ -845,17 +885,18 @@ void Spaceship::Think(float deltatime)
 		const Vector P3(16.0f, 0.0f);
 		Vector spawnpos = pos + P3.Rotate(shipangle) * 1.1;
 		Vector spawnvel = Vector(speed, 0.0).Rotate(shipangle);
-		if ( missile ) new Missile(spawnpos, vel + spawnvel, spawnvel, ttl);
-		if ( firework ) new Firework(spawnpos, vel + spawnvel, spawnvel, 0.0);
-		if ( attractor ) new Attractor(spawnpos, vel + spawnvel, 10000.0, 1.001);
+		if ( missile )
+			new Missile(spawnpos, vel + spawnvel, spawnvel, ttl);
+		if ( firework )
+			new Firework(spawnpos, vel + spawnvel, spawnvel, 0.0);
+		if ( attractor )
+			new Attractor(spawnpos, vel + spawnvel, 10000.0, 1.001);
 	}
 }
 
 void Spaceship::Render()
 {
 	Vector screenpos = pos - screenoff;
-	// TODO: Ideally these should be global constants, but global constructors
-	// are _not_ called upon process initiazation on Sortix yet.
 	const Vector P1(-8.0f, 8.0f);
 	const Vector P2(-8.0f, -8.0f);
 	const Vector P3(16.0f, 0.0f);
@@ -917,8 +958,13 @@ Botship::Botship(float shipangle, Vector pos, Vector vel, Vector acc)
 	this->vel = vel;
 	this->acc = acc;
 	this->mass = 1.0;
-	turnleft = turnright = moveforward = movebackward = missile = \
-	attractor = firework = false;
+	turnleft = false;
+	turnright = false;
+	moveforward = false;
+	movebackward = false;
+	missile = false;
+	attractor = false;
+	firework = false;
 	firedelay = 0.0f;
 }
 
@@ -939,8 +985,10 @@ void Botship::Think(float deltatime)
 	float targetsafety = 0.0f;
 	for ( Object* obj = firstobject; !needreturn && obj; obj = obj->NextObj() )
 	{
-		if ( !obj->GCIsAlive() ) { continue; }
-		if ( !obj->IsA("Asteroid") ) { continue; }
+		if ( !obj->GCIsAlive() )
+			continue;
+		if ( !obj->IsA("Asteroid") )
+			continue;
 		Asteroid* ast = (Asteroid*) obj;
 		if ( ast->Type() == TYPE_CRYSTAL )
 			continue;
@@ -997,7 +1045,7 @@ void Firework::Think(float deltatime)
 		const size_t NUM_MISSILES = 8;
 		const Vector velocity = Vector(MISSILE_SPEED, 0);
 		const float offsetangle = RandomAngle();
-		const float angle = 2 * PI / NUM_MISSILES;
+		const float angle = 2 * M_PI / NUM_MISSILES;
 		for ( size_t i = 0; i < NUM_MISSILES; i++ )
 		{
 			Vector dir = velocity.Rotate(offsetangle + angle * i);
@@ -1008,10 +1056,13 @@ void Firework::Think(float deltatime)
 	}
 	for ( Object* obj = firstobject; obj; obj = obj->NextObj() )
 	{
-		if ( !obj->GCIsAlive() ) { continue; }
-		if ( !obj->IsA("Asteroid") ) { continue; }
+		if ( !obj->GCIsAlive() )
+			continue;
+		if ( !obj->IsA("Asteroid") )
+			continue;
 		Asteroid* ast = (Asteroid*) obj;
-		if ( !ast->InsideMe(pos) ) { continue; }
+		if ( !ast->InsideMe(pos) )
+			continue;
 		// Fireworks taken out by asteroids before explosion.
 		GCDie();
 	}
@@ -1031,7 +1082,8 @@ void GameLogic()
 	deltatime *= timescale;
 	Object* first = firstobject;
 	Object* obj;
-	for ( obj = first; obj; obj = obj->NextObj() ) { obj->GCBirth(); }
+	for ( obj = first; obj; obj = obj->NextObj() )
+		obj->GCBirth();
 	bool key_a = pop_is_key_just_down(KBKEY_A);
 	bool key_b = pop_is_key_just_down(KBKEY_B);
 	bool key_space = pop_is_key_just_down(KBKEY_SPACE);
@@ -1044,24 +1096,28 @@ void GameLogic()
 		new Botship(RandomAngle(), playership->pos, playership->vel);
 	for ( obj = first; obj; obj = obj->NextObj() )
 	{
-		if ( !obj->GCIsBorn() ) { continue; }
+		if ( !obj->GCIsBorn() )
+			continue;
 		obj->PreFrame();
 	}
 	for ( obj = first; obj; obj = obj->NextObj() )
 	{
-		if ( !obj->GCIsBorn() ) { continue; }
+		if ( !obj->GCIsBorn() )
+			continue;
 		obj->OnFrame(deltatime);
 	}
 	for ( obj = first; obj; obj = obj->NextObj() )
 	{
-		if ( !obj->GCIsBorn() ) { continue; }
+		if ( !obj->GCIsBorn() )
+			continue;
 		obj->PostFrame(deltatime);
 	}
 	for ( obj = first; obj; )
 	{
 		Object* todelete = obj;
 		obj = obj->NextObj();
-		if ( !todelete->GCIsDead() ) {  continue; }
+		if ( !todelete->GCIsDead() )
+			continue;
 		delete todelete;
 	}
 }
@@ -1107,23 +1163,6 @@ void RunFrame(struct dispd_window* window)
 	GameLogic();
 	Render();
 	dispd_finish_render(fb);
-}
-
-char* GetCurrentVideoMode()
-{
-	FILE* fp = fopen("/dev/video/mode", "r");
-	if ( !fp ) { return NULL; }
-	char* mode = NULL;
-	size_t n = 0;
-	getline(&mode, &n, fp);
-	fclose(fp);
-	return mode;
-}
-
-int atoi_safe(const char* str)
-{
-	if ( !str ) { return 0; }
-	return atoi(str);
 }
 
 void InitGame()
