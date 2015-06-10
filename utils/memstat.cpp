@@ -20,6 +20,7 @@
 
 *******************************************************************************/
 
+#include <err.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -66,7 +67,8 @@ int main(int /*argc*/, char* /*argv*/[])
 {
 	size_t memused = 0;
 	size_t memtotal = 0;
-	if ( memstat(&memused, &memtotal) ) { perror("memstat"); return 1; }
+	if ( memstat(&memused, &memtotal) )
+		err(1, "memstat");
 
 	printf("memory usage: ");
 	printbytes(memused);

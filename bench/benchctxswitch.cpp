@@ -20,6 +20,7 @@
 
 *******************************************************************************/
 
+#include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -39,11 +40,13 @@ static int uptime(uintmax_t* usecs)
 int main(int /*argc*/, char* /*argv*/[])
 {
 	pid_t slavepid = fork();
-	if ( slavepid < 0 ) { perror("fork"); return 1; }
+	if ( slavepid < 0 )
+		err(1, "fork");
 	if ( slavepid == 0 ) { while ( true ) { usleep(0); } exit(0); }
 
 	uintmax_t start;
-	if ( uptime(&start) ) { perror("uptime"); return 1; }
+	if ( uptime(&start) )
+		err(1, "uptime");
 	uintmax_t end = start + 1ULL * 1000ULL * 1000ULL; // 1 second
 	size_t count = 0;
 	uintmax_t now;

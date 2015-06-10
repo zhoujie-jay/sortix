@@ -64,7 +64,8 @@ int main(int argc, char* argv[])
 	}
 	size_t bufsize = 32;
 	char* buf = (char*) malloc(bufsize);
-	if ( !buf ) { perror("malloc"); return 1; }
+	if ( !buf )
+		error(1, errno, "malloc");
 	for ( int i = 1; i < argc; i++ )
 	{
 retry:
@@ -80,7 +81,8 @@ retry:
 		if ( ret )
 		{
 			buf = (char*) realloc(buf, ret);
-			if ( !buf ) { perror("realloc"); return 1; }
+			if ( !buf )
+				error(1, errno, "realloc");
 			bufsize = ret;
 			goto retry;
 		}

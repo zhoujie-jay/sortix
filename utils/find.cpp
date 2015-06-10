@@ -62,7 +62,7 @@ bool Find(int dirfd, const char* relpath, const char* path, int types)
 		if ( types & TYPE_DIR )
 			printf("%s\n", path);
 		DIR* dir = fdopendir(fd);
-		if ( !dir ) { perror("fdopendir"); close(fd); return false; }
+		if ( !dir ) { error(0, errno, "fdopendir"); close(fd); return false; }
 		struct dirent* entry;
 		while ( (entry = readdir(dir)) )
 		{

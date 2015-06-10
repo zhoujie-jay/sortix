@@ -396,7 +396,7 @@ int ls(const char* path)
 	{
 		if ( errno == ENOTDIR )
 			return handle_entry_internal(path, path, DT_UNKNOWN);
-		perror(path);
+		error(0, errno, "%s", path);
 		ret = 2;
 		goto cleanup_entries;
 	}
