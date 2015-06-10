@@ -323,7 +323,15 @@ dirent/fdopendir.o \
 dirent/opendir.o \
 dirent/scandir.o \
 dlfcn/dlfcn.o \
+err/err.o \
+err/errx.o \
 error/gnu_error.o \
+err/verr.o \
+err/verrx.o \
+err/vwarn.o \
+err/vwarnx.o \
+err/warn.o \
+err/warnx.o \
 fcntl/creat.o \
 fcntl/fcntl.o \
 fcntl/openat.o \
