@@ -132,6 +132,7 @@ stdio/fwrite.o \
 stdio/fwrite_unlocked.o \
 stdio/getdelim.o \
 stdio/getline.o \
+stdio/open_memstream.o \
 stdio/rewind.o \
 stdio/setbuf.o \
 stdio/setvbuf.o \

@@ -242,7 +242,7 @@ int dprintf(int fildes, const char* __restrict format, ...)
 	__attribute__((__format__ (printf, 2, 3)));
 FILE* fmemopen(void* __restrict, size_t, const char* __restrict);
 ssize_t getdelim(char** __restrict lineptr, size_t* __restrict n, int delimiter, FILE* __restrict stream);
-/* TODO: open_memstream */
+FILE* open_memstream(char**, size_t*);
 ssize_t getline(char** __restrict lineptr, size_t* __restrict n, FILE* __restrict stream);
 int renameat(int oldfd, const char* oldname, int newfd, const char* newname);
 int vdprintf(int fildes, const char* __restrict format, __gnuc_va_list ap)
