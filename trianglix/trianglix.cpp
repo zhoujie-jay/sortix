@@ -60,12 +60,14 @@ bool use_runes = false;
 bool configured_use_runes = false;
 uint8_t font[FONT_CHARSIZE * FONT_NUMCHARS];
 
+__attribute__((format(printf, 1, 2)))
 char* print_string(const char* format, ...)
 {
-	char* ret = NULL;
+	char* ret;
 	va_list ap;
 	va_start(ap, format);
-	vasprintf(&ret, format, ap);
+	if ( vasprintf(&ret, format, ap) < 0 )
+		ret = NULL;
 	va_end(ap);
 	return ret;
 }

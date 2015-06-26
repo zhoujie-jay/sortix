@@ -369,6 +369,7 @@ bool dictionary_append_file_path(string_array_t* sa, const char* path)
 	return true;
 }
 
+__attribute__((format(printf, 1, 2)))
 char* print_string(const char* format, ...)
 {
 	va_list ap;

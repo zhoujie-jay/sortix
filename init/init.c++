@@ -62,9 +62,10 @@ char* read_single_line(FILE* fp)
 	return ret;
 }
 
+__attribute__((format(printf, 1, 2)))
 char* print_string(const char* format, ...)
 {
-	char* ret = NULL;
+	char* ret;
 	va_list ap;
 	va_start(ap, format);
 	int status = vasprintf(&ret, format, ap);
