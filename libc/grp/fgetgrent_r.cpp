@@ -83,6 +83,8 @@ static size_t count_num_members(const char* member_string)
 		result++;
 		while ( *member_string && *member_string != ',' )
 			member_string++;
+		if ( *member_string == ',' )
+			member_string++;
 	}
 	return result;
 }
@@ -205,7 +207,7 @@ int fgetgrent_r(FILE* restrict fp,
 
 	size_t num_members = count_num_members(member_string);
 	size_t member_list_bytes = (num_members + 1) * sizeof(char*);
-	size_t available_bytes = buf_len < buf_used;
+	size_t available_bytes = buf_len - buf_used;
 	if ( available_bytes < member_list_bytes )
 		goto range_failure;
 
