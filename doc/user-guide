@@ -173,6 +173,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `find` - recursively list files
 * `head` - display start of file
 * `help` - show list of available programs
+* `id` - print real and effective user and group IDs
 * `init` - system management deamon
 * `initrdfs` - tool for examining initrds
 * `install` - installs a program into a system directory

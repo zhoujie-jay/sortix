@@ -18,6 +18,7 @@ expr
 false
 find
 head
+id
 help
 kernelinfo
 kill
