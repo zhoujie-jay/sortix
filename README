@@ -87,7 +87,7 @@ information.
 See the individual files for copyright terms. If a file does not contain a
 license header, you can assume it is released under the GNU General Public
 Licenser, either version 3 or (at your option) any later version. This includes
-Sortix-related experimental branches and repositories found on Gitorious: these
+Sortix-related experimental branches and repositories found on Gitlab: these
 things are so experimental that I might not have added copyright statements.
 
 The build scripts might not contain a copyright license in which case they are
@@ -97,7 +97,7 @@ Unless the license header in the source code states otherwise, the Sortix
 kernel, the filesystem servers, the initrd tools, the utilities, the games, the
 benchmark programs, regression tests, base programs, editors, shell, init, and
 the tix package management programs are licensed under the GNU General Public
-License, either version 3 or (at youroption) any later version.
+License, either version 3 or (at your option) any later version.
 
 Unless the license header in the source code states otherwise, the libc library,
 the libpthread library, and the libdispd library are licensed under the GNU
