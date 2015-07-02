@@ -286,7 +286,7 @@ void HandleReadAt(int chl, struct fsm_req_pread* msg, Filesystem* fs)
 	free(buf);
 }
 
-void HandleWriteAt(int chl, struct fsm_req_pread* msg, Filesystem* fs)
+void HandleWriteAt(int chl, struct fsm_req_pwrite* msg, Filesystem* fs)
 {
 	if ( fs->num_inodes <= msg->ino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->ino);
@@ -325,7 +325,7 @@ void HandleOpen(int chl, struct fsm_req_open* msg, Filesystem* fs)
 	result->Unref();
 }
 
-void HandleMakeDir(int chl, struct fsm_req_open* msg, Filesystem* fs)
+void HandleMakeDir(int chl, struct fsm_req_mkdir* msg, Filesystem* fs)
 {
 	if ( fs->num_inodes <= msg->dirino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->dirino);
