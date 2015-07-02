@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -25,7 +25,7 @@
 
 class Block;
 
-const size_t DEVICE_HASH_LENGTH = 1 << 16;
+static const size_t DEVICE_HASH_LENGTH = 1 << 16;
 
 class Device
 {

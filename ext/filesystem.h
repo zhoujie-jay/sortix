@@ -27,7 +27,7 @@ class BlockGroup;
 class Device;
 class Inode;
 
-const size_t INODE_HASH_LENGTH = 1 << 16;
+static const size_t INODE_HASH_LENGTH = 1 << 16;
 
 class Filesystem
 {

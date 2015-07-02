@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -33,18 +33,18 @@ template <class T> T roundup(T a, T b)
 	return a % b ? a + b - a % b : a;
 }
 
-inline bool checkbit(const uint8_t* bitmap, size_t bit)
+static inline bool checkbit(const uint8_t* bitmap, size_t bit)
 {
 	uint8_t bits = bitmap[bit / 8UL];
 	return bits & (1U << (bit % 8UL));
 }
 
-inline void setbit(uint8_t* bitmap, size_t bit)
+static inline void setbit(uint8_t* bitmap, size_t bit)
 {
 	bitmap[bit / 8UL] |= 1U << (bit % 8UL);
 }
 
-inline void clearbit(uint8_t* bitmap, size_t bit)
+static inline void clearbit(uint8_t* bitmap, size_t bit)
 {
 	bitmap[bit / 8UL] &= ~(1U << (bit % 8UL));
 }

@@ -50,11 +50,11 @@
 #include "inode.h"
 #include "ioleast.h"
 
-const uint32_t EXT2_FEATURE_COMPAT_SUPPORTED = 0;
-const uint32_t EXT2_FEATURE_INCOMPAT_SUPPORTED = \
-               EXT2_FEATURE_INCOMPAT_FILETYPE;
-const uint32_t EXT2_FEATURE_RO_COMPAT_SUPPORTED = \
-               EXT2_FEATURE_RO_COMPAT_LARGE_FILE;
+static const uint32_t EXT2_FEATURE_COMPAT_SUPPORTED = 0;
+static const uint32_t EXT2_FEATURE_INCOMPAT_SUPPORTED = \
+                      EXT2_FEATURE_INCOMPAT_FILETYPE;
+static const uint32_t EXT2_FEATURE_RO_COMPAT_SUPPORTED = \
+                      EXT2_FEATURE_RO_COMPAT_LARGE_FILE;
 
 // TODO: Inode 0 is not valid, but a lot of functions here accept it!
 
