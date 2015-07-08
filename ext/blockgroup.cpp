@@ -48,7 +48,7 @@ BlockGroup::BlockGroup(Filesystem* filesystem, uint32_t group_id)
 	this->block_alloc_chunk = 0;
 	this->inode_alloc_chunk = 0;
 	this->block_bitmap_chunk_i = 0;
-	// TODO: inode_bitmap_chunk_i
+	this->inode_bitmap_chunk_i = 0;
 	this->first_block_id = filesystem->sb->s_first_data_block +
 	                       filesystem->sb->s_blocks_per_group * group_id;
 	this->first_inode_id = 1 +
@@ -187,6 +187,8 @@ void BlockGroup::FreeBlock(uint32_t block_id)
 	uint8_t* chunk_bits = block_bitmap_chunk->block_data;
 	clearbit(chunk_bits, chunk_bit);
 	block_bitmap_chunk->FinishWrite();
+	if ( chunk_bit < inode_bitmap_chunk_i )
+		block_bitmap_chunk_i = chunk_bit;
 	BeginWrite();
 	data->bg_free_blocks_count++;
 	FinishWrite();
@@ -215,6 +217,8 @@ void BlockGroup::FreeInode(uint32_t inode_id)
 	uint8_t* chunk_bits = inode_bitmap_chunk->block_data;
 	clearbit(chunk_bits, chunk_bit);
 	inode_bitmap_chunk->FinishWrite();
+	if ( chunk_bit < inode_bitmap_chunk_i )
+		inode_bitmap_chunk_i = chunk_bit;
 	BeginWrite();
 	data->bg_free_inodes_count++;
 	FinishWrite();
