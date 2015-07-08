@@ -61,7 +61,7 @@ Inode::Inode(Filesystem* filesystem, uint32_t inode_id)
 	this->data = NULL;
 	this->filesystem = filesystem;
 	this->reference_count = 1;
-	this->remote_reference_count = 1;
+	this->remote_reference_count = 0;
 	this->inode_id = inode_id;
 	this->dirty = false;
 }
@@ -274,6 +274,7 @@ Block* Inode::GetBlock(uint64_t offset)
 		goto read_doubly;
 	}
 
+	table->Unref();
 	return NULL;
 }
 
@@ -595,7 +596,7 @@ bool Inode::Link(const char* elem, Inode* dest, bool directories)
 	return true;
 }
 
-Inode* Inode::Unlink(const char* elem, bool directories, bool force)
+Inode* Inode::UnlinkKeep(const char* elem, bool directories, bool force)
 {
 	if ( !EXT2_S_ISDIR(Mode()) )
 		return errno = ENOTDIR, (Inode*) NULL;
@@ -699,6 +700,15 @@ Inode* Inode::Unlink(const char* elem, bool directories, bool force)
 	if ( block )
 		block->Unref();
 	return errno = ENOENT, (Inode*) NULL;
+}
+
+bool Inode::Unlink(const char* elem, bool directories, bool force)
+{
+	Inode* result = UnlinkKeep(elem, directories, force);
+	if ( !result )
+		return false;
+	result->Unref();
+	return true;
 }
 
 ssize_t Inode::ReadAt(uint8_t* buf, size_t s_count, off_t o_offset)
@@ -925,24 +935,20 @@ Inode* Inode::CreateDirectory(const char* path, mode_t mode)
 	if ( !Link(path, result, true) )
 	{
 	error:
-		result->Truncate(0);
-		memset(result->data, 0, sizeof(*result->data));
-		// TODO: dtime
 		result->Unref();
-		filesystem->FreeInode(result_inode_id);
 		return NULL;
 	}
 
 	if ( !result->Link(".", result, true) )
 	{
-		Unlink(path, true);
+		Unlink(path, true, true);
 		goto error;
 	}
 
 	if ( !result->Link("..", this, true) )
 	{
-		result->Unlink(".", true);
-		Unlink(path, true);
+		result->Unlink(".", true, true);
+		Unlink(path, true, true);
 		goto error;
 	}
 
@@ -951,11 +957,11 @@ Inode* Inode::CreateDirectory(const char* path, mode_t mode)
 
 bool Inode::RemoveDirectory(const char* path)
 {
-	Inode* result = Unlink(path, true);
+	Inode* result = UnlinkKeep(path, true);
 	if ( !result )
 		return false;
-	result->Unlink("..", true);
-	result->Unlink(".", true);
+	result->Unlink("..", true, true);
+	result->Unlink(".", true, true);
 	result->Truncate(0);
 
 	// Decrease the directory count statistics.
@@ -1035,6 +1041,7 @@ void Inode::Refer()
 
 void Inode::Unref()
 {
+	assert(0 < reference_count);
 	reference_count--;
 	if ( !reference_count && !remote_reference_count )
 	{
@@ -1051,6 +1058,7 @@ void Inode::RemoteRefer()
 
 void Inode::RemoteUnref()
 {
+	assert(0 < remote_reference_count);
 	remote_reference_count--;
 	if ( !reference_count && !remote_reference_count )
 	{

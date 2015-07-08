@@ -82,7 +82,7 @@ Inode* ext2_fuse_resolve_path(const char* path)
 		if ( *path == '/' )
 		{
 			if ( !EXT2_S_ISDIR(inode->Mode()) )
-				return errno = ENOTDIR, (Inode*) NULL;
+				return inode->Unref(), errno = ENOTDIR, (Inode*) NULL;
 			path++;
 			continue;
 		}
@@ -113,7 +113,7 @@ Inode* ext2_fuse_parent_dir(const char** path_ptr)
 		if ( *path == '/' )
 		{
 			if ( !EXT2_S_ISDIR(inode->Mode()) )
-				return errno = ENOTDIR, (Inode*) NULL;
+				return inode->Unref(), errno = ENOTDIR, (Inode*) NULL;
 			path++;
 			continue;
 		}
@@ -199,11 +199,10 @@ int ext2_fuse_unlink(const char* path)
 	Inode* inode = ext2_fuse_parent_dir(&path);
 	if ( !inode )
 		return -errno;
-	Inode* result = inode->Unlink(path, false);
+	bool result = inode->Unlink(path, false);
 	inode->Unref();
 	if ( !result )
 		return -errno;
-	result->Unref();
 	return 0;
 }
 
@@ -344,6 +343,7 @@ int ext2_fuse_create(const char* path, mode_t mode, struct fuse_file_info* fi)
 		return -errno;
 	fi->fh = (uint64_t) result->inode_id;
 	fi->keep_cache = 1;
+	result->RemoteRefer();
 	result->Unref();
 	return 0;
 }

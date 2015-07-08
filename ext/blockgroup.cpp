@@ -68,6 +68,10 @@ BlockGroup::BlockGroup(Filesystem* filesystem, uint32_t group_id)
 BlockGroup::~BlockGroup()
 {
 	Sync();
+	if ( block_bitmap_chunk )
+		block_bitmap_chunk->Unref();
+	if ( inode_bitmap_chunk )
+		inode_bitmap_chunk->Unref();
 	if ( data_block )
 		data_block->Unref();
 	filesystem->block_groups[group_id] = NULL;

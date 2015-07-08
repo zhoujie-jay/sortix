@@ -171,7 +171,10 @@ void HandleRefer(int chl, struct fsm_req_refer* msg, Filesystem* fs)
 	if ( fs->num_inodes <= msg->ino )
 		return;
 	if ( Inode* inode = fs->GetInode((uint32_t) msg->ino) )
+	{
 		inode->RemoteRefer();
+		inode->Unref();
+	}
 }
 
 void HandleUnref(int chl, struct fsm_req_unref* msg, Filesystem* fs)
@@ -180,7 +183,10 @@ void HandleUnref(int chl, struct fsm_req_unref* msg, Filesystem* fs)
 	if ( fs->num_inodes <= msg->ino )
 		return;
 	if ( Inode* inode = fs->GetInode((uint32_t) msg->ino) )
+	{
 		inode->RemoteUnref();
+		inode->Unref();
+	}
 }
 
 void HandleSync(int chl, struct fsm_req_sync* msg, Filesystem* fs)
@@ -410,6 +416,7 @@ void HandleReadDir(int chl, struct fsm_req_readdirents* msg, Filesystem* fs)
 	}
 	if ( block )
 		block->Unref();
+	inode->Unref();
 
 	kernel_entry.d_reclen = sizeof(kernel_entry);
 	RespondReadDir(chl, &kernel_entry);
@@ -441,18 +448,16 @@ void HandleUnlink(int chl, struct fsm_req_unlink* msg, Filesystem* fs)
 	memcpy(path, pathraw, msg->namelen);
 	path[msg->namelen] = '\0';
 
-	Inode* result = inode->Unlink(path, false);
+	bool result = inode->Unlink(path, false);
 	free(path);
 	inode->Unref();
 
 	if ( !result ) { RespondError(chl, errno); return; }
 
-	result->Unref();
-
 	RespondSuccess(chl);
 }
 
-void HandleRemoveDir(int chl, struct fsm_req_unlink* msg, Filesystem* fs)
+void HandleRemoveDir(int chl, struct fsm_req_rmdir* msg, Filesystem* fs)
 {
 	if ( fs->num_inodes <= msg->dirino ) { RespondError(chl, EBADF); return; }
 	Inode* inode = fs->GetInode((uint32_t) msg->dirino);
@@ -772,6 +777,7 @@ int fsmarshall_main(const char* argv0,
 	{
 		fprintf(stderr, "%s: filesystem server shutting down, syncing...", argv0);
 		fflush(stderr);
+		// TODO: Need to close all open inodes here, and in the fuse backend too.
 		fs->Sync();
 		fprintf(stderr, " done.\n");
 	}
