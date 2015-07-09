@@ -168,7 +168,7 @@ int ext2_fuse_readlink(const char* path, char* buf, size_t bufsize)
 	ssize_t amount = inode->ReadAt((uint8_t*) buf, bufsize, 0);
 	if ( amount < 0 )
 		return inode->Unref(), -errno;
-	buf[(size_t) amount < bufsize ? (size_t) bufsize : bufsize - 1] = '\0';
+	buf[(size_t) amount < bufsize ? (size_t) amount : bufsize - 1] = '\0';
 	inode->Unref();
 	return 0;
 }
