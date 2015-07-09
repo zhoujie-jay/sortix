@@ -1169,6 +1169,7 @@ int sys_execve_kernel(const char* filename,
 	Ref<Descriptor> desc = from->open(&ctx, filename, O_EXEC | O_READ, 0);
 	if ( !desc )
 		return -1;
+	from.Reset();
 
 	struct stat st;
 	if ( desc->stat(&ctx, &st) )
@@ -1194,6 +1195,8 @@ int sys_execve_kernel(const char* filename,
 			return sys_execve_free(&buffer_alloc), errno = EEOF, -1;
 		sofar += amount;
 	}
+
+	desc.Reset();
 
 	int result = process->Execute(filename, buffer, filesize, argc, argv, envc, envp, regs);
 
