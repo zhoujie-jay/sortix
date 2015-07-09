@@ -27,6 +27,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "highlight.h++"
+
 struct line
 {
 	wchar_t* data;
@@ -82,7 +84,7 @@ struct editor
 	bool rshift;
 	bool dirty;
 	bool modal_error;
-	bool highlight_source;
+	enum language highlight_source;
 	bool line_numbering;
 };
 

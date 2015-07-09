@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -25,7 +25,14 @@
 
 struct editor;
 
-bool should_highlight_path(const char* path);
+enum language
+{
+	LANGUAGE_NONE,
+	LANGUAGE_C_CXX,
+	LANGUAGE_DIFF,
+};
+
+enum language language_of_path(const char* path);
 void editor_colorize(struct editor* editor);
 
 #endif

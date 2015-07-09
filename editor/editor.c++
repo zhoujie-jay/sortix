@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -74,7 +74,7 @@ void initialize_editor(struct editor* editor)
 	editor->rshift = false;
 	editor->dirty = false;
 	editor->modal_error = false;
-	editor->highlight_source = false;
+	editor->highlight_source = LANGUAGE_NONE;
 
 	editor->lines_used = 1;
 	editor->lines_length = 1;
@@ -100,7 +100,7 @@ void editor_reset_contents(struct editor* editor)
 	editor->lines[0].data = NULL;
 	editor->lines[0].used = 0;
 	editor->lines[0].length = 0;
-	editor->highlight_source = false;
+	editor->highlight_source = LANGUAGE_NONE;
 	editor_cursor_set(editor, 0, 0);
 }
 
@@ -171,7 +171,7 @@ bool editor_load_file(struct editor* editor, const char* path)
 		return false;
 
 	editor->current_file_name = strdup(path);
-	editor->highlight_source = should_highlight_path(path);
+	editor->highlight_source = language_of_path(path);
 
 	return true;
 }
@@ -225,7 +225,7 @@ bool editor_save_file(struct editor* editor, const char* path)
 
 	editor->current_file_name = strdup(path);
 	editor->dirty = false;
-	editor->highlight_source = should_highlight_path(path);
+	editor->highlight_source = language_of_path(path);
 
 	return fclose(fp) != EOF;
 }

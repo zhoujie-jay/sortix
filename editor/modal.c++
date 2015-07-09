@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -34,6 +34,7 @@
 #include "command.h++"
 #include "cursor.h++"
 #include "editor.h++"
+#include "highlight.h++"
 #include "modal.h++"
 #include "multibyte.h++"
 
@@ -208,12 +209,17 @@ void editor_modal_language(struct editor* editor, const char* language)
 {
 	if ( !language[0] || !strcmp(language, "none") )
 	{
-		editor->highlight_source = false;
+		editor->highlight_source = LANGUAGE_NONE;
 		return;
 	}
 	if ( !strcmp(language, "c") || !strcmp(language, "c++") )
 	{
-		editor->highlight_source = true;
+		editor->highlight_source = LANGUAGE_C_CXX;
+		return;
+	}
+	if ( !strcmp(language, "diff") || !strcmp(language, "patch") )
+	{
+		editor->highlight_source = LANGUAGE_DIFF;
 		return;
 	}
 	editor->modal_error = true;

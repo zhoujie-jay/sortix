@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -33,13 +33,13 @@
 #include "editor.h++"
 #include "highlight.h++"
 
-bool should_highlight_path(const char* path)
+enum language language_of_path(const char* path)
 {
 	size_t path_length = strlen(path);
 	if ( 2 <= path_length &&
 	     (!strcmp(path+path_length-2, ".c") ||
 		  !strcmp(path+path_length-2, ".h")) )
-		return true;
+		return LANGUAGE_C_CXX;
 	if ( 4 <= path_length &&
 	     (!strcmp(path+path_length-4, ".c++") ||
 		  !strcmp(path+path_length-4, ".h++") ||
@@ -47,11 +47,14 @@ bool should_highlight_path(const char* path)
 		  !strcmp(path+path_length-4, ".hxx") ||
 		  !strcmp(path+path_length-4, ".cpp") ||
 		  !strcmp(path+path_length-4, ".hpp")) )
-		return true;
-	return false;
+		return LANGUAGE_C_CXX;
+	if ( (5 <= path_length && !strcmp(path+path_length-5, ".diff")) ||
+	     (6 <= path_length && !strcmp(path+path_length-6, ".patch")) )
+		return LANGUAGE_DIFF;
+	return LANGUAGE_NONE;
 }
 
-size_t recognize_constant(const wchar_t* string, size_t string_length)
+static size_t recognize_constant(const wchar_t* string, size_t string_length)
 {
 	bool binary = false;
 	bool hex = false;
@@ -131,10 +134,13 @@ size_t recognize_constant(const wchar_t* string, size_t string_length)
 	return result;
 }
 
+static void editor_colorize_c_cxx(struct editor* editor);
+static void editor_colorize_diff(struct editor* editor);
+
 void editor_colorize(struct editor* editor)
 {
 	if ( editor->color_lines_length != editor->lines_used ||
-	     !editor->highlight_source )
+	     editor->highlight_source == LANGUAGE_NONE )
 	{
 		for ( size_t i = 0; i < editor->color_lines_used; i++ )
 			delete[] editor->color_lines[i].data;
@@ -144,7 +150,7 @@ void editor_colorize(struct editor* editor)
 		editor->color_lines = NULL;
 	}
 
-	if ( !editor->highlight_source )
+	if ( editor->highlight_source == LANGUAGE_NONE )
 		return;
 
 	if ( !editor->color_lines )
@@ -177,6 +183,16 @@ void editor_colorize(struct editor* editor)
 		editor->color_lines[i].length = editor->lines[i].used;
 	}
 
+	switch ( editor->highlight_source )
+	{
+	case LANGUAGE_NONE: break;
+	case LANGUAGE_C_CXX: editor_colorize_c_cxx(editor); break;
+	case LANGUAGE_DIFF: editor_colorize_diff(editor); break;
+	}
+}
+
+static void editor_colorize_c_cxx(struct editor* editor)
+{
 	enum
 	{
 		STATE_INIT,
@@ -512,6 +528,27 @@ void editor_colorize(struct editor* editor)
 				escaped = false;
 			else
 				state = STATE_INIT;
+		}
+	}
+}
+
+static void editor_colorize_diff(struct editor* editor)
+{
+	for ( size_t y = 0; y < editor->lines_used; y++ )
+	{
+		struct line* line = &editor->lines[y];
+		uint8_t color = 7;
+		if ( line->used && line->data[0] == L'-' )
+			color = 1;
+		else if ( line->used && line->data[0] == L'+' )
+			color = 2;
+		else if ( line->used && line->data[0] == L'@' )
+			color = 6;
+		else if ( line->used && !iswblank(line->data[0]) )
+			color = 4 + 8;
+		for ( size_t x = 0; x < line->used; x++ )
+		{
+			editor->color_lines[y].data[x] = color;
 		}
 	}
 }
