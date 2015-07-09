@@ -36,8 +36,8 @@ public:
 	~Filesystem();
 
 public:
-	struct ext_superblock* sb;
 	Block* sb_block;
+	struct ext_superblock* sb;
 	Device* device;
 	BlockGroup** block_groups;
 	const char* mount_path;

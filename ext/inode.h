@@ -84,8 +84,6 @@ public:
 	void Use();
 	void Unlink();
 	void Prelink();
-	void Linked();
-	void Unlinked();
 	void Delete();
 
 };

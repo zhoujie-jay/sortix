@@ -42,29 +42,29 @@ Filesystem::Filesystem(Device* device, const char* mount_path)
 {
 	uint64_t sb_offset = 1024;
 	uint32_t sb_block_id = sb_offset / device->block_size;
-	sb_block = device->GetBlock(sb_block_id);
-	sb = (struct ext_superblock*)
-		(sb_block->block_data + sb_offset % device->block_size);
+	this->sb_block = device->GetBlock(sb_block_id);
+	this->sb = (struct ext_superblock*)
+		       (sb_block->block_data + sb_offset % device->block_size);
 	this->device = device;
-	block_groups = NULL;
+	this->block_groups = NULL;
 	this->mount_path = mount_path;
-	block_size = device->block_size;
-	mru_inode = NULL;
-	lru_inode = NULL;
-	dirty_inode = NULL;
+	this->block_size = device->block_size;
+	this->inode_size = this->sb->s_inode_size;
+	this->num_blocks = this->sb->s_blocks_count;
+	this->num_groups = divup(this->sb->s_blocks_count, this->sb->s_blocks_per_group);
+	this->num_inodes = this->sb->s_inodes_count;
+	this->mru_inode = NULL;
+	this->lru_inode = NULL;
+	this->dirty_inode = NULL;
 	for ( size_t i = 0; i < INODE_HASH_LENGTH; i++ )
-		hash_inodes[i] = NULL;
-	inode_size = this->sb->s_inode_size;
-	num_blocks = sb->s_blocks_count;
-	num_groups = divup(this->sb->s_blocks_count, this->sb->s_blocks_per_group);
-	num_inodes = this->sb->s_inodes_count;
-	dirty = false;
-
+		this->hash_inodes[i] = NULL;
 	struct timespec now_realtime, now_monotonic;
 	clock_gettime(CLOCK_REALTIME, &now_realtime);
 	clock_gettime(CLOCK_MONOTONIC, &now_monotonic);
-	mtime_realtime = now_realtime.tv_sec;
-	mtime_monotonic = now_monotonic.tv_sec;
+	this->mtime_realtime = now_realtime.tv_sec;
+	this->mtime_monotonic = now_monotonic.tv_sec;
+	this->dirty = false;
+
 	BeginWrite();
 	sb->s_mtime = mtime_realtime;
 	sb->s_mnt_count++;
@@ -133,7 +133,6 @@ BlockGroup* Filesystem::GetBlockGroup(uint32_t group_id)
 	assert(group_id < num_groups);
 	if ( block_groups[group_id] )
 		return block_groups[group_id]->Refer(), block_groups[group_id];
-	BlockGroup* group = new BlockGroup(this, group_id);
 
 	size_t group_size = sizeof(ext_blockgrpdesc);
 	uint32_t first_block_id = sb->s_first_data_block + 1 /* superblock */;
@@ -141,6 +140,7 @@ BlockGroup* Filesystem::GetBlockGroup(uint32_t group_id)
 	uint32_t offset = (group_id * group_size) % block_size;
 
 	Block* block = device->GetBlock(block_id);
+	BlockGroup* group = new BlockGroup(this, group_id);
 	group->data_block = block;
 	uint8_t* buf = group->data_block->block_data + offset;
 	group->data = (struct ext_blockgrpdesc*) buf;
@@ -149,15 +149,15 @@ BlockGroup* Filesystem::GetBlockGroup(uint32_t group_id)
 
 Inode* Filesystem::GetInode(uint32_t inode_id)
 {
-	assert(inode_id);
-	assert(inode_id < num_inodes);
+	if ( !inode_id || num_inodes <= inode_id )
+		return errno = EBADF, (Inode*) NULL;
+	if ( !inode_id )
+		return errno = EBADF, (Inode*) NULL;
 
 	size_t bin = inode_id % INODE_HASH_LENGTH;
 	for ( Inode* iter = hash_inodes[bin]; iter; iter = iter->next_hashed )
 		if ( iter->inode_id == inode_id )
 			return iter->Refer(), iter;
-
-	Inode* inode = new Inode(this, inode_id);
 
 	uint32_t group_id = (inode_id-1) / sb->s_inodes_per_group;
 	uint32_t tabel_index = (inode_id-1) % sb->s_inodes_per_group;
@@ -169,6 +169,7 @@ Inode* Filesystem::GetInode(uint32_t inode_id)
 	uint32_t offset = (tabel_index * inode_size) % block_size;
 
 	Block* block = device->GetBlock(block_id);
+	Inode* inode = new Inode(this, inode_id);
 	inode->data_block = block;
 	uint8_t* buf = inode->data_block->block_data + offset;
 	inode->data = (struct ext_inode*) buf;
@@ -194,7 +195,7 @@ uint32_t Filesystem::AllocateBlock(BlockGroup* preferred)
 	//       this can't happen. That also allows us to make the linked list
 	//       requested above.
 	BeginWrite();
-	sb->s_free_blocks_count--;
+	sb->s_free_blocks_count = 0;
 	FinishWrite();
 	return errno = ENOSPC, 0;
 }
@@ -216,13 +217,14 @@ uint32_t Filesystem::AllocateInode(BlockGroup* preferred)
 	//       this can't happen. That also allows us to make the linked list
 	//       requested above.
 	BeginWrite();
-	sb->s_free_inodes_count--;
+	sb->s_free_inodes_count = 0;
 	FinishWrite();
 	return errno = ENOSPC, 0;
 }
 
 void Filesystem::FreeBlock(uint32_t block_id)
 {
+	assert(block_id);
 	assert(block_id < num_blocks);
 	uint32_t group_id = (block_id - sb->s_first_data_block) / sb->s_blocks_per_group;
 	assert(group_id < num_groups);
@@ -233,6 +235,7 @@ void Filesystem::FreeBlock(uint32_t block_id)
 
 void Filesystem::FreeInode(uint32_t inode_id)
 {
+	assert(inode_id);
 	assert(inode_id < num_inodes);
 	uint32_t group_id = (inode_id-1) / sb->s_inodes_per_group;
 	assert(group_id < num_groups);

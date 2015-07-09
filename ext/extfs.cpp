@@ -56,8 +56,6 @@ static const uint32_t EXT2_FEATURE_INCOMPAT_SUPPORTED = \
 static const uint32_t EXT2_FEATURE_RO_COMPAT_SUPPORTED = \
                       EXT2_FEATURE_RO_COMPAT_LARGE_FILE;
 
-// TODO: Inode 0 is not valid, but a lot of functions here accept it!
-
 mode_t HostModeFromExtMode(uint32_t extmode)
 {
 	mode_t hostmode = extmode & 0777;
@@ -169,7 +167,7 @@ static void uuid_from_string(uint8_t uuid[16], const char* string)
 	assert(string[i] == '\0');
 }
 
-void compact_arguments(int* argc, char*** argv)
+static void compact_arguments(int* argc, char*** argv)
 {
 	for ( int i = 0; i < *argc; i++ )
 	{
@@ -182,12 +180,12 @@ void compact_arguments(int* argc, char*** argv)
 	}
 }
 
-void help(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
-	fprintf(fp, "Usage: %s [--probe] [--test-uuid UUID] DEVICE [MOUNT-POINT]\n", argv0);
+	fprintf(fp, "Usage: %s [OPTION]... DEVICE [MOUNT-POINT]\n", argv0);
 }
 
-void version(FILE* fp, const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
 	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
@@ -206,7 +204,7 @@ int main(int argc, char* argv[])
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' )
+		if ( arg[0] != '-' || !arg[1] )
 			continue;
 		argv[i] = NULL;
 		if ( !strcmp(arg, "--") )
@@ -223,8 +221,12 @@ int main(int argc, char* argv[])
 				exit(1);
 			}
 		}
-		else if ( !strcmp(arg, "--help") ) { help(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--version") ) { version(stdout, argv0); exit(0); }
+		else if ( !strcmp(arg, "--help") )
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--version") )
+			version(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--background") )
+			foreground = false;
 		else if ( !strcmp(arg, "--foreground") )
 			foreground = true;
 		else if ( !strcmp(arg, "--probe") )
@@ -265,7 +267,7 @@ int main(int argc, char* argv[])
 	compact_arguments(&argc, &argv);
 
 	const char* device_path = 2 <= argc ? argv[1] : NULL;
-	const char* mount_path = 2 <= argc ? argv[2] : NULL;
+	const char* mount_path = 3 <= argc ? argv[2] : NULL;
 
 	if ( !device_path )
 	{
@@ -318,31 +320,33 @@ int main(int argc, char* argv[])
 	}
 
 	// Test whether this revision of the extended filesystem is supported.
-	if ( probe && sb.s_rev_level == EXT2_GOOD_OLD_REV )
-		exit(1);
-
-	if ( !probe && sb.s_rev_level == EXT2_GOOD_OLD_REV )
+	if ( sb.s_rev_level == EXT2_GOOD_OLD_REV )
+	{
+		if ( probe )
+			exit(1);
 		error(1, 0, "`%s' is formatted with an obsolete filesystem revision",
 		            device_path);
+	}
 
 	// Verify that no incompatible features are in use.
-	if ( probe && sb.s_feature_compat & ~EXT2_FEATURE_INCOMPAT_SUPPORTED )
-		exit(1);
-
-	if ( !probe && sb.s_feature_incompat & ~EXT2_FEATURE_INCOMPAT_SUPPORTED )
+	if ( sb.s_feature_compat & ~EXT2_FEATURE_INCOMPAT_SUPPORTED )
+	{
+		if ( probe )
+			exit(1);
 		error(1, 0, "`%s' uses unsupported and incompatible features",
 		            device_path);
+	}
 
 	// Verify that no incompatible features are in use if opening for write.
-	if ( probe && default_access && write &&
+	if ( !default_access && write &&
 	     sb.s_feature_ro_compat & ~EXT2_FEATURE_RO_COMPAT_SUPPORTED )
-		exit(1);
-
-	if ( !probe && default_access && write &&
-	     sb.s_feature_ro_compat & ~EXT2_FEATURE_RO_COMPAT_SUPPORTED )
-			error(1, 0, "`%s uses unsupported and incompatible features, "
-			            "read-only access is possible, but write-access was "
-						"requested", device_path);
+	{
+		if ( probe )
+			exit(1);
+		error(1, 0, "`%s' uses unsupported and incompatible features, "
+		            "read-only access is possible, but write-access was "
+		            "requested", device_path);
+	}
 
 	if ( write && sb.s_feature_ro_compat & ~EXT2_FEATURE_RO_COMPAT_SUPPORTED )
 	{
@@ -359,13 +363,21 @@ int main(int argc, char* argv[])
 		fprintf(stderr, "Note: filesystem uses unsupported but compatible "
 		                "features\n");
 
+	// Check the block size is sane. 64 KiB may have issues, 32 KiB then.
+	if ( sb.s_log_block_size > (15-10) /* 32 KiB blocks */ )
+	{
+		if ( probe )
+			exit(1);
+		error(1, 0, "`%s': excess block size", device_path);
+	}
+
 	// We have found no critical problems, so let the caller know that this
 	// filesystem satisfies the probe request.
 	if ( probe )
 		exit(0);
 
 	// Check whether the filesystem was unmounted cleanly.
-	if ( !probe && sb.s_state != EXT2_VALID_FS )
+	if ( sb.s_state != EXT2_VALID_FS )
 		fprintf(stderr, "Warning: `%s' wasn't unmounted cleanly\n",
 	                    device_path);
 

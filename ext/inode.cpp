@@ -48,6 +48,9 @@
 #ifndef S_SETABLE
 #define S_SETABLE 02777
 #endif
+#ifndef O_WRITE
+#define O_WRITE (O_WRONLY | O_RDWR)
+#endif
 
 Inode::Inode(Filesystem* filesystem, uint32_t inode_id)
 {
@@ -161,20 +164,6 @@ void Inode::SetSize(uint64_t new_size)
 	FinishWrite();
 
 	Modified();
-}
-
-void Inode::Linked()
-{
-	BeginWrite();
-	data->i_links_count++;
-	FinishWrite();
-}
-
-void Inode::Unlinked()
-{
-	BeginWrite();
-	data->i_links_count--;
-	FinishWrite();
 }
 
 Block* Inode::GetBlockFromTable(Block* table, uint32_t index)
@@ -406,6 +395,8 @@ Inode* Inode::Open(const char* elem, int flags, mode_t mode)
 	if ( !EXT2_S_ISDIR(Mode()) )
 		return errno = ENOTDIR, (Inode*) NULL;
 	size_t elem_length = strlen(elem);
+	if ( elem_length == 0 )
+		return errno = ENOENT, (Inode*) NULL;
 	uint64_t filesize = Size();
 	uint64_t offset = 0;
 	Block* block = NULL;
@@ -421,13 +412,12 @@ Inode* Inode::Open(const char* elem, int flags, mode_t mode)
 			return NULL;
 		const uint8_t* block_data = block->block_data + entry_block_offset;
 		const struct ext_dirent* entry = (const struct ext_dirent*) block_data;
-		if ( entry->name_len == elem_length &&
-		     memcmp(elem, entry->name, elem_length) == 0 &&
-		     entry->inode )
+		if ( entry->inode &&
+		     entry->name_len == elem_length &&
+		     memcmp(elem, entry->name, elem_length) == 0 )
 		{
 			uint8_t file_type = entry->file_type;
 			uint32_t inode_id = entry->inode;
-			assert(inode_id);
 			block->Unref();
 			if ( (flags & O_CREAT) && (flags & O_EXCL) )
 				return errno = EEXIST, (Inode*) NULL;
@@ -444,7 +434,7 @@ Inode* Inode::Open(const char* elem, int flags, mode_t mode)
 				inode->Unref();
 				return errno = ENOTDIR, (Inode*) NULL;
 			}
-			if ( S_ISREG(inode->Mode()) && flags & O_TRUNC )
+			if ( S_ISREG(inode->Mode()) && flags & O_WRITE && flags & O_TRUNC )
 				inode->Truncate(0);
 			return inode;
 		}
@@ -469,10 +459,7 @@ Inode* Inode::Open(const char* elem, int flags, mode_t mode)
 		// TODO: Set all the other inode properties!
 		if ( !Link(elem, result, false) )
 		{
-			memset(result->data, 0, sizeof(*result->data));
-			// TODO: dtime
 			result->Unref();
-			filesystem->FreeInode(result_inode_id);
 			return NULL;
 		}
 		return result;
@@ -482,8 +469,6 @@ Inode* Inode::Open(const char* elem, int flags, mode_t mode)
 
 bool Inode::Link(const char* elem, Inode* dest, bool directories)
 {
-	// TODO: Check if dest has checked the link limit!
-
 	if ( !EXT2_S_ISDIR(Mode()) )
 		return errno = ENOTDIR, false;
 	if ( directories && !EXT2_S_ISDIR(dest->Mode()) )
@@ -496,6 +481,8 @@ bool Inode::Link(const char* elem, Inode* dest, bool directories)
 	// Search for a hole in which we can store the new directory entry and stop
 	// if we meet an existing link with the requested name.
 	size_t elem_length = strlen(elem);
+	if ( elem_length == 0 )
+		return errno = ENOENT, false;
 	size_t new_entry_size = roundup(sizeof(struct ext_dirent) + elem_length, (size_t) 4);
 	uint64_t filesize = Size();
 	uint64_t offset = 0;
@@ -517,8 +504,7 @@ bool Inode::Link(const char* elem, Inode* dest, bool directories)
 		const uint8_t* block_data = block->block_data + entry_block_offset;
 		const struct ext_dirent* entry = (const struct ext_dirent*) block_data;
 		if ( entry->name_len == elem_length &&
-		     memcmp(elem, entry->name, elem_length) == 0 &&
-		     entry->inode )
+		     memcmp(elem, entry->name, elem_length) == 0 )
 		{
 			block->Unref();
 			return errno = EEXIST, false;
@@ -526,7 +512,7 @@ bool Inode::Link(const char* elem, Inode* dest, bool directories)
 		if ( !found_hole )
 		{
 			size_t entry_size = roundup(sizeof(struct ext_dirent) + entry->name_len, (size_t) 4);
-			if ( (!entry->name[0] || !entry->inode) && new_entry_size <= entry->reclen )
+			if ( (!entry->inode || !entry->name[0]) && new_entry_size <= entry->reclen )
 			{
 				hole_block_id = entry_block_id;
 				hole_block_offset = entry_block_offset;
@@ -544,6 +530,12 @@ bool Inode::Link(const char* elem, Inode* dest, bool directories)
 		}
 		offset += entry->reclen;
 	}
+
+	if ( UINT16_MAX <= dest->data->i_links_count )
+		return errno = EMLINK, false;
+
+	if ( 255 < elem_length )
+		return errno = ENAMETOOLONG, false;
 
 	// We'll append another block if we failed to find a suitable hole.
 	if ( !found_hole )
@@ -576,22 +568,22 @@ bool Inode::Link(const char* elem, Inode* dest, bool directories)
 	// Write the new directory entry.
 	entry->inode = dest->inode_id;
 	entry->reclen = new_entry_size;
-
 	entry->name_len = elem_length;
-	// TODO: Only do this if the filetype feature is on!
-	entry->file_type = EXT2_FT_OF_MODE(dest->Mode());
+	if ( filesystem->sb->s_feature_incompat & EXT2_FEATURE_INCOMPAT_FILETYPE )
+		entry->file_type = EXT2_FT_OF_MODE(dest->Mode());
+	else
+		entry->file_type = 0;
 	strncpy(entry->name, elem, new_entry_size - sizeof(struct ext_dirent));
 
-	assert(entry->reclen);
-
 	block->FinishWrite();
+	block->Unref();
 
-	dest->Linked();
+	dest->BeginWrite();
+	dest->data->i_links_count++;
+	dest->FinishWrite();
 
 	if ( !found_hole )
 		SetSize(Size() + filesystem->block_size);
-
-	block->Unref();
 
 	return true;
 }
@@ -602,6 +594,8 @@ Inode* Inode::UnlinkKeep(const char* elem, bool directories, bool force)
 		return errno = ENOTDIR, (Inode*) NULL;
 	Modified();
 	size_t elem_length = strlen(elem);
+	if ( elem_length == 0 )
+		return errno = ENOENT, (Inode*) NULL;
 	uint32_t block_size = filesystem->block_size;
 	uint64_t filesize = Size();
 	uint64_t num_blocks = divup(filesize, (uint64_t) block_size);
@@ -621,10 +615,9 @@ Inode* Inode::UnlinkKeep(const char* elem, bool directories, bool force)
 			return NULL;
 		uint8_t* block_data = block->block_data + entry_block_offset;
 		struct ext_dirent* entry = (struct ext_dirent*) block_data;
-		assert(entry->reclen);
-		if ( entry->name_len == elem_length &&
-		     memcmp(elem, entry->name, elem_length) == 0 &&
-		     entry->inode )
+		if ( entry->inode &&
+		     entry->name_len == elem_length &&
+		     memcmp(elem, entry->name, elem_length) == 0 )
 		{
 			Inode* inode = filesystem->GetInode(entry->inode);
 
@@ -649,7 +642,9 @@ Inode* Inode::UnlinkKeep(const char* elem, bool directories, bool force)
 				return errno = EISDIR, (Inode*) NULL;
 			}
 
-			inode->Unlinked();
+			inode->BeginWrite();
+			inode->data->i_links_count--;
+			inode->FinishWrite();
 
 			block->BeginWrite();
 
@@ -660,17 +655,13 @@ Inode* Inode::UnlinkKeep(const char* elem, bool directories, bool force)
 			// Merge the current entry with the previous if any.
 			if ( last_entry )
 			{
-				assert(entry->reclen);
 				last_entry->reclen += entry->reclen;
 				memset(entry, 0, entry->reclen);
 				entry = last_entry;
-				assert(last_entry->reclen);
 			}
 
-			assert(entry->reclen);
 			strncpy(entry->name + entry->name_len, "",
 			        entry->reclen - sizeof(struct ext_dirent) - entry->name_len);
-			assert(entry->reclen);
 
 			// If the entire block is empty, we'll need to remove it.
 			if ( !entry->name[0] && entry->reclen == block_size )
@@ -788,14 +779,14 @@ ssize_t Inode::WriteAt(const uint8_t* buf, size_t s_count, off_t o_offset)
 		uint32_t block_left = filesystem->block_size - block_offset;
 		Block* block = GetBlock(block_id);
 		if ( !block )
-			return sofar ? sofar : -1;
+			return sofar ? (ssize_t) sofar : -1;
 		size_t amount = count - sofar < block_left ? count - sofar : block_left;
 		block->BeginWrite();
 		memcpy(block->block_data + block_offset, buf + sofar, amount);
 		block->FinishWrite();
+		block->Unref();
 		sofar += amount;
 		offset += amount;
-		block->Unref();
 	}
 	return (ssize_t) sofar;
 }
@@ -886,20 +877,10 @@ bool Inode::Symlink(const char* elem, const char* dest)
 	if ( SSIZE_MAX < dest_length )
 		return errno = EFBIG, -1;
 	if ( result->WriteAt((const uint8_t*) dest, dest_length, 0) < (ssize_t) dest_length )
-	{
-	error:
-		memset(result->data, 0, sizeof(*result->data));
-		// TODO: dtime
-		result->Unref();
-		filesystem->FreeInode(result_inode_id);
-		return false;
-	}
+		return result->Unref(), false;
 
 	if ( !Link(elem, result, false) )
-	{
-		result->Truncate(0);
-		goto error;
-	}
+		return result->Truncate(0), result->Unref(), false;
 
 	result->Unref();
 	return true;
@@ -933,23 +914,19 @@ Inode* Inode::CreateDirectory(const char* path, mode_t mode)
 	// TODO: Set all the other inode properties!
 
 	if ( !Link(path, result, true) )
-	{
-	error:
-		result->Unref();
-		return NULL;
-	}
+		return result->Unref(), (Inode*) NULL;
 
 	if ( !result->Link(".", result, true) )
 	{
 		Unlink(path, true, true);
-		goto error;
+		return result->Unref(), (Inode*) NULL;
 	}
 
 	if ( !result->Link("..", this, true) )
 	{
 		result->Unlink(".", true, true);
 		Unlink(path, true, true);
-		goto error;
+		return result->Unref(), (Inode*) NULL;
 	}
 
 	return result;

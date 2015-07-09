@@ -98,6 +98,7 @@ uint32_t BlockGroup::AllocateBlock()
 		size_t num_bits = last ? num_blocks - chunk_offset : num_chunk_bits;
 		// TODO: This can be made faster by caching if previous bits were set.
 		for ( ; block_bitmap_chunk_i < num_bits; block_bitmap_chunk_i++ )
+		{
 			if ( !checkbit(chunk_bits, block_bitmap_chunk_i) )
 			{
 				block_bitmap_chunk->BeginWrite();
@@ -113,6 +114,7 @@ uint32_t BlockGroup::AllocateBlock()
 				uint32_t block_id = first_block_id + group_block_id;
 				return block_id;
 			}
+		}
 		block_bitmap_chunk->Unref();
 		block_bitmap_chunk = NULL;
 	}
@@ -143,6 +145,7 @@ uint32_t BlockGroup::AllocateInode()
 		size_t num_bits = last ? num_inodes - chunk_offset : num_chunk_bits;
 		// TODO: This can be made faster by caching if previous bits were set.
 		for ( ; inode_bitmap_chunk_i < num_bits; inode_bitmap_chunk_i++ )
+		{
 			if ( !checkbit(chunk_bits, inode_bitmap_chunk_i) )
 			{
 				inode_bitmap_chunk->BeginWrite();
@@ -158,6 +161,7 @@ uint32_t BlockGroup::AllocateInode()
 				uint32_t inode_id = first_inode_id + group_inode_id;
 				return inode_id;
 			}
+		}
 		inode_bitmap_chunk->Unref();
 		inode_bitmap_chunk = NULL;
 	}

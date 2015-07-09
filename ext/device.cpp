@@ -42,23 +42,25 @@ void* Device__SyncThread(void* ctx)
 
 Device::Device(int fd, const char* path, uint32_t block_size, bool write)
 {
-	this->write = write;
-	this->fd = fd;
-	this->path = path;
-	this->block_size = block_size;
-	struct stat st;
-	fstat(fd, &st);
-	this->device_size = st.st_size;
+	// sync_thread unset.
+	this->sync_thread_cond = PTHREAD_COND_INITIALIZER;
+	this->sync_thread_idle_cond = PTHREAD_COND_INITIALIZER;
+	this->sync_thread_lock = PTHREAD_MUTEX_INITIALIZER;
 	this->mru_block = NULL;
 	this->lru_block = NULL;
 	this->dirty_block = NULL;
 	for ( size_t i = 0; i < DEVICE_HASH_LENGTH; i++ )
 		hash_blocks[i] = NULL;
-	this->sync_thread_cond = PTHREAD_COND_INITIALIZER;
-	this->sync_thread_idle_cond = PTHREAD_COND_INITIALIZER;
-	this->sync_thread_lock = PTHREAD_MUTEX_INITIALIZER;
-	this->sync_in_transit = false;
+	struct stat st;
+	fstat(fd, &st);
+	this->device_size = st.st_size;
+	this->path = path;
+	this->block_size = block_size;
+	this->fd = fd;
+	this->write = write;
 	this->has_sync_thread = false;
+	this->sync_thread_should_exit = false;
+	this->sync_in_transit = false;
 }
 
 Device::~Device()

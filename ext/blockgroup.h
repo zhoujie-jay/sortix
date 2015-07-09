@@ -42,14 +42,14 @@ public:
 	uint32_t group_id;
 	uint32_t block_alloc_chunk;
 	uint32_t inode_alloc_chunk;
-	uint32_t num_block_bitmap_chunks;
-	uint32_t num_inode_bitmap_chunks;
 	uint32_t block_bitmap_chunk_i;
 	uint32_t inode_bitmap_chunk_i;
-	uint32_t num_blocks;
-	uint32_t num_inodes;
 	uint32_t first_block_id;
 	uint32_t first_inode_id;
+	uint32_t num_blocks;
+	uint32_t num_inodes;
+	uint32_t num_block_bitmap_chunks;
+	uint32_t num_inode_bitmap_chunks;
 	bool dirty;
 
 public:

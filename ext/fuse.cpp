@@ -30,6 +30,7 @@
 #include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define FUSE_USE_VERSION 26
@@ -126,7 +127,7 @@ Inode* ext2_fuse_parent_dir(const char** path_ptr)
 		delete[] elem;
 		inode->Unref();
 		if ( !next )
-			return NULL;
+			return (Inode*) NULL;
 		inode = next;
 	}
 	*path_ptr = *path ? path : ".";
@@ -145,7 +146,7 @@ int ext2_fuse_getattr(const char* path, struct stat* st)
 }
 
 int ext2_fuse_fgetattr(const char* /*path*/, struct stat* st,
-                        struct fuse_file_info* fi)
+                       struct fuse_file_info* fi)
 {
 	Filesystem* fs = FUSE_FS;
 	Inode* inode = fs->GetInode((uint32_t) fi->fh);
@@ -199,11 +200,9 @@ int ext2_fuse_unlink(const char* path)
 	Inode* inode = ext2_fuse_parent_dir(&path);
 	if ( !inode )
 		return -errno;
-	bool result = inode->Unlink(path, false);
+	bool success = inode->Unlink(path, false);
 	inode->Unref();
-	if ( !result )
-		return -errno;
-	return 0;
+	return success ? 0 : -errno;
 }
 
 int ext2_fuse_rmdir(const char* path)
