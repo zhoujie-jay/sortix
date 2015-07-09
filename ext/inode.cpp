@@ -427,6 +427,8 @@ Inode* Inode::Open(const char* elem, int flags, mode_t mode)
 			     file_type != EXT2_FT_SYMLINK )
 				return errno = ENOTDIR, (Inode*) NULL;
 			Inode* inode = filesystem->GetInode(inode_id);
+			if ( !inode )
+				return (Inode*) NULL;
 			if ( flags & O_DIRECTORY &&
 			     !EXT2_S_ISDIR(inode->Mode()) &&
 			     !EXT2_S_ISLNK(inode->Mode()) )
@@ -449,6 +451,8 @@ Inode* Inode::Open(const char* elem, int flags, mode_t mode)
 		if ( !result_inode_id )
 			return NULL;
 		Inode* result = filesystem->GetInode(result_inode_id);
+		if ( !result )
+			return filesystem->FreeInode(result_inode_id), (Inode*) NULL;
 		memset(result->data, 0, sizeof(*result->data));
 		result->SetMode((mode & S_SETABLE) | S_IFREG);
 		struct timespec now;
@@ -673,10 +677,17 @@ Inode* Inode::UnlinkKeep(const char* elem, bool directories, bool force)
 				if ( entry_block_id + 1 != num_blocks )
 				{
 					Block* last_block = GetBlock(num_blocks-1);
-					memcpy(block->block_data, last_block->block_data, block_size);
-					last_block->Unref();
+					if ( last_block )
+					{
+						memcpy(block->block_data, last_block->block_data, block_size);
+						last_block->Unref();
+						Truncate(filesize - block_size);
+					}
 				}
-				Truncate(filesize - block_size);
+				else
+				{
+					Truncate(filesize - block_size);
+				}
 			}
 
 			block->FinishWrite();
@@ -863,6 +874,8 @@ bool Inode::Symlink(const char* elem, const char* dest)
 		return NULL;
 
 	Inode* result = filesystem->GetInode(result_inode_id);
+	if ( !result )
+		return filesystem->FreeInode(result_inode_id), false;
 	memset(result->data, 0, sizeof(*result->data));
 	result->SetMode((0777 & S_SETABLE) | EXT2_S_IFLNK);
 
@@ -894,6 +907,8 @@ Inode* Inode::CreateDirectory(const char* path, mode_t mode)
 		return NULL;
 
 	Inode* result = filesystem->GetInode(result_inode_id);
+	if ( !result )
+		return filesystem->FreeInode(result_inode_id), (Inode*) NULL;
 	memset(result->data, 0, sizeof(*result->data));
 	result->SetMode((mode & S_SETABLE) | EXT2_S_IFDIR);
 
@@ -901,6 +916,8 @@ Inode* Inode::CreateDirectory(const char* path, mode_t mode)
 	uint32_t group_id = (result->inode_id - 1) / filesystem->sb->s_inodes_per_group;
 	assert(group_id < filesystem->num_groups);
 	BlockGroup* block_group = filesystem->GetBlockGroup(group_id);
+	if ( !block_group )
+		return result->Unref(), (Inode*) NULL;
 	block_group->BeginWrite();
 	block_group->data->bg_used_dirs_count++;
 	block_group->FinishWrite();
@@ -945,10 +962,13 @@ bool Inode::RemoveDirectory(const char* path)
 	uint32_t group_id = (result->inode_id - 1) / filesystem->sb->s_inodes_per_group;
 	assert(group_id < filesystem->num_groups);
 	BlockGroup* block_group = filesystem->GetBlockGroup(group_id);
-	block_group->BeginWrite();
-	block_group->data->bg_used_dirs_count--;
-	block_group->FinishWrite();
-	block_group->Unref();
+	if ( block_group )
+	{
+		block_group->BeginWrite();
+		block_group->data->bg_used_dirs_count--;
+		block_group->FinishWrite();
+		block_group->Unref();
+	}
 
 	result->Unref();
 

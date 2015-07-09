@@ -43,6 +43,7 @@ Filesystem::Filesystem(Device* device, const char* mount_path)
 	uint64_t sb_offset = 1024;
 	uint32_t sb_block_id = sb_offset / device->block_size;
 	this->sb_block = device->GetBlock(sb_block_id);
+	assert(sb_block); // TODO: This can fail.
 	this->sb = (struct ext_superblock*)
 		       (sb_block->block_data + sb_offset % device->block_size);
 	this->device = device;
@@ -140,7 +141,11 @@ BlockGroup* Filesystem::GetBlockGroup(uint32_t group_id)
 	uint32_t offset = (group_id * group_size) % block_size;
 
 	Block* block = device->GetBlock(block_id);
+	if ( !block )
+		return (BlockGroup*) NULL;
 	BlockGroup* group = new BlockGroup(this, group_id);
+	if ( !group ) // TODO: Use operator new nothrow!
+		return block->Unref(), (BlockGroup*) NULL;
 	group->data_block = block;
 	uint8_t* buf = group->data_block->block_data + offset;
 	group->data = (struct ext_blockgrpdesc*) buf;
@@ -163,13 +168,19 @@ Inode* Filesystem::GetInode(uint32_t inode_id)
 	uint32_t tabel_index = (inode_id-1) % sb->s_inodes_per_group;
 	assert(group_id < num_groups);
 	BlockGroup* group = GetBlockGroup(group_id);
+	if ( !group )
+		return (Inode*) NULL;
 	uint32_t tabel_block = group->data->bg_inode_table;
 	group->Unref();
 	uint32_t block_id = tabel_block + (tabel_index * inode_size) / block_size;
 	uint32_t offset = (tabel_index * inode_size) % block_size;
 
 	Block* block = device->GetBlock(block_id);
+	if ( !block )
+		return (Inode*) NULL;
 	Inode* inode = new Inode(this, inode_id);
+	if ( !inode )
+		return block->Unref(), (Inode*) NULL;
 	inode->data_block = block;
 	uint8_t* buf = inode->data_block->block_data + offset;
 	inode->data = (struct ext_inode*) buf;
@@ -229,6 +240,8 @@ void Filesystem::FreeBlock(uint32_t block_id)
 	uint32_t group_id = (block_id - sb->s_first_data_block) / sb->s_blocks_per_group;
 	assert(group_id < num_groups);
 	BlockGroup* group = GetBlockGroup(group_id);
+	if ( !group )
+		return;
 	group->FreeBlock(block_id);
 	group->Unref();
 }
@@ -240,6 +253,8 @@ void Filesystem::FreeInode(uint32_t inode_id)
 	uint32_t group_id = (inode_id-1) / sb->s_inodes_per_group;
 	assert(group_id < num_groups);
 	BlockGroup* group = GetBlockGroup(group_id);
+	if ( !group )
+		return;
 	group->FreeInode(inode_id);
 	group->Unref();
 }

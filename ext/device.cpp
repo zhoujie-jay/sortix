@@ -92,8 +92,13 @@ Block* Device::GetBlock(uint32_t block_id)
 {
 	if ( Block* block = GetCachedBlock(block_id) )
 		return block;
+	uint8_t* data = new uint8_t[block_size];
+	if ( !data ) // TODO: Use operator new nothrow!
+		return NULL;
 	Block* block = new Block(this, block_id);
-	block->block_data = new uint8_t[block_size];
+	if ( !block ) // TODO: Use operator new nothrow!
+		return delete[] data, (Block*) NULL;
+	block->block_data = data;
 	off_t file_offset = (off_t) block_size * (off_t) block_id;
 	preadall(fd, block->block_data, block_size, file_offset);
 	block->Prelink();
@@ -109,8 +114,13 @@ Block* Device::GetBlockZeroed(uint32_t block_id)
 		block->FinishWrite();
 		return block;
 	}
+	uint8_t* data = new uint8_t[block_size];
+	if ( !data ) // TODO: Use operator new nothrow!
+		return NULL;
 	Block* block = new Block(this, block_id);
-	block->block_data = new uint8_t[block_size];
+	if ( !block ) // TODO: Use operator new nothrow!
+		return delete[] data, (Block*) NULL;
+	block->block_data = data;
 	memset(block->block_data, 0, block_size);
 	block->Prelink();
 	block->BeginWrite();

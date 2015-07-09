@@ -384,9 +384,15 @@ int main(int argc, char* argv[])
 	uint32_t block_size = 1024U << sb.s_log_block_size;
 
 	Device* dev = new Device(fd, device_path, block_size, write);
+	if ( !dev ) // TODO: Use operator new nothrow!
+		error(1, errno, "malloc");
 	Filesystem* fs = new Filesystem(dev, mount_path);
+	if ( !fs ) // TODO: Use operator new nothrow!
+		error(1, errno, "malloc");
 
 	fs->block_groups = new BlockGroup*[fs->num_groups];
+	if ( !fs->block_groups ) // TODO: Use operator new nothrow!
+		error(1, errno, "malloc");
 	for ( size_t i = 0; i < fs->num_groups; i++ )
 		fs->block_groups[i] = NULL;
 

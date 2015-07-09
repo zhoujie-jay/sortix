@@ -77,7 +77,8 @@ Inode* ext2_fuse_resolve_path(const char* path)
 {
 	Filesystem* fs = FUSE_FS;
 	Inode* inode = fs->GetInode(EXT2_ROOT_INO);
-	assert(inode);
+	if ( !inode )
+		return (Inode*) NULL;
 	while ( path[0] )
 	{
 		if ( *path == '/' )
@@ -88,12 +89,12 @@ Inode* ext2_fuse_resolve_path(const char* path)
 			continue;
 		}
 		size_t elem_len = strcspn(path, "/");
-		char* elem = new char[elem_len+1];
-		memcpy(elem, path, elem_len);
-		elem[elem_len] = '\0';
+		char* elem = strndup(path, elem_len);
+		if ( !elem )
+			return inode->Unref(), errno = ENOTDIR, (Inode*) NULL;
 		path += elem_len;
 		Inode* next = inode->Open(elem, O_RDONLY, 0);
-		delete[] elem;
+		free(elem);
 		inode->Unref();
 		if ( !next )
 			return NULL;
@@ -108,7 +109,8 @@ Inode* ext2_fuse_parent_dir(const char** path_ptr)
 	const char* path = *path_ptr;
 	Filesystem* fs = FUSE_FS;
 	Inode* inode = fs->GetInode(EXT2_ROOT_INO);
-	assert(inode);
+	if ( !inode )
+		return (Inode*) NULL;
 	while ( strchr(path, '/') )
 	{
 		if ( *path == '/' )
@@ -119,12 +121,12 @@ Inode* ext2_fuse_parent_dir(const char** path_ptr)
 			continue;
 		}
 		size_t elem_len = strcspn(path, "/");
-		char* elem = new char[elem_len+1];
-		memcpy(elem, path, elem_len);
-		elem[elem_len] = '\0';
+		char* elem = strndup(path, elem_len);
+		if ( !elem )
+			return inode->Unref(), errno = ENOTDIR, (Inode*) NULL;
 		path += elem_len;
 		Inode* next = inode->Open(elem, O_RDONLY, 0);
-		delete[] elem;
+		free(elem);
 		inode->Unref();
 		if ( !next )
 			return (Inode*) NULL;
@@ -492,11 +494,12 @@ int ext2_fuse_readdir(const char* /*path*/, void* buf, fuse_fill_dir_t filler,
 		const struct ext_dirent* entry = (const struct ext_dirent*) block_data;
 		if ( entry->inode && entry->name_len && (!rec_num || !rec_num--) )
 		{
-			char* entry_name = new char[entry->name_len+1];
+			char* entry_name = strndup(entry->name, entry->name_len);
+			if ( !entry_name )
+				return block->Unref(), inode->Unref(), -errno;
 			memcpy(entry_name, entry->name, entry->name_len);
-			entry_name[entry->name_len] = '\0';
 			bool full = filler(buf, entry_name, NULL, 0);
-			delete[] entry_name;
+			free(entry_name);
 			if ( full )
 			{
 				block->Unref();

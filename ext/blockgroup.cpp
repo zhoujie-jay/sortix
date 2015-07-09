@@ -91,6 +91,8 @@ uint32_t BlockGroup::AllocateBlock()
 		{
 			uint32_t block_id = data->bg_block_bitmap + block_alloc_chunk;
 			block_bitmap_chunk = filesystem->device->GetBlock(block_id);
+			if ( !block_bitmap_chunk )
+				return 0;
 			block_bitmap_chunk_i = 0;
 		}
 		uint32_t chunk_offset = block_alloc_chunk * num_chunk_bits;
@@ -138,6 +140,8 @@ uint32_t BlockGroup::AllocateInode()
 		{
 			uint32_t block_id = data->bg_inode_bitmap + inode_alloc_chunk;
 			inode_bitmap_chunk = filesystem->device->GetBlock(block_id);
+			if ( !inode_bitmap_chunk )
+				return 0;
 			inode_bitmap_chunk_i = 0;
 		}
 		uint32_t chunk_offset = inode_alloc_chunk * num_chunk_bits;
