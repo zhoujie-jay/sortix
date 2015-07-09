@@ -536,6 +536,7 @@ void HandleSymlink(int chl, struct fsm_req_symlink* msg, Filesystem* fs)
 	char* path = (char*) malloc(msg->namelen + 1);
 	if ( !path )
 	{
+		free(dest);
 		RespondError(chl, errno);
 		inode->Unref();
 		return;
