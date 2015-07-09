@@ -7,11 +7,11 @@ OPTLEVEL?=$(DEFAULT_OPTLEVEL)
 CFLAGS?=$(OPTLEVEL)
 
 # TODO: Better detection of the proper subdirectory here!
-ifneq ($(shell echo $(HOST) | grep -E ^i[012346789]*86-),)
+ifneq ($(shell echo $(HOST) | grep -E '^i[012346789]*86-'),)
   ARCH_SUBDIR:=arch/i387
   ARCH_MACHINE_HEADERS:=$(ARCH_SUBDIR)/machine/npx.h
 endif
-ifneq ($(shell echo $(HOST) | grep -E ^x86_64-),)
+ifneq ($(shell echo $(HOST) | grep -E '^x86_64-'),)
   ARCH_SUBDIR:=arch/x86_64
   ARCH_MACHINE_HEADERS:=$(ARCH_SUBDIR)/machine/fpu.h
 endif
