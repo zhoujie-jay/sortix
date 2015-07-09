@@ -260,6 +260,8 @@ int ext2_fuse_chmod(const char* path, mode_t mode)
 	Inode* inode = ext2_fuse_resolve_path(path);
 	if ( !inode )
 		return -errno;
+	if ( !FUSE_FS->device->write )
+		return inode->Unref(), -(errno = EROFS);
 	uint32_t req_mode = ExtModeFromHostMode(mode);
 	uint32_t old_mode = inode->Mode();
 	uint32_t new_mode = (old_mode & ~S_SETABLE) | (req_mode & S_SETABLE);
@@ -273,6 +275,8 @@ int ext2_fuse_chown(const char* path, uid_t owner, gid_t group)
 	Inode* inode = ext2_fuse_resolve_path(path);
 	if ( !inode )
 		return -errno;
+	if ( !FUSE_FS->device->write )
+		return inode->Unref(), -(errno = EROFS);
 	inode->SetUserId((uint32_t) owner);
 	inode->SetGroupId((uint32_t) group);
 	inode->Unref();
@@ -284,6 +288,8 @@ int ext2_fuse_truncate(const char* path, off_t size)
 	Inode* inode = ext2_fuse_resolve_path(path);
 	if ( !inode )
 		return -errno;
+	if ( !FUSE_FS->device->write )
+		return inode->Unref(), -(errno = EROFS);
 	inode->Truncate((uint64_t) size);
 	inode->Unref();
 	return 0;
@@ -296,6 +302,8 @@ int ext2_fuse_ftruncate(const char* /*path*/, off_t size,
 	Inode* inode = fs->GetInode((uint32_t) fi->fh);
 	if ( !inode )
 		return -errno;
+	if ( !FUSE_FS->device->write )
+		return inode->Unref(), -(errno = EROFS);
 	inode->Truncate((uint64_t) size);
 	inode->Unref();
 	return 0;
@@ -526,6 +534,8 @@ int ext2_fuse_utimens(const char* path, const struct timespec tv[2])
 	Inode* inode = ext2_fuse_resolve_path(path);
 	if ( !inode )
 		return -errno;
+	if ( !FUSE_FS->device->write )
+		return inode->Unref(), -(errno = EROFS);
 	inode->BeginWrite();
 	inode->data->i_atime = tv[0].tv_sec;
 	inode->data->i_mtime = tv[1].tv_sec;

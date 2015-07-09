@@ -107,6 +107,7 @@ Block* Device::GetBlock(uint32_t block_id)
 
 Block* Device::GetBlockZeroed(uint32_t block_id)
 {
+	assert(write);
 	if ( Block* block = GetCachedBlock(block_id) )
 	{
 		block->BeginWrite();

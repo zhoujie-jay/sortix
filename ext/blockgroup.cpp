@@ -79,6 +79,8 @@ BlockGroup::~BlockGroup()
 
 uint32_t BlockGroup::AllocateBlock()
 {
+	if ( !filesystem->device->write )
+		return errno = EROFS, 0;
 	if ( !data->bg_free_blocks_count )
 		return errno = ENOSPC, 0;
 	size_t num_chunk_bits = filesystem->block_size * 8UL;
@@ -128,6 +130,8 @@ uint32_t BlockGroup::AllocateBlock()
 
 uint32_t BlockGroup::AllocateInode()
 {
+	if ( !filesystem->device->write )
+		return errno = EROFS, 0;
 	if ( !data->bg_free_inodes_count )
 		return errno = ENOSPC, 0;
 	size_t num_chunk_bits = filesystem->block_size * 8UL;
@@ -177,6 +181,7 @@ uint32_t BlockGroup::AllocateInode()
 
 void BlockGroup::FreeBlock(uint32_t block_id)
 {
+	assert(filesystem->device->write);
 	block_id -= first_block_id;
 	size_t num_chunk_bits = filesystem->block_size * 8UL;
 	uint32_t chunk_id = block_id / num_chunk_bits;
@@ -207,6 +212,7 @@ void BlockGroup::FreeBlock(uint32_t block_id)
 
 void BlockGroup::FreeInode(uint32_t inode_id)
 {
+	assert(filesystem->device->write);
 	inode_id -= first_inode_id;
 	size_t num_chunk_bits = filesystem->block_size * 8UL;
 	uint32_t chunk_id = inode_id / num_chunk_bits;

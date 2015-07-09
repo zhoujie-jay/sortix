@@ -85,6 +85,7 @@ uint32_t Inode::Mode()
 
 void Inode::SetMode(uint32_t mode)
 {
+	assert(filesystem->device->write);
 	BeginWrite();
 	// TODO: Use i_mode_high.
 	data->i_mode = (uint16_t) mode;
@@ -99,6 +100,7 @@ uint32_t Inode::UserId()
 
 void Inode::SetUserId(uint32_t user)
 {
+	assert(filesystem->device->write);
 	BeginWrite();
 	// TODO: Use i_uid_high.
 	data->i_uid = (uint16_t) user;
@@ -113,6 +115,7 @@ uint32_t Inode::GroupId()
 
 void Inode::SetGroupId(uint32_t group)
 {
+	assert(filesystem->device->write);
 	BeginWrite();
 	// TODO: Use i_gid_high.
 	data->i_gid = (uint16_t) group;
@@ -133,6 +136,7 @@ uint64_t Inode::Size()
 
 void Inode::SetSize(uint64_t new_size)
 {
+	assert(filesystem->device->write);
 	bool largefile = filesystem->sb->s_feature_ro_compat &
 	                 EXT2_FEATURE_RO_COMPAT_LARGE_FILE;
 	uint32_t lower = new_size & 0xFFFFFFFF;
@@ -170,6 +174,9 @@ Block* Inode::GetBlockFromTable(Block* table, uint32_t index)
 {
 	if ( uint32_t block_id = ((uint32_t*) table->block_data)[index] )
 		return filesystem->device->GetBlock(block_id);
+	// TODO: If in read only mode, then perhaps return a zero block here.
+	if ( !filesystem->device->write )
+		return NULL;
 	uint32_t group_id = (inode_id - 1) / filesystem->sb->s_inodes_per_group;
 	assert(group_id < filesystem->num_groups);
 	BlockGroup* block_group = filesystem->GetBlockGroup(group_id);
@@ -270,6 +277,7 @@ Block* Inode::GetBlock(uint64_t offset)
 bool Inode::FreeIndirect(uint64_t from, uint64_t offset, uint32_t block_id,
                          int indirection, uint64_t entry_span)
 {
+	assert(filesystem->device->write);
 	const uint64_t ENTRIES = filesystem->block_size / sizeof(uint32_t);
 	Block* block = filesystem->device->GetBlock(block_id);
 	uint32_t* table = (uint32_t*) block->block_data;
@@ -303,6 +311,7 @@ bool Inode::FreeIndirect(uint64_t from, uint64_t offset, uint32_t block_id,
 
 void Inode::Truncate(uint64_t new_size)
 {
+	assert(filesystem->device->write);
 	uint64_t old_size = Size();
 	bool could_be_embedded = old_size == 0 && EXT2_S_ISLNK(Mode()) && !data->i_blocks;
 	bool is_embedded = 0 < old_size && old_size <= 60 && !data->i_blocks;
@@ -436,6 +445,11 @@ Inode* Inode::Open(const char* elem, int flags, mode_t mode)
 				inode->Unref();
 				return errno = ENOTDIR, (Inode*) NULL;
 			}
+			if ( flags & O_WRITE && !filesystem->device->write )
+			{
+				inode->Unref();
+				return errno = EROFS, (Inode*) NULL;
+			}
 			if ( S_ISREG(inode->Mode()) && flags & O_WRITE && flags & O_TRUNC )
 				inode->Truncate(0);
 			return inode;
@@ -446,6 +460,8 @@ Inode* Inode::Open(const char* elem, int flags, mode_t mode)
 		block->Unref();
 	if ( flags & O_CREAT )
 	{
+		if ( !filesystem->device->write )
+			return errno = EROFS, (Inode*) NULL;
 		// TODO: Preferred block group!
 		uint32_t result_inode_id = filesystem->AllocateInode();
 		if ( !result_inode_id )
@@ -479,8 +495,6 @@ bool Inode::Link(const char* elem, Inode* dest, bool directories)
 		return errno = ENOTDIR, false;
 	if ( !directories && EXT2_S_ISDIR(dest->Mode()) )
 		return errno = EISDIR, false;
-
-	Modified();
 
 	// Search for a hole in which we can store the new directory entry and stop
 	// if we meet an existing link with the requested name.
@@ -535,6 +549,9 @@ bool Inode::Link(const char* elem, Inode* dest, bool directories)
 		offset += entry->reclen;
 	}
 
+	if ( !filesystem->device->write )
+		return errno = EROFS, false;
+
 	if ( UINT16_MAX <= dest->data->i_links_count )
 		return errno = EMLINK, false;
 
@@ -554,6 +571,8 @@ bool Inode::Link(const char* elem, Inode* dest, bool directories)
 		block = NULL;
 	if ( !block && !(block = GetBlock(block_id = hole_block_id)) )
 		return NULL;
+
+	Modified();
 
 	block->BeginWrite();
 
@@ -596,7 +615,6 @@ Inode* Inode::UnlinkKeep(const char* elem, bool directories, bool force)
 {
 	if ( !EXT2_S_ISDIR(Mode()) )
 		return errno = ENOTDIR, (Inode*) NULL;
-	Modified();
 	size_t elem_length = strlen(elem);
 	if ( elem_length == 0 )
 		return errno = ENOENT, (Inode*) NULL;
@@ -645,6 +663,15 @@ Inode* Inode::UnlinkKeep(const char* elem, bool directories, bool force)
 				block->Unref();
 				return errno = EISDIR, (Inode*) NULL;
 			}
+
+			if ( !filesystem->device->write )
+			{
+				inode->Unref();
+				block->Unref();
+				return errno = EROFS, (Inode*) NULL;
+			}
+
+			Modified();
 
 			inode->BeginWrite();
 			inode->data->i_links_count--;
@@ -761,6 +788,8 @@ ssize_t Inode::WriteAt(const uint8_t* buf, size_t s_count, off_t o_offset)
 		return errno = EISDIR, -1;
 	if ( o_offset < 0 )
 		return errno = EINVAL, -1;
+	if ( !filesystem->device->write )
+		return errno = EROFS, -1;
 	if ( SSIZE_MAX < s_count )
 		s_count = SSIZE_MAX;
 	Modified();
@@ -868,6 +897,9 @@ bool Inode::Rename(Inode* olddir, const char* oldname, const char* newname)
 
 bool Inode::Symlink(const char* elem, const char* dest)
 {
+	if ( !filesystem->device->write )
+		return errno = EROFS, false;
+
 	// TODO: Preferred block group!
 	uint32_t result_inode_id = filesystem->AllocateInode();
 	if ( !result_inode_id )
@@ -901,6 +933,9 @@ bool Inode::Symlink(const char* elem, const char* dest)
 
 Inode* Inode::CreateDirectory(const char* path, mode_t mode)
 {
+	if ( !filesystem->device->write )
+		return errno = EROFS, (Inode*) NULL;
+
 	// TODO: Preferred block group!
 	uint32_t result_inode_id = filesystem->AllocateInode();
 	if ( !result_inode_id )

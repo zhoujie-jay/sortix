@@ -355,7 +355,7 @@ int main(int argc, char* argv[])
 			                "features, falling back to read-only access\n",
 			                device_path);
 		// TODO: Modify the file descriptor such that writing fails!
-		read = false;
+		read = true;
 	}
 
 	// Check whether any features are in use that we can safely disregard.

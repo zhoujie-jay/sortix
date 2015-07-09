@@ -214,6 +214,7 @@ void HandleStat(int chl, struct fsm_req_stat* msg, Filesystem* fs)
 
 void HandleChangeMode(int chl, struct fsm_req_chmod* msg, Filesystem* fs)
 {
+	if ( !fs->device->write ) { RespondError(chl, EROFS); return; }
 	Inode* inode = SafeGetInode(fs, msg->ino);
 	if ( !inode ) { RespondError(chl, errno); return; }
 	uint32_t req_mode = ExtModeFromHostMode(msg->mode);
@@ -226,6 +227,7 @@ void HandleChangeMode(int chl, struct fsm_req_chmod* msg, Filesystem* fs)
 
 void HandleChangeOwner(int chl, struct fsm_req_chown* msg, Filesystem* fs)
 {
+	if ( !fs->device->write ) { RespondError(chl, EROFS); return; }
 	Inode* inode = SafeGetInode(fs, msg->ino);
 	if ( !inode ) { RespondError(chl, errno); return; }
 	inode->SetUserId((uint32_t) msg->uid);
@@ -236,6 +238,7 @@ void HandleChangeOwner(int chl, struct fsm_req_chown* msg, Filesystem* fs)
 
 void HandleUTimens(int chl, struct fsm_req_utimens* msg, Filesystem* fs)
 {
+	if ( !fs->device->write ) { RespondError(chl, EROFS); return; }
 	Inode* inode = SafeGetInode(fs, msg->ino);
 	if ( !inode ) { RespondError(chl, errno); return; }
 	inode->BeginWrite();
@@ -248,6 +251,7 @@ void HandleUTimens(int chl, struct fsm_req_utimens* msg, Filesystem* fs)
 
 void HandleTruncate(int chl, struct fsm_req_truncate* msg, Filesystem* fs)
 {
+	if ( !fs->device->write ) { RespondError(chl, EROFS); return; }
 	if ( msg->size < 0 ) { RespondError(chl, EINVAL); return; }
 	Inode* inode = SafeGetInode(fs, msg->ino);
 	if ( !inode ) { RespondError(chl, errno); return; }

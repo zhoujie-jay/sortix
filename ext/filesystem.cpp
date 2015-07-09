@@ -66,12 +66,15 @@ Filesystem::Filesystem(Device* device, const char* mount_path)
 	this->mtime_monotonic = now_monotonic.tv_sec;
 	this->dirty = false;
 
-	BeginWrite();
-	sb->s_mtime = mtime_realtime;
-	sb->s_mnt_count++;
-	sb->s_state = EXT2_ERROR_FS;
-	FinishWrite();
-	Sync();
+	if ( device->write )
+	{
+		BeginWrite();
+		sb->s_mtime = mtime_realtime;
+		sb->s_mnt_count++;
+		sb->s_state = EXT2_ERROR_FS;
+		FinishWrite();
+		Sync();
+	}
 }
 
 Filesystem::~Filesystem()
@@ -82,10 +85,13 @@ Filesystem::~Filesystem()
 	for ( size_t i = 0; i < num_groups; i++ )
 		delete block_groups[i];
 	delete[] block_groups;
-	BeginWrite();
-	sb->s_state = EXT2_VALID_FS;
-	FinishWrite();
-	Sync();
+	if ( device->write )
+	{
+		BeginWrite();
+		sb->s_state = EXT2_VALID_FS;
+		FinishWrite();
+		Sync();
+	}
 	sb_block->Unref();
 }
 
@@ -191,6 +197,8 @@ Inode* Filesystem::GetInode(uint32_t inode_id)
 
 uint32_t Filesystem::AllocateBlock(BlockGroup* preferred)
 {
+	if ( !device->write )
+		return errno = EROFS, 0;
 	if ( !sb->s_free_blocks_count )
 		return errno = ENOSPC, 0;
 	if ( preferred )
@@ -213,6 +221,8 @@ uint32_t Filesystem::AllocateBlock(BlockGroup* preferred)
 
 uint32_t Filesystem::AllocateInode(BlockGroup* preferred)
 {
+	if ( !device->write )
+		return errno = EROFS, 0;
 	if ( !sb->s_free_inodes_count )
 		return errno = ENOSPC, 0;
 	if ( preferred )
@@ -235,6 +245,7 @@ uint32_t Filesystem::AllocateInode(BlockGroup* preferred)
 
 void Filesystem::FreeBlock(uint32_t block_id)
 {
+	assert(device->write);
 	assert(block_id);
 	assert(block_id < num_blocks);
 	uint32_t group_id = (block_id - sb->s_first_data_block) / sb->s_blocks_per_group;
@@ -248,6 +259,7 @@ void Filesystem::FreeBlock(uint32_t block_id)
 
 void Filesystem::FreeInode(uint32_t inode_id)
 {
+	assert(device->write);
 	assert(inode_id);
 	assert(inode_id < num_inodes);
 	uint32_t group_id = (inode_id-1) / sb->s_inodes_per_group;
