@@ -287,8 +287,9 @@ void HandleReadAt(int chl, struct fsm_req_pread* msg, Filesystem* fs)
 	uint8_t* buf = (uint8_t*) malloc(msg->count);
 	if ( !buf ) { inode->Unref(); RespondError(chl, errno); return; }
 	ssize_t amount = inode->ReadAt(buf, msg->count, msg->offset);
-	RespondRead(chl, buf, amount);
 	inode->Unref();
+	if ( amount < 0 ) { free(buf); RespondError(chl, errno); return; }
+	RespondRead(chl, buf, amount);
 	free(buf);
 }
 
@@ -299,8 +300,9 @@ void HandleWriteAt(int chl, struct fsm_req_pwrite* msg, Filesystem* fs)
 	if ( !inode ) { RespondError(chl, errno); return; }
 	const uint8_t* buf = (const uint8_t*) &msg[1];
 	ssize_t amount = inode->WriteAt(buf, msg->count, msg->offset);
-	RespondWrite(chl, amount);
 	inode->Unref();
+	if ( amount < 0 ) { RespondError(chl, errno); return; }
+	RespondWrite(chl, amount);
 }
 
 void HandleOpen(int chl, struct fsm_req_open* msg, Filesystem* fs)
@@ -561,8 +563,9 @@ void HandleReadlink(int chl, struct fsm_req_readlink* msg, Filesystem* fs)
 	uint8_t* buf = (uint8_t*) malloc(count);
 	if ( !buf ) { inode->Unref(); RespondError(chl, errno); return; }
 	ssize_t amount = inode->ReadAt(buf, count, 0);
-	RespondReadlink(chl, buf, amount);
 	inode->Unref();
+	if ( amount < 0 )  { RespondError(chl, errno); return; }
+	RespondReadlink(chl, buf, amount);
 	free(buf);
 }
 
