@@ -128,66 +128,6 @@ void StatInode(Inode* inode, struct stat* st)
 	st->st_blocks = inode->data->i_blocks;
 }
 
-static bool is_hex_digit(char c)
-{
-	return ('0' <= c && c <= '9') ||
-	       ('a' <= c && c <= 'f') ||
-	       ('A' <= c && c <= 'F');
-}
-
-static bool is_valid_uuid(const char* uuid)
-{
-	if ( strlen(uuid) != 36 )
-		return false;
-	// Format: 01234567-0123-0123-0123-0123456789AB
-	for ( size_t i = 0; i < 36; i++ )
-	{
-		if ( i == 8 || i == 13 || i == 18 || i == 23 )
-		{
-			if ( uuid[i] != '-' )
-				return false;
-		}
-		else
-		{
-			if ( !is_hex_digit(uuid[i]) )
-				return false;
-		}
-	}
-	return true;
-}
-
-static unsigned char debase(char c)
-{
-	if ( '0' <= c && c <= '9' )
-		return (unsigned char) (c - '0');
-	if ( 'a' <= c && c <= 'f' )
-		return (unsigned char) (c - 'a' + 10);
-	if ( 'A' <= c && c <= 'F' )
-		return (unsigned char) (c - 'A' + 10);
-	return 0;
-}
-
-static void uuid_from_string(uint8_t uuid[16], const char* string)
-{
-	assert(is_valid_uuid(string));
-	size_t output_index = 0;
-	size_t i = 0;
-	while ( i < 36 )
-	{
-		assert(string[i + 0] != '\0');
-		if ( i == 8 || i == 13 || i == 18 || i == 23 )
-		{
-			i++;
-			continue;
-		}
-		assert(string[i + 1] != '\0');
-		uuid[output_index++] = debase(string[i + 0]) << 4 |
-		                       debase(string[i + 1]) << 0;
-		i += 2;
-	}
-	assert(string[i] == '\0');
-}
-
 static void compact_arguments(int* argc, char*** argv)
 {
 	for ( int i = 0; i < *argc; i++ )
@@ -217,9 +157,8 @@ static void version(FILE* fp, const char* argv0)
 int main(int argc, char* argv[])
 {
 	const char* argv0 = argv[0];
-	const char* test_uuid = NULL;
+	const char* pretend_mount_path = NULL;
 	bool foreground = false;
-	bool probe = false;
 	bool read = false;
 	bool write = false;
 	for ( int i = 1; i < argc; i++ )
@@ -250,20 +189,21 @@ int main(int argc, char* argv[])
 			foreground = false;
 		else if ( !strcmp(arg, "--foreground") )
 			foreground = true;
-		else if ( !strcmp(arg, "--probe") )
-			probe = true;
 		else if ( !strcmp(arg, "--read") )
 			read = true;
 		else if ( !strcmp(arg, "--write") )
 			write = true;
-		else if ( !strcmp(arg, "--test-uuid") )
+		else if ( !strncmp(arg, "--pretend-mount-path=", strlen("--pretend-mount-path=")) )
+			pretend_mount_path = arg + strlen("--pretend-mount-path=");
+		else if ( !strcmp(arg, "--pretend-mount-path") )
 		{
 			if ( i+1 == argc )
 			{
-				fprintf(stderr, "%s:  --test-uuid: Missing operand\n", argv0);
+				fprintf(stderr, "%s: --pretend-mount-path: Missing operand\n", argv0);
 				exit(1);
 			}
-			test_uuid = argv[++i], argv[i] = NULL;
+			pretend_mount_path = argv[++i];
+			argv[i] = NULL;
 		}
 		else
 		{
@@ -296,6 +236,9 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 
+	if ( !pretend_mount_path )
+		pretend_mount_path = mount_path;
+
 	int fd = open(device_path, write ? O_RDWR : O_RDONLY);
 	if ( fd < 0 )
 		error(1, errno, "`%s'", device_path);
@@ -304,98 +247,50 @@ int main(int argc, char* argv[])
 	struct ext_superblock sb;
 	if ( preadall(fd, &sb, sizeof(sb), 1024) != sizeof(sb) )
 	{
-		if ( probe )
-			exit(1);
-		else if ( errno == EEOF )
+		if ( errno == EEOF )
 			error(1, 0, "`%s' isn't a valid extended filesystem", device_path);
 		else
 			error(1, errno, "read: `%s'", device_path);
 	}
 
 	// Verify the magic value to detect a compatible filesystem.
-	if ( !probe && sb.s_magic != EXT2_SUPER_MAGIC )
+	if ( sb.s_magic != EXT2_SUPER_MAGIC )
 		error(1, 0, "`%s' isn't a valid extended filesystem", device_path);
-
-	if ( probe && sb.s_magic != EXT2_SUPER_MAGIC )
-		exit(1);
-
-	// Test whether this was the filesystem the user was looking for.
-	if ( test_uuid )
-	{
-		if ( !is_valid_uuid(test_uuid) )
-		{
-			if ( !probe )
-				error(1, 0, "`%s' isn't a valid uuid", test_uuid);
-			exit(1);
-		}
-
-		uint8_t uuid[16];
-		uuid_from_string(uuid, test_uuid);
-
-		if ( memcmp(sb.s_uuid, uuid, 16) != 0 )
-		{
-			if ( !probe )
-				error(1, 0, "uuid `%s' did not match the ext2 filesystem at `%s'", test_uuid, device_path);
-			exit(1);
-		}
-	}
 
 	// Test whether this revision of the extended filesystem is supported.
 	if ( sb.s_rev_level == EXT2_GOOD_OLD_REV )
-	{
-		if ( probe )
-			exit(1);
 		error(1, 0, "`%s' is formatted with an obsolete filesystem revision",
 		            device_path);
-	}
 
 	// Verify that no incompatible features are in use.
 	if ( sb.s_feature_compat & ~EXT2_FEATURE_INCOMPAT_SUPPORTED )
-	{
-		if ( probe )
-			exit(1);
 		error(1, 0, "`%s' uses unsupported and incompatible features",
 		            device_path);
-	}
 
 	// Verify that no incompatible features are in use if opening for write.
 	if ( !default_access && write &&
 	     sb.s_feature_ro_compat & ~EXT2_FEATURE_RO_COMPAT_SUPPORTED )
-	{
-		if ( probe )
-			exit(1);
 		error(1, 0, "`%s' uses unsupported and incompatible features, "
 		            "read-only access is possible, but write-access was "
 		            "requested", device_path);
-	}
 
 	if ( write && sb.s_feature_ro_compat & ~EXT2_FEATURE_RO_COMPAT_SUPPORTED )
 	{
-		if ( !probe )
-			fprintf(stderr, "Warning: `%s' uses unsupported and incompatible "
-			                "features, falling back to read-only access\n",
-			                device_path);
+		fprintf(stderr, "Warning: `%s' uses unsupported and incompatible "
+		                "features, falling back to read-only access\n",
+		                device_path);
 		// TODO: Modify the file descriptor such that writing fails!
 		read = true;
 	}
 
 	// Check whether any features are in use that we can safely disregard.
-	if ( !probe && sb.s_feature_compat & ~EXT2_FEATURE_COMPAT_SUPPORTED )
+	if ( sb.s_feature_compat & ~EXT2_FEATURE_COMPAT_SUPPORTED )
 		fprintf(stderr, "Note: filesystem uses unsupported but compatible "
 		                "features\n");
 
 	// Check the block size is sane. 64 KiB may have issues, 32 KiB then.
 	if ( sb.s_log_block_size > (15-10) /* 32 KiB blocks */ )
-	{
-		if ( probe )
-			exit(1);
 		error(1, 0, "`%s': excess block size", device_path);
-	}
-
-	// We have found no critical problems, so let the caller know that this
-	// filesystem satisfies the probe request.
-	if ( probe )
-		exit(0);
 
 	// Check whether the filesystem was unmounted cleanly.
 	if ( sb.s_state != EXT2_VALID_FS )
@@ -407,7 +302,7 @@ int main(int argc, char* argv[])
 	Device* dev = new Device(fd, device_path, block_size, write);
 	if ( !dev ) // TODO: Use operator new nothrow!
 		error(1, errno, "malloc");
-	Filesystem* fs = new Filesystem(dev, mount_path);
+	Filesystem* fs = new Filesystem(dev, pretend_mount_path);
 	if ( !fs ) // TODO: Use operator new nothrow!
 		error(1, errno, "malloc");
 

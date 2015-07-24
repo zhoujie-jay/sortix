@@ -1,0 +1,46 @@
+.Dd $Mdocdate: October 5 2015 $
+.Dt VIDEOMODE 5
+.Os
+.Sh NAME
+.Nm videomode
+.Nd initial graphics resolution
+.Sh SYNOPSIS
+.Nm /etc/videomode
+.Sh DESCRIPTION
+The
+.Nm videomode
+file is read on boot by
+.Xr init 8
+and is used as the initial graphics resolution on the primary monitor.  The
+resolution provided by the bootloader remains in effect if the file is missing.
+The resolution is usable only if the graphics card has a driver and the
+resolution is supported.
+.Sh FORMAT
+.Ar width Ns x Ns Ar height Ns x Ns Ar bits-per-pixel
+.Pp
+The file specifies a graphics resolution as a single line with three numeric
+fields separated by x characters and no whitespace whatsoever.  The first field
+is used as the
+.Ar width
+in pixels, the second field is used as the
+.Ar height
+in pixels, and the third field is used as the
+.Ar bits-per-pixel .
+.Sh FILES
+.Bl -tag -width "/etc/videomode" -compact
+.It Pa /etc/videomode
+primary monitor graphics resolution.
+.El
+.Sh EXAMPLES
+.Bd -literal
+1920x1080x32
+.Ed
+.Sh SEE ALSO
+.Xr chvideomode 1 ,
+.Xr dispmsg_issue 2 ,
+.Xr init 8
+.Sh BUGS
+This scheme only supports a single monitor.  The kernel console doesn't handle
+resolution changes gracefully, the console will be cleared and the console
+cursor might be out of the screen upon resolution shrink.  Early boot messages
+will be unavailable.

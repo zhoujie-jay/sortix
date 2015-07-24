@@ -24,8 +24,8 @@ all: $(BINARIES)
 .PHONY: all install clean
 
 install: all
-	mkdir -p $(DESTDIR)$(BINDIR)
-	install $(BINARIES) $(DESTDIR)$(BINDIR)
+	mkdir -p $(DESTDIR)$(SBINDIR)
+	install $(BINARIES) $(DESTDIR)$(SBINDIR)
 
 extfs: *.cpp *.h
 	$(CXX) $(PTHREAD_OPTION) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) *.cpp -o $@ $(LIBS)

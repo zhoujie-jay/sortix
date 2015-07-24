@@ -586,8 +586,14 @@ static void BootThread(void* /*user*/)
 
 	switch ( status )
 	{
-	case 0: CPU::ShutDown();
-	case 1: CPU::Reboot();
+	case 0:
+		CPU::ShutDown();
+	case 1:
+		CPU::Reboot();
+	case 2:
+		Log::Print("kernel: fatal: Halting system due to init fatality\n");
+		Log::Sync();
+		HaltKernel();
 	default:
 		PanicF("Init returned with unexpected return code %i", status);
 	}
@@ -618,7 +624,7 @@ static void InitThread(void* /*user*/)
 
 	dtable.Reset();
 
-	static char default_init_cmdline[] = "/bin/init";
+	static char default_init_cmdline[] = "/sbin/init";
 	if ( !init_cmdline )
 		init_cmdline = default_init_cmdline;
 

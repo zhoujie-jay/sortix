@@ -19,14 +19,16 @@ all: $(BINARY)
 .PHONY: all install clean
 
 $(BINARY): $(OBJS)
-	$(CXX) $(OBJS) -o $(BINARY) $(CXXFLAGS) $(LIBS)
+	$(CXX) $(OBJS) -o $(BINARY) $(CXXFLAGS) -lmount $(LIBS)
 
 %.o: %.c++
 	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 install: all
-	mkdir -p $(DESTDIR)$(BINDIR)
-	install $(BINARY) $(DESTDIR)$(BINDIR)
+	mkdir -p $(DESTDIR)$(SBINDIR)
+	install $(BINARY) $(DESTDIR)$(SBINDIR)
+	mkdir -p $(DESTDIR)$(MANDIR)/man8
+	cp init.8 $(DESTDIR)$(MANDIR)/man8/init.8
 
 clean:
 	rm -f $(BINARY) $(OBJS) *.o

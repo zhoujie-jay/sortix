@@ -88,12 +88,15 @@ endif
 	rm -rf "$(INSTALL_ROOTFS)/boot/sortix.initrd.d"
 	mkdir -p "$(INSTALL_ROOTFS)/boot/sortix.initrd.d"
 	mkdir -p "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/bin"
-	for PROGRAM in init mbrfs extfs; do \
-	  cp "$(INSTALL_ROOTFS)/bin/$$PROGRAM" "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/bin/$$PROGRAM"; \
-	done
+	mkdir -p "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/sbin"
+	test ! -e "$(INSTALL_ROOTFS)/bin/fsck.ext2" || \
+	cp "$(INSTALL_ROOTFS)/bin/fsck.ext2" "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/bin/fsck.ext2"
+	cp "$(INSTALL_ROOTFS)/sbin/extfs" "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/sbin/extfs"
+	cp "$(INSTALL_ROOTFS)/sbin/init" "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/sbin/init"
 	mkdir -p "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/etc"
 	mkdir -p "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/etc/init"
-	cp "$(INSTALL_ROOTFS)/etc/rootfs.uuid" "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/etc/init/rootfs.uuid"
+	cp "$(INSTALL_ROOTFS)/etc/fstab" "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/etc/fstab"
+	echo chain > "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/etc/init/target"
 	mkinitrd --format=sortix-initrd-2 "$(INSTALL_ROOTFS)/boot/sortix.initrd.d" -o "$(INSTALL_ROOTFS)/boot/sortix.initrd"
 	rm -rf "$(INSTALL_ROOTFS)/boot/sortix.initrd.d"
 

@@ -1,0 +1,182 @@
+.Dd $Mdocdate: October 5 2015 $
+.Dt INIT 8
+.Os
+.Sh NAME
+.Nm init
+.Nd system initialization
+.Sh SYNOPSIS
+.Nm init
+.Op Fl \-target Ns "=" Ns Ar init-target
+.Op Fl \-chain Ns "=" Ns Ar path-or-uuid
+.Sh DESCRIPTION
+.Nm
+is the first program run after system startup and is responsible for
+initializing the operating system and starting the specified
+.Ar init-target .
+This is normally a login screen, a root shell, or a dedicated special purpose
+program.
+.Pp
+The
+.Xr kernel 7
+starts the system in a temporary environment with a root filesystem
+backed by system memory and extracts the
+.Xr initrd 7
+into it.  The kernel runs the
+.Pa /sbin/init
+program of the system memory root filesystem as the first process.  If the
+system is bootable cdrom, then the initrd will be a fully functional system and
+.Nm
+will start a live environment or an operating system installer.  If the
+system is installed on a harddisk, then the initrd is a minimal system made with
+.Xr update-initrd 8
+that will search for the actual root filesystem and chain init it.  The next
+stage init will recognize it as the intended system and complete the system
+startup.
+.Ss Initialization Target
+.Nm
+first determines its target from the
+.Fl \-target
+option if specified or
+.Pa /etc/init/target
+otherwise. Supported targets are:
+.Pp
+.Bl -tag -width "single-user" -compact -offset indent
+.It chain
+mount real root filesystem and run its
+.Nm
+.It multi-user
+boot to
+.Xr login 8
+.It single-user
+boot to root shell without password (not secure)
+.It sysinstall
+boot to operating system installer (not secure)
+.It sysupgrade
+boot to operating system upgrader (not secure)
+.El
+.Pp
+It is a full system compromise if unauthenticated users are able to boot the
+wrong target.  The kernel command line can specify the path to
+.Nm
+and its arguments.  Unprivileged users can change the kernel command line from
+the bootloader command line if it hasn't been password protected.  Likewise
+unprivileged users can use their own replacement bootloader by booting a
+portable device under their control if the firmware configuration has not been
+password protected.
+.Ss Partition Creation
+.Nm
+will scan every block device for valid partition tables and create the
+corresponding partition devices in
+.Pa /dev .
+.Ss Chain Initialization
+The chain target triggers a search for the root filesystem.  The
+.Fl \-chain Ns "=" Ns Ar path-or-uuid
+option implies
+.Fl \-target Ns "=" Ns chain
+if it is not set and specifies the method to locate the root filesystem.  The
+.Ar path-or-uuid
+value is either a path to a directory, in which case it is used as the root
+filesystem, or a file that contains a uuid of the root filesystem, or it can be
+a valid uuid of the intended root filesystem.  If the
+.Fl \-chain
+option is not specified, the root filesystem of
+.Pa /etc/fstab
+is used as described in
+.Xr fstab 5 .
+.Pp
+Every block device and partition is scanned to determine if it is the filesystem
+by matching the desired uuid.  The root filesystem is checked for consistency
+and mounted at
+.Pa /tmp/fs.XXXXXX
+and the
+.Pa /dev
+filesystem directory is bound at
+.Pa /tmp/fs.XXXXXX/dev .
+.Pp
+Finally the
+.Pa /sbin/init
+program of the target root filesystem is run inside a chroot.
+.Ss Configuration
+Once the
+.Nm
+of the real root filesystem runs, it will process basic configuration files and
+apply them:
+.Pp
+.Bl -tag -width "/etc/videomode" -compact -offset indent
+.It Pa /etc/hostname
+set hostname (see
+.Xr hostname 5 )
+.It Pa /etc/kblayout
+set keyboard layout (see
+.Xr kblayout 5 )
+.It Pa /etc/videomode
+set graphics resolution (see
+.Xr videomode 5 )
+.El
+.Ss Session
+Finally
+.Nm
+will start the target program according to its initialization target.  This will
+be a login screen, a root shell, or something else.  If the process exits
+abnormally
+.Nm
+will automatically restart it.
+.Nm
+will exit with the same exit status as the process if it exits
+normally.  The kernel decides whether to power off, reboot or halt based on this
+exit status.
+.Sh ENVIRONMENT
+.Nm
+sets the following environment variables.
+.Bl -tag -width "INIT_PID"
+.It Ev HOME
+root's home directory
+.It Ev INIT_PID
+.Nm Ns 's
+process id
+.It Ev LOGNAME
+root
+.It Ev PATH
+.Pa /bin:/sbin
+.It Ev SHELL
+root's shell
+.It Ev TERM
+sortix
+.It Ev USER
+root
+.El
+.Sh FILES
+.Bl -tag -width "/etc/init/target" -compact
+.It Pa /etc/init/target
+default initialization target
+.It Pa /etc/fstab
+filesystem table (see
+.Xr fstab 5 )
+.It Pa /etc/hostname
+hostname (see
+.Xr hostname 5 )
+.It Pa /etc/kblayout
+keyboard layout (see
+.Xr kblayout 5 )
+.It Pa /etc/videomode
+graphics resolution (see
+.Xr videomode 5 )
+.El
+.Sh EXIT STATUS
+.Nm
+exits 0 if the kernel should power off, exits 1 if the kernel should reboot, or
+exits 2 if the boot failed and the kernel should halt.  Any other exit by the
+initial
+.Nm
+will trigger a kernel panic.
+.Nm
+exits with the same exit status as its target session if it terminates normally.
+.Sh SEE ALSO
+.Xr fstab 5 ,
+.Xr hostname 5 ,
+.Xr kblayout 5 ,
+.Xr videomode 5 ,
+.Xr initrd 7 ,
+.Xr kernel 7 ,
+.Xr login 8 ,
+.Xr update-initrd 8
