@@ -12,6 +12,7 @@ dispd \
 libmount \
 bench \
 carray \
+disked \
 editor \
 ext \
 games \

@@ -1,0 +1,189 @@
+.Dd $Mdocdate: October 11 2015 $
+.Dt DISKED 8
+.Os
+.Sh NAME
+.Nm disked
+.Nd disk editor
+.Sh SYNOPSIS
+.Nm disked
+.Op Fl \-fstab Ns "=" Ns Ar path
+.Sh DESCRIPTION
+.Nm
+is an interactive program that manages partition tables.  It can create and
+destroy partition tables on block devices.  It can create partitions and destroy
+them.  It can format filesystems on partitions and configure mountpoints in
+.Xr fstab 5 .
+.Nm
+supports the Master Boot Record and GUID Partition Table partitioning schemes.
+.Pp
+.Nm
+provides an interactive command line. Its prompt shows the currently selected
+device (defaulting to the first device alphabetically) or
+.Li (disked)
+if none is selected.  Commands perform their actions when run rather
+than waiting for the user to write out changes.
+.Nm
+only creates partitions aligned to 1 MiB boundaries whose size is a multiple of
+1 MiB. Unused regions are aligned and those smaller than the alignment are not
+shown.
+.Pp
+The options are as follows:
+.Bl -tag -width "12345678"
+.It Fl \-fstab Ns "=" Ns Ar path
+Use
+.Ar path
+instead of
+.Pa /etc/fstab
+as
+.Xr fstab 5 .
+.El
+.Pp
+The following commands are supported:
+.Bl -tag -width "12345678"
+.It Sy device Ar device-index
+Switch to the device
+.Ar device-index
+as numbered by the
+.Sy devices
+command.  If no index is specified, show the name of the current device.
+Alternatively you can write the absolute path to the device such as
+.Pa /dev/ahci0
+or just its name
+.Pa ahci0 .
+.It Sy devices
+List every available block device and show their indexes, device names (as found
+in
+.Pa /dev ) ,
+model names and serial numbers.  Devices are counted from 0.
+.It Sy exit
+Exit
+.Nm .
+.It Sy fsck Ar partition-index
+Perform a
+.Xr fsck 8
+filesystem check of the partition
+.Ar partition-index
+on the current device.
+.It Sy help
+List available commands.
+.It Sy ls
+Display the partition table of the current device.  Partitions are counted from
+1.
+.It Sy man Oo ... Oc
+Display this manual page if no operands are given, otherwise run
+.Xr man 1
+with the given command line.
+.It Sy mkpart
+Create a partition on the current device.  If the partition table has multiple
+unused regions
+.Pq holes ,
+.Nm
+asks you which one to use.  You need to specify the offset into the hole where
+the partition is created and then the length of the partition.  See
+.Sx QUANTITIES
+below on the possible partition offset and length values.  You will be asked if
+you want to format a filesystem:
+.Bl -tag -width "12345678"
+.It Sy biosdata
+(gpt only) Format a BIOS boot partition, which is required for booting with GRUB
+from a root filesystem on a GPT partition. 1 MiB is sufficient for this kind of
+partition.
+.It Sy extended
+(mbr only) Create an extended partition, which can contain an arbitrary amount
+logical partitions. You can only have a single extended partition.
+.It Sy ext2
+Format an ext2 filesystem.
+.It Sy no
+Use the existing disk data.
+.El
+.Pp
+If you format a mountable filesystem, then you will be asked if you want to
+create a mountpoint for the partition, which will be added to
+.Xr fstab 5 .
+.It Sy mktable Oo mbr "|" gpt Oc
+Create a partition table on the current device of the specified type.
+.It Sy mount Ar partition-index Oo Ar mountpoint Li "|" Sy no Oc
+Mount the partition
+.Ar partition-index
+of the current device on
+.Ar mountpoint
+in
+.Xr fstab 5 ,
+or if
+.Sy no
+then remove any existing mountpoints.  Conflicting mountpoints are removed.
+.It Sy quit
+Exit
+.Nm .
+.It Sy rmpart Ar partition-index
+Delete the partition
+.Ar partition-index
+on the current device.  The partition data is rendered inaccessible but is not
+actually erased.  The partition can technically be recovered using
+.Sy mkpart .
+The partition data no longer has the protections of being in a partition and
+looks like regular unused space and can easily be overwritten.  You should not
+delete a partition unless you want its contents gone. Deleting an extended
+partition deletes all the partitions it contains.
+.It Sy rmtable
+Delete the partition table on the current device.  The existing partitions are
+rendered inaccessible but are not actually erased.  The partitions can
+technically be recovered using
+.Sy mktable
+and
+.Sy mkpart .
+The disk data no longer has the protections of being partitioned and looks like
+regular unused space and can easily be overwritten.  You should not delete the
+partition table unless you want all the data on the disk gone.
+.It Sy sh
+Run an interactive shell.
+.El
+.Sh QUANTITIES
+.Nm
+allows useful expressions when describing disk offsets and lengths.  Every
+question needs an answer between 0 and a maximum.  You can answer in percent
+where 100% is the maximum.  You can answer an integer value followed by a suffix
+such as B, K, M, G, T, or P to signify bytes, KiB, MiB, GiB, TiB, and PiB
+respectively.  The value is in MiB by default if there is no suffix.  The answer
+is rounded to the 1 MiB alignment.  If the expression is a negative value, then
+the answer is the maximum minus the absolute value.  For instance:
+.Bl -tag -width "12345678"
+.It 42%
+Use 42% of the maximum.
+.It 13m
+Use 13 MiB.
+.It 37
+Use 37 MiB.
+.It 9001 GiB
+Use 9001 GiB.
+.It -100M
+Leave 100 MiB at the end.
+.It -10%
+Use 90% of the maximum.
+.El
+.Sh FILES
+.Bl -tag -width "/etc/fstab" -compact
+.It Pa /etc/fstab
+filesystem table (see
+.Xr fstab 5 )
+.El
+.Sh EXAMPLES
+.Bd -literal
+(ahci0) devices         # list devices
+(ahci0) device 1        # select device 1
+(ahci1) mktable gpt     # create partition table
+(ahci1) mkpart          # create partition
+0%                      # no free space preceding it
+50%                     # use half the disk
+ext2                    # format an ext2 filesystem
+/home/user              # use as /home/user filesystem
+(ahci1) ls              # inspect partition table
+(ahci1) mount 1 /home   # change partition 1 mountpoint to /home
+(ahci1) exit            # done
+.Ed
+.Sh SEE ALSO
+.Xr fstab 5 ,
+.Xr gpt 7 ,
+.Xr mbr 7 ,
+.Xr fsck 8 ,
+.Xr init 8
