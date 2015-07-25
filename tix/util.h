@@ -459,6 +459,13 @@ char* GetBuildTriplet()
 	const char* env_host = getenv("BUILD");
 	if ( env_host )
 		return strdup(env_host);
+#if defined(__sortix__) && defined(__i386__)
+	return strdup("i486-sortix");
+#elif defined(__sortix__) && defined(__x86_64__)
+	return strdup("x86_64-sortix");
+#elif defined(__sortix__)
+	#warning "Add your build triplet here"
+#endif
 	FILE* fp = popen("cc -dumpmachine", "r");
 	if ( !fp )
 		return NULL;
