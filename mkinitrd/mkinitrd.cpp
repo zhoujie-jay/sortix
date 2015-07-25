@@ -39,10 +39,6 @@
 
 #include <sortix/initrd.h>
 
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
-
 #define DEFAULT_FORMAT "sortix-initrd-2"
 
 #include "crc32.h"
@@ -86,6 +82,18 @@ struct DirEntry
 	Node* node;
 };
 
+int DirEntryCompare(const DirEntry* a, const DirEntry* b)
+{
+	return strcmp(a->name, b->name);
+}
+
+int DirEntryCompareIndirect(const void* a_ptr, const void* b_ptr)
+{
+	const DirEntry* a = (const DirEntry*) a_ptr;
+	const DirEntry* b = (const DirEntry*) b_ptr;
+	return DirEntryCompare(a, b);
+}
+
 struct Node
 {
 	char* path;
@@ -103,10 +111,14 @@ struct Node
 
 void FreeNode(Node* node)
 {
+	if ( !node )
+		return;
 	if ( 1 < node->nlink ) { node->nlink--; return; }
 	for ( size_t i = 0; i < node->direntsused; i++ )
 	{
 		DirEntry* entry = node->dirents + i;
+		if ( !entry->name )
+			continue;
 		if ( strcmp(entry->name, ".") != 0 && strcmp(entry->name, "..") != 0 )
 		{
 			if ( --entry->node->refcount == 0 )
@@ -310,7 +322,90 @@ Node* RecursiveSearch(const char* real_path, const char* virt_path,
 		FreeNode(node);
 		return NULL;
 	}
+	qsort(node->dirents, node->direntsused, sizeof(DirEntry),
+	      DirEntryCompareIndirect);
 	return node;
+}
+
+Node* MergeNodes(Node* a, Node* b)
+{
+	if ( !S_ISDIR(a->mode) || !S_ISDIR(b->mode) )
+	{
+		FreeNode(b);
+		return a;
+	}
+	size_t dirents_used = 0;
+	size_t dirents_length = a->direntsused + b->direntsused;
+	DirEntry* dirents = (DirEntry*) malloc(sizeof(DirEntry) * dirents_length);
+	if ( !dirents )
+	{
+		error(0, errno, "malloc");
+		FreeNode(a);
+		FreeNode(b);
+		return NULL;
+	}
+	bool failure = false;
+	size_t ai = 0;
+	size_t bi = 0;
+	while ( ai != a->direntsused || bi != b->direntsused )
+	{
+		if ( bi == b->direntsused ||
+		     (ai != a->direntsused &&
+		      bi != b->direntsused &&
+		      DirEntryCompare(&a->dirents[ai], &b->dirents[bi]) < 0) )
+		{
+			dirents[dirents_used++] = a->dirents[ai];
+			a->dirents[ai].name = NULL;
+			a->dirents[ai].node = NULL;
+			ai++;
+			continue;
+		}
+		if ( ai == a->direntsused ||
+		     (ai != a->direntsused &&
+		      bi != b->direntsused &&
+		      DirEntryCompare(&a->dirents[ai], &b->dirents[bi]) > 0) )
+		{
+			dirents[dirents_used++] = b->dirents[bi];
+			for ( size_t i = 0; i < b->dirents[bi].node->direntsused; i++ )
+			{
+				if ( strcmp(b->dirents[bi].node->dirents[i].name, "..") != 0 )
+					continue;
+				b->dirents[bi].node->dirents[i].node = a;
+			}
+			b->dirents[bi].name = NULL;
+			b->dirents[bi].node = NULL;
+			bi++;
+			continue;
+		}
+		const char* name = a->dirents[ai].name;
+		dirents[dirents_used].name = a->dirents[ai].name;
+		if ( !strcmp(name, ".") || !strcmp(name, "..") )
+			dirents[dirents_used].node = a->dirents[ai].node;
+		else
+		{
+			dirents[dirents_used].node =
+				MergeNodes(a->dirents[ai].node, b->dirents[bi].node);
+			if ( !dirents[dirents_used].node )
+				failure = true;
+		}
+		dirents_used++;
+		a->dirents[ai].name = NULL;
+		a->dirents[ai].node = NULL;
+		ai++;
+		free(b->dirents[bi].name);
+		b->dirents[bi].name = NULL;
+		b->dirents[bi].node = NULL;
+		bi++;
+	}
+	free(a->dirents);
+	a->dirents = dirents;
+	a->direntsused = dirents_used;
+	a->direntslength = dirents_length;
+	b->direntsused = 0;
+	FreeNode(b);
+	if ( failure )
+		return FreeNode(b), (Node*) NULL;
+	return a;
 }
 
 bool WriteNode(struct initrd_superblock* sb, int fd, const char* outputname,
@@ -527,7 +622,7 @@ bool get_option_variable(const char* option, char** varptr,
 
 static void help(FILE* fp, const char* argv0)
 {
-	fprintf(fp, "Usage: %s [OPTION]... ROOT -o OUTPUT\n", argv0);
+	fprintf(fp, "Usage: %s [OPTION]... ROOT... -o OUTPUT\n", argv0);
 	fprintf(fp, "Creates a init ramdisk for the Sortix kernel.\n");
 	fprintf(fp, "\n");
 	fprintf(fp, "Mandatory arguments to long options are mandatory for short options too.\n");
@@ -592,7 +687,6 @@ int main(int argc, char* argv[])
 			help(stdout, argv0), exit(0);
 		else if ( !strcmp(arg, "--version") )
 			version(stdout, argv0), exit(0);
-
 		else if ( GET_OPTION_VARIABLE("--filter", &arg_filter) )
 		{
 			FILE* fp = fopen(arg_filter, "r");
@@ -629,13 +723,6 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 
-	if (  2 < argc  )
-	{
-		fprintf(stderr, "%s: Too many roots specified\n", argv0),
-		help(stderr, argv0);
-		exit(1);
-	}
-
 	if (  !arg_output  )
 	{
 		fprintf(stderr, "%s: No output file specified\n", argv0),
@@ -655,12 +742,20 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 
-	const char* rootstr = argv[1];
-
 	uint32_t inodecount = 1;
-	Node* root = RecursiveSearch(rootstr, "/", &inodecount);
-	if ( !root )
-		exit(1);
+	Node* root = NULL;
+	for ( int i = 1; i < argc; i++ )
+	{
+		Node* node = RecursiveSearch(argv[i], "/", &inodecount);
+		if ( !node )
+			exit(1);
+		if ( root )
+			root = MergeNodes(root, node);
+		else
+			root = node;
+		if ( !root )
+			exit(1);
+	}
 
 	if ( !Format(arg_output, inodecount, root) )
 		exit(1);
