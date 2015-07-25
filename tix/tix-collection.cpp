@@ -71,7 +71,11 @@ int main(int argc, char* argv[])
 	//       case code. Simplify all of this code, remove the tixdb abstraction.
 	// TODO: After releasing Sortix 1.1, delete the --disable-multiarch option
 	//       compatibility.
+#if defined(__sortix__)
+	bool use_multiarch = false;
+#else
 	bool use_multiarch = true;
+#endif
 
 	const char* argv0 = argv[0];
 	for ( int i = 0; i < argc; i++ )
