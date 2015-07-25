@@ -76,7 +76,7 @@ ifeq ($(BUILD_IS_SORTIX),0)
 	  exit 1 \
 	fi
 endif
-	for ENTRY in $$(ls -A "$(SYSROOT)" | grep -Ev '^(src|etc|home|mnt|tmp|var)$$'); do \
+	for ENTRY in $$(ls -A "$(SYSROOT)" | grep -Ev '^(dev|etc|home|mnt|root|src|tix|tmp|var)$$'); do \
 		cp -RTv "$(SYSROOT)/$$ENTRY" "$(DESTDIR)/$$ENTRY" || exit $$?; \
 	done
 
@@ -109,6 +109,7 @@ sysroot-fsh:
 	mkdir -p "$(SYSROOT)"
 	mkdir -p "$(SYSROOT)/bin"
 	mkdir -p "$(SYSROOT)/boot"
+	mkdir -p "$(SYSROOT)/dev"
 	mkdir -p "$(SYSROOT)/etc"
 	mkdir -p "$(SYSROOT)/etc/skel"
 	mkdir -p "$(SYSROOT)/home"
@@ -119,12 +120,12 @@ sysroot-fsh:
 	mkdir -p "$(SYSROOT)/sbin"
 	mkdir -p "$(SYSROOT)/share"
 	mkdir -p "$(SYSROOT)/src"
+	mkdir -p "$(SYSROOT)/tix"
+	mkdir -p "$(SYSROOT)/tix/manifest"
 	mkdir -p "$(SYSROOT)/tmp"
 	mkdir -p "$(SYSROOT)/var"
 	mkdir -p "$(SYSROOT)/var/empty"
 	ln -sfT . "$(SYSROOT)/usr"
-	echo "root::0:0:root:/root:sh" > "$(SYSROOT)/etc/passwd"
-	echo "root::0:root" > "$(SYSROOT)/etc/group"
 
 .PHONY: sysroot-base-headers
 sysroot-base-headers: sysroot-fsh
@@ -133,9 +134,42 @@ sysroot-base-headers: sysroot-fsh
 
 .PHONY: sysroot-system
 sysroot-system: sysroot-fsh sysroot-base-headers
+	rm -f "$(SYSROOT)/tix/manifest/system"
+	echo / >> "$(SYSROOT)/tix/manifest/system"
+	echo /bin >> "$(SYSROOT)/tix/manifest/system"
+	echo /boot >> "$(SYSROOT)/tix/manifest/system"
+	echo /dev >> "$(SYSROOT)/tix/manifest/system"
+	echo /etc >> "$(SYSROOT)/tix/manifest/system"
+	echo /etc/skel >> "$(SYSROOT)/tix/manifest/system"
+	echo /home >> "$(SYSROOT)/tix/manifest/system"
+	echo /include >> "$(SYSROOT)/tix/manifest/system"
+	echo /lib >> "$(SYSROOT)/tix/manifest/system"
+	echo /libexec >> "$(SYSROOT)/tix/manifest/system"
+	echo /mnt >> "$(SYSROOT)/tix/manifest/system"
+	echo /sbin >> "$(SYSROOT)/tix/manifest/system"
+	echo /share >> "$(SYSROOT)/tix/manifest/system"
+	echo /src >> "$(SYSROOT)/tix/manifest/system"
+	echo /tix >> "$(SYSROOT)/tix/manifest/system"
+	echo /tix/manifest >> "$(SYSROOT)/tix/manifest/system"
+	echo /tmp >> "$(SYSROOT)/tix/manifest/system"
+	echo /usr >> "$(SYSROOT)/tix/manifest/system"
+	echo /var >> "$(SYSROOT)/tix/manifest/system"
+	echo /var/empty >> "$(SYSROOT)/tix/manifest/system"
+	find share | sed -e 's,^,/,' >> "$(SYSROOT)/tix/manifest/system"
 	cp -RT share "$(SYSROOT)/share"
 	export SYSROOT="$(SYSROOT)" && \
-	(for D in $(MODULES); do ($(MAKE) -C $$D && $(MAKE) -C $$D install DESTDIR="$(SYSROOT)") || exit $$?; done)
+	(for D in $(MODULES); \
+	  do ($(MAKE) -C $$D && \
+	      rm -rf "$(SYSROOT).destdir" && \
+	      mkdir -p "$(SYSROOT).destdir" && \
+	      $(MAKE) -C $$D install DESTDIR="$(SYSROOT).destdir" && \
+	      (cd "$(SYSROOT).destdir" && find .) | sed -e 's/\.//' -e 's/^$$/\//' | \
+	      grep -E '^.+$$' >> "$(SYSROOT)/tix/manifest/system" && \
+	      cp -RT "$(SYSROOT).destdir" "$(SYSROOT)" && \
+	      rm -rf "$(SYSROOT).destdir") \
+	  || exit $$?; done)
+	LC_ALL=C sort -u "$(SYSROOT)/tix/manifest/system" > "$(SYSROOT)/tix/manifest/system.new"
+	mv "$(SYSROOT)/tix/manifest/system.new" "$(SYSROOT)/tix/manifest/system"
 
 .PHONY: sysroot-source
 sysroot-source: sysroot-fsh
@@ -147,6 +181,9 @@ sysroot-source: sysroot-fsh
 	cp -RT build-aux "$(SYSROOT)/src/build-aux"
 	cp -RT isosrc "$(SYSROOT)/src/isosrc"
 	(for D in $(MODULES); do (cp -R $$D -t "$(SYSROOT)/src" && $(MAKE) -C "$(SYSROOT)/src/$$D" clean) || exit $$?; done)
+	(cd "$(SYSROOT)" && find .) | sed 's/\.//' | \
+	grep -E '^/src(/.*)?$$' | \
+	LC_ALL=C sort > "$(SYSROOT)/tix/manifest/src"
 
 .PHONY: sysroot-ports
 sysroot-ports: sysroot-fsh sysroot-base-headers sysroot-system sysroot-source
@@ -163,17 +200,8 @@ sysroot-overlay: sysroot-fsh sysroot-system sysroot-ports
 	! [ -d "$(SYSROOT_OVERLAY)" ] || \
 	cp -RT --preserve=mode,timestamp,links "$(SYSROOT_OVERLAY)" "$(SYSROOT)"
 
-.PHONY: sysroot-user-skel
-sysroot-user-skel: sysroot-fsh sysroot-system sysroot-ports sysroot-overlay
-	cp "$(SYSROOT)/share/doc/welcome" -t "$(SYSROOT)/etc/skel"
-
-.PHONY: sysroot-home-directory
-sysroot-home-directory: sysroot-fsh sysroot-system sysroot-ports sysroot-overlay sysroot-user-skel
-	mkdir -p "$(SYSROOT)/root"
-	cp -RT "$(SYSROOT)/etc/skel" "$(SYSROOT)/root"
-
 .PHONY: sysroot
-sysroot: sysroot-system sysroot-source sysroot-ports sysroot-overlay sysroot-home-directory
+sysroot: sysroot-system sysroot-source sysroot-ports sysroot-overlay
 
 $(SORTIX_REPOSITORY_DIR):
 	mkdir -p $@
@@ -212,6 +240,7 @@ clean-repository:
 .PHONY: clean-sysroot
 clean-sysroot:
 	rm -rf "$(SYSROOT)"
+	rm -rf "$(SYSROOT)".destdir
 
 .PHONY: clean
 clean: clean-core clean-ports
@@ -277,15 +306,25 @@ sortix.bin: kernel
 
 $(INITRD): sysroot
 	mkdir -p `dirname $(INITRD)`
+	rm -rf $(INITRD).live
+	mkdir -p $(INITRD).live
+	mkdir -p $(INITRD).live/etc
+	mkdir -p $(INITRD).live/etc/init
+	echo single-user > $(INITRD).live/etc/init/target
+	echo "root::0:0:root:/root:sh" > $(INITRD).live/etc/passwd
+	echo "root::0:root" > $(INITRD).live/etc/group
+	mkdir -p $(INITRD).live/home
+	mkdir -p $(INITRD).live/root -m 700
+	cp -RT "$(SYSROOT)/etc/skel" $(INITRD).live/root
+	cp doc/welcome $(INITRD).live/root
 	printf '' > $(INITRD).filter
-	echo "exclude /boot" >> $(INITRD).filter
 	echo "exclude /dev" >> $(INITRD).filter
-	echo "exclude /next" >> $(INITRD).filter
 	echo "exclude /src/sysroot" >> $(INITRD).filter
 	echo "exclude /tmp" >> $(INITRD).filter
 	if ! which mkinitrd; then echo You need to install mkinitrd; fi
-	mkinitrd --format=sortix-initrd-2 --filter=$(INITRD).filter "$(SYSROOT)" -o $(INITRD)
+	mkinitrd --format=sortix-initrd-2 --filter=$(INITRD).filter "$(SYSROOT)" "$(INITRD).live" -o $(INITRD)
 	rm -f $(INITRD).filter
+	rm -rf $(INITRD).live
 
 .PHONY: initrd
 initrd: $(INITRD)
