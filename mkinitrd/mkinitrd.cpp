@@ -174,9 +174,12 @@ Node* RecursiveSearch(const char* real_path, const char* virt_path,
 		return NULL;
 	}
 
-	Node* cached = LookupCache(st.st_dev, st.st_ino);
-	if ( cached )
-		return cached->nlink++, cached->refcount++, cached;
+	if ( !S_ISDIR(st.st_mode) && 2 <= st.st_nlink )
+	{
+		Node* cached = LookupCache(st.st_dev, st.st_ino);
+		if ( cached )
+			return cached->nlink++, cached->refcount++, cached;
+	}
 
 	Node* node = (Node*) calloc(1, sizeof(Node));
 	if ( !node )
@@ -199,9 +202,9 @@ Node* RecursiveSearch(const char* real_path, const char* virt_path,
 
 	node->path = real_path_clone;
 
-	if ( !S_ISDIR(st.st_mode) )
+	if ( !S_ISDIR(st.st_mode))
 	{
-		if ( !AddToCache(node, st.st_dev, st.st_ino) )
+		if ( 2 <= st.st_nlink && !AddToCache(node, st.st_dev, st.st_ino) )
 		{
 			free(real_path_clone);
 			free(node);
@@ -302,7 +305,7 @@ Node* RecursiveSearch(const char* real_path, const char* virt_path,
 	}
 
 	closedir(dir);
-	if ( !successful || !AddToCache(node, st.st_dev, st.st_ino) )
+	if ( !successful )
 	{
 		FreeNode(node);
 		return NULL;
