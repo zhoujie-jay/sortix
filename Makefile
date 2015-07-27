@@ -41,10 +41,11 @@ SORTIX_BUILDS_DIR?=builds
 SORTIX_PORTS_DIR?=ports
 SORTIX_RELEASE_DIR?=release
 SORTIX_REPOSITORY_DIR?=repository
+SORTIX_ISO_COMPRESSION?=xz
 
 include build-aux/dirs.mak
 
-BUILD_NAME:=sortix_$(VERSION)_$(MACHINE)
+BUILD_NAME:=sortix-$(VERSION)-$(MACHINE)
 
 INITRD:=$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).initrd
 
@@ -179,7 +180,6 @@ sysroot-source: sysroot-fsh
 	cp Makefile -t "$(SYSROOT)/src"
 	cp README -t "$(SYSROOT)/src"
 	cp -RT build-aux "$(SYSROOT)/src/build-aux"
-	cp -RT isosrc "$(SYSROOT)/src/isosrc"
 	(for D in $(MODULES); do (cp -R $$D -t "$(SYSROOT)/src" && $(MAKE) -C "$(SYSROOT)/src/$$D" clean) || exit $$?; done)
 	(cd "$(SYSROOT)" && find .) | sed 's/\.//' | \
 	grep -E '^/src(/.*)?$$' | \
@@ -227,7 +227,6 @@ clean-builds:
 	rm -f sortix.bin
 	rm -f sortix.initrd
 	rm -f sortix.iso
-	rm -f sortix.iso.xz
 
 .PHONY: clean-release
 clean-release:
@@ -252,10 +251,10 @@ mostlyclean: clean-core clean-ports clean-builds clean-release clean-sysroot
 distclean: clean-core clean-ports clean-builds clean-release clean-repository clean-sysroot
 
 .PHONY: most-things
-most-things: sysroot initrd tar iso
+most-things: sysroot initrd iso
 
 .PHONY: everything
-everything: most-things iso.xz
+everything: most-things
 
 # Targets that build multiple architectures.
 
@@ -321,7 +320,6 @@ $(INITRD): sysroot
 	echo "exclude /dev" >> $(INITRD).filter
 	echo "exclude /src/sysroot" >> $(INITRD).filter
 	echo "exclude /tmp" >> $(INITRD).filter
-	if ! which mkinitrd; then echo You need to install mkinitrd; fi
 	mkinitrd --format=sortix-initrd-2 --filter=$(INITRD).filter "$(SYSROOT)" "$(INITRD).live" -o $(INITRD)
 	rm -f $(INITRD).filter
 	rm -rf $(INITRD).live
@@ -337,42 +335,34 @@ sortix.initrd: $(INITRD)
 $(SORTIX_BUILDS_DIR):
 	mkdir -p $(SORTIX_BUILDS_DIR)
 
-$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).tar.xz: sysroot $(INITRD) $(SORTIX_BUILDS_DIR)
-	rm -rf $(SORTIX_BUILDS_DIR)/tardir
-	mkdir -p $(SORTIX_BUILDS_DIR)/tardir
-	mkdir -p $(SORTIX_BUILDS_DIR)/tardir/boot
-	cp "$(SYSROOT)/boot/sortix.bin" $(SORTIX_BUILDS_DIR)/tardir/boot/sortix.bin
-	cp $(INITRD) $(SORTIX_BUILDS_DIR)/tardir/boot/sortix.initrd
-	tar --create --xz --file $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).tar.xz -C $(SORTIX_BUILDS_DIR)/tardir `ls $(SORTIX_BUILDS_DIR)/tardir`
-	rm -rf $(SORTIX_BUILDS_DIR)/tardir
-
-.PHONY: tar
-tar: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).tar.xz
-
 # Bootable images
 
 $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso: sysroot $(INITRD) $(SORTIX_BUILDS_DIR)
 	rm -rf $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 	mkdir -p $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
-	cp -RT isosrc $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
+	mkdir -p $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot
+ifeq ($(SORTIX_ISO_COMPRESSION),xz)
+	xz -c "$(SYSROOT)/boot/sortix.bin" > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.bin.xz
+	xz -c $(INITRD) > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.initrd.xz
+	build-aux/iso-grub-cfg.sh --platform $(HOST) --version $(VERSION) $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
+	grub-mkrescue --compress=xz -o $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
+else ifeq ($(SORTIX_ISO_COMPRESSION),gzip)
+	gzip -c "$(SYSROOT)/boot/sortix.bin" > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.bin.gz
+	gzip -c $(INITRD) > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.initrd.gz
+	build-aux/iso-grub-cfg.sh --platform $(HOST) --version $(VERSION) $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
+	grub-mkrescue --compress=gz -o $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
+else # none
 	cp "$(SYSROOT)/boot/sortix.bin" $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.bin
 	cp $(INITRD) $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.initrd
+	build-aux/iso-grub-cfg.sh --platform $(HOST) --version $(VERSION) $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 	grub-mkrescue -o $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
+endif
 	rm -rf $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
-
-$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso.xz: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso $(SORTIX_BUILDS_DIR)
-	xz -c $< > $@
 
 .PHONY: iso
 iso: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso
 
-.PHONY: iso.xz
-iso.xz: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso.xz
-
 sortix.iso: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso
-	cp $< $@
-
-sortix.iso.xz: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso.xz
 	cp $< $@
 
 # Release
@@ -383,20 +373,14 @@ $(SORTIX_RELEASE_DIR)/$(VERSION):
 $(SORTIX_RELEASE_DIR)/$(VERSION)/builds: $(SORTIX_RELEASE_DIR)/$(VERSION)
 	mkdir -p $@
 
-$(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(BUILD_NAME).iso.xz: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso.xz $(SORTIX_RELEASE_DIR)/$(VERSION)/builds
+$(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(BUILD_NAME).iso: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso $(SORTIX_RELEASE_DIR)/$(VERSION)/builds
 	cp $< $@
 
-.PHONY: release-iso.xz
-release-iso.xz: $(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(BUILD_NAME).iso.xz
-
-$(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(BUILD_NAME).tar.xz: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).tar.xz $(SORTIX_RELEASE_DIR)/$(VERSION)/builds
-	cp $< $@
-
-.PHONY: release-tar
-release-tar: $(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(BUILD_NAME).tar.xz
+.PHONY: release-iso
+release-iso: $(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(BUILD_NAME).iso
 
 .PHONY: release-builds
-release-builds: release-iso.xz release-tar
+release-builds: release-iso
 
 $(SORTIX_RELEASE_DIR)/$(VERSION)/README: README $(SORTIX_RELEASE_DIR)/$(VERSION)
 	cp $< $@

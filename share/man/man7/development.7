@@ -138,6 +138,13 @@ Specifies compiler optimization options that gets added to
 .Ev CFLAGS
 and
 .Ev CXXFLAGS .
+.It Ev SORTIX_ISO_COMPRESSION
+Specifies the compression algorithm used in iso files.  This must be one of
+.Sy none , gzip
+or
+.Sy xz
+and defaults to
+.Sy xz .
 .El
 .Ss Components
 The operating systems components, such as libc and the kernel, each have their
