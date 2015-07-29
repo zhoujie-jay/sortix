@@ -29,10 +29,6 @@
 #include <error.h>
 #include <ctype.h>
 
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
-
 #ifdef HEAD
 #define TAIL false
 #else
@@ -119,20 +115,26 @@ bool processfp(const char* inputname, FILE* fp)
 	return true;
 }
 
-void help(const char* argv0)
+static void compact_arguments(int* argc, char*** argv)
 {
-	printf("usage: %s [-n <numlines>] [-q | -v] [<FILE> ...]\n", argv0);
+	for ( int i = 0; i < *argc; i++ )
+	{
+		while ( i < *argc && !(*argv)[i] )
+		{
+			for ( int n = i; n < *argc; n++ )
+				(*argv)[n] = (*argv)[n+1];
+			(*argc)--;
+		}
+	}
 }
 
-void errusage(const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
-	help(argv0);
-	exit(1);
+	fprintf(fp, "Usage: %s [OPTION]... [FILE]...\n", argv0);
 }
 
-void version(const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
-	FILE* fp = stdout;
 	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
 	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
 	fprintf(fp, "This is free software: you are free to change and redistribute it.\n");
@@ -141,54 +143,73 @@ void version(const char* argv0)
 
 int main(int argc, char* argv[])
 {
-	const char* argv0 = argv[0];
+	const char* nlinesstr = NULL;
 
+	const char* argv0 = argv[0];
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' ) { continue; }
+		if ( arg[0] != '-' || !arg[1] )
+			continue;
 		argv[i] = NULL;
-		if ( strcmp(arg, "--") == 0 ) { break; }
-		const char* nlinesstr = NULL;
-		if ( strcmp(arg, "--help") == 0 ) { help(argv0); return 0; }
-		if ( strcmp(arg, "--version") == 0 ) { version(argv0); return 0; }
-		if ( strcmp(arg, "-q") == 0 ||
-		     strcmp(arg, "--quiet") == 0 ||
-		     strcmp(arg, "--silent") == 0 )
+		if ( !strcmp(arg, "--") )
+			break;
+		if ( isdigit((unsigned char) arg[1]) )
+			nlinesstr = arg + 1;
+		else if ( arg[1] != '-' )
 		{
-			quiet = true;
-			verbose = false;
-			continue;
-		}
-		if ( strcmp(arg, "-v") == 0 ||
-		     strcmp(arg, "--verbose") == 0 )
-		{
-			quiet = false;
-			verbose = true;
-			continue;
-		}
-		if ( strcmp(arg, "-n") == 0 ) { nlinesstr = argv[++i]; argv[i] = NULL; }
-		if ( isdigit(arg[1]) ) { nlinesstr = arg+1; }
-		if ( nlinesstr )
-		{
-			char* nlinesstrend;
-			long nlines = strtol(nlinesstr, &nlinesstrend, 10);
-			if ( *nlinesstrend )
+			while ( char c = *++arg ) switch ( c )
 			{
-				fprintf(stderr, "Bad number of lines: %s\n", nlinesstr);
-				errusage(argv0);
+			case 'n':
+				if ( !*(nlinesstr = arg + 1) )
+				{
+					if ( i + 1 == argc )
+					{
+						error(0, 0, "option requires an argument -- 'n'");
+						fprintf(stderr, "Try `%s --help' for more information.\n", argv[0]);
+						exit(125);
+					}
+					nlinesstr = argv[i+1];
+					argv[++i] = NULL;
+				}
+				arg = "n";
+				break;
+			case 'q': quiet = true; verbose = false; break;
+			case 'v': quiet = false; verbose = true; break;
+			default:
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
+				help(stderr, argv0);
+				exit(1);
 			}
-			numlines = nlines;
-			continue;
 		}
-		fprintf(stderr, "%s: unrecognized option '%s'\n", argv0, arg);
-		errusage(argv0);
+		else if ( !strcmp(arg, "--help") )
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--version") )
+			version(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--quiet") || !strcmp(arg, "--silent") )
+			quiet = true, verbose = false;
+		else if ( !strcmp(arg, "--verbose") )
+			quiet = false, verbose = true;
+		else
+		{
+			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
+			help(stderr, argv0);
+			exit(1);
+		}
 	}
 
-	size_t numfiles = 0;
-	for ( int i = 1; i < argc; i++ ) { if ( argv[i] ) { numfiles++; } }
+	compact_arguments(&argc, &argv);
 
-	if ( !numfiles )
+	if ( nlinesstr )
+	{
+		char* nlinesstrend;
+		long nlines = strtol(nlinesstr, &nlinesstrend, 10);
+		if ( *nlinesstrend )
+			error(1, 0, "Bad number of lines: %s", nlinesstr);
+		numlines = nlines;
+	}
+
+	if ( argc < 2 )
 	{
 		bool header = verbose;
 		if ( header )
@@ -203,7 +224,6 @@ int main(int argc, char* argv[])
 	const char* prefix = "";
 	for ( int i = 1; i < argc; i++ )
 	{
-		if ( !argv[i] ) { continue; }
 		bool isstdin = strcmp(argv[i], "-") == 0;
 		FILE* fp = isstdin ? stdin : fopen(argv[i], "r");
 		if ( !fp )
@@ -212,7 +232,7 @@ int main(int argc, char* argv[])
 			result = 1;
 			continue;
 		}
-		bool header = !quiet && (verbose || 1 < numfiles);
+		bool header = !quiet && (verbose || 2 < argc);
 		if ( header )
 			printf("%s==> %s <==\n", prefix, argv[i]);
 		prefix = "\n";

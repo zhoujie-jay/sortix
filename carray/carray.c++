@@ -27,10 +27,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
-
 static void compact_arguments(int* argc, char*** argv)
 {
 	for ( int i = 0; i < *argc; i++ )

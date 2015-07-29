@@ -40,10 +40,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
-
 int current_year;
 
 bool option_colors = false;

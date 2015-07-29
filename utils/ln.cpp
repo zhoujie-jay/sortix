@@ -28,17 +28,26 @@
 #include <string.h>
 #include <unistd.h>
 
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
+static void compact_arguments(int* argc, char*** argv)
+{
+	for ( int i = 0; i < *argc; i++ )
+	{
+		while ( i < *argc && !(*argv)[i] )
+		{
+			for ( int n = i; n < *argc; n++ )
+				(*argv)[n] = (*argv)[n+1];
+			(*argc)--;
+		}
+	}
+}
 
-void Help(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION]... TARGET LINK_NAME\n", argv0);
 	fprintf(fp, "Create a hard or symbolic link.\n");
 }
 
-void Version(FILE* fp, const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
 	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
@@ -55,54 +64,46 @@ int main(int argc, char* argv[])
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' )
+		if ( arg[0] != '-' || !arg[1] )
 			continue;
 		argv[i] = NULL;
 		if ( !strcmp(arg, "--") )
 			break;
 		if ( arg[1] != '-' )
-			for ( size_t i = 1; arg[i]; i++ )
-				switch ( arg[i] )
-				{
-				case 'f': force = true; break;
-				case 's': symbolic = true; break;
-				case 'v': verbose = true; break;
-				default:
-					fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, arg[i]);
-					Help(stderr, argv0);
-					exit(1);
-				}
+		{
+			while ( char c = *++arg ) switch ( c )
+			{
+			case 'f': force = true; break;
+			case 's': symbolic = true; break;
+			case 'v': verbose = true; break;
+			default:
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, arg[i]);
+				help(stderr, argv0);
+				exit(1);
+			}
+		}
 		else if ( !strcmp(arg, "--force") )
 			force = true;
 		else if ( !strcmp(arg, "--symbolic") )
 			symbolic = true;
 		else if ( !strcmp(arg, "--verbose") )
 			verbose = true;
-		else if ( !strcmp(arg, "--help") ) { Help(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--version") ) { Version(stdout, argv0); exit(0); }
+		else if ( !strcmp(arg, "--help") )
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--version") )
+			version(stdout, argv0), exit(0);
 		else
 		{
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
-			Help(stderr, argv0);
+			help(stderr, argv0);
 			exit(1);
 		}
 	}
 
-	for ( int i = 0; i < argc; i++ )
-		while ( i < argc && !argv[i] )
-		{
-			for ( int n = i; n < argc; n++ )
-				argv[n] = argv[n+1];
-			argc--;
-		}
+	compact_arguments(&argc, &argv);
 
 	if ( argc != 3 )
-	{
-		const char* what = argc < 3 ? "missing" : "extra";
-		fprintf(stderr, "%s: %s operand\n", argv0, what);
-		Help(stderr, argv0);
-		exit(1);
-	}
+		error(1, 0, "%s operand", argc < 3 ? "missing" : "extra");
 
 	const char* oldname = argv[1];
 	const char* newname = argv[2];

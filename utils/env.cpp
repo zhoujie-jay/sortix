@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 	{
 		const char* arg = argv[i];
 		if ( arg[0] != '-' )
-			break;
+			break; // Intentionally not continue.
 		if ( arg[0] == '-' && !arg[1] )
 		{
 			ignore_environment = true;

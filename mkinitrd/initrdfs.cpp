@@ -238,25 +238,31 @@ bool PrintFile(int fd, initrd_superblock_t* sb, initrd_inode_t* inode)
 	return true;
 }
 
-void Usage(FILE* fp, const char* argv0)
+static void compact_arguments(int* argc, char*** argv)
 {
-	fprintf(fp, "usage: %s [--check] <INITRD> (ls | cat) <PATH>\n", argv0);
+	for ( int i = 0; i < *argc; i++ )
+	{
+		while ( i < *argc && !(*argv)[i] )
+		{
+			for ( int n = i; n < *argc; n++ )
+				(*argv)[n] = (*argv)[n+1];
+			(*argc)--;
+		}
+	}
+}
+
+static void help(FILE* fp, const char* argv0)
+{
+	fprintf(fp, "Usage: %s [OPTION]... INITRD (ls | cat) PATH\n", argv0);
 	fprintf(fp, "Accesses data in a Sortix kernel init ramdisk.\n");
 }
 
-void Help(FILE* fp, const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
-	Usage(fp, argv0);
-}
-
-void Version(FILE* fp, const char* argv0)
-{
-	(void) argv0;
-	fprintf(fp, "initrdfs 0.2\n");
-	fprintf(fp, "Copyright (C) 2012 Jonas 'Sortie' Termansen\n");
-	fprintf(fp, "This is free software; see the source for copying conditions.  There is NO\n");
-	fprintf(fp, "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n");
-	fprintf(fp, "website: http://www.maxsi.org/software/sortix/\n");
+	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
+	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
+	fprintf(fp, "This is free software: you are free to change and redistribute it.\n");
+	fprintf(fp, "There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
 int main(int argc, char* argv[])
@@ -264,50 +270,51 @@ int main(int argc, char* argv[])
 	bool all = false;
 	bool check = false;
 	const char* argv0 = argv[0];
-	if ( argc < 2 ) { Usage(stdout, argv0); exit(0); }
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' ) { continue; }
+		if ( arg[0] != '-' || !arg[1] )
+			continue;
 		argv[i] = NULL;
-		if ( !strcmp(arg, "--") ) { break; }
-		if ( !strcmp(arg, "--help") ) { Help(stdout, argv0); exit(0); }
-		if ( !strcmp(arg, "--usage") ) { Usage(stdout, argv0); exit(0); }
-		if ( !strcmp(arg, "--version") ) { Version(stdout, argv0); exit(0); }
-		if ( !strcmp(arg, "-a") ) { all = true; continue; }
-		if ( !strcmp(arg, "--check") ) { check = true; continue; }
-		fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
-		Usage(stderr, argv0);
-		exit(1);
-	}
-
-	const char* initrd = NULL;
-	const char* cmd = NULL;
-	const char* path = NULL;
-	int args = 0;
-	for ( int i = 1; i < argc; i++ )
-	{
-		if ( !argv[i] ) { continue; }
-		switch ( ++args )
+		if ( !strcmp(arg, "--") )
+			break;
+		if ( arg[1] != '-' )
 		{
-		case 1: initrd = argv[i]; break;
-		case 2: cmd = argv[i]; break;
-		case 3: path = argv[i]; break;
+			while ( char c = *++arg ) switch ( c )
+			{
+			default:
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
+				help(stderr, argv0);
+				exit(1);
+			}
+		}
+		else if ( !strcmp(arg, "--help") )
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--version") )
+			version(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "-a") )
+			all = true;
+		else if ( !strcmp(arg, "--check") )
+			check = true;
+		else
+		{
+			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
+			help(stderr, argv0);
+			exit(1);
 		}
 	}
 
-	const char* errmsg = NULL;
-	if ( !errmsg && !initrd ) { errmsg = "no initrd specified"; }
-	if ( !errmsg && !cmd ) { errmsg = "no command specified"; }
-	if ( !errmsg && !path ) { errmsg = "no path specified"; }
-	if ( !errmsg && 3 < args ) { errmsg = "too many arguments"; }
+	compact_arguments(&argc, &argv);
 
-	if ( errmsg )
-	{
-		fprintf(stderr, "%s: %s\n", argv0, errmsg),
-		Usage(stderr, argv0);
-		exit(1);
-	}
+	if ( argc == 1 )
+		error(1, 0, "No initrd specified");
+	const char* initrd = argv[1];
+	if ( argc == 2 )
+		error(1, 0, "No command specified");
+	const char* cmd = argv[2];
+	if ( argc == 3 )
+		error(1, 0, "No path specified");
+	const char* path = argv[3];
 
 	int fd = open(initrd, O_RDONLY);
 	if ( fd < 0 ) { error(1, errno, "open: %s", initrd); }

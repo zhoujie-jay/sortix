@@ -35,10 +35,6 @@
 #include <timespec.h>
 #include <unistd.h>
 
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
-
 const char* BaseName(const char* path)
 {
 	size_t len = strlen(path);
@@ -419,7 +415,7 @@ bool CopyAmbigious(int srcdirfd, const char* srcrel, const char* srcpath,
 		                  flags, symbolic_dereference);
 }
 
-void compact_arguments(int* argc, char*** argv)
+static void compact_arguments(int* argc, char*** argv)
 {
 	for ( int i = 0; i < *argc; i++ )
 	{
@@ -432,7 +428,7 @@ void compact_arguments(int* argc, char*** argv)
 	}
 }
 
-void help(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION]... [-T] SOURCE DEST\n", argv0);
 	fprintf(fp, "  or:  %s [OPTION]... SOURCE... DIRECTORY\n", argv0);
@@ -444,7 +440,7 @@ void help(FILE* fp, const char* argv0)
 #endif
 }
 
-void version(FILE* fp, const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
 	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
@@ -462,7 +458,7 @@ int main(int argc, char* argv[])
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' )
+		if ( arg[0] != '-' || !arg[1] )
 			continue;
 		argv[i] = NULL;
 		if ( !strcmp(arg, "--") )

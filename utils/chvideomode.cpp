@@ -39,10 +39,6 @@
 #include <termios.h>
 #include <unistd.h>
 
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
-
 bool SetCurrentMode(struct dispmsg_crtc_mode mode)
 {
 	struct dispmsg_set_crtc_mode msg;
@@ -177,7 +173,7 @@ static void compact_arguments(int* argc, char*** argv)
 	}
 }
 
-void help(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION ...] [-- PROGRAM-TO-RUN [ARG ...]]\n", argv0);
 	fprintf(fp, "Changes the video mode and optionally runs a program\n");
@@ -196,7 +192,7 @@ void help(FILE* fp, const char* argv0)
 	fprintf(fp, "  --height=NUM, --min-heigh= NUM, --max-height=NUM\n");
 }
 
-void version(FILE* fp, const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
 	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
@@ -297,8 +293,8 @@ int main(int argc, char* argv[])
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' )
-			break;
+		if ( arg[0] != '-' || !arg[1] )
+			break; // Intentionally not continue.
 		argv[i] = NULL;
 		if ( !strcmp(arg, "--") )
 			break;

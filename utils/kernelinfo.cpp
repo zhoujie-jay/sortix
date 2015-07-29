@@ -27,23 +27,18 @@
 #include <errno.h>
 #include <error.h>
 
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
-
-void help(const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
-	printf("usage: %s <REQUEST> ...\n", argv0);
-	printf("Prints a kernel information string.\n");
-	printf("example: %s name\n", argv0);
-	printf("example: %s version\n", argv0);
-	printf("example: %s builddate\n", argv0);
-	printf("example: %s buildtime\n", argv0);
+	fprintf(fp, "Usage: %s [OPTION]... REQUEST...\n", argv0);
+	fprintf(fp, "Prints a kernel information string.\n");
+	fprintf(fp, "example: %s name\n", argv0);
+	fprintf(fp, "example: %s version\n", argv0);
+	fprintf(fp, "example: %s builddate\n", argv0);
+	fprintf(fp, "example: %s buildtime\n", argv0);
 }
 
-void version(const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
-	FILE* fp = stdout;
 	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
 	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
 	fprintf(fp, "This is free software: you are free to change and redistribute it.\n");
@@ -53,14 +48,34 @@ void version(const char* argv0)
 int main(int argc, char* argv[])
 {
 	const char* argv0 = argv[0];
-	if ( argc < 2 ) { help(argv0); return 0; }
 	for ( int i = 1; i < argc; i++ )
 	{
-		if ( argv[i][0] != '-' ) { continue; }
-		if ( strcmp(argv[i], "--help") == 0 ) { help(argv0); return 0; }
-		if ( strcmp(argv[i], "--version") == 0 ) { version(argv0); return 0; }
-		fprintf(stderr, "%s: unknown option: %s\n", argv0, argv[i]);
-		return 1;
+		const char* arg = argv[i];
+		if ( arg[0] != '-' || !arg[1] )
+			continue;
+		argv[i] = NULL;
+		if ( !strcmp(arg, "--") )
+			break;
+		if ( arg[1] != '-' )
+		{
+			while ( char c = *++arg ) switch ( c )
+			{
+			default:
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
+				help(stderr, argv0);
+				exit(1);
+			}
+		}
+		else if ( !strcmp(arg, "--help") )
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--version") )
+			version(stdout, argv0), exit(0);
+		else
+		{
+			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
+			help(stderr, argv0);
+			exit(1);
+		}
 	}
 	size_t bufsize = 32;
 	char* buf = (char*) malloc(bufsize);

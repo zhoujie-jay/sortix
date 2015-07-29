@@ -151,20 +151,18 @@ void InstallPackageOfName(params_t* params, const char* pkg_name)
 	free(pkg_path);
 }
 
-void Usage(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s PREFIX COMMAND [OPTION]...\n", argv0);
 	fprintf(fp, "Front end to the Tix package management system.\n");
 }
 
-void Help(FILE* fp, const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
-	Usage(fp, argv0);
-}
-
-void Version(FILE* fp, const char* argv0)
-{
-	Usage(fp, argv0);
+	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
+	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
+	fprintf(fp, "This is free software: you are free to change and redistribute it.\n");
+	fprintf(fp, "There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
 int main(int argc, char* argv[])
@@ -178,7 +176,7 @@ int main(int argc, char* argv[])
 	for ( int i = 0; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' )
+		if ( arg[0] != '-' || !arg[1] )
 			continue;
 		argv[i] = NULL;
 		if ( !strcmp(arg, "--") )
@@ -188,32 +186,33 @@ int main(int argc, char* argv[])
 			while ( char c = *++arg ) switch ( c )
 			{
 			default:
-				fprintf(stderr, "%s: unknown option -- `%c'\n", argv0, c);
-				Usage(stderr, argv0);
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
+				help(stderr, argv0);
 				exit(1);
 			}
 		}
-		else if ( !strcmp(arg, "--help") ) { Help(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--usage") ) { Usage(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--version") ) { Version(stdout, argv0); exit(0); }
+		else if ( !strcmp(arg, "--help") )
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--version") )
+			version(stdout, argv0), exit(0);
 		else if ( GET_OPTION_VARIABLE("--collection", &params.collection) ) { }
 		else if ( GET_OPTION_VARIABLE("--tar", &params.tar) ) { }
 		else if ( GET_OPTION_VARIABLE("--tix-install", &params.tix_install) ) { }
 		else
 		{
-			fprintf(stderr, "%s: unknown option: `%s'\n", argv0, arg);
-			Usage(stderr, argv0);
+			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
+			help(stderr, argv0);
 			exit(1);
 		}
 	}
 
 	if ( argc == 1 )
 	{
-		Usage(stdout, argv0);
+		help(stdout, argv0);
 		exit(0);
 	}
 
-	CompactArguments(&argc, &argv);
+	compact_arguments(&argc, &argv);
 
 	ParseOptionalCommandLineCollectionPrefix(&params.collection, &argc, &argv);
 	VerifyCommandLineCollection(&params.collection);
@@ -242,7 +241,6 @@ int main(int argc, char* argv[])
 	if ( argc == 1 )
 	{
 		error(0, 0, "error: no command specified.");
-		Usage(stderr, argv0);
 		exit(1);
 	}
 
@@ -252,7 +250,6 @@ int main(int argc, char* argv[])
 		if ( argc == 2 )
 		{
 			error(0, 0, "expected list of packages to install after `install'");
-			Usage(stderr, argv0);
 			exit(1);
 		}
 
@@ -280,7 +277,6 @@ int main(int argc, char* argv[])
 	else
 	{
 		fprintf(stderr, "%s: unknown command: `%s'\n", argv0, cmd);
-		Usage(stderr, argv0);
 		exit(1);
 	}
 }

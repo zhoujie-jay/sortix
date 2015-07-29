@@ -800,20 +800,18 @@ void PurifyMakeflags()
 	string_array_reset(&makeflags);
 }
 
-void Usage(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION]... PACKAGE\n", argv0);
 	fprintf(fp, "Compile a source tix into a tix suitable for installation.\n");
 }
 
-void Help(FILE* fp, const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
-	Usage(fp, argv0);
-}
-
-void Version(FILE* fp, const char* argv0)
-{
-	Usage(fp, argv0);
+	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
+	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
+	fprintf(fp, "This is free software: you are free to change and redistribute it.\n");
+	fprintf(fp, "There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
 int main(int argc, char* argv[])
@@ -839,7 +837,7 @@ int main(int argc, char* argv[])
 	for ( int i = 0; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' )
+		if ( arg[0] != '-' || !arg[1] )
 			continue;
 		argv[i] = NULL;
 		if ( !strcmp(arg, "--") )
@@ -849,14 +847,15 @@ int main(int argc, char* argv[])
 			while ( char c = *++arg ) switch ( c )
 			{
 			default:
-				fprintf(stderr, "%s: unknown option -- `%c'\n", argv0, c);
-				Usage(stderr, argv0);
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
+				help(stderr, argv0);
 				exit(1);
 			}
 		}
-		else if ( !strcmp(arg, "--help") ) { Help(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--usage") ) { Usage(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--version") ) { Version(stdout, argv0); exit(0); }
+		else if ( !strcmp(arg, "--help") )
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--version") )
+			version(stdout, argv0), exit(0);
 		else if ( GET_OPTION_VARIABLE("--build", &minfo.build) ) { }
 		else if ( GET_OPTION_VARIABLE("--destination", &minfo.destination) ) { }
 		else if ( GET_OPTION_VARIABLE("--end", &end_step_string) ) { }
@@ -872,8 +871,8 @@ int main(int argc, char* argv[])
 		else if ( GET_OPTION_VARIABLE("--tmp", &minfo.tmp) ) { }
 		else
 		{
-			fprintf(stderr, "%s: unknown option: `%s'\n", argv0, arg);
-			Usage(stderr, argv0);
+			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
+			help(stderr, argv0);
 			exit(1);
 		}
 	}
@@ -881,24 +880,22 @@ int main(int argc, char* argv[])
 	if ( !(minfo.start_step = step_of_step_name(start_step_string)) )
 	{
 		fprintf(stderr, "%s: no such step `%s'\n", argv0, start_step_string);
-		Usage(stderr, argv0);
 		exit(1);
 	}
 
 	if ( !(minfo.end_step = step_of_step_name(end_step_string)) )
 	{
 		fprintf(stderr, "%s: no such step `%s'\n", argv0, end_step_string);
-		Usage(stderr, argv0);
 		exit(1);
 	}
 
 	if ( argc == 1 )
 	{
-		Usage(stdout, argv0);
+		help(stdout, argv0);
 		exit(0);
 	}
 
-	CompactArguments(&argc, &argv);
+	compact_arguments(&argc, &argv);
 
 	if ( minfo.prefix && !strcmp(minfo.prefix, "/") )
 		minfo.prefix[0] = '\0';
@@ -906,14 +903,12 @@ int main(int argc, char* argv[])
 	if ( argc < 2 )
 	{
 		fprintf(stderr, "%s: no package specified\n", argv0);
-		Usage(stderr, argv0);
 		exit(1);
 	}
 
 	if ( 2 < argc )
 	{
 		fprintf(stderr, "%s: unexpected extra operand `%s'\n", argv0, argv[2]);
-		Usage(stderr, argv0);
 		exit(1);
 	}
 

@@ -45,15 +45,18 @@
 
 #include "util.h"
 
-void help(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION]... PORT-TIX\n", argv0);
 	fprintf(fp, "Converts an archived port tix into an archived source tix.\n");
 }
 
-void version(FILE* fp, const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
-	help(fp, argv0);
+	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
+	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
+	fprintf(fp, "This is free software: you are free to change and redistribute it.\n");
+	fprintf(fp, "There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
 bool is_file_name(const char* path)
@@ -75,7 +78,7 @@ int main(int argc, char* argv[])
 	for ( int i = 0; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' )
+		if ( arg[0] != '-' || !arg[1] )
 			continue;
 		argv[i] = NULL;
 		if ( !strcmp(arg, "--") )
@@ -85,13 +88,15 @@ int main(int argc, char* argv[])
 			while ( char c = *++arg ) switch ( c )
 			{
 			default:
-				fprintf(stderr, "%s: unknown option -- `%c'\n", argv0, c);
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
 				help(stderr, argv0);
 				exit(1);
 			}
 		}
-		else if ( !strcmp(arg, "--help") ) { help(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--version") ) { version(stdout, argv0); exit(0); }
+		else if ( !strcmp(arg, "--help") )
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--version") )
+			version(stdout, argv0), exit(0);
 		else if ( GET_OPTION_VARIABLE("--output-directory", &output_directory) ) { }
 		else if ( GET_OPTION_VARIABLE("--output", &output) ) { }
 		else if ( GET_OPTION_VARIABLE("--patch", &patch) ) { }
@@ -101,7 +106,7 @@ int main(int argc, char* argv[])
 		else if ( GET_OPTION_VARIABLE("--tmp", &tmp) ) { }
 		else
 		{
-			fprintf(stderr, "%s: unknown option: `%s'\n", argv0, arg);
+			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
 			help(stderr, argv0);
 			exit(1);
 		}
@@ -113,21 +118,13 @@ int main(int argc, char* argv[])
 		exit(0);
 	}
 
-	CompactArguments(&argc, &argv);
+	compact_arguments(&argc, &argv);
 
 	if ( argc <= 1 )
-	{
-		fprintf(stderr, "%s: no archived port tix specified\n", argv0);
-		help(stderr, argv0);
-		exit(1);
-	}
+		error(1, 0, "No archived port tix specified");
 
 	if ( 3 <= argc )
-	{
-		fprintf(stderr, "%s: unexpected extra operand `%s'\n", argv0, argv[2]);
-		help(stderr, argv0);
-		exit(1);
-	}
+		error(1, 0, "extra operand");
 
 	const char* porttix_path = argv[1];
 

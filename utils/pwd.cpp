@@ -27,10 +27,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
-
 static bool nul_or_slash(char c)
 {
 	return !c || c == '/';

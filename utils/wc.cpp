@@ -35,10 +35,6 @@
 #include <wchar.h>
 #include <wctype.h>
 
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
-
 const int FLAG_PRINT_NUM_BYTES = 1 << 0;
 const int FLAG_PRINT_NUM_CHARACTERS = 1 << 1;
 const int FLAG_PRINT_NUM_WORDS = 1 << 2;
@@ -162,12 +158,14 @@ static void version(FILE* fp, const char* argv0)
 static void compact_arguments(int* argc, char*** argv)
 {
 	for ( int i = 0; i < *argc; i++ )
+	{
 		while ( i < *argc && !(*argv)[i] )
 		{
 			for ( int n = i; n < *argc; n++ )
 				(*argv)[n] = (*argv)[n+1];
 			(*argc)--;
 		}
+	}
 }
 
 bool word_count_file(FILE* fp, const char* path, int flags,

@@ -31,10 +31,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
-
 static bool cat_fd(int fd, const char* path)
 {
 	struct stat st;
@@ -95,12 +91,14 @@ static bool cat_arguments(int argc, char* argv[])
 static void compact_arguments(int* argc, char*** argv)
 {
 	for ( int i = 0; i < *argc; i++ )
+	{
 		while ( i < *argc && !(*argv)[i] )
 		{
 			for ( int n = i; n < *argc; n++ )
 				(*argv)[n] = (*argv)[n+1];
 			(*argc)--;
 		}
+	}
 }
 
 static void help(FILE* fp, const char* argv0)

@@ -443,14 +443,16 @@ int mkdir_p(const char* path, mode_t mode)
 	return 0;
 }
 
-void CompactArguments(int* argc, char*** argv)
+static void compact_arguments(int* argc, char*** argv)
 {
 	for ( int i = 0; i < *argc; i++ )
-	while ( i < *argc && !(*argv)[i] )
 	{
-		for ( int n = i; n < *argc; n++ )
-			(*argv)[n] = (*argv)[n+1];
-		(*argc)--;
+		while ( i < *argc && !(*argv)[i] )
+		{
+			for ( int n = i; n < *argc; n++ )
+				(*argv)[n] = (*argv)[n+1];
+			(*argc)--;
+		}
 	}
 }
 
@@ -708,7 +710,7 @@ void ParseOptionalCommandLineCollectionPrefix(char** collection, int* argcp,
 		free(*collection);
 		*collection = strdup((*argvp)[1]);
 		(*argvp)[1] = NULL;
-		CompactArguments(argcp, argvp);
+		compact_arguments(argcp, argvp);
 	}
 }
 
@@ -1009,13 +1011,13 @@ retry_ask_recovery_method:
 			selection = (int) strtol(input, &input_end, 0);
 			if ( *input_end )
 			{
-				error(0, 0, "error: `%s' is not an allowed choice\n", input);
+				error(0, 0, "error: `%s' is not an allowed choice", input);
 				goto retry_ask_recovery_method;
 			}
 
 			if ( 5 < selection )
 			{
-				error(0, 0, "error: `%i' is not an allowed choice\n", selection);
+				error(0, 0, "error: `%i' is not an allowed choice", selection);
 				goto retry_ask_recovery_method;
 			}
 		}

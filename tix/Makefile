@@ -4,10 +4,9 @@ include ../build-aux/version.mak
 include ../build-aux/dirs.mak
 
 OPTLEVEL?=$(DEFAULT_OPTLEVEL)
-CPPFLAGS?=
 CXXFLAGS?=$(OPTLEVEL)
 
-CPPFLAGS:=$(CPPFLAGS)
+CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\"
 CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
 
 BINARIES:=\

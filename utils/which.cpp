@@ -31,10 +31,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
-
 // NOTE: The PATH-searching logic is repeated multiple places. Until this logic
 //       can be shared somehow, you need to keep this comment in sync as well
 //       as the logic in these files:
@@ -123,13 +119,26 @@ bool Which(const char* filename, const char* path, bool all)
 	return found;
 }
 
-void Help(FILE* fp, const char* argv0)
+static void compact_arguments(int* argc, char*** argv)
+{
+	for ( int i = 0; i < *argc; i++ )
+	{
+		while ( i < *argc && !(*argv)[i] )
+		{
+			for ( int n = i; n < *argc; n++ )
+				(*argv)[n] = (*argv)[n+1];
+			(*argc)--;
+		}
+	}
+}
+
+static void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [-a] FILENAME...\n", argv0);
 	fprintf(fp, "Locate a program in the PATH.\n");
 }
 
-void Version(FILE* fp, const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
 	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
@@ -144,41 +153,38 @@ int main(int argc, char* argv[])
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' )
+		if ( arg[0] != '-' || !arg[1] )
 			continue;
 		argv[i] = NULL;
 		if ( !strcmp(arg, "--") )
 			break;
 		if ( arg[1] != '-' )
-			for ( size_t i = 1; arg[i]; i++ )
-				switch ( arg[i] )
-				{
-				case 'a': all = true; break;
-				default:
-					fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, arg[i]);
-					Help(stderr, argv0);
-					exit(1);
-				}
-		else if ( !strcmp(arg, "--help") ) { Help(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--version") ) { Version(stdout, argv0); exit(0); }
+		{
+			while ( char c = *++arg ) switch ( c )
+			{
+			case 'a': all = true; break;
+			default:
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, arg[i]);
+				help(stderr, argv0);
+				exit(1);
+			}
+		}
+		else if ( !strcmp(arg, "--help") )
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--version") )
+			version(stdout, argv0), exit(0);
 		else
 		{
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
-			Help(stderr, argv0);
+			help(stderr, argv0);
 			exit(1);
 		}
 	}
 
-	int num_args = 0;
-	for ( int i = 1; i < argc; i++ )
-		if ( argv[i] )
-			num_args++;
+	compact_arguments(&argc, &argv);
 
-	if ( !num_args )
-	{
-		fprintf(stderr, "%s: missing operand\n", argv0);
-		exit(1);
-	}
+	if ( argc < 2 )
+		error(1, 0, "missing operand");
 
 	const char* path = getenv("PATH");
 
@@ -186,8 +192,6 @@ int main(int argc, char* argv[])
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( !arg )
-			continue;
 		if ( !Which(arg, path, all) )
 			success = false;
 	}

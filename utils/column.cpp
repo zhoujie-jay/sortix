@@ -32,10 +32,6 @@
 #include <termios.h>
 #include <wchar.h>
 
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
-
 struct line
 {
 	const char* string;
@@ -138,7 +134,7 @@ bool append_lines_from_file(FILE* fp,
 	}
 }
 
-void compact_arguments(int* argc, char*** argv)
+static void compact_arguments(int* argc, char*** argv)
 {
 	for ( int i = 0; i < *argc; i++ )
 	{
@@ -151,7 +147,7 @@ void compact_arguments(int* argc, char*** argv)
 	}
 }
 
-void help(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION]... FILE...\n", argv0);
 	fprintf(fp, "Columnate lists.\n");
@@ -162,7 +158,7 @@ void help(FILE* fp, const char* argv0)
 	fprintf(fp, "      --version                output version information and exit\n");
 }
 
-void version(FILE* fp, const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
 	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
@@ -191,7 +187,7 @@ int main(int argc, char* argv[])
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' )
+		if ( arg[0] != '-' || !arg[1] )
 			continue;
 		argv[i] = NULL;
 		if ( !strcmp(arg, "--") )

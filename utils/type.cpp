@@ -29,17 +29,13 @@
 #include <errno.h>
 #include <error.h>
 
-#if !defined(VERSIONSTR)
-#define VERSIONSTR "unknown version"
-#endif
-
-void help(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
-	fprintf(fp, "usage: %s [--help | --version]\n", argv0);
+	fprintf(fp, "Usage: %s [OPTION]...\n", argv0);
 	fprintf(fp, "Lets you type freely onto the tty.\n");
 }
 
-void version(FILE* fp, const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
 	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
@@ -54,14 +50,31 @@ int main(int argc, char* argv[])
 	for ( int i = 1; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' ) { continue; }
+		if ( arg[0] != '-' || !arg[1] )
+			continue;
 		argv[i] = NULL;
-		if ( !strcmp(arg, "--") ) { break; }
-		if ( !strcmp(arg, "--help") ) { help(stdout, argv0); exit(0); }
-		if ( !strcmp(arg, "--version") ) { version(stdout, argv0); exit(0); }
-		error(0, 0, "unrecognized option: %s", arg);
-		help(stderr, argv0);
-		exit(1);
+		if ( !strcmp(arg, "--") )
+			break;
+		if ( arg[1] != '-' )
+		{
+			while ( char c = *++arg ) switch ( c )
+			{
+			default:
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
+				help(stderr, argv0);
+				exit(1);
+			}
+		}
+		else if ( !strcmp(arg, "--help") )
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--version") )
+			version(stdout, argv0), exit(0);
+		else
+		{
+			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
+			help(stderr, argv0);
+			exit(1);
+		}
 	}
 
 	if ( !isatty(0) || !isatty(1) )

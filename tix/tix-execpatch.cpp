@@ -173,15 +173,18 @@ bool execpatch(FILE* input, const char* input_path, bool check)
 	return result;
 }
 
-void help(FILE* fp, const char* argv0)
+static void help(FILE* fp, const char* argv0)
 {
 	fprintf(fp, "Usage: %s [OPTION]... [PATCH]\n", argv0);
 	fprintf(fp, "Patches the executable bits of files in the current source directory.\n");
 }
 
-void version(FILE* fp, const char* argv0)
+static void version(FILE* fp, const char* argv0)
 {
-	help(fp, argv0);
+	fprintf(fp, "%s (Sortix) %s\n", argv0, VERSIONSTR);
+	fprintf(fp, "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.\n");
+	fprintf(fp, "This is free software: you are free to change and redistribute it.\n");
+	fprintf(fp, "There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
 int main(int argc, char* argv[])
@@ -193,7 +196,7 @@ int main(int argc, char* argv[])
 	for ( int i = 0; i < argc; i++ )
 	{
 		const char* arg = argv[i];
-		if ( arg[0] != '-' )
+		if ( arg[0] != '-' || !arg[1] )
 			continue;
 		argv[i] = NULL;
 		if ( !strcmp(arg, "--") )
@@ -204,31 +207,30 @@ int main(int argc, char* argv[])
 			{
 			case 'c': check = true; break;
 			default:
-				fprintf(stderr, "%s: unknown option -- `%c'\n", argv0, c);
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
 				help(stderr, argv0);
 				exit(1);
 			}
 		}
-		else if ( !strcmp(arg, "--help") ) { help(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--version") ) { version(stdout, argv0); exit(0); }
-		else if ( !strcmp(arg, "--check") ) { check = true; }
+		else if ( !strcmp(arg, "--help") )
+			help(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--version") )
+			version(stdout, argv0), exit(0);
+		else if ( !strcmp(arg, "--check") )
+			check = true;
 		else if ( GET_OPTION_VARIABLE("--directory", &directory) ) { }
 		else
 		{
-			fprintf(stderr, "%s: unknown option: `%s'\n", argv0, arg);
+			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
 			help(stderr, argv0);
 			exit(1);
 		}
 	}
 
-	CompactArguments(&argc, &argv);
+	compact_arguments(&argc, &argv);
 
 	if ( 2 < argc )
-	{
-		fprintf(stderr, "%s: unexpected extra operand `%s'\n", argv0, argv[2]);
-		help(stderr, argv0);
-		exit(1);
-	}
+		error(1, 0, "extra operand");
 
 	const char* input_path = "<stdin>";
 	FILE* input = stdin;
