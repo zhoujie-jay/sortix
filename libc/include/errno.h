@@ -118,6 +118,7 @@ extern "C" {
 #define EOWNERDEAD 96
 #define EPROTO 97
 #define ETXTBSY 98
+#define ENOMOUNT 99
 
 #define EOPNOTSUPP ENOTSUP
 

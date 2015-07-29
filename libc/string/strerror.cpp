@@ -117,6 +117,7 @@ extern "C" const char* sortix_strerror(int errnum)
 	case EOWNERDEAD: return "Previous owner died";
 	case EPROTO: return "Protocol error";
 	case ETXTBSY: return "Text file busy";
+	case ENOMOUNT: return "No such mountpoint";
 	default: return "Unknown error condition";
 	}
 }

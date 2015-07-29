@@ -187,7 +187,7 @@ int Vnode::unmount(ioctx_t* ctx, const char* filename, int flags)
 
 	size_t mp_index;
 	if ( !LookupMountUnlocked(normal_inode, &mp_index) )
-		return errno = EINVAL, -1;
+		return errno = ENOMOUNT, -1;
 	mountpoint_t* mp = mtable->mounts + mp_index;
 
 	Ref<Inode> mp_inode = mp->inode;
