@@ -41,6 +41,7 @@ mkdir \
 mktemp \
 mv \
 pager \
+ps \
 pwd \
 realpath \
 rm \
