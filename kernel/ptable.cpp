@@ -29,11 +29,11 @@
 #include <string.h>
 
 #include <sortix/kernel/kthread.h>
+#include <sortix/kernel/process.h>
 #include <sortix/kernel/ptable.h>
 #include <sortix/kernel/refcount.h>
 
 // TODO: Process memory ownership needs to be reference counted.
-// TODO: There is no proper way to iterate all the existing processes.
 // TODO: This implementation is rather run-time inefficient.
 // TODO: The Free method potentially leaks memory as the ptable is never shrunk.
 // TODO: The next_pid counter could potentially overflow.
@@ -98,6 +98,34 @@ void ProcessTable::Free(pid_t pid)
 		return;
 	}
 	assert(false);
+}
+
+pid_t ProcessTable::Prev(pid_t pid)
+{
+	ScopedLock lock(&ptablelock);
+	pid_t result = -1;
+	for ( size_t i = 0; i < entries_used; i++ )
+	{
+		if ( pid <= entries[i].process->pid )
+			continue;
+		if ( result == -1 || result < entries[i].process->pid )
+			result = entries[i].process->pid;
+	}
+	return result;
+}
+
+pid_t ProcessTable::Next(pid_t pid)
+{
+	ScopedLock lock(&ptablelock);
+	pid_t result = -1;
+	for ( size_t i = 0; i < entries_used; i++ )
+	{
+		if ( entries[i].process->pid <= pid )
+			continue;
+		if ( result == -1 || entries[i].process->pid < result )
+			result = entries[i].process->pid;
+	}
+	return result;
 }
 
 } // namespace Sortix

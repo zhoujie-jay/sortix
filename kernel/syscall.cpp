@@ -188,6 +188,8 @@ void* syscall_list[SYSCALL_MAX_NUM + 1] =
 	[SYSCALL_UNMOUNTAT] = (void*) sys_unmountat,
 	[SYSCALL_FSM_MOUNTAT] = (void*) sys_fsm_mountat,
 	[SYSCALL_CLOSEFROM] = (void*) sys_closefrom,
+	[SYSCALL_RESERVED1] = (void*) sys_bad_syscall,
+	[SYSCALL_PSCTL] = (void*) sys_psctl,
 	[SYSCALL_MAX_NUM] = (void*) sys_bad_syscall,
 };
 } /* extern "C" */

@@ -48,6 +48,8 @@ public:
 	Process* Get(pid_t pid);
 	pid_t Allocate(Process* process);
 	void Free(pid_t pid);
+	pid_t Prev(pid_t pid);
+	pid_t Next(pid_t pid);
 
 private:
 	kthread_mutex_t ptablelock;

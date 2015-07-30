@@ -178,6 +178,8 @@
 #define SYSCALL_UNMOUNTAT 150
 #define SYSCALL_FSM_MOUNTAT 151
 #define SYSCALL_CLOSEFROM 152
-#define SYSCALL_MAX_NUM 153 /* index of highest constant + 1 */
+#define SYSCALL_RESERVED1 153
+#define SYSCALL_PSCTL 154
+#define SYSCALL_MAX_NUM 155 /* index of highest constant + 1 */
 
 #endif

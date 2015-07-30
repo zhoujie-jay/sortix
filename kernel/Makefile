@@ -128,6 +128,7 @@ pci.o \
 pipe.o \
 poll.o \
 process.o \
+psctl.o \
 ptable.o \
 random.o \
 refcount.o \

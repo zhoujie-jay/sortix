@@ -117,7 +117,7 @@ public:
 	void SetRoot(Ref<Descriptor> newroot);
 	void SetCWD(Ref<Descriptor> newcwd);
 
-private:
+public:
 // A process may only access its parent if parentlock is locked. A process
 // may only use its list of children if childlock is locked. A process may
 // not access its sibling processes.

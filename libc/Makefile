@@ -388,6 +388,7 @@ netdb/setprotoent.o \
 netdb/setservent.o \
 poll/poll.o \
 poll/ppoll.o \
+psctl/psctl.o \
 pwd/endpwent.o \
 pwd/fgetpwent.o \
 pwd/fgetpwent_r.o \

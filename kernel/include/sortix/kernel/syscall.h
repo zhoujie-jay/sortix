@@ -122,6 +122,7 @@ int sys_ppoll(struct pollfd*, size_t, const struct timespec*, const sigset_t*);
 ssize_t sys_pread(int, void*, size_t, off_t);
 ssize_t sys_preadv(int, const struct iovec*, int, off_t);
 int sys_prlimit(pid_t, int, const struct rlimit*, struct rlimit*);
+int sys_psctl(pid_t, int, void*);
 ssize_t sys_pwrite(int, const void*, size_t, off_t);
 ssize_t sys_pwritev(int, const struct iovec*, int, off_t);
 int sys_raise(int);
