@@ -127,7 +127,6 @@ Process::Process()
 	childlock = KTHREAD_MUTEX_INITIALIZER;
 	parentlock = KTHREAD_MUTEX_INITIALIZER;
 	zombiecond = KTHREAD_COND_INITIALIZER;
-	zombiewaiting = 0;
 	iszombie = false;
 	nozombify = false;
 	exit_code = -1;
@@ -323,28 +322,23 @@ void Process::LastPrayer()
 		if ( init->firstchild )
 			init->firstchild->prevsibling = process;
 		init->firstchild = process;
+		process->nozombify = true;
 	}
 	// Since we have no more children (they are with init now), we don't
 	// have to worry about new zombie processes showing up, so just collect
 	// those that are left. Then we satisfiy the invariant !zombiechild that
 	// applies on process termination.
-	bool hadzombies = zombiechild;
 	while ( zombiechild )
 	{
-		ScopedLock zombiechildlock(&zombiechild->parentlock);
-		ScopedLock initlock(&init->childlock);
 		Process* zombie = zombiechild;
 		zombiechild = zombie->nextsibling;
-		zombie->prevsibling = NULL;
-		zombie->nextsibling = init->zombiechild;
-		if ( init->zombiechild )
-			init->zombiechild->prevsibling = zombie;
-		init->zombiechild = zombie;
+		zombie->nextsibling = NULL;
+		if ( zombiechild )
+			zombiechild->prevsibling = NULL;
+		zombie->nozombify = true;
+		zombie->WaitedFor();
 	}
 	kthread_mutex_unlock(&childlock);
-
-	if ( hadzombies )
-		init->NotifyNewZombies();
 
 	iszombie = true;
 
@@ -365,14 +359,19 @@ void Process::LastPrayer()
 
 	// If nobody is waiting for us, then simply commit suicide.
 	if ( !zombify )
-	{
-		kthread_mutex_lock(&groupparentlock);
-		bool in_limbo = groupfirst && (grouplimbo = true);
-		kthread_mutex_unlock(&groupparentlock);
+		WaitedFor();
+}
 
-		if ( !in_limbo )
-			delete this;
-	}
+void Process::WaitedFor()
+{
+	kthread_mutex_lock(&parentlock);
+	parent = NULL;
+	kthread_mutex_unlock(&parentlock);
+	kthread_mutex_lock(&groupparentlock);
+	bool in_limbo = groupfirst && (grouplimbo = true);
+	kthread_mutex_unlock(&groupparentlock);
+	if ( !in_limbo )
+		delete this;
 }
 
 void Process::ResetAddressSpace()
@@ -451,8 +450,7 @@ void Process::NotifyNewZombies()
 {
 	ScopedLock lock(&childlock);
 	DeliverSignal(SIGCHLD);
-	if ( zombiewaiting )
-		kthread_cond_broadcast(&zombiecond);
+	kthread_cond_broadcast(&zombiecond);
 }
 
 pid_t Process::Wait(pid_t thepid, int* status_ptr, int options)
@@ -474,10 +472,10 @@ pid_t Process::Wait(pid_t thepid, int* status_ptr, int options)
 		// target process has the correct parent.
 		bool found = false;
 		for ( Process* p = firstchild; !found && p; p = p->nextsibling )
-			if ( p->pid == thepid )
+			if ( p->pid == thepid && !p->nozombify )
 				found = true;
 		for ( Process* p = zombiechild; !found && p; p = p->nextsibling )
-			if ( p->pid == thepid )
+			if ( p->pid == thepid && !p->nozombify )
 				found = true;
 		if ( !found )
 			return errno = ECHILD, -1;
@@ -487,16 +485,13 @@ pid_t Process::Wait(pid_t thepid, int* status_ptr, int options)
 	while ( !zombie )
 	{
 		for ( zombie = zombiechild; zombie; zombie = zombie->nextsibling )
-			if ( thepid == -1 || thepid == zombie->pid )
+			if ( (thepid == -1 || thepid == zombie->pid) && !zombie->nozombify )
 				break;
 		if ( zombie )
 			break;
 		if ( options & WNOHANG )
 			return 0;
-		zombiewaiting++;
-		unsigned long r = kthread_cond_wait_signal(&zombiecond, &childlock);
-		zombiewaiting--;
-		if ( !r )
+		if ( !kthread_cond_wait_signal(&zombiecond, &childlock) )
 			return errno = EINTR, -1;
 	}
 
@@ -521,13 +516,7 @@ pid_t Process::Wait(pid_t thepid, int* status_ptr, int options)
 	if ( status < 0 )
 		status = WCONSTRUCT(WNATURE_SIGNALED, 128 + SIGKILL, SIGKILL);
 
-	kthread_mutex_lock(&zombie->groupparentlock);
-	bool in_limbo = zombie->groupfirst && (zombie->grouplimbo = true);
-	kthread_mutex_unlock(&zombie->groupparentlock);
-
-	// And so, the process was fully deleted.
-	if ( !in_limbo )
-		delete zombie;
+	zombie->WaitedFor();
 
 	if ( status_ptr )
 		*status_ptr = status;

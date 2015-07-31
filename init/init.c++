@@ -469,7 +469,7 @@ void set_hostname()
 	free(hostname);
 }
 
-int init_main(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
 	if ( 3 <= argc && !strcmp(argv[1], "--chain") )
 		return chain_boot_device(argv[2]);
@@ -512,34 +512,4 @@ int init_main(int argc, char* argv[])
 	fclose(root_uuid_fp);
 
 	return chain_boot_uuid(root_uuid);
-}
-
-int main(int argc, char* argv[])
-{
-	if ( getpid() == 1 )
-	{
-		pid_t direct_child_pid = fork();
-		if ( direct_child_pid < 0 )
-			error(2, errno, "fork");
-		if ( direct_child_pid )
-		{
-			int status;
-			while ( true )
-			{
-				pid_t child_pid = waitpid(-1, &status, 0);
-				if ( child_pid < 0 )
-					error(2, errno, "waitpid");
-				if ( child_pid == direct_child_pid )
-					break;
-			}
-			int exit_value = WEXITSTATUS(status);
-			// TODO: Broadcast SIGKILL and wait for all processes to finish.
-			while ( 0 < waitpid(-1, &status, WNOHANG) )
-			{
-			}
-			return exit_value;
-		}
-	}
-
-	return init_main(argc, argv);
 }

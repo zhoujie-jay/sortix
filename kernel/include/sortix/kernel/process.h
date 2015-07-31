@@ -129,7 +129,6 @@ private:
 	kthread_mutex_t childlock;
 	kthread_mutex_t parentlock;
 	kthread_cond_t zombiecond;
-	size_t zombiewaiting;
 	bool iszombie;
 	bool nozombify;
 	int exit_code;
@@ -190,6 +189,7 @@ public:
 private:
 	void OnLastThreadExit();
 	void LastPrayer();
+	void WaitedFor();
 	void NotifyMemberExit(Process* child);
 	void NotifyChildExit(Process* child, bool zombify);
 	void NotifyNewZombies();
