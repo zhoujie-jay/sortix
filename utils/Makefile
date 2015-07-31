@@ -42,6 +42,7 @@ mktemp \
 mv \
 pager \
 ps \
+pstree \
 pwd \
 realpath \
 rm \
