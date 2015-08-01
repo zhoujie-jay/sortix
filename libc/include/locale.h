@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -70,12 +70,7 @@ struct lconv
 #define LC_ALL 6
 #define LC_NUM_CATEGORIES LC_ALL
 
-const char* sortix_setlocale(int category, const char* locale);
-#if __USE_SORTIX && __SORTIX_STDLIB_REDIRECTS
-const char* setlocale(int category, const char* locale) __asm__ ("sortix_setlocale");
-#else
 char* setlocale(int category, const char* locale);
-#endif
 struct lconv* localeconv(void);
 
 #ifdef __cplusplus

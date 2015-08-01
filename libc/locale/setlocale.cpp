@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -22,45 +22,35 @@
 
 *******************************************************************************/
 
-#define __SORTIX_STDLIB_REDIRECTS 0
 #include <errno.h>
 #include <locale.h>
-#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 
-static pthread_mutex_t locale_lock = PTHREAD_MUTEX_INITIALIZER;
 static char* current_locales[LC_NUM_CATEGORIES] = { NULL };
 
-extern "C" const char* sortix_setlocale(int category, const char* locale)
+extern "C" char* setlocale(int category, const char* locale)
 {
 	if ( category < 0 || LC_ALL < category )
-		return errno = EINVAL, (const char*) NULL;
+		return errno = EINVAL, (char*) NULL;
 	char* new_strings[LC_NUM_CATEGORIES];
 	int from = category != LC_ALL ? category : 0;
 	int to = category != LC_ALL ? category : LC_NUM_CATEGORIES - 1;
 	if ( !locale )
-		return current_locales[to] ? current_locales[to] : "C";
+		return current_locales[to] ? current_locales[to] : (char*) "C";
 	for ( int i = from; i <= to; i++ )
 	{
 		if ( !(new_strings[i] = strdup(locale)) )
 		{
 			for ( int n = from; n < i; n++ )
 				free(new_strings[n]);
-			return NULL;
+			return (char*) NULL;
 		}
 	}
-	pthread_mutex_lock(&locale_lock);
 	for ( int i = from; i <= to; i++ )
 	{
 		free(current_locales[i]);
 		current_locales[i] = new_strings[i];
 	}
-	pthread_mutex_unlock(&locale_lock);
-	return locale;
-}
-
-extern "C" char* setlocale(int category, const char* locale)
-{
-	return (char*) sortix_setlocale(category, locale);
+	return (char*) locale;
 }
