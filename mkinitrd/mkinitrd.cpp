@@ -388,8 +388,8 @@ bool WriteNode(struct initrd_superblock* sb, int fd, const char* outputname,
 
 	struct initrd_inode inode;
 	inode.mode = HostModeToInitRD(node->mode);
-	inode.uid = 1;
-	inode.gid = 1;
+	inode.uid = 0;
+	inode.gid = 0;
 	inode.nlink = node->nlink;
 	inode.ctime = (uint64_t) node->ctime;
 	inode.mtime = (uint64_t) node->mtime;
