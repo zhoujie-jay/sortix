@@ -49,6 +49,7 @@ rm \
 rmdir \
 sleep \
 sort \
+stat \
 tail \
 time \
 tr \

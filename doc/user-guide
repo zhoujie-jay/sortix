@@ -212,6 +212,7 @@ Sortix comes with a number of home-made programs. Here is an overview:
 * `sh` - command shell
 * `sleep` - delay for a specified amount of time
 * `sort` - sort lines of text files
+* `stat` - display file status
 * `tail` - display end of file
 * `time` - measure program running time
 * `trianglix` - triangle system
