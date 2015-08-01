@@ -53,7 +53,6 @@ static inline void ExitThread()
 }
 #endif
 
-void Init();
 void Switch(struct interrupt_context* intctx);
 void SetThreadState(Thread* thread, ThreadState state);
 ThreadState GetThreadState(Thread* thread);

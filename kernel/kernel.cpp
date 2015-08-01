@@ -419,9 +419,6 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Initialize Unix Signals.
 	Signal::Init();
 
-	// Initialize the scheduler.
-	Scheduler::Init();
-
 	// Now that the base system has been loaded, it's time to go threaded. First
 	// we create an object that represents this process.
 	Ref<ProcessTable> ptable(new ProcessTable());

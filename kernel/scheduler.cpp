@@ -453,13 +453,6 @@ void ScheduleTrueThread()
 	Interrupt::SetEnabled(wasenabled);
 }
 
-void Init()
-{
-	first_runnable_thread = NULL;
-	true_current_thread = NULL;
-	idle_thread = NULL;
-}
-
 } // namespace Scheduler
 } // namespace Sortix
 
