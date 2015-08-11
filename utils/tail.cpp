@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -19,6 +19,8 @@
     Output the last part of files.
 
 *******************************************************************************/
+
+#include <sys/stat.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -45,6 +47,13 @@ bool verbose = false;
 
 bool processfp(const char* inputname, FILE* fp)
 {
+	struct stat st;
+	if ( fstat(fileno(fp), &st) == 0 && S_ISDIR(st.st_mode) )
+	{
+		error(0, EISDIR, "%s", inputname);
+		return false;
+	}
+
 	const bool tail = TAIL;
 	const bool head = !TAIL;
 	if ( !numlines ) { return true; }
@@ -69,7 +78,7 @@ bool processfp(const char* inputname, FILE* fp)
 		{
 			free(line);
 			if ( feof(fp) ) { break; }
-			error(1, errno, "error reading line: %s", inputname);
+			error(1, errno, "%s", inputname);
 		}
 		if ( specialleading )
 		{
@@ -182,10 +191,14 @@ int main(int argc, char* argv[])
 	if ( !numfiles )
 	{
 		bool header = verbose;
-		if ( header ) { printf("==> %s <==\n", STDINNAME); }
-		if ( !processfp(STDINNAME, stdin) ) { return 1; }
+		if ( header )
+			printf("==> %s <==\n", STDINNAME);
+		if ( !processfp(STDINNAME, stdin) )
+			return 1;
 		return 0;
 	}
+
+	int result = 0;
 
 	const char* prefix = "";
 	for ( int i = 1; i < argc; i++ )
@@ -193,13 +206,21 @@ int main(int argc, char* argv[])
 		if ( !argv[i] ) { continue; }
 		bool isstdin = strcmp(argv[i], "-") == 0;
 		FILE* fp = isstdin ? stdin : fopen(argv[i], "r");
-		if ( !fp ) { error(1, errno, "error opening: %s", argv[i]); }
+		if ( !fp )
+		{
+			error(0, errno, "%s", argv[i]);
+			result = 1;
+			continue;
+		}
 		bool header = !quiet && (verbose || 1 < numfiles);
-		if ( header ) { printf("%s==> %s <==\n", prefix, argv[i]); }
+		if ( header )
+			printf("%s==> %s <==\n", prefix, argv[i]);
 		prefix = "\n";
-		if ( !processfp(isstdin ? STDINNAME : argv[i], fp) ) { return 1; }
-		if ( !isstdin ) { fclose(fp); }
+		if ( !processfp(isstdin ? STDINNAME : argv[i], fp) )
+			result = 1;
+		if ( !isstdin )
+			fclose(fp);
 	}
 
-	return 0;
+	return result;
 }
