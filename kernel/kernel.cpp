@@ -27,6 +27,7 @@
 
 #include <assert.h>
 #include <brand.h>
+#include <ctype.h>
 #include <elf.h>
 #include <errno.h>
 #include <malloc.h>
@@ -106,6 +107,51 @@ static void SystemIdleThread(void* user);
 addr_t initrd;
 size_t initrdsize;
 
+static char* cmdline_tokenize(char** saved)
+{
+	char* data = *saved;
+	if ( !data )
+		return *saved = NULL;
+	while ( data[0] && isspace((unsigned char) data[0]) )
+		data++;
+	if ( !data[0] )
+		return *saved = NULL;
+	size_t input = 0;
+	size_t output = 0;
+	bool singly = false;
+	bool doubly = false;
+	bool escaped = false;
+	for ( ; data[input]; input++ )
+	{
+		char c = data[input];
+		if ( !escaped && !singly && !doubly && isspace((unsigned char) c) )
+			break;
+		if ( !escaped && !doubly && c == '\'' )
+		{
+			singly = !singly;
+			continue;
+		}
+		if ( !escaped && !singly && c == '"' )
+		{
+			doubly = !doubly;
+			continue;
+		}
+		if ( !singly && !escaped && c == '\\' )
+		{
+			escaped = true;
+			continue;
+		}
+		escaped = false;
+		data[output++] = c;
+	}
+	if ( data[input] )
+		*saved = data + input + 1;
+	else
+		*saved = NULL;
+	data[output] = '\0';
+	return data;
+}
+
 extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 {
 	(void) magic;
@@ -152,6 +198,81 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 		      "x86_64 without KVM.  You have three options: 1) Enable KVM 2) "
 		      "Use a 32-bit OS 3) Use another version of qemu.");
 #endif
+
+	char* cmdline = NULL;
+	if ( bootinfo->flags & MULTIBOOT_INFO_CMDLINE && bootinfo->cmdline )
+	{
+		addr_t physical_from = Page::AlignDown(bootinfo->cmdline);
+		size_t offset = bootinfo->cmdline - physical_from;
+		size_t desired = 16 * Page::Size();
+		size_t mapped = offset + desired;
+		addralloc_t alloc;
+		if ( !AllocateKernelAddress(&alloc, mapped) )
+			Panic("Failed to allocate virtual space for command line");
+		for ( size_t i = 0; i < mapped; i += Page::Size() )
+		{
+			if ( !Memory::Map(physical_from + i, alloc.from + i, PROT_KREAD) )
+				Panic("Failed to memory map command line");
+		}
+		char* bootloader_cmdline = (char*) (alloc.from + offset);
+		size_t cmdline_length = strnlen(bootloader_cmdline, desired);
+		if ( desired <= cmdline_length )
+			Panic("Kernel command line is too long");
+		if ( !(cmdline = strdup(bootloader_cmdline)) )
+			Panic("Failed to strdup command line");
+		for ( size_t i = 0; i < mapped; i += Page::Size() )
+			Memory::Unmap(alloc.from + i);
+		Memory::Flush();
+		FreeKernelAddress(&alloc);
+	}
+
+	char* arg_saved = cmdline;
+	char* arg;
+	struct kernel_option
+	{
+		const char* name;
+		bool has_parameter;
+	} options[] =
+	{
+	};
+	size_t options_count = sizeof(options) / sizeof(options[0]);
+	while ( (arg = cmdline_tokenize(&arg_saved)) )
+	{
+		struct kernel_option* option = NULL;
+		char* parameter = NULL;
+		for ( size_t i = 0; i < options_count; i++ )
+		{
+			struct kernel_option* candidate = &options[i];
+			if ( candidate->has_parameter )
+			{
+				size_t name_length = strlen(candidate->name);
+				if ( strncmp(arg, candidate->name, name_length) != 0 )
+					continue;
+				if ( arg[name_length] == '=' )
+					parameter = arg + name_length + 1;
+				else if ( !arg[name_length] )
+				{
+					if ( !(parameter = cmdline_tokenize(&arg_saved)) )
+					{
+						Log::PrintF("\r\e[J");
+						Log::PrintF("kernel: fatal: option '%s' requires an argument\n", arg);
+						HaltKernel();
+					}
+				}
+				else
+					continue;
+			}
+			else if ( strcmp(arg, candidate->name) != 0 )
+				continue;
+			option = candidate;
+		}
+		if ( !option )
+		{
+			Log::PrintF("\r\e[J");
+			Log::PrintF("kernel: fatal: unrecognized option '%s'\n", arg);
+			HaltKernel();
+		}
+	}
 
 	initrd = 0;
 	initrdsize = 0;
