@@ -30,9 +30,12 @@
 #include <ctype.h>
 #include <elf.h>
 #include <errno.h>
+#include <limits.h>
 #include <malloc.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <sortix/fcntl.h>
 #include <sortix/mman.h>
@@ -106,6 +109,7 @@ static void SystemIdleThread(void* user);
 
 addr_t initrd;
 size_t initrdsize;
+static char* init_cmdline;
 
 static char* cmdline_tokenize(char** saved)
 {
@@ -234,6 +238,7 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 		bool has_parameter;
 	} options[] =
 	{
+		{ "--init", true },
 	};
 	size_t options_count = sizeof(options) / sizeof(options[0]);
 	while ( (arg = cmdline_tokenize(&arg_saved)) )
@@ -272,6 +277,8 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 			Log::PrintF("kernel: fatal: unrecognized option '%s'\n", arg);
 			HaltKernel();
 		}
+		if ( !strcmp(option->name, "--init") )
+			init_cmdline = parameter;
 	}
 
 	initrd = 0;
@@ -688,7 +695,34 @@ static void InitThread(void* /*user*/)
 
 	dtable.Reset();
 
-	const char* initpath = "/bin/init";
+	static char default_init_cmdline[] = "/bin/init";
+	if ( !init_cmdline )
+		init_cmdline = default_init_cmdline;
+
+	char* init_cmdline_dup = strdup(init_cmdline);
+	if ( !init_cmdline_dup )
+		PanicF("strdup: %m");
+	size_t init_cmdline_tokens = 0;
+	char* saved = init_cmdline_dup;
+	char* arg;
+	while ( (arg = cmdline_tokenize(&saved)) )
+		init_cmdline_tokens++;
+	free(init_cmdline_dup);
+
+	if ( INT_MAX - 1 < init_cmdline_tokens )
+		Panic("Too many tokens in init command line");
+
+	int argc = init_cmdline_tokens;
+	char** argv = new char*[argc + 1];
+	if ( !argv )
+		PanicF("operator new: %m");
+	saved = init_cmdline;
+	for ( int i = 0; i <= argc; i++ )
+		argv[i] = cmdline_tokenize(&saved);
+
+	if ( argc == 0 )
+		Panic("No init specified");
+	const char* initpath = argv[0];
 	Ref<Descriptor> init = root->open(&ctx, initpath, O_EXEC | O_READ);
 	if ( !init )
 		PanicF("Could not open %s in early kernel RAM filesystem:\n%s",
@@ -716,8 +750,6 @@ static void InitThread(void* /*user*/)
 
 	init.Reset();
 
-	int argc = 1;
-	const char* argv[] = { "init", NULL };
 	int envc = 0;
 	const char* envp[] = { NULL };
 	struct thread_registers regs;
@@ -728,6 +760,7 @@ static void InitThread(void* /*user*/)
 		PanicF("Unable to execute %s.", initpath);
 
 	delete[] program;
+	delete[] argv;
 
 	// Now become the init process and the operation system shall run.
 	LoadRegisters(&regs);
