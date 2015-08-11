@@ -136,7 +136,7 @@ bool string_array_append_token_string(string_array_t* sa, const char* str)
 {
 	while ( *str )
 	{
-		if ( isspace(*str) )
+		if ( isspace((unsigned char) *str) )
 		{
 			str++;
 			continue;
@@ -147,7 +147,7 @@ bool string_array_append_token_string(string_array_t* sa, const char* str)
 		bool quoted = false;
 		bool escaped = false;
 		while ( str[input_length] &&
-		        (escaped || quoted || !isspace(str[input_length])) )
+		        (escaped || quoted || !isspace((unsigned char) str[input_length])) )
 		{
 			if ( !escaped && str[input_length] == '\\' )
 				escaped = true;
@@ -170,7 +170,7 @@ bool string_array_append_token_string(string_array_t* sa, const char* str)
 		quoted = false;
 		escaped = false;
 		while ( str[input_length] &&
-		        (escaped || quoted || !isspace(str[input_length])) )
+		        (escaped || quoted || !isspace((unsigned char) str[input_length])) )
 		{
 			if ( !escaped && str[input_length] == '\\' )
 				escaped = true;
@@ -215,7 +215,7 @@ bool string_array_append_token_string(string_array_t* sa, const char* str)
 
 bool is_token_string_special_character(char c)
 {
-	return isspace(c) || c == '"' || c == '\\';
+	return isspace((unsigned char) c) || c == '"' || c == '\\';
 }
 
 char* token_string_of_string_array(const string_array_t* sa)
@@ -333,7 +333,7 @@ void dictionary_normalize_entry(char* entry)
 	size_t input_off, output_off;
 	for ( input_off = output_off = 0; entry[input_off]; input_off++ )
 	{
-		if ( key && isspace(entry[input_off]) )
+		if ( key && isspace((unsigned char) entry[input_off]) )
 			continue;
 		if ( key && (entry[input_off] == '=' || entry[input_off] == '#') )
 			key = false;

@@ -111,9 +111,9 @@ void editor_modal_save(struct editor* editor, const char* path)
 
 void editor_modal_ask_quit(struct editor* editor, const char* answer)
 {
-	if ( tolower(answer[0]) == 'y' )
+	if ( tolower((unsigned char) answer[0]) == 'y' )
 		editor->mode = MODE_QUIT;
-	else if ( tolower(answer[0]) == 'n' || !answer[0] )
+	else if ( tolower((unsigned char) answer[0]) == 'n' || !answer[0] )
 		editor_type_edit(editor);
 	else
 		editor->modal_error = true;
@@ -235,10 +235,10 @@ bool is_modal_command(const char* cmd, const char* candidate, const char** rest)
 {
 	size_t candidate_len = strlen(candidate);
 	if ( strncmp(cmd, candidate, candidate_len) == 0 &&
-	     (!cmd[candidate_len] || isspace(cmd[candidate_len])) )
+	     (!cmd[candidate_len] || isspace((unsigned char) cmd[candidate_len])) )
 	{
 		*rest = cmd + candidate_len;
-		while ( **rest && isspace(**rest) )
+		while ( **rest && isspace((unsigned char) **rest) )
 			(*rest)++;
 		return true;
 	}
@@ -247,7 +247,7 @@ bool is_modal_command(const char* cmd, const char* candidate, const char** rest)
 
 void editor_modal_command(struct editor* editor, const char* cmd)
 {
-	while ( *cmd && isspace(*cmd) )
+	while ( *cmd && isspace((unsigned char) *cmd) )
 		cmd++;
 	if ( cmd[0] == ':' )
 		cmd++;

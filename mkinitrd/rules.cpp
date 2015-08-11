@@ -167,7 +167,8 @@ bool InclusionRules::AddRule(InclusionRule* rule)
 
 static const char* SkipWhitespace(const char* line)
 {
-	while ( *line && isspace(*line) ) line++;
+	while ( *line && isspace((unsigned char) *line) )
+		line++;
 	return line;
 }
 
@@ -183,13 +184,14 @@ static bool IsLineComment(const char* line)
 
 static const char* IsLineCommand(const char* line, const char* command)
 {
-	while ( *line && isspace(*line) ) line++;
+	while ( *line && isspace((unsigned char) *line) )
+		line++;
 	size_t cmdlen = strlen(command);
 	if ( strncmp(line, command, cmdlen) != 0 )
 		return NULL;
-	if ( line[cmdlen] && !isspace(line[cmdlen]) )
+	if ( line[cmdlen] && !isspace((unsigned char) line[cmdlen]) )
 		return NULL;
-	while ( line[cmdlen] && isspace(line[cmdlen]) )
+	while ( line[cmdlen] && isspace((unsigned char) line[cmdlen]) )
 		cmdlen++;
 	return line + cmdlen;
 }

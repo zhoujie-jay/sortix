@@ -1065,7 +1065,7 @@ static char* shebang_tokenize(char** saved)
 	char* data = *saved;
 	if ( !data )
 		return *saved = NULL;
-	while ( data[0] && isspace(data[0]) )
+	while ( data[0] && isspace((unsigned char) data[0]) )
 		data++;
 	if ( !data[0] )
 		return *saved = NULL;
@@ -1077,7 +1077,7 @@ static char* shebang_tokenize(char** saved)
 	for ( ; data[input]; input++ )
 	{
 		char c = data[input];
-		if ( !escaped && !singly && !doubly && isspace(c) )
+		if ( !escaped && !singly && !doubly && isspace((unsigned char) c) )
 			break;
 		if ( !escaped && !doubly && c == '\'' )
 		{

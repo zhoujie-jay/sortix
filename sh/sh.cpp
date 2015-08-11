@@ -1718,7 +1718,7 @@ void on_trap_eof(void* edit_state_ptr)
 
 bool is_usual_char_for_completion(char c)
 {
-	return !isspace(c) &&
+	return !isspace((unsigned char) c) &&
 	       c != ';' && c != '&' && c != '|' &&
 	       c != '<' && c != '>' && c != '#' && c != '$';
 }
@@ -1762,7 +1762,7 @@ size_t do_complete(char*** completions_ptr,
 	else
 	{
 		size_t type_offset = complete_at - used_before;
-		while ( type_offset && isspace(partial[type_offset-1]) )
+		while ( type_offset && isspace((unsigned char) partial[type_offset-1]) )
 			type_offset--;
 
 		if ( 2 <= type_offset &&
