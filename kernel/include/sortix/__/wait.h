@@ -34,9 +34,9 @@ __BEGIN_DECLS
 #define __WNATURE_STOPPED 2
 #define __WNATURE_CONTINUED 3
 
-#define __WEXITSTATUS(status) ((status >> 8) & 0xFF)
-#define __WTERMSIG(status) ((status >> 0) & 0x7F)
-#define __WNATURE(status) ((status >> 16) & 0xFF)
+#define __WEXITSTATUS(status) (((status) >> 8) & 0xFF)
+#define __WTERMSIG(status) (((status) >> 0) & 0x7F)
+#define __WNATURE(status) (((status) >> 16) & 0xFF)
 
 #define __WIFEXITED(status) (__WNATURE(status) == __WNATURE_EXITED)
 #define __WIFSIGNALED(status) (__WNATURE(status) == __WNATURE_SIGNALED)
