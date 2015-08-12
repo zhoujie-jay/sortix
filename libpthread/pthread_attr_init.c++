@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This file is part of Sortix libpthread.
 
@@ -25,7 +25,7 @@
 #include <pthread.h>
 #include <string.h>
 
-static const unsigned long DEFAULT_STACK_SIZE = 64 * 1024;
+static const unsigned long DEFAULT_STACK_SIZE = 80 * 1024;
 
 extern "C" int pthread_attr_init(pthread_attr_t* attr)
 {
