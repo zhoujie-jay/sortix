@@ -186,7 +186,7 @@ bool pager_is_out_of_allowed_lines(struct pager* pager, wchar_t wc)
 
 void pager_push_final_char(struct pager* pager, wchar_t wc)
 {
-	if ( !wc )
+	if ( pager->quiting || !wc )
 		return;
 
 	while ( pager_is_out_of_allowed_lines(pager, wc) )
