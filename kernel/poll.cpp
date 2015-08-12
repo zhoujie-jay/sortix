@@ -25,14 +25,17 @@
 #include <sys/types.h>
 
 #include <assert.h>
+#include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <errno.h>
+#include <timespec.h>
 
+#include <sortix/clock.h>
 #include <sortix/poll.h>
 #include <sortix/sigset.h>
 #include <sortix/timespec.h>
 
+#include <sortix/kernel/clock.h>
 #include <sortix/kernel/copy.h>
 #include <sortix/kernel/descriptor.h>
 #include <sortix/kernel/ioctx.h>
@@ -41,6 +44,8 @@
 #include <sortix/kernel/poll.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/time.h>
+#include <sortix/kernel/timer.h>
 
 #include "poll.h"
 
@@ -177,6 +182,21 @@ static bool FetchTimespec(struct timespec* dest, const struct timespec* user)
 	return true;
 }
 
+struct poll_timeout
+{
+	kthread_mutex_t* wake_mutex;
+	kthread_cond_t* wake_cond;
+	bool* woken;
+};
+
+static void poll_timeout_callback(Clock*, Timer*, void* ctx)
+{
+	struct poll_timeout* pts = (struct poll_timeout*) ctx;
+	ScopedLock lock(pts->wake_mutex);
+	*pts->woken = true;
+	kthread_cond_signal(pts->wake_cond);
+}
+
 int sys_ppoll(struct pollfd* user_fds, size_t nfds,
               const struct timespec* user_timeout_ts,
               const sigset_t* user_sigmask)
@@ -187,7 +207,7 @@ int sys_ppoll(struct pollfd* user_fds, size_t nfds,
 	if ( !FetchTimespec(&timeout_ts, user_timeout_ts) )
 		return -1;
 
-	if ( 0 < timeout_ts.tv_sec || timeout_ts.tv_nsec || user_sigmask )
+	if ( user_sigmask )
 		return errno = ENOSYS, -1;
 
 	struct pollfd* fds = CopyFdsFromUser(user_fds, nfds);
@@ -205,8 +225,22 @@ int sys_ppoll(struct pollfd* user_fds, size_t nfds,
 
 	int ret = -1;
 	bool self_woken = false;
-	volatile bool remote_woken = false;
+	bool remote_woken = false;
 	bool unexpected_error = false;
+
+	Timer timer;
+	struct poll_timeout pts;
+	if ( timespec_le(timespec_make(0, 1), timeout_ts) )
+	{
+		timer.Attach(Time::GetClock(CLOCK_MONOTONIC));
+		struct itimerspec its;
+		its.it_interval = timespec_nul();
+		its.it_value = timeout_ts;
+		pts.wake_mutex = &wakeup_mutex;
+		pts.wake_cond = &wakeup_cond;
+		pts.woken = &remote_woken;
+		timer.Set(&its, NULL, 0, poll_timeout_callback, &pts);
+	}
 
 	size_t reqs;
 	for ( reqs = 0; !unexpected_error && reqs < nfds; )
@@ -229,7 +263,7 @@ int sys_ppoll(struct pollfd* user_fds, size_t nfds,
 		node->revents = 0;
 		node->wake_mutex = &wakeup_mutex;
 		node->wake_cond = &wakeup_cond;
-		node->woken = (bool*) &remote_woken;
+		node->woken = &remote_woken;
 		reqs++;
 		// TODO: How should errors be handled?
 		if ( desc->poll(&ctx, node) == 0 )
@@ -240,7 +274,7 @@ int sys_ppoll(struct pollfd* user_fds, size_t nfds,
 			unexpected_error = self_woken = true;
 	}
 
-	if ( timeout_ts.tv_sec == 0 )
+	if ( timeout_ts.tv_sec == 0 && timeout_ts.tv_nsec == 0 )
 		self_woken = true;
 
 	while ( !(self_woken || remote_woken) )
@@ -255,6 +289,12 @@ int sys_ppoll(struct pollfd* user_fds, size_t nfds,
 	for ( size_t i = 0; i < reqs; i++ )
 		if ( 0 <= fds[i].fd )
 			nodes[i].Cancel();
+
+	if ( timespec_le(timespec_make(0, 1), timeout_ts) )
+	{
+		timer.Cancel();
+		timer.Detach();
+	}
 
 	if ( !unexpected_error )
 	{
