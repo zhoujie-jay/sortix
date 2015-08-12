@@ -80,6 +80,8 @@ endif
 	for ENTRY in $$(ls -A "$(SYSROOT)" | grep -Ev '^(dev|etc|home|mnt|root|src|tix|tmp|var)$$'); do \
 		cp -RTv "$(SYSROOT)/$$ENTRY" "$(DESTDIR)/$$ENTRY" || exit $$?; \
 	done
+	cp -TPv "$(SYSROOT)/etc/os-release" "$(DESTDIR)/etc/os-release"
+	cp -TPv "$(SYSROOT)/etc/sortix-release" "$(DESTDIR)/etc/sortix-release"
 
 .PHONY: clean-build-tools
 clean-build-tools:
@@ -156,6 +158,16 @@ sysroot-system: sysroot-fsh sysroot-base-headers
 	echo /usr >> "$(SYSROOT)/tix/manifest/system"
 	echo /var >> "$(SYSROOT)/tix/manifest/system"
 	echo /var/empty >> "$(SYSROOT)/tix/manifest/system"
+	(echo 'NAME="Sortix"' && \
+	 echo 'VERSION="$(VERSION)"' && \
+	 echo 'ID=sortix' && \
+	 echo 'VERSION_ID="$(VERSION)"' && \
+	 echo 'PRETTY_NAME="Sortix $(VERSION)"' && \
+	 echo 'SORTIX_ABI=0.0' && \
+	 true) > "$(SYSROOT)/etc/sortix-release"
+	echo /etc/sortix-release >> "$(SYSROOT)/tix/manifest/system"
+	ln -sf sortix-release "$(SYSROOT)/etc/os-release"
+	echo /etc/os-release >> "$(SYSROOT)/tix/manifest/system"
 	find share | sed -e 's,^,/,' >> "$(SYSROOT)/tix/manifest/system"
 	cp -RT share "$(SYSROOT)/share"
 	export SYSROOT="$(SYSROOT)" && \
