@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -92,6 +92,7 @@ Thread::Thread()
 	kernelstacksize = 0;
 	kernelstackmalloced = false;
 	pledged_destruction = false;
+	force_no_signals = false;
 	sigemptyset(&signal_pending);
 	sigemptyset(&signal_mask);
 	memset(&signal_stack, 0, sizeof(signal_stack));

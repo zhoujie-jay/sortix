@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -657,6 +657,10 @@ Unode::Unode(Ref<Server> server, ino_t ino, mode_t type)
 	this->type = type;
 
 	// Let the remote know that the kernel is using this inode.
+	Thread* thread = CurrentThread();
+	bool saved = thread->force_no_signals;
+	thread->force_no_signals = true;
+	thread->DoUpdatePendingSignal();
 	if ( Channel* channel = server->Connect(NULL) )
 	{
 		struct fsm_req_refer msg;
@@ -664,11 +668,17 @@ Unode::Unode(Ref<Server> server, ino_t ino, mode_t type)
 		SendMessage(channel, FSM_REQ_REFER, &msg, sizeof(msg));
 		channel->KernelClose();
 	}
+	thread->force_no_signals = saved;
+	thread->DoUpdatePendingSignal();
 }
 
 Unode::~Unode()
 {
 	// Let the remote know that the kernel is no longer using this inode.
+	Thread* thread = CurrentThread();
+	bool saved = thread->force_no_signals;
+	thread->force_no_signals = true;
+	thread->DoUpdatePendingSignal();
 	if ( Channel* channel = server->Connect(NULL) )
 	{
 		struct fsm_req_unref msg;
@@ -676,6 +686,8 @@ Unode::~Unode()
 		SendMessage(channel, FSM_REQ_UNREF, &msg, sizeof(msg));
 		channel->KernelClose();
 	}
+	thread->force_no_signals = saved;
+	thread->DoUpdatePendingSignal();
 }
 
 bool Unode::SendMessage(Channel* channel, size_t type, void* ptr, size_t size,

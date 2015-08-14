@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -82,12 +82,14 @@ public:
 	size_t kernelstacksize;
 	bool kernelstackmalloced;
 	bool pledged_destruction;
+	bool force_no_signals;
 
 public:
 	void HandleSignal(struct interrupt_context* intctx);
 	void HandleSigreturn(struct interrupt_context* intctx);
 	bool DeliverSignal(int signum);
 	bool DeliverSignalUnlocked(int signum);
+	void DoUpdatePendingSignal();
 
 };
 

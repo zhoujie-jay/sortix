@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -97,12 +97,20 @@ void UpdatePendingSignals(Thread* thread) // thread->process->signal_lock held
 
 	// Determine whether any signals can be delivered.
 	unsigned long is_pending = !sigisemptyset(&deliverable_signals) ? 1 : 0;
+	if ( thread->force_no_signals )
+		is_pending = 0;
 
 	// Store whether a signal is pending in the virtual register.
 	if ( thread == CurrentThread() )
 		asm_signal_is_pending = is_pending;
 	else
 		thread->registers.signal_pending = is_pending;
+}
+
+void Thread::DoUpdatePendingSignal()
+{
+	ScopedLock lock(&process->signal_lock);
+	UpdatePendingSignals(this);
 }
 
 int sys_sigaction(int signum,
