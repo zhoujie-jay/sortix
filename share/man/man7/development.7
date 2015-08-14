@@ -8,8 +8,10 @@
 .Pa /src
 .Sh DESCRIPTION
 Releases come with the system source code in
-.Pa /src .
-It can be modified, compiled and installed on the current system.
+.Pa /src
+as a
+.Xr git 1
+repository.  It can be modified, compiled and installed on the current system.
 The source code is built with a
 .Xr make 1
 build system.  The source code can be located in any location, if so, simply
@@ -138,6 +140,19 @@ Specifies compiler optimization options that gets added to
 .Ev CFLAGS
 and
 .Ev CXXFLAGS .
+.It Ev SORTIX_INCLUDE_SOURCE
+Specifies whether the source code is included in the sysroot.  This must be one
+of
+.Sy no, yes
+or
+.Sy git
+and defaults to
+.Sy git
+if
+.Xr git 1
+is installed and
+.Sy yes
+otherwise.
 .It Ev SORTIX_ISO_COMPRESSION
 Specifies the compression algorithm used in iso files.  This must be one of
 .Sy none , gzip
@@ -251,6 +266,30 @@ as not all ports can be built natively yet.
 .Pp
 The ports system is described in detail in
 .Xr porting-guide 7 .
+.Ss Patches
+The source code is managed as a
+.Xr git 1
+repository and you can make your own changes and commit them.  A good approach
+is to set up your own local development branch and work there:
+.Bd -literal
+    git checkout -b local
+    git add utils/hello.c
+    git commit -m 'Add hello(1).'
+.Ed
+.Pp
+You can then easily prepare your a set of patches for upstream submission:
+.Bd -literal
+    git format-patch master..local
+.Ed
+.Pp
+This will create a series of .patch files containing your changes.  Review them
+and rewrite git history as needed until they are of submittable quality. You can
+then submit them for review at the official website.
+.Pp
+To transfer files out of the operating system, you can either mount the local
+root filesystem from another operating system with networking, or you transmit
+the patches over the serial connection as described in
+.Xr serial-transfer 7 .
 .Ss Releases
 CD-ROM release of the operating system can be built with the
 .Sy iso
@@ -272,7 +311,9 @@ target and prepare a
 directory with a directory structure and miscellaneous files suitable for a
 formal online release.
 .Sh SEE ALSO
+.Xr git 1 ,
 .Xr make 1 ,
 .Xr cross-development 7 ,
 .Xr porting-guide 7 ,
+.Xr serial-transfer 7 ,
 .Xr update-initrd 8

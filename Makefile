@@ -43,6 +43,17 @@ SORTIX_RELEASE_DIR?=release
 SORTIX_REPOSITORY_DIR?=repository
 SORTIX_ISO_COMPRESSION?=xz
 
+SORTIX_INCLUDE_SOURCE_GIT_REPO?=$(shell test -d .git && echo "file://`pwd`")
+SORTIX_INCLUDE_SOURCE_GIT_REPO:=$(SORTIX_INCLUDE_SOURCE_GIT_REPO)
+SORTIX_INCLUDE_SOURCE_GIT_ORIGIN?=
+SORTIX_INCLUDE_SOURCE_GIT_CLONE_OPTIONS?=--single-branch
+SORTIX_INCLUDE_SOURCE_GIT_BRANCHES?=master
+ifneq ($(and $(shell which git 2>/dev/null),$(SORTIX_INCLUDE_SOURCE_GIT_REPO)),)
+  SORTIX_INCLUDE_SOURCE?=git
+else
+  SORTIX_INCLUDE_SOURCE?=yes
+endif
+
 include build-aux/dirs.mak
 
 BUILD_NAME:=sortix-$(VERSION)-$(MACHINE)
@@ -189,6 +200,19 @@ sysroot-system: sysroot-fsh sysroot-base-headers
 
 .PHONY: sysroot-source
 sysroot-source: sysroot-fsh
+ifeq ($(SORTIX_INCLUDE_SOURCE),git)
+	rm -rf "$(SYSROOT)/src"
+	git clone --no-hardlinks $(SORTIX_INCLUDE_SOURCE_GIT_CLONE_OPTIONS) -- $(SORTIX_INCLUDE_SOURCE_GIT_REPO) "$(SYSROOT)/src"
+	-cd "$(SYSROOT)/src" && for BRANCH in $(SORTIX_INCLUDE_SOURCE_GIT_BRANCHES); do \
+	  git fetch origin $$BRANCH && \
+	  git branch -f $$BRANCH FETCH_HEAD ; \
+	done
+ifneq ($(SORTIX_INCLUDE_SOURCE_GIT_ORIGIN),)
+	cd "$(SYSROOT)/src" && git remote set-url origin $(SORTIX_INCLUDE_SOURCE_GIT_ORIGIN)
+else
+	-cd "$(SYSROOT)/src" && git remote rm origin
+endif
+else ifneq ($(SORTIX_INCLUDE_SOURCE),no)
 	cp .gitignore -t "$(SYSROOT)/src"
 	cp COPYING-GPL -t "$(SYSROOT)/src"
 	cp COPYING-LGPL -t "$(SYSROOT)/src"
@@ -196,6 +220,7 @@ sysroot-source: sysroot-fsh
 	cp README -t "$(SYSROOT)/src"
 	cp -RT build-aux "$(SYSROOT)/src/build-aux"
 	(for D in $(MODULES); do (cp -R $$D -t "$(SYSROOT)/src" && $(MAKE) -C "$(SYSROOT)/src/$$D" clean) || exit $$?; done)
+endif
 	(cd "$(SYSROOT)" && find .) | sed 's/\.//' | \
 	grep -E '^/src(/.*)?$$' | \
 	LC_ALL=C sort > "$(SYSROOT)/tix/manifest/src"
