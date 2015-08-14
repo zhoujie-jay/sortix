@@ -781,12 +781,19 @@ int fsmarshall_main(const char* argv0,
 		}
 	}
 
+	// Garbage collect all open inode references.
+	while ( fs->mru_inode )
+	{
+		Inode* inode = fs->mru_inode;
+		if ( inode->remote_reference_count )
+			inode->RemoteUnref();
+		else if ( inode->reference_count )
+			inode->Unref();
+	}
+
 	// Sync the filesystem before shutting down.
 	if ( dev->write )
-	{
-		// TODO: Need to close all open inodes here, and in the fuse backend too.
 		fs->Sync();
-	}
 
 	close(serverfd);
 

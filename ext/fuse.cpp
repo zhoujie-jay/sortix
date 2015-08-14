@@ -67,6 +67,14 @@ void* ext2_fuse_init(struct fuse_conn_info* /*conn*/)
 void ext2_fuse_destroy(void* fs_private)
 {
 	struct ext2_fuse_ctx* ext2_fuse_ctx = (struct ext2_fuse_ctx*) fs_private;
+	while ( ext2_fuse_ctx->fs->mru_inode )
+	{
+		Inode* inode = ext2_fuse_ctx->fs->mru_inode;
+		if ( inode->remote_reference_count )
+			inode->RemoteUnref();
+		else if ( inode->reference_count )
+			inode->Unref();
+	}
 	ext2_fuse_ctx->fs->Sync();
 	ext2_fuse_ctx->dev->Sync();
 	delete ext2_fuse_ctx->fs; ext2_fuse_ctx->fs = NULL;
