@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -36,6 +36,15 @@
 #include <unistd.h>
 #include <wchar.h>
 
+#define CONTROL_SEQUENCE_MAX 128
+
+enum control_state
+{
+	CONTROL_STATE_NONE = 0,
+	CONTROL_STATE_CSI,
+	CONTROL_STATE_COMMAND,
+};
+
 struct display_entry
 {
 	wchar_t c;
@@ -56,6 +65,12 @@ struct pager
 	const char* input_prompt_name;
 	size_t allowed_lines;
 	bool quiting;
+	bool flag_raw_control_chars;
+	bool flag_color_sequences;
+	enum control_state control_state;
+	unsigned char control_sequence[CONTROL_SEQUENCE_MAX];
+	size_t control_sequence_length;
+	bool input_set_color;
 };
 
 void pager_init(struct pager* pager)
@@ -78,7 +93,11 @@ void pager_init(struct pager* pager)
 		pager->display = (struct display_entry*)
 			calloc(display_length, sizeof(struct display_entry));
 		if ( !pager->display )
-			error(1, errno, "malloc");
+		{
+			error(0, errno, "malloc");
+			settermmode(pager->tty_fd, pager->tty_fd_old_termmode);
+			exit(1);
+		}
 		tcgetwincurpos(pager->out_fd, &pager->begun_wcp);
 		memcpy(&pager->current_wcp, &pager->begun_wcp, sizeof(struct wincurpos));
 		pager->allowed_lines = pager->out_fd_winsize.ws_row - 1;
@@ -97,7 +116,9 @@ void pager_end(struct pager* pager)
 
 void pager_prompt(struct pager* pager)
 {
-	if ( pager->input_prompt_name[0] )
+	if ( pager->input_prompt_name[0] && pager->input_set_color )
+		dprintf(pager->out_fd, "%s\e[J", pager->input_prompt_name);
+	else if ( pager->input_prompt_name[0] && !pager->input_set_color )
 		dprintf(pager->out_fd, "\e[47;30m%s\e[m\e[J", pager->input_prompt_name);
 	else
 		dprintf(pager->out_fd, ":");
@@ -132,7 +153,9 @@ void pager_prompt(struct pager* pager)
 			return;
 		}
 	}
-	error(1, errno, "/dev/tty");
+	error(0, errno, "/dev/tty");
+	pager_end(pager);
+	exit(1);
 }
 
 bool pager_would_push_newline_scroll(struct pager* pager)
@@ -203,7 +226,11 @@ void pager_push_final_char(struct pager* pager, wchar_t wc)
 	}
 
 	if ( writeall(pager->out_fd, mb, mb_size) < mb_size )
-		error(1, errno, "write: <stdout>");
+	{
+		error(0, errno, "write: <stdout>");
+		pager_end(pager);
+		exit(1);
+	}
 	memcpy(&pager->out_ps, &ps, sizeof(mbstate_t));
 
 	if ( wc == L'\n' )
@@ -235,12 +262,20 @@ void pager_push_final_char(struct pager* pager, wchar_t wc)
 
 void pager_push_char(struct pager* pager, wchar_t wc)
 {
-	if ( wc < 32 && wc != L'\t' && wc != L'\n' )
+	if ( wc == L'\b' &&
+	     (pager->flag_raw_control_chars || pager->flag_color_sequences) )
 	{
-		dprintf(pager->out_fd, "\e[97m");
-		pager_push_char(pager, L'^');
-		pager_push_char(pager, L'@' + wc);
-		dprintf(pager->out_fd, "\e[m");
+		dprintf(pager->out_fd, "\b");
+		tcgetwincurpos(pager->out_fd, &pager->current_wcp);
+	}
+	else if ( wc < 32 && wc != L'\t' && wc != L'\n' )
+	{
+		if ( !pager->input_set_color )
+			dprintf(pager->out_fd, "\e[97m");
+		pager_push_final_char(pager, L'^');
+		pager_push_final_char(pager, L'@' + wc);
+		if ( !pager->input_set_color )
+			dprintf(pager->out_fd, "\e[m");
 	}
 	else
 	{
@@ -248,10 +283,107 @@ void pager_push_char(struct pager* pager, wchar_t wc)
 	}
 }
 
+void pager_control_sequence_begin(struct pager* pager)
+{
+	pager->control_sequence_length = 0;
+}
+
+void pager_control_sequence_accept(struct pager* pager)
+{
+	unsigned char* cs = pager->control_sequence;
+	size_t cs_length = pager->control_sequence_length;
+	if ( writeall(pager->out_fd, cs, cs_length) < cs_length )
+	{
+		error(0, errno, "write: <stdout>");
+		pager_end(pager);
+		exit(1);
+	}
+	pager->control_sequence_length = 0;
+	pager->control_state = CONTROL_STATE_NONE;
+}
+
+void pager_control_sequence_reject(struct pager* pager)
+{
+	for ( size_t i = 0; i < pager->control_sequence_length; i++ )
+	{
+		wint_t wc = btowc(pager->control_sequence[i]);
+		if ( wc != WEOF )
+			pager_push_char(pager, wc);
+	}
+	pager->control_sequence_length = 0;
+	pager->control_state = CONTROL_STATE_NONE;
+}
+
+void pager_control_sequence_push(struct pager* pager, unsigned char byte)
+{
+	if ( CONTROL_SEQUENCE_MAX <= pager->control_sequence_length )
+	{
+		if ( !pager->flag_raw_control_chars )
+			return pager_control_sequence_reject(pager);
+		unsigned char* cs = pager->control_sequence;
+		size_t cs_length = pager->control_sequence_length;
+		if ( writeall(pager->out_fd, cs, cs_length) < cs_length )
+		{
+			error(0, errno, "write: <stdout>");
+			pager_end(pager);
+			exit(1);
+		}
+		pager->control_sequence_length = 0;
+	}
+	pager->control_sequence[pager->control_sequence_length++] = byte;
+}
+
+void pager_control_sequence_finish(struct pager* pager, unsigned char byte)
+{
+	pager_control_sequence_push(pager, byte);
+	if ( pager->control_state == CONTROL_STATE_NONE )
+		return;
+	if ( byte == 'm' )
+	{
+		pager->input_set_color = true;
+		return pager_control_sequence_accept(pager);
+	}
+	if ( !pager->flag_raw_control_chars )
+		return pager_control_sequence_reject(pager);
+	pager_control_sequence_accept(pager);
+	tcgetwincurpos(pager->out_fd, &pager->current_wcp);
+}
+
 void pager_push_byte(struct pager* pager, unsigned char byte)
 {
 	if ( pager->quiting )
 		return;
+
+	if ( byte == '\e' && mbsinit(&pager->in_ps) &&
+	     (pager->flag_raw_control_chars || pager->flag_color_sequences) &&
+	     pager->control_state == CONTROL_STATE_NONE )
+	{
+		pager_control_sequence_begin(pager);
+		pager_control_sequence_push(pager, byte);
+		pager->control_state = CONTROL_STATE_CSI;
+		return;
+	}
+	else if ( pager->control_state == CONTROL_STATE_CSI )
+	{
+		if ( byte == '[' )
+		{
+			pager_control_sequence_push(pager, byte);
+			pager->control_state = CONTROL_STATE_COMMAND;
+			return;
+		}
+		pager_control_sequence_reject(pager);
+	}
+	else if ( pager->control_state == CONTROL_STATE_COMMAND )
+	{
+		if ( ('0' <= byte && byte <= '9') ||
+		     byte == ';' || byte == ':' || byte == '?' )
+		{
+			pager_control_sequence_push(pager, byte);
+			return;
+		}
+		pager_control_sequence_finish(pager, byte);
+		return;
+	}
 
 	wchar_t wc;
 	size_t amount = mbrtowc(&wc, (const char*) &byte, 1, &pager->in_ps);
@@ -272,10 +404,18 @@ void pager_simple_output_fd(struct pager* pager, int fd, const char* fdpath)
 	while ( 0 < (in_amount = read(fd, buffer, sizeof(buffer))) )
 	{
 		if ( writeall(pager->out_fd, buffer, in_amount) < (size_t) in_amount )
-			error(1, errno, "<stdout>");
+		{
+			error(0, errno, "<stdout>");
+			pager_end(pager);
+			exit(1);
+		}
 	}
 	if ( in_amount < 0 )
-		error(1, errno, "%s", fdpath);
+	{
+		error(0, errno, "%s", fdpath);
+		pager_end(pager);
+		exit(1);
+	}
 }
 
 void pager_push_fd(struct pager* pager, int fd, const char* fdpath)
@@ -290,7 +430,11 @@ void pager_push_fd(struct pager* pager, int fd, const char* fdpath)
 	// TODO: In this case, we should disable echoing and read from the terminal
 	//       anyways.
 	if ( isatty(fd) )
-		error(1, errno, "/dev/tty");
+	{
+		error(0, errno, "/dev/tty");
+		pager_end(pager);
+		exit(1);
+	}
 	if ( !pager->out_fd_tty )
 		return pager_simple_output_fd(pager, fd, fdpath);
 	unsigned char buffer[4096];
@@ -302,7 +446,11 @@ void pager_push_fd(struct pager* pager, int fd, const char* fdpath)
 			pager_push_byte(pager, buffer[i]);
 	}
 	if ( in_amount < 0 )
-		error(1, errno, "%s", fdpath);
+	{
+		error(0, errno, "%s", fdpath);
+		pager_end(pager);
+		exit(1);
+	}
 }
 
 void pager_push_path(struct pager* pager, const char* path)
@@ -314,7 +462,11 @@ void pager_push_path(struct pager* pager, const char* path)
 		return pager_push_fd(pager, 0, "<stdin>");
 	int fd = open(path, O_RDONLY);
 	if ( fd < 0 )
-		error(1, errno, "%s", path);
+	{
+		error(0, errno, "%s", path);
+		pager_end(pager);
+		exit(1);
+	}
 	pager_push_fd(pager, fd, path);
 	close(fd);
 }
@@ -350,6 +502,25 @@ int main(int argc, char* argv[])
 {
 	setlocale(LC_ALL, "");
 
+	struct pager pager;
+	memset(&pager, 0, sizeof(pager));
+
+	if ( getenv("LESS") )
+	{
+		const char* options = getenv("LESS");
+		char c;
+		while ( (c = *options++) )
+		{
+			switch ( c )
+			{
+			case '-': break;
+			case 'r': pager.flag_raw_control_chars = true; break;
+			case 'R': pager.flag_color_sequences = true; break;
+			default: break;
+			}
+		}
+	}
+
 	const char* argv0 = argv[0];
 	for ( int i = 1; i < argc; i++ )
 	{
@@ -363,6 +534,8 @@ int main(int argc, char* argv[])
 		{
 			while ( char c = *++arg ) switch ( c )
 			{
+			case 'r': pager.flag_raw_control_chars = true; break;
+			case 'R': pager.flag_color_sequences = true; break;
 			default:
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
 				help(stderr, argv0);
@@ -383,20 +556,24 @@ int main(int argc, char* argv[])
 
 	compact_arguments(&argc, &argv);
 
-	struct pager pager;
-	memset(&pager, 0, sizeof(pager));
 	pager_init(&pager);
 
 	if ( argc == 1 )
 	{
 		if ( pager.tty_fd == 0 )
-			error(1, 0, "missing file operand");
+		{
+			error(0, 0, "missing file operand");
+			pager_end(&pager);
+			exit(1);
+		}
 		pager_push_fd(&pager, 0, "<stdin>");
 	}
 	else for ( int i = 1; i < argc; i++ )
 	{
 		pager_push_path(&pager, argv[i]);
 	}
+
+	pager_end(&pager);
 
 	return 0;
 }
