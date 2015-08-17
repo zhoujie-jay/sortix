@@ -45,7 +45,7 @@ extern "C" {
 /* TODO: This random interface is stupid. What should a good value be? */
 #define RAND_MAX 32767
 
-#define MB_CUR_MAX 6
+#define MB_CUR_MAX 4
 
 typedef struct
 {
