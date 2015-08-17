@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -25,35 +25,19 @@
 
 #include <errno.h>
 #include <error.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <timespec.h>
 #include <unistd.h>
 
-int main(int argc, char* argv[])
-{
-	struct timespec start_time;
-	clock_gettime(CLOCK_MONOTONIC, &start_time);
-	pid_t child_pid = fork();
-	if ( child_pid < 0 )
-		error(1, errno, "fork");
-	if ( !child_pid )
-	{
-		setpgid(child_pid, child_pid);
-		tcsetpgrp(0, child_pid);
-		if ( argc <= 1 )
-			exit(0);
-		execvp(argv[1], argv+1);
-		error(127, errno, "%s", argv[1]);
-	}
-	setpgid(child_pid, child_pid);
-	tcsetpgrp(0, child_pid);
-	int exit_status = 0;
-	waitpid(child_pid, &exit_status, 0);
-	tcsetpgrp(0, getpgid(0));
+static pid_t child_pid;
+static struct timespec start_time, end_time;
 
-	struct timespec end_time;
+void statistics(void)
+{
 	clock_gettime(CLOCK_MONOTONIC, &end_time);
 	struct tmns tmns;
 	timens(&tmns);
@@ -66,6 +50,48 @@ int main(int argc, char* argv[])
 	fprintf(stderr, "real\t%lim%li.%03li\n", (long) real_time.tv_sec / 60, (long) real_time.tv_sec % 60, real_time.tv_nsec / 1000000L);
 	fprintf(stderr, "user\t%lim%li.%03li\n", (long) user_time.tv_sec / 60, (long) user_time.tv_sec % 60, user_time.tv_nsec / 1000000);
 	fprintf(stderr, "sys\t%lim%li.%03li\n", (long) system_time.tv_sec / 60, (long) system_time.tv_sec % 60, system_time.tv_nsec / 1000000);
+}
 
-	return WEXITSTATUS(exit_status);
+void signal_handler(int signum)
+{
+	int code;
+	waitpid(child_pid, &code, 0);
+	statistics();
+	raise(signum);
+	_exit(1);
+}
+
+int main(int argc, char* argv[])
+{
+	clock_gettime(CLOCK_MONOTONIC, &start_time);
+	sigset_t handleset, oldset;
+	sigemptyset(&handleset);
+	sigaddset(&handleset, SIGINT);
+	sigaddset(&handleset, SIGQUIT);
+	sigprocmask(SIG_BLOCK, &handleset, &oldset);
+	if ( (child_pid = fork()) < 0 )
+		error(1, errno, "fork");
+	if ( !child_pid )
+	{
+		sigprocmask(SIG_SETMASK, &oldset, NULL);
+		if ( argc <= 1 )
+			exit(0);
+		execvp(argv[1], argv+1);
+		error(127, errno, "%s", argv[1]);
+	}
+	struct sigaction sa;
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = signal_handler;
+	sa.sa_flags = SA_RESETHAND;
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGQUIT, &sa, NULL);
+	int code = 0;
+	sigprocmask(SIG_SETMASK, &oldset, NULL);
+	waitpid(child_pid, &code, 0);
+	signal(SIGINT, SIG_DFL);
+	signal(SIGQUIT, SIG_DFL);
+	statistics();
+	if ( WIFSIGNALED(code) )
+		raise(WTERMSIG(code));
+	return WEXITSTATUS(code);
 }
