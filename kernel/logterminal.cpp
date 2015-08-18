@@ -275,7 +275,7 @@ void LogTerminal::QueueUnicode(uint32_t unicode)
 	int abskbkey = (kbkey < 0) ? -kbkey : kbkey;
 	bool wasenter = kbkey == KBKEY_ENTER || unicode == '\n';
 	bool kbkeymode = termmode & TERMMODE_KBKEY;
-	bool unicodemode = termmode && TERMMODE_UNICODE;
+	bool unicodemode = termmode & TERMMODE_UNICODE;
 	bool linemode = termmode & TERMMODE_LINEBUFFER;
 	bool echomode = termmode & TERMMODE_ECHO;
 
