@@ -767,11 +767,16 @@ retry_another_signal:
 	// Update the current registers.
 	Scheduler::LoadInterruptedContext(intctx, &handler_regs);
 
-	// TODO: SA_RESETHAND:
-	//       "If set, the disposition of the signal shall be reset to SIG_DFL
-	//        and the SA_SIGINFO flag shall be cleared on entry to the signal
-	//        handler. Note: SIGILL and SIGTRAP cannot be automatically reset
-	//        when delivered; the system silently enforces this restriction."
+	// Reset the signal handler if this signal handler is once only.
+	if ( action->sa_flags & SA_RESETHAND )
+	{
+		// POSIX mandates SA_RESETHAND is silently ignored for these signals.
+		if ( signum != SIGILL && signum != SIGTRAP )
+		{
+			action->sa_flags &= ~SA_RESETHAND;
+			action->sa_handler = SIG_DFL;
+		}
+	}
 
 	// Run the signal handler by returning to user-space.
 	return;
