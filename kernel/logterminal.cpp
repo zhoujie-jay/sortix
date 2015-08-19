@@ -408,16 +408,16 @@ ssize_t LogTerminal::read(ioctx_t* ctx, uint8_t* userbuf, size_t count)
 	return sofar;
 }
 
-ssize_t LogTerminal::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
+ssize_t LogTerminal::write(ioctx_t* ctx, const uint8_t* io_buffer, size_t count)
 {
 	// TODO: Add support for ioctx to the kernel log.
 	const size_t BUFFER_SIZE = 64UL;
 	if ( BUFFER_SIZE < count )
 		count = BUFFER_SIZE;
 	char buffer[BUFFER_SIZE];
-	if ( !ctx->copy_from_src(buffer, buf, count) )
+	if ( !ctx->copy_from_src(buffer, io_buffer, count) )
 		return -1;
-	Log::PrintData(buf, count);
+	Log::PrintData(buffer, count);
 	return count;
 }
 
