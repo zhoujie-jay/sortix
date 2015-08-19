@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -34,7 +34,15 @@ static const char* machine = "x86_64";
 static const char* processor = "x86_64";
 static const char* hwplatform = "x86_64";
 #elif defined(__i386__)
+#if defined(__i686__)
+static const char* machine = "i686";
+#elif defined(__i586__)
+static const char* machine = "i586";
+#elif defined(__i486__)
+static const char* machine = "i486";
+#else
 static const char* machine = "i386";
+#endif
 static const char* processor = "i386";
 static const char* hwplatform = "i386";
 #else
