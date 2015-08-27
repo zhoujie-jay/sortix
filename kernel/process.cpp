@@ -851,7 +851,8 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	size_t raw_tls_size_aligned = -(-raw_tls_size & ~(aux.tls_mem_align-1));
 	if ( raw_tls_size && raw_tls_size_aligned == 0 /* overflow */ )
 		return errno = EINVAL, -1;
-	int raw_tls_prot = PROT_READ | PROT_KREAD | PROT_KWRITE | PROT_FORK;
+	int raw_tls_kprot = PROT_KWRITE | PROT_FORK;
+	int raw_tls_prot = PROT_READ | PROT_KREAD | PROT_FORK;
 	void* raw_tls_hint = stack_hint;
 
 	size_t tls_size = raw_tls_size_aligned + aux.uthread_size;
@@ -873,7 +874,8 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	void* tls_hint = stack_hint;
 
 	size_t auxcode_size = Page::Size();
-	int auxcode_prot = PROT_EXEC | PROT_READ | PROT_KREAD | PROT_KWRITE | PROT_FORK;
+	int auxcode_kprot = PROT_KWRITE | PROT_FORK;
+	int auxcode_prot = PROT_EXEC | PROT_READ | PROT_KREAD | PROT_FORK;
 	void* auxcode_hint = stack_hint;
 
 	size_t arg_size = 0;
@@ -900,18 +902,15 @@ int Process::Execute(const char* programname, const uint8_t* program,
 
 	if ( !(MapSegment(&arg_segment, stack_hint, arg_size, 0, stack_prot) &&
 	       MapSegment(&stack_segment, stack_hint, stack_size, 0, stack_prot) &&
-	       MapSegment(&raw_tls_segment, raw_tls_hint, raw_tls_size, 0, raw_tls_prot) &&
+	       MapSegment(&raw_tls_segment, raw_tls_hint, raw_tls_size, 0, raw_tls_kprot) &&
 	       MapSegment(&tls_segment, tls_hint, tls_size, 0, tls_prot) &&
-	       MapSegment(&auxcode_segment, auxcode_hint, auxcode_size, 0, auxcode_prot)) )
+	       MapSegment(&auxcode_segment, auxcode_hint, auxcode_size, 0, auxcode_kprot)) )
 	{
 		kthread_mutex_unlock(&segment_lock);
 		kthread_mutex_unlock(&segment_write_lock);
 		ResetForExecute();
 		return errno = ENOMEM, -1;
 	}
-
-	kthread_mutex_unlock(&segment_lock);
-	kthread_mutex_unlock(&segment_write_lock);
 
 	char** target_argv = (char**) ((char*) arg_segment.addr + 0);
 	char** target_envp = (char**) ((char*) arg_segment.addr + argv_size);
@@ -945,6 +944,7 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	uint8_t* target_raw_tls = (uint8_t*) raw_tls_segment.addr;
 	memcpy(target_raw_tls, file_raw_tls, aux.tls_file_size);
 	memset(target_raw_tls + aux.tls_file_size, 0, aux.tls_mem_size - aux.tls_file_size);
+	Memory::ProtectMemory(this, raw_tls_segment.addr, raw_tls_segment.size, raw_tls_prot);
 
 	uint8_t* target_tls = (uint8_t*) (tls_segment.addr + tls_offset_tls);
 	assert((((uintptr_t) target_tls) & (aux.tls_mem_align-1)) == 0);
@@ -1020,6 +1020,10 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	(void) auxcode;
 	#warning "You need to initialize auxcode with a sigreturn routine"
 #endif
+	Memory::ProtectMemory(this, auxcode_segment.addr, auxcode_segment.size, auxcode_prot);
+
+	kthread_mutex_unlock(&segment_lock);
+	kthread_mutex_unlock(&segment_write_lock);
 
 	dtable->OnExecute();
 

@@ -148,7 +148,7 @@ bool ProtectMemory(Process* process, uintptr_t addr, size_t size, int prot)
 	// First split the segments overlapping with [addr, addr + size) into
 	// smaller segments that doesn't cross addr and addr+size, while verifying
 	// there are no gaps in that region. This is where the operation can fail as
-	// the AddSegtment call can run out of memory. There is no harm in splitting
+	// the AddSegment call can run out of memory. There is no harm in splitting
 	// the segments into smaller chunks.
 	for ( size_t offset = 0; offset < size; )
 	{
@@ -353,7 +353,7 @@ void* sys_mmap(void* addr_ptr, size_t size, int prot, int flags, int fd,
 		new_segment.size = aligned_size;
 	else if ( !PlaceSegment(&new_segment, process, (void*) addr, aligned_size, flags) )
 		return errno = ENOMEM, MAP_FAILED;
-	new_segment.prot = prot | PROT_KREAD | PROT_KWRITE | PROT_FORK;
+	new_segment.prot = PROT_KWRITE | PROT_FORK;
 
 	// Allocate a memory segment with the desired properties.
 	if ( !Memory::MapMemory(process, new_segment.addr, new_segment.size, new_segment.prot) )
@@ -389,6 +389,16 @@ void* sys_mmap(void* addr_ptr, size_t size, int prot, int flags, int fd,
 			so_far += num_bytes;
 		}
 	}
+
+	// Finally switch to the desired page protections.
+	kthread_mutex_lock(&process->segment_lock);
+	if ( prot & PROT_READ )
+		prot |= PROT_KREAD;
+	if ( prot & PROT_WRITE )
+		prot |= PROT_KWRITE;
+	prot |= PROT_FORK;
+	Memory::ProtectMemory(CurrentProcess(), new_segment.addr, new_segment.size, prot);
+	kthread_mutex_unlock(&process->segment_lock);
 
 	lock1.Reset();
 

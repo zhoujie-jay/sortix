@@ -414,26 +414,40 @@ namespace Memory {
 
 addr_t ProtectionToPMLFlags(int prot)
 {
-	addr_t result = 0;
-	if ( prot & PROT_EXEC ) { result |= PML_USERSPACE; }
-	if ( prot & PROT_READ ) { result |= PML_USERSPACE; }
-	if ( prot & PROT_WRITE ) { result |= PML_USERSPACE | PML_WRITABLE; }
-	if ( prot & PROT_KEXEC ) { result |= 0; }
-	if ( prot & PROT_KREAD ) { result |= 0; }
-	if ( prot & PROT_KWRITE ) { result |= 0; }
-	if ( prot & PROT_FORK ) { result |= PML_FORK; }
+	addr_t result = PML_NX;
+	if ( prot & PROT_EXEC )
+	{
+		result |= PML_USERSPACE;
+		result &= ~PML_NX;
+	}
+	if ( prot & PROT_READ )
+		result |= PML_USERSPACE;
+	if ( prot & PROT_WRITE )
+		result |= PML_USERSPACE | PML_WRITABLE;
+	if ( prot & PROT_KEXEC )
+		result &= ~PML_NX;
+	if ( prot & PROT_KREAD )
+		result |= 0;
+	if ( prot & PROT_KWRITE )
+		result |= PML_WRITABLE;
+	if ( prot & PROT_FORK )
+		result |= PML_FORK;
 	return result;
 }
 
 int PMLFlagsToProtection(addr_t flags)
 {
-	int prot = PROT_KREAD | PROT_KWRITE | PROT_KEXEC;
-	bool user = flags & PML_USERSPACE;
-	bool write = flags & PML_WRITABLE;
-	if ( user )
-		prot |= PROT_EXEC | PROT_READ;
-	if ( user && write )
+	int prot = PROT_KREAD;
+	if ( (flags & PML_USERSPACE) && !(flags & PML_NX) )
+		prot |= PROT_EXEC;
+	if ( (flags & PML_USERSPACE) )
+		prot |= PROT_READ;
+	if ( (flags & PML_USERSPACE) && (flags & PML_WRITABLE) )
 		prot |= PROT_WRITE;
+	if ( !(flags & PML_NX) )
+		prot |= PROT_KEXEC;
+	if ( flags & PML_WRITABLE )
+		prot |= PROT_KWRITE;
 	if ( flags & PML_FORK )
 		prot |= PROT_FORK;
 	return prot;

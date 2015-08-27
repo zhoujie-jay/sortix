@@ -318,7 +318,7 @@ bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc)
 	// Map the physical frames onto our address space.
 	addr_t mapat = initrd_addr_alloc.from;
 	for ( size_t i = 0; i < size; i += Page::Size() )
-		if ( !Memory::Map(physaddr + i, mapat + i, PROT_KREAD) )
+		if ( !Memory::Map(physaddr + i, mapat + i, PROT_KREAD | PROT_KWRITE) )
 			PanicF("Unable to map the init ramdisk into virtual memory");
 	Memory::Flush();
 

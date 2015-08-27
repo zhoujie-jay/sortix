@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -47,8 +47,13 @@ const addr_t PML_AVAILABLE1 = 1 << 9;
 const addr_t PML_AVAILABLE2 = 1 << 10;
 const addr_t PML_AVAILABLE3 = 1 << 11;
 const addr_t PML_FORK       = PML_AVAILABLE1;
-const addr_t PML_FLAGS      = 0xFFFUL; // Bits used for the flags.
-const addr_t PML_ADDRESS    = ~0xFFFUL; // Bits used for the address.
+#ifdef __x86_64__
+const addr_t PML_NX         = 1UL << 63;
+#else
+const addr_t PML_NX         = 0;
+#endif
+const addr_t PML_FLAGS      = 0xFFFUL | PML_NX; // Bits used for the flags.
+const addr_t PML_ADDRESS    = ~PML_FLAGS; // Bits used for the address.
 const addr_t PAT_UC = 0x00; // Uncacheable
 const addr_t PAT_WC = 0x01; // Write-Combine
 const addr_t PAT_WT = 0x04; // Writethrough

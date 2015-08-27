@@ -114,6 +114,8 @@ __start:
 	movl $(bootpml1_b + 0x003), bootpml2 + 1 * 8
 
 	# Page Table (identity map the first 4 MiB, except NULL).
+	# TODO: This is insecure as it doesn't restrict write & execute access to
+	#       the code kernel code & variables appropriately.
 	movl $(bootpml1_a + 8), %edi
 	movl $0x1003, %esi
 	movl $1023, %ecx
@@ -152,15 +154,15 @@ __start:
 	orl $0x20, %eax
 	movl %eax, %cr4
 
-	# Enable long mode.
+	# Enable long mode and the No-Execute bit.
 	movl $0xC0000080, %ecx
 	rdmsr
-	orl $0x100, %eax
+	orl $0x900, %eax
 	wrmsr
 
-	# Enable paging and enter long mode (still 32-bit)
+	# Enable paging (with write protection) and enter long mode (still 32-bit)
 	movl %cr0, %eax
-	orl $0x80000000, %eax
+	orl $0x80010000, %eax
 	movl %eax, %cr0
 
 	# Load the Global Descriptor Table pointer register.

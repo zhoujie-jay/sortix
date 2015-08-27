@@ -262,13 +262,14 @@ uintptr_t Load(const void* file_ptr, size_t file_size, Auxiliary* aux)
 			     pheader->p_vaddr % pheader->p_align !=
 			     pheader->p_offset % pheader->p_align )
 				return errno = EINVAL, 0;
-			int prot = PROT_FORK | PROT_KREAD | PROT_KWRITE;
+			int kprot = PROT_KWRITE | PROT_FORK;
+			int prot = PROT_FORK;
 			if ( pheader->p_flags & PF_X )
 				prot |= PROT_EXEC;
 			if ( pheader->p_flags & PF_R )
-				prot |= PROT_READ;
+				prot |= PROT_READ | PROT_KREAD;
 			if ( pheader->p_flags & PF_W )
-				prot |= PROT_WRITE;
+				prot |= PROT_WRITE | PROT_KWRITE;
 
 			if ( pheader->p_vaddr < userspace_addr )
 				return errno = EINVAL, 0;
@@ -284,7 +285,7 @@ uintptr_t Load(const void* file_ptr, size_t file_size, Auxiliary* aux)
 			struct segment segment;
 			segment.addr =  map_start;
 			segment.size = map_size;
-			segment.prot = prot;
+			segment.prot = kprot;
 
 			assert(IsUserspaceSegment(&segment));
 
@@ -298,7 +299,7 @@ uintptr_t Load(const void* file_ptr, size_t file_size, Auxiliary* aux)
 				return errno = EINVAL, 0;
 			}
 
-			if ( !Memory::MapRange(segment.addr, segment.size, prot, PAGE_USAGE_USER_SPACE) )
+			if ( !Memory::MapRange(segment.addr, segment.size, kprot, PAGE_USAGE_USER_SPACE) )
 			{
 				kthread_mutex_unlock(&process->segment_lock);
 				kthread_mutex_unlock(&process->segment_write_lock);
@@ -313,11 +314,12 @@ uintptr_t Load(const void* file_ptr, size_t file_size, Auxiliary* aux)
 				return errno = EINVAL, 0;
 			}
 
-			kthread_mutex_unlock(&process->segment_lock);
-			kthread_mutex_unlock(&process->segment_write_lock);
-
 			memset((void*) segment.addr, 0, segment.size);
 			memcpy((void*) pheader->p_vaddr, file + pheader->p_offset, pheader->p_filesz);
+			Memory::ProtectMemory(CurrentProcess(), segment.addr, segment.size, prot);
+
+			kthread_mutex_unlock(&process->segment_lock);
+			kthread_mutex_unlock(&process->segment_write_lock);
 		}
 	}
 

@@ -80,6 +80,8 @@ __start:
 	movl $(bootpml1 + 0x003), bootpml2 + 0 * 4
 
 	# Page Table (identity map the first 4 MiB, except NULL).
+	# TODO: This is insecure as it doesn't restrict write & execute access to
+	#       the code kernel code & variables appropriately.
 	movl $(bootpml1 + 4), %edi
 	movl $0x1003, %esi
 	movl $1023, %ecx
@@ -103,9 +105,9 @@ __start:
 	movl $(physpml1 + 0x003), bootpml2 + 1021 * 4
 	movl $(physpml0 + 0x003), physpml1 + 0    * 4
 
-	# Enable paging.
+	# Enable paging (with write protection).
 	movl %cr0, %edi
-	orl $0x80000000, %edi
+	orl $0x80010000, %edi
 	movl %edi, %cr0
 
 	# Load the Global Descriptor Table pointer register.
