@@ -399,12 +399,11 @@ install: install-headers install-libm
 
 install-include-dirs: headers
 	mkdir -p $(DESTDIR)$(INCLUDEDIR)
-	mkdir -p $(DESTDIR)$(INCLUDEDIR)/$(HOST)
-	mkdir -p $(DESTDIR)$(INCLUDEDIR)/$(HOST)/machine
+	mkdir -p $(DESTDIR)$(INCLUDEDIR)/machine
 
 install-headers: install-include-dirs headers
 	cp -RTv include $(DESTDIR)$(INCLUDEDIR)
-	cp -v $(ARCH_MACHINE_HEADERS) $(DESTDIR)$(INCLUDEDIR)/$(HOST)/machine
+	cp -v $(ARCH_MACHINE_HEADERS) $(DESTDIR)$(INCLUDEDIR)/machine
 
 install-libs: install-libm
 
