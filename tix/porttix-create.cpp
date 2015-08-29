@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of Tix.
 
@@ -70,14 +70,10 @@ static void version(FILE* fp, const char* argv0)
 }
 int main(int argc, char* argv[])
 {
-	char* cp = strdup(getenv_def("CP", "cp"));
-	char* diff = strdup(getenv_def("DIFF", "diff"));
 	char* input_normalized_path = NULL;
 	char* input_tarball_path = NULL;
 	char* output_directory = strdup(".");
 	char* output = NULL;
-	char* tar = strdup(getenv_def("TAR", "tar"));
-	char* tix_execdiff = strdup(getenv_def("TIX_EXECDIFF", "tix-execdiff"));
 	char* tmp = strdup(getenv_def("TMP", "/tmp"));
 
 	const char* argv0 = argv[0];
@@ -103,14 +99,10 @@ int main(int argc, char* argv[])
 			help(stdout, argv0), exit(0);
 		else if ( !strcmp(arg, "--version") )
 			version(stdout, argv0), exit(0);
-		else if ( GET_OPTION_VARIABLE("--cp", &cp) ) { }
-		else if ( GET_OPTION_VARIABLE("--diff", &diff) ) { }
 		else if ( GET_OPTION_VARIABLE("--normalized", &input_normalized_path) ) { }
 		else if ( GET_OPTION_VARIABLE("--output-directory", &output_directory) ) { }
 		else if ( GET_OPTION_VARIABLE("--output", &output) ) { }
 		else if ( GET_OPTION_VARIABLE("--tarball", &input_tarball_path) ) { }
-		else if ( GET_OPTION_VARIABLE("--tar", &tar) ) { }
-		else if ( GET_OPTION_VARIABLE("--tix-execdiff", &tix_execdiff) ) { }
 		else if ( GET_OPTION_VARIABLE("--tmp", &tmp) ) { }
 		else
 		{
@@ -164,7 +156,7 @@ int main(int argc, char* argv[])
 		output = print_string("%s/%s.porttix.tar.xz", output_directory, package_name);
 
 	char* tmp_root = print_string("%s/tmppid.%ju", tmp, (uintmax_t) getpid());
-	if ( mkdir_p(tmp_root, 0777) != 0 )
+	if ( mkdir_p(tmp_root, 0755) != 0 )
 		error(1, errno, "mkdir: `%s'", tmp_root);
 
 	on_exit(cleanup_file_or_directory, tmp_root);
@@ -175,15 +167,15 @@ int main(int argc, char* argv[])
 	char* rel_normalized_path = print_string("%s.normalized", package_name);
 
 	char* porttix_path = print_string("%s/%s", tmp_root, package_name);
-	if ( mkdir_p(porttix_path, 0777) != 0 )
+	if ( mkdir_p(porttix_path, 0755) != 0 )
 		error(1, errno, "mkdir: `%s'", porttix_path);
 
 	char* srctix_path = print_string("%s/%s", tmp_root, rel_srctix_path);
-	if ( mkdir_p(srctix_path, 0777) != 0 )
+	if ( mkdir_p(srctix_path, 0755) != 0 )
 		error(1, errno, "mkdir: `%s'", srctix_path);
 
 	char* normalized_path = print_string("%s/%s", tmp_root, rel_normalized_path);
-	if ( mkdir_p(normalized_path, 0777) != 0 )
+	if ( mkdir_p(normalized_path, 0755) != 0 )
 		error(1, errno, "mkdir: `%s'", normalized_path);
 
 	// Create the porttixinfo file.
@@ -198,7 +190,7 @@ int main(int argc, char* argv[])
 	{
 		const char* cmd_argv[] =
 		{
-			cp,
+			"cp",
 			"-HRT",
 			"--preserve=timestamps,links",
 			"--",
@@ -222,7 +214,7 @@ int main(int argc, char* argv[])
 				error(1, errno, "chdir: `%s'", work_dir);
 			const char* cmd_argv[] =
 			{
-				tar,
+				"tar",
 				"--create",
 				"--xz",
 				"--directory", input_normalized_path,
@@ -243,7 +235,7 @@ int main(int argc, char* argv[])
 		{
 			const char* cmd_argv[] =
 			{
-				cp,
+				"cp",
 				"-HRT",
 				"--preserve=timestamps,links",
 				"--",
@@ -263,7 +255,7 @@ int main(int argc, char* argv[])
 		{
 			const char* cmd_argv[] =
 			{
-				tar,
+				"tar",
 				"--extract",
 				"--directory", normalized_path,
 				"--file", input_tarball_path,
@@ -281,7 +273,7 @@ int main(int argc, char* argv[])
 	{
 		const char* cmd_argv[] =
 		{
-			cp,
+			"cp",
 			"--",
 			input_tarball_path,
 			porttix_tarball_path,
@@ -313,7 +305,7 @@ int main(int argc, char* argv[])
 		close(pipes[0]);
 		const char* cmd_argv[] =
 		{
-			tar,
+			"tar",
 			"--list",
 			"--file", porttix_tarball_path,
 			"--strip-components=1",
@@ -333,7 +325,7 @@ int main(int argc, char* argv[])
 		if ( line_len && line[line_len-1] == '\n' )
 			line[--line_len] = '\0';
 		const char* path = line;
-		while ( *path != '/' )
+		while ( *path && *path != '/' )
 			path++;
 		if ( *path == '/' )
 			path++;
@@ -373,13 +365,13 @@ int main(int argc, char* argv[])
 	if ( fork_and_wait_or_death(false) )
 	{
 		close(1);
-		if ( open(patch_path, O_WRONLY | O_CREAT | O_TRUNC, 0666) != 1 )
+		if ( open(patch_path, O_WRONLY | O_CREAT | O_TRUNC, 0644) != 1 )
 			error(1, errno, "`%s'", patch_path);
 		if ( chdir(tmp_root) != 0 )
 			error(1, errno, "chdir(`%s')", tmp_root);
 		const char* cmd_argv[] =
 		{
-			diff,
+			"diff",
 			"--no-dereference",
 			"-Naur",
 			"--",
@@ -397,13 +389,13 @@ int main(int argc, char* argv[])
 	char* patch_exec_path = join_paths(porttix_path, "patch.execpatch");
 	if ( fork_and_wait_or_death(false) )
 	{
-		if ( redirect(patch_exec_path, O_WRONLY | O_CREAT | O_TRUNC, 0666) != 0 )
+		if ( redirect(patch_exec_path, O_WRONLY | O_CREAT | O_TRUNC, 0644) != 0 )
 			error(1, errno, "`%s'", patch_exec_path);
 		if ( chdir(tmp_root) != 0 )
 			error(1, errno, "chdir(`%s')", tmp_root);
 		const char* cmd_argv[] =
 		{
-			tix_execdiff,
+			"tix-execdiff",
 			"--",
 			rel_normalized_path,
 			rel_srctix_path,
@@ -424,7 +416,7 @@ int main(int argc, char* argv[])
 	{
 		const char* cmd_argv[] =
 		{
-			tar,
+			"tar",
 			"--create",
 			"--xz",
 			"--directory", tmp_root,

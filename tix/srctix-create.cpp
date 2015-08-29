@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of Tix.
 
@@ -68,10 +68,6 @@ int main(int argc, char* argv[])
 {
 	char* output_directory = strdup(".");
 	char* output = NULL;
-	char* patch = strdup(getenv_def("PATCH", "patch"));
-	char* tar = strdup(getenv_def("TAR", "tar"));
-	char* tix_execpatch = strdup(getenv_def("TIX_EXECPATCH", "tix-execpatch"));
-	char* tix_rmpatch = strdup(getenv_def("TIX_RMPATCH", "tix-rmpatch"));
 	char* tmp = strdup(getenv_def("TMP", "/tmp"));
 
 	const char* argv0 = argv[0];
@@ -99,10 +95,6 @@ int main(int argc, char* argv[])
 			version(stdout, argv0), exit(0);
 		else if ( GET_OPTION_VARIABLE("--output-directory", &output_directory) ) { }
 		else if ( GET_OPTION_VARIABLE("--output", &output) ) { }
-		else if ( GET_OPTION_VARIABLE("--patch", &patch) ) { }
-		else if ( GET_OPTION_VARIABLE("--tar", &tar) ) { }
-		else if ( GET_OPTION_VARIABLE("--tix-execpatch", &tix_execpatch) ) { }
-		else if ( GET_OPTION_VARIABLE("--tix-rmpatch", &tix_rmpatch) ) { }
 		else if ( GET_OPTION_VARIABLE("--tmp", &tmp) ) { }
 		else
 		{
@@ -129,7 +121,7 @@ int main(int argc, char* argv[])
 	const char* porttix_path = argv[1];
 
 	char* tmp_in_root = print_string("%s/tmppid.%ju.in", tmp, (uintmax_t) getpid());
-	if ( mkdir_p(tmp_in_root, 0777) != 0 )
+	if ( mkdir_p(tmp_in_root, 0755) != 0 )
 		error(1, errno, "mkdir: `%s'", tmp_in_root);
 	on_exit(cleanup_file_or_directory, tmp_in_root);
 
@@ -137,7 +129,7 @@ int main(int argc, char* argv[])
 	{
 		const char* cmd_argv[] =
 		{
-			tar,
+			"tar",
 			"--extract",
 			"--directory", tmp_in_root,
 			"--file", porttix_path,
@@ -159,7 +151,7 @@ int main(int argc, char* argv[])
 	}
 
 	char* tmp_out_root = print_string("%s/tmppid.%ju.out", tmp, (uintmax_t) getpid());
-	if ( mkdir_p(tmp_out_root, 0777) != 0 )
+	if ( mkdir_p(tmp_out_root, 0755) != 0 )
 		error(1, errno, "mkdir: `%s'", tmp_out_root);
 	on_exit(cleanup_file_or_directory, tmp_out_root);
 
@@ -191,7 +183,7 @@ int main(int argc, char* argv[])
 				      porttixinfo_path, parameter);
 			package_name = strdup(parameter);
 			srctix_path = join_paths(tmp_out_root, package_name);
-			if ( mkdir_p(srctix_path, 0777) != 0 )
+			if ( mkdir_p(srctix_path, 0755) != 0 )
 				error(1, errno, "mkdir: `%s'", srctix_path);
 		}
 		else if ( !package_name )
@@ -207,7 +199,7 @@ int main(int argc, char* argv[])
 			{
 				const char* cmd_argv[] =
 				{
-					tar,
+					"tar",
 					"--extract",
 					"--directory", srctix_path,
 					"--file", tarball_path,
@@ -229,7 +221,7 @@ int main(int argc, char* argv[])
 			{
 				const char* cmd_argv[] =
 				{
-					tix_rmpatch,
+					"tix-rmpatch",
 					"--directory", srctix_path,
 					"--",
 					rmpatch_path,
@@ -250,7 +242,7 @@ int main(int argc, char* argv[])
 			{
 				const char* cmd_argv[] =
 				{
-					patch,
+					"patch",
 					"--strip=1",
 					"--silent",
 					"--directory", srctix_path,
@@ -272,7 +264,7 @@ int main(int argc, char* argv[])
 			{
 				const char* cmd_argv[] =
 				{
-					tix_execpatch,
+					"tix-execpatch",
 					"--directory", srctix_path,
 					"--",
 					execpatch_path,
@@ -299,7 +291,7 @@ int main(int argc, char* argv[])
 	{
 		const char* cmd_argv[] =
 		{
-			tar,
+			"tar",
 			"--create",
 			"--xz",
 			"--directory", tmp_out_root,

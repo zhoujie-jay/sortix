@@ -100,6 +100,7 @@ typedef struct
 	char* build;
 	char* build_dir;
 	char* destination;
+	int generation;
 	char* host;
 	char* make;
 	char* makeflags;
@@ -239,7 +240,7 @@ void emit_compiler_sysroot_cross_wrapper(metainfo_t* minfo,
 void emit_pkg_config_wrapper(metainfo_t* minfo)
 {
 	char* bindir = print_string("%s/tmppid.%ju.bin", minfo->tmp, (uintmax_t) getpid());
-	if ( mkdir_p(bindir, 0777) != 0 )
+	if ( mkdir_p(bindir, 0755) != 0 )
 		error(1, errno, "mkdir: `%s'", bindir);
 
 	on_exit(cleanup_file_or_directory, strdup(bindir));
@@ -298,7 +299,7 @@ void emit_pkg_config_wrapper(metainfo_t* minfo)
 	if ( getenv("TIX_WARNINGS_DIR") )
 	{
 		char* warnings_dir = print_string("%s/%s", getenv("TIX_WARNINGS_DIR"), minfo->package_name);
-		if ( mkdir(warnings_dir, 0777) == 0 || errno == EEXIST )
+		if ( mkdir(warnings_dir, 0755) == 0 || errno == EEXIST )
 		{
 			setenv("TIX_WARNINGS_DIR", warnings_dir, 1);
 		}
@@ -583,7 +584,7 @@ void BuildPackage(metainfo_t* minfo)
 	{
 		minfo->build_dir = print_string("%s/tmppid.%ju", minfo->tmp,
 		                                (uintmax_t) getpid());
-		if ( mkdir_p(minfo->build_dir, 0777) != 0 )
+		if ( mkdir_p(minfo->build_dir, 0755) != 0 )
 			error(1, errno, "mkdir: `%s'", minfo->build_dir);
 	}
 	else
@@ -616,8 +617,8 @@ void BuildPackage(metainfo_t* minfo)
 
 	if ( !location_independent && !minfo->prefix )
 		error(1, 0, "error: %s is not location independent and you need to "
-		            "specify the intended destination prefix using --prefix or "
-		            "PREFIX", minfo->package_name);
+		            "specify the intended destination prefix using --prefix",
+		            minfo->package_name);
 
 	if ( SHOULD_DO_BUILD_STEP(BUILD_STEP_BUILD, minfo) )
 		Make(minfo, build_target, NULL, true, subdir);
@@ -627,7 +628,7 @@ void BuildPackage(metainfo_t* minfo)
 	char* tixdir_rel = print_string("%s/%s", minfo->tmp, "tmp-tixbuild/tix");
 	char* tixinfo_rel = print_string("%s/%s", minfo->tmp, "tmp-tixbuild/tix/tixinfo");
 
-	while ( mkdir(tardir_rel, 0777) != 0 )
+	while ( mkdir(tardir_rel, 0755) != 0 )
 	{
 		if ( errno != EEXIST )
 			error(1, errno, "mkdir: `%s'", tardir_rel);
@@ -635,9 +636,9 @@ void BuildPackage(metainfo_t* minfo)
 			error(1, errno, "rmdir: `%s'", tardir_rel);
 	}
 
-	if ( mkdir(destdir_rel, 0777) != 0 )
+	if ( mkdir(destdir_rel, 0755) != 0 )
 		error(1, errno, "mkdir: `%s'", destdir_rel);
-	if ( mkdir(tixdir_rel, 0777) != 0 )
+	if ( mkdir(tixdir_rel, 0755) != 0 )
 		error(1, errno, "mkdir: `%s'", tixdir_rel);
 
 	char* destdir = canonicalize_file_name(destdir_rel);
@@ -819,16 +820,18 @@ int main(int argc, char* argv[])
 	PurifyMakeflags();
 
 	metainfo_t minfo;
+	memset(&minfo, 0, sizeof(minfo));
 	minfo.build = NULL;
-	minfo.destination = strdup(getenv_def("TIX_BUILD_DESTINATION", "."));
+	minfo.destination = NULL;
 	minfo.host = NULL;
+	char* generation_string = strdup(DEFAULT_GENERATION);
 	minfo.makeflags = strdup_null(getenv_def("MAKEFLAGS", NULL));
 	minfo.make = strdup(getenv_def("MAKE", "make"));
-	minfo.prefix = strdup_null(getenv_def("PREFIX", NULL));
-	minfo.exec_prefix = strdup_null(getenv_def("EXEC_PREFIX", NULL));
-	minfo.sysroot = strdup_null(getenv_def("SYSROOT", NULL));
+	minfo.prefix = strdup("");
+	minfo.exec_prefix = NULL;
+	minfo.sysroot = NULL;
 	minfo.target = NULL;
-	minfo.tar = strdup(getenv_def("TAR", "tar"));
+	minfo.tar = strdup("tar");
 	minfo.tmp = strdup(getenv_def("BUILDTMP", "."));
 	char* start_step_string = strdup("start");
 	char* end_step_string = strdup("end");
@@ -860,6 +863,7 @@ int main(int argc, char* argv[])
 		else if ( GET_OPTION_VARIABLE("--destination", &minfo.destination) ) { }
 		else if ( GET_OPTION_VARIABLE("--end", &end_step_string) ) { }
 		else if ( GET_OPTION_VARIABLE("--host", &minfo.host) ) { }
+		else if ( GET_OPTION_VARIABLE("--generation", &generation_string) ) { }
 		else if ( GET_OPTION_VARIABLE("--makeflags", &minfo.makeflags) ) { }
 		else if ( GET_OPTION_VARIABLE("--make", &minfo.make) ) { }
 		else if ( GET_OPTION_VARIABLE("--prefix", &minfo.prefix) ) { }
@@ -876,6 +880,9 @@ int main(int argc, char* argv[])
 			exit(1);
 		}
 	}
+
+	minfo.generation = atoi(generation_string);
+	free(generation_string);
 
 	if ( !(minfo.start_step = step_of_step_name(start_step_string)) )
 	{
@@ -924,17 +931,17 @@ int main(int argc, char* argv[])
 		free(minfo.target), minfo.target = NULL;
 
 	if ( !minfo.build && !(minfo.build = GetBuildTriplet()) )
-		error(1, errno, "unable to determine build, use --build or BUILD");
-	if ( !minfo.host && !(minfo.host = strdup_null_if_content(getenv("HOST"))) )
+		error(1, errno, "unable to determine build, use --build");
+	if ( !minfo.host )
 		minfo.host = strdup(minfo.build);
-	if ( !minfo.target && !(minfo.target = strdup_null_if_content(getenv("TARGET"))) )
+	if ( !minfo.target )
 		minfo.target = strdup(minfo.host);
 
 	if ( minfo.prefix && !minfo.exec_prefix )
 	{
 // TODO: After releasing Sortix 1.0, switch to this branch that defaults the
 //       exec-prefix to the prefix.
-#if 0
+#if defined(__sortix__)
 		minfo.exec_prefix = strdup(minfo.prefix);
 #else // Sortix 0.9 compatibility.
 		minfo.exec_prefix = print_string("%s/%s", minfo.prefix, minfo.host);

@@ -46,7 +46,7 @@
 
 static void help(FILE* fp, const char* argv0)
 {
-	fprintf(fp, "Usage: %s PREFIX [OPTION]... COMMAND\n", argv0);
+	fprintf(fp, "Usage: %s [PREFIX] [OPTION]... COMMAND\n", argv0);
 	fprintf(fp, "Administer and configure a tix collection.\n");
 }
 
@@ -60,7 +60,7 @@ static void version(FILE* fp, const char* argv0)
 
 int main(int argc, char* argv[])
 {
-	char* collection = strdup_null(getenv_def("TIX_COLLECTION", NULL));
+	char* collection = NULL;
 	char* platform = NULL;
 	char* prefix = NULL;
 	// TODO: After releasing Sortix 1.0, keep the --disable-multiarch option
@@ -74,6 +74,7 @@ int main(int argc, char* argv[])
 #else
 	bool use_multiarch = true;
 #endif
+	char* generation_string = strdup(DEFAULT_GENERATION);
 
 	const char* argv0 = argv[0];
 	for ( int i = 0; i < argc; i++ )
@@ -101,6 +102,7 @@ int main(int argc, char* argv[])
 		else if ( GET_OPTION_VARIABLE("--collection", &collection) ) { }
 		else if ( GET_OPTION_VARIABLE("--platform", &platform) ) { }
 		else if ( GET_OPTION_VARIABLE("--prefix", &prefix) ) { }
+		else if ( GET_OPTION_VARIABLE("--generation", &generation_string) ) { }
 		else if ( !strcmp(arg, "--enable-multiarch") )
 			use_multiarch = true;
 		else if ( !strcmp(arg, "--disable-multiarch") )
@@ -124,6 +126,10 @@ int main(int argc, char* argv[])
 	ParseOptionalCommandLineCollectionPrefix(&collection, &argc, &argv);
 	VerifyCommandLineCollection(&collection);
 
+	int generation = atoi(generation_string);
+	free(generation_string);
+	(void) generation;
+
 	if ( !prefix )
 		prefix = strdup(collection);
 
@@ -140,14 +146,14 @@ int main(int argc, char* argv[])
 			error(1, errno, "unable to determine platform, use --platform");
 
 		char* tix_path = join_paths(collection, "tix");
-		if ( mkdir_p(tix_path, 0777) != 0 )
+		if ( mkdir_p(tix_path, 0755) != 0 )
 			error(1, errno, "mkdir: `%s'", tix_path);
 
 		char* tixdb_path;
 		if ( use_multiarch )
 		{
 			tixdb_path = join_paths(tix_path, platform);
-			if ( mkdir_p(tixdb_path, 0777) != 0 )
+			if ( mkdir_p(tixdb_path, 0755) != 0 )
 				error(1, errno, "mkdir: `%s'", tixdb_path);
 		}
 		else
@@ -180,9 +186,6 @@ int main(int argc, char* argv[])
 		if ( !inst_list_fp )
 			error(1, errno, "`%s'", inst_list_path);
 		fclose(inst_list_fp);
-
-		printf("Created empty tix collection at `%s' with no repositories.\n",
-		       collection);
 
 		return 0;
 	}

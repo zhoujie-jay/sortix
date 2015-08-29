@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of Tix.
 
@@ -49,9 +49,7 @@
 typedef struct
 {
 	char* collection;
-	char* tar;
 	char* tixdb_path;
-	char* tix_install;
 	string_array_t coll_conf;
 	string_array_t repo_list;
 	string_array_t inst_list;
@@ -91,11 +89,11 @@ string_array_t GetPackageDependencies(params_t* params, const char* pkg_name)
 		error(1, errno, "unable to locate package `%s'", pkg_name);
 
 	const char* tixinfo_path = "tix/tixinfo";
-	if ( !TarContainsFile(params->tar, pkg_path, tixinfo_path) )
+	if ( !TarContainsFile(pkg_path, tixinfo_path) )
 		error(1, 0, "`%s' doesn't contain a `%s' file", pkg_path, tixinfo_path);
 
 	string_array_t tixinfo = string_array_make();
-	FILE* tixinfo_fp = TarOpenFile(params->tar, pkg_path, tixinfo_path);
+	FILE* tixinfo_fp = TarOpenFile(pkg_path, tixinfo_path);
 	dictionary_append_file(&tixinfo, tixinfo_fp);
 	fclose(tixinfo_fp);
 
@@ -138,9 +136,8 @@ void InstallPackageOfName(params_t* params, const char* pkg_name)
 	{
 		const char* cmd_argv[] =
 		{
-			params->tix_install,
+			"tix-install",
 			"--collection", params->collection,
-			"--tar", params->tar,
 			"--", pkg_path,
 			NULL
 		};
@@ -153,7 +150,7 @@ void InstallPackageOfName(params_t* params, const char* pkg_name)
 
 static void help(FILE* fp, const char* argv0)
 {
-	fprintf(fp, "Usage: %s PREFIX COMMAND [OPTION]...\n", argv0);
+	fprintf(fp, "Usage: %s [PREFIX] COMMAND [OPTION]...\n", argv0);
 	fprintf(fp, "Front end to the Tix package management system.\n");
 }
 
@@ -168,9 +165,7 @@ static void version(FILE* fp, const char* argv0)
 int main(int argc, char* argv[])
 {
 	params_t params;
-	params.collection = strdup_null(getenv_def("TIX_COLLECTION", NULL));
-	params.tar = strdup(getenv_def("TAR", "tar"));
-	params.tix_install = strdup("tix-install");
+	params.collection = NULL;
 
 	const char* argv0 = argv[0];
 	for ( int i = 0; i < argc; i++ )
@@ -196,8 +191,6 @@ int main(int argc, char* argv[])
 		else if ( !strcmp(arg, "--version") )
 			version(stdout, argv0), exit(0);
 		else if ( GET_OPTION_VARIABLE("--collection", &params.collection) ) { }
-		else if ( GET_OPTION_VARIABLE("--tar", &params.tar) ) { }
-		else if ( GET_OPTION_VARIABLE("--tix-install", &params.tix_install) ) { }
 		else
 		{
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);

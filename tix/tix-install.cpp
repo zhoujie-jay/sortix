@@ -48,8 +48,8 @@
 
 void TipTixCollection(const char* prefix)
 {
-	error(0, 0, "error: `%s' isn't a tix collection, use tix-collection before "
-                "installing packages.", prefix);
+	error(0, 0, "error: `%s' isn't a tix collection, use \"tix-collection %s "
+	            "create\" before " "installing packages.", prefix, prefix);
 }
 
 void VerifyTixCollection(const char* prefix)
@@ -108,7 +108,7 @@ bool IsPackageInstalled(const char* tixdb_path, const char* package)
 
 	bool ret = false;
 	char* line = NULL;
-	size_t line_size;
+	size_t line_size = 0;
 	ssize_t line_len;
 	while ( 0 < (line_len = getline(&line, &line_size, installed_list_fp)) )
 	{
@@ -144,7 +144,7 @@ void MarkPackageAsInstalled(const char* tixdb_path, const char* package)
 
 static void help(FILE* fp, const char* argv0)
 {
-	fprintf(fp, "Usage: %s [OPTION]... --collection=PREFIX PACKAGE\n", argv0);
+	fprintf(fp, "Usage: %s [OPTION]... [--collection=PREFIX] PACKAGE...\n", argv0);
 	fprintf(fp, "Install a tix into a tix collection.\n");
 }
 
@@ -156,12 +156,15 @@ static void version(FILE* fp, const char* argv0)
 	fprintf(fp, "There is NO WARRANTY, to the extent permitted by law.\n");
 }
 
+static char* collection = NULL;
+static bool reinstall = false;
+static char* tix_directory_path = NULL;
+
+void InstallPackage(const char* tix_path);
+
 int main(int argc, char* argv[])
 {
-	char* collection = strdup_null(getenv_def("TIX_COLLECTION", NULL));
-	char* prefix = strdup_null(getenv_def("TIX_COLLECTION_PREFIX", NULL));
-	char* tar = strdup(getenv_def("TAR", "tar"));
-	bool reinstall = false;
+	collection = strdup("/");
 
 	const char* argv0 = argv[0];
 	for ( int i = 0; i < argc; i++ )
@@ -187,8 +190,6 @@ int main(int argc, char* argv[])
 		else if ( !strcmp(arg, "--version") )
 			version(stdout, argv0), exit(0);
 		else if ( GET_OPTION_VARIABLE("--collection", &collection) ) { }
-		else if ( GET_OPTION_VARIABLE("--prefix", &prefix) ) { }
-		else if ( GET_OPTION_VARIABLE("--tar", &tar) ) { }
 		else if ( !strcmp(arg, "--reinstall") )
 			reinstall = true;
 		else
@@ -213,44 +214,37 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 
-	if ( !collection && prefix )
-		collection = strdup(prefix);
-
-	if ( !collection )
-	{
-		fprintf(stderr, "%s: no collection prefix specified, use --collection "
-		                "or TIX_COLLECTION to specify where the package will "
-		                "installed.\n", argv0);
-		exit(1);
-	}
-
-	if ( !prefix )
-		prefix = strdup(collection);
-
-	if ( strcmp(collection, prefix) != 0 )
-		error(1, 0, "error: desired collection `%s' isn't equal to desired "
-		            "prefix `%s', which isn't supported (and dangerous).\n",
-		             collection, prefix);
-
 	if ( !*collection )
+	{
+		free(collection);
 		collection = strdup("/");
+	}
 
 	VerifyTixCollection(collection);
 
-	char* tix_directory_path = join_paths(collection, "tix");
+	tix_directory_path = join_paths(collection, "tix");
 
 	VerifyTixDirectory(collection, tix_directory_path);
 
-	char* tix_path = strdup(argv[1]);
+	for ( int i = 1; i < argc; i++ )
+		InstallPackage(argv[i]);
+
+	free(tix_directory_path);
+
+	return 0;
+}
+
+void InstallPackage(const char* tix_path)
+{
 	if ( !IsFile(tix_path) )
 		error(1, errno, "`%s'", tix_path);
 
 	const char* tixinfo_path = "tix/tixinfo";
-	if ( !TarContainsFile(tar, tix_path, tixinfo_path) )
+	if ( !TarContainsFile(tix_path, tixinfo_path) )
 		error(1, 0, "`%s' doesn't contain a `%s' file", tix_path, tixinfo_path);
 
 	string_array_t tixinfo = string_array_make();
-	FILE* tixinfo_fp = TarOpenFile(tar, tix_path, tixinfo_path);
+	FILE* tixinfo_fp = TarOpenFile(tix_path, tixinfo_path);
 	dictionary_append_file(&tixinfo, tixinfo_fp);
 	fclose(tixinfo_fp);
 
@@ -258,20 +252,18 @@ int main(int argc, char* argv[])
 	assert(package_name);
 
 	const char* package_prefix = dictionary_get(&tixinfo, "pkg.prefix");
+	assert(package_prefix || !package_prefix);
 
 	const char* package_platform = dictionary_get(&tixinfo, "tix.platform");
-	assert(package_platform);
+	assert(package_platform || !package_platform);
 
 	// TODO: After releasing Sortix 1.0, delete this compatibility.
+	//       Then move this code to main, from here...
 	char* tixdb_path = join_paths(tix_directory_path, package_platform);
-	if ( IsDirectory(tixdb_path ) )
-	{
-		free(tix_directory_path);
-	}
-	else
+	if ( !IsDirectory(tixdb_path ) )
 	{
 		free(tixdb_path);
-		tixdb_path = tix_directory_path;
+		tixdb_path = strdup(tix_directory_path);
 	}
 
 	VerifyTixDatabase(collection, tixdb_path);
@@ -282,7 +274,14 @@ int main(int argc, char* argv[])
 		error(1, errno, "`%s'", coll_conf_path);
 	VerifyTixCollectionConfiguration(&coll_conf, coll_conf_path);
 	free(coll_conf_path);
+	// ... to here. (But see allocation cleanup below).
 
+	const char* coll_generation = dictionary_get(&coll_conf, "collection.generation");
+	// TODO: After releasing Sortix 1.0, remove this compatibility.
+	if ( !coll_generation )
+		coll_generation = "1";
+	assert(coll_generation);
+	(void) coll_generation;
 	const char* coll_prefix = dictionary_get(&coll_conf, "collection.prefix");
 	assert(coll_prefix);
 	const char* coll_platform = dictionary_get(&coll_conf, "collection.platform");
@@ -290,7 +289,8 @@ int main(int argc, char* argv[])
 
 	bool already_installed = IsPackageInstalled(tixdb_path, package_name);
 	if ( already_installed && !reinstall )
-		error(1, 0, "error: package `%s' is already installed.", package_name);
+		error(1, 0, "error: package `%s' is already installed. Use --reinstall "
+		            "to force reinstallation.", package_name);
 
 	if ( package_prefix && strcmp(coll_prefix, package_prefix) != 0 )
 	{
@@ -301,7 +301,7 @@ int main(int argc, char* argv[])
 		                "--prefix=\"%s\".", coll_prefix);
 	}
 
-	if ( strcmp(coll_platform, package_platform) != 0 )
+	if ( package_platform && strcmp(coll_platform, package_platform) != 0 )
 	{
 		error(0, errno, "error: `%s' is compiled with the platform `%s', but "
 		                "the destination collection has the platform `%s'.",
@@ -310,8 +310,8 @@ int main(int argc, char* argv[])
 		                "--host=%s\".", coll_platform);
 	}
 
-	printf("Installing `%s' into `%s'...\n", package_name, prefix);
-	char* data_and_prefix = package_prefix && prefix[0] ?
+	printf("Installing `%s' into `%s'...\n", package_name, collection);
+	char* data_and_prefix = package_prefix && package_prefix[0] ?
 	                        print_string("data%s", package_prefix) :
 	                        strdup("data");
 	if ( fork_and_wait_or_death() )
@@ -319,9 +319,9 @@ int main(int argc, char* argv[])
 		size_t num_strips = count_tar_components(data_and_prefix);
 		const char* cmd_argv[] =
 		{
-			tar,
+			"tar",
 			print_string("--strip-components=%zu", num_strips),
-			"-C", prefix,
+			"-C", collection,
 			"--extract",
 			"--file", tix_path,
 			"--keep-directory-symlink",
@@ -335,4 +335,10 @@ int main(int argc, char* argv[])
 
 	if ( !already_installed )
 		MarkPackageAsInstalled(tixdb_path, package_name);
+
+	string_array_reset(&tixinfo);
+
+	// TODO: After releasing Sortix 1.0, and done the above, move this to main.
+	string_array_reset(&coll_conf);
+	free(tixdb_path);
 }

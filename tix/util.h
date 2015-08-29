@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of Tix.
 
@@ -24,6 +24,8 @@
 
 #ifndef UTIL_H
 #define UTIL_H
+
+#define DEFAULT_GENERATION "1"
 
 bool does_path_contain_dotdot(const char* path)
 {
@@ -262,7 +264,7 @@ char* token_string_of_string_array(const string_array_t* sa)
 void string_array_append_file(string_array_t* sa, FILE* fp)
 {
 	char* entry = NULL;
-	size_t entry_size;
+	size_t entry_size = 0;
 	ssize_t entry_length;
 	while ( 0 < (entry_length = getline(&entry, &entry_size, fp)) )
 	{
@@ -345,7 +347,7 @@ void dictionary_normalize_entry(char* entry)
 void dictionary_append_file(string_array_t* sa, FILE* fp)
 {
 	char* entry = NULL;
-	size_t entry_size;
+	size_t entry_size = 0;
 	ssize_t entry_length;
 	while ( 0 < (entry_length = getline(&entry, &entry_size, fp)) )
 	{
@@ -458,9 +460,6 @@ static void compact_arguments(int* argc, char*** argv)
 
 char* GetBuildTriplet()
 {
-	const char* env_host = getenv("BUILD");
-	if ( env_host )
-		return strdup(env_host);
 #if defined(__sortix__) && defined(__i386__)
 	return strdup("i486-sortix");
 #elif defined(__sortix__) && defined(__x86_64__)
@@ -537,7 +536,7 @@ size_t count_tar_components(const char* path)
 //       through the error stream for messages such as "file not found", which
 //       can be hard to distinguish from the common "oh no, an error occured"
 //       case in which we need to abort as well.
-bool TarContainsFile(const char* tar, const char* archive, const char* file)
+bool TarContainsFile(const char* archive, const char* file)
 {
 	int pipes[2];
 	if ( pipe(pipes) )
@@ -550,7 +549,7 @@ bool TarContainsFile(const char* tar, const char* archive, const char* file)
 		close(pipes[0]);
 		const char* cmd_argv[] =
 		{
-			tar,
+			"tar",
 			"--list",
 			"--file", archive,
 			NULL
@@ -595,7 +594,7 @@ bool TarContainsFile(const char* tar, const char* archive, const char* file)
 	return ret;
 }
 
-FILE* TarOpenFile(const char* tar, const char* archive, const char* file)
+FILE* TarOpenFile(const char* archive, const char* file)
 {
 	FILE* fp = tmpfile();
 	if ( !fp )
@@ -607,7 +606,7 @@ FILE* TarOpenFile(const char* tar, const char* archive, const char* file)
 		fclose(fp);
 		const char* cmd_argv[] =
 		{
-			tar,
+			"tar",
 			"--to-stdout",
 			"--extract",
 			"--file", archive,
@@ -707,10 +706,17 @@ void ParseOptionalCommandLineCollectionPrefix(char** collection, int* argcp,
 {
 	if ( 2 <= *argcp && IsCollectionPrefixRatherThanCommand((*argvp)[1]) )
 	{
-		free(*collection);
-		*collection = strdup((*argvp)[1]);
+		if ( !*collection )
+		{
+			free(*collection);
+			*collection = strdup((*argvp)[1]);
+		}
 		(*argvp)[1] = NULL;
 		compact_arguments(argcp, argvp);
+	}
+	else if ( !*collection )
+	{
+		*collection = strdup("/");
 	}
 }
 
@@ -718,8 +724,8 @@ void VerifyCommandLineCollection(char** collection)
 {
 	if ( !*collection )
 		error(1, 0, "error: you need to specify which tix collection to "
-		            "administer using --collection or TIX_COLLECTION or giving "
-		            "the prefix as the first argument.");
+		            "administer using --collection or giving the prefix as the "
+		            "first argument.");
 
 	if ( !**collection )
 	{
@@ -730,6 +736,7 @@ void VerifyCommandLineCollection(char** collection)
 	char* collection_rel = *collection;
 	if ( !(*collection = canonicalize_file_name(collection_rel)) )
 		error(1, errno, "canonicalize_file_name(`%s')", collection_rel);
+	free(collection_rel);
 }
 
 void VerifyTixCollectionConfiguration(string_array_t* info, const char* path)
@@ -937,7 +944,6 @@ int recovery_execvp(const char* path, char* const* argv)
 	const char* cmd_argv[] =
 	{
 		getenv_def("SHELL", "sh"),
-		"-i",
 		NULL
 	};
 	execvp(cmd_argv[0], (char* const*) cmd_argv);
