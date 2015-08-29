@@ -53,27 +53,38 @@ typedef struct
 	string_array_t coll_conf;
 	string_array_t repo_list;
 	string_array_t inst_list;
+	bool reinstall;
 } params_t;
 
-char* FindPackageInRepository(const char* repo, const char* pkg_name)
+char* FindPackageInRepository(params_t* params,
+                              const char* repo,
+                              const char* pkg_name)
 {
-	char* repo_index_path = join_paths(repo, "repository.index");
-	string_array_t repo_index = string_array_make();
-	if ( !dictionary_append_file_path(&repo_index, repo_index_path) )
-		error(1, errno, "bad repository: `%s'", repo_index_path);
-	free(repo_index_path);
-	const char* pkg_path_rel = dictionary_get(&repo_index, pkg_name);
-	char* ret = pkg_path_rel ? join_paths(repo, pkg_path_rel) : NULL;
-	string_array_reset(&repo_index);
-	return ret;
+	char* repo_location;
+	if ( repo[0] == '/' )
+		repo_location = strdup(repo);
+	else
+		repo_location = join_paths(params->tixdb_path, repo);
+	char* tix_name = print_string("%s.tix.tar.xz", pkg_name);
+	char* tix_path = join_paths(repo_location, tix_name);
+	free(repo_location);
+	free(tix_name);
+	if ( !IsFile(tix_path) )
+	{
+		free(tix_path);
+		return NULL;
+	}
+	return tix_path;
 }
 
-char* FindPackage(string_array_t* repositories, const char* pkg_name)
+char* FindPackage(params_t* params,
+                  string_array_t* repositories,
+                  const char* pkg_name)
 {
 	for ( size_t i = 0; i < repositories->length; i++ )
 	{
 		const char* repo = repositories->strings[i];
-		char* ret = FindPackageInRepository(repo, pkg_name);
+		char* ret = FindPackageInRepository(params, repo, pkg_name);
 		if ( ret )
 			return ret;
 	}
@@ -84,7 +95,7 @@ string_array_t GetPackageDependencies(params_t* params, const char* pkg_name)
 {
 	string_array_t ret = string_array_make();
 
-	char* pkg_path = FindPackage(&params->repo_list, pkg_name);
+	char* pkg_path = FindPackage(params, &params->repo_list, pkg_name);
 	if ( !pkg_path )
 		error(1, errno, "unable to locate package `%s'", pkg_name);
 
@@ -128,7 +139,7 @@ void GetPackageRecursiveDependencies(params_t* params, string_array_t* sofar,
 
 void InstallPackageOfName(params_t* params, const char* pkg_name)
 {
-	char* pkg_path = FindPackage(&params->repo_list, pkg_name);
+	char* pkg_path = FindPackage(params, &params->repo_list, pkg_name);
 	if ( !pkg_path )
 		error(1, errno, "unable to locate package `%s'", pkg_name);
 
@@ -150,8 +161,11 @@ void InstallPackageOfName(params_t* params, const char* pkg_name)
 
 static void help(FILE* fp, const char* argv0)
 {
-	fprintf(fp, "Usage: %s [PREFIX] COMMAND [OPTION]...\n", argv0);
+	fprintf(fp, "Usage: %s [PREFIX] COMMAND ...\n", argv0);
 	fprintf(fp, "Front end to the Tix package management system.\n");
+	fprintf(fp, "\n");
+	fprintf(fp, "Commands:\n");
+	fprintf(fp, "  install [--reinstall] PACKAGE...\n");
 }
 
 static void version(FILE* fp, const char* argv0)
@@ -165,6 +179,7 @@ static void version(FILE* fp, const char* argv0)
 int main(int argc, char* argv[])
 {
 	params_t params;
+	memset(&params, 0, sizeof(params));
 	params.collection = NULL;
 
 	const char* argv0 = argv[0];
@@ -191,6 +206,8 @@ int main(int argc, char* argv[])
 		else if ( !strcmp(arg, "--version") )
 			version(stdout, argv0), exit(0);
 		else if ( GET_OPTION_VARIABLE("--collection", &params.collection) ) { }
+		else if ( !strcmp(arg, "--reinstall") )
+			params.reinstall = true;
 		else
 		{
 			fprintf(stderr, "%s: unknown option: %s\n", argv0, arg);
@@ -232,19 +249,13 @@ int main(int argc, char* argv[])
 	free(inst_list_path);
 
 	if ( argc == 1 )
-	{
-		error(0, 0, "error: no command specified.");
-		exit(1);
-	}
+		error(1, 0, "error: no command specified.");
 
 	const char* cmd = argv[1];
 	if ( !strcmp(cmd, "install") )
 	{
 		if ( argc == 2 )
-		{
-			error(0, 0, "expected list of packages to install after `install'");
-			exit(1);
-		}
+			error(1, 0, "expected list of packages to install after `install'");
 
 		string_array_t work = string_array_make();
 
@@ -253,6 +264,11 @@ int main(int argc, char* argv[])
 			const char* pkg_name = argv[i];
 			if ( string_array_contains(&params.inst_list, pkg_name) )
 			{
+				if ( params.reinstall )
+				{
+					string_array_append(&work, pkg_name);
+					continue;
+				}
 				printf("Package `%s' is already installed.\n", pkg_name);
 				continue;
 			}
