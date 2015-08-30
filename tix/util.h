@@ -46,27 +46,6 @@ bool does_path_contain_dotdot(const char* path)
 	return false;
 }
 
-bool does_path_contain_dot_or_dotdot(const char* path)
-{
-	size_t index = 0;
-	while ( path[index] )
-	{
-		if ( path[index] == '.' )
-		{
-			index++;
-			if ( path[index] == '.'  )
-				index++;
-			if ( !path[index] || path[index] == '/' )
-				return true;
-		}
-		while ( path[index] && path[index] != '/' )
-			index++;
-		while ( path[index] == '/' )
-			index++;
-	}
-	return false;
-}
-
 bool parse_boolean(const char* str)
 {
 	return strcmp(str, "true") == 0;
@@ -626,40 +605,6 @@ FILE* TarOpenFile(const char* archive, const char* file)
 	if ( fseeko(fp, 0, SEEK_SET) < 0 )
 		error(1, errno, "fseeko(tmpfile(), 0, SEEK_SET)");
 	return fp;
-}
-
-int fopenat_opener(int dirfd, const char* path, const char* mode)
-{
-	int omode = 0;
-	int oflags = 0;
-	char c;
-	// TODO: This is too hacky and a little buggy.
-	while ( (c = *mode++) )
-		switch ( c )
-		{
-			case 'r': omode = O_RDONLY;  break;
-			case 'a': oflags |= O_APPEND; /* fall-through */
-			case 'w': omode = O_WRONLY; oflags |= O_CREAT | O_TRUNC; break;
-			case '+': omode = O_RDWR; break;
-			case 'x': omode = O_EXCL; break;
-			case 'b': break;
-			case 't': break;
-			default:
-				errno = EINVAL;
-				return -1;
-		}
-	return openat(dirfd, path, omode | oflags, 0666);
-}
-
-FILE* fopenat(DIR* dir, const char* path, const char* mode)
-{
-	int fd = fopenat_opener(dirfd(dir), path, mode);
-	if ( fd < 0 )
-		return NULL;
-	FILE* ret = fdopen(fd, mode);
-	if ( !ret )
-		return close(fd), (FILE*) NULL;
-	return ret;
 }
 
 const char* VerifyInfoVariable(string_array_t* info, const char* var,
