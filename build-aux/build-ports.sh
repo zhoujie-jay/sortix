@@ -135,7 +135,7 @@ mkdir -p "$SORTIX_REPOSITORY_DIR"
 
 # Initialize Tix package management in the system root if absent.
 [ -e "$SYSROOT/tix/collection.conf" ] ||
-tix-collection "$SYSROOT" create --platform=$HOST --prefix= --disable-multiarch --generation=1
+tix-collection "$SYSROOT" create --platform=$HOST --prefix= --disable-multiarch --generation=2
 
 # Build all the packages (if needed) and otherwise install them.
 for PACKAGE in $PACKAGES; do
@@ -149,7 +149,7 @@ for PACKAGE in $PACKAGES; do
     --prefix= \
     --exec-prefix= \
     --destination="$SORTIX_REPOSITORY_DIR" \
-    --generation=1 \
+    --generation=2 \
     "$SORTIX_PORTS_DIR/$PACKAGE"
   tix-install \
     --collection="$SYSROOT" \

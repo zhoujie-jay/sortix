@@ -161,6 +161,20 @@ int main(int argc, char* argv[])
 			tixdb_path = strdup(tix_path);
 		}
 
+		// TODO: After releasing Sortix 1.0, do this unconditionally.
+		if ( 2 <= generation )
+		{
+			char* tixinfo_path = join_paths(tixdb_path, "tixinfo");
+			if ( mkdir_p(tixinfo_path, 0755) != 0 )
+				error(1, errno, "mkdir: `%s'", tixinfo_path);
+			free(tixinfo_path);
+
+			char* manifest_path = join_paths(tixdb_path, "manifest");
+			if ( mkdir_p(manifest_path, 0755) != 0 )
+				error(1, errno, "mkdir: `%s'", manifest_path);
+			free(manifest_path);
+		}
+
 		char* collection_conf_path = join_paths(tixdb_path, "collection.conf");
 		FILE* conf_fp = fopen(collection_conf_path, "wx");
 		if ( !conf_fp && errno == EEXIST )
@@ -169,6 +183,9 @@ int main(int argc, char* argv[])
 		                collection);
 		fprintf(conf_fp, "tix.version=1\n");
 		fprintf(conf_fp, "tix.class=collection\n");
+		// TODO: After releasing Sortix 1.0, do this unconditionally.
+		if ( 2 <= generation )
+			fprintf(conf_fp, "collection.generation=%i\n", generation);
 		fprintf(conf_fp, "collection.prefix=%s\n", !strcmp(prefix, "/") ? "" :
 		                                           prefix);
 		fprintf(conf_fp, "collection.platform=%s\n", platform);

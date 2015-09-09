@@ -234,6 +234,13 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
+static int strcmp_indirect(const void* a_ptr, const void* b_ptr)
+{
+	const char* a = *(const char* const*) a_ptr;
+	const char* b = *(const char* const*) b_ptr;
+	return strcmp(a, b);
+}
+
 void InstallPackage(const char* tix_path)
 {
 	if ( !IsFile(tix_path) )
@@ -281,7 +288,8 @@ void InstallPackage(const char* tix_path)
 	if ( !coll_generation )
 		coll_generation = "1";
 	assert(coll_generation);
-	(void) coll_generation;
+	int generation = atoi(coll_generation);
+	(void) generation;
 	const char* coll_prefix = dictionary_get(&coll_conf, "collection.prefix");
 	assert(coll_prefix);
 	const char* coll_platform = dictionary_get(&coll_conf, "collection.platform");
@@ -314,6 +322,46 @@ void InstallPackage(const char* tix_path)
 	char* data_and_prefix = package_prefix && package_prefix[0] ?
 	                        print_string("data%s", package_prefix) :
 	                        strdup("data");
+
+	// TODO: After releasing Sortix 1.0, do this unconditionally.
+	if ( 2 <= generation )
+	{
+		char* tixinfo_path = print_string("%s/tixinfo/%s", tixdb_path, package_name);
+		int tixinfo_fd = open(tixinfo_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+		if ( tixinfo_fd < 0 )
+			error(1, errno, "%s", tixinfo_path);
+		TarExtractFileToFD(tix_path, "tix/tixinfo", tixinfo_fd);
+		close(tixinfo_fd);
+
+		FILE* index_fp = TarOpenIndex(tix_path);
+		string_array_t files = string_array_make();
+		string_array_append_file(&files, index_fp);
+		qsort(files.strings, files.length, sizeof(char*), strcmp_indirect);
+		char* manifest_path = print_string("%s/manifest/%s", tixdb_path, package_name);
+		FILE* manifest_fp = fopen(manifest_path, "w");
+		if ( !manifest_fp )
+			error(1, errno, "%s", manifest_path);
+		for ( size_t i = 0; i < files.length; i++ )
+		{
+			char* str = files.strings[i];
+			if ( strncmp(str, "data", strlen("data")) != 0 )
+				continue;
+			str += strlen("data");
+			if ( str[0] && str[0] != '/' )
+				continue;
+			size_t len = strlen(str);
+			while ( 2 <= len && str[len-1] == '/' )
+				str[--len] = '\0';
+			if ( fprintf(manifest_fp, "%s\n", str) < 0 )
+				error(1, errno, "%s", manifest_path);
+		}
+		if ( ferror(manifest_fp) || fflush(manifest_fp) == EOF )
+			error(1, errno, "%s", manifest_path);
+		fclose(manifest_fp);
+		string_array_reset(&files);
+		fclose(index_fp);
+	}
+
 	if ( fork_and_wait_or_death() )
 	{
 		size_t num_strips = count_tar_components(data_and_prefix);

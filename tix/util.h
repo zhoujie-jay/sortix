@@ -25,7 +25,13 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+// TODO: After releasing Sortix 1.0, remove this ifdef and default it to the
+//       latest generation.
+#if defined(__sortix__)
+#define DEFAULT_GENERATION "2"
+#else
 #define DEFAULT_GENERATION "1"
+#endif
 
 bool does_path_contain_dotdot(const char* path)
 {
@@ -573,16 +579,17 @@ bool TarContainsFile(const char* archive, const char* file)
 	return ret;
 }
 
-FILE* TarOpenFile(const char* archive, const char* file)
+void TarExtractFileToFD(const char* archive, const char* file, int fd)
 {
-	FILE* fp = tmpfile();
-	if ( !fp )
-		error(1, errno, "tmpfile");
 	pid_t tar_pid = fork_or_death();
 	if ( !tar_pid )
 	{
-		dup2(fileno(fp), 1);
-		fclose(fp);
+		if ( dup2(fd, 1) < 0 )
+		{
+			error(0, errno, "dup2");
+			_exit(127);
+		}
+		close(fd);
 		const char* cmd_argv[] =
 		{
 			"tar",
@@ -593,7 +600,8 @@ FILE* TarOpenFile(const char* archive, const char* file)
 			NULL
 		};
 		execvp(cmd_argv[0], (char* const*) cmd_argv);
-		error(127, errno, "%s", cmd_argv[0]);
+		error(0, errno, "%s", cmd_argv[0]);
+		_exit(127);
 	}
 	int tar_exit_status;
 	waitpid(tar_pid, &tar_exit_status, 0);
@@ -602,6 +610,56 @@ FILE* TarOpenFile(const char* archive, const char* file)
 		error(1, 0, "Unable to extract `%s/%s'", archive, file);
 		exit(WEXITSTATUS(tar_exit_status));
 	}
+}
+
+FILE* TarOpenFile(const char* archive, const char* file)
+{
+	FILE* fp = tmpfile();
+	if ( !fp )
+		error(1, errno, "tmpfile");
+	TarExtractFileToFD(archive, file, fileno(fp));
+	if ( fseeko(fp, 0, SEEK_SET) < 0 )
+		error(1, errno, "fseeko(tmpfile(), 0, SEEK_SET)");
+	return fp;
+}
+
+void TarIndexToFD(const char* archive, int fd)
+{
+	pid_t tar_pid = fork_or_death();
+	if ( !tar_pid )
+	{
+		if ( dup2(fd, 1) < 0 )
+		{
+			error(0, errno, "dup2");
+			_exit(127);
+		}
+		close(fd);
+		const char* cmd_argv[] =
+		{
+			"tar",
+			"--list",
+			"--file", archive,
+			NULL
+		};
+		execvp(cmd_argv[0], (char* const*) cmd_argv);
+		error(0, errno, "%s", cmd_argv[0]);
+		_exit(127);
+	}
+	int tar_exit_status;
+	waitpid(tar_pid, &tar_exit_status, 0);
+	if ( !WIFEXITED(tar_exit_status) || WEXITSTATUS(tar_exit_status) != 0 )
+	{
+		error(1, 0, "Unable to list contents of `%s'", archive);
+		exit(WEXITSTATUS(tar_exit_status));
+	}
+}
+
+FILE* TarOpenIndex(const char* archive)
+{
+	FILE* fp = tmpfile();
+	if ( !fp )
+		error(1, errno, "tmpfile");
+	TarIndexToFD(archive, fileno(fp));
 	if ( fseeko(fp, 0, SEEK_SET) < 0 )
 		error(1, errno, "fseeko(tmpfile(), 0, SEEK_SET)");
 	return fp;
