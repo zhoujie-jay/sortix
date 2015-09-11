@@ -244,11 +244,8 @@ static const uint8_t font_replacement_character[16] =
 };
 
 __attribute__((unused))
-static inline const uint8_t* GetCharacterFont(const uint8_t* font, wchar_t wc)
+static inline const uint8_t* GetCharacterFont(const uint8_t* font, int remap)
 {
-	if ( wc == L'�' )
-		return font_replacement_character;
-	int remap = MapWideToVGAFont(wc);
 	if ( remap < 0 )
 		return font_replacement_character;
 	return font + 16 * remap;

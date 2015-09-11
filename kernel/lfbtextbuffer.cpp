@@ -213,18 +213,20 @@ void LFBTextBuffer::RenderChar(TextChar textchar, size_t posx, size_t posy)
 	uint8_t bgcoloridx = textchar.vgacolor >> 4 & 0x0F;
 	uint32_t fgcolor = colors[fgcoloridx];
 	uint32_t bgcolor = colors[bgcoloridx];
-	const uint8_t* charfont = VGA::GetCharacterFont(font, textchar.c);
+	int remap = VGA::MapWideToVGAFont(textchar.c);
+	const uint8_t* charfont = VGA::GetCharacterFont(font, remap);
 	for ( size_t y = 0; y < VGA_FONT_HEIGHT; y++ )
 	{
 		size_t pixely = posy * VGA_FONT_HEIGHT + y;
 		uint8_t linebitmap = charfont[y];
-		for ( size_t x = 0; x < VGA_FONT_WIDTH+1; x++ )
-		{
-			uint32_t* line = (uint32_t*) (lfb + pixely * scansize);
-			size_t pixelx = posx * (VGA_FONT_WIDTH+1) + x;
-			bool fg = x != VGA_FONT_WIDTH && linebitmap & 1U << (7-x);
-			line[pixelx] = fg ? fgcolor : bgcolor;
-		}
+		uint32_t* line = (uint32_t*) (lfb + pixely * scansize);
+		size_t pixelxoff = posx * (VGA_FONT_WIDTH+1);
+		for ( size_t x = 0; x < VGA_FONT_WIDTH; x++ )
+			line[pixelxoff + x] = linebitmap & 1 << (7-x) ? fgcolor : bgcolor;
+		uint32_t lastcolor = bgcolor;
+		if ( 0xB0 <= remap && remap <= 0xDF && (linebitmap & 1) )
+			lastcolor = fgcolor;
+		line[pixelxoff + VGA_FONT_WIDTH] = lastcolor;
 	}
 	if ( likely(!drawcursor) )
 		return;
