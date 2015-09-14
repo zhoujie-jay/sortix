@@ -227,6 +227,27 @@ void LFBTextBuffer::RenderChar(TextChar textchar, size_t posx, size_t posy)
 		if ( 0xB0 <= remap && remap <= 0xDF && (linebitmap & 1) )
 			lastcolor = fgcolor;
 		line[pixelxoff + VGA_FONT_WIDTH] = lastcolor;
+		if ( unlikely(posx + 1 == columns) )
+		{
+			for ( size_t x = pixelxoff + VGA_FONT_WIDTH + 1; x < pixelsx; x++ )
+				line[x] = bgcolor;
+		}
+	}
+	if ( unlikely(posy + 1 == rows) )
+	{
+		size_t pixelyoff = rows * VGA_FONT_HEIGHT;
+		for ( size_t y = pixelyoff; y < pixelsy; y++ )
+		{
+			uint32_t* line = (uint32_t*) (lfb + y * scansize);
+			size_t pixelxoff = posx * (VGA_FONT_WIDTH+1);
+			for ( size_t x = 0; x < VGA_FONT_WIDTH + 1; x++ )
+				line[pixelxoff + x] = bgcolor;
+			if ( unlikely(posx + 1 == columns) )
+			{
+				for ( size_t x = pixelxoff + VGA_FONT_WIDTH + 1; x < pixelsx; x++ )
+					line[x] = bgcolor;
+			}
+		}
 	}
 	if ( likely(!drawcursor) )
 		return;
@@ -279,15 +300,14 @@ void LFBTextBuffer::RenderRange(TextPos from, TextPos to)
 	if ( backbuffered )
 	{
 		lfb = orig_lfb;
-		size_t font_height = 16;
-		size_t font_width = 9;
-		size_t scanline_start = from.y * font_height;
-		size_t scanline_end = ((to.y+1) * font_height) - 1;
-		size_t linesize = font_width * sizeof(uint32_t) * columns;
+		size_t scanline_start = from.y * VGA_FONT_HEIGHT;
+		size_t scanline_end = ((to.y+1) * VGA_FONT_HEIGHT) - 1;
+		if ( to.y + 1 == rows )
+			scanline_end = pixelsy - 1;
 		for ( size_t sc = scanline_start; sc <= scanline_end; sc++ )
 		{
 			size_t offset = sc * scansize;
-			memcpy(lfb + offset, backbuf + offset, linesize);
+			memcpy(lfb + offset, backbuf + offset, pixelsx * sizeof(uint32_t));
 		}
 	}
 #endif
