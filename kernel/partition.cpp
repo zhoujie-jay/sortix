@@ -77,9 +77,7 @@ off_t Partition::lseek(ioctx_t* /*ctx*/, off_t offset, int whence)
 
 ssize_t Partition::pread(ioctx_t* ctx, uint8_t* buf, size_t count, off_t off)
 {
-	// TODO: Avoid underflow and overflow!
-	off_t end_at = off + count;
-	if ( length <= end_at )
+	if ( length <= off )
 		return 0;
 	off_t available = length - off;
 	if ( (uintmax_t) available < (uintmax_t) count )
@@ -90,9 +88,7 @@ ssize_t Partition::pread(ioctx_t* ctx, uint8_t* buf, size_t count, off_t off)
 ssize_t Partition::pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
                           off_t off)
 {
-	// TODO: Avoid underflow and overflow!
-	off_t end_at = off + count;
-	if ( length <= end_at )
+	if ( length <= off )
 		return 0;
 	off_t available = length - off;
 	if ( (uintmax_t) available < (uintmax_t) count )
