@@ -53,29 +53,31 @@ DescriptorTable::~DescriptorTable()
 
 bool DescriptorTable::IsGoodEntry(int i)
 {
-	bool ret = 0 <= i && i < numentries && entries[i].desc;
-	return ret;
+	return 0 <= i && i < numentries && entries[i].desc;
 }
 
 Ref<DescriptorTable> DescriptorTable::Fork()
 {
 	ScopedLock lock(&dtablelock);
 	Ref<DescriptorTable> ret(new DescriptorTable);
-	if ( !ret ) { return Ref<DescriptorTable>(NULL); }
+	if ( !ret )
+		return Ref<DescriptorTable>(NULL);
 	ret->entries = new dtableent_t[numentries];
-	if ( !ret->entries ) { return Ref<DescriptorTable>(NULL); }
+	if ( !ret->entries )
+		return Ref<DescriptorTable>(NULL);
 	ret->first_not_taken = 0;
-	for ( ret->numentries = 0; ret->numentries < numentries; ret->numentries++ )
+	ret->numentries = numentries;
+	for ( int i = 0; i < numentries; i++ )
 	{
-		int i = ret->numentries;
-		if ( entries[i].desc && !(entries[i].flags & FD_CLOFORK) )
+		if ( !entries[i].desc || entries[i].flags & FD_CLOFORK )
 		{
-			ret->entries[i] = entries[i];
-			if ( i == ret->first_not_taken && i != INT_MAX )
-				ret->first_not_taken++;
+			//ret->entries[i].desc = NULL; // Constructor did this already.
+			ret->entries[i].flags = 0;
+			continue;
 		}
-		else
-			/* Already set to NULL in dtableent_t::desc constructor. */{}
+		ret->entries[i] = entries[i];
+		if ( ret->first_not_taken == i )
+			ret->first_not_taken = i + 1;
 	}
 	return ret;
 }
@@ -83,13 +85,16 @@ Ref<DescriptorTable> DescriptorTable::Fork()
 Ref<Descriptor> DescriptorTable::Get(int index)
 {
 	ScopedLock lock(&dtablelock);
-	if ( !IsGoodEntry(index) ) { errno = EBADF; return Ref<Descriptor>(NULL); }
+	if ( !IsGoodEntry(index) )
+		return errno = EBADF, Ref<Descriptor>(NULL);
 	return entries[index].desc;
 }
 
 bool DescriptorTable::Enlargen(int atleast)
 {
-	if ( numentries == INT_MAX ) { errno = EOVERFLOW; return -1; }
+	if ( numentries == INT_MAX )
+		return errno = EMFILE, false; // Cannot enlargen any more.
+	// TODO: Modern overflow checks.
 	int newnumentries = INT_MAX - numentries < numentries ?
 	                    INT_MAX :
                         numentries ? 2 * numentries : 8;
@@ -99,17 +104,23 @@ bool DescriptorTable::Enlargen(int atleast)
 	if ( !newentries )
 		return false;
 	for ( int i = 0; i < numentries; i++ )
-		newentries[i].desc = entries[i].desc,
-		newentries[i].flags = entries[i].flags;
+	{
+		newentries[i] = entries[i];
+		entries[i].desc.Reset();
+	}
 	for ( int i = numentries; i < newnumentries; i++ )
-		/* newentries[i].desc is set in dtableent_t::desc constructor */
+	{
+		//newentries[i].desc = NULL; // Constructor did this already.
 		newentries[i].flags = 0;
-	delete[] entries; entries = newentries;
+	}
+	delete[] entries;
+	entries = newentries;
 	numentries = newnumentries;
 	return true;
 }
 
-int DescriptorTable::AllocateInternal(Ref<Descriptor> desc, int flags,
+int DescriptorTable::AllocateInternal(Ref<Descriptor> desc,
+                                      int flags,
                                       int min_index)
 {
 	// dtablelock is held.
@@ -121,21 +132,23 @@ int DescriptorTable::AllocateInternal(Ref<Descriptor> desc, int flags,
 		min_index = first_not_taken;
 	for ( int i = min_index; i < numentries; i++ )
 	{
-		if ( !entries[i].desc )
-		{
-			entries[i].desc = desc;
-			entries[i].flags = flags;
-			return i;
-		}
-		if ( i == first_not_taken && i != INT_MAX )
-			first_not_taken++;
+		if ( entries[i].desc )
+			continue;
+		entries[i].desc = desc;
+		entries[i].flags = flags;
+		if ( first_not_taken == i )
+			first_not_taken = i + 1;
+		return i;
 	}
+	first_not_taken = numentries;
 	int oldnumentries = numentries;
 	if ( !Enlargen(min_index) )
 		return -1;
-	int i = oldnumentries++;
+	int i = oldnumentries;
 	entries[i].desc = desc;
 	entries[i].flags = flags;
+	if ( first_not_taken == i )
+		first_not_taken = i + 1;
 	return i;
 }
 
@@ -167,25 +180,33 @@ int DescriptorTable::Copy(int from, int to, int flags)
 	if ( from == to )
 		return errno = EINVAL, -1;
 	while ( !(to < numentries) )
-		if ( !Enlargen(to+1) )
+	{
+		if ( to == INT_MAX )
+			return errno = EBADF, -1;
+		if ( !Enlargen(to + 1) )
 			return -1;
+	}
 	if ( entries[to].desc != entries[from].desc )
 	{
 		if ( entries[to].desc )
-			/* TODO: Should this be synced or otherwise properly closed? */{}
+		{
+			// TODO: Should this be synced or otherwise properly closed?
+		}
 		entries[to].desc = entries[from].desc;
-		if ( to == first_not_taken && to != INT_MAX )
-			first_not_taken++;
 	}
 	entries[to].flags = flags;
+	if ( first_not_taken == to )
+		first_not_taken = to + 1;
 	return to;
 }
 
 Ref<Descriptor> DescriptorTable::FreeKeepInternal(int index)
 {
-	if ( !IsGoodEntry(index) ) { errno = EBADF; return Ref<Descriptor>(NULL); }
+	if ( !IsGoodEntry(index) )
+		return errno = EBADF, Ref<Descriptor>(NULL);
 	Ref<Descriptor> ret = entries[index].desc;
 	entries[index].desc.Reset();
+	entries[index].flags = 0;
 	if ( index < first_not_taken )
 		first_not_taken = index;
 	return ret;
@@ -220,6 +241,9 @@ void DescriptorTable::OnExecute()
 void DescriptorTable::Reset()
 {
 	ScopedLock lock(&dtablelock);
+	for ( int i = 0; i < numentries; i++ )
+		if ( entries[i].desc )
+			entries[i].desc.Reset();
 	numentries = 0;
 	delete[] entries;
 	entries = NULL;
@@ -229,9 +253,10 @@ void DescriptorTable::Reset()
 bool DescriptorTable::SetFlags(int index, int flags)
 {
 	if ( flags & ~__FD_ALLOWED_FLAGS )
-		return errno = EINVAL, -1;
+		return errno = EINVAL, false;
 	ScopedLock lock(&dtablelock);
-	if ( !IsGoodEntry(index) ) { errno = EBADF; return false; }
+	if ( !IsGoodEntry(index) )
+		return errno = EBADF, false;
 	entries[index].flags = flags;
 	return true;
 }
@@ -239,42 +264,34 @@ bool DescriptorTable::SetFlags(int index, int flags)
 int DescriptorTable::GetFlags(int index)
 {
 	ScopedLock lock(&dtablelock);
-	if ( !IsGoodEntry(index) ) { errno = EBADF; return -1; }
+	if ( !IsGoodEntry(index) )
+		return errno = EBADF, -1;
 	return entries[index].flags;
 }
 
 int DescriptorTable::Previous(int index)
 {
 	ScopedLock lock(&dtablelock);
-
 	if ( index < 0 )
 		index = numentries;
-
 	do index--;
 	while ( 0 <= index && !IsGoodEntry(index) );
-
 	if ( index < 0 )
 		return errno = EBADF, -1;
-
 	return index;
 }
 
 int DescriptorTable::Next(int index)
 {
 	ScopedLock lock(&dtablelock);
-
 	if ( index < 0 )
 		index = -1;
-
 	if ( numentries <= index )
 		return errno = EBADF, -1;
-
 	do index++;
 	while ( index < numentries && !IsGoodEntry(index) );
-
 	if ( numentries <= index )
 		return errno = EBADF, -1;
-
 	return index;
 }
 
@@ -282,11 +299,8 @@ int DescriptorTable::CloseFrom(int index)
 {
 	if ( index < 0 )
 		return errno = EBADF, -1;
-
 	ScopedLock lock(&dtablelock);
-
 	bool any = false;
-
 	while ( index < numentries )
 	{
 		if ( !IsGoodEntry(index) )
@@ -294,7 +308,6 @@ int DescriptorTable::CloseFrom(int index)
 		FreeKeepInternal(index);
 		any = true;
 	}
-
 	return any ? 0 : (errno = EBADF, -1);
 }
 
