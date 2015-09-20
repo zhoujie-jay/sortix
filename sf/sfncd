@@ -1,0 +1,35 @@
+#!/bin/sh -e
+################################################################################
+#
+#   Copyright(C) Jonas 'Sortie' Termansen 2016.
+#
+#   This program is free software: you can redistribute it and/or modify it
+#   under the terms of the GNU General Public License as published by the Free
+#   Software Foundation, either version 3 of the License, or (at your option)
+#   any later version.
+#
+#   This program is distributed in the hope that it will be useful, but WITHOUT
+#   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#   FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+#   more details.
+#
+#   You should have received a copy of the GNU General Public License along with
+#   this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#   sfncd
+#   Remote for nc over sf
+#
+################################################################################
+
+if [ $# -lt 2 ] || [ 3 -lt $# ]; then
+  echo Usage: $0 receive-device transmit-device [server-command]
+  exit 1
+fi
+sf -i -- "$1" |
+(export HOST=$(sf -i) &&
+ export PORT=$(sf -i) &&
+ (if [ $# -lt 3 ]; then
+    nc -- "$HOST" "$PORT"
+  else
+    sh -c "$3"
+  fi) | sf -o -- "$2")

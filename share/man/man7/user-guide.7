@@ -104,6 +104,9 @@ ext2 extensions.  You can make a compatible filesystem with:
 Sortix does not have networking at this time.  Unix sockets have a basic
 implementation incapable of advanced features.  The standard library and
 kernel provides stubs for many network interfaces.
+.Ss Serial Transfer
+It is possible to transfer files over serial devices as described in
+.Xr serial-transfer 7 .
 .Ss Development
 The system is self-hosting and is capable of building itself as described in
 .Xr development 7 .
@@ -112,4 +115,5 @@ Ports are cross-compiled as described in
 but it is becoming feasible to build a large number of them natively.
 .Sh SEE ALSO
 .Xr cross-development 7 ,
-.Xr development 7
+.Xr development 7 ,
+.Xr serial-transfer 7

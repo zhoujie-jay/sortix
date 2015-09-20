@@ -1,0 +1,64 @@
+.Dd $Mdocdate: January 7 2015 $
+.Dt SF 1
+.Os
+.Sh NAME
+.Nm sf
+.Nd serial framing
+.Sh SYNOPSIS
+.Nm sf
+.Op Fl i "|" Fl o
+.Op Ar device
+.Sh DESCRIPTION
+.Nm
+provides a simple scheme for framing a message over a byte stream.  This is
+useful in cases such as sockets, pipe, and serial devices where a real
+end of file condition would require terminating the link, but it is important
+to transmit multiple messages and keeping the link open for an arbitrary amount
+of time.
+.Pp
+.Nm
+uses a simple framing scheme with a start of message byte sequence
+.Li ( 0xF7 0xFF ) ,
+most bytes represent themselves, an escape byte sequence
+.Li ( 0xF7 0xFD ) ,
+and an end of messsage byte sequence
+.Li ( 0xF7 0xFE ) .
+UTF-8 encoded text will never need to be escaped.  Data can be recursively
+framed.
+.Pp
+Exactly one of the
+.Fl i
+and
+.Fl o
+options must be set to control whether the program is in input or output mode.
+.Pp
+Input mode works by reading one byte at a time from stdin (or the
+.Ar device
+if given).  It discards all read bytes until it finds a valid start of message
+byte sequence.  It then decodes the body and writes the decoded bytes to stdout.
+Finally it finds an end of message byte sequence and exits.
+.Pp
+Output mode works by reading bytes from stdin until an end of file condition.
+It emits a start of message byte sequence to stdout (or to the
+.Ar device
+if given).  It emits an encoded body with the contents of stdin.  Finally it
+emits an end of message byte sequence.
+.Pp
+The
+.Ar device
+argument can be a device or the path of an existing unix socket.
+.Pp
+The options are as follows:
+.Bl -tag -width "12345678"
+.It Fl i
+Decode payload.
+.It Fl o
+Encode payload.
+.El
+.Sh EXIT STATUS
+.Nm
+will exit 0 on success and non-zero otherwise.
+.Sh SEE ALSO
+.Xr sfnc 1 ,
+.Xr sfncd 1 ,
+.Xr serial-transfer 7

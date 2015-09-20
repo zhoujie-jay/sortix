@@ -1,0 +1,36 @@
+.Dd $Mdocdate: February 4 2015 $
+.Dt SFNCD 1
+.Os
+.Sh NAME
+.Nm sfncd
+.Nd network connection over sf (server side)
+.Sh SYNOPSIS
+.Nm sfncd
+.Ar transmit-device
+.Ar receive-device
+.Op Ar server-command
+.Sh DESCRIPTION
+.Nm
+communicates with another program over two byte steams and receives a host and
+port which it connects to using
+.Xr nc 1
+or
+.Ar server-command
+if specified (with the
+.Ev HOST
+and
+.Ev PORT
+environment variables set to the parameters).
+.Pp
+It receives bytes from
+.Ar receive-device
+and sends them to the invoked program.  It reads bytes from the invoked program
+and transmits them through
+.Ar transmit-device .
+.Pp
+The protocol is as described in
+.Xr sfnc 1 .
+.Sh SEE ALSO
+.Xr sf 1 ,
+.Xr sfnc 1 ,
+.Xr serial-transfer 7

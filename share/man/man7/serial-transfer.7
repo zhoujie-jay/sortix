@@ -1,0 +1,130 @@
+.Dd $Mdocdate: January 6 2016 $
+.Dt SERIAL-TRANSFER 7
+.Os
+.Sh NAME
+.Nm serial-transfer
+.Nd files over serial device
+.Sh DESCRIPTION
+You can transfer data using the serial line.  The
+.Xr sf 1
+program provides simple framing which is useful to conduct advanced transfers
+by combining with other tools such as
+.Xr tar 1 .
+.Pp
+The serial device will be available at the appropriate device after boot, such
+as
+.Pa /dev/com1 .
+Data written to it will be available to readers on the other end and likewise
+data written on the other end will be available to local readers.  Take care to
+ensure that the reader is always reading before writing or you may lose data.
+.Pp
+You get a byte stream between the guest and host using this interface. This is
+powerful but often you want to transfer finite payloads and have the transfer
+finish when done rather than needing to manually interrupt it.
+.Pp
+The
+.Xr sf 1
+program encodes and decodes frames.
+.Li sf -o
+will emit a start byte
+sequence, then read from stdin and encode a body, and finally emit an end
+sequence.
+.Li sf -i
+will read bytes until it finds a start sequence, then it will decode the body
+and emit it to stdout, and finally stop when it receives the end sequence. We
+can use this to do transfers over the serial connection.
+.Pp
+.Xr sf 1
+is a Sortix specific program. Other operating systems don't come with it and you
+need to build it from the Sortix source code. This is automatically done by the
+.Sy build-tools
+target during
+.Xr cross-development 7 .
+You can also just transfer its code from
+.Pa /src/sf/sf.c
+over the serial line.
+.Ss Virtual Machines
+This method is useful when running inside a virtual machine and you wish to
+communicate with the host system.  This is particularly useful if you connect
+the serial line to a unix socket. In Qemu, this is done with:
+.Bd -literal
+   -serial unix:/tmp/serial,server,nowait
+.Ed
+.Pp
+In VirtualBox, in the virtual machine settings, under serial ports, enable one
+and put it in mode Host Pipe and mark Create Pipe.
+.Ss Conventions
+Let
+.Pa /dev/receiver
+mean the device on the receiving machine and let
+.Pa /dev/transmitter
+mean the device on the transmitting machine.  This will be devices such as
+.Pa /dev/com1 .
+If one end is the host of a virtual machine as described above, its device will
+be an unix socket such as
+.Pa /tmp/serial .
+.Ss Simple File Transfer
+You can then transfer a file from this system to another. First run on the
+receiving machine:
+.Bd -literal
+    sf -i /dev/receiver > file.txt
+.Ed
+.Pp
+Then run on the transmitting machine:
+.Bd -literal
+    sf -o /dev/transmitter < file.txt
+.Ed
+.Pp
+The sender will stop when it has transmitted the last byte and the receiver will
+end when it has recognized an end sequence.
+.Ss Advanced File Transfer
+You can transfer multiple files using
+.Xr tar 1 .
+This also allows you to preserve file meta data such as permissions and modified
+time.  First run on the receiving machine:
+.Bd -literal
+    sf -i /dev/receiver | tar -xv
+.Ed
+.Pp
+Then run on the transmitting machine:
+.Bd -literal
+    tar -cv *.patch | sf -o /dev/transmitter
+.Ed
+.Pp
+The
+.Fl v
+option is useful as it displays the names of files as they are transferred.
+.Ss Network Connection
+It is possible to use the
+.Xr sfnc 1
+and
+.Xr sfncd 1
+scripts to create a bidirectional communication channel using two serial ports,
+one for each direction.  The scripts use a protocol where
+.Xr sfnc 1
+sends a hostname, a port, and the body from stdin.  Likewise the
+.Xr sfncd 1
+script receives the two parameters and invokes
+.Xr nc 1
+(or another program as specified).
+.Pp
+For instance, run on the server:
+.Bd -literal
+    sfncd /dev/receive /dev/transmit
+.Ed
+.Pp
+And then run on the client:
+.Bd -literal
+    sfnc irc.freenode.net 6667 /dev/receive /dev/transmit
+.Ed
+.Pp
+This will last for the duration of the connection.
+.Xr sfncd 1
+needs to be run again to start another connection.  This scheme only allows one
+connection at one given time, but with it is possible for custom programs on
+either side to multiplex connections.
+.Sh SEE ALSO
+.Xr sf 1 ,
+.Xr tar 1 ,
+.Xr development 7 ,
+.Xr user-guide 7

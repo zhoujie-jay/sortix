@@ -1,0 +1,42 @@
+.Dd $Mdocdate: February 4 2015 $
+.Dt SFNC 1
+.Os
+.Sh NAME
+.Nm sfnc
+.Nd network connection over sf (client side)
+.Sh SYNOPSIS
+.Nm sfnc
+.Ar host
+.Ar port
+.Ar transmit-device
+.Ar receive-device
+.Sh DESCRIPTION
+.Nm
+communicates with another program over two byte steams and asks the remote
+program (usually
+.Xr sfncd 1 )
+to connect to the specified
+.Ar host
+and
+.Ar port .
+.Pp
+It reads bytes from the standard input and transmits them across
+.Ar transmit-device .
+It receives bytes from
+.Ar receive-device
+and sends them to the standard output.
+.Pp
+.Ss Protocol
+The client transmits in one
+.Xr sf 1
+session, which contains two nested
+.Xr sf 1
+connections (first host, then port), and then the actual body read from the
+standard input.  The server transmits in one
+.Xr sf 1
+session, which begins once the host and port has been received, and it contains
+the response.
+.Sh SEE ALSO
+.Xr sf 1 ,
+.Xr sfncd 1 ,
+.Xr serial-transfer 7
