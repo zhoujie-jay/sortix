@@ -1162,6 +1162,8 @@ int sys_execve_kernel(const char* filename,
 	struct stat st;
 	if ( desc->stat(&ctx, &st) )
 		return -1;
+	if ( !(st.st_mode & 0111) )
+		return errno = EACCES, -1;
 	if ( st.st_size < 0 )
 		return errno = EINVAL, -1;
 	if ( (uintmax_t) SIZE_MAX < (uintmax_t) st.st_size )
