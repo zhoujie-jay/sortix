@@ -132,8 +132,8 @@ private:
 
 };
 
-bool LinkInodeInDir(ioctx_t* ctx, Ref<Descriptor> dir, const char* name,
-                    Ref<Inode> inode);
+int LinkInodeInDir(ioctx_t* ctx, Ref<Descriptor> dir, const char* name,
+                   Ref<Inode> inode);
 Ref<Descriptor> OpenDirContainingPath(ioctx_t* ctx, Ref<Descriptor> from,
                                       const char* path, char** finalp);
 

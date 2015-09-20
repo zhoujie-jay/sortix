@@ -61,18 +61,18 @@ static const int OPEN_FLAGS = O_CREATE | O_DIRECTORY | O_EXCL | O_TRUNC |
 // Flags that only make sense for descriptors.
 static const int DESCRIPTOR_FLAGS = O_APPEND | O_NONBLOCK;
 
-bool LinkInodeInDir(ioctx_t* ctx,
-                    Ref<Descriptor> dir,
-                    const char* name,
-                    Ref<Inode> inode)
+int LinkInodeInDir(ioctx_t* ctx,
+                   Ref<Descriptor> dir,
+                   const char* name,
+                   Ref<Inode> inode)
 {
 	Ref<Vnode> vnode(new Vnode(inode, Ref<Vnode>(), 0, 0));
 	if ( !vnode )
-		return false;
+		return -1;
 	Ref<Descriptor> desc(new Descriptor(Ref<Vnode>(vnode), 0));
 	if ( !desc )
-		return false;
-	return dir->link(ctx, name, desc) != 0;
+		return -1;
+	return dir->link(ctx, name, desc);
 }
 
 Ref<Descriptor> OpenDirContainingPath(ioctx_t* ctx,
