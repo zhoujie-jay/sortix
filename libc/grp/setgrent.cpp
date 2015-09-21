@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -25,10 +25,12 @@
 #include <grp.h>
 #include <stdio.h>
 
+extern "C" { FILE* __grp_file = NULL; }
+
 extern "C" void setgrent(void)
 {
 	if ( __grp_file )
-		fseeko(__grp_file, 0, SEEK_SET);
+		rewind(__grp_file);
 	else
 		__grp_file = opengr();
 }

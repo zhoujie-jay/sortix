@@ -25,8 +25,6 @@
 #include <stddef.h>
 #include <pwd.h>
 
-extern "C" { FILE* __pwd_file = NULL; }
-
 extern "C" struct passwd* getpwent(void)
 {
 	if ( !__pwd_file && !(__pwd_file = openpw()) )

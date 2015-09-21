@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -25,10 +25,12 @@
 #include <pwd.h>
 #include <stdio.h>
 
+extern "C" { FILE* __pwd_file = NULL; }
+
 extern "C" void setpwent(void)
 {
 	if ( __pwd_file )
-		fseeko(__pwd_file, 0, SEEK_SET);
+		rewind(__pwd_file);
 	else
 		__pwd_file = openpw();
 }

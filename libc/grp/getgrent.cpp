@@ -25,8 +25,6 @@
 #include <grp.h>
 #include <stddef.h>
 
-extern "C" { FILE* __grp_file = NULL; }
-
 extern "C" struct group* getgrent(void)
 {
 	if ( !__grp_file && !(__grp_file = opengr()) )
