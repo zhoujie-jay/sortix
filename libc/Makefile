@@ -352,6 +352,12 @@ fcntl/openat.o \
 fcntl/open.o \
 fsmarshall/fsm_fsbind.o \
 fsmarshall/fsm_mountat.o \
+fstab/endfsent.o \
+fstab/getfsent.o \
+fstab/getfsfile.o \
+fstab/getfsspec.o \
+fstab/scanfsent.o \
+fstab/setfsent.o \
 getopt/getopt_long.o \
 getopt/getopt.o \
 grp/endgrent.o \
