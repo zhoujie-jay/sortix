@@ -1,0 +1,94 @@
+#!/bin/sh -e
+################################################################################
+#
+#   Copyright(C) Jonas 'Sortie' Termansen 2015.
+#
+#   This program is free software: you can redistribute it and/or modify it
+#   under the terms of the GNU General Public License as published by the Free
+#   Software Foundation, either version 3 of the License, or (at your option)
+#   any later version.
+#
+#   This program is distributed in the hope that it will be useful, but WITHOUT
+#   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+#   FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+#   more details.
+#
+#   You should have received a copy of the GNU General Public License along with
+#   this program. If not, see <http://www.gnu.org/licenses/>.
+#
+#   update-initrd
+#   Generate a mkinitrd that locates and chain boots the real root filesystem.
+#
+################################################################################
+
+show_version() {
+  cat << EOF
+$0 (Sortix)
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+EOF
+  exit 0
+}
+
+
+show_help() {
+  cat << EOF
+Usage: $0 [OPTION]...
+
+Generate a mkinitrd that locates and chain boots the real root filesystem.
+
+Configuration:
+  --help              display this help and exit
+  --version           display version information and exit
+  --sysroot=DIR       operate on this root filesystem [/]
+EOF
+  exit 0
+}
+
+sysroot=
+
+dashdash=
+previous_option=
+for argument do
+  if test -n "$previous_option"; then
+    eval $previous_option=\$argument
+    previous_option=
+    continue
+  fi
+  case $argument in
+  *=?*) parameter=$(expr "X$argument" : '[^=]*=\(.*\)') ;;
+  *=)   parameter= ;;
+  *)    parameter=yes ;;
+  esac
+  case $dashdash$argument in
+  --) dashdash=yes ;;
+  --sysroot=*) sysroot=$parameter ;;
+  --sysroot) previous_option=sysroot ;;
+  --help) show_help ;;
+  --version) show_version ;;
+  -*) echo "$0: unrecognized option $argument" >&2
+      $option_checking && exit 1 ;;
+  *) echo "$0: unexpected operand $argument" >&2
+     exit 1 ;;
+  esac
+done
+
+if [ ! -e "$sysroot/etc/fstab" ]; then
+  echo "$0: $sysroot/etc/fstab: Need a filesystem table to make an initrd" >&2
+  exit 1
+fi
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT HUP INT QUIT TERM
+mkdir "$tmp/bin"
+mkdir "$tmp/sbin"
+cp "$sysroot/sbin/init" "$tmp/sbin"
+cp "$sysroot/sbin/extfs" "$tmp/sbin"
+test -f "$sysroot/sbin/fsck.ext2" &&
+cp "$sysroot/sbin/fsck.ext2" "$tmp/sbin"
+mkdir "$tmp/etc"
+cp "$sysroot/etc/fstab" "$tmp/etc/fstab"
+mkdir "$tmp/etc/init"
+echo chain > "$tmp/etc/init/target"
+mkdir -p "$sysroot/boot"
+mkinitrd --format=sortix-initrd-2 "$tmp" -o "$sysroot/boot/sortix.initrd" > /dev/null

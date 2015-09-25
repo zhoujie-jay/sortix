@@ -37,6 +37,7 @@ system, run as root:
     cd /src
     make            # build new operating system in /src/sysroot
     make sysmerge   # upgrade current operating system with /src/sysroot
+    update-initrd   # update boot initrd with new files
 .Ed
 .Pp
 The build system creates a minimal root filesystem structure in the
@@ -57,6 +58,15 @@ configuration files and other things that could cause conflicts when merging
 with an existing system.  The new user-space is running on completition, though
 existing processes will be running the old programs. Likewise a reboot is needed
 to run the new kernel.
+.Pp
+The
+.Xr update-initrd 8
+program regenerates the
+.Xr initrd 7
+by embedding configuration and programs from the root filesystem.  It needs to
+be run when init system files,
+.Xr fstab 5 ,
+filesystem drivers, or filesystem checkers are modified.
 .Ss Root Makefile
 The
 .Pa /src/Makefile
@@ -257,4 +267,5 @@ formal online release.
 .Sh SEE ALSO
 .Xr make 1 ,
 .Xr cross-development 7 ,
-.Xr porting-guide 7
+.Xr porting-guide 7 ,
+.Xr update-initrd 8

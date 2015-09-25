@@ -25,6 +25,7 @@ sf \
 sh \
 tix \
 trianglix \
+update-initrd \
 utils \
 kernel
 
@@ -66,38 +67,6 @@ install: sysroot
 	  done; \
 	fi
 	cp -RTv "$(SYSROOT)" "$(INSTALL_ROOTFS)"
-	@if test -n '$(INSTALL_ROOTFS_UUID)'; then \
-	   echo '$(INSTALL_ROOTFS_UUID)' > "$(INSTALL_ROOTFS)/etc/rootfs.uuid"; \
-	   SYSROOT="$(SYSROOT)" $(MAKE) create-install-rootfs-initrd; \
-	else \
-	   echo "Warning: INSTALL_ROOTFS_UUID was not set"; \
-	   echo "Therefore: /etc/rootfs.uuid was not created"; \
-	   echo "Therefore: No initrd was created and installed"; \
-	fi
-
-.PHONY: create-install-rootfs-initrd
-create-install-rootfs-initrd:
-ifeq ($(BUILD_IS_SORTIX),0)
-	@if test -z '$(INSTALL_ROOTFS)' || test 'x$(INSTALL_ROOTFS)' = 'x/'; then \
-	  echo "error: Refusing to create an initrd for the local non-Sortix operating system" >&2; \
-	  exit 1; \
-	fi
-endif
-	mkdir -p "$(INSTALL_ROOTFS)/boot"
-	rm -rf "$(INSTALL_ROOTFS)/boot/sortix.initrd.d"
-	mkdir -p "$(INSTALL_ROOTFS)/boot/sortix.initrd.d"
-	mkdir -p "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/bin"
-	mkdir -p "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/sbin"
-	test ! -e "$(INSTALL_ROOTFS)/bin/fsck.ext2" || \
-	cp "$(INSTALL_ROOTFS)/bin/fsck.ext2" "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/bin/fsck.ext2"
-	cp "$(INSTALL_ROOTFS)/sbin/extfs" "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/sbin/extfs"
-	cp "$(INSTALL_ROOTFS)/sbin/init" "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/sbin/init"
-	mkdir -p "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/etc"
-	mkdir -p "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/etc/init"
-	cp "$(INSTALL_ROOTFS)/etc/fstab" "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/etc/fstab"
-	echo chain > "$(INSTALL_ROOTFS)/boot/sortix.initrd.d/etc/init/target"
-	mkinitrd --format=sortix-initrd-2 "$(INSTALL_ROOTFS)/boot/sortix.initrd.d" -o "$(INSTALL_ROOTFS)/boot/sortix.initrd"
-	rm -rf "$(INSTALL_ROOTFS)/boot/sortix.initrd.d"
 
 .PHONY: sysmerge
 sysmerge: sysroot

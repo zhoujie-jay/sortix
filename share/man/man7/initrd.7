@@ -20,9 +20,16 @@ The initrd is in the custom format made by
 .Xr mkinitrd 8
 and can be viewed with
 .Xr initrdfs 8 .
+.Pp
+The
+.Xr update-initrd 8
+program creates a minimal initrd that locates the root filesystem and chain
+boots it as described in
+.Xr init 8 .
 .Sh SEE ALSO
 .Xr initrd 7 ,
 .Xr kernel 7 ,
 .Xr init 8 ,
 .Xr initrdfs 8 ,
-.Xr mkinitrd 8
+.Xr mkinitrd 8 ,
+.Xr update-initrd 8
