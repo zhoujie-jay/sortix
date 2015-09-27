@@ -38,6 +38,7 @@
 #include <sortix/stat.h>
 #include <sortix/statvfs.h>
 #include <sortix/uio.h>
+#include <sortix/unistd.h>
 
 #include <sortix/kernel/copy.h>
 #include <sortix/kernel/descriptor.h>
@@ -192,10 +193,11 @@ int sys_openat(int dirfd, const char* path, int flags, mode_t mode)
 	return ret;
 }
 
-// TODO: This is a hack! Stat the file in some manner and check permissions.
-int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
+int sys_faccessat(int dirfd, const char* path, int mode, int flags)
 {
 	if ( flags & ~(AT_SYMLINK_NOFOLLOW | AT_EACCESS) )
+		return errno = EINVAL, -1;
+	if ( mode & ~(X_OK | W_OK | R_OK) )
 		return errno = EINVAL, -1;
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
@@ -206,7 +208,26 @@ int sys_faccessat(int dirfd, const char* path, int /*mode*/, int flags)
 	int open_flags = O_READ | (flags & AT_SYMLINK_NOFOLLOW ? O_SYMLINK_NOFOLLOW : 0);
 	Ref<Descriptor> desc = from->open(&ctx, pathcopy, open_flags);
 	delete[] pathcopy;
-	return desc ? 0 : -1;
+	if ( !desc )
+		return -1;
+	ioctx_t kctx; SetupKernelIOCtx(&kctx);
+	struct stat st;
+	if ( desc->stat(&kctx, &st) < 0 )
+		return -1;
+	mode_t mask;
+	if ( kctx.uid == st.st_uid )
+		mask = 0700;
+	else if ( kctx.gid == st.st_gid )
+		mask = 0070;
+	else
+		mask = 0007;
+	if ( (mode & X_OK) && !(st.st_mode & 0111 & mask) )
+		return errno = EACCES, -1;
+	if ( (mode & W_OK) && !(st.st_mode & 0222 & mask) )
+		return errno = EACCES, -1;
+	if ( (mode & R_OK) && !(st.st_mode & 0444 & mask) )
+		return errno = EACCES, -1;
+	return 0;
 }
 
 int sys_unlinkat(int dirfd, const char* path, int flags)
