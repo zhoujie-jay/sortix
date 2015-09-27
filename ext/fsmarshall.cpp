@@ -713,6 +713,8 @@ int fsmarshall_main(const char* argv0,
                     Filesystem* fs,
                     Device* dev)
 {
+	(void) argv0;
+
 	// Stat the root inode.
 	struct stat root_inode_st;
 	Inode* root_inode = fs->GetInode((uint32_t) EXT2_ROOT_INO);
@@ -779,11 +781,8 @@ int fsmarshall_main(const char* argv0,
 	// Sync the filesystem before shutting down.
 	if ( dev->write )
 	{
-		fprintf(stderr, "%s: filesystem server shutting down, syncing...", argv0);
-		fflush(stderr);
 		// TODO: Need to close all open inodes here, and in the fuse backend too.
 		fs->Sync();
-		fprintf(stderr, " done.\n");
 	}
 
 	close(serverfd);
