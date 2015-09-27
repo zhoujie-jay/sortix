@@ -22,6 +22,7 @@
 
 #if defined(__sortix__)
 
+#include <sys/mman.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -680,23 +681,24 @@ void HandleIncomingMessage(int chl, struct fsm_msg_header* hdr, Filesystem* fs)
 		RespondError(chl, ENOTSUP);
 		return;
 	}
-	uint8_t* body = (uint8_t*) malloc(hdr->msgsize);
-	if ( !body )
+	uint8_t body_buffer[65536];
+	uint8_t* body = body_buffer;
+	if ( sizeof(body_buffer) < hdr->msgsize )
 	{
-		fprintf(stderr, "extfs: message of type %zu too large: %zu bytes\n", hdr->msgtype, hdr->msgsize);
-		RespondError(chl, errno);
-		return;
+		body = (uint8_t*) mmap(NULL, hdr->msgsize, PROT_READ | PROT_WRITE,
+		                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+		if ( (void*) body == MAP_FAILED )
+		{
+			RespondError(chl, errno);
+			return;
+		}
 	}
-	size_t amount = readall(chl, body, hdr->msgsize);
-	if ( amount < hdr->msgsize )
-	{
-		fprintf(stderr, "extfs: incomplete message of type %zu: got %zi of %zu bytes\n", hdr->msgtype, amount, hdr->msgsize);
+	if ( readall(chl, body, hdr->msgsize) == hdr->msgsize )
+		handlers[hdr->msgtype](chl, body, fs);
+	else
 		RespondError(chl, errno);
-		free(body);
-		return;
-	}
-	handlers[hdr->msgtype](chl, body, fs);
-	free(body);
+	if ( sizeof(body_buffer) < hdr->msgsize )
+		munmap(body, hdr->msgsize);
 }
 static volatile bool should_terminate = false;
 
