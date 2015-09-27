@@ -259,9 +259,12 @@ bool show_line_optimized(struct show_line* show_state, const char* line, size_t 
 
 	show_line_change_cursor(show_state, cursor_wcp);
 
-	free(show_state->current_line);
-	show_state->current_line = strdup(line);
-	assert(show_state->current_line);
+	if ( show_state->current_line != line )
+	{
+		free(show_state->current_line);
+		show_state->current_line = strdup(line);
+		assert(show_state->current_line);
+	}
 	show_state->current_cursor = cursor;
 
 	return true;
@@ -342,9 +345,12 @@ void show_line(struct show_line* show_state, const char* line, size_t cursor)
 
 	show_state->wcp_current = wcp;
 
-	free(show_state->current_line);
-	show_state->current_line = strdup(line);
-	assert(show_state->current_line);
+	if ( show_state->current_line != line )
+	{
+		free(show_state->current_line);
+		show_state->current_line = strdup(line);
+		assert(show_state->current_line);
+	}
 	show_state->current_cursor = cursor;
 
 	show_state->invalidated = false;
