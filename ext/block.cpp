@@ -31,7 +31,17 @@
 #include "device.h"
 #include "ioleast.h"
 
+Block::Block()
+{
+	this->block_data = NULL;
+}
+
 Block::Block(Device* device, uint32_t block_id)
+{
+	Construct(device, block_id);
+}
+
+void Block::Construct(Device* device, uint32_t block_id)
 {
 	this->modify_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 	this->transit_done_cond = PTHREAD_COND_INITIALIZER;
@@ -46,14 +56,18 @@ Block::Block(Device* device, uint32_t block_id)
 	this->block_id = block_id;
 	this->dirty = false;
 	this->is_in_transit = false;
-	this->block_data = NULL;
 }
 
 Block::~Block()
 {
+	Destruct();
+	delete[] block_data;
+}
+
+void Block::Destruct()
+{
 	Sync();
 	Unlink();
-	delete[] block_data;
 }
 
 void Block::Refer()
@@ -64,11 +78,12 @@ void Block::Refer()
 void Block::Unref()
 {
 	if ( !--reference_count )
+	{
 #if 0
+		device->block_count--;
 		delete this;
-#else
-		{};
 #endif
+	}
 }
 
 void Block::Sync()

@@ -28,8 +28,11 @@ class Device;
 class Block
 {
 public:
+	Block();
 	Block(Device* device, uint32_t block_id);
 	~Block();
+	void Construct(Device* device, uint32_t block_id);
+	void Destruct();
 
 public:
 	pthread_mutex_t modify_lock;

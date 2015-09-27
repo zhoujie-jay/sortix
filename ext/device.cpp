@@ -61,6 +61,15 @@ Device::Device(int fd, const char* path, uint32_t block_size, bool write)
 	this->has_sync_thread = false;
 	this->sync_thread_should_exit = false;
 	this->sync_in_transit = false;
+	this->block_count = 0;
+#ifdef __sortix__
+	// TODO: This isn't scaleable if there's multiple filesystems mounted.
+	size_t memory;
+	memstat(NULL, &memory);
+	this->block_limit = (memory / 10) / block_size;
+#else
+	this->block_limit = 32768;
+#endif
 }
 
 Device::~Device()
@@ -88,17 +97,37 @@ void Device::SpawnSyncThread()
 		pthread_create(&this->sync_thread, NULL, Device__SyncThread, this) == 0;
 }
 
+Block* Device::AllocateBlock()
+{
+	if ( block_limit <= block_count )
+	{
+		for ( Block* block = lru_block; block; block = block->prev_block )
+		{
+			if ( block->reference_count )
+				continue;
+			block->Destruct(); // Syncs.
+			return block;
+		}
+	}
+	uint8_t* data = new uint8_t[block_size];
+	if ( !data ) // TODO: Use operator new nothrow!
+		return NULL;
+	Block* block = new Block();
+	if ( !block ) // TODO: Use operator new nothrow!
+		return delete[] data, (Block*) NULL;
+	block->block_data = data;
+	block_count++;
+	return block;
+}
+
 Block* Device::GetBlock(uint32_t block_id)
 {
 	if ( Block* block = GetCachedBlock(block_id) )
 		return block;
-	uint8_t* data = new uint8_t[block_size];
-	if ( !data ) // TODO: Use operator new nothrow!
+	Block* block = AllocateBlock();
+	if ( !block )
 		return NULL;
-	Block* block = new Block(this, block_id);
-	if ( !block ) // TODO: Use operator new nothrow!
-		return delete[] data, (Block*) NULL;
-	block->block_data = data;
+	block->Construct(this, block_id);
 	off_t file_offset = (off_t) block_size * (off_t) block_id;
 	preadall(fd, block->block_data, block_size, file_offset);
 	block->Prelink();
@@ -115,13 +144,10 @@ Block* Device::GetBlockZeroed(uint32_t block_id)
 		block->FinishWrite();
 		return block;
 	}
-	uint8_t* data = new uint8_t[block_size];
-	if ( !data ) // TODO: Use operator new nothrow!
+	Block* block = AllocateBlock();
+	if ( !block )
 		return NULL;
-	Block* block = new Block(this, block_id);
-	if ( !block ) // TODO: Use operator new nothrow!
-		return delete[] data, (Block*) NULL;
-	block->block_data = data;
+	block->Construct(this, block_id);
 	memset(block->block_data, 0, block_size);
 	block->Prelink();
 	block->BeginWrite();

@@ -50,9 +50,12 @@ public:
 	bool has_sync_thread;
 	bool sync_thread_should_exit;
 	bool sync_in_transit;
+	size_t block_count;
+	size_t block_limit;
 
 public:
 	void SpawnSyncThread();
+	Block* AllocateBlock();
 	Block* GetBlock(uint32_t block_id);
 	Block* GetBlockZeroed(uint32_t block_id);
 	Block* GetCachedBlock(uint32_t block_id);
