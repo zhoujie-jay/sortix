@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2015.
 
     This file is part of Sortix.
 
@@ -69,6 +69,11 @@ void UnmapMemory(Process* process, uintptr_t addr, size_t size)
 	assert(Page::IsAligned(size));
 	assert(process == CurrentProcess());
 
+	if ( UINTPTR_MAX - addr < size )
+		size = Page::AlignDown(UINTPTR_MAX - addr);
+	if ( !size )
+		return;
+
 	struct segment unmap_segment;
 	unmap_segment.addr = addr;
 	unmap_segment.size = size;
@@ -77,7 +82,7 @@ void UnmapMemory(Process* process, uintptr_t addr, size_t size)
 	                                                          &unmap_segment) )
 	{
 		// Delete the segment if covered entirely by our request.
-		if ( addr <= conflict->addr && conflict->addr + conflict->size - addr <= size )
+		if ( addr <= conflict->addr && conflict->addr + conflict->size <= addr + size )
 		{
 			uintptr_t conflict_offset = (uintptr_t) conflict - (uintptr_t) process->segments;
 			size_t conflict_index = conflict_offset / sizeof(struct segment);
@@ -122,11 +127,11 @@ void UnmapMemory(Process* process, uintptr_t addr, size_t size)
 		}
 
 		// Delete the part of the segment covered partially from the right.
-		if ( conflict->addr + size <= addr + size )
+		if ( conflict->addr <= addr + size )
 		{
-			Memory::UnmapRange(addr, addr + conflict->size + conflict->addr, PAGE_USAGE_USER_SPACE);
+			Memory::UnmapRange(addr, conflict->addr + conflict->size - addr, PAGE_USAGE_USER_SPACE);
 			Memory::Flush();
-			conflict->size -= conflict->size + conflict->addr;
+			conflict->size -= conflict->addr + conflict->size - addr;
 			continue;
 		}
 	}
