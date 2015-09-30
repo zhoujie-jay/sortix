@@ -23,11 +23,6 @@ fi
 # Make paths absolute for later use.
 SORTIX_PORTS_DIR=$(make_dir_path_absolute "$SORTIX_PORTS_DIR")
 
-# Create a temporary directory in which out-of-directory builds will happen.
-if [ -z "$BUILDTMP" ]; then
-  export BUILDTMP=$(mktemp -d)
-fi
-
 # Detect all packages.
 get_all_packages() {
   for PACKAGE in $(ls "$SORTIX_PORTS_DIR"); do

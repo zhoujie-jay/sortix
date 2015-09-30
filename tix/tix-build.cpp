@@ -239,9 +239,9 @@ void emit_compiler_sysroot_cross_wrapper(metainfo_t* minfo,
 
 void emit_pkg_config_wrapper(metainfo_t* minfo)
 {
-	char* bindir = print_string("%s/tmppid.%ju.bin", minfo->tmp, (uintmax_t) getpid());
-	if ( mkdir_p(bindir, 0755) != 0 )
-		error(1, errno, "mkdir: `%s'", bindir);
+	char* bindir = print_string("%s/bin.XXXXXX", minfo->tmp);
+	if ( !mkdtemp(bindir) )
+		error(1, errno, "mkdtemp: `%s'", bindir);
 
 	on_exit(cleanup_file_or_directory, strdup(bindir));
 
@@ -582,10 +582,10 @@ void BuildPackage(metainfo_t* minfo)
 	bool use_build_dir = parse_boolean(use_build_dir_var);
 	if ( use_build_dir )
 	{
-		minfo->build_dir = print_string("%s/tmppid.%ju", minfo->tmp,
-		                                (uintmax_t) getpid());
-		if ( mkdir_p(minfo->build_dir, 0755) != 0 )
-			error(1, errno, "mkdir: `%s'", minfo->build_dir);
+		minfo->build_dir = print_string("%s/build.XXXXXX", minfo->tmp);
+		if ( !mkdtemp(minfo->build_dir) )
+			error(1, errno, "mkdtemp: `%s'", minfo->build_dir);
+		on_exit(cleanup_file_or_directory, strdup(minfo->build_dir));
 	}
 	else
 		minfo->build_dir = strdup(minfo->package_dir);
@@ -623,18 +623,14 @@ void BuildPackage(metainfo_t* minfo)
 	if ( SHOULD_DO_BUILD_STEP(BUILD_STEP_BUILD, minfo) )
 		Make(minfo, build_target, NULL, true, subdir);
 
-	char* tardir_rel = print_string("%s/%s", minfo->tmp, "tmp-tixbuild");
-	char* destdir_rel = print_string("%s/%s", minfo->tmp, "tmp-tixbuild/data");
-	char* tixdir_rel = print_string("%s/%s", minfo->tmp, "tmp-tixbuild/tix");
-	char* tixinfo_rel = print_string("%s/%s", minfo->tmp, "tmp-tixbuild/tix/tixinfo");
+	char* tardir_rel = print_string("%s/%s", minfo->tmp, "tix.XXXXXX");
+	if ( !mkdtemp(tardir_rel) )
+		error(1, errno, "mkdtemp: `%s'", tardir_rel);
+	on_exit(cleanup_file_or_directory, strdup(tardir_rel));
 
-	while ( mkdir(tardir_rel, 0755) != 0 )
-	{
-		if ( errno != EEXIST )
-			error(1, errno, "mkdir: `%s'", tardir_rel);
-		if ( rmdir(tardir_rel) != 0 )
-			error(1, errno, "rmdir: `%s'", tardir_rel);
-	}
+	char* destdir_rel = print_string("%s/%s", tardir_rel, "data");
+	char* tixdir_rel = print_string("%s/%s", tardir_rel, "tix");
+	char* tixinfo_rel = print_string("%s/%s", tardir_rel, "tix/tixinfo");
 
 	if ( mkdir(destdir_rel, 0755) != 0 )
 		error(1, errno, "mkdir: `%s'", destdir_rel);
@@ -734,7 +730,7 @@ void BuildPackage(metainfo_t* minfo)
 	unlink(tixinfo_rel);
 	rmdir(destdir_rel);
 	rmdir(tixdir_rel);
-	rmdir(tardir_rel);
+	//rmdir(tardir_rel); // Keep around to avoid on_exit handler race.
 
 	free(tardir_rel);
 	free(destdir_rel);
@@ -822,7 +818,7 @@ int main(int argc, char* argv[])
 	metainfo_t minfo;
 	memset(&minfo, 0, sizeof(minfo));
 	minfo.build = NULL;
-	minfo.destination = NULL;
+	minfo.destination = strdup(".");
 	minfo.host = NULL;
 	char* generation_string = strdup(DEFAULT_GENERATION);
 	minfo.makeflags = strdup_null(getenv_def("MAKEFLAGS", NULL));
@@ -832,7 +828,7 @@ int main(int argc, char* argv[])
 	minfo.sysroot = NULL;
 	minfo.target = NULL;
 	minfo.tar = strdup("tar");
-	minfo.tmp = strdup(getenv_def("BUILDTMP", "."));
+	minfo.tmp = strdup(getenv_def("TMPDIR", "/tmp"));
 	char* start_step_string = strdup("start");
 	char* end_step_string = strdup("end");
 

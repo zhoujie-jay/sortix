@@ -776,20 +776,28 @@ void cleanup_file_or_directory(int, void* path_ptr)
 {
 	if ( original_pid != getpid() )
 		return;
-	const char* path = (const char*) path_ptr;
-	if ( fork_and_wait_or_death(false) )
+	pid_t pid = fork();
+	if ( pid < 0 )
+	{
+		error(0, errno, "fork");
+		return;
+	}
+	if ( pid == 0 )
 	{
 		const char* cmd_argv[] =
 		{
 			"rm",
 			"-rf",
 			"--",
-			path,
+			(const char*) path_ptr,
 			NULL,
 		};
 		execvp(cmd_argv[0], (char* const*) cmd_argv);
-		error(127, errno, "%s", cmd_argv[0]);
+		error(0, errno, "%s", cmd_argv[0]);
+		_exit(127);
 	}
+	int code;
+	waitpid(pid, &code, 0);
 }
 
 mode_t get_umask_value()

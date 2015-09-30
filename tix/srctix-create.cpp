@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
 {
 	char* output_directory = strdup(".");
 	char* output = NULL;
-	char* tmp = strdup(getenv_def("TMP", "/tmp"));
+	char* tmp = strdup(getenv_def("TMPDIR", "/tmp"));
 
 	const char* argv0 = argv[0];
 	for ( int i = 0; i < argc; i++ )
@@ -120,9 +120,9 @@ int main(int argc, char* argv[])
 
 	const char* porttix_path = argv[1];
 
-	char* tmp_in_root = print_string("%s/tmppid.%ju.in", tmp, (uintmax_t) getpid());
-	if ( mkdir_p(tmp_in_root, 0755) != 0 )
-		error(1, errno, "mkdir: `%s'", tmp_in_root);
+	char* tmp_in_root = print_string("%s/srctixin.XXXXXX", tmp);
+	if ( !mkdtemp(tmp_in_root) )
+		error(1, errno, "mkdtemp: `%s'", tmp_in_root);
 	on_exit(cleanup_file_or_directory, tmp_in_root);
 
 	if ( fork_and_wait_or_death() )
@@ -150,9 +150,9 @@ int main(int argc, char* argv[])
 		error(1, errno, "`%s'", porttixinfo_path);
 	}
 
-	char* tmp_out_root = print_string("%s/tmppid.%ju.out", tmp, (uintmax_t) getpid());
-	if ( mkdir_p(tmp_out_root, 0755) != 0 )
-		error(1, errno, "mkdir: `%s'", tmp_out_root);
+	char* tmp_out_root = print_string("%s/srctixout.XXXXXX", tmp);
+	if ( !mkdtemp(tmp_out_root) )
+		error(1, errno, "mkdtemp: `%s'", tmp_out_root);
 	on_exit(cleanup_file_or_directory, tmp_out_root);
 
 	char* package_name = NULL;

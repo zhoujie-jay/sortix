@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
 	char* input_tarball_path = NULL;
 	char* output_directory = strdup(".");
 	char* output = NULL;
-	char* tmp = strdup(getenv_def("TMP", "/tmp"));
+	char* tmp = strdup(getenv_def("TMPDIR", "/tmp"));
 
 	const char* argv0 = argv[0];
 	for ( int i = 0; i < argc; i++ )
@@ -155,9 +155,9 @@ int main(int argc, char* argv[])
 	if ( !output )
 		output = print_string("%s/%s.porttix.tar.xz", output_directory, package_name);
 
-	char* tmp_root = print_string("%s/tmppid.%ju", tmp, (uintmax_t) getpid());
-	if ( mkdir_p(tmp_root, 0755) != 0 )
-		error(1, errno, "mkdir: `%s'", tmp_root);
+	char* tmp_root = print_string("%s/porttix.XXXXXX", tmp);
+	if ( !mkdtemp(tmp_root) )
+		error(1, errno, "mkdtemp: `%s'", tmp_root);
 
 	on_exit(cleanup_file_or_directory, tmp_root);
 
