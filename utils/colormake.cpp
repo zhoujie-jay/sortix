@@ -66,7 +66,8 @@ int main(int /*argc*/, char* argv[])
 	{
 		if ( strstr(line, "make") )
 			mode = MODE_MAKE;
-		if ( strstr(line, "gcc") || strstr(line, "g++") )
+		if ( strstr(line, "cc") || strstr(line, "c++") ||
+		     strstr(line, "gcc") || strstr(line, "g++") )
 			mode = MODE_GCC;
 		const char* color = "\e[m";
 		int next_mode = MODE_NONE;
