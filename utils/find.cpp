@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -53,7 +53,7 @@ const int TYPE_DIR = 1 << 1;
 bool Find(int dirfd, const char* relpath, const char* path, int types)
 {
 	bool ret = true;
-	int fd = openat(dirfd, relpath, O_RDONLY);
+	int fd = openat(dirfd, relpath, O_RDONLY | O_SYMLINK_NOFOLLOW);
 	if ( fd < 0 ) { error(0, errno, "%s", path); return false; }
 	struct stat st;
 	if ( fstat(fd, &st) ) { error(0, errno, "stat: %s", path); return false; }
