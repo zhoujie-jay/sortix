@@ -100,5 +100,7 @@ int main(int /*argc*/, char* argv[])
 	free(line);
 	int status;
 	waitpid(child_pid, &status, 0);
+	printf("\e[m");
+	fflush(stdout);
 	return WEXITSTATUS(status);
 }
