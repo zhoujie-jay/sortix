@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -60,6 +61,7 @@ int main(int argc, char* argv[])
 	const char* argv0 = argv[0];
 	bool force = false;
 	bool symbolic = false;
+	bool no_target_directory = false;
 	bool verbose = false;
 	for ( int i = 1; i < argc; i++ )
 	{
@@ -75,6 +77,7 @@ int main(int argc, char* argv[])
 			{
 			case 'f': force = true; break;
 			case 's': symbolic = true; break;
+			case 'T': no_target_directory = true; break;
 			case 'v': verbose = true; break;
 			default:
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
@@ -108,14 +111,29 @@ int main(int argc, char* argv[])
 	const char* oldname = argv[1];
 	const char* newname = argv[2];
 
+	bool done = false;
+again:
 	if ( force )
 		unlink(newname);
 
+	struct stat st;
 	int ret = (symbolic ? symlink : link)(oldname, newname);
 	if ( ret == 0  )
 	{
 		if ( verbose )
 			printf("`%s' => `%s'\n", newname, oldname);
+	}
+	else if ( !done && errno == EEXIST && !no_target_directory &&
+	          lstat(newname, &st) == 0 && S_ISDIR(st.st_mode) )
+	{
+		char* oldnamecopy = strdup(oldname);
+		const char* name = basename(oldnamecopy);
+		char* newnewname;
+		asprintf(&newnewname, "%s/%s", newname, name);
+		free(oldnamecopy);
+		newname = newnewname;
+		done = true;
+		goto again;
 	}
 	else
 		error(0, errno, "`%s' => `%s'", newname, oldname);
