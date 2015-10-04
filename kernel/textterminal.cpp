@@ -36,8 +36,7 @@
 
 namespace Sortix {
 
-const uint16_t DEFAULT_COLOR = COLOR8_LIGHT_GREY << 0U | COLOR8_BLACK << 4U;
-const uint16_t ATTR_CHAR = 1U << 0U;
+static const uint16_t DEFAULT_COLOR = COLOR8_LIGHT_GREY | COLOR8_BLACK << 4;
 
 TextTerminal::TextTerminal(TextBufferHandle* textbufhandle)
 {
@@ -53,6 +52,7 @@ TextTerminal::~TextTerminal()
 
 void TextTerminal::Reset()
 {
+	next_attr = 0;
 	vgacolor = DEFAULT_COLOR;
 	column = line = 0;
 	ansisavedposx = ansisavedposy = 0;
@@ -60,8 +60,8 @@ void TextTerminal::Reset()
 	TextBuffer* textbuf = textbufhandle->Acquire();
 	TextPos fillfrom(0, 0);
 	TextPos fillto(textbuf->Width()-1, textbuf->Height()-1);
-	TextChar fillwith(' ', vgacolor);
-	textbuf->Fill(fillfrom, fillto, fillwith, 0);
+	TextChar fillwith(' ', vgacolor, 0);
+	textbuf->Fill(fillfrom, fillto, fillwith);
 	textbuf->SetCursorEnabled(true);
 	UpdateCursor(textbuf);
 	textbufhandle->Release(textbuf);
@@ -278,9 +278,9 @@ void TextTerminal::PutChar(TextBuffer* textbuf, char c)
 	if ( textbuf->Width() <= column )
 		Newline(textbuf);
 	TextPos pos(column++, line);
-	TextChar tc(wc, vgacolor);
+	TextChar tc(wc, vgacolor, ATTR_CHAR | next_attr);
 	textbuf->SetChar(pos, tc);
-	textbuf->SetCharAttr(pos, ATTR_CHAR);
+	next_attr = 0;
 }
 
 void TextTerminal::UpdateCursor(TextBuffer* textbuf)
@@ -290,13 +290,21 @@ void TextTerminal::UpdateCursor(TextBuffer* textbuf)
 
 void TextTerminal::Newline(TextBuffer* textbuf)
 {
-	textbuf->SetCharAttr(TextPos(column, line), ATTR_CHAR);
+	TextPos pos(column, line);
+	TextChar tc = textbuf->GetChar(pos);
+	if ( !(tc.attr & ATTR_CHAR) )
+	{
+		tc.attr |= ATTR_CHAR;
+		textbuf->SetChar(pos, tc);
+	}
 	column = 0;
 	if ( line < textbuf->Height()-1 )
 		line++;
 	else
-		textbuf->Scroll(1, TextChar(' ', vgacolor)),
+	{
+		textbuf->Scroll(1, TextChar(' ', vgacolor, 0));
 		line = textbuf->Height()-1;
+	}
 }
 
 static TextPos DecrementTextPos(TextBuffer* textbuf, TextPos pos)
@@ -314,10 +322,16 @@ void TextTerminal::Backspace(TextBuffer* textbuf)
 	while ( pos.x || pos.y )
 	{
 		pos = DecrementTextPos(textbuf, pos);
-		uint16_t attr = textbuf->GetCharAttr(pos);
-		textbuf->SetChar(pos, TextChar(' ', vgacolor));
-		textbuf->SetCharAttr(pos, attr & ~ATTR_CHAR);
-		if ( attr & ATTR_CHAR )
+		TextChar tc = textbuf->GetChar(pos);
+		next_attr = tc.attr & (ATTR_BOLD | ATTR_UNDERLINE);
+		if ( tc.c == L'_' )
+			next_attr |= ATTR_UNDERLINE;
+		else if ( tc.c == L' ' )
+			next_attr &= ~(ATTR_BOLD | ATTR_CHAR);
+		else
+			next_attr |= ATTR_BOLD;
+		textbuf->SetChar(pos, TextChar(' ', vgacolor, 0));
+		if ( tc.attr & ATTR_CHAR )
 			break;
 	}
 	column = pos.x;
@@ -328,17 +342,21 @@ void TextTerminal::Tab(TextBuffer* textbuf)
 {
 	if ( column == textbuf->Width() )
 		Newline(textbuf);
-	// TODO: This does not work correctly if the text buffer width is not a
-	// multiple of four and the column is near the edge.
-	unsigned until = 8 - (column % 8);
-	textbuf->SetCharAttr(TextPos(column, line), ATTR_CHAR);
-	while ( (until--) != 0 )
-		textbuf->SetChar(TextPos(column++, line), TextChar(' ', vgacolor));
+	unsigned int count = 8 - (column % 8);
+	for ( unsigned int i = 0; i < count; i++ )
+	{
+		if ( column == textbuf->Width() )
+			break;
+		TextPos pos(column++, line);
+		TextChar tc(' ', vgacolor, i == 0 ? ATTR_CHAR : 0);
+		textbuf->SetChar(pos, tc);
+	}
 }
 
 // TODO: This implementation of the 'Ansi Escape Codes' is incomplete and hacky.
 void TextTerminal::AnsiReset()
 {
+	next_attr = 0;
 	ansiusedparams = 0;
 	currentparamindex = 0;
 	ansiparams[0] = 0;
@@ -501,7 +519,7 @@ void TextTerminal::RunAnsiCommand(TextBuffer* textbuf, char c)
 			from = TextPos{0, 0},
 			to = TextPos{width-1, height-1};
 
-		textbuf->Fill(from, to, TextChar(' ', vgacolor), 0);
+		textbuf->Fill(from, to, TextChar(' ', vgacolor, 0));
 	} break;
 	case 'K': // Erase parts of the current line.
 	{
@@ -521,16 +539,16 @@ void TextTerminal::RunAnsiCommand(TextBuffer* textbuf, char c)
 			from = TextPos{0, line},
 			to = TextPos{width-1, line};
 
-		textbuf->Fill(from, to, TextChar(' ', vgacolor), 0);
+		textbuf->Fill(from, to, TextChar(' ', vgacolor, 0));
 	} break;
 	case 'S': // Scroll a line up and place a new line at the buttom.
 	{
-		textbuf->Scroll(1, TextChar(' ', vgacolor));
+		textbuf->Scroll(1, TextChar(' ', vgacolor, 0));
 		line = height-1;
 	} break;
 	case 'T': // Scroll a line up and place a new line at the top.
 	{
-		textbuf->Scroll(-1, TextChar(' ', vgacolor));
+		textbuf->Scroll(-1, TextChar(' ', vgacolor, 0));
 		line = 0;
 	} break;
 	case 'm': // Change how the text is rendered.

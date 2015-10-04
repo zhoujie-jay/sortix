@@ -35,6 +35,10 @@
 
 namespace Sortix {
 
+static const uint16_t ATTR_CHAR = 1 << 0;
+static const uint16_t ATTR_BOLD = 1 << 1;
+static const uint16_t ATTR_UNDERLINE = 1 << 2;
+
 struct TextPos
 {
 	TextPos() { }
@@ -47,16 +51,20 @@ struct TextCharPOD
 {
 	wchar_t c;
 	uint8_t vgacolor; // Format of <sortix/vga.h>
+	uint16_t attr;
 };
 
 struct TextChar
 {
 	TextChar() { }
-	TextChar(const TextCharPOD& o) : c(o.c), vgacolor(o.vgacolor)  { }
-	TextChar(wchar_t c, uint8_t vgacolor) : c(c), vgacolor(vgacolor) { }
-	operator TextCharPOD() { return TextCharPOD{c, vgacolor}; }
+	TextChar(const TextCharPOD& o) :
+		c(o.c), vgacolor(o.vgacolor), attr(o.attr)  { }
+	TextChar(wchar_t c, uint8_t vgacolor, uint16_t attr) :
+		c(c), vgacolor(vgacolor), attr(attr) { }
+	operator TextCharPOD() { return TextCharPOD{c, vgacolor, attr}; }
 	wchar_t c;
 	uint8_t vgacolor; // Format of <sortix/vga.h>
+	uint16_t attr;
 };
 
 static inline bool IsTextPosBeforeTextPos(const TextPos& a, const TextPos& b)
@@ -77,12 +85,9 @@ public:
 	virtual size_t Height() const = 0;
 	virtual TextChar GetChar(TextPos pos) const = 0;
 	virtual void SetChar(TextPos pos, TextChar c) = 0;
-	virtual uint16_t GetCharAttr(TextPos pos) const = 0;
-	virtual void SetCharAttr(TextPos pos, uint16_t attr) = 0;
 	virtual void Scroll(ssize_t off, TextChar fillwith) = 0;
 	virtual void Move(TextPos to, TextPos from, size_t numchars) = 0;
-	virtual void Fill(TextPos from, TextPos to, TextChar fillwith,
-	                  uint16_t fillattr) = 0;
+	virtual void Fill(TextPos from, TextPos to, TextChar fillwith) = 0;
 	virtual bool GetCursorEnabled() const = 0;
 	virtual void SetCursorEnabled(bool enablecursor) = 0;
 	virtual TextPos GetCursorPos() const = 0;

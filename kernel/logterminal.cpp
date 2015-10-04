@@ -228,7 +228,7 @@ void LogTerminal::ProcessKeystroke(int kbkey)
 		     (!wasuni || termmode & TERMMODE_UNICODE) &&
 		     termmode & TERMMODE_ECHO &&
 		     wasuni )
-				Log::Print("\b");
+				Log::Print("\b \b");
 		goto c_w_delete_more;
 	}
 
@@ -243,7 +243,7 @@ void LogTerminal::ProcessKeystroke(int kbkey)
 				 (!wasuni || termmode & TERMMODE_UNICODE) &&
 				 termmode & TERMMODE_ECHO &&
 				 wasuni )
-				Log::Print("\b");
+				Log::Print("\b \b");
 		}
 		return;
 	}
@@ -289,7 +289,7 @@ void LogTerminal::QueueUnicode(uint32_t unicode)
 		if ( waskbkey && !kbkeymode ) { continue; }
 		if ( wasuni && !unicodemode ) { continue; }
 		if ( !echomode ) { return; }
-		if ( wasuni ) { Log::Print("\b"); }
+		if ( wasuni ) { Log::Print("\b \b"); }
 		return;
 	}
 
@@ -308,7 +308,10 @@ void LogTerminal::QueueUnicode(uint32_t unicode)
 		memset(&ps, 0, sizeof(ps));
 		char utf8buf[MB_CUR_MAX];
 		size_t num_bytes = wcrtomb(utf8buf, (wchar_t) unicode, &ps);
-		Log::PrintData(utf8buf, num_bytes);
+		if ( num_bytes == 1 && utf8buf[0] == '\b' )
+			Log::PrintData("\b \b", 3);
+		else
+			Log::PrintData(utf8buf, num_bytes);
 	}
 
 	bool commit = !linemode || wasenter;

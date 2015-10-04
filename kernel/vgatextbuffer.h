@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -32,18 +32,15 @@ namespace Sortix {
 class VGATextBuffer : public TextBuffer
 {
 public:
-	VGATextBuffer(uint16_t* vga, TextChar* chars, uint16_t* attr, size_t width, size_t height);
+	VGATextBuffer(uint16_t* vga, TextChar* chars, size_t width, size_t height);
 	virtual ~VGATextBuffer();
 	virtual size_t Width() const;
 	virtual size_t Height() const;
 	virtual TextChar GetChar(TextPos pos) const;
 	virtual void SetChar(TextPos pos, TextChar c);
-	virtual uint16_t GetCharAttr(TextPos pos) const ;
-	virtual void SetCharAttr(TextPos pos, uint16_t attrval);
 	virtual void Scroll(ssize_t off, TextChar fillwith);
 	virtual void Move(TextPos to, TextPos from, size_t numchars);
-	virtual void Fill(TextPos from, TextPos to, TextChar fillwith,
-	                  uint16_t fillattr);
+	virtual void Fill(TextPos from, TextPos to, TextChar fillwith);
 	virtual bool GetCursorEnabled() const;
 	virtual void SetCursorEnabled(bool enablecursor);
 	virtual TextPos GetCursorPos() const;
@@ -63,7 +60,6 @@ private:
 private:
 	uint16_t* vga;
 	TextChar* chars;
-	uint16_t* attr;
 	size_t width;
 	size_t height;
 	TextPos cursorpos;

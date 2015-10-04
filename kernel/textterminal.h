@@ -69,6 +69,7 @@ private:
 	mbstate_t ps;
 	mutable TextBufferHandle* textbufhandle;
 	mutable kthread_mutex_t termlock;
+	uint16_t next_attr;
 	uint8_t vgacolor;
 	unsigned column;
 	unsigned line;

@@ -36,7 +36,6 @@ enum TextBufferCmdType
 	TEXTBUFCMD_SYNC,
 	TEXTBUFCMD_PAUSE,
 	TEXTBUFCMD_CHAR,
-	TEXTBUFCMD_ATTR,
 	TEXTBUFCMD_CURSOR_SET_ENABLED,
 	TEXTBUFCMD_CURSOR_MOVE,
 	TEXTBUFCMD_MOVE,
@@ -55,7 +54,7 @@ struct TextBufferCmd
 	union
 	{
 		bool b;
-		struct { TextCharPOD c; uint16_t attr; };
+		TextCharPOD c;
 		size_t val;
 	};
 };
@@ -74,12 +73,9 @@ public:
 	virtual size_t Height() const;
 	virtual TextChar GetChar(TextPos pos) const;
 	virtual void SetChar(TextPos pos, TextChar c);
-	virtual uint16_t GetCharAttr(TextPos pos) const;
-	virtual void SetCharAttr(TextPos pos, uint16_t attrval);
 	virtual void Scroll(ssize_t off, TextChar fillwith);
 	virtual void Move(TextPos to, TextPos from, size_t numchars);
-	virtual void Fill(TextPos from, TextPos to, TextChar fillwith,
-	                  uint16_t fillattr);
+	virtual void Fill(TextPos from, TextPos to, TextChar fillwith);
 	virtual bool GetCursorEnabled() const;
 	virtual void SetCursorEnabled(bool enablecursor);
 	virtual TextPos GetCursorPos() const;
@@ -104,7 +100,7 @@ private:
 	TextPos AddToPosition(TextPos pos, size_t count);
 	void DoScroll(ssize_t off, TextChar entry);
 	void DoMove(TextPos to, TextPos from, size_t numchars);
-	void DoFill(TextPos from, TextPos to, TextChar fillwith, uint16_t fillattr);
+	void DoFill(TextPos from, TextPos to, TextChar fillwith);
 	void IssueCommand(TextBufferCmd* cmd);
 	void StopRendering();
 	void ResumeRendering();
@@ -135,7 +131,6 @@ private:
 	uint8_t* backbuf;
 	uint8_t* font;
 	TextChar* chars;
-	uint16_t* attrs;
 	size_t columns;
 	size_t rows;
 	size_t pixelsx;

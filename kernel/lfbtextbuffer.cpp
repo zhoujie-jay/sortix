@@ -63,7 +63,6 @@ LFBTextBuffer* CreateLFBTextBuffer(uint8_t* lfb, uint32_t lfbformat,
 	uint8_t* backbuf;
 	uint8_t* font;
 	TextChar* chars;
-	uint16_t* attrs;
 	TextBufferCmd* queue;
 	LFBTextBuffer* ret;
 
@@ -75,10 +74,8 @@ LFBTextBuffer* CreateLFBTextBuffer(uint8_t* lfb, uint32_t lfbformat,
 		goto cleanup_backbuf;
 	if ( !(chars = new TextChar[columns * rows]) )
 		goto cleanup_font;
-	if ( !(attrs = new uint16_t[columns * rows]) )
-		goto cleanup_chars;
 	if ( !(queue = new TextBufferCmd[QUEUE_LENGTH]) )
-		goto cleanup_attrs;
+		goto cleanup_chars;
 	if ( !(ret = new LFBTextBuffer) )
 		goto cleanup_queue;
 
@@ -108,8 +105,6 @@ LFBTextBuffer* CreateLFBTextBuffer(uint8_t* lfb, uint32_t lfbformat,
 	ret->font = font;
 	memset(chars, 0, sizeof(chars[0]) * columns * rows);
 	ret->chars = chars;
-	memset(attrs, 0, sizeof(attrs[0]) * columns * rows);
-	ret->attrs = attrs;
 	for ( size_t i = 0; i < 16UL; i++ )
 	{
 		uint8_t r = i & 0b0100 ? (i & 0b1000 ? 255 : 191) : (i & 0b1000 ? 63 : 0);
@@ -135,8 +130,6 @@ LFBTextBuffer* CreateLFBTextBuffer(uint8_t* lfb, uint32_t lfbformat,
 
 cleanup_queue:
 	delete[] queue;
-cleanup_attrs:
-	delete[] attrs;
 cleanup_chars:
 	delete[] chars;
 cleanup_font:
@@ -176,7 +169,6 @@ LFBTextBuffer::~LFBTextBuffer()
 	delete[] backbuf;
 	delete[] font;
 	delete[] chars;
-	delete[] attrs;
 	delete[] queue;
 }
 
@@ -220,6 +212,8 @@ void LFBTextBuffer::RenderChar(TextChar textchar, size_t posx, size_t posy)
 		return;
 	bool drawcursor = cursorenabled && posx == cursorpos.x && posy == cursorpos.y;
 	uint8_t fgcoloridx = textchar.vgacolor >> 0 & 0x0F;
+	if ( textchar.attr & ATTR_BOLD )
+		fgcoloridx |= 0x08;
 	uint8_t bgcoloridx = textchar.vgacolor >> 4 & 0x0F;
 	uint32_t fgcolor = colors[fgcoloridx];
 	uint32_t bgcolor = colors[bgcoloridx];
@@ -259,9 +253,10 @@ void LFBTextBuffer::RenderChar(TextChar textchar, size_t posx, size_t posy)
 			}
 		}
 	}
-	if ( likely(!drawcursor) )
+	if ( likely(!drawcursor) && !(textchar.attr & ATTR_UNDERLINE) )
 		return;
-	for ( size_t y = VGA_FONT_HEIGHT - 2; y < VGA_FONT_HEIGHT; y++ )
+	size_t underlines = VGA_FONT_HEIGHT - (!drawcursor ? 1 : 0);
+	for ( size_t y = VGA_FONT_HEIGHT - 2; y < underlines; y++ )
 	{
 		size_t pixely = posy * VGA_FONT_HEIGHT + y;
 		for ( size_t x = 0; x < VGA_FONT_WIDTH+1; x++ )
@@ -378,7 +373,7 @@ TextChar LFBTextBuffer::GetChar(TextPos pos) const
 		((LFBTextBuffer*) this)->ResumeRendering();
 		return ret;
 	}
-	return {0, 0};
+	return {0, 0, 0};
 }
 
 void LFBTextBuffer::SetChar(TextPos pos, TextChar c)
@@ -390,30 +385,6 @@ void LFBTextBuffer::SetChar(TextPos pos, TextChar c)
 	cmd.x = pos.x;
 	cmd.y = pos.y;
 	cmd.c = c;
-	IssueCommand(&cmd);
-}
-
-uint16_t LFBTextBuffer::GetCharAttr(TextPos pos) const
-{
-	if ( UsablePosition(pos) )
-	{
-		((LFBTextBuffer*) this)->StopRendering();
-		uint16_t ret = attrs[pos.y * columns + pos.x];
-		((LFBTextBuffer*) this)->ResumeRendering();
-		return ret;
-	}
-	return 0;
-}
-
-void LFBTextBuffer::SetCharAttr(TextPos pos, uint16_t attrval)
-{
-	if ( !UsablePosition(pos) )
-		return;
-	TextBufferCmd cmd;
-	cmd.type = TEXTBUFCMD_ATTR;
-	cmd.x = pos.x;
-	cmd.y = pos.y;
-	cmd.attr = attrval;
 	IssueCommand(&cmd);
 }
 
@@ -485,8 +456,7 @@ void LFBTextBuffer::Move(TextPos to, TextPos from, size_t numchars)
 	IssueCommand(&cmd);
 }
 
-void LFBTextBuffer::Fill(TextPos from, TextPos to, TextChar fillwith,
-                         uint16_t fillattr)
+void LFBTextBuffer::Fill(TextPos from, TextPos to, TextChar fillwith)
 {
 	from = CropPosition(from);
 	to = CropPosition(to);
@@ -497,7 +467,6 @@ void LFBTextBuffer::Fill(TextPos from, TextPos to, TextChar fillwith,
 	cmd.to_x = to.x;
 	cmd.to_y = to.y;
 	cmd.c = fillwith;
-	cmd.attr = fillattr;
 	IssueCommand(&cmd);
 }
 
@@ -513,7 +482,7 @@ void LFBTextBuffer::DoScroll(ssize_t off, TextChar entry)
 	TextPos fillto = neg ? TextPos{columns-1, rows-1} : TextPos{columns-1, absoff-1};
 	size_t scrollchars = columns * (rows-absoff);
 	DoMove(scrollto, scrollfrom, scrollchars);
-	DoFill(fillfrom, fillto, entry, 0);
+	DoFill(fillfrom, fillto, entry);
 }
 
 void LFBTextBuffer::DoMove(TextPos to, TextPos from, size_t numchars)
@@ -522,22 +491,18 @@ void LFBTextBuffer::DoMove(TextPos to, TextPos from, size_t numchars)
 	size_t src = OffsetOfPos(from);
 	if ( dest < src )
 		for ( size_t i = 0; i < numchars; i++ )
-			chars[dest + i] = chars[src + i],
-			attrs[dest + i] = attrs[src + i];
+			chars[dest + i] = chars[src + i];
 	else if ( src < dest )
 		for ( size_t i = 0; i < numchars; i++ )
-			chars[dest + numchars-1 - i] = chars[src + numchars-1 - i],
-			attrs[dest + numchars-1 - i] = attrs[src + numchars-1 - i];
+			chars[dest + numchars-1 - i] = chars[src + numchars-1 - i];
 }
 
-void LFBTextBuffer::DoFill(TextPos from, TextPos to, TextChar fillwith,
-                           uint16_t fillattr)
+void LFBTextBuffer::DoFill(TextPos from, TextPos to, TextChar fillwith)
 {
 	size_t start = OffsetOfPos(from);
 	size_t end = OffsetOfPos(to);
 	for ( size_t i = start; i <= end; i++ )
-		chars[i] = fillwith,
-		attrs[i] = fillattr;
+		chars[i] = fillwith;
 }
 
 bool LFBTextBuffer::IsCommandIdempotent(const TextBufferCmd* cmd) const
@@ -548,7 +513,6 @@ bool LFBTextBuffer::IsCommandIdempotent(const TextBufferCmd* cmd) const
 		case TEXTBUFCMD_SYNC: return true;
 		case TEXTBUFCMD_PAUSE: return true;
 		case TEXTBUFCMD_CHAR: return true;
-		case TEXTBUFCMD_ATTR: return true;
 		case TEXTBUFCMD_CURSOR_SET_ENABLED: return true;
 		case TEXTBUFCMD_CURSOR_MOVE: return true;
 		case TEXTBUFCMD_MOVE: return false;
@@ -585,11 +549,6 @@ void LFBTextBuffer::ExecuteCommand(TextBufferCmd* cmd,
 				render_from = pos;
 			if ( IsTextPosAfterTextPos(pos, render_to) )
 				render_to = pos;
-		} break;
-		case TEXTBUFCMD_ATTR:
-		{
-			TextPos pos(cmd->x, cmd->y);
-			attrs[pos.y * columns + pos.x] = cmd->attr;
 		} break;
 		case TEXTBUFCMD_CURSOR_SET_ENABLED:
 			if ( cmd->b != cursorenabled )
@@ -633,7 +592,7 @@ void LFBTextBuffer::ExecuteCommand(TextBufferCmd* cmd,
 		{
 			TextPos from(cmd->from_x, cmd->from_y);
 			TextPos to(cmd->to_x, cmd->to_y);
-			DoFill(from, to, cmd->c, cmd->attr);
+			DoFill(from, to, cmd->c);
 			if ( IsTextPosBeforeTextPos(from, render_from) )
 				render_from = from;
 			if ( IsTextPosAfterTextPos(to, render_to) )
@@ -778,7 +737,7 @@ void LFBTextBuffer::EmergencyReset()
 {
 	// TODO: Reset everything here!
 
-	Fill(TextPos{0, 0}, TextPos{columns-1, rows-1}, TextChar{0, 0}, 0);
+	Fill(TextPos{0, 0}, TextPos{columns-1, rows-1}, TextChar{0, 0, 0});
 	SetCursorPos(TextPos{0, 0});
 }
 

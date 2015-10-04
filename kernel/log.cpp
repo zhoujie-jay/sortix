@@ -176,12 +176,10 @@ void Init(multiboot_info_t* bootinfo)
 		uint16_t* const VGAFB = (uint16_t*) 0xB8000;
 		const size_t VGA_WIDTH = 80;
 		const size_t VGA_HEIGHT = 25;
-		uint16_t* vga_attr_buffer = new uint16_t[VGA_WIDTH * VGA_HEIGHT];
 		TextChar* vga_chars_buffer = new TextChar[VGA_WIDTH * VGA_HEIGHT];
-		if ( !vga_attr_buffer || !vga_chars_buffer )
+		if ( !vga_chars_buffer )
 			Panic(oom_msg);
-		textbuf = new VGATextBuffer(VGAFB, vga_chars_buffer, vga_attr_buffer,
-		                            VGA_WIDTH, VGA_HEIGHT);
+		textbuf = new VGATextBuffer(VGAFB, vga_chars_buffer, VGA_WIDTH, VGA_HEIGHT);
 		if ( !textbuf )
 			Panic(oom_msg);
 	}
