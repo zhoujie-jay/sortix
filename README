@@ -41,42 +41,25 @@ such as VirtualBox and Qemu:
 Documentation
 -------------
 
-You can find the documentation for Sortix use and development at your local
-documentation mirror, for instance:
-
-  The documentation directory in a Sortix system:
-  /share/doc
-
-  The doc directory inside the Sortix source repository:
-  doc/
-
-  The official Sortix website:
-  https://sortix.org/doc/
+The system is documented as manual pages.  Introductory system usage is covered
+in the user-guide(7) manual page.
 
 Building Sortix
 ---------------
 
-If you wish to build Sortix under Sortix itself, please consult the user guide:
+Development of Sortix under itself is covered in development(7).
 
-  $MY_LOCAL_DOCUMENTATION_MIRROR/user-guide
+Development from another operating system is covered in cross-development(7).
 
-If you wish to cross-build Sortix from another operating system, please read
-the cross development guide:
+You can view the cross-development(7) manual page with this command:
 
-  $MY_LOCAL_DOCUMENTATION_MIRROR/cross-development
-
-Documentation
--------------
-
-Basic usage of the system has been documented at:
-
-  $MY_LOCAL_DOCUMENTATION_MIRROR/user-guide
+  man share/man/man7/cross-development.7
 
 License
 -------
 
 Copyright(C) Jonas 'Sortie' Termansen <sortie@maxsi.org> and contributors 2011,
-2012, 2013, 2014.
+2012, 2013, 2014, 2015, 2016.
 
 Sortix is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A

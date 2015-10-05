@@ -157,6 +157,7 @@ sysroot-base-headers: sysroot-fsh
 
 .PHONY: sysroot-system
 sysroot-system: sysroot-fsh sysroot-base-headers
+	cp -RT share "$(SYSROOT)/share"
 	export SYSROOT="$(SYSROOT)" && \
 	(for D in $(MODULES); do ($(MAKE) -C $$D && $(MAKE) -C $$D install DESTDIR="$(SYSROOT)") || exit $$?; done)
 
@@ -361,10 +362,7 @@ sortix.iso.xz: $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso.xz
 
 # Release
 
-$(SORTIX_RELEASE_DIR):
-	mkdir -p $@
-
-$(SORTIX_RELEASE_DIR)/$(VERSION): $(SORTIX_RELEASE_DIR)
+$(SORTIX_RELEASE_DIR)/$(VERSION):
 	mkdir -p $@
 
 $(SORTIX_RELEASE_DIR)/$(VERSION)/builds: $(SORTIX_RELEASE_DIR)/$(VERSION)
@@ -385,14 +383,6 @@ release-tar: $(SORTIX_RELEASE_DIR)/$(VERSION)/builds/$(BUILD_NAME).tar.xz
 .PHONY: release-builds
 release-builds: release-iso.xz release-tar
 
-$(SORTIX_RELEASE_DIR)/$(VERSION)/doc: $(SORTIX_RELEASE_DIR)/$(VERSION) doc doc/*
-	cp -RT doc $(SORTIX_RELEASE_DIR)/$(VERSION)/doc
-	rm -f $(SORTIX_RELEASE_DIR)/$(VERSION)/doc/.gitignore
-	rm -f $(SORTIX_RELEASE_DIR)/$(VERSION)/doc/Makefile
-
-.PHONY: release-doc
-release-doc: $(SORTIX_RELEASE_DIR)/$(VERSION)/doc
-
 $(SORTIX_RELEASE_DIR)/$(VERSION)/README: README $(SORTIX_RELEASE_DIR)/$(VERSION)
 	cp $< $@
 
@@ -409,10 +399,10 @@ $(SORTIX_RELEASE_DIR)/$(VERSION)/repository/$(HOST): sysroot $(SORTIX_REPOSITORY
 release-repository: $(SORTIX_RELEASE_DIR)/$(VERSION)/repository/$(HOST)
 
 .PHONY: release-arch
-release-arch: release-builds release-doc release-readme release-repository
+release-arch: release-builds release-readme release-repository
 
 .PHONY: release-shared
-release-shared: release-doc release-readme
+release-shared: release-readme
 
 .PHONY: release
 release: release-arch release-shared

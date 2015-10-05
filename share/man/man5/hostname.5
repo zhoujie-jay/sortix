@@ -1,0 +1,29 @@
+.Dd $Mdocdate: October 5 2015 $
+.Dt HOSTNAME 5
+.Os
+.Sh NAME
+.Nm hostname
+.Nd initial hostname
+.Sh SYNOPSIS
+.Nm /etc/hostname
+.Sh DESCRIPTION
+The
+.Nm hostname
+file is read on boot by
+.Xr init 8
+and is used as the system hostname.  No hostname is set if the file is missing
+and the hostname remains the kernel default.
+.Sh FORMAT
+The file must contain a valid hostname and no whitespace on a single line.
+.Sh FILES
+.Bl -tag -width "/etc/hostname" -compact
+.It Pa /etc/hostname
+System hostname.
+.El
+.Sh EXAMPLES
+.Bd -literal
+dragon
+.Ed
+.Sh SEE ALSO
+.Xr sethostname 2 ,
+.Xr init 8

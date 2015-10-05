@@ -1,0 +1,28 @@
+.Dd $Mdocdate: October 5 2015 $
+.Dt INITRD 7
+.Os
+.Sh NAME
+.Nm initrd
+.Nd initialization ramdisk
+.Sh SYNOPSIS
+.Pa /boot/sortix.initrd
+.Sh DESCRIPTION
+.Pa /boot/sortix.initrd
+is a achieve of a minimal userland loaded by the bootloader and passed to the
+.Xr kernel 7
+that extracts it into the initial kernel memory root filesystem.  The kernel
+invokes the
+.Xr init 8
+extracted from the initrd as
+.Pa /bin/init .
+.Pp
+The initrd is in the custom format made by
+.Xr mkinitrd 8
+and can be viewed with
+.Xr initrdfs 8 .
+.Sh SEE ALSO
+.Xr initrd 7 ,
+.Xr kernel 7 ,
+.Xr init 8 ,
+.Xr initrdfs 8 ,
+.Xr mkinitrd 8

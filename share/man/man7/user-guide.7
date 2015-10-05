@@ -1,0 +1,115 @@
+.Dd $Mdocdate: December 28 2015 $
+.Dt USER-GUIDE 7
+.Os
+.Sh NAME
+.Nm user-guide
+.Nd basic system usage and overview
+.Sh DESCRIPTION
+Sortix is a small self-hosting Unix-like operating system developed since 2011.
+This document covers matters relevant to new users from other Unix-like
+operating systems.
+.Ss Introduction
+You will be presented a with standard Unix command line environment upon booting
+the live environment.
+.Ss Shutdown
+.Xr init 8
+spawns a session after boot.  This is a root shell if booted in
+single-user mode.
+.Pp
+To power off from a single-user boot root shell, run
+.Sy exit 0
+in the shell. To reboot, run
+.Sy exit 1
+in the shell.
+.Ss Keyboard Layout
+The kernel has a default US keyboard layout compiled into it.
+.Pp
+You can change the current keyboard layout using
+.Xr chkblayout 1 .
+It loads the requested keyboard layout with the requested name from
+.Pa /share/kblayout .
+For instance to load a Danish keyboard layout:
+.Pp
+.Dl $ chkblayout dk
+.Pp
+The system has basic unicode capabilities but the kernel console font is limited
+to characters in codepage 437.
+.Ss Graphics
+The bootloader prepares an appropriate video mode to the best of its abilities.
+If you have a supported graphics card:
+.Pp
+.Bl -bullet -compact
+.It
+.Xr bga 4 -
+Bochs Graphics Adapter found in virtual machines.
+.El
+.Pp
+Then you can run
+.Xr chvideomode 1
+to change the video mode after boot.
+.Pp
+.Dl $ chvideomode
+.Ss Manual
+The system manual can be viewed with the
+.Xr man 1
+program.  Sortix is currently in the process of being documented and many manual
+pages are missing.  The current priority is to document areas specific to Sortix
+and assume standard knowledge from other operating system.
+.Ss Editor
+.Xr editor 1
+is the standard text file editor.
+.Ss Games
+The base system comes with games such as
+.Xr asteroids 6 .
+Additional third party games may be installed through ports.
+.Ss Filesystem Hierarchy
+The filesystem hierarchy is described in
+.Xr hier 7 .
+.Ss Memory Usage
+The
+.Xr memstat 1
+command shows the current memory usage.
+.Ss Third Party Software
+Releases come with useful third party software installed. The
+.Pa /tix/installed.list
+file lists all currently installed ports.
+.Ss Source Code
+Releases come full with the system source code in
+.Pa /src
+along with the tools to build it and develop it.  The build
+process is covered in
+.Xr development 7 .
+.Ss Mounting
+You can mount ext2 partitions using
+.Xr extfs 8
+and unmount them with
+.Xr unmount 8 :
+.Pp
+.Dl $ extfs /dev/ahci0p1 /mnt
+.Dl $ unmount /mnt
+.Pp
+Beware that
+.Xr init 8
+is unaware of manual point points and powering off will not gracefully unmount.
+The
+.Xr extfs 8
+driver only supports the
+.Sy large_file
+and
+.Sy filetype
+ext2 extensions.  You can make a compatible filesystem with:
+.Pp
+.Dl $ mkfs.ext2 -O none,large_file,filetype
+.Ss Networking
+Sortix does not have networking at this time.  Unix sockets have a basic
+implementation incapable of advanced features.  The standard library and
+kernel provides stubs for many network interfaces.
+.Ss Development
+The system is self-hosting and is capable of building itself as described in
+.Xr development 7 .
+Ports are cross-compiled as described in
+.Xr cross-development 7 ,
+but it is becoming feasible to build a large number of them natively.
+.Sh SEE ALSO
+.Xr cross-development 7 ,
+.Xr development 7

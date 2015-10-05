@@ -1,0 +1,43 @@
+.Dd $Mdocdate: October 5 2015 $
+.Dt KBLAYOUT 5
+.Os
+.Sh NAME
+.Nm kblayout
+.Nd initial keyboard layout
+.Sh SYNOPSIS
+.Nm /etc/kblayout
+.Sh DESCRIPTION
+The
+.Nm kblayout
+file is read on boot by
+.Xr init 8
+and names a file in
+.Pa /share/kblayout
+that is loaded and set as the keyboard layout.  The default kernel US keyboard
+layout is retained if the file is missing.
+.Pp
+The kernel translates the raw keyboard scancodes into unicode codepoints using
+the keyboard layout table associated with the terminal.  Keyboard layout
+tables are compiled from a textual description with
+.Xr kblayout-compiler 1
+into compressed binary tables.
+.Sh FORMAT
+The file must contain a filename of
+.Pa /share/kblayout
+on a single line.
+.Sh FILES
+.Bl -tag -width "/share/kblayout" -compact
+.It Pa /etc/kblayout
+Name of initial keyboard layout.
+.It Pa /share/kblayout
+Keyboard layouts.
+.El
+.Sh EXAMPLES
+.Bd -literal
+dk
+.Ed
+.Sh SEE ALSO
+.Xr chkblayout 1 ,
+.Xr kblayout-compiler 1 ,
+.Xr tcsetblob 2 ,
+.Xr init 8

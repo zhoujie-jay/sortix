@@ -5,11 +5,9 @@ include ../build-aux/dirs.mak
 
 DOCUMENTS:=\
 cross-compilation-sins \
-cross-development \
 obsolete-stuff \
 porting-guide \
 posix-divergence \
-user-guide \
 welcome \
 
 all: $(BINARIES)

@@ -1,0 +1,40 @@
+.Dd $Mdocdate: October 5 2015 $
+.Dt KERNEL 7
+.Os
+.Sh NAME
+.Nm kernel
+.Nd operating system kernel
+.Sh SYNOPSIS
+.Pa /boot/sortix.bin
+.Op Fl \-init Ns "=" Ns Ar init-command-line
+.Sh DESCRIPTION
+.Pa /boot/sortix.bin
+is the operating system
+.Nm kernel .
+It initializes and manages the hardware to provide a multitasking computing
+environment. The kernel is a
+.Xr multiboot 7
+compatible executable loaded by the bootloader along with a companion
+.Xr initrd 7
+that contains a userland.
+.Pp
+The kernel extracts the initrd into the initial kernel memory root filesystem
+and executes
+.Xr init 8
+as
+.Pa /bin/init .
+The computer is powered off if this process exits 0, rebooted if it exits 1,
+halted if it exits 2, and paniced otherwise.
+.Pp
+The options are as follows:
+.Bl -tag -width "12345678"
+.It Fl \-init Ns "=" Ns Ar init-command-line
+The
+.Ar init-command-line
+argument is split into tokens and used as the command line to invoke the
+specified
+.Xr init 8 .
+.El
+.Sh SEE ALSO
+.Xr initrd 7 ,
+.Xr init 8

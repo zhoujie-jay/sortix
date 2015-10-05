@@ -1,0 +1,51 @@
+.Dd $Mdocdate: January 8 2016 $
+.Dt HIER 7
+.Os
+.Sh NAME
+.Nm hier
+.Nd layout of filesystems
+.Sh DESCRIPTION
+The filesystem hierarchy is as follows:
+.Bl -tag -width "12345678"
+.It Pa /
+Root directory.
+.It Pa /bin
+Programs.
+.It Pa /boot
+Boot programs,
+.Xr kernel 7 ,
+.Xr initrd 7 ,
+bootloader.
+.It Pa /dev
+Devices.
+.It Pa /etc
+System-wide configuration.
+.It Pa /home
+User directories.
+.It Pa /include
+Development headers.
+.It Pa /lib
+Development libraries.
+.It Pa /libexec
+Non-user programs.
+.It Pa /mnt
+User mountpoints.
+.It Pa /root
+Directory of the root user.
+.It Pa /sbin
+System programs.
+.It Pa /share
+Architecture independent files.
+.It Pa /src
+System source code.
+.It Pa /tix
+Package management
+.It Pa /tmp
+Temporary files.
+.It Pa /usr
+Symlink to the current directory.
+.It Pa /var
+Various files.
+.El
+.Sh SEE ALSO
+.Xr user-guide 7

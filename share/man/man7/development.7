@@ -1,0 +1,258 @@
+.Dd $Mdocdate: December 29 2015 $
+.Dt DEVELOPMENT 7
+.Os
+.Sh NAME
+.Nm development
+.Nd operating system development instructions
+.Sh SYNOPSIS
+.Pa /src
+.Sh DESCRIPTION
+Releases come with the system source code in
+.Pa /src .
+It can be modified, compiled and installed on the current system.
+The source code is built with a
+.Xr make 1
+build system.  The source code can be located in any location, if so, simply
+substitute
+.Pa /src
+with the real location.  These instructions only apply to building the operating
+system from within itself, those building it from another operating system needs
+to follow
+.Xr cross-development 7
+instead.
+.Pp
+If you are building a new version of the operation system where build tools have
+been added or changed, you first need to install the new tools.  This is not
+needed when building the matching release.  To do so, run as root:
+.Bd -literal
+    cd /src
+    make distclean            # fully clean build directory
+    make install-build-tools  # install new tools
+    make clean-build-tools    # clean for real build below
+.Ed
+.Pp
+To build the base operating system and upgrade the current
+system, run as root:
+.Bd -literal
+    cd /src
+    make            # build new operating system in /src/sysroot
+    make sysmerge   # upgrade current operating system with /src/sysroot
+.Ed
+.Pp
+The build system creates a minimal root filesystem structure in the
+.Pa /src/sysroot
+and builds each operating system component in turn, installing them into the
+sysroot. If the source code for ports are placed in
+.Pa /src/ports
+then they are automatically built as well.  The result is a minimal system that
+can be turned into working system by adding important configuration such as
+.Xr passwd 5 .
+.Pp
+The
+.Sy sysmerge
+make target ensures a system is built in
+.Pa /src/sysroot
+and then uses it to replace the current operating system.  It ignores
+configuration files and other things that could cause conflicts when merging
+with an existing system.  The new user-space is running on completition, though
+existing processes will be running the old programs. Likewise a reboot is needed
+to run the new kernel.
+.Ss Root Makefile
+The
+.Pa /src/Makefile
+handles the high level build of the operating system.  The important targets
+are:
+.Bl -tag -width "12345678"
+.It Sy all
+(default) Build each component in turn and install them into the sysroot.
+.It Sy build-tools
+Make all build tools.
+.It Sy clean
+Clean the component directories and the port source code.
+.Sy ( clean-core, clean-ports )
+.It Sy clean-build-tools
+Clean the directories of all build tools.
+.It Sy distclean
+Run every clean target such that the source code is ready for distribution.
+.Sy ( clean-builds, clean-core, clean-ports, clean-release, clean-repository, clean-sysroot )
+.It Sy install-build-tools
+Install all build tools after making them.
+.It Sy iso
+Create a release iso in the
+.Pa /src/builds
+directory after making
+.Sy all .
+.It Sy mostlyclean
+Clean everything except binary packages.
+.Sy ( clean-builds, clean-core, clean-ports, clean-release, clean-sysroot )
+.It Sy release
+Make
+.Sy iso
+and construct release directory tree in
+.Pa /src/release
+suitable for online publishing.
+.It Sy sortix.iso
+Make
+.Sy iso
+and place it in the current directory as
+.Pa sortix.iso .
+.It Sy sysmerge
+Upgrade the current operating system using the sysroot after making the
+.Sy all
+target.
+.It Sy sysroot-base-headers
+Create the sysroot and install only the headers of the standard library and
+kernel into it.  This is useful when bootstrapping the runtime libraries of the
+compiler that need to know about libc prior to building libc.
+.El
+.Pp
+The important environment variables influencing the Makefile are:
+.Bl -tag -width "12345678"
+.It Ev BUILD
+The platform of the current operating system.  This defaults to the current machine
+and operating system.
+.It Ev HOST
+Specifies platform on which the compiled code will run. This defaults to the
+current machine and operating system.  This is used when cross-compiling the
+operating system.  When cross-compiling the operating system, it must be set to
+one of
+.Sy i486-sortix
+and
+.Sy x86_64-sortix .
+This must be unset when building the build tools as they run on the current
+operating system.  The compiler tools are prefixed with this variable if it does
+not match
+.Ev BUILD.
+.It Ev OPTLEVEL
+Specifies compiler optimization options that gets added to
+.Ev CFLAGS
+and
+.Ev CXXFLAGS .
+.El
+.Ss Components
+The operating systems components, such as libc and the kernel, each have their
+own directory by that name. It contains a makefile that can build and install
+that component.  This allows building and installing only that component onto
+the current operating system.
+.Pp
+For instance, to build and install libc, run as root:
+.Bd -literal
+    cd /src/libc
+    make
+    make install
+.Ed
+.Pp
+System libraries are statically linked and you will have to relink programs with
+the new library for changes to take effect.  Building the whole operating system
+from the root makefile ensures components are built in the right order such that
+all programs use fresh libraries.
+The root makefile invokes component makefiles with
+.Ev SYSROOT
+set to
+.Pa /src/sysroot
+to force the compiler to locate files there.  Likewise when installing, it sets
+.Ev DESTDIR
+to
+.Pa /src/sysroot
+to make it install files there.
+.Ss Directories
+In addition to the directories for each operating system component, there are
+these special directories:
+.Bl -tag -width "12345678"
+.It Pa /src/ports
+If this directory exists, each subdirectory can contain the source code for a
+port that gets built along with the rest of the system.
+.It Pa /src/release
+The
+.Sy release
+root makefile target creates this directory and populates it with a directory
+structure suitable for online publishing of a release.
+.It Pa /src/repository
+If ports are present, this directory is made when binary packages are built and
+they are stored here.  This works as a cache so ports don't have to be rebuilt
+every time the operating system is.  Packages are also copied from here rather
+than the sysroot when making releases.
+.It Pa /src/sysroot
+This directory is made when building the operating system and the freshly made
+files are installed here.  The build system uses this as the system root which
+forces the compiler to look here for headers and libraries.  This ensures a
+clean bootstrap where files from the current operating system do not leak into
+the new system.
+.It Pa /src/sysroot-overlay
+If this directory exists, it is added to the initrd of the produced iso and can
+contain additional system files.
+.El
+.Ss Build Tools
+Some components are used to build the source code and must match the versions
+in the source code being built.  These are currently:
+.Pp
+.Bl -bullet -compact
+.It
+carray
+.It
+kblayout-compiler
+.It
+mkinitrd
+.It
+tix
+.El
+.Pp
+If the currently installed versions of those tools are older than the ones in
+the source code, you must update them.  The
+.Sy clean-build-tools
+root makefile target cleans the applicable directories, the
+.Sy build-tools
+root makefile target builds them from the source code, and the
+.Sy install-build-tools
+root makefile target installs the new version.  You must clean the compiled
+files from the source code afterwards because the compiled tools are intended to
+run on the current system, and have not been built properly using
+.Pa /src/sysroot .
+.Ss Ports
+You can place the source code for ports in
+.Xr srctix 7
+format (has a
+.Xr tixbuildinfo 7
+file) in the
+.Pa /src/ports
+directory and they will get built automatically when and installed into the
+sysroot when building the whole operating system.  Installable binary packages
+are created in the
+.Pa /src/repository/$HOST
+directory using
+.Xr tix-build 8
+directory and can be installed with
+.Xr tix-install 8 .
+If an existing binary package exists in the repository, it is used instead of
+the building the port again.
+.Pp
+Ports are currently made using
+.Xr cross-development 7
+as not all ports can be built natively yet.
+.Pp
+The ports system is described in detail in
+.Xr porting-guide 7 .
+.Ss Releases
+CD-ROM release of the operating system can be built with the
+.Sy iso
+root makefile target.  This will build the whole operating system, if not done
+already, and produce a bootable iso for the current architecture in the
+.Pa /src/builds
+directory.  The
+.Sy sortix.iso
+root makefile target will do the above and place a
+.Pa sortix.iso
+file in the current directory.
+.Pp
+The
+.Sy release
+root makefile target will run the
+.Sy iso
+target and prepare a
+.Pa /src/release
+directory with a directory structure and miscellaneous files suitable for a
+formal online release.
+.Sh SEE ALSO
+.Xr make 1 ,
+.Xr cross-development 7 ,
+.Xr porting-guide 7
