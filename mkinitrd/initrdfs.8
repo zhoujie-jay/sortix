@@ -1,0 +1,57 @@
+.Dd $Mdocdate: October 7 2015 $
+.Dt INITRDFS 8
+.Os
+.Sh NAME
+.Nm initrdfs
+.Nd view initialization ramdisk
+.Sh SYNOPSIS
+.Nm initrdfs
+.Op Fl \-check
+.Ar initrd
+.Oo
+ls
+.Op Fl a
+.Ar path
+|
+cat
+.Ar path
+.Oc
+.Sh DESCRIPTION
+.Nm
+opens a
+.Xr initrd 7
+made with
+.Xr mkinitrd 8
+and lets you view the stored directories and files.
+.Pp
+The options are as follows:
+.Bl -tag -width "12345678"
+.It Fl a
+.Sy ( ls )
+Include directory entries whose names begin with a
+dot
+.Pq Sq \&. .
+.It Fl \-check
+Exit unsucessfully if the checksum is invalid.
+.El
+.Pp
+.Nm
+supports these commands:
+.Bl -tag -width "cat"
+.It Sy ls
+List the directory
+.Pa path .
+.It Sy cat
+Show the contents of the file
+.Pa path .
+.El
+.Sh EXIT STATUS
+.Nm
+will exit 0 on success and non-zero otherwise.
+.Sh SEE ALSO
+.Xr initrd 7 ,
+.Xr mkinitrd 8
+.Sh BUGS
+.Nm
+is severely feature limited and doesn't actually let you extract an initrd or
+view all the contained meta information.  It's also not a filesystem driver.

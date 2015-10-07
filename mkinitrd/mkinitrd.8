@@ -1,0 +1,119 @@
+.Dd $Mdocdate: October 7 2015 $
+.Dt MKINITRD 8
+.Os
+.Sh NAME
+.Nm mkinitrd
+.Nd make initialization ramdisk
+.Sh SYNOPSIS
+.Nm mkinitrd
+.Op Fl \-filter Ns "=" Ns Ar rules-file
+.Op Fl \-format Ns "=" Ns Ar format
+.Fl o Ar destination
+.Ar directory ...
+.Sh DESCRIPTION
+.Nm
+produces a
+.Xr initrd 7
+for the Sortix
+.Xr kernel 7
+at the
+.Ar destination .
+It is a checksummed achieve in the
+.In sortix/initrd.h
+format of files and directories.
+.Pp
+Every specified
+.Ar directory
+is used as a root directory and is recursively searched for files and
+directories matching the filter. If multiple directories are specified, the
+directories are merged together. In case two files with the same path conflict,
+precedence is given to the file in the root directory specified first.
+.Pp
+The resulting archieve has a crc32 checksum embedded for consistency check
+during
+.Xr kernel 7
+extraction.  Hardlinks are detected and preserved to avoid data duplication.
+Inode times are truncated to second precision due to format limitations.  Inode
+are stored with uid 0 and gid 0 of the root user.  The format is not compressed
+but can be compressed externally if it is decompressed during bootloading.
+.Pp
+.Xr initrdfs 8
+can be used to view the files produced by
+.Nm .
+.Pp
+The options are as follows:
+.Bl -tag -width "12345678"
+.It Fl \-filter Ns "=" Ns Ar rule-file
+Include only files and directories during the recursive search that matches
+rules in the
+.Ar rule-file
+in the format specified under
+.Sx FILTER RULES .
+.It Fl \-format Ns "=" Ns Ar format
+Produce the achieve in the specified format.  This is for forward compatibility
+and only
+.Sy sortix-initrd-2
+is supported.
+.Sy default
+is an alias for the newest format
+.Sy sortix-initrd-2  .
+.Nm
+will default to a newer format when one is introduced and this allows
+.Nm
+to support old callers during the transitional period.
+.It Fl o , Fl \-output Ns "=" Ns Ar destination
+Store the produced
+.Xr initrd 7
+at the specified
+.Ar destination .
+.El
+.Sh FILTER RULES
+The rule format is line based and leading whitespace is skipped. Lines starting
+with a
+.Li #
+character are ignored as comments. The first word on a line must be one of
+the following commands and the rest of the line is its parameter. Trailing
+whitespace is not ignored.
+.Bl -tag -width "12345678"
+.It Sy default Ar boolean
+The
+.Ar boolean
+parameter is either
+.Sy true
+or
+.Sy false
+and determines whether a file or directory is included if no other rules match
+it.  This defaults to
+.Sy true.
+.It Sy include Ar path
+Include the file or directory if it matches
+.Ar path .
+.It Sy exclude Ar path
+Exclude the file or directory if it matches
+.Ar path .
+.El
+.Pp
+The rules are checked on the paths relative to the root directories during the
+recursive descent.  The last rule to match a path decides whether it is
+included or not.  Directory are not descended into if they are excluded.  The
+pattern patch is simple and matches paths exactly.
+.Sh EXIT STATUS
+.Nm
+will exit 0 on success and non-zero otherwise.
+.Sh EXAMPLES
+.Bd -literal
+# By default include everything expect these directories:
+exclude /dev
+exclude /src/sysroot
+exclude /tmp
+.Ed
+.Sh SEE ALSO
+.Xr initrd 7 ,
+.Xr kernel 7 ,
+.Xr initrdfs 8 ,
+.Xr update-initrd 8
+.Sh BUGS
+The path pattern matching should be upgraded to use
+.Xr fnmatch 3 .
+The initrd format does not losslessly represent the Sortix
+.Li struct stat .

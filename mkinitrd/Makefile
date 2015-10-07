@@ -24,5 +24,8 @@ clean:
 	rm -f $(BINARIES)
 
 install: all
-	mkdir -p $(DESTDIR)$(BINDIR)
-	install $(BINARIES) $(DESTDIR)$(BINDIR)
+	mkdir -p $(DESTDIR)$(SBINDIR)
+	install $(BINARIES) $(DESTDIR)$(SBINDIR)
+	mkdir -p $(DESTDIR)$(MANDIR)/man8
+	cp initrdfs.8 $(DESTDIR)$(MANDIR)/man8/initrdfs.8
+	cp mkinitrd.8 $(DESTDIR)$(MANDIR)/man8/mkinitrd.8
