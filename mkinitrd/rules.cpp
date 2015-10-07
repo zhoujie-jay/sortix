@@ -218,7 +218,7 @@ bool InclusionRules::AddRulesFromFile(FILE* fp, FILE* err, const char* fpname)
 			bool value;
 			if ( !strcmp(parameter, "true") )
 				value = true;
-			else if ( !strcmp(parameter, "true") )
+			else if ( !strcmp(parameter, "false") )
 				value = false;
 			else
 			{
