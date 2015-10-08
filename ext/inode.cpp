@@ -372,6 +372,8 @@ void Inode::Truncate(uint64_t new_size)
 
 	for ( uint64_t i = new_num_blocks; i < old_num_blocks && i < 12; i++ )
 	{
+		if ( !data->i_block[i] )
+			continue;
 		filesystem->FreeBlock(data->i_block[i]);
 		data->i_block[i] = 0;
 	}
