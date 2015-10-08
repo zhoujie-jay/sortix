@@ -388,6 +388,9 @@ interrupt_handler_prepare:
 	movq %rsp, %rdi
 	movq %rsp, %rbx
 	andq $0xFFFFFFFFFFFFFFF0, %rsp
+.global fake_interrupt
+.type fake_interrupt, @function
+fake_interrupt:
 	call interrupt_handler
 	movq %rbx, %rsp
 

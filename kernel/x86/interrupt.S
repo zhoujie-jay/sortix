@@ -385,6 +385,9 @@ fixup_relocate_stack_complete:
 	movl %esp, %ebx
 	subl $4, %esp
 	andl $0xFFFFFFF0, %esp
+.global fake_interrupt
+.type fake_interrupt, @function
+fake_interrupt:
 	movl %ebx, (%esp)
 	call interrupt_handler
 	movl %ebx, %esp

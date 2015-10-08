@@ -175,6 +175,86 @@ void LoadInterruptedContext(struct interrupt_context* intctx,
 #endif
 }
 
+extern "C" void fake_interrupt(void);
+
+// Pretend a particular interrupt arrived on another thread's stack. This
+// assumes we're _not_ on current_thread's stack right now. This sets up the
+// interrupt context such that the interrupt handler runs in that thread.
+// The interrupt handler runs with premption enabled. This is used to deliver
+// signals during context switches, as the signal handler needs to have
+// preemption enabled.
+static void FakeInterruptedContext(struct interrupt_context* intctx, int int_no)
+{
+#if defined(__i386__)
+	uintptr_t stack = current_thread->kernelstackpos +
+	                  current_thread->kernelstacksize;
+	stack -= sizeof(struct interrupt_context);
+	struct interrupt_context* fakectx = (struct interrupt_context*) stack;
+	memcpy(fakectx, intctx, sizeof(struct interrupt_context));
+	fakectx->int_no = int_no;
+	fakectx->err_code = 0;
+	stack -= 4;
+	stack &= 0xFFFFFFF0;
+	intctx->signal_pending = intctx->signal_pending;
+	intctx->kerrno = 0;
+	intctx->cr2 = 0;
+	intctx->ds = KDS | KRPL;
+	intctx->edi = intctx->edi;
+	intctx->esi = intctx->esi;
+	intctx->ebp = intctx->signal_pending;
+	intctx->not_esp = intctx->not_esp;
+	intctx->ebx = (uintptr_t) fakectx;
+	intctx->edx = intctx->edx;
+	intctx->ecx = intctx->ecx;
+	intctx->eax = intctx->eax;
+	intctx->int_no = intctx->int_no;
+	intctx->err_code = intctx->err_code;
+	intctx->eip = (uintptr_t) fake_interrupt;
+	intctx->cs = KCS | KRPL;
+	intctx->eflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+	intctx->esp = stack;
+	intctx->ss = KDS | KRPL;
+#elif defined(__x86_64__)
+	uintptr_t stack = current_thread->kernelstackpos +
+	                  current_thread->kernelstacksize;
+	stack -= sizeof(struct interrupt_context);
+	struct interrupt_context* fakectx = (struct interrupt_context*) stack;
+	memcpy(fakectx, intctx, sizeof(struct interrupt_context));
+	fakectx->int_no = int_no;
+	fakectx->err_code = 0;
+	stack &= 0xFFFFFFFFFFFFFFF0;
+	intctx->signal_pending = intctx->signal_pending;
+	intctx->kerrno = 0;
+	intctx->cr2 = 0;
+	intctx->ds = KDS | KRPL;
+	intctx->rdi = (uintptr_t) fakectx;
+	intctx->rsi = intctx->rsi;
+	intctx->rbp = intctx->signal_pending;
+	intctx->not_rsp = intctx->not_rsp;
+	intctx->rbx = (uintptr_t) fakectx;
+	intctx->rdx = intctx->rdx;
+	intctx->rcx = intctx->rcx;
+	intctx->rax = intctx->rax;
+	intctx->r8 = intctx->r8;
+	intctx->r9 = intctx->r9;
+	intctx->r10 = intctx->r10;
+	intctx->r11 = intctx->r11;
+	intctx->r12 = intctx->r12;
+	intctx->r13 = intctx->r13;
+	intctx->r14 = intctx->r14;
+	intctx->r15 = intctx->r15;
+	intctx->int_no = intctx->int_no;
+	intctx->err_code = intctx->err_code;
+	intctx->rip = (uintptr_t) fake_interrupt;
+	intctx->cs = KCS | KRPL;
+	intctx->rflags = FLAGS_RESERVED1 | FLAGS_INTERRUPT | FLAGS_ID;
+	intctx->rsp = stack;
+	intctx->ss = KDS | KRPL;
+#else
+#warning "You need to implement faking an interrupt"
+#endif
+}
+
 static
 void SwitchThread(struct interrupt_context* intctx, Thread* prev, Thread* next)
 {
@@ -237,12 +317,25 @@ static Thread* PopNextThread(bool yielded)
 
 static void RealSwitch(struct interrupt_context* intctx, bool yielded)
 {
-	SwitchThread(intctx, CurrentThread(), PopNextThread(yielded));
-
+	Thread* old_thread = CurrentThread();
+	Thread* new_thread = PopNextThread(yielded);
+	SwitchThread(intctx, old_thread, new_thread);
 	if ( intctx->signal_pending && InUserspace(intctx) )
 	{
-		Interrupt::Enable();
-		Signal::DispatchHandler(intctx, NULL);
+		// Become the thread for real and run the signal handler.
+		if ( old_thread == new_thread )
+		{
+			// We're already this thread, so run the signal handler.
+			Interrupt::Enable();
+			Signal::DispatchHandler(intctx, NULL);
+		}
+		else
+		{
+			// We need to transfer execution to the correct stack. We know the
+			// the thread is in user-space and isn't using its kernel stack, and
+			// we know we're not using the stack right now.
+			FakeInterruptedContext(intctx, 130);
+		}
 	}
 }
 
