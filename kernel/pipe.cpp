@@ -59,7 +59,6 @@ public:
 	~PipeChannel();
 	void CloseReading();
 	void CloseWriting();
-	void PerhapsShutdown();
 	bool GetSIGPIPEDelivery();
 	void SetSIGPIPEDelivery(bool deliver_sigpipe);
 	size_t ReadSize();
@@ -90,6 +89,7 @@ private:
 	size_t pretended_read_buffer_size;
 	size_t pledged_read;
 	size_t pledged_write;
+	unsigned long closers;
 	bool anyreading;
 	bool anywriting;
 	bool is_sigpipe_enabled;
@@ -110,6 +110,7 @@ PipeChannel::PipeChannel(uint8_t* buffer, size_t buffersize)
 	receiver_system_tid = 0;
 	pledged_read = 0;
 	pledged_write = 0;
+	closers = 0;
 }
 
 PipeChannel::~PipeChannel()
@@ -119,26 +120,27 @@ PipeChannel::~PipeChannel()
 
 void PipeChannel::CloseReading()
 {
+	kthread_mutex_lock(&pipelock);
 	anyreading = false;
 	kthread_cond_broadcast(&writecond);
-	PerhapsShutdown();
+	read_poll_channel.Signal(ReadPollEventStatus());
+	write_poll_channel.Signal(WritePollEventStatus());
+	kthread_mutex_unlock(&pipelock);
+	unsigned long count = InterlockedIncrement(&closers).n;
+	if ( count == 2 )
+		delete this;
 }
 
 void PipeChannel::CloseWriting()
 {
+	kthread_mutex_lock(&pipelock);
 	anywriting = false;
 	kthread_cond_broadcast(&readcond);
-	PerhapsShutdown();
-}
-
-void PipeChannel::PerhapsShutdown()
-{
-	kthread_mutex_lock(&pipelock);
 	read_poll_channel.Signal(ReadPollEventStatus());
 	write_poll_channel.Signal(WritePollEventStatus());
-	bool deleteme = !anyreading & !anywriting;
 	kthread_mutex_unlock(&pipelock);
-	if ( deleteme )
+	unsigned long count = InterlockedIncrement(&closers).n;
+	if ( count == 2 )
 		delete this;
 }
 
@@ -404,6 +406,7 @@ void PipeEndpoint::Disconnect()
 		channel->CloseReading();
 	else
 		channel->CloseWriting();
+	channel = NULL;
 	reading = false;
 }
 
