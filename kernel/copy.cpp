@@ -46,7 +46,7 @@
 
 namespace Sortix {
 
-static bool IsInProgressAddressSpace(Process* process)
+static bool IsInProcessAddressSpace(Process* process)
 {
 	addr_t current_address_space;
 #if defined(__i386__)
@@ -80,7 +80,7 @@ bool CopyToUser(void* userdst_ptr, const void* ksrc_ptr, size_t count)
 	uintptr_t ksrc = (uintptr_t) ksrc_ptr;
 	bool result = true;
 	Process* process = CurrentProcess();
-	assert(IsInProgressAddressSpace(process));
+	assert(IsInProcessAddressSpace(process));
 	kthread_mutex_lock(&process->segment_lock);
 	while ( count )
 	{
@@ -110,7 +110,7 @@ bool CopyFromUser(void* kdst_ptr, const void* usersrc_ptr, size_t count)
 	uintptr_t usersrc = (uintptr_t) usersrc_ptr;
 	bool result = true;
 	Process* process = CurrentProcess();
-	assert(IsInProgressAddressSpace(process));
+	assert(IsInProcessAddressSpace(process));
 	kthread_mutex_lock(&process->segment_lock);
 	while ( count )
 	{
@@ -158,7 +158,7 @@ bool ZeroUser(void* userdst_ptr, size_t count)
 	uintptr_t userdst = (uintptr_t) userdst_ptr;
 	bool result = true;
 	Process* process = CurrentProcess();
-	assert(IsInProgressAddressSpace(process));
+	assert(IsInProcessAddressSpace(process));
 	kthread_mutex_lock(&process->segment_lock);
 	while ( count )
 	{
@@ -189,10 +189,11 @@ char* GetStringFromUser(const char* usersrc_str)
 	uintptr_t usersrc = (uintptr_t) usersrc_str;
 	size_t result_length = 0;
 	Process* process = CurrentProcess();
-	assert(IsInProgressAddressSpace(process));
+	assert(IsInProcessAddressSpace(process));
 
 	kthread_mutex_lock(&process->segment_lock);
-	while ( true )
+	bool done = false;
+	while ( !done )
 	{
 		uintptr_t current_at = usersrc + result_length;
 		struct segment* segment = FindSegment(process, current_at);
@@ -208,12 +209,12 @@ char* GetStringFromUser(const char* usersrc_str)
 		{
 			char c = str[length];
 			if ( c == '\0' )
+			{
+				done = true;
 				break;
-			length++;
+			}
 		}
 		result_length += length;
-		if ( length < segment_available )
-			break;
 	}
 
 	char* result = new char[result_length + 1];
