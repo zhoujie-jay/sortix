@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -77,6 +77,27 @@ int heap_get_paranoia(void);
 #define assert(x) do { ((void) 0); } while ( 0 )
 #define HEAP_NO_ASSERT
 #endif
+#endif
+
+#if !defined(HEAP_GUARD_DEBUG) && \
+    defined(__is_sortix_kernel) && defined(HEAP_GUARD_DEBUG_KERNEL)
+#define HEAP_GUARD_DEBUG
+#endif
+
+#if !defined(MALLOC_GUARD_DEBUG) && \
+    __STDC_HOSTED__ && defined(HEAP_GUARD_DEBUG_USERLAND)
+#define HEAP_GUARD_DEBUG
+#endif
+
+#if defined(HEAP_GUARD_DEBUG) && !defined(__is_sortix_kernel)
+struct heap_alloc
+{
+	uintptr_t from;
+	size_t size;
+};
+#define HEAP_PAGE_SIZE 4096UL
+#define HEAP_ALIGN_PAGEDOWN(x) ((x) & ~(HEAP_PAGE_SIZE - 1))
+#define HEAP_ALIGN_PAGEUP(x) (-(-(x) & ~(HEAP_PAGE_SIZE - 1)))
 #endif
 
 /* A magic value to identify a heap part edge. The value is selected such

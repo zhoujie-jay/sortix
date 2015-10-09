@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -28,15 +28,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if __is_sortix_kernel
-#include <sortix/kernel/kernel.h>
-#endif
-
 #if defined(HEAP_NO_ASSERT)
 #define __heap_verify() ((void) 0)
 #undef assert
 #define assert(x) do { ((void) 0); } while ( 0 )
 #endif
+
+#if !defined(HEAP_GUARD_DEBUG)
 
 extern "C" void* malloc(size_t original_size)
 {
@@ -102,3 +100,55 @@ extern "C" void* malloc(size_t original_size)
 	// Return the inner data associated with the chunk to the caller.
 	return heap_chunk_to_data(result_chunk);
 }
+
+#else
+
+#if defined(__is_sortix_kernel)
+#include <sortix/mman.h>
+#include <sortix/kernel/addralloc.h>
+#include <sortix/kernel/memorymanagement.h>
+#else
+#include <sys/mman.h>
+#endif
+
+extern "C" void* malloc(size_t original_size)
+{
+	if ( !original_size )
+		original_size = 1;
+	size_t size = -(-original_size & ~15UL);
+	size_t needed = 16 + size;
+#if defined(__is_sortix_kernel)
+	using namespace Sortix;
+	needed = Page::AlignUp(needed);
+	size_t virtsize = needed + Page::Size();
+	addralloc_t addralloc;
+	if ( !AllocateKernelAddress(&addralloc, virtsize) )
+		return NULL;
+	if ( !Memory::MapRange(addralloc.from, addralloc.size - Page::Size(),
+	                       PROT_KREAD | PROT_KWRITE, PAGE_USAGE_KERNEL_HEAP) )
+	{
+		FreeKernelAddress(&addralloc);
+		return NULL;
+	}
+	Memory::Flush();
+	addralloc_t* addralloc_ptr = (addralloc_t*) (addralloc.from);
+	*addralloc_ptr = addralloc;
+#else
+	needed = HEAP_ALIGN_PAGEUP(needed);
+	size_t virtsize = needed + HEAP_PAGE_SIZE;
+	void* from = mmap(NULL, virtsize, PROT_READ | PROT_WRITE,
+	                  MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	if ( from == MAP_FAILED )
+		return NULL;
+	void* guard = (char*) from + needed;
+	if ( mprotect(guard, HEAP_PAGE_SIZE, PROT_NONE) < 0 )
+		return munmap(from, virtsize), (void*) NULL;
+	struct heap_alloc* addralloc_ptr = (struct heap_alloc*) from;
+	addralloc_ptr->from = (uintptr_t) from;
+	addralloc_ptr->size = virtsize;
+#endif
+	size_t offset = needed - size;
+	return (void*) (addralloc_ptr->from + offset);
+}
+
+#endif

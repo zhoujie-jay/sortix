@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -28,15 +28,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if __is_sortix_kernel
-#include <sortix/kernel/kernel.h>
-#endif
-
 #if defined(HEAP_NO_ASSERT)
 #define __heap_verify() ((void) 0)
 #undef assert
 #define assert(x) do { ((void) 0); } while ( 0 )
 #endif
+
+#if !defined(HEAP_GUARD_DEBUG)
 
 extern "C" void* realloc(void* ptr, size_t requested_size)
 {
@@ -125,3 +123,41 @@ extern "C" void* realloc(void* ptr, size_t requested_size)
 
 	return result;
 }
+
+#else
+
+#if defined(__is_sortix_kernel)
+#include <sortix/kernel/addralloc.h>
+#include <sortix/kernel/memorymanagement.h>
+#endif
+
+extern "C" void* realloc(void* ptr, size_t requested_size)
+{
+	if ( !ptr )
+		return malloc(requested_size);
+
+#if defined(__is_sortix_kernel)
+	using namespace Sortix;
+	addralloc_t* alloc_ptr =
+		(addralloc_t*) Page::AlignDown((uintptr_t) ptr - 16);
+	assert(alloc_ptr->from == (uintptr_t) alloc_ptr);
+	addralloc_t alloc = *alloc_ptr;
+	size_t size = (alloc.from + alloc.size - Page::Size()) - (uintptr_t) ptr;
+#else
+	struct heap_alloc* alloc_ptr =
+		(struct heap_alloc*) HEAP_ALIGN_PAGEDOWN((uintptr_t) ptr - 16);
+	assert(alloc_ptr->from == (uintptr_t) alloc_ptr);
+	struct heap_alloc alloc = *alloc_ptr;
+	size_t size = (alloc.from + alloc.size - HEAP_PAGE_SIZE) - (uintptr_t) ptr;
+#endif
+	if ( requested_size <= size )
+		return ptr;
+	void* replacement = malloc(requested_size);
+	if ( !replacement )
+		return NULL;
+	memcpy(replacement, ptr, size);
+	free(ptr);
+	return replacement;
+}
+
+#endif

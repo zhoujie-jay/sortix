@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -25,15 +25,13 @@
 #include <malloc.h>
 #include <stdlib.h>
 
-#if __is_sortix_kernel
-#include <sortix/kernel/kernel.h>
-#endif
-
 #if defined(HEAP_NO_ASSERT)
 #define __heap_verify() ((void) 0)
 #undef assert
 #define assert(x) do { ((void) 0); } while ( 0 )
 #endif
+
+#if !defined(HEAP_GUARD_DEBUG)
 
 extern "C" void free(void* addr)
 {
@@ -55,3 +53,33 @@ extern "C" void free(void* addr)
 	__heap_verify();
 	__heap_unlock();
 }
+
+#else
+
+#if defined(__is_sortix_kernel)
+#include <sortix/kernel/addralloc.h>
+#include <sortix/kernel/memorymanagement.h>
+#else
+#include <sys/mman.h>
+#endif
+
+extern "C" void free(void* addr)
+{
+	if ( !addr )
+		return;
+
+#if defined(__is_sortix_kernel)
+	using namespace Sortix;
+	addralloc_t* alloc_ptr = (addralloc_t*) Page::AlignDown((uintptr_t) addr - 16);
+	assert(alloc_ptr->from == (uintptr_t) alloc_ptr);
+	addralloc_t alloc = *alloc_ptr;
+	Memory::UnmapRange(alloc.from, alloc.size - Page::Size(), PAGE_USAGE_KERNEL_HEAP);
+	FreeKernelAddress(&alloc);
+#else
+	struct heap_alloc* alloc_ptr =
+		(struct heap_alloc*) HEAP_ALIGN_PAGEDOWN((uintptr_t) addr - 16);
+	munmap((void*) alloc_ptr->from, alloc_ptr->size);
+#endif
+}
+
+#endif
