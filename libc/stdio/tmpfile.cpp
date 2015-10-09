@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -25,15 +25,21 @@
 #include <sys/types.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 extern "C" FILE* tmpfile()
 {
-	char name[5 + sizeof(pid_t) * 3];
-	snprintf(name, sizeof(name), "/tmp/%ju", (uintmax_t) getpid());
-	FILE* ret = fopen(name, "w+");
-	if ( !ret )
-		return NULL;
-	unlink(name);
-	return ret;
+	// TODO: There is a short interval during which other processes can access
+	//       this file. Implement and use O_TMPFILE.
+	char path[] = "/tmp/tmp.XXXXXX";
+	int fd = mkstemp(path);
+	if ( fd < 0 )
+		return (FILE*) NULL;
+	if ( unlink(path) < 0 )
+		return close(fd), (FILE*) NULL;
+	FILE* fp = fdopen(fd, "r+");
+	if ( !fp )
+		return close(fd), (FILE*) NULL;
+	return fp;
 }
