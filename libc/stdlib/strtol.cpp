@@ -116,9 +116,9 @@ static bool would_multiplication_overflow(T_INT a, T_INT b)
 		T_UNSIGNED_INT b_abs = b < 0 ? - (T_UNSIGNED_INT) b : b;
 		T_UNSIGNED_INT min_abs = - (T_UNSIGNED_INT) T_INT_MIN;
 		T_UNSIGNED_INT max_abs = T_INT_MAX;
-		T_UNSIGNED_INT limit_pos = (0 <= a && 0 <= b) || (a < 0 && b < 0);
+		bool limit_pos = (0 <= a && 0 <= b) || (a < 0 && b < 0);
 		T_UNSIGNED_INT limit = limit_pos ? max_abs : min_abs;
-		T_UNSIGNED_INT max_b = a_abs / limit;
+		T_UNSIGNED_INT max_b = limit / a_abs;
 		return max_b < b_abs;
 	}
 }
