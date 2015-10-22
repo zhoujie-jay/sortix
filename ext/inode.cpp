@@ -41,6 +41,7 @@
 #include "block.h"
 #include "blockgroup.h"
 #include "device.h"
+#include "extfs.h"
 #include "filesystem.h"
 #include "inode.h"
 #include "util.h"
@@ -471,14 +472,18 @@ Inode* Inode::Open(const char* elem, int flags, mode_t mode)
 		Inode* result = filesystem->GetInode(result_inode_id);
 		if ( !result )
 			return filesystem->FreeInode(result_inode_id), (Inode*) NULL;
-		memset(result->data, 0, sizeof(*result->data));
-		result->SetMode((mode & S_SETABLE) | S_IFREG);
 		struct timespec now;
 		clock_gettime(CLOCK_REALTIME, &now);
+		result->BeginWrite();
+		memset(result->data, 0, sizeof(*result->data));
 		result->data->i_atime = now.tv_sec;
 		result->data->i_ctime = now.tv_sec;
 		result->data->i_mtime = now.tv_sec;
 		// TODO: Set all the other inode properties!
+		result->FinishWrite();
+		result->SetMode((mode & S_SETABLE) | S_IFREG);
+		result->SetUserId(request_uid);
+		result->SetGroupId(request_gid);
 		if ( !Link(elem, result, false) )
 		{
 			result->Unref();
@@ -910,15 +915,18 @@ bool Inode::Symlink(const char* elem, const char* dest)
 	Inode* result = filesystem->GetInode(result_inode_id);
 	if ( !result )
 		return filesystem->FreeInode(result_inode_id), false;
-	memset(result->data, 0, sizeof(*result->data));
-	result->SetMode((0777 & S_SETABLE) | EXT2_S_IFLNK);
-
 	struct timespec now;
 	clock_gettime(CLOCK_REALTIME, &now);
+	result->BeginWrite();
+	memset(result->data, 0, sizeof(*result->data));
 	result->data->i_atime = now.tv_sec;
 	result->data->i_ctime = now.tv_sec;
 	result->data->i_mtime = now.tv_sec;
 	// TODO: Set all the other inode properties!
+	result->FinishWrite();
+	result->SetMode((0777 & S_SETABLE) | EXT2_S_IFLNK);
+	result->SetUserId(request_uid);
+	result->SetGroupId(request_gid);
 
 	size_t dest_length = strlen(dest);
 	if ( SSIZE_MAX < dest_length )
@@ -946,8 +954,18 @@ Inode* Inode::CreateDirectory(const char* path, mode_t mode)
 	Inode* result = filesystem->GetInode(result_inode_id);
 	if ( !result )
 		return filesystem->FreeInode(result_inode_id), (Inode*) NULL;
+	struct timespec now;
+	clock_gettime(CLOCK_REALTIME, &now);
+	result->BeginWrite();
 	memset(result->data, 0, sizeof(*result->data));
+	result->data->i_atime = now.tv_sec;
+	result->data->i_ctime = now.tv_sec;
+	result->data->i_mtime = now.tv_sec;
+	// TODO: Set all the other inode properties!
+	result->FinishWrite();
 	result->SetMode((mode & S_SETABLE) | EXT2_S_IFDIR);
+	result->SetUserId(request_uid);
+	result->SetGroupId(request_gid);
 
 	// Increase the directory count statistics.
 	uint32_t group_id = (result->inode_id - 1) / filesystem->sb->s_inodes_per_group;
@@ -959,13 +977,6 @@ Inode* Inode::CreateDirectory(const char* path, mode_t mode)
 	block_group->data->bg_used_dirs_count++;
 	block_group->FinishWrite();
 	block_group->Unref();
-
-	struct timespec now;
-	clock_gettime(CLOCK_REALTIME, &now);
-	result->data->i_atime = now.tv_sec;
-	result->data->i_ctime = now.tv_sec;
-	result->data->i_mtime = now.tv_sec;
-	// TODO: Set all the other inode properties!
 
 	if ( !Link(path, result, true) )
 		return result->Unref(), (Inode*) NULL;

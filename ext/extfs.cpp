@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #if defined(__sortix__)
 #include "fsmarshall.h"
@@ -55,6 +56,9 @@ static const uint32_t EXT2_FEATURE_INCOMPAT_SUPPORTED = \
                       EXT2_FEATURE_INCOMPAT_FILETYPE;
 static const uint32_t EXT2_FEATURE_RO_COMPAT_SUPPORTED = \
                       EXT2_FEATURE_RO_COMPAT_LARGE_FILE;
+
+uid_t request_uid;
+uid_t request_gid;
 
 mode_t HostModeFromExtMode(uint32_t extmode)
 {

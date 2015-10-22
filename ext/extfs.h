@@ -23,6 +23,9 @@
 #ifndef EXTFS_H
 #define EXTFS_H
 
+extern uid_t request_uid;
+extern gid_t request_gid;
+
 class Inode;
 
 mode_t HostModeFromExtMode(uint32_t extmode);

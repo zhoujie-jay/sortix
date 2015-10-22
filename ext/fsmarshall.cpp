@@ -639,6 +639,16 @@ void HandleTCGetBlob(int chl, struct fsm_req_tcgetblob* msg, Filesystem* fs)
 
 void HandleIncomingMessage(int chl, struct fsm_msg_header* hdr, Filesystem* fs)
 {
+	request_uid = hdr->uid;
+	request_gid = hdr->gid;
+	if ( (uint16_t) request_uid != request_uid ||
+	     (uint16_t) request_gid != request_gid )
+	{
+		fprintf(stderr, "extfs: id exceeded 16-bit: uid=%ju gid=%ju\n",
+		        (uintmax_t) request_uid, (uintmax_t) request_gid);
+		RespondError(chl, EOVERFLOW);
+		return;
+	}
 	typedef void (*handler_t)(int, void*, Filesystem*);
 	handler_t handlers[FSM_MSG_NUM] = { NULL };
 	handlers[FSM_REQ_SYNC] = (handler_t) HandleSync;
@@ -666,7 +676,7 @@ void HandleIncomingMessage(int chl, struct fsm_msg_header* hdr, Filesystem* fs)
 	handlers[FSM_REQ_TCGETBLOB] = (handler_t) HandleTCGetBlob;
 	if ( FSM_MSG_NUM <= hdr->msgtype || !handlers[hdr->msgtype] )
 	{
-		fprintf(stderr, "extfs: message type %zu not supported!\n", hdr->msgtype);
+		fprintf(stderr, "extfs: message type %zu not supported\n", hdr->msgtype);
 		RespondError(chl, ENOTSUP);
 		return;
 	}

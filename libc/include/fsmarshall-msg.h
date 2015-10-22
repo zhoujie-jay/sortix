@@ -47,6 +47,8 @@ struct fsm_msg_header
 {
 	size_t msgtype;
 	size_t msgsize;
+	uid_t uid;
+	gid_t gid;
 };
 
 #define FSM_RESP_ERROR 0

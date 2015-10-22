@@ -94,7 +94,7 @@ public:
 class Channel
 {
 public:
-	Channel();
+	Channel(ioctx_t* ioctx);
 	~Channel();
 
 public:
@@ -135,6 +135,10 @@ private:
 	bool kernel_closed;
 	bool user_closed;
 
+public:
+	uid_t uid;
+	gid_t gid;
+
 };
 
 class ChannelNode : public AbstractInode
@@ -159,7 +163,7 @@ public:
 	virtual ~Server();
 	void Disconnect();
 	void Unmount();
-	Channel* Connect();
+	Channel* Connect(ioctx_t* ctx);
 	Channel* Accept();
 	Ref<Inode> BootstrapNode(ino_t ino, mode_t type);
 	Ref<Inode> OpenNode(ino_t ino, mode_t type);
@@ -386,13 +390,15 @@ void ChannelDirection::RecvClose()
 // Implementation of Channel.
 //
 
-Channel::Channel()
+Channel::Channel(ioctx_t* ctx)
 {
 	kernel_lock = KTHREAD_MUTEX_INITIALIZER;
 	user_lock = KTHREAD_MUTEX_INITIALIZER;
 	destruction_lock = KTHREAD_MUTEX_INITIALIZER;
 	user_closed = false;
 	kernel_closed = false;
+	uid = ctx ? ctx->uid : 0;
+	gid = ctx ? ctx->gid : 0;
 }
 
 Channel::~Channel()
@@ -551,9 +557,9 @@ void Server::Unmount()
 	kthread_cond_signal(&connecting_cond);
 }
 
-Channel* Server::Connect()
+Channel* Server::Connect(ioctx_t* ctx)
 {
-	Channel* channel = new Channel();
+	Channel* channel = new Channel(ctx);
 	if ( !channel )
 		return NULL;
 	CurrentThread()->yield_to_tid = listener_system_tid;
@@ -651,7 +657,7 @@ Unode::Unode(Ref<Server> server, ino_t ino, mode_t type)
 	this->type = type;
 
 	// Let the remote know that the kernel is using this inode.
-	if ( Channel* channel = server->Connect() )
+	if ( Channel* channel = server->Connect(NULL) )
 	{
 		struct fsm_req_refer msg;
 		msg.ino = ino;
@@ -663,7 +669,7 @@ Unode::Unode(Ref<Server> server, ino_t ino, mode_t type)
 Unode::~Unode()
 {
 	// Let the remote know that the kernel is no longer using this inode.
-	if ( Channel* channel = server->Connect() )
+	if ( Channel* channel = server->Connect(NULL) )
 	{
 		struct fsm_req_unref msg;
 		msg.ino = ino;
@@ -678,6 +684,8 @@ bool Unode::SendMessage(Channel* channel, size_t type, void* ptr, size_t size,
 	struct fsm_msg_header hdr;
 	hdr.msgtype = type;
 	hdr.msgsize = size + extra;
+	hdr.uid = channel->uid;
+	hdr.gid = channel->gid;
 	if ( !channel->KernelSend(&kctx, &hdr, sizeof(hdr)) )
 		return false;
 	if ( !channel->KernelSend(&kctx, ptr, size) )
@@ -734,9 +742,9 @@ void Unode::unlinked()
 {
 }
 
-int Unode::sync(ioctx_t* /*ctx*/)
+int Unode::sync(ioctx_t* ctx)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -751,7 +759,7 @@ int Unode::sync(ioctx_t* /*ctx*/)
 
 int Unode::stat(ioctx_t* ctx, struct stat* st)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -769,7 +777,7 @@ int Unode::stat(ioctx_t* ctx, struct stat* st)
 
 int Unode::statvfs(ioctx_t* ctx, struct statvfs* stvfs)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -786,9 +794,9 @@ int Unode::statvfs(ioctx_t* ctx, struct statvfs* stvfs)
 	return ret;
 }
 
-int Unode::chmod(ioctx_t* /*ctx*/, mode_t mode)
+int Unode::chmod(ioctx_t* ctx, mode_t mode)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -802,9 +810,9 @@ int Unode::chmod(ioctx_t* /*ctx*/, mode_t mode)
 	return ret;
 }
 
-int Unode::chown(ioctx_t* /*ctx*/, uid_t owner, gid_t group)
+int Unode::chown(ioctx_t* ctx, uid_t owner, gid_t group)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -819,9 +827,9 @@ int Unode::chown(ioctx_t* /*ctx*/, uid_t owner, gid_t group)
 	return ret;
 }
 
-int Unode::truncate(ioctx_t* /*ctx*/, off_t length)
+int Unode::truncate(ioctx_t* ctx, off_t length)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -835,9 +843,9 @@ int Unode::truncate(ioctx_t* /*ctx*/, off_t length)
 	return ret;
 }
 
-off_t Unode::lseek(ioctx_t* /*ctx*/, off_t offset, int whence)
+off_t Unode::lseek(ioctx_t* ctx, off_t offset, int whence)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	off_t ret = -1;
@@ -855,7 +863,7 @@ off_t Unode::lseek(ioctx_t* /*ctx*/, off_t offset, int whence)
 
 ssize_t Unode::read(ioctx_t* ctx, uint8_t* buf, size_t count)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	ssize_t ret = -1;
@@ -877,7 +885,7 @@ ssize_t Unode::read(ioctx_t* ctx, uint8_t* buf, size_t count)
 
 ssize_t Unode::pread(ioctx_t* ctx, uint8_t* buf, size_t count, off_t off)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	ssize_t ret = -1;
@@ -900,7 +908,7 @@ ssize_t Unode::pread(ioctx_t* ctx, uint8_t* buf, size_t count, off_t off)
 
 ssize_t Unode::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -910,6 +918,8 @@ ssize_t Unode::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 	struct fsm_msg_header hdr;
 	hdr.msgtype = FSM_REQ_WRITE;
 	hdr.msgsize = sizeof(msg) + count;
+	hdr.uid = ctx->uid;
+	hdr.gid = ctx->gid;
 	struct fsm_resp_write resp;
 	if ( channel->KernelSend(&kctx, &hdr, sizeof(hdr)) &&
 	     channel->KernelSend(&kctx, &msg, sizeof(msg)) &&
@@ -922,7 +932,7 @@ ssize_t Unode::write(ioctx_t* ctx, const uint8_t* buf, size_t count)
 
 ssize_t Unode::pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count, off_t off)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	ssize_t ret = -1;
@@ -933,6 +943,8 @@ ssize_t Unode::pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count, off_t off)
 	struct fsm_msg_header hdr;
 	hdr.msgtype = FSM_REQ_PWRITE;
 	hdr.msgsize = sizeof(msg) + count;
+	hdr.uid = ctx->uid;
+	hdr.gid = ctx->gid;
 	struct fsm_resp_write resp;
 	if ( channel->KernelSend(&kctx, &hdr, sizeof(hdr)) &&
 	     channel->KernelSend(&kctx, &msg, sizeof(msg)) &&
@@ -943,12 +955,12 @@ ssize_t Unode::pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count, off_t off)
 	return ret;
 }
 
-int Unode::utimens(ioctx_t* /*ctx*/,
+int Unode::utimens(ioctx_t* ctx,
                    const struct timespec* atime,
                    const struct timespec* /*ctime*/,
                    const struct timespec* mtime)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -963,9 +975,9 @@ int Unode::utimens(ioctx_t* /*ctx*/,
 	return ret;
 }
 
-int Unode::isatty(ioctx_t* /*ctx*/)
+int Unode::isatty(ioctx_t* ctx)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return 0;
 	int ret = 0;
@@ -981,7 +993,7 @@ int Unode::isatty(ioctx_t* /*ctx*/)
 ssize_t Unode::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
                            size_t size, off_t start, size_t /*maxcount*/)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	ssize_t ret = -1;
@@ -1023,10 +1035,10 @@ ssize_t Unode::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 	return ret;
 }
 
-Ref<Inode> Unode::open(ioctx_t* /*ctx*/, const char* filename, int flags,
+Ref<Inode> Unode::open(ioctx_t* ctx, const char* filename, int flags,
                        mode_t mode)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return Ref<Inode>(NULL);
 	size_t filenamelen = strlen(filename);
@@ -1045,9 +1057,9 @@ Ref<Inode> Unode::open(ioctx_t* /*ctx*/, const char* filename, int flags,
 	return ret;
 }
 
-int Unode::mkdir(ioctx_t* /*ctx*/, const char* filename, mode_t mode)
+int Unode::mkdir(ioctx_t* ctx, const char* filename, mode_t mode)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	size_t filenamelen = strlen(filename);
@@ -1065,11 +1077,11 @@ int Unode::mkdir(ioctx_t* /*ctx*/, const char* filename, mode_t mode)
 	return ret;
 }
 
-int Unode::link(ioctx_t* /*ctx*/, const char* filename, Ref<Inode> node)
+int Unode::link(ioctx_t* ctx, const char* filename, Ref<Inode> node)
 {
 	if ( node->dev != this->dev )
 		return errno = EXDEV, -1;
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	size_t filenamelen = strlen(filename);
@@ -1091,10 +1103,10 @@ int Unode::link_raw(ioctx_t* /*ctx*/, const char* /*filename*/, Ref<Inode> /*nod
 	return errno = EPERM, -1;
 }
 
-int Unode::unlink(ioctx_t* /*ctx*/, const char* filename)
+int Unode::unlink(ioctx_t* ctx, const char* filename)
 {
 	// TODO: Make sure the target is no longer used!
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	size_t filenamelen = strlen(filename);
@@ -1115,10 +1127,10 @@ int Unode::unlink_raw(ioctx_t* /*ctx*/, const char* /*filename*/)
 	return errno = EPERM, -1;
 }
 
-int Unode::rmdir(ioctx_t* /*ctx*/, const char* filename)
+int Unode::rmdir(ioctx_t* ctx, const char* filename)
 {
 	// TODO: Make sure the target is no longer used!
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	size_t filenamelen = strlen(filename);
@@ -1139,9 +1151,9 @@ int Unode::rmdir_me(ioctx_t* /*ctx*/)
 	return errno = EPERM, -1;
 }
 
-int Unode::symlink(ioctx_t* /*ctx*/, const char* oldname, const char* filename)
+int Unode::symlink(ioctx_t* ctx, const char* oldname, const char* filename)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	size_t oldnamelen = strlen(oldname);
@@ -1163,7 +1175,7 @@ int Unode::symlink(ioctx_t* /*ctx*/, const char* oldname, const char* filename)
 
 ssize_t Unode::readlink(ioctx_t* ctx, char* buf, size_t bufsiz)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	ssize_t ret = -1;
@@ -1184,7 +1196,7 @@ ssize_t Unode::readlink(ioctx_t* ctx, char* buf, size_t bufsiz)
 
 int Unode::tcgetwincurpos(ioctx_t* ctx, struct wincurpos* wcp)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -1201,7 +1213,7 @@ int Unode::tcgetwincurpos(ioctx_t* ctx, struct wincurpos* wcp)
 
 int Unode::tcgetwinsize(ioctx_t* ctx, struct winsize* ws)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -1216,9 +1228,9 @@ int Unode::tcgetwinsize(ioctx_t* ctx, struct winsize* ws)
 	return ret;
 }
 
-int Unode::tcsetpgrp(ioctx_t* /*ctx*/, pid_t pgid)
+int Unode::tcsetpgrp(ioctx_t* ctx, pid_t pgid)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -1232,9 +1244,9 @@ int Unode::tcsetpgrp(ioctx_t* /*ctx*/, pid_t pgid)
 	return ret;
 }
 
-pid_t Unode::tcgetpgrp(ioctx_t* /*ctx*/)
+pid_t Unode::tcgetpgrp(ioctx_t* ctx)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	pid_t ret = -1;
@@ -1248,9 +1260,9 @@ pid_t Unode::tcgetpgrp(ioctx_t* /*ctx*/)
 	return ret;
 }
 
-int Unode::settermmode(ioctx_t* /*ctx*/, unsigned mode)
+int Unode::settermmode(ioctx_t* ctx, unsigned mode)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -1266,7 +1278,7 @@ int Unode::settermmode(ioctx_t* /*ctx*/, unsigned mode)
 
 int Unode::gettermmode(ioctx_t* ctx, unsigned* mode)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -1286,10 +1298,10 @@ int Unode::poll(ioctx_t* /*ctx*/, PollNode* /*node*/)
 	return errno = ENOTSUP, -1;
 }
 
-int Unode::rename_here(ioctx_t* /*ctx*/, Ref<Inode> from, const char* oldname,
+int Unode::rename_here(ioctx_t* ctx, Ref<Inode> from, const char* oldname,
                        const char* newname)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -1347,7 +1359,7 @@ int Unode::getsockopt(ioctx_t* ctx, int level, int option_name,
 	size_t option_size;
 	if ( !ctx->copy_from_src(&option_size, option_size_ptr, sizeof(option_size)) )
 		return -1;
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -1374,7 +1386,7 @@ int Unode::getsockopt(ioctx_t* ctx, int level, int option_name,
 int Unode::setsockopt(ioctx_t* ctx, int level, int option_name,
                       const void* option_value, size_t option_size)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	int ret = -1;
@@ -1393,7 +1405,7 @@ int Unode::setsockopt(ioctx_t* ctx, int level, int option_name,
 
 ssize_t Unode::tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	if ( !buffer )
@@ -1421,7 +1433,7 @@ ssize_t Unode::tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t co
 
 ssize_t Unode::tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count)
 {
-	Channel* channel = server->Connect();
+	Channel* channel = server->Connect(ctx);
 	if ( !channel )
 		return -1;
 	ssize_t ret = -1;
