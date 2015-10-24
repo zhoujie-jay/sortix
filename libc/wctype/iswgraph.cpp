@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -26,5 +26,5 @@
 
 extern "C" int iswgraph(wint_t c)
 {
-	return L'!' <= c && c <= L'~';
+	return L'!' <= c && c != 127;
 }
