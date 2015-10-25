@@ -516,10 +516,6 @@ int main(int argc, char* argv[])
 	if ( 3 <= argc && !strcmp(argv[1], "--chain") )
 		return chain_boot_device(argv[2]);
 
-	// Reset the terminal's color and the rest of it.
-	printf(BRAND_INIT_BOOT_MESSAGE);
-	fflush(stdout);
-
 	// Set the default file creation mask.
 	umask(022);
 

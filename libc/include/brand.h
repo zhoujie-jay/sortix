@@ -39,49 +39,39 @@
 
 /* Ascii version of the maxsi logo. */
 #define BRAND_MAXSI \
-"                                                       _                        \n" \
-"                                                      / \\                       \n" \
-"                  /\\    /\\                           /   \\                      \n" \
-"                 /  \\  /  \\                          |   |                      \n" \
-"                /    \\/    \\                         |   |                      \n" \
-"               |  O    O    \\_______________________ /   |                      \n" \
-"               |                                         |                      \n" \
-"               | \\_______/                               /                      \n" \
-"                \\                                       /                       \n" \
-"                  ------       ---------------      ---/                        \n" \
-"                       /       \\             /      \\                           \n" \
-"                      /         \\           /        \\                          \n" \
-"                     /           \\         /          \\                         \n" \
-"                    /_____________\\       /____________\\                        \n" \
-"                                                                                \n" \
+"                                        _  \n" \
+"                                       / \\ \n" \
+"   /\\    /\\                           /   \\\n" \
+"  /  \\  /  \\                          |   |\n" \
+" /    \\/    \\                         |   |\n" \
+"|  O    O    \\_______________________ /   |\n" \
+"|                                         |\n" \
+"| \\_______/                               /\n" \
+" \\                                       / \n" \
+"   ------       ---------------      ---/  \n" \
+"        /       \\             /      \\     \n" \
+"       /         \\           /        \\    \n" \
+"      /           \\         /          \\   \n" \
+"     /_____________\\       /____________\\  \n" \
+"                                           \n" \
 
 /* Dead version of the maxsi logo, used for panic screens and such. */
 #define BRAND_MAXSI_DEAD \
-"                                                       _                        \n" \
-"                                                      / \\                       \n" \
-"                  /\\    /\\                           /   \\                      \n" \
-"                 /  \\  /  \\                          |   |                      \n" \
-"                /    \\/    \\                         |   |                      \n" \
-"               |  X    X    \\_______________________ /   |                      \n" \
-"               |                                         |                      \n" \
-"               | _________                               /                      \n" \
-"                \\                                       /                       \n" \
-"                  ------       ---------------      ---/                        \n" \
-"                       /       \\             /      \\                           \n" \
-"                      /         \\           /        \\                          \n" \
-"                     /           \\         /          \\                         \n" \
-"                    /_____________\\       /____________\\                        \n" \
-"                                                                                \n" \
-
-/* Message printed by the kernel just after boot. */
-#define BRAND_KERNEL_BOOT_MESSAGE \
-"\e[37;41m\e[2J" \
-BRAND_MAXSI \
-"                           BOOTING OPERATING SYSTEM...                          "
-
-/* Message printed by init after it takes control. */
-#define BRAND_INIT_BOOT_MESSAGE \
-"\r\e[m\e[J"
+"                                        _  \n" \
+"                                       / \\ \n" \
+"   /\\    /\\                           /   \\\n" \
+"  /  \\  /  \\                          |   |\n" \
+" /    \\/    \\                         |   |\n" \
+"|  X    X    \\_______________________ /   |\n" \
+"|                                         |\n" \
+"| _________                               /\n" \
+" \\                                       / \n" \
+"   ------       ---------------      ---/  \n" \
+"        /       \\             /      \\     \n" \
+"       /         \\           /        \\    \n" \
+"      /           \\         /          \\   \n" \
+"     /_____________\\       /____________\\  \n" \
+"                                           \n" \
 
 /* Message printed when a critical error occurs and the system panics. */
 #define BRAND_PANIC_LONG \

@@ -42,18 +42,14 @@ static bool panicing = false;
 static bool doublepanic = false;
 static bool logrecovering = false;
 
-static void PanicLogoLong()
-{
-	Log::PrintF(BRAND_PANIC_LONG);
-}
-
-static void PanicLogoShort()
-{
-	Log::Print(BRAND_PANIC_SHORT);
-}
-
 void PanicInit()
 {
+	// TODO: Some panics are soft the console rendering and core features are
+	//       perfectly online, they do not need too paranoid handling here,
+	//       while others (like a real kernel crash) is critical and this is
+	//       needed. Supply multiple kernel panicing interfaces and switch code
+	//       to using them instead.
+
 	// This is a kernel emergency. We will need to disable preemption, such that
 	// this is the only thread running. This means that we cannot acquire locks
 	// and the data protected by them may be inconsistent.
@@ -109,27 +105,31 @@ void PanicInit()
 	// Handle the case where the panic code caused another system crash.
 	if ( panicing )
 	{
-		Log::PrintF("Panic while panicing:\n");
+		Log::Print("Panic while panicing:\n");
 		doublepanic = true;
 		return;
 	}
 	panicing = true;
 
 	// Render a notice that the system has crashed and forcefully shut down.
-	longpanic ? PanicLogoLong() : PanicLogoShort();
-}
-
-static void PanicHooks()
-{
-	if ( doublepanic )
-		return;
+	if ( longpanic )
+	{
+		Log::Print("\e[m\e[31;40m\e[2J\e[H");
+		Log::Center(BRAND_MAXSI_DEAD);
+		Log::Center("KERNEL PANIC");
+		Log::Print("\n\nThe operating system encountered an unrecoverable "
+		           "error.\n\nTechincal information:\n");
+	}
+	else
+	{
+		Log::Print("\e[m\e[31m\e[0Jkernel: panic: ");
+	}
 }
 
 extern "C" __attribute__((noreturn)) void Panic(const char* error)
 {
 	PanicInit();
 	Log::Print(error);
-	PanicHooks();
 	HaltKernel();
 }
 
@@ -140,7 +140,6 @@ extern "C" __attribute__((noreturn)) void PanicF(const char* format, ...)
 	va_start(list, format);
 	Log::PrintFV(format, list);
 	va_end(list);
-	PanicHooks();
 	HaltKernel();
 }
 

@@ -116,6 +116,7 @@ inline size_t PrintFV(const char* format, va_list list)
 }
 
 void Init(multiboot_info_t* bootinfo);
+void Center(const char* string);
 
 } // namespace Log
 } // namespace Sortix

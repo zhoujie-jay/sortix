@@ -173,8 +173,9 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 	// Initialize the kernel log.
 	Log::Init(bootinfo);
 
-	// Display the boot welcome screen.
-	Log::Print(BRAND_KERNEL_BOOT_MESSAGE);
+	// Display the logo.
+	Log::PrintF("\e[37;41m\e[2J");
+	Log::Center(BRAND_MAXSI);
 
 #if defined(__x86_64__)
 	// TODO: Remove this hack when qemu 1.4.x and 1.5.0 are obsolete.
@@ -749,6 +750,8 @@ static void InitThread(void* /*user*/)
 	}
 
 	init.Reset();
+
+	Log::PrintF("\r\e[m\e[J");
 
 	int envc = 0;
 	const char* envp[] = { NULL };

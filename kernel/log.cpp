@@ -171,5 +171,25 @@ void Init(multiboot_info_t* bootinfo)
 	Log::emergency_device_pointer = textterm;
 }
 
+void Center(const char* string)
+{
+	size_t log_width = Log::Width();
+	while ( *string )
+	{
+		size_t string_width = strcspn(string, "\n");
+		size_t leading = string_width <= log_width ?
+		                 (log_width - string_width) / 2 : 0;
+		for ( size_t i = 0; i < leading; i++ )
+			Log::Print(" ");
+		Log::PrintData(string, string_width);
+		string += string_width;
+		if ( *string == '\n' )
+		{
+			string++;
+			Log::Print("\n");
+		}
+	}
+}
+
 } // namespace Log
 } // namespace Sortix
