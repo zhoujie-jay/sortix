@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -28,9 +28,9 @@
 
 extern "C" void psignal(int signum, const char* message)
 {
-	flockfile(stderr);
-	if ( message && message[0] )
-		fprintf_unlocked(stderr, "%s: ", message);
-	fprintf_unlocked(stderr, strsignal(signum));
-	funlockfile(stderr);
+	const char* signumstr = strsignal(signum);
+	if ( message )
+		fprintf(stderr, "%s: %s\n", message, signumstr);
+	else
+		fprintf(stderr, "%s\n", signumstr);
 }
