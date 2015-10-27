@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -23,12 +23,9 @@
 *******************************************************************************/
 
 #include <assert.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <scram.h>
 
 #if defined(__is_sortix_kernel)
-#include <sortix/kernel/decl.h>
 #include <sortix/kernel/panic.h>
 #endif
 
@@ -42,8 +39,11 @@ void __assert(const char* filename,
 	Sortix::PanicF("Assertion failure: %s:%lu: %s: %s", filename, line,
 	               function_name, expression);
 #else
-	fprintf(stderr, "Assertion failure: %s:%lu: %s: %s\n", filename, line,
-	        function_name, expression);
-	abort();
+	struct scram_assert info;
+	info.filename = filename;
+	info.line = line;
+	info.function = function_name;
+	info.expression = expression;
+	scram(SCRAM_ASSERT, &info);
 #endif
 }

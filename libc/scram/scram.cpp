@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2015.
 
     This file is part of the Sortix C Library.
 
@@ -17,38 +17,19 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdlib/realpath.cpp
-    Return the canonicalized filename.
+    scram/scram.cpp
+    Emergency process shutdown.
 
 *******************************************************************************/
 
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
+#include <sys/syscall.h>
+
 #include <scram.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
-#ifdef PATH_MAX
-#error "This realpath implementation assumes no PATH_MAX"
-#endif
+DEFN_SYSCALL2(void, sys_scram, SYSCALL_SCRAM, int, const void*);
 
-extern "C"
-char* realpath(const char* restrict path, char* restrict resolved_path)
+extern "C" void scram(int event, const void* info)
 {
-	if ( resolved_path )
-	{
-		struct scram_undefined_behavior info;
-		info.filename = __FILE__;
-		info.line = __LINE__;
-		info.column = 0;
-		info.violation = "realpath call with non-null argument and PATH_MAX unset";
-		scram(SCRAM_UNDEFINED_BEHAVIOR, &info);
-	}
-	char* ret_path = canonicalize_file_name(path);
-	if ( !ret_path )
-		return NULL;
-	return ret_path;
+	sys_scram(event, info);
+	__builtin_unreachable();
 }

@@ -401,6 +401,7 @@ pwd/getpwuid_r.o \
 pwd/openpw.o \
 pwd/setpwent.o \
 sched/sched_yield.o \
+scram/scram.o \
 signal/kill.o \
 signal/killpg.o \
 signal/psiginfo.o \

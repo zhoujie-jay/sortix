@@ -180,6 +180,14 @@
 #define SYSCALL_CLOSEFROM 152
 #define SYSCALL_RESERVED1 153
 #define SYSCALL_PSCTL 154
-#define SYSCALL_MAX_NUM 155 /* index of highest constant + 1 */
+#define SYSCALL_RESERVED2 155
+#define SYSCALL_RESERVED3 156
+#define SYSCALL_RESERVED4 157
+#define SYSCALL_RESERVED5 158
+#define SYSCALL_RESERVED6 159
+#define SYSCALL_RESERVED7 160
+#define SYSCALL_RESERVED8 161
+#define SYSCALL_SCRAM 162
+#define SYSCALL_MAX_NUM 163 /* index of highest constant + 1 */
 
 #endif

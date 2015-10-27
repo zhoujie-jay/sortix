@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2015.
 
     This file is part of the Sortix C Library.
 
@@ -17,38 +17,45 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdlib/realpath.cpp
-    Return the canonicalized filename.
+    scram.h
+    Emergency process shutdown.
 
 *******************************************************************************/
 
-#include <errno.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <scram.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#ifndef _SCRAM_H
+#define _SCRAM_H
 
-#ifdef PATH_MAX
-#error "This realpath implementation assumes no PATH_MAX"
+#include <sys/cdefs.h>
+
+#define SCRAM_ASSERT 1
+#define SCRAM_STACK_SMASH 2
+#define SCRAM_UNDEFINED_BEHAVIOR 3
+
+struct scram_assert
+{
+	const char* filename;
+	unsigned long line;
+	const char* function;
+	const char* expression;
+};
+
+struct scram_undefined_behavior
+{
+	const char* filename;
+	unsigned long line;
+	unsigned long column;
+	const char* violation;
+};
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
-extern "C"
-char* realpath(const char* restrict path, char* restrict resolved_path)
-{
-	if ( resolved_path )
-	{
-		struct scram_undefined_behavior info;
-		info.filename = __FILE__;
-		info.line = __LINE__;
-		info.column = 0;
-		info.violation = "realpath call with non-null argument and PATH_MAX unset";
-		scram(SCRAM_UNDEFINED_BEHAVIOR, &info);
-	}
-	char* ret_path = canonicalize_file_name(path);
-	if ( !ret_path )
-		return NULL;
-	return ret_path;
-}
+__attribute__((noreturn))
+void scram(int, const void*);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif

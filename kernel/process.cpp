@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <msr.h>
+#include <scram.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -1641,6 +1642,95 @@ mode_t sys_getumask(void)
 	Process* process = CurrentProcess();
 	ScopedLock lock(&process->idlock);
 	return process->umask;
+}
+
+static void GetAssertInfo(struct scram_assert* info,
+                          const void* user_info_ptr)
+{
+	memset(info, 0, sizeof(*info));
+	struct scram_assert user_info;
+	if ( !CopyFromUser(&user_info, user_info_ptr, sizeof(user_info)) )
+		return;
+	info->filename = GetStringFromUser(user_info.filename);
+	info->line = user_info.line;
+	info->function = GetStringFromUser(user_info.function);
+	info->expression = GetStringFromUser(user_info.expression);
+}
+
+static void FreeAssertInfo(struct scram_assert* info)
+{
+	delete[] (char*) info->filename;
+	delete[] (char*) info->function;
+	delete[] (char*) info->expression;
+}
+
+static
+void GetUndefinedBehaviorInfo(struct scram_undefined_behavior* info,
+                              const void* user_info_ptr)
+{
+	memset(info, 0, sizeof(*info));
+	struct scram_undefined_behavior user_info;
+	if ( !CopyFromUser(&user_info, user_info_ptr, sizeof(user_info)) )
+		return;
+	info->filename = GetStringFromUser(user_info.filename);
+	info->line = user_info.line;
+	info->column = user_info.column;
+	info->violation = GetStringFromUser(user_info.violation);
+}
+
+static void FreeUndefinedBehaviorInfo(struct scram_undefined_behavior* info)
+{
+	delete[] info->filename;
+	delete[] info->violation;
+}
+
+__attribute__((noreturn))
+void sys_scram(int event, const void* user_info)
+{
+	Process* process = CurrentProcess();
+	// TODO: Prohibit execve such that program_image_path is protected.
+	process->ExitThroughSignal(SIGABRT);
+	if ( event == SCRAM_ASSERT )
+	{
+		struct scram_assert info;
+		GetAssertInfo(&info, user_info);
+		Log::PrintF("%s[%ji]: Assertion failure: %s:%lu: %s: %s\n",
+			process->program_image_path,
+			(intmax_t) process->pid,
+			info.filename ? info.filename : "<unknown>",
+			info.line,
+			info.function ? info.function : "<unknown>",
+			info.expression ? info.expression : "<unknown>");
+		FreeAssertInfo(&info);
+	}
+	else if ( event == SCRAM_STACK_SMASH )
+	{
+		Log::PrintF("%s[%ji]: Stack smashing detected\n",
+			process->program_image_path,
+			(intmax_t) process->pid);
+	}
+	else if ( event == SCRAM_UNDEFINED_BEHAVIOR )
+	{
+		struct scram_undefined_behavior info;
+		GetUndefinedBehaviorInfo(&info, user_info);
+		Log::PrintF("%s[%ji]: Undefined behavior: %s at %s:%lu:%lu\n",
+			process->program_image_path,
+			(intmax_t) process->pid,
+			info.violation ? info.violation : "<unknown>",
+			info.filename ? info.filename : "<unknown>",
+			info.line,
+			info.column);
+		FreeUndefinedBehaviorInfo(&info);
+	}
+	else
+	{
+		Log::PrintF("%s[%ji]: Unknown scram event %i\n",
+			process->program_image_path,
+			(intmax_t) process->pid,
+			event);
+	}
+	// TODO: Allow debugging this event.
+	kthread_exit();
 }
 
 } // namespace Sortix
