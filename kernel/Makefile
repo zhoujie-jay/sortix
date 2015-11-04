@@ -83,7 +83,6 @@ clock.o \
 com.o \
 copy.o \
 $(CPUDIR)/kthread.o \
-crc32.o \
 debugger.o \
 descriptor.o \
 disk/ahci/ahci.o \

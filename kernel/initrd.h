@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -18,7 +18,7 @@
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
     initrd.h
-    Provides low-level access to a Sortix init ramdisk.
+    Extracts initrds into the initial memory filesystem.
 
 *******************************************************************************/
 
@@ -27,15 +27,13 @@
 
 #include <sortix/kernel/refcount.h>
 
+struct multiboot_info;
+
 namespace Sortix {
 
 class Descriptor;
 
-namespace InitRD {
-
-bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc);
-
-} // namespace InitRD
+void ExtractModules(struct multiboot_info* bootinfo, Ref<Descriptor> root);
 
 } // namespace Sortix
 

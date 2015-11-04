@@ -111,8 +111,7 @@ static void BootThread(void* user);
 static void InitThread(void* user);
 static void SystemIdleThread(void* user);
 
-addr_t initrd;
-size_t initrdsize;
+static multiboot_info_t* bootinfo;
 static char* init_cmdline;
 
 static char* cmdline_tokenize(char** saved)
@@ -160,9 +159,10 @@ static char* cmdline_tokenize(char** saved)
 	return data;
 }
 
-extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
+extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo_p)
 {
 	(void) magic;
+	bootinfo = bootinfo_p;
 
 	//
 	// Stage 1. Initialization of Early Environment.
@@ -285,20 +285,6 @@ extern "C" void KernelInit(unsigned long magic, multiboot_info_t* bootinfo)
 		if ( !strcmp(option->name, "--init") )
 			init_cmdline = parameter;
 	}
-
-	initrd = 0;
-	initrdsize = 0;
-
-	uint32_t* modules = (uint32_t*) (addr_t) bootinfo->mods_addr;
-	for ( uint32_t i = 0; i < bootinfo->mods_count; i++ )
-	{
-		initrdsize = modules[2*i+1] - modules[2*i+0];
-		initrd = (addr_t) modules[2*i+0];
-		break;
-	}
-
-	if ( !initrd )
-		Panic("No init ramdisk provided");
 
 	// Initialize the interrupt handler table and enable interrupts.
 	Interrupt::Init();
@@ -436,11 +422,10 @@ static void BootThread(void* /*user*/)
 	if ( iroot->link_raw(&ctx, "..", iroot) != 0 )
 		Panic("Unable to link /.. to /");
 
-	// Install the initrd into our fresh RAM filesystem.
-	if ( !InitRD::ExtractFromPhysicalInto(initrd, initrdsize, droot) )
-		Panic("Unable to extract initrd into RAM root filesystem. Your machine "
-		      "needs more memory to boot using this initrd, as a rule of thumb "
-		      "you need twice as much memory as the size of the initrd device.");
+	// Extract the initrds.
+	if ( bootinfo->mods_count == 0 )
+		Panic("No initrd was loaded");
+	ExtractModules(bootinfo, droot);
 
 	//
 	// Stage 5. Loading and Initializing Core Drivers.
