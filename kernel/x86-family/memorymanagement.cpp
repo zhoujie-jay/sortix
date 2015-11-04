@@ -65,10 +65,71 @@ namespace Memory {
 
 addr_t PAT2PMLFlags[PAT_NUM];
 
+static bool CheckUsedRange(addr_t test,
+                           addr_t from_unaligned,
+                           size_t size_unaligned,
+                           size_t* dist_ptr)
+{
+	addr_t from = Page::AlignDown(from_unaligned);
+	size_unaligned += from_unaligned - from;
+	size_t size = Page::AlignUp(size_unaligned);
+	if ( from <= test && test < from + size )
+		return *dist_ptr = from + size - test, true;
+	if ( test < from && from - test < *dist_ptr )
+		*dist_ptr = from - test;
+	return false;
+}
+
+static bool CheckUsedString(addr_t test,
+                            const char* string,
+                            size_t* dist_ptr)
+{
+	size_t size = strlen(string) + 1;
+	return CheckUsedRange(test, (addr_t) string, size, dist_ptr);
+}
+
+static bool CheckUsedRanges(multiboot_info_t* bootinfo,
+                            addr_t test,
+                            size_t* dist_ptr)
+{
+	addr_t kernel_end = (addr_t) &end;
+	if ( CheckUsedRange(test, 0, kernel_end, dist_ptr) )
+		return true;
+
+	if ( CheckUsedRange(test, (addr_t) bootinfo, sizeof(*bootinfo), dist_ptr) )
+		return true;
+
+	const char* cmdline = (const char*) (uintptr_t) bootinfo->cmdline;
+	if ( CheckUsedString(test, cmdline, dist_ptr) )
+		return true;
+
+	size_t mods_size = bootinfo->mods_count * sizeof(struct multiboot_mod_list);
+	if ( CheckUsedRange(test, bootinfo->mods_addr, mods_size, dist_ptr) )
+		return true;
+
+	struct multiboot_mod_list* modules =
+		(struct multiboot_mod_list*) (uintptr_t) bootinfo->mods_addr;
+	for ( uint32_t i = 0; i < bootinfo->mods_count; i++ )
+	{
+		struct multiboot_mod_list* module = &modules[i];
+		assert(module->mod_start <= module->mod_end);
+		size_t mod_size = module->mod_end - module->mod_start;
+		if ( CheckUsedRange(test, module->mod_start, mod_size, dist_ptr) )
+			return true;
+		const char* mod_cmdline = (const char*) (uintptr_t) module->cmdline;
+		if ( CheckUsedString(test, mod_cmdline, dist_ptr) )
+			return true;
+	}
+
+	if ( CheckUsedRange(test, bootinfo->mmap_addr, bootinfo->mmap_length,
+	                      dist_ptr) )
+		return true;
+
+	return false;
+}
+
 void Init(multiboot_info_t* bootinfo)
 {
-	addr_t kernelend = Page::AlignUp((addr_t) &end);
-
 	if ( !(bootinfo->flags & MULTIBOOT_INFO_MEM_MAP) )
 		Panic("The memory map flag was't set in the multiboot structure.");
 
@@ -97,80 +158,49 @@ void Init(multiboot_info_t* bootinfo)
 	typedef const multiboot_memory_map_t* mmap_t;
 
 	// Loop over every detected memory region.
-	for (
-	     mmap_t mmap = (mmap_t) (addr_t) bootinfo->mmap_addr;
-	     (addr_t) mmap < bootinfo->mmap_addr + bootinfo->mmap_length;
-	     mmap = (mmap_t) ((addr_t) mmap + mmap->size + sizeof(mmap->size))
-	    )
+	for ( mmap_t mmap = (mmap_t) (addr_t) bootinfo->mmap_addr;
+	      (addr_t) mmap < bootinfo->mmap_addr + bootinfo->mmap_length;
+	      mmap = (mmap_t) ((addr_t) mmap + mmap->size + sizeof(mmap->size)) )
 	{
 		// Check that we can use this kind of RAM.
 		if ( mmap->type != 1 )
 			continue;
 
-		// The kernel's code may split this memory area into multiple pieces.
-		addr_t base = (addr_t) mmap->addr;
-		size_t length = Page::AlignDown(mmap->len);
-
+		// Truncate the memory area if needed.
+		uint64_t mmap_addr = mmap->addr;
+		uint64_t mmap_len = mmap->len;
 #if defined(__i386__)
-		// Figure out if the memory area is addressable (are our pointers big enough?)
-		if ( 0xFFFFFFFFULL < mmap->addr )
+		if ( 0xFFFFFFFFULL < mmap_addr )
 			continue;
-		if ( 0xFFFFFFFFULL < mmap->addr + mmap->len )
-			length = 0x100000000ULL - mmap->addr;
+		if ( 0xFFFFFFFFULL < mmap_addr + mmap_len )
+			mmap_len = 0x100000000ULL - mmap_addr;
 #endif
 
-		// Count the amount of usable RAM (even if reserved for kernel).
+		// Properly page align the entry if needed.
+		// TODO: Is the bootloader required to page align this? This could be
+		//       raw BIOS data that might not be page aligned? But that would
+		//       be a silly computer.
+		addr_t base_unaligned = (addr_t) mmap_addr;
+		addr_t base = Page::AlignUp(base_unaligned);
+		if ( mmap_len < base - base_unaligned )
+			continue;
+		size_t length_unaligned = mmap_len - (base - base_unaligned);
+		size_t length = Page::AlignDown(length_unaligned);
+		if ( !length )
+			continue;
+
+		// Count the amount of usable RAM.
 		Page::totalmem += length;
 
 		// Give all the physical memory to the physical memory allocator
 		// but make sure not to give it things we already use.
-		addr_t regionstart = base;
-		addr_t regionend = base + length;
-		addr_t processed = regionstart;
-		while ( processed < regionend )
+		addr_t processed = base;
+		while ( processed < base + length )
 		{
-			addr_t lowest = processed;
-			addr_t highest = regionend;
-
-			// Don't allocate the kernel.
-			if ( lowest < kernelend )
-			{
-				processed = kernelend;
-				continue;
-			}
-
-			// Don't give any of our modules to the physical page
-			// allocator, we'll need them.
-			bool continuing = false;
-			uint32_t* modules = (uint32_t*) (addr_t) bootinfo->mods_addr;
-			for ( uint32_t i = 0; i < bootinfo->mods_count; i++ )
-			{
-				size_t modsize = (size_t) (modules[2*i+1] - modules[2*i+0]);
-				addr_t modstart = (addr_t) modules[2*i+0];
-				addr_t modend = modstart + modsize;
-				if ( modstart <= processed && processed < modend )
-				{
-					processed = modend;
-					continuing = true;
-					break;
-				}
-				if ( lowest <= modstart && modstart < highest )
-					highest = modstart;
-			}
-
-			if ( continuing )
-				continue;
-
-			if ( highest <= lowest )
-				break;
-
-			// Now that we have a continious area not used by anything,
-			// let's forward it to the physical page allocator.
-			lowest = Page::AlignUp(lowest);
-			highest = Page::AlignUp(highest);
-			size_t size = highest - lowest;
-			Page::InitPushRegion(lowest, size);
-			processed = highest;
+			size_t distance = base + length - processed;
+			if ( !CheckUsedRanges(bootinfo, processed, &distance) )
+				Page::InitPushRegion(processed, distance);
+			processed += distance;
 		}
 	}
 
