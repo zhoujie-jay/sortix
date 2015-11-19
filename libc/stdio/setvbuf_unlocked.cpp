@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -24,18 +24,28 @@
 
 #include <errno.h>
 #include <stdio.h>
+#include <unistd.h>
 
 extern "C" int setvbuf_unlocked(FILE* fp, char* buf, int mode, size_t size)
 {
-	if ( fp->flags & _FILE_BUFFER_MODE_SET )
-		return fp->flags |= _FILE_STATUS_ERROR, errno = EINVAL, -1;
-	fp->buffer_mode = mode;
-	if ( buf )
+	(void) buf;
+	(void) size;
+	if ( mode == -1 )
 	{
-		fp->buffer = (unsigned char*) buf;
-		fp->buffersize = size;
-		fp->flags |= _FILE_BUFFER_MODE_SET;
-		fp->fflush_indirect = fflush;
+#if defined(__is_sortix_kernel)
+		mode = _IOLBF;
+#else
+		mode = _IOFBF;
+		int saved_errno = errno;
+		if ( isatty(fileno_unlocked(fp)) )
+			mode = _IOLBF;
+		errno = saved_errno;
+#endif
 	}
+	if ( !fp->buffer )
+		mode = _IONBF;
+	fp->buffer_mode = mode;
+	fp->flags |= _FILE_BUFFER_MODE_SET;
+	fp->fflush_indirect = fflush;
 	return 0;
 }

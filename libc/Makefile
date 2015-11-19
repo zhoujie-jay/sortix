@@ -126,8 +126,6 @@ stdio/fscanf_unlocked.o \
 stdio/fseek.o \
 stdio/fseeko.o \
 stdio/fseeko_unlocked.o \
-stdio/fsetdefaultbuf.o \
-stdio/fsetdefaultbuf_unlocked.o \
 stdio/fshutdown.o \
 stdio/ftell.o \
 stdio/ftello.o \

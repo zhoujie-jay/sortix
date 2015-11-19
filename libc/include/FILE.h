@@ -31,6 +31,10 @@
 
 #include <pthread.h>
 
+#if !defined(BUFSIZ)
+#include <stdio.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -72,11 +76,6 @@ typedef struct __FILE FILE;
    changed if you make changes to this structure. */
 struct __FILE
 {
-	/* This is non-standard, but useful. If you allocate your own FILE and
-	   register it with fregister, feel free to use modify the following members
-	   to customize how it works. Don't call the functions directly, though, as
-	   the standard library does various kinds of buffering and conversion. */
-	size_t buffersize;
 	unsigned char* buffer;
 	void* user;
 	void* free_user;
@@ -87,10 +86,8 @@ struct __FILE
 	int (*fileno_func)(void* user);
 	int (*close_func)(void* user);
 	void (*free_func)(void* free_user, FILE* fp);
-	/* Application writers shouldn't use anything beyond this point. */
 	pthread_mutex_t file_lock;
 	int (*fflush_indirect)(FILE*);
-	void (*buffer_free_indirect)(void*);
 	FILE* prev;
 	FILE* next;
 	int flags;

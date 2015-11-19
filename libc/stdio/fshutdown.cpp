@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -34,10 +34,8 @@ extern "C" int fshutdown(FILE* fp)
 		         exact error value, for instance, as with popen/pclose. */;
 	}
 	ret = fp->close_func ? fp->close_func(fp->user) : ret;
-	if ( fp->flags & _FILE_BUFFER_OWNED && fp->buffer_free_indirect )
-		fp->buffer_free_indirect(fp->buffer);
 	// Resetting the FILE here isn't needed in the case where fclose calls us,
-	// but it's nice to zero it out anyway (avoiding state) data, and it's a
+	// but it's nice to zero it out anyway (avoiding stale) data, and it's a
 	// feature when called by freopen that wishes to reuse the FILE. It also
 	// means that the file is always in a consistent state.
 	fresetfile(fp);

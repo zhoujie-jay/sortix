@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -38,8 +38,7 @@ extern "C" int fgetc_unlocked(FILE* fp)
 		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
 
 	if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
-		if ( fsetdefaultbuf_unlocked(fp) != 0 )
-			return EOF;
+		setvbuf_unlocked(fp, NULL, fp->buffer_mode, 0);
 
 	if ( fp->buffer_mode == _IONBF )
 	{
@@ -60,12 +59,12 @@ extern "C" int fgetc_unlocked(FILE* fp)
 
 	if ( !(fp->offset_input_buffer < fp->amount_input_buffered) )
 	{
-		assert(fp->buffer && fp->buffersize);
+		assert(fp->buffer && BUFSIZ);
 
 		size_t pushback = _FILE_MAX_PUSHBACK;
-		if ( fp->buffersize <= pushback )
+		if ( BUFSIZ <= pushback )
 			pushback = 0;
-		size_t count = fp->buffersize - pushback;
+		size_t count = BUFSIZ - pushback;
 		if ( (size_t) SSIZE_MAX < count )
 			count = SSIZE_MAX;
 		ssize_t numread = fp->read_func(fp->user, fp->buffer + pushback, count);

@@ -40,10 +40,6 @@
 #endif
 #include <stdarg.h>
 
-#if defined(__is_sortix_libc)
-#include <FILE.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -121,9 +117,9 @@ typedef __off_t fpos_t;
 #define FILE_MODE_CLOEXEC (1 << 7)
 #endif
 
-extern FILE* stdin;
-extern FILE* stdout;
-extern FILE* stderr;
+extern FILE* const stdin;
+extern FILE* const stdout;
+extern FILE* const stderr;
 
 #define stdin stdin
 #define stdout stdout
@@ -300,8 +296,6 @@ void fregister(FILE* fp);
 void fresetfile(FILE* fp);
 void funregister(FILE* fp);
 FILE* fnewfile(void);
-int fsetdefaultbuf(FILE* fp);
-int fsetdefaultbuf_unlocked(FILE* fp);
 int fshutdown(FILE* fp);
 #endif
 
@@ -321,6 +315,10 @@ int vscanf_callback(void* fp,
 
 #ifdef __cplusplus
 } /* extern "C" */
+#endif
+
+#if defined(__is_sortix_libc)
+#include <FILE.h>
 #endif
 
 #endif

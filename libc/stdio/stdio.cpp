@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -29,6 +29,9 @@
 
 #include "fdio.h"
 
+static unsigned char stdin_buffer[BUFSIZ];
+static unsigned char stdout_buffer[BUFSIZ];
+
 static struct fdio_state stdin_fdio = { NULL, 0 };
 static struct fdio_state stdout_fdio = { NULL, 1 };
 static struct fdio_state stderr_fdio = { NULL, 2 };
@@ -41,8 +44,7 @@ extern FILE __stderr_file;
 
 FILE __stdin_file =
 {
-	/* buffersize = */ 0,
-	/* buffer = */ NULL,
+	/* buffer = */ stdin_buffer,
 	/* user = */ &stdin_fdio,
 	/* free_user = */ NULL,
 	/* reopen_func = */ fdio_reopen,
@@ -54,7 +56,6 @@ FILE __stdin_file =
 	/* free_func = */ NULL,
 	/* file_lock = */ PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP,
 	/* fflush_indirect = */ NULL,
-	/* buffer_free_indirect = */ NULL,
 	/* prev = */ NULL,
 	/* next = */ &__stdout_file,
 	/* flags = */ _FILE_REGISTERED | _FILE_READABLE,
@@ -66,8 +67,7 @@ FILE __stdin_file =
 
 FILE __stdout_file
 {
-	/* buffersize = */ 0,
-	/* buffer = */ NULL,
+	/* buffer = */ stdout_buffer,
 	/* user = */ &stdout_fdio,
 	/* free_user = */ NULL,
 	/* reopen_func = */ fdio_reopen,
@@ -79,7 +79,6 @@ FILE __stdout_file
 	/* free_func = */ NULL,
 	/* file_lock = */ PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP,
 	/* fflush_indirect = */ NULL,
-	/* buffer_free_indirect = */ NULL,
 	/* prev = */ &__stdin_file,
 	/* next = */ &__stderr_file,
 	/* flags = */ _FILE_REGISTERED | _FILE_WRITABLE,
@@ -91,7 +90,6 @@ FILE __stdout_file
 
 FILE __stderr_file
 {
-	/* buffersize = */ 0,
 	/* buffer = */ NULL,
 	/* user = */ &stderr_fdio,
 	/* free_user = */ NULL,
@@ -104,7 +102,6 @@ FILE __stderr_file
 	/* free_func = */ NULL,
 	/* file_lock = */ PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP,
 	/* fflush_indirect = */ NULL,
-	/* buffer_free_indirect = */ NULL,
 	/* prev = */ &__stdout_file,
 	/* next = */ NULL,
 	/* flags = */ _FILE_REGISTERED | _FILE_WRITABLE,
@@ -114,8 +111,8 @@ FILE __stderr_file
 	/* amount_output_buffered = */ 0,
 };
 
-FILE* stdin = &__stdin_file;
-FILE* stdout = &__stdout_file;
-FILE* stderr = &__stderr_file;
+FILE* const stdin = &__stdin_file;
+FILE* const stdout = &__stdout_file;
+FILE* const stderr = &__stderr_file;
 
 } /* extern "C" */

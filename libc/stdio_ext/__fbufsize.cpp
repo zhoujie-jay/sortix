@@ -28,7 +28,7 @@
 extern "C" size_t __fbufsize(FILE* fp)
 {
 	flockfile(fp);
-	size_t result = fp->buffersize;
+	int mode = fp->buffer_mode;
 	funlockfile(fp);
-	return result;
+	return mode == _IONBF ? 0 : BUFSIZ;
 }

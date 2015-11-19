@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -25,6 +25,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static void fnewfile_destroyer(void* /*user*/, FILE* fp)
 {
@@ -33,9 +34,11 @@ static void fnewfile_destroyer(void* /*user*/, FILE* fp)
 
 extern "C" FILE* fnewfile(void)
 {
-	FILE* fp = (FILE*) calloc(sizeof(FILE), 1);
+	FILE* fp = (FILE*) malloc(sizeof(FILE) + BUFSIZ);
 	if ( !fp )
 		return NULL;
+	memset(fp, 0, sizeof(FILE));
+	fp->buffer = (unsigned char*) (fp + 1);
 	fp->free_user = NULL;
 	fp->free_func = fnewfile_destroyer;
 	fresetfile(fp);

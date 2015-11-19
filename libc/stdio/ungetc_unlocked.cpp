@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -36,8 +36,7 @@ extern "C" int ungetc_unlocked(int c, FILE* fp)
 		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
 
 	if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
-		if ( fsetdefaultbuf_unlocked(fp) != 0 )
-			return EOF;
+		setvbuf_unlocked(fp, NULL, fp->buffer_mode, 0);
 
 	if ( fp->flags & _FILE_LAST_WRITE )
 		fflush_stop_writing_unlocked(fp);
@@ -51,7 +50,7 @@ extern "C" int ungetc_unlocked(int c, FILE* fp)
 	if ( fp->offset_input_buffer == 0 )
 	{
 		size_t amount = fp->amount_input_buffered - fp->offset_input_buffer;
-		size_t offset = fp->buffersize - amount;
+		size_t offset = BUFSIZ - amount;
 		if ( !offset )
 			return EOF;
 		memmove(fp->buffer + offset, fp->buffer, sizeof(fp->buffer[0]) * amount);

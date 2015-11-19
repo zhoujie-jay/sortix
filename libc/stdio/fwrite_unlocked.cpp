@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -46,8 +46,7 @@ size_t fwrite_unlocked(const void* ptr,
 	if ( fp->buffer_mode == _IONBF )
 	{
 		if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
-			if ( fsetdefaultbuf_unlocked(fp) != 0 )
-				return EOF;
+			setvbuf_unlocked(fp, NULL, fp->buffer_mode, 0);
 		if ( !fp->write_func )
 			return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, 0;
 		if ( fp->flags & _FILE_LAST_READ )

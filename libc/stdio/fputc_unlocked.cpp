@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -31,8 +31,7 @@ extern "C" int fputc_unlocked(int c, FILE* fp)
 		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
 
 	if ( !(fp->flags & _FILE_BUFFER_MODE_SET) )
-		if ( fsetdefaultbuf_unlocked(fp) != 0 )
-			return EOF;
+		setvbuf_unlocked(fp, NULL, fp->buffer_mode, 0);
 
 	if ( fp->buffer_mode == _IONBF )
 	{
@@ -51,7 +50,7 @@ extern "C" int fputc_unlocked(int c, FILE* fp)
 	fp->flags |= _FILE_LAST_WRITE;
 	fp->flags &= ~_FILE_STATUS_EOF;
 
-	if ( fp->amount_output_buffered == fp->buffersize )
+	if ( fp->amount_output_buffered == BUFSIZ )
 	{
 		if ( fflush_unlocked(fp) == EOF )
 			return EOF;

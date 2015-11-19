@@ -33,10 +33,12 @@ extern "C" void fresetfile(FILE* fp)
 {
 	FILE* prev = fp->prev;
 	FILE* next = fp->next;
+	unsigned char* keep_buffer = fp->buffer;
 	void* free_user = fp->free_user;
 	void (*free_func)(void*, FILE*) = fp->free_func;
 	int kept_flags = fp->flags & (_FILE_REGISTERED | 0);
 	memset(fp, 0, sizeof(*fp));
+	fp->buffer = keep_buffer;
 	fp->file_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 	fp->flags = kept_flags;
 	fp->buffer_mode = -1;
