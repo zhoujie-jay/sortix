@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -32,7 +32,12 @@ extern "C" int fflush(FILE* fp)
 		int result = 0;
 		pthread_mutex_lock(&__first_file_lock);
 		for ( fp = __first_file; fp; fp = fp->next )
-			result |= fflush(fp);
+		{
+			flockfile(fp);
+			if ( fp->flags & _FILE_LAST_WRITE )
+				result |= fflush_unlocked(fp);
+			funlockfile(fp);
+		}
 		pthread_mutex_unlock(&__first_file_lock);
 		return result;
 	}
