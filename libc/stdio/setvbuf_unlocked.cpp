@@ -46,6 +46,6 @@ extern "C" int setvbuf_unlocked(FILE* fp, char* buf, int mode, size_t size)
 		mode = _IONBF;
 	fp->buffer_mode = mode;
 	fp->flags |= _FILE_BUFFER_MODE_SET;
-	fp->fflush_indirect = fflush;
+	fp->fflush_indirect = fflush_unlocked;
 	return 0;
 }
