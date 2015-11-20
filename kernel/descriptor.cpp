@@ -351,9 +351,8 @@ int Descriptor::isatty(ioctx_t* ctx)
 }
 
 ssize_t Descriptor::readdirents(ioctx_t* ctx,
-                                struct kernel_dirent* dirent,
-                                size_t size,
-                                size_t maxcount)
+                                struct dirent* dirent,
+                                size_t size)
 {
 	// TODO: COMPATIBILITY HACK: Traditionally, you can open a directory with
 	//       O_RDONLY and pass it to fdopendir and then use it, which doesn't
@@ -370,35 +369,12 @@ ssize_t Descriptor::readdirents(ioctx_t* ctx,
 	//       because the execute bit on directories control search permission.
 	if ( !(dflags & (O_SEARCH | O_READ | O_WRITE)) )
 		return errno = EPERM, -1;
-
-	if ( !maxcount )
-		return 0;
-	if ( 1 < maxcount )
-		maxcount = 1;
 	if ( SSIZE_MAX < size )
 		size = SSIZE_MAX;
 	if ( size < sizeof(*dirent) )
 		return errno = EINVAL, -1;
 	ScopedLock lock(&current_offset_lock);
-	ssize_t ret = vnode->readdirents(ctx, dirent, size, current_offset, maxcount);
-	if ( ret == 0 )
-	{
-		const char* name = "";
-		size_t name_length = strlen(name);
-		size_t needed = sizeof(*dirent) + name_length + 1;
-		struct kernel_dirent retdirent;
-		memset(&retdirent, 0, sizeof(retdirent));
-		retdirent.d_reclen = needed;
-		retdirent.d_nextoff = 0;
-		retdirent.d_namlen = name_length;
-		if ( !ctx->copy_to_dest(dirent, &retdirent, sizeof(retdirent)) )
-			return -1;
-		if ( size < needed )
-			return errno = ERANGE, -1;
-		if ( !ctx->copy_to_dest(dirent->d_name, name, name_length+1) )
-			return -1;
-		return needed;
-	}
+	ssize_t ret = vnode->readdirents(ctx, dirent, size, current_offset);
 	if ( 0 < ret )
 		current_offset++;
 	return ret;

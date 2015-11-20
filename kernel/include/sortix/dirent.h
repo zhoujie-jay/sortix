@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -54,11 +54,7 @@ typedef __ino_t ino_t;
 #include <stddef.h>
 #endif
 
-#ifndef NULL
-#define __need_NULL
-#include <stddef.h>
-#endif
-
+#if __USE_SORTIX
 #define DT_UNKNOWN __DT_UNKNOWN
 #define DT_BLK __DT_BLK
 #define DT_CHR __DT_CHR
@@ -67,27 +63,22 @@ typedef __ino_t ino_t;
 #define DT_LNK __DT_LNK
 #define DT_REG __DT_REG
 #define DT_SOCK __DT_SOCK
+#endif
 
+#if __USE_SORTIX
 #define IFTODT(x) __IFTODT(x)
 #define DTTOIF(x) __DTTOIF(x)
+#endif
 
-struct kernel_dirent
+struct dirent
 {
 	size_t d_reclen;
-	size_t d_nextoff;
 	size_t d_namlen;
 	ino_t d_ino;
 	dev_t d_dev;
 	unsigned char d_type;
 	__extension__ char d_name[];
 };
-
-static __inline struct kernel_dirent* kernel_dirent_next(struct kernel_dirent* ent)
-{
-	if ( !ent->d_nextoff )
-		return NULL;
-	return (struct kernel_dirent*) ((uint8_t*) ent + ent->d_nextoff);
-}
 
 #ifdef __cplusplus
 } /* extern "C" */

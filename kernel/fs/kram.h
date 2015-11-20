@@ -65,8 +65,8 @@ class Dir : public AbstractInode
 public:
 	Dir(dev_t dev, ino_t ino, uid_t owner, gid_t group, mode_t mode);
 	virtual ~Dir();
-	virtual ssize_t readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
-	                            size_t size, off_t start, size_t maxcount);
+	virtual ssize_t readdirents(ioctx_t* ctx, struct dirent* dirent,
+	                            size_t size, off_t start);
 	virtual Ref<Inode> open(ioctx_t* ctx, const char* filename, int flags,
 	                        mode_t mode);
 	virtual int mkdir(ioctx_t* ctx, const char* filename, mode_t mode);

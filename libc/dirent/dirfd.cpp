@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -23,12 +23,9 @@
 *******************************************************************************/
 
 #include <dirent.h>
-#include <DIR.h>
 #include <errno.h>
 
 extern "C" int dirfd(DIR* dir)
 {
-	if ( !dir->fd_func )
-		return errno = EBADF, 0;
-	return dir->fd_func(dir->user);
+	return dir->fd;
 }

@@ -129,7 +129,7 @@ ssize_t sys_pwritev(int, const struct iovec*, int, off_t);
 int sys_raise(int);
 uint64_t sys_rdmsr(uint32_t);
 ssize_t sys_read(int, void*, size_t);
-ssize_t sys_readdirents(int, struct kernel_dirent*, size_t);
+ssize_t sys_readdirents(int, struct dirent*, size_t);
 ssize_t sys_readlinkat(int, const char*, char*, size_t);
 ssize_t sys_readv(int, const struct iovec*, int);
 ssize_t sys_recv(int, void*, size_t, int);

@@ -281,10 +281,10 @@ int Vnode::isatty(ioctx_t* ctx)
 	return inode->isatty(ctx);
 }
 
-ssize_t Vnode::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
-                           size_t size, off_t start, size_t count)
+ssize_t Vnode::readdirents(ioctx_t* ctx, struct dirent* dirent,
+                           size_t size, off_t start)
 {
-	return inode->readdirents(ctx, dirent, size, start, count);
+	return inode->readdirents(ctx, dirent, size, start);
 }
 
 int Vnode::mkdir(ioctx_t* ctx, const char* filename, mode_t mode)

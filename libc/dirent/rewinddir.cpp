@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -23,11 +23,9 @@
 *******************************************************************************/
 
 #include <dirent.h>
-#include <DIR.h>
+#include <unistd.h>
 
 extern "C" void rewinddir(DIR* dir)
 {
-	if ( dir->rewind_func )
-		dir->rewind_func(dir->user);
-	dir->flags &= ~_DIR_EOF;
+	lseek(dir->fd, 0, SEEK_SET);
 }

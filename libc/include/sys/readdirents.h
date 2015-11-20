@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -29,22 +29,24 @@
 
 #include <sys/__/types.h>
 
-#include <sys/types.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <sortix/dirent.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef __size_t_defined
 #define __size_t_defined
 #define __need_size_t
 #include <stddef.h>
 #endif
 
-ssize_t readdirents(int fd, struct kernel_dirent* dirent, size_t size);
+#ifndef __ssize_t_defined
+#define __ssize_t_defined
+typedef __ssize_t ssize_t;
+#endif
+
+struct dirent;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+ssize_t readdirents(int, struct dirent*, size_t);
 
 #ifdef __cplusplus
 } /* extern "C" */

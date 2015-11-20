@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -18,16 +18,16 @@
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
     sys/readdirents/readdirents.cpp
-    Reads entries from a directory file descriptor.
+    Reads directory entries from a directory file descriptor.
 
 *******************************************************************************/
 
 #include <sys/readdirents.h>
 #include <sys/syscall.h>
 
-DEFN_SYSCALL4(ssize_t, sys_readdirents, SYSCALL_READDIRENTS, int, struct kernel_dirent*, size_t, size_t);
+DEFN_SYSCALL3(ssize_t, sys_readdirents, SYSCALL_READDIRENTS, int, struct dirent*, size_t);
 
-extern "C" ssize_t readdirents(int fd, struct kernel_dirent* dirent, size_t size)
+extern "C" ssize_t readdirents(int fd, struct dirent* dirent, size_t size)
 {
-	return sys_readdirents(fd, dirent, size, 1);
+	return sys_readdirents(fd, dirent, size);
 }

@@ -382,16 +382,15 @@ int sys_ioctl(int fd, int cmd, uintptr_t arg)
 	}
 }
 
-ssize_t sys_readdirents(int fd, struct kernel_dirent* dirent, size_t size)
+ssize_t sys_readdirents(int fd, struct dirent* dirent, size_t size)
 {
-	if ( size < sizeof(kernel_dirent) ) { errno = EINVAL; return -1; }
 	if ( SSIZE_MAX < size )
 		size = SSIZE_MAX;
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	return desc->readdirents(&ctx, dirent, size, 1 /*maxcount*/);
+	return desc->readdirents(&ctx, dirent, size);
 }
 
 int sys_fchdir(int fd)

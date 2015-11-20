@@ -60,11 +60,8 @@ extern "C" void exit(int status)
 		__exit_handler_stack = __exit_handler_stack->next;
 	}
 
-	pthread_mutex_lock(&__first_dir_lock);
 	pthread_mutex_lock(&__first_file_lock);
 
-	while ( __first_dir )
-		__first_dir->closedir_indirect(__first_dir);
 	for ( FILE* fp = __first_file; fp; fp = fp->next )
 	{
 		flockfile(fp);

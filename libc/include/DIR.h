@@ -54,25 +54,10 @@ typedef struct __DIR DIR;
 
 struct __DIR
 {
-	void* user;
-	int (*read_func)(void* user, struct dirent* dirent, size_t* size);
-	int (*rewind_func)(void* user);
-	int (*fd_func)(void* user);
-	int (*close_func)(void* user);
-	void (*free_func)(DIR* dir);
-	/* Application writers shouldn't use anything beyond this point. */
-	int (*closedir_indirect)(DIR*);
-	DIR* prev;
-	DIR* next;
 	struct dirent* entry;
-	size_t entrysize;
-	int flags;
+	size_t size;
+	int fd;
 };
-
-#if defined(__is_sortix_libc)
-extern DIR* __first_dir;
-extern __pthread_mutex_t __first_dir_lock;
-#endif
 
 #ifdef __cplusplus
 } /* extern "C" */

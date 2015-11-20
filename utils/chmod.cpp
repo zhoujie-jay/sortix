@@ -272,7 +272,8 @@ static bool do_chmod_directory(int fd,
 		joiner = "";
 
 	bool success = true;
-	while ( struct dirent* entry = readdir(dir) )
+	struct dirent* entry;
+	while ( (errno = 0, entry = readdir(dir)) )
 	{
 		if ( !strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..") )
 			continue;
@@ -291,7 +292,7 @@ static bool do_chmod_directory(int fd,
 		free(entry_path);
 	}
 
-	if ( derror(dir) )
+	if ( errno != 0 )
 	{
 		error(0, errno, "reading directory: `%s'", path);
 		closedir(dir);

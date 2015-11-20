@@ -33,12 +33,12 @@
 
 #include <sortix/kernel/refcount.h>
 
+struct dirent;
 struct stat;
 struct statvfs;
 struct termios;
 struct wincurpos;
 struct winsize;
-struct kernel_dirent;
 
 namespace Sortix {
 
@@ -72,8 +72,8 @@ public:
 	int utimens(ioctx_t* ctx, const struct timespec* atime,
 	            const struct timespec* ctime, const struct timespec* mtime);
 	int isatty(ioctx_t* ctx);
-	ssize_t readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
-	                    size_t size, off_t start, size_t maxcount);
+	ssize_t readdirents(ioctx_t* ctx, struct dirent* dirent, size_t size,
+	                    off_t start);
 	Ref<Vnode> open(ioctx_t* ctx, const char* filename, int flags, mode_t mode);
 	int mkdir(ioctx_t* ctx, const char* filename, mode_t mode);
 	int unlink(ioctx_t* ctx, const char* filename);

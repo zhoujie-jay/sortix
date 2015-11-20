@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -24,16 +24,17 @@
 
 #include <dirent.h>
 #include <fcntl.h>
-#include <stddef.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 extern "C" DIR* opendir(const char* path)
 {
-	int fd = open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+	int fd = open(path, O_SEARCH | O_DIRECTORY | O_CLOEXEC);
 	if ( fd < 0 )
 		return NULL;
-	DIR* dir = fdopendir(fd);
+	DIR* dir = (DIR*) calloc(sizeof(DIR), 1);
 	if ( !dir )
 		return close(fd), (DIR*) NULL;
+	dir->fd = fd;
 	return dir;
 }

@@ -148,7 +148,7 @@ bool RespondMakeDir(int chl, ino_t ino)
 	return RespondMessage(chl, FSM_RESP_MKDIR, &body, sizeof(body));
 }
 
-bool RespondReadDir(int chl, struct kernel_dirent* dirent)
+bool RespondReadDir(int chl, struct dirent* dirent)
 {
 	struct fsm_resp_readdirents body;
 	body.ino = dirent->d_ino;
@@ -371,8 +371,8 @@ void HandleReadDir(int chl, struct fsm_req_readdirents* msg, Filesystem* fs)
 	}
 	union
 	{
-		struct kernel_dirent kernel_entry;
-		uint8_t padding[sizeof(struct kernel_dirent) + 256];
+		struct dirent kernel_entry;
+		uint8_t padding[sizeof(struct dirent) + 256];
 	};
 	memset(&kernel_entry, 0, sizeof(kernel_entry));
 
@@ -398,13 +398,12 @@ void HandleReadDir(int chl, struct fsm_req_readdirents* msg, Filesystem* fs)
 		if ( entry->inode && entry->name_len && !(msg->rec_num--) )
 		{
 			kernel_entry.d_reclen = sizeof(kernel_entry) + entry->name_len;
-			kernel_entry.d_nextoff = 0;
 			kernel_entry.d_ino = entry->inode;
 			kernel_entry.d_dev = 0;
 			kernel_entry.d_type = 0; // TODO: Support this!
 			kernel_entry.d_namlen = entry->name_len;
 			memcpy(kernel_entry.d_name, entry->name, entry->name_len);
-			size_t dname_offset = offsetof(struct kernel_dirent, d_name);
+			size_t dname_offset = offsetof(struct dirent, d_name);
 			padding[dname_offset + kernel_entry.d_namlen] = '\0';
 			block->Unref();
 			inode->Unref();

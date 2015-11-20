@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -22,38 +22,34 @@
 
 *******************************************************************************/
 
+#include <sys/readdirents.h>
+
 #include <dirent.h>
-#include <DIR.h>
 #include <errno.h>
-#include <stddef.h>
 #include <stdlib.h>
 
 extern "C" struct dirent* readdir(DIR* dir)
 {
 	int old_errno = errno;
-
-	if ( !dir->read_func )
-		return dir->flags |= _DIR_ERROR, errno = EBADF, (struct dirent*) NULL;
-
-	size_t size = dir->entrysize;
-	int status;
-	while ( 0 < (status = dir->read_func(dir->user, dir->entry, &size)) )
+	struct dirent fallback;
+	struct dirent* entry = dir->entry ? dir->entry : &fallback;
+	size_t size = dir->entry ? dir->size : sizeof(fallback);
+	ssize_t amount;
+	while ( (amount = readdirents(dir->fd, entry, size)) < 0 )
 	{
-		struct dirent* biggerdir = (struct dirent*) malloc(size);
-		if ( !biggerdir )
-			return dir->flags |= _DIR_ERROR, (struct dirent*) NULL;
+		if ( errno != ERANGE )
+			return NULL;
+		errno = old_errno;
+		size_t needed = entry->d_reclen;
 		free(dir->entry);
-		dir->entry = biggerdir;
-		dir->entrysize = size;
+		dir->entry = NULL;
+		struct dirent* new_dirent = (struct dirent*) malloc(needed);
+		if ( !new_dirent )
+			return NULL;
+		entry = dir->entry = new_dirent;
+		size = dir->size = needed;
 	}
-
-	if ( status < 0 )
-		return dir->flags |= _DIR_ERROR, (struct dirent*) NULL;
-
-	dir->flags &= ~_DIR_ERROR;
-
-	if ( !dir->entry->d_name[0] )
-		return dir->flags |= _DIR_EOF, errno = old_errno, (struct dirent*) NULL;
-
+	if ( amount == 0 )
+		return NULL;
 	return dir->entry;
 }

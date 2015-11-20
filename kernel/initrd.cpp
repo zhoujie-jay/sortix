@@ -383,11 +383,11 @@ bool ExtractFromPhysicalInto(addr_t physaddr, size_t size, Ref<Descriptor> desc)
 
 	union
 	{
-		struct kernel_dirent dirent;
-		uint8_t dirent_data[sizeof(struct kernel_dirent) + sizeof(uintmax_t) * 3];
+		struct dirent dirent;
+		uint8_t dirent_data[sizeof(struct dirent) + sizeof(uintmax_t) * 3];
 	};
 
-	while ( 0 < ctx.links->readdirents(&ctx.ioctx, &dirent, sizeof(dirent_data), 1) &&
+	while ( 0 < ctx.links->readdirents(&ctx.ioctx, &dirent, sizeof(dirent_data)) &&
 	        ((const char*) dirent.d_name)[0] )
 	{
 		if ( ((const char*) dirent.d_name)[0] == '.' )

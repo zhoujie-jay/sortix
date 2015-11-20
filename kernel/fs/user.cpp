@@ -217,8 +217,8 @@ public:
 	                    const struct timespec* ctime,
 	                    const struct timespec* mtime);
 	virtual int isatty(ioctx_t* ctx);
-	virtual ssize_t readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
-	                            size_t size, off_t start, size_t maxcount);
+	virtual ssize_t readdirents(ioctx_t* ctx, struct dirent* dirent,
+	                            size_t size, off_t start);
 	virtual Ref<Inode> open(ioctx_t* ctx, const char* filename, int flags,
 	                        mode_t mode);
 	virtual int mkdir(ioctx_t* ctx, const char* filename, mode_t mode);
@@ -1009,8 +1009,8 @@ int Unode::isatty(ioctx_t* ctx)
 	return ret;
 }
 
-ssize_t Unode::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
-                           size_t size, off_t start, size_t /*maxcount*/)
+ssize_t Unode::readdirents(ioctx_t* ctx, struct dirent* dirent, size_t size,
+                           off_t start)
 {
 	Channel* channel = server->Connect(ctx);
 	if ( !channel )
@@ -1030,9 +1030,9 @@ ssize_t Unode::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 			goto break_if;
 		}
 
-		struct kernel_dirent entry;
+		struct dirent entry;
+		memset(&entry, 0, sizeof(entry));
 		entry.d_reclen = sizeof(entry) + resp.namelen + 1;
-		entry.d_nextoff = 0;
 		entry.d_namlen = resp.namelen;
 		entry.d_dev = (dev_t) server;
 		entry.d_ino = resp.ino;
@@ -1041,14 +1041,13 @@ ssize_t Unode::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
 		if ( !ctx->copy_to_dest(dirent, &entry, sizeof(entry)) )
 			goto break_if;
 
-		size_t needed = sizeof(*dirent) + resp.namelen + 1;
-		if ( size < needed && (errno = ERANGE) )
+		if ( size < entry.d_reclen && (errno = ERANGE) )
 			goto break_if;
 
-		uint8_t nul = 0;
+		char nul = '\0';
 		if ( channel->KernelRecv(ctx, dirent->d_name, resp.namelen) &&
 		     ctx->copy_to_dest(&dirent->d_name[resp.namelen], &nul, 1) )
-			ret = (ssize_t) needed;
+			ret = (ssize_t) entry.d_reclen;
 	} break_if:
 	channel->KernelClose();
 	return ret;

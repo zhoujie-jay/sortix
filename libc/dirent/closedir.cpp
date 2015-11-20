@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -23,15 +23,13 @@
 *******************************************************************************/
 
 #include <dirent.h>
-#include <DIR.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 extern "C" int closedir(DIR* dir)
 {
-	int result = dir->close_func ? dir->close_func(dir->user) : 0;
-	dunregister(dir);
+	close(dir->fd);
 	free(dir->entry);
-	if ( dir->free_func )
-		dir->free_func(dir);
-	return result;
+	free(dir);
+	return 0;
 }

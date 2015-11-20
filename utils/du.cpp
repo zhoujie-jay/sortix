@@ -223,7 +223,8 @@ bool disk_usage_file_at(int relfd,
 	}
 
 	bool success = true;
-	while ( struct dirent* entry = readdir(dir) )
+	struct dirent* entry;
+	while ( (errno = 0, entry = readdir(dir)) )
 	{
 		if ( !strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..") )
 			continue;
@@ -249,14 +250,12 @@ bool disk_usage_file_at(int relfd,
 	if ( num_bytes_ptr )
 		*num_bytes_ptr = num_bytes;
 
-#if defined(__sortix__)
-	if ( derror(dir) && errno != ENOTDIR )
+	if ( errno && errno != ENOTDIR )
 	{
 		error(0, errno, "reading directory `%s'", path);
 		closedir(dir);
 		return false;
 	}
-#endif
 
 	if ( print_if_dir )
 		print_disk_usage(num_bytes, block_size, flags, path);

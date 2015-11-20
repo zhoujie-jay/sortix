@@ -217,39 +217,29 @@ Dir::~Dir()
 	delete[] children;
 }
 
-ssize_t Dir::readdirents(ioctx_t* ctx, struct kernel_dirent* dirent,
-                         size_t size, off_t start, size_t /*maxcount*/)
+ssize_t Dir::readdirents(ioctx_t* ctx, struct dirent* dirent, size_t size,
+                         off_t start)
 {
 	ScopedLock lock(&dir_lock);
 	if ( children_used <= (uintmax_t) start )
 		return 0;
-	struct kernel_dirent retdirent;
+	struct dirent retdirent;
 	memset(&retdirent, 0, sizeof(retdirent));
 	const char* name = children[start].name;
 	size_t namelen = strlen(name);
-	size_t needed = sizeof(*dirent) + namelen + 1;
-	ssize_t ret = -1;
-	if ( size < needed )
-	{
-		errno = ERANGE;
-		retdirent.d_namlen = namelen;
-	}
-	else
-	{
-		Ref<Inode> inode = children[start].inode;
-		ret = needed;
-		retdirent.d_reclen = needed;
-		retdirent.d_nextoff = 0;
-		retdirent.d_namlen = namelen;
-		retdirent.d_ino = inode->ino;
-		retdirent.d_dev = inode->dev;
-		retdirent.d_type = ModeToDT(inode->type);
-	}
+	Ref<Inode> inode = children[start].inode;
+	retdirent.d_reclen = sizeof(*dirent) + namelen + 1;
+	retdirent.d_namlen = namelen;
+	retdirent.d_ino = inode->ino;
+	retdirent.d_dev = inode->dev;
+	retdirent.d_type = ModeToDT(inode->type);
 	if ( !ctx->copy_to_dest(dirent, &retdirent, sizeof(retdirent)) )
 		return -1;
-	if ( 0 <= ret && !ctx->copy_to_dest(dirent->d_name, name, namelen+1) )
+	if ( size < retdirent.d_reclen )
+		return errno = ERANGE, -1;
+	if ( !ctx->copy_to_dest(dirent->d_name, name, namelen+1) )
 		return -1;
-	return ret;
+	return (ssize_t) retdirent.d_reclen;
 }
 
 size_t Dir::FindChild(const char* filename)

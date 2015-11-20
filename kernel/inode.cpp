@@ -202,9 +202,9 @@ int AbstractInode::isatty(ioctx_t* /*ctx*/)
 }
 
 ssize_t AbstractInode::readdirents(ioctx_t* /*ctx*/,
-                                   struct kernel_dirent* /*dirent*/,
-                                   size_t /*size*/, off_t /*start*/,
-                                   size_t /*maxcount*/)
+                                   struct dirent* /*dirent*/,
+                                   size_t /*size*/,
+                                   off_t /*start*/)
 {
 	if ( inode_type == INODE_TYPE_DIR )
 		return errno = EBADF, -1;
