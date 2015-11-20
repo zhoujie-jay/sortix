@@ -28,17 +28,14 @@
 #include "fdio.h"
 
 static unsigned char stdout_buffer[BUFSIZ];
-static struct fdio_state stdout_fdio = { NULL, 1 };
 static FILE stdout_file
 {
 	/* buffer = */ stdout_buffer,
-	/* user = */ &stdout_fdio,
+	/* user = */ &stdout_file,
 	/* free_user = */ NULL,
-	/* reopen_func = */ fdio_reopen,
-	/* read_func = */ fdio_read,
+	/* read_func = */ NULL,
 	/* write_func = */ fdio_write,
 	/* seek_func = */ fdio_seek,
-	/* fileno_func = */ fdio_fileno,
 	/* close_func = */ fdio_close,
 	/* free_func = */ NULL,
 	/* file_lock = */ PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP,
@@ -47,6 +44,7 @@ static FILE stdout_file
 	/* next = */ NULL,
 	/* flags = */ _FILE_REGISTERED | _FILE_WRITABLE,
 	/* buffer_mode = */ -1,
+	/* fd = */ 1,
 	/* offset_input_buffer = */ 0,
 	/* amount_input_buffered = */ 0,
 	/* amount_output_buffered = */ 0,

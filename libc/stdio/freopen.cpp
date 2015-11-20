@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -29,18 +29,8 @@
 
 extern "C" FILE* freopen(const char* path, const char* mode, FILE* fp)
 {
-	// If no path is given, simply try to change the mode of the file.
 	if ( !path )
-	{
-		// TODO: Determine whether the file should be closed in case we fail
-		// here to change the mode. A quick look at POSIX doesn't mention that
-		// it should be closed, so we'll assume it shouldn't!
-		if ( !fp->reopen_func )
-			return errno = EBADF, (FILE*) NULL;
-		if ( !fp->reopen_func(fp->user, mode) )
-			return NULL;
-		return fp;
-	}
+		return errno = EBADF, (FILE*) NULL;
 
 	// Uninstall the current backend of the FILE (after flushing) and return the
 	// FILE to the default state (like a new object from fnewfile).

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -38,17 +38,9 @@
 extern "C" {
 #endif
 
-struct fdio_state
-{
-	void (*free_indirect)(void*);
-	int fd;
-};
-
-int fdio_reopen(void* user, const char* mode);
 ssize_t fdio_read(void* user, void* ptr, size_t size);
 ssize_t fdio_write(void* user, const void* ptr, size_t size);
 off_t fdio_seek(void* user, off_t offset, int whence);
-int fdio_fileno(void* user);
 int fdio_close(void* user);
 
 bool fdio_install_fd(FILE* fp, int fd, const char* mode);

@@ -424,9 +424,12 @@ signal/signal.o \
 signal/sigpending.o \
 signal/sigprocmask.o \
 signal/sigsuspend.o \
+stdio/fdio_close.o \
 stdio/fdio_install_fd.o \
 stdio/fdio_install_path.o \
-stdio/fdio.o \
+stdio/fdio_read.o \
+stdio/fdio_seek.o \
+stdio/fdio_write.o \
 stdio/fdopen.o \
 stdio/fgetpos.o \
 stdio/fileno.o \

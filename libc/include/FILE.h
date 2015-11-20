@@ -79,11 +79,9 @@ struct __FILE
 	unsigned char* buffer;
 	void* user;
 	void* free_user;
-	int (*reopen_func)(void* user, const char* mode);
 	ssize_t (*read_func)(void* user, void* ptr, size_t size);
 	ssize_t (*write_func)(void* user, const void* ptr, size_t size);
 	off_t (*seek_func)(void* user, off_t offset, int whence);
-	int (*fileno_func)(void* user);
 	int (*close_func)(void* user);
 	void (*free_func)(void* free_user, FILE* fp);
 	pthread_mutex_t file_lock;
@@ -92,6 +90,7 @@ struct __FILE
 	FILE* next;
 	int flags;
 	int buffer_mode;
+	int fd;
 	size_t offset_input_buffer;
 	size_t amount_input_buffered;
 	size_t amount_output_buffered;

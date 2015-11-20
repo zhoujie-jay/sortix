@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -213,7 +213,7 @@ FILE* fmemopen(void* restrict buffer_ptr,
 		fp->flags |= _FILE_READABLE;
 	if ( mode & FILE_MODE_WRITE )
 		fp->flags |= _FILE_WRITABLE;
-
+	fp->fd = -1;
 	fp->user = state;
 	fp->read_func = fmemopen_read;
 	fp->write_func = fmemopen_write;

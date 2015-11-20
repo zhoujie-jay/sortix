@@ -27,7 +27,5 @@
 
 extern "C" int fileno_unlocked(FILE* fp)
 {
-	if ( !fp->fileno_func )
-		return errno = EBADF, -1;
-	return fp->fileno_func(fp->user);
+	return fp->fd;
 }

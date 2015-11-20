@@ -27,17 +27,14 @@
 
 #include "fdio.h"
 
-static struct fdio_state stderr_fdio = { NULL, 2 };
 static FILE stderr_file
 {
 	/* buffer = */ NULL,
-	/* user = */ &stderr_fdio,
+	/* user = */ &stderr_file,
 	/* free_user = */ NULL,
-	/* reopen_func = */ fdio_reopen,
-	/* read_func = */ fdio_read,
+	/* read_func = */ NULL,
 	/* write_func = */ fdio_write,
 	/* seek_func = */ fdio_seek,
-	/* fileno_func = */ fdio_fileno,
 	/* close_func = */ fdio_close,
 	/* free_func = */ NULL,
 	/* file_lock = */ PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP,
@@ -46,6 +43,7 @@ static FILE stderr_file
 	/* next = */ NULL,
 	/* flags = */ _FILE_REGISTERED | _FILE_WRITABLE,
 	/* buffer_mode = */ _IONBF,
+	/* fd = */ 2,
 	/* offset_input_buffer = */ 0,
 	/* amount_input_buffered = */ 0,
 	/* amount_output_buffered = */ 0,

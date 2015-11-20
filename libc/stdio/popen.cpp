@@ -56,12 +56,6 @@ static off_t popen_seek(void* /*user*/, off_t /*offset*/, int /*whence*/)
 	return errno = ESPIPE, -1;
 }
 
-static int popen_fileno(void* user)
-{
-	popen_t* info = (popen_t*) user;
-	return info->fd;
-}
-
 static int popen_close(void* user)
 {
 	popen_t* info = (popen_t*) user;
@@ -76,13 +70,12 @@ static int popen_close(void* user)
 	return status;
 }
 
-void popen_install(FILE* fp, popen_t* info)
+static void popen_install(FILE* fp, popen_t* info)
 {
 	fp->user = info;
 	fp->read_func = popen_read;
 	fp->write_func = popen_write;
 	fp->seek_func = popen_seek;
-	fp->fileno_func = popen_fileno;
 	fp->close_func = popen_close;
 }
 
@@ -127,6 +120,7 @@ extern "C" FILE* popen(const char* command, const char* type)
 		info->pid = childpid;
 		popen_install(fp, info);
 		fp->flags |= writing ? _FILE_WRITABLE : _FILE_READABLE;
+		fp->fd = info->fd;
 		return fp;
 	}
 

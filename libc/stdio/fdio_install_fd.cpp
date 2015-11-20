@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -47,24 +47,15 @@ extern "C" bool fdio_install_fd(FILE* fp, int fd, const char* mode)
 	     S_ISDIR(st.st_mode) )
 		return errno = EISDIR, false;
 
-	struct fdio_state* fdio = (struct fdio_state*) malloc(sizeof(struct fdio_state));
-	if ( !fdio )
-		return false;
-
-	fdio->free_indirect = free;
-	fdio->fd = fd;
-
 	if ( mode_flags & FILE_MODE_READ )
 		fp->flags |= _FILE_READABLE;
 	if ( mode_flags & FILE_MODE_WRITE )
 		fp->flags |= _FILE_WRITABLE;
-
-	fp->user = fdio;
-	fp->reopen_func = fdio_reopen;
+	fp->fd = fd;
+	fp->user = fp;
 	fp->read_func = fdio_read;
 	fp->write_func = fdio_write;
 	fp->seek_func = fdio_seek;
-	fp->fileno_func = fdio_fileno;
 	fp->close_func = fdio_close;
 
 	return true;

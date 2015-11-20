@@ -113,6 +113,7 @@ extern "C" FILE* open_memstream(char** string_out, size_t* used_out)
 	ms->used = 0;
 	ms->size = 0;
 	fp->flags |= _FILE_WRITABLE;
+	fp->fd = -1;
 	fp->user = ms;
 	fp->write_func = memstream_write;
 	fp->seek_func = memstream_seek;
