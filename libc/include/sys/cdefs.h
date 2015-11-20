@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -50,6 +50,16 @@
 #define restrict __restrict
 #undef __HAS_RESTRICT
 #define __HAS_RESTRICT 2
+#endif
+
+/* Macro to declare a weak alias. */
+#if defined(__is_sortix_libc)
+#ifdef __cplusplus
+#define weak_alias_cxx(old, new, mangled) \
+	extern "C" { extern __typeof(old) new __attribute__((weak, alias(mangled))); }
+#endif
+#define weak_alias(old, new) \
+	extern __typeof(old) new __attribute__((weak, alias(#old)))
 #endif
 
 #define __pure2 __attribute__((__const__))

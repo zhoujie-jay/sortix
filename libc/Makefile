@@ -453,7 +453,9 @@ stdio/remove.o \
 stdio/renameat.o \
 stdio/rename.o \
 stdio/scanf.o \
-stdio/stdio.o \
+stdio/stderr.o \
+stdio/stdin.o \
+stdio/stdout.o \
 stdio/tmpfile.o \
 stdio/vfprintf.o \
 stdio/vprintf.o \

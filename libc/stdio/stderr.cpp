@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -17,38 +17,39 @@
     You should have received a copy of the GNU Lesser General Public License
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
-    stdio/fflush.cpp
-    Flushes a FILE.
+    stdio/stderr.cpp
+    Standard error.
 
 *******************************************************************************/
 
 #include <pthread.h>
 #include <stdio.h>
 
-static FILE* volatile dummy_file = NULL;
-weak_alias_cxx(dummy_file, __stdout_used, "_ZL10dummy_file");
+#include "fdio.h"
 
-extern "C" int fflush(FILE* fp)
+static struct fdio_state stderr_fdio = { NULL, 2 };
+static FILE stderr_file
 {
-	if ( !fp )
-	{
-		int result = 0;
-		pthread_mutex_lock(&__first_file_lock);
-		if ( __stdout_used )
-			fflush(__stdout_used);
-		for ( fp = __first_file; fp; fp = fp->next )
-		{
-			flockfile(fp);
-			if ( fp->flags & _FILE_LAST_WRITE )
-				result |= fflush_unlocked(fp);
-			funlockfile(fp);
-		}
-		pthread_mutex_unlock(&__first_file_lock);
-		return result;
-	}
+	/* buffer = */ NULL,
+	/* user = */ &stderr_fdio,
+	/* free_user = */ NULL,
+	/* reopen_func = */ fdio_reopen,
+	/* read_func = */ fdio_read,
+	/* write_func = */ fdio_write,
+	/* seek_func = */ fdio_seek,
+	/* fileno_func = */ fdio_fileno,
+	/* close_func = */ fdio_close,
+	/* free_func = */ NULL,
+	/* file_lock = */ PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP,
+	/* fflush_indirect = */ NULL,
+	/* prev = */ NULL,
+	/* next = */ NULL,
+	/* flags = */ _FILE_REGISTERED | _FILE_WRITABLE,
+	/* buffer_mode = */ _IONBF,
+	/* offset_input_buffer = */ 0,
+	/* amount_input_buffered = */ 0,
+	/* amount_output_buffered = */ 0,
+};
 
-	flockfile(fp);
-	int ret = fflush_unlocked(fp);
-	funlockfile(fp);
-	return ret;
-}
+extern "C" { FILE* const stderr = &stderr_file; }
+extern "C" { FILE* volatile __stderr_used = &stderr_file; }

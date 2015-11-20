@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -35,12 +35,25 @@ extern "C" { struct exit_handler* __exit_handler_stack = NULL; }
 static pthread_mutex_t exit_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 static bool currently_exiting = false;
 
-extern "C" FILE __stdin_file;
+static FILE* volatile dummy_file = NULL; // volatile due to constant folding bug
+weak_alias_cxx(dummy_file, __stdin_used, "_ZL10dummy_file");
+weak_alias_cxx(dummy_file, __stdout_used, "_ZL10dummy_file");
 
 extern "C" { DIR* __first_dir = NULL; }
 extern "C" { pthread_mutex_t __first_dir_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; }
-extern "C" { FILE* __first_file = &__stdin_file; }
+extern "C" { FILE* __first_file = NULL; }
 extern "C" { pthread_mutex_t __first_file_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; }
+
+static void exit_file(FILE* fp)
+{
+	if ( !fp )
+		return;
+	flockfile(fp);
+	if ( fp->fflush_indirect )
+		fp->fflush_indirect(fp);
+	if ( fp->close_func )
+		fp->close_func(fp->user);
+}
 
 extern "C" void exit(int status)
 {
@@ -51,7 +64,7 @@ extern "C" void exit(int status)
 	// It's undefined behavior to call this function more than once: If a
 	// cleanup function calls this function we'll self-destruct immediately.
 	if ( currently_exiting )
-		_Exit(status);
+		_exit(status);
 	currently_exiting = true;
 
 	while ( __exit_handler_stack )
@@ -62,14 +75,10 @@ extern "C" void exit(int status)
 
 	pthread_mutex_lock(&__first_file_lock);
 
+	exit_file(__stdin_used);
+	exit_file(__stdout_used);
 	for ( FILE* fp = __first_file; fp; fp = fp->next )
-	{
-		flockfile(fp);
-		if ( fp->fflush_indirect )
-			fp->fflush_indirect(fp);
-		if ( fp->close_func )
-			fp->close_func(fp->user);
-	}
+		exit_file(fp);
 
-	_Exit(status);
+	_exit(status);
 }
