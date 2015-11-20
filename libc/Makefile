@@ -319,7 +319,6 @@ arpa/inet/inet_pton.o \
 blf/blowfish.o \
 $(CPUDIR)/fork.o \
 $(CPUDIR)/setjmp.o \
-$(CPUDIR)/signal.o \
 $(CPUDIR)/syscall.o \
 dirent/closedir.o \
 dirent/dscandir_r.o \
