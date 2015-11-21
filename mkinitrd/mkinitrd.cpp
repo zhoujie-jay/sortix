@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <assert.h>
 #include <dirent.h>
 #include <endian.h>
 #include <errno.h>
@@ -467,16 +468,17 @@ bool WriteNode(struct initrd_superblock* sb, int fd, const char* outputname,
 			dirent.reclen = (dirent.reclen+3)/4*4; // Align entries.
 			size_t entsize = sizeof(dirent);
 			export_initrd_dirent(&dirent);
+			assert((dataoff & (alignof(dirent)-1)) == 0 );
 			ssize_t hdramt = pwriteall(fd, &dirent, entsize, dataoff);
 			import_initrd_dirent(&dirent);
 			ssize_t nameamt = pwriteall(fd, name, namelen+1, dataoff + entsize);
 			if ( hdramt < (ssize_t) entsize || nameamt < (ssize_t) (namelen+1) )
 				return error(0, errno, "write: %s", outputname), false;
 			size_t padding = dirent.reclen - (entsize + (namelen+1));
-			for ( size_t i = 0; i < padding; i++ )
+			for ( size_t n = 0; n < padding; n++ )
 			{
 				uint8_t nul = 0;
-				if ( pwrite(fd, &nul, 1, dataoff+entsize+namelen+1+i) != 1 )
+				if ( pwrite(fd, &nul, 1, dataoff+entsize+namelen+1+n) != 1 )
 					return error(0, errno, "write: %s", outputname), false;
 			}
 			filesize += dirent.reclen;
@@ -497,12 +499,14 @@ bool WriteNode(struct initrd_superblock* sb, int fd, const char* outputname,
 	uint32_t inodepos = sb->inodeoffset + node->ino * sb->inodesize;
 	uint32_t inodesize = sizeof(inode);
 	export_initrd_inode(&inode);
+	assert((inodepos & (alignof(inode)-1)) == 0 );
 	if ( pwriteall(fd, &inode, inodesize, inodepos) < inodesize )
 		return error(0, errno, "write: %s", outputname), false;
 	import_initrd_inode(&inode);
 
 	uint32_t increment = dataoff - origfssize;
 	sb->fssize += increment;
+	sb->fssize = (sb->fssize+7)/8*8; // Align upwards.
 
 	return node->written = true;
 }
@@ -544,6 +548,7 @@ bool Format(const char* outputname, int fd, uint32_t inodecount, Node* root)
 
 	uint32_t inodebytecount = sb.inodesize * sb.inodecount;
 	sb.fssize += inodebytecount;
+	sb.fssize = (sb.fssize+7)/8*8; // Align upwards.
 
 	if ( !WriteNodeRecursive(&sb, fd, outputname, root) )
 		return false;
@@ -551,6 +556,7 @@ bool Format(const char* outputname, int fd, uint32_t inodecount, Node* root)
 	uint32_t crcsize = sizeof(uint32_t);
 	sb.sumalgorithm = INITRD_ALGO_CRC32;
 	sb.sumsize = crcsize;
+	sb.fssize = (sb.fssize+3)/4*4; // Align upwards.
 	sb.fssize += sb.sumsize;
 
 	export_initrd_superblock(&sb);
@@ -561,11 +567,18 @@ bool Format(const char* outputname, int fd, uint32_t inodecount, Node* root)
 	}
 	import_initrd_superblock(&sb);
 
+	if ( ftruncate(fd, sb.fssize) < 0 )
+	{
+		error(0, errno, "truncate: %s", outputname);
+		return false;
+	}
+
 	uint32_t checksize = sb.fssize - sb.sumsize;
 	uint32_t crc;
 	if ( !CRC32File(&crc, outputname, fd, 0, checksize) )
 		return false;
 	crc = htole32(crc);
+	assert((checksize & (alignof(crc) - 1)) == 0);
 	if ( pwriteall(fd, &crc, crcsize, checksize) < crcsize )
 		return false;
 	crc = le32toh(crc);
