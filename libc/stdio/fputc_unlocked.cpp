@@ -53,7 +53,7 @@ extern "C" int fputc_unlocked(int c, FILE* fp)
 
 	if ( fp->amount_output_buffered == fp->buffersize )
 	{
-		if ( !fflush_unlocked(fp) == EOF )
+		if ( fflush_unlocked(fp) == EOF )
 			return EOF;
 	}
 
