@@ -40,6 +40,8 @@ size_t fread_unlocked(void* ptr,
 
 	unsigned char* buf = (unsigned char*) ptr;
 	size_t count = element_size * num_elements;
+	if ( count == 0 )
+		return num_elements;
 
 	if ( fp->buffer_mode == _IONBF )
 	{

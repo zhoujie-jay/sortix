@@ -40,6 +40,8 @@ size_t fwrite_unlocked(const void* ptr,
 
 	const unsigned char* buf = (const unsigned char*) ptr;
 	size_t count = element_size * num_elements;
+	if ( count == 0 )
+		return num_elements;
 
 	if ( fp->buffer_mode == _IONBF )
 	{
