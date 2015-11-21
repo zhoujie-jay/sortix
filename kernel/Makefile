@@ -66,10 +66,10 @@ endif
 
 # Object files that constitute the kernel.
 
-CRTI_OBJ:=$(CPUDIR)/crti.o
-CRTBEGIN_OBJ:=$(shell $(CXX) $(CXXFLAGS) -print-file-name=crtbegin.o)
-CRTEND_OBJ:=$(shell $(CXX) $(CXXFLAGS) -print-file-name=crtend.o)
-CRTN_OBJ:=$(CPUDIR)/crtn.o
+CRTI_OBJ=$(CPUDIR)/crti.o
+CRTBEGIN_OBJ=$(shell $(CXX) $(CXXFLAGS) -print-file-name=crtbegin.o)
+CRTEND_OBJ=$(shell $(CXX) $(CXXFLAGS) -print-file-name=crtend.o)
+CRTN_OBJ=$(CPUDIR)/crtn.o
 
 LIBS=\
 -nostdlib \
