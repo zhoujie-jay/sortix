@@ -235,7 +235,7 @@ int sys_sigsuspend(const sigset_t* set)
 	Process* process = CurrentProcess();
 	Thread* thread = CurrentThread();
 
-	sigset_t old_signal_mask;
+	sigset_t old_signal_mask; sigemptyset(&old_signal_mask);
 	sigset_t new_signal_mask;
 
 	ScopedLock lock(&process->signal_lock);
