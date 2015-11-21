@@ -72,8 +72,12 @@ pid_t ProcessTable::Allocate(Process* process)
 		struct ptable_entry* new_entries = new struct ptable_entry[new_length];
 		if ( !new_entries )
 			return -1;
-		memcpy(new_entries, entries, sizeof(struct ptable_entry) * entries_length);
-		delete[] entries;
+		if ( entries )
+		{
+			size_t old_size = sizeof(struct ptable_entry) * entries_length;
+			memcpy(new_entries, entries, old_size);
+			delete[] entries;
+		}
 		entries = new_entries;
 		entries_length = new_length;
 	}

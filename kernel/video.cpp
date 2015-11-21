@@ -61,8 +61,12 @@ bool RegisterDevice(const char* name, VideoDevice* device)
 		DeviceEntry* newdevices = new DeviceEntry[newdevices_length];
 		if ( !newdevices )
 			return false;
-		memcpy(newdevices, devices, sizeof(*devices) * num_devices);
-		delete[] devices; devices = newdevices;
+		if ( devices )
+		{
+			memcpy(newdevices, devices, sizeof(*devices) * num_devices);
+			delete[] devices;
+		}
+		devices = newdevices;
 		devices_length = devices_length;
 	}
 

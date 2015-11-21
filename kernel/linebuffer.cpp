@@ -66,9 +66,12 @@ bool LineBuffer::Push(uint32_t unicode)
 		size_t leadingavai = bufferlength-bufferoffset;
 		size_t leading = (leadingavai < bufferused) ? leadingavai : bufferused;
 		size_t trailing = bufferused - leading;
-		memcpy(newbuffer, buffer + bufferoffset, leading * elemsize);
-		memcpy(newbuffer + leading, buffer, trailing * elemsize);
-		delete[] buffer;
+		if ( buffer )
+		{
+			memcpy(newbuffer, buffer + bufferoffset, leading * elemsize);
+			memcpy(newbuffer + leading, buffer, trailing * elemsize);
+			delete[] buffer;
+		}
 		buffer = newbuffer;
 		bufferlength = newbufferlength;
 		bufferoffset = 0;
