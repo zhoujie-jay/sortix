@@ -74,6 +74,8 @@ enum build_step step_of_step_name(const char* step_name)
 {
 	if ( !strcmp(step_name, "start") )
 		return BUILD_STEP_START;
+	if ( !strcmp(step_name, "clean") )
+		return BUILD_STEP_PRE_CLEAN;
 	if ( !strcmp(step_name, "pre-clean") )
 		return BUILD_STEP_PRE_CLEAN;
 	if ( !strcmp(step_name, "configure") )
@@ -88,8 +90,6 @@ enum build_step step_of_step_name(const char* step_name)
 		return BUILD_STEP_POST_CLEAN;
 	if ( !strcmp(step_name, "package") )
 		return BUILD_STEP_PACKAGE;
-	if ( !strcmp(step_name, "clean") )
-		return BUILD_STEP_POST_CLEAN;
 	if ( !strcmp(step_name, "end") )
 		return BUILD_STEP_END;
 	return BUILD_STEP_NO_SUCH_STEP;
@@ -398,7 +398,7 @@ void SetNeededVariables(metainfo_t* minfo)
 	SetNeedVariableCrossTool(minfo, "STRIP", "strip");
 }
 
-void Configure(metainfo_t* minfo)
+void Configure(metainfo_t* minfo, const char* subdir = NULL)
 {
 	if ( fork_and_wait_or_recovery() )
 	{
@@ -432,6 +432,8 @@ void Configure(metainfo_t* minfo)
 			                                        "false"));
 		if ( chdir(minfo->build_dir) != 0 )
 			error(1, errno, "chdir: `%s'", minfo->build_dir);
+		if ( subdir && chdir(subdir) != 0 )
+			error(1, errno, "chdir: `%s/%s'", minfo->build_dir, subdir);
 		SetNeededVariables(minfo);
 		string_array_t env_vars = string_array_make();
 		string_array_append_token_string(&env_vars, conf_extra_vars);
@@ -491,6 +493,31 @@ void Configure(metainfo_t* minfo)
 		recovery_execvp(args.strings[0], (char* const*) args.strings);
 		error(127, errno, "`%s'", args.strings[0]);
 	}
+}
+
+bool TestDirty(metainfo_t* minfo,
+               const char* subdir,
+               const char* candidate)
+{
+	if ( !subdir )
+		subdir = ".";
+	char* path;
+	if ( asprintf(&path, "%s/%s/%s", minfo->build_dir, subdir, candidate) < 0 )
+		error(1, errno, "asprintf");
+	bool result = access(path, F_OK) == 0;
+	free(path);
+	return result;
+}
+
+bool IsDirty(metainfo_t* minfo, const char* subdir = NULL)
+{
+	string_array_t* pkg_info = &minfo->package_info;
+	const char* dirty_file = dictionary_get(pkg_info, "pkg.dirty-file");
+	if ( dirty_file )
+		return TestDirty(minfo, subdir, dirty_file);
+	return TestDirty(minfo, subdir, "config.log") ||
+	       TestDirty(minfo, subdir, "Makefile") ||
+	       TestDirty(minfo, subdir, "makefile");
 }
 
 void Make(metainfo_t* minfo, const char* make_target,
@@ -599,18 +626,20 @@ void BuildPackage(metainfo_t* minfo)
 		dictionary_get(pinfo, "pkg.make.ignore-clean-failure", "true");
 	bool ignore_clean_failure = parse_boolean(ignore_clean_failure_var);
 
-	if ( SHOULD_DO_BUILD_STEP(BUILD_STEP_PRE_CLEAN, minfo) && !use_build_dir )
+	const char* subdir = dictionary_get(pinfo, "pkg.subdir", NULL);
+
+	if ( SHOULD_DO_BUILD_STEP(BUILD_STEP_PRE_CLEAN, minfo) &&
+	     !use_build_dir &&
+	     IsDirty(minfo) )
 		Make(minfo, clean_target, NULL, !ignore_clean_failure);
 
 	// Configure the build directory if needed.
 	if ( strcmp(build_system, "configure") == 0 &&
 	     SHOULD_DO_BUILD_STEP(BUILD_STEP_CONFIGURE, minfo) )
-		Configure(minfo);
+		Configure(minfo, subdir);
 
 	bool location_independent =
 		parse_boolean(dictionary_get(pinfo, "pkg.location-independent", "false"));
-
-	const char* subdir = dictionary_get(pinfo, "pkg.subdir", NULL);
 
 	const char* build_target = dictionary_get(pinfo, "pkg.make.build-target", "all");
 	const char* install_target = dictionary_get(pinfo, "pkg.make.install-target", "install");
