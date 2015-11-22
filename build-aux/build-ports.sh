@@ -1,4 +1,4 @@
-set -e
+#!/bin/sh -e
 
 make_dir_path_absolute() {
   (cd "$1" && pwd)
@@ -9,9 +9,7 @@ has_command() {
 }
 
 # Detect if the environment isn't set up properly.
-if [ -z "$PACKAGES" -a "${PACKAGES+x}" = 'x' ]; then
-  exit 0
-elif [ -z "$HOST" ]; then
+if [ -z "$HOST" ]; then
   echo "$0: error: You need to set \$HOST" >&2
   exit 1
 elif [ -z "$SYSROOT" ]; then
@@ -53,6 +51,16 @@ CFLAGS="$CFLAGS -Werror=format -Wno-error=format-contains-nul -Werror=implicit-f
 CXXFLAGS="$CXXFLAGS -Werror=format -Wno-error=format-contains-nul"
 export CFLAGS
 export CXXFLAGS
+
+# Create the system root if absent.
+mkdir -p "$SYSROOT"
+
+# Create the binary package repository.
+mkdir -p "$SORTIX_REPOSITORY_DIR"
+
+# Initialize Tix package management in the system root if absent.
+[ -e "$SYSROOT/tix/collection.conf" ] ||
+tix-collection "$SYSROOT" create --platform=$HOST --prefix= --disable-multiarch --generation=2
 
 # Detect all packages.
 get_all_packages() {
@@ -123,16 +131,6 @@ BUILD_LIST=$(unset MAKE;
              make -Bs -f "$DEPENDENCY_MAKEFILE" $PACKAGES)
 rm -f "$DEPENDENCY_MAKEFILE"
 PACKAGES="$BUILD_LIST"
-
-# Create the system root if absent.
-mkdir -p "$SYSROOT"
-
-# Create the binary package repository.
-mkdir -p "$SORTIX_REPOSITORY_DIR"
-
-# Initialize Tix package management in the system root if absent.
-[ -e "$SYSROOT/tix/collection.conf" ] ||
-tix-collection "$SYSROOT" create --platform=$HOST --prefix= --disable-multiarch --generation=2
 
 # Build all the packages (if needed) and otherwise install them.
 for PACKAGE in $PACKAGES; do
