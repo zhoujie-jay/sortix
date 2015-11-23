@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -395,7 +395,7 @@ unsigned char iterate_constructs_repeat(struct construct_iterator_repeat* iter)
 	return iter->has_last_c = true, iter->last_c = c;
 }
 
-void calculate_translator(unsigned char translator[UCHAR_MAX],
+void calculate_translator(unsigned char translator[UCHAR_MAX + 1],
                           const char* string_1,
                           const char* string_2)
 {
@@ -425,7 +425,7 @@ void calculate_translator(unsigned char translator[UCHAR_MAX],
 	}
 }
 
-void calculate_translator_complement(unsigned char translator[UCHAR_MAX],
+void calculate_translator_complement(unsigned char translator[UCHAR_MAX + 1],
                                      const char* string_1,
                                      const char* string_2)
 {
@@ -436,7 +436,7 @@ void calculate_translator_complement(unsigned char translator[UCHAR_MAX],
 			break;
 	}
 
-	bool s1_members[UCHAR_MAX];
+	bool s1_members[UCHAR_MAX + 1];
 	memset(&s1_members, 0, sizeof(s1_members));
 
 	struct construct_iterator s1i;
@@ -462,7 +462,7 @@ void calculate_translator_complement(unsigned char translator[UCHAR_MAX],
 	}
 }
 
-void calculate_character_set(bool deletes[UCHAR_MAX],
+void calculate_character_set(bool deletes[UCHAR_MAX + 1],
                              const char* string_1)
 {
 	for ( unsigned char i = 0; true; i++ )
@@ -482,7 +482,7 @@ void calculate_character_set(bool deletes[UCHAR_MAX],
 		deletes[c1] = true;
 }
 
-void calculate_character_set_complement(bool deletes[UCHAR_MAX],
+void calculate_character_set_complement(bool deletes[UCHAR_MAX + 1],
                                         const char* string_1)
 {
 	calculate_character_set(deletes, string_1);
@@ -573,9 +573,9 @@ int main(int argc, char* argv[])
 		error(1, 0, "missing operand");
 	const char* string_1 = argv[1];
 
-	bool deletes[UCHAR_MAX];
-	bool squeezes[UCHAR_MAX];
-	unsigned char translator[UCHAR_MAX];
+	bool deletes[UCHAR_MAX + 1];
+	bool squeezes[UCHAR_MAX + 1];
+	unsigned char translator[UCHAR_MAX + 1];
 	for ( unsigned char i = 0; true; i++ )
 	{
 		deletes[i] = false;
@@ -600,14 +600,12 @@ int main(int argc, char* argv[])
 			calculate_character_set(deletes, string_1);
 
 		calculate_character_set(squeezes, string_2);
-
 	}
 	else if ( flag_delete && !flag_squeeze )
 	{
 		if ( 3 <= argc )
 			error(1, 0, "extra operand `%s'", argv[3]);
 
-		bool deletes[UCHAR_MAX];
 		if ( flag_complement )
 			calculate_character_set_complement(deletes, string_1);
 		else
