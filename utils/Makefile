@@ -43,6 +43,7 @@ mkdir \
 mktemp \
 mv \
 pager \
+passwd \
 ps \
 pstree \
 pwd \
