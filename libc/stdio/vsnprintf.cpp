@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -18,7 +18,7 @@
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
     stdio/vsnprintf.cpp
-    Prints a formatted string to a limited string.
+    Prints a formatted string to the supplied buffer.
 
 *******************************************************************************/
 
@@ -26,40 +26,38 @@
 #include <stdio.h>
 #include <string.h>
 
-typedef struct vsnprintf_struct
+struct vsnprintf
 {
 	char* str;
 	size_t size;
-	size_t produced;
 	size_t written;
-} vsnprintf_t;
+};
 
-static size_t StringPrintCallback(void* user, const char* string,
-                                  size_t stringlen)
+static size_t vsnprintf_callback(void* ctx, const char* string, size_t length)
 {
-	vsnprintf_t* info = (vsnprintf_t*) user;
-	if ( info->produced < info->size )
+	struct vsnprintf* info = (struct vsnprintf*) ctx;
+	if ( 1 <= info->size && info->written < info->size )
 	{
-		size_t available = info->size - info->produced;
-		size_t possible = (stringlen < available) ? stringlen : available;
-		memcpy(info->str + info->produced, string, possible);
+		size_t available = info->size - info->written;
+		size_t possible = length < available ? length : available;
+		memcpy(info->str + info->written, string, possible);
 		info->written += possible;
 	}
-	info->produced += stringlen;
-	return stringlen;
+	return length;
 }
 
 extern "C"
-int vsnprintf(char* restrict str, size_t size, const char* restrict format,
+int vsnprintf(char* restrict str,
+              size_t size,
+              const char* restrict format,
               va_list list)
 {
-	vsnprintf_t info;
+	struct vsnprintf info;
 	info.str = str;
-	info.size = size ? size-1 : 0;
-	info.produced = 0;
+	info.size = size ? size - 1 : 0;
 	info.written = 0;
-	int result = vcbprintf(&info, StringPrintCallback, format, list);
-	if ( size )
+	int result = vcbprintf(&info, vsnprintf_callback, format, list);
+	if ( 1 <= size )
 		info.str[info.written] = '\0';
 	return result;
 }

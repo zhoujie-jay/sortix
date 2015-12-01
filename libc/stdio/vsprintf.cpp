@@ -18,7 +18,7 @@
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
     stdio/vsprintf.cpp
-    Prints a formatted string to a string.
+    Prints a formatted string to the supplied buffer.
 
 *******************************************************************************/
 

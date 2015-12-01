@@ -18,7 +18,7 @@
     along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
 
     stdio/snprintf.cpp
-    Prints a formatted string to a limited string.
+    Prints a formatted string to the supplied buffer.
 
 *******************************************************************************/
 
