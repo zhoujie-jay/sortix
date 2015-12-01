@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -39,8 +39,10 @@ static size_t convert_integer(char* destination, uintmax_t value,
 	while ( base <= copy )
 		copy /= base, result++;
 	for ( size_t i = result; i != 0; i-- )
-		destination[i-1] = digits[value % base],
+	{
+		destination[i-1] = digits[value % base];
 		value /= base;
+	}
 	return result;
 }
 
@@ -49,16 +51,8 @@ static size_t noop_callback(void*, const char*, size_t amount)
 	return amount;
 }
 
-static inline
-size_t callback_character(void* user,
-                          size_t (*callback)(void*, const char*, size_t),
-                          char c)
-{
-	return callback(user, &c, 1);
-}
-
 extern "C"
-int vcbprintf(void* user,
+int vcbprintf(void* ctx,
               size_t (*callback)(void*, const char*, size_t),
               const char* format,
               va_list parameters)
@@ -77,7 +71,7 @@ int vcbprintf(void* user,
 			size_t amount = 1;
 			while ( format[amount] && format[amount] != '%' )
 				amount++;
-			if ( callback(user, format, amount) != amount )
+			if ( callback(ctx, format, amount) != amount )
 				return -1;
 			format += amount;
 			written += amount;
@@ -106,9 +100,6 @@ int vcbprintf(void* user,
 		bool group_thousands = false;
 		bool alternate_output_digits = false;
 
-		(void) group_thousands;
-		(void) alternate_output_digits;
-
 		while ( true )
 		{
 			switch ( *format++ )
@@ -124,6 +115,9 @@ int vcbprintf(void* user,
 			}
 			break;
 		}
+
+		(void) group_thousands;
+		(void) alternate_output_digits;
 
 		int field_width = 0;
 		if ( *format == '*' && (format++, true) )
@@ -143,14 +137,15 @@ int vcbprintf(void* user,
 				int int_precision = va_arg(parameters, int);
 				precision = 0 <= int_precision ? (size_t) int_precision : 0;
 			}
+			else if ( *format == '-' && (format++, true) )
+			{
+				while ( '0' <= *format && *format <= '9' )
+					format++;
+			}
 			else
 			{
-				if ( *format == '-' && (format++, true) )
-					while ( '0' <= *format && *format <= '9' )
-						format++;
-				else
-					while ( '0' <= *format && *format <= '9' )
-						precision = 10 * precision + *format++ - '0';
+				while ( '0' <= *format && *format <= '9' )
+					precision = 10 * precision + *format++ - '0';
 			}
 		}
 
@@ -281,8 +276,10 @@ int vcbprintf(void* user,
 			else if ( prepend_blank_if_positive )
 				prefix[prefix_length++] = ' ';
 			if ( alternate && (conversion == 'x' || conversion == 'X') && value != 0 )
-				prefix[prefix_digits_length++, prefix_length++] = '0',
+			{
+				prefix[prefix_digits_length++, prefix_length++] = '0';
 				prefix[prefix_digits_length++, prefix_length++] = conversion;
+			}
 			if ( alternate && conversion == 'o' && value != 0 )
 				prefix[prefix_digits_length++, prefix_length++] = '0';
 
@@ -308,35 +305,47 @@ int vcbprintf(void* user,
 			bool use_right_pad = !use_zero_pad && field_width < 0;
 
 			if ( use_left_pad )
+			{
 				for ( size_t i = length_with_precision; i < abs_field_width; i++ )
-					if ( callback_character(user, callback, ' ') != 1 )
+				{
+					if ( callback(ctx, " ", 1) != 1 )
 						return -1;
-					else
-						written++;
-			if ( callback(user, prefix, prefix_length) != prefix_length )
+					written++;
+				}
+			}
+			if ( callback(ctx, prefix, prefix_length) != prefix_length )
 				return -1;
 			written += prefix_length;
 			if ( use_zero_pad )
+			{
 				for ( size_t i = normal_length; i < abs_field_width; i++ )
-					if ( callback_character(user, callback, '0') != 1 )
+				{
+					if ( callback(ctx, "0", 1) != 1 )
 						return -1;
-					else
-						written++;
+					written++;
+				}
+			}
 			if ( use_precision )
+			{
 				for ( size_t i = digits_length; i < precision; i++ )
-					if ( callback_character(user, callback, '0') != 1 )
+				{
+					if ( callback(ctx, "0", 1) != 1 )
 						return -1;
-					else
-						written++;
-			if ( callback(user, output, output_length) != output_length )
+					written++;
+				}
+			}
+			if ( callback(ctx, output, output_length) != output_length )
 				return -1;
 			written += output_length;
 			if ( use_right_pad )
+			{
 				for ( size_t i = length_with_precision; i < abs_field_width; i++ )
-					if ( callback_character(user, callback, ' ') != 1 )
+				{
+					if ( callback(ctx, " ", 1) != 1 )
 						return -1;
-					else
-						written++;
+					written++;
+				}
+			}
 		}
 #if !defined(__is_sortix_kernel)
 		else if ( *format == 'e' || *format == 'E' ||
@@ -376,22 +385,28 @@ int vcbprintf(void* user,
 				goto incomprehensible_conversion;
 
 			if ( !field_width_is_negative && 1 < abs_field_width )
+			{
 				for ( size_t i = 1; i < abs_field_width; i++ )
-					if ( callback_character(user, callback, ' ') != 1 )
+				{
+					if ( callback(ctx, " ", 1) != 1 )
 						return -1;
-					else
-						written++;
+					written++;
+				}
+			}
 
-			if ( callback(user, &c, 1) != 1 )
+			if ( callback(ctx, &c, 1) != 1 )
 				return -1;
 			written++;
 
 			if ( field_width_is_negative && 1 < abs_field_width )
+			{
 				for ( size_t i = 1; i < abs_field_width; i++ )
-					if ( callback_character(user, callback, ' ') != 1 )
+				{
+					if ( callback(ctx, " ", 1) != 1 )
 						return -1;
-					else
-						written++;
+					written++;
+				}
+			}
 		}
 		else if ( *format == 'm' || *format == 's' )
 		{
@@ -419,22 +434,28 @@ int vcbprintf(void* user,
 				string_length++;
 
 			if ( !field_width_is_negative && string_length < abs_field_width )
+			{
 				for ( size_t i = string_length; i < abs_field_width; i++ )
-					if ( callback_character(user, callback, ' ') != 1 )
+				{
+					if ( callback(ctx, " ", 1) != 1 )
 						return -1;
-					else
-						written++;
+					written++;
+				}
+			}
 
-			if ( callback(user, string, string_length) != string_length )
+			if ( callback(ctx, string, string_length) != string_length )
 				return -1;
 			written += string_length;
 
 			if ( field_width_is_negative && string_length < abs_field_width )
+			{
 				for ( size_t i = string_length; i < abs_field_width; i++ )
-					if ( callback_character(user, callback, ' ') != 1 )
+				{
+					if ( callback(ctx, " ", 1) != 1 )
 						return -1;
-					else
-						written++;
+					written++;
+				}
+			}
 
 		}
 		else if ( *format == 'n' && (format++, true) )
@@ -463,7 +484,7 @@ int vcbprintf(void* user,
 	}
 
 	if ( INT_MAX < written )
-		return INT_MAX;
+		return -1;
 
 	return written;
 }

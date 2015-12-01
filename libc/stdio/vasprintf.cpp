@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -27,37 +27,35 @@
 #include <string.h>
 #include <stdlib.h>
 
-struct vasprintf_state
+struct vasprintf
 {
-	char* string;
-	size_t string_length;
-	size_t string_used;
+	char* buffer;
+	size_t used;
+	size_t size;
 };
 
-static size_t vasprintf_callback(void* user, const char* string, size_t length)
+static size_t vasprintf_callback(void* ctx, const char* string, size_t length)
 {
-	struct vasprintf_state* state = (struct vasprintf_state*) user;
-	if ( !state->string )
-		return 0;
-	size_t needed_length = state->string_used + length + 1;
-	if ( state->string_length < needed_length )
+	struct vasprintf* state = (struct vasprintf*) ctx;
+	size_t needed_size = state->used + length + 1;
+	if ( state->size < needed_size )
 	{
-		size_t new_length = 2 * state->string_used;
-		if ( new_length < needed_length )
-			new_length = needed_length;
-		size_t new_size = new_length * sizeof(char);
-		char* new_string = (char*) realloc(state->string, new_size);
-		if ( !new_string )
+		// TODO: Overflow check.
+		size_t new_size = 2 * state->size;
+		if ( new_size < needed_size )
+			new_size = needed_size;
+		char* new_buffer = (char*) realloc(state->buffer, new_size);
+		if ( !new_buffer )
 		{
-			free(state->string);
-			state->string = NULL;
+			free(state->buffer);
+			state->buffer = NULL;
 			return 0;
 		}
-		state->string = new_string;
-		state->string_length = new_length;
+		state->buffer = new_buffer;
+		state->size = new_size;
 	}
-	memcpy(state->string + state->string_used, string, sizeof(char) * length);
-	state->string_used += length;
+	memcpy(state->buffer + state->used, string, length);
+	state->used += length;
 	return length;
 }
 
@@ -66,15 +64,14 @@ int vasprintf(char** restrict result_ptr,
               const char* restrict format,
               va_list list)
 {
-	const size_t DEFAULT_SIZE = 32;
-	struct vasprintf_state state;
-	state.string_length = DEFAULT_SIZE;
-	state.string_used = 0;
-	if ( !(state.string = (char*) malloc(state.string_length * sizeof(char))) )
-		return *result_ptr = NULL, -1;
+	struct vasprintf state;
+	state.used = 0;
+	state.size = 32;
+	if ( !(state.buffer = (char*) malloc(state.size)) )
+		return -1;
 	int result = vcbprintf(&state, vasprintf_callback, format, list);
-	if ( !state.string )
-		return *result_ptr = NULL, -1;
-	state.string[state.string_used] = '\0';
-	return *result_ptr = state.string, result;
+	if ( !state.buffer )
+		return -1;
+	state.buffer[state.used] = '\0';
+	return *result_ptr = state.buffer, result;
 }

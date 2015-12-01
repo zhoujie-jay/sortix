@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -28,12 +28,12 @@
 #include <stdint.h>
 #include <unistd.h>
 
-static size_t write_callback(void* user, const char* string, size_t stringlen)
+static size_t vdprintf_callback(void* fdptr, const char* string, size_t length)
 {
-	return writeall((int) (uintptr_t) user, string, stringlen);
+	return writeall(*(int*) fdptr, string, length);
 }
 
 extern "C" int vdprintf(int fd, const char* restrict format, va_list list)
 {
-	return vcbprintf((void*) (uintptr_t) fd, write_callback, format, list);
+	return vcbprintf(&fd, vdprintf_callback, format, list);
 }

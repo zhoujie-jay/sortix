@@ -35,13 +35,13 @@ struct vsnprintf
 
 static size_t vsnprintf_callback(void* ctx, const char* string, size_t length)
 {
-	struct vsnprintf* info = (struct vsnprintf*) ctx;
-	if ( 1 <= info->size && info->written < info->size )
+	struct vsnprintf* state = (struct vsnprintf*) ctx;
+	if ( 1 <= state->size && state->written < state->size )
 	{
-		size_t available = info->size - info->written;
+		size_t available = state->size - state->written;
 		size_t possible = length < available ? length : available;
-		memcpy(info->str + info->written, string, possible);
-		info->written += possible;
+		memcpy(state->str + state->written, string, possible);
+		state->written += possible;
 	}
 	return length;
 }
@@ -52,12 +52,12 @@ int vsnprintf(char* restrict str,
               const char* restrict format,
               va_list list)
 {
-	struct vsnprintf info;
-	info.str = str;
-	info.size = size ? size - 1 : 0;
-	info.written = 0;
-	int result = vcbprintf(&info, vsnprintf_callback, format, list);
+	struct vsnprintf state;
+	state.str = str;
+	state.size = size ? size - 1 : 0;
+	state.written = 0;
+	int result = vcbprintf(&state, vsnprintf_callback, format, list);
 	if ( 1 <= size )
-		info.str[info.written] = '\0';
+		state.str[state.written] = '\0';
 	return result;
 }

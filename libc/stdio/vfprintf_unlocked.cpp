@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -27,16 +27,15 @@
 #include <stdio.h>
 #include <stdint.h>
 
-static size_t FileWriteCallback(void* user, const char* string, size_t stringlen)
+static size_t vfprintf_callback(void* ctx, const char* string, size_t length)
 {
-	return fwrite_unlocked(string, 1, stringlen, (FILE*) user);
+	return fwrite_unlocked(string, 1, length, (FILE*) ctx);
 }
 
 extern "C"
 int vfprintf_unlocked(FILE* fp, const char* restrict format, va_list list)
 {
 	if ( !(fp->flags & _FILE_WRITABLE) )
-		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, EOF;
-
-	return vcbprintf(fp, FileWriteCallback, format, list);
+		return errno = EBADF, fp->flags |= _FILE_STATUS_ERROR, -1;
+	return vcbprintf(fp, vfprintf_callback, format, list);
 }
