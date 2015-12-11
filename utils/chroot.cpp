@@ -171,12 +171,6 @@ int main(int argc, char* argv[])
 		sigprocmask(SIG_SETMASK, &oldset, NULL);
 	}
 
-	pid_t child_pid = 0;
-	if ( devices )
-		child_pid = fork();
-	if ( child_pid < 0 )
-		error(1, errno, "fork");
-
 	if ( chroot(argv[1]) != 0 )
 		error(1, errno, "`%s'", argv[1]);
 
