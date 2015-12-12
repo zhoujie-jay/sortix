@@ -210,13 +210,16 @@ bool PS2Keyboard::PushKey(int key)
 		int* newqueue = new int[newqueuelength];
 		if ( !newqueue )
 			return false;
-		size_t elemsize = sizeof(*queue);
-		size_t leadingavai = queuelength-queueoffset;
-		size_t leading = (leadingavai < queueused) ? leadingavai : queueused;
-		size_t trailing = queueused - leading;
-		memcpy(newqueue, queue + queueoffset, leading * elemsize);
-		memcpy(newqueue + leading, queue, trailing * elemsize);
-		delete[] queue;
+		if ( queue )
+		{
+			size_t elemsize = sizeof(*queue);
+			size_t leadingavai = queuelength-queueoffset;
+			size_t leading = (leadingavai < queueused) ? leadingavai : queueused;
+			size_t trailing = queueused - leading;
+			memcpy(newqueue, queue + queueoffset, leading * elemsize);
+			memcpy(newqueue + leading, queue, trailing * elemsize);
+			delete[] queue;
+		}
 		queue = newqueue;
 		queuelength = newqueuelength;
 		queueoffset = 0;
