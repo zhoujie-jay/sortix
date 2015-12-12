@@ -105,7 +105,7 @@ int LogTerminal::settermmode(ioctx_t* /*ctx*/, unsigned newtermmode)
 	if ( oldutf8 != newutf8 )
 		partiallywritten = 0;
 	termmode = newtermmode;
-	if ( (!newtermmode & TERMMODE_LINEBUFFER) )
+	if ( !(newtermmode & TERMMODE_LINEBUFFER) )
 		CommitLineBuffer();
 	partiallywritten = 0;
 	return 0;
