@@ -24,6 +24,7 @@
 #include <error.h>
 #include <inttypes.h>
 #include <locale.h>
+#include <regex.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,6 +41,14 @@ char* strdup_or_die(const char* str)
 	char* result = strdup(str);
 	if ( !str )
 		error(2, errno, "strdup");
+	return result;
+}
+
+char* strndup_or_die(const char* str, size_t n)
+{
+	char* result = strndup(str, n);
+	if ( !str )
+		error(2, errno, "strndup");
 	return result;
 }
 
@@ -282,16 +291,50 @@ char* evaluate_mod(const char* a, const char* b)
 	return evaluate_integer_function(a, b, integer_mod);
 }
 
-// TODO: Implement regular expression pattern matching!
 char* evaluate_match(const char* a, const char* b)
 {
-	size_t b_length = strlen(b);
-	for ( size_t i = 0; i < b_length; i++ )
+	regex_t regex;
+	int status = regcomp(&regex, b, 0);
+	if ( status != 0 )
 	{
-		if ( b[i] != a[i] )
-			return strdup_or_die("0");
+		char errbuf[256];
+		const char* errmsg = errbuf;
+		char* erralloc = NULL;
+		size_t errbuf_needed;
+		if ( sizeof(errbuf) < (errbuf_needed = regerror(status, &regex, errbuf,
+		                                                sizeof(errbuf))) )
+		{
+			if ( (erralloc = (char*) malloc(errbuf_needed)) )
+			{
+				errmsg = erralloc;
+				regerror(status, &regex, erralloc, errbuf_needed);
+			}
+		}
+		error(2, 0, "compiling regular expression: %s", errmsg);
+		free(erralloc);
 	}
-	return print_intmax_or_die((intmax_t) strlen(a));
+
+	char* result;
+
+	regmatch_t rm[2];
+	if ( regexec(&regex, a, 2, rm, 0) == 0 && rm[0].rm_so == 0 )
+	{
+		if ( 0 <= rm[1].rm_so )
+			result = strndup_or_die(a + rm[1].rm_so, rm[1].rm_eo - rm[1].rm_so);
+		else
+			result = print_intmax_or_die(rm[0].rm_eo);
+	}
+	else
+	{
+		if ( 0 < regex.re_nsub )
+			result = strdup_or_die("");
+		else
+			result = strdup_or_die("0");
+	}
+
+	regfree(&regex);
+
+	return result;
 }
 
 struct binary_operator

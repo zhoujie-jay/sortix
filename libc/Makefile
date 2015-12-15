@@ -62,6 +62,10 @@ malloc/heap_init.o \
 malloc/__heap_lock.o \
 malloc/__heap_unlock.o \
 malloc/__heap_verify.o \
+regex/regcomp.o \
+regex/regerror.o \
+regex/regexec.o \
+regex/regfree.o \
 signal/sigaddset.o \
 signal/sigandset.o \
 signal/sigdelset.o \
