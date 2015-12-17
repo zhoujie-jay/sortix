@@ -145,6 +145,7 @@ sysroot-fsh:
 	mkdir -p "$(SYSROOT)/tmp"
 	mkdir -p "$(SYSROOT)/var"
 	mkdir -p "$(SYSROOT)/var/empty"
+	ln -sfT . "$(SYSROOT)/usr"
 	echo "root::0:0:root:/root:sh" > "$(SYSROOT)/etc/passwd"
 	echo "root::0:root" > "$(SYSROOT)/etc/group"
 
