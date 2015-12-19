@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -31,6 +31,7 @@ extern "C" long pathconf(const char* path, int name)
 	switch ( name )
 	{
 	case _PC_PATH_MAX: return -1; // Unbounded
+	case _PC_NAME_MAX: return -1; // Unbounded
 	default:
 		fprintf(stderr, "%s:%u warning: %s(\"%s\", %i) is unsupported\n",
 		        __FILE__, __LINE__, __func__, path, name);
