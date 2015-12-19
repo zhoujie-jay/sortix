@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -23,12 +23,23 @@
 *******************************************************************************/
 
 #include <netdb.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 
-extern "C" const char* gai_strerror(int)
+extern "C" const char* gai_strerror(int err)
 {
-	fprintf(stderr, "%s is not implemented, aborting.\n", __func__);
-	abort();
+	switch ( err )
+	{
+	case EAI_AGAIN: return "Try again";
+	case EAI_BADFLAGS: return "Invalid flags";
+	case EAI_FAIL: return "Non-recoverable error";
+	case EAI_FAMILY: return "Unrecognized address family or invalid length";
+	case EAI_MEMORY: return "Out of memory";
+	case EAI_NONAME: return "Name does not resolve";
+	case EAI_SERVICE: return "Unrecognized service";
+	case EAI_SOCKTYPE: return "Unrecognized socket type";
+	case EAI_SYSTEM: return "System error";
+	case EAI_OVERFLOW: return "Overflow";
+	}
+	return "Unknown error";
 }

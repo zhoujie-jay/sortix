@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -31,6 +31,5 @@ extern "C" int getaddrinfo(const char* restrict, const char* restrict,
                            const struct addrinfo* restrict,
                            struct addrinfo** restrict)
 {
-	fprintf(stderr, "%s is not implemented, aborting.\n", __func__);
-	abort();
+	return EAI_NONAME;
 }
