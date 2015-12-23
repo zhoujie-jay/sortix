@@ -25,7 +25,7 @@
 #ifndef INCLUDE_SEMAPHORE_H
 #define INCLUDE_SEMAPHORE_H
 
-#include <features.h>
+#include <sys/cdefs.h>
 
 #include <sortix/timespec.h>
 

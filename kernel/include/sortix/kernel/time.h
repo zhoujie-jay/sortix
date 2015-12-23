@@ -25,11 +25,8 @@
 #ifndef INCLUDE_SORTIX_KERNEL_TIME_H
 #define INCLUDE_SORTIX_KERNEL_TIME_H
 
-#include <features.h>
-
+#include <sys/cdefs.h>
 #include <sys/types.h>
-
-#include <stddef.h>
 
 #include <sortix/timespec.h>
 
