@@ -212,7 +212,7 @@ bool string_parameter(const char* option,
 	if ( strncmp(option, arg, option_len) != 0 )
 		return false;
 	if ( arg[option_len] == '=' )
-		return arg + option_len + 1;
+		return *result = arg + option_len + 1, true;
 	if ( arg[option_len] != '\0' )
 		return false;
 	if ( *ip + 1 == argc )
