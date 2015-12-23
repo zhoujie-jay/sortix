@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This file is part of trianglix.
 
@@ -641,12 +641,12 @@ void decide_runes::invoke()
 	if ( answer )
 	{
 		unlink("/etc/rune-disable");
-		close(::open("/etc/rune-enable", O_WRONLY | O_CREAT, 0666));
+		close(::open("/etc/rune-enable", O_WRONLY | O_CREAT, 0644));
 	}
 	else
 	{
 		unlink("/etc/rune-enable");
-		close(::open("/etc/rune-disable", O_WRONLY | O_CREAT, 0666));
+		close(::open("/etc/rune-disable", O_WRONLY | O_CREAT, 0644));
 	}
 }
 
