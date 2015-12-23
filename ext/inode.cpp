@@ -428,7 +428,9 @@ Inode* Inode::Open(const char* elem, int flags, mode_t mode)
 		     entry->name_len == elem_length &&
 		     memcmp(elem, entry->name, elem_length) == 0 )
 		{
-			uint8_t file_type = entry->file_type;
+			uint8_t file_type = EXT2_FT_UNKNOWN;
+			if ( filesystem->sb->s_feature_incompat & EXT2_FEATURE_INCOMPAT_FILETYPE )
+				file_type = entry->file_type;
 			uint32_t inode_id = entry->inode;
 			block->Unref();
 			if ( (flags & O_CREAT) && (flags & O_EXCL) )
@@ -602,7 +604,7 @@ bool Inode::Link(const char* elem, Inode* dest, bool directories)
 	if ( filesystem->sb->s_feature_incompat & EXT2_FEATURE_INCOMPAT_FILETYPE )
 		entry->file_type = EXT2_FT_OF_MODE(dest->Mode());
 	else
-		entry->file_type = 0;
+		entry->file_type = EXT2_FT_UNKNOWN;
 	strncpy(entry->name, elem, new_entry_size - sizeof(struct ext_dirent));
 
 	block->FinishWrite();

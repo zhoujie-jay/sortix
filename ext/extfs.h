@@ -30,6 +30,7 @@ class Inode;
 
 mode_t HostModeFromExtMode(uint32_t extmode);
 uint32_t ExtModeFromHostMode(mode_t hostmode);
+uint8_t HostDTFromExtDT(uint8_t extdt);
 void StatInode(Inode* inode, struct stat* st);
 
 #endif

@@ -29,6 +29,7 @@
 
 #include <errno.h>
 #include <error.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <ioleast.h>
 #include <signal.h>
@@ -397,10 +398,13 @@ void HandleReadDir(int chl, struct fsm_req_readdirents* msg, Filesystem* fs)
 		const struct ext_dirent* entry = (const struct ext_dirent*) block_data;
 		if ( entry->inode && entry->name_len && !(msg->rec_num--) )
 		{
+			uint8_t file_type = EXT2_FT_UNKNOWN;
+			if ( fs->sb->s_feature_incompat & EXT2_FEATURE_INCOMPAT_FILETYPE )
+				file_type = entry->file_type;
 			kernel_entry.d_reclen = sizeof(kernel_entry) + entry->name_len;
 			kernel_entry.d_ino = entry->inode;
 			kernel_entry.d_dev = 0;
-			kernel_entry.d_type = 0; // TODO: Support this!
+			kernel_entry.d_type = HostDTFromExtDT(file_type);
 			kernel_entry.d_namlen = entry->name_len;
 			memcpy(kernel_entry.d_name, entry->name, entry->name_len);
 			size_t dname_offset = offsetof(struct dirent, d_name);

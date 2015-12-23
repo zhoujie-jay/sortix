@@ -24,6 +24,7 @@
 #include <sys/types.h>
 
 #include <assert.h>
+#include <dirent.h>
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
@@ -90,6 +91,22 @@ uint32_t ExtModeFromHostMode(mode_t hostmode)
 	if ( S_ISCHR(hostmode) ) extmode |= EXT2_S_IFCHR;
 	if ( S_ISFIFO(hostmode) ) extmode |= EXT2_S_IFIFO;
 	return extmode;
+}
+
+uint8_t HostDTFromExtDT(uint8_t extdt)
+{
+	switch ( extdt )
+	{
+	case EXT2_FT_UNKNOWN: return DT_UNKNOWN;
+	case EXT2_FT_REG_FILE: return DT_REG;
+	case EXT2_FT_DIR: return DT_DIR;
+	case EXT2_FT_CHRDEV: return DT_CHR;
+	case EXT2_FT_BLKDEV: return DT_BLK;
+	case EXT2_FT_FIFO: return DT_FIFO;
+	case EXT2_FT_SOCK: return DT_SOCK;
+	case EXT2_FT_SYMLINK: return DT_LNK;
+	}
+	return DT_UNKNOWN;
 }
 
 void StatInode(Inode* inode, struct stat* st)
