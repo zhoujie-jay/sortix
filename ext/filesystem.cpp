@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <time.h>
 
 #include "ext-constants.h"
@@ -72,6 +73,13 @@ Filesystem::Filesystem(Device* device, const char* mount_path)
 		sb->s_mtime = mtime_realtime;
 		sb->s_mnt_count++;
 		sb->s_state = EXT2_ERROR_FS;
+		// TODO: Remove this temporarily compatibility when this driver is moved
+		//       into the kernel and the the FUSE frontend is removed.
+#ifdef __GLIBC__
+		strncpy(sb->s_last_mounted, mount_path, sizeof(sb->s_last_mounted));
+#else
+		strlcpy(sb->s_last_mounted, mount_path, sizeof(sb->s_last_mounted));
+#endif
 		FinishWrite();
 		Sync();
 	}
