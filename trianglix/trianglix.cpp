@@ -780,12 +780,31 @@ class action** administration::list_actions(size_t* num_actions)
 {
 	class action** actions = new action*[4 + 1];
 	size_t index = 0;
+#if 0 // TODO: Until crypt_newhash is used for the password.
 	actions[index++] = new action("Create user", new create_user());
+#endif
 	actions[index++] = new action("Enable Runes", new decide_runes(true));
 	actions[index++] = new action("Disable Runes", new decide_runes(false));
 	actions[index++] = new action("Trinit Core", new core());
 	actions[index++] = new action("Back", parent_object);
 	return *num_actions = index, actions;
+}
+
+class exiter : public object
+{
+public:
+	exiter() { }
+	virtual ~exiter() { }
+
+public:
+	virtual enum object_type type() { return TYPE_FILE; }
+	virtual void invoke();
+
+};
+
+void exiter::invoke()
+{
+	exit(0);
 }
 
 class desktop : public object
@@ -811,7 +830,7 @@ class action** desktop::list_actions(size_t* num_actions)
 	actions[3] = new action("Shell", new path_program("sh"));
 	actions[4] = new action("Development", new development());
 	actions[5] = new action("Administration", new administration());
-	actions[6] = new action("Logout", parent_object);
+	actions[6] = new action("Logout", new exiter());
 	return actions;
 }
 
@@ -828,109 +847,6 @@ class object* log_user_in(struct passwd* user)
 	setenv("SHELL", user->pw_shell, 1);
 	setenv("DEFAULT_STUFF", "NO", 1);
 	return new desktop();
-}
-
-class poweroff : public object
-{
-public:
-	poweroff() { }
-	virtual ~poweroff() { }
-
-public:
-	virtual enum object_type type() { return TYPE_FILE; }
-	virtual void invoke();
-
-};
-
-void poweroff::invoke()
-{
-	exit(0);
-}
-
-class login : public object
-{
-public:
-	login(const char* username) : username(strdup(username)) { }
-	virtual ~login() { }
-
-public:
-	virtual enum object_type type() { return TYPE_DIRECTORY; }
-	virtual class object* factory();
-	virtual const char* title() { return "Authentication required "; }
-	virtual const char* prompt() { return "Enter Password:"; }
-	virtual bool is_password_prompt() { return true; }
-	virtual class action** list_actions(size_t* num_actions);
-	virtual class object* command_line(const char* command);
-
-private:
-	char* username;
-
-};
-
-class user_selection : public object
-{
-public:
-	user_selection() { }
-	virtual ~user_selection() { }
-
-public:
-	virtual enum object_type type() { return TYPE_DIRECTORY; }
-	virtual const char* title() { return "User Selection"; }
-	virtual class action** list_actions(size_t* num_actions);
-	virtual class object* command_line(const char* command);
-
-};
-
-class object* login::factory()
-{
-	if ( struct passwd* user = getpwnam(username) )
-		if ( !user->pw_passwd[0] )
-			return log_user_in(user);
-	return NULL;
-}
-
-class action** login::list_actions(size_t* num_actions)
-{
-	return *num_actions = 0, new class action*[0];
-}
-
-class object* login::command_line(const char* password)
-{
-	error_string = "";
-	if ( struct passwd* user = getpwnam(username) )
-	{
-		if ( !strcmp(user->pw_passwd, password) )
-			return log_user_in(user);
-		else
-			return error_string = "Invalid password", (class object*) NULL;
-	}
-	return error_string = "No such user", (class object*) NULL;
-}
-
-class action** user_selection::list_actions(size_t* num_actions)
-{
-	size_t num_users = 0;
-	FILE* fp = openpw();
-	while ( fgetpwent(fp) )
-		num_users++;
-	fseeko(fp, 0, SEEK_SET);
-	action** actions = new class action*[num_users + 1];
-	size_t which_user = 0;
-	while ( struct passwd* user = fgetpwent(fp) )
-		actions[which_user++] =
-			new action(user->pw_gecos ? user->pw_gecos : user->pw_name,
-			           new login(user->pw_name));
-	fclose(fp);
-	actions[num_users] = new action("Poweroff", new poweroff);
-	return *num_actions = num_users + 1, actions;
-}
-
-class object* user_selection::command_line(const char* command)
-{
-	error_string = "";
-	if ( getpwnam(command) )
-		return new login(command);
-	return error_string = "No such user", (class object*) NULL;
 }
 
 class FrameBufferInfo;
@@ -1764,7 +1680,7 @@ static void InitializeDesktop(struct Desktop* desktop)
 	desktop->rshift = false;
 	desktop->actions = NULL;
 	desktop->num_actions = 0;
-	desktop->object = new user_selection();
+	desktop->object = new class desktop();
 	UpdateActionList(desktop);
 }
 

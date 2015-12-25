@@ -13,8 +13,15 @@ You will be presented a with standard Unix command line environment upon booting
 the live environment.
 .Ss Shutdown
 .Xr init 8
-spawns a session after boot.  This is a root shell if booted in
+spawns a session after boot.  This is
+.Xr login 8
+if the system is booted in multi-user mode.  This is a root shell if booted in
 single-user mode.
+.Pp
+To power off from the login screen, login as user
+.Sy poweroff .
+To reboot, login as user
+.Sy reboot .
 .Pp
 To power off from a single-user boot root shell, run
 .Sy exit 0

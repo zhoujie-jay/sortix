@@ -23,6 +23,7 @@
 *******************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 void suggest_editor(const char* filename)
@@ -49,6 +50,40 @@ void suggest_unmount(const char* filename)
 	fprintf(stderr, " Command 'unmount' from package 'utils'\n");
 }
 
+void suggest_logout(const char* filename)
+{
+	fprintf(stderr, "No command '%s' found, did you mean:\n", filename);
+	fprintf(stderr, " Exiting your shell normally to logout.\n");
+}
+
+void suggest_poweroff(const char* filename)
+{
+	fprintf(stderr, "No command '%s' found, did you mean:\n", filename);
+	if ( getenv("LOGIN_PID") )
+	{
+		fprintf(stderr, " Exiting your shell normally to logout.\n");
+		fprintf(stderr, " Login as user 'poweroff' to power off computer.\n");
+	}
+	else
+	{
+		fprintf(stderr, " Exiting your shell normally to poweroff.\n");
+	}
+}
+
+void suggest_reboot(const char* filename)
+{
+	fprintf(stderr, "No command '%s' found, did you mean:\n", filename);
+	if ( getenv("LOGIN_PID") )
+	{
+		fprintf(stderr, " Exiting your shell normally to logout.\n");
+		fprintf(stderr, " Login as user 'reboot' to reboot computer.\n");
+	}
+	else
+	{
+		fprintf(stderr, " Exiting your shell with 'exit 1' to reboot.\n");
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	const char* filename = 2 <= argc ? argv[1] : argv[0];
@@ -65,6 +100,15 @@ int main(int argc, char* argv[])
 		suggest_extfs(filename);
 	else if ( !strcmp(filename, "umount") )
 		suggest_unmount(filename);
+	else if ( !strcmp(filename, "logout") ||
+	          !strcmp(filename, "logoff") )
+		suggest_logout(filename);
+	else if ( !strcmp(filename, "poweroff") ||
+	          !strcmp(filename, "halt") ||
+	          !strcmp(filename, "shutdown") )
+		suggest_poweroff(filename);
+	else if ( !strcmp(filename, "reboot") )
+		suggest_reboot(filename);
 	fprintf(stderr, "%s: command not found\n", filename);
 	return 127;
 }

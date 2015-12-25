@@ -1,0 +1,74 @@
+.Dd $Mdocdate: October 6 2015 $
+.Dt LOGIN 8
+.Os
+.Sh NAME
+.Nm login
+.Nd authenticate users and run personal session
+.Sh SYNOPSIS
+.Nm login
+.Sh DESCRIPTION
+.Nm login
+interactively authenticates users by asking them to enter their username and
+password.  The passwords are checked against the password hashes in
+.Pa /etc/passwd
+as described in
+.Xr passwd 5 .
+.Nm login
+creates a session as the requested user upon successful authentication.
+.Pp
+.Nm login
+has a graphical interface if the display is graphical and uses a textual
+interface otherwise.  The textual interface is forced if
+.Pa /etc/login.conf.textual
+exists. The process remains running in the background and takes
+over again when the user session exits.
+.Pp
+Type a special username to perform special options:
+.Pp
+.Bl -tag -width "poweroff" -compact -offset indent
+.It exit
+alias for poweroff
+.It poweroff
+exit asking for powering off the computer
+.It reboot
+exit asking for rebooting the computer
+.El
+.Sh SECURITY
+There is currently no method to confirm the login screen is in fact real other
+than witnessing a pristine boot.  Local users can log in and show a counterfeit
+login screen that look and behave like the real
+.Nm login
+program and trick the next user into revealing their password.
+.Sh ENVIRONMENT
+.Nm login
+sets the following environment variables to match the authenticated user:
+.Bl -tag -width "LOGNAME"
+.It Ev HOME
+home directory
+.It Ev LOGNAME
+username
+.It Ev SHELL
+shell
+.It Ev USER
+username
+.El
+.Sh FILES
+.Bl -tag -width "/etc/passwd" -compact
+.It Pa /etc/passwd
+user database (see
+.Xr passwd 5 )
+.It Pa /etc/login.conf.textual
+textual interface is forced if this file exists
+.El
+.Sh EXIT STATUS
+.Nm login
+exits 0 if the computer should power off, exits 1 if the computer should
+reboot, or exits 2 on fatal failure and the boot should halt.
+.Sh SEE ALSO
+.Xr crypt_checkpass 3 ,
+.Xr passwd 5 ,
+.Xr init 8 ,
+.Xr login 8
+.Sh BUGS
+.Nm login
+only supports a single monitor.  The mouse code is less than perfect.

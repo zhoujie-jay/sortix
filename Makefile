@@ -18,6 +18,7 @@ games \
 init \
 kblayout \
 kblayout-compiler \
+login \
 mbr \
 mkinitrd \
 regress \
