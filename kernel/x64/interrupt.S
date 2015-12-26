@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -129,7 +129,7 @@ isr16:
 .global isr17
 .type isr17, @function
 isr17:
-	pushq $0 # err_code
+	# pushq $0 # err_code pushed by CPU
 	pushq $17 # int_no
 	jmp interrupt_handler_prepare
 .global isr18
@@ -207,7 +207,7 @@ isr29:
 .global isr30
 .type isr30, @function
 isr30:
-	pushq $0 # err_code
+	# pushq $0 # err_code pushed by CPU
 	pushq $30 # int_no
 	jmp interrupt_handler_prepare
 .global isr31
