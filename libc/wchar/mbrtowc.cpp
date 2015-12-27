@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -114,6 +114,11 @@ size_t utf8_mbrtowc(wchar_t* restrict pwc,
 		return errno = EILSEQ, (size_t) -1;
 #endif
 
+	// The definition of UTF-8 prohibits encoding character numbers between
+	// U+D800 and U+DFFF, which are reserved for use with the UTF-16 encoding
+	// form (as surrogate pairs) and do not directly represent characters.
+	if ( 0xD800 <= ps->wch && ps->wch <= 0xDFFF )
+		return errno = EILSEQ, (size_t) -1;
 	// RFC 3629 limits UTF-8 to 0x0 through 0x10FFFF.
 	if ( 0x10FFFF <= ps->wch )
 		return errno = EILSEQ, (size_t) -1;
