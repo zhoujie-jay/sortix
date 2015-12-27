@@ -444,43 +444,64 @@ retry_pick_mode:
 		if ( settermmode(0, TERMMODE_KBKEY | TERMMODE_UNICODE | TERMMODE_SIGNAL) < 0 )
 			error(1, errno, "settermmode");
 
-		uint32_t codepoint;
-		ssize_t numbytes;
-		int kbkey = 0;
-		while ( 0 < (numbytes = read(0, &codepoint, sizeof(codepoint))) &&
-		        (kbkey = KBKEY_DECODE(codepoint)) == 0 )
-			continue;
+		bool redraw = false;
+		while ( !redraw && !decided )
+		{
+			uint32_t codepoint;
+			ssize_t numbytes = read(0, &codepoint, sizeof(codepoint));
+			if ( numbytes < 0 )
+				error(1, errno, "read");
+
+			int kbkey = KBKEY_DECODE(codepoint);
+			if ( kbkey )
+			{
+				switch ( kbkey )
+				{
+				case KBKEY_ESC:
+					if ( settermmode(0, oldtermmode) < 0 )
+						error(1, errno, "settermmode");
+					printf("\n");
+					exit(10);
+					break;
+				case KBKEY_UP:
+					if ( selection )
+						selection--;
+					else
+						selection = num_modes -1;
+					redraw = true;
+					break;
+				case KBKEY_DOWN:
+					if ( selection + 1 == num_modes )
+						selection = 0;
+					else
+						selection++;
+					redraw = true;
+					break;
+				case KBKEY_ENTER:
+					if ( settermmode(0, oldtermmode) < 0 )
+						error(1, errno, "settermmode");
+					fgetc(stdin);
+					printf("\n");
+					decided = true;
+					break;
+				}
+			}
+			else
+			{
+				if ( L'0' <= codepoint && codepoint <= '9' )
+				{
+					uint32_t requested = codepoint - '0';
+					if ( requested < num_modes )
+					{
+						selection = requested;
+						redraw = true;
+					}
+				}
+			}
+		}
 
 		if ( settermmode(0, oldtermmode) < 0 )
 			error(1, errno, "settermmode");
-
-		if ( numbytes < 0 )
-			error(1, errno, "read");
-
-		switch ( kbkey )
-		{
-		case KBKEY_ESC:
-			printf("\n");
-			exit(10);
-			break;
-		case KBKEY_UP:
-			if ( selection )
-				selection--;
-			else
-				selection = num_modes -1;
-			break;
-		case KBKEY_DOWN:
-			if ( selection + 1 == num_modes )
-				selection = 0;
-			else
-				selection++;
-			break;
-		case KBKEY_ENTER:
-			fgetc(stdin);
-			printf("\n");
-			decided = true;
-			break;
-		}
 	}
 
 	struct dispmsg_crtc_mode mode = modes[selection];
