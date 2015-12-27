@@ -249,6 +249,7 @@ void TextTerminal::PutChar(TextBuffer* textbuf, char c)
 		case '\b': Backspace(textbuf); return;
 		case '\t': Tab(textbuf); return;
 		case '\e': AnsiReset(); return;
+		case 127: return;
 		default: break;
 		}
 	}
