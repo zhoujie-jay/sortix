@@ -84,7 +84,7 @@ maybe_compressed() {
     echo "$1.xz"
   elif [ -e "$1.gz" ]; then
     echo "$1.gz"
-  else
+  elif [ -e "$1" ]; then
     echo "$1"
   fi
 }
@@ -98,7 +98,10 @@ menuentry() {
   args=""
   [ -n "$2" ] && args=" $2"
   kernel=$(maybe_compressed boot/sortix.bin)
-  initrd=$(maybe_compressed boot/sortix.initrd)
+  live_initrd=$(maybe_compressed boot/live.initrd)
+  overlay_initrd=$(maybe_compressed boot/overlay.initrd)
+  src_initrd=$(maybe_compressed boot/src.initrd)
+  system_initrd=$(maybe_compressed boot/system.initrd)
   printf "menuentry \"Sortix (%s)\" {\n" "$1"
   case $platform in
   x86_64-*)
@@ -116,10 +119,21 @@ EOF
 	echo -n "Loading /$kernel ($(human_size $kernel)) ... "
 	multiboot /$kernel$args
 	echo done
+EOF
+  for initrd in $system_initrd $src_initrd $live_initrd $overlay_initrd; do
+  cat << EOF
 	echo -n "Loading /$initrd ($(human_size $initrd)) ... "
 	module /$initrd
 	echo done
 EOF
+  done
+  find repository | grep -E '^(.*/)?.*\.tix\.tar\.xz$' | LC_ALL=C sort | while read tix; do
+    cat << EOF
+	echo -n "Loading /$tix$I ($(human_size $tix)) ... "
+	module /$tix
+	echo done
+EOF
+  done
   printf "}\n"
 }
 

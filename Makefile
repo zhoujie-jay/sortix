@@ -58,7 +58,10 @@ include build-aux/dirs.mak
 
 BUILD_NAME:=sortix-$(VERSION)-$(MACHINE)
 
-INITRD:=$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).initrd
+LIVE_INITRD:=$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).live.initrd
+OVERLAY_INITRD:=$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).overlay.initrd
+SRC_INITRD:=$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).src.initrd
+SYSTEM_INITRD:=$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).system.initrd
 
 .PHONY: all
 all: sysroot
@@ -235,13 +238,8 @@ sysroot-ports: sysroot-fsh sysroot-base-headers sysroot-system sysroot-source
 	 MAKEFLAGS="$(MAKEFLAGS)" \
 	 build-aux/build-ports.sh
 
-.PHONY: sysroot-overlay
-sysroot-overlay: sysroot-fsh sysroot-system sysroot-ports
-	! [ -d "$(SYSROOT_OVERLAY)" ] || \
-	cp -RT --preserve=mode,timestamp,links "$(SYSROOT_OVERLAY)" "$(SYSROOT)"
-
 .PHONY: sysroot
-sysroot: sysroot-system sysroot-source sysroot-ports sysroot-overlay
+sysroot: sysroot-system sysroot-source sysroot-ports
 
 $(SORTIX_REPOSITORY_DIR):
 	mkdir -p $@
@@ -264,7 +262,6 @@ clean-ports:
 .PHONY: clean-builds
 clean-builds:
 	rm -rf "$(SORTIX_BUILDS_DIR)"
-	rm -f sortix.initrd
 	rm -f sortix.iso
 
 .PHONY: clean-release
@@ -290,7 +287,7 @@ mostlyclean: clean-core clean-ports clean-builds clean-release clean-sysroot
 distclean: clean-core clean-ports clean-builds clean-release clean-repository clean-sysroot
 
 .PHONY: most-things
-most-things: sysroot initrd iso
+most-things: sysroot iso
 
 .PHONY: everything
 everything: most-things
@@ -334,32 +331,33 @@ release-all-archs:
 
 # Initial ramdisk
 
-$(INITRD): sysroot
-	mkdir -p `dirname $(INITRD)`
-	rm -rf $(INITRD).live
-	mkdir -p $(INITRD).live
-	mkdir -p $(INITRD).live/etc
-	mkdir -p $(INITRD).live/etc/init
-	echo single-user > $(INITRD).live/etc/init/target
-	echo "root::0:0:root:/root:sh" > $(INITRD).live/etc/passwd
-	echo "root::0:root" > $(INITRD).live/etc/group
-	mkdir -p $(INITRD).live/home
-	mkdir -p $(INITRD).live/root -m 700
-	cp -RT "$(SYSROOT)/etc/skel" $(INITRD).live/root
-	cp doc/welcome $(INITRD).live/root
-	printf '' > $(INITRD).filter
-	echo "exclude /dev" >> $(INITRD).filter
-	echo "exclude /src/sysroot" >> $(INITRD).filter
-	echo "exclude /tmp" >> $(INITRD).filter
-	mkinitrd --format=sortix-initrd-2 --filter=$(INITRD).filter "$(SYSROOT)" "$(INITRD).live" -o $(INITRD)
-	rm -f $(INITRD).filter
-	rm -rf $(INITRD).live
+$(LIVE_INITRD): sysroot
+	mkdir -p `dirname $(LIVE_INITRD)`
+	rm -rf $(LIVE_INITRD).d
+	mkdir -p $(LIVE_INITRD).d
+	mkdir -p $(LIVE_INITRD).d/etc
+	mkdir -p $(LIVE_INITRD).d/etc/init
+	echo single-user > $(LIVE_INITRD).d/etc/init/target
+	echo "root::0:0:root:/root:sh" > $(LIVE_INITRD).d/etc/passwd
+	echo "root::0:root" > $(LIVE_INITRD).d/etc/group
+	mkdir -p $(LIVE_INITRD).d/home
+	mkdir -p $(LIVE_INITRD).d/root -m 700
+	cp -RT "$(SYSROOT)/etc/skel" $(LIVE_INITRD).d/root
+	cp doc/welcome $(LIVE_INITRD).d/root
+	tix-collection $(LIVE_INITRD).d create --platform=$HOST --prefix= --disable-multiarch --generation=2
+	mkinitrd --format=sortix-initrd-2 $(LIVE_INITRD).d -o $(LIVE_INITRD)
+	rm -rf $(LIVE_INITRD).d
 
-.PHONY: initrd
-initrd: $(INITRD)
+.PHONY: $(OVERLAY_INITRD)
+$(OVERLAY_INITRD): sysroot
+	test ! -d "$(SYSROOT_OVERLAY)" || \
+	mkinitrd --format=sortix-initrd-2 "$(SYSROOT_OVERLAY)" -o $(OVERLAY_INITRD)
 
-sortix.initrd: $(INITRD)
-	cp $(INITRD) sortix.initrd
+$(SRC_INITRD): sysroot
+	mkinitrd --format=sortix-initrd-2 --manifest="$(SYSROOT)/tix/manifest/src" "$(SYSROOT)" -o $(SRC_INITRD)
+
+$(SYSTEM_INITRD): sysroot
+	mkinitrd --format=sortix-initrd-2 --manifest="$(SYSROOT)/tix/manifest/system" "$(SYSROOT)" -o $(SYSTEM_INITRD)
 
 # Packaging
 
@@ -368,23 +366,41 @@ $(SORTIX_BUILDS_DIR):
 
 # Bootable images
 
-$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso: sysroot $(INITRD) $(SORTIX_BUILDS_DIR)
+$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso: sysroot $(LIVE_INITRD) $(OVERLAY_INITRD) $(SRC_INITRD) $(SYSTEM_INITRD) $(SORTIX_BUILDS_DIR)
 	rm -rf $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 	mkdir -p $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 	mkdir -p $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot
+	mkdir -p $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/repository
+	SORTIX_PORTS_DIR="$(SORTIX_PORTS_DIR)" \
+	SORTIX_REPOSITORY_DIR="$(SORTIX_REPOSITORY_DIR)" \
+	SYSROOT="$(SYSROOT)" \
+	HOST="$(HOST)" \
+	build-aux/iso-repository.sh $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/repository
 ifeq ($(SORTIX_ISO_COMPRESSION),xz)
 	xz -c "$(SYSROOT)/boot/sortix.bin" > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.bin.xz
-	xz -c $(INITRD) > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.initrd.xz
+	xz -c $(LIVE_INITRD) > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/live.initrd.xz
+	test ! -e "$(OVERLAY_INITRD)" || \
+	xz -c $(OVERLAY_INITRD) > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/overlay.initrd.xz
+	xz -c $(SRC_INITRD) > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/src.initrd.xz
+	xz -c $(SYSTEM_INITRD) > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/system.initrd.xz
 	build-aux/iso-grub-cfg.sh --platform $(HOST) --version $(VERSION) $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 	grub-mkrescue --compress=xz -o $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 else ifeq ($(SORTIX_ISO_COMPRESSION),gzip)
 	gzip -c "$(SYSROOT)/boot/sortix.bin" > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.bin.gz
-	gzip -c $(INITRD) > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.initrd.gz
+	gzip -c $(LIVE_INITRD) > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/live.initrd.gz
+	test ! -e "$(OVERLAY_INITRD)" || \
+	gzip -c $(OVERLAY_INITRD) > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/overlay.initrd.gz
+	gzip -c $(SRC_INITRD) > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/src.initrd.gz
+	gzip -c $(SYSTEM_INITRD) > $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/system.initrd.gz
 	build-aux/iso-grub-cfg.sh --platform $(HOST) --version $(VERSION) $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 	grub-mkrescue --compress=gz -o $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 else # none
 	cp "$(SYSROOT)/boot/sortix.bin" $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.bin
-	cp $(INITRD) $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/sortix.initrd
+	cp $(LIVE_INITRD) $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/live.initrd
+	test ! -e "$(OVERLAY_INITRD)" || \
+	cp $(OVERLAY_INITRD) $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/overlay.initrd
+	cp $(SRC_INITRD) $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/src.initrd
+	cp $(SYSTEM_INITRD) $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso/boot/system.initrd
 	build-aux/iso-grub-cfg.sh --platform $(HOST) --version $(VERSION) $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 	grub-mkrescue -o $(SORTIX_BUILDS_DIR)/$(BUILD_NAME).iso $(SORTIX_BUILDS_DIR)/$(BUILD_NAME)-iso
 endif
