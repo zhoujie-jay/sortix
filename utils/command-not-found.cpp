@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -37,6 +37,18 @@ void suggest_pager(const char* filename)
 	fprintf(stderr, " Command 'pager' from package 'utils'\n");
 }
 
+void suggest_extfs(const char* filename)
+{
+	fprintf(stderr, "No command '%s' found, did you mean:\n", filename);
+	fprintf(stderr, " Command 'extfs' from package 'ext'\n");
+}
+
+void suggest_unmount(const char* filename)
+{
+	fprintf(stderr, "No command '%s' found, did you mean:\n", filename);
+	fprintf(stderr, " Command 'unmount' from package 'utils'\n");
+}
+
 int main(int argc, char* argv[])
 {
 	const char* filename = 2 <= argc ? argv[1] : argv[0];
@@ -49,6 +61,10 @@ int main(int argc, char* argv[])
 	else if ( !strcmp(filename, "less") ||
 	          !strcmp(filename, "more") )
 		suggest_pager(filename);
+	else if ( !strcmp(filename, "mount") )
+		suggest_extfs(filename);
+	else if ( !strcmp(filename, "umount") )
+		suggest_unmount(filename);
 	fprintf(stderr, "%s: command not found\n", filename);
 	return 127;
 }
