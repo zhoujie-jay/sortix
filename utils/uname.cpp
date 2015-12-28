@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
 			case 'i': flags |= PRINT_HWPLATFORM; break;
 			case 'o': flags |= PRINT_OPSYS; break;
 			default:
-				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, arg[i]);
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
 				help(stderr, argv0);
 				exit(1);
 			}

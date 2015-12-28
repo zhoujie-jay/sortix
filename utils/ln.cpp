@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 			case 's': symbolic = true; break;
 			case 'v': verbose = true; break;
 			default:
-				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, arg[i]);
+				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
 				help(stderr, argv0);
 				exit(1);
 			}
