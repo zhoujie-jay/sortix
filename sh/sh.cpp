@@ -1133,6 +1133,62 @@ struct execute_result execute(const char* const* tokens,
 		do_exit = true;
 		internal_status = exitcode;
 	}
+	else if ( strcmp(argv[0], "export") == 0 )
+	{
+		internal = true;
+		internal_status = 0;
+		if ( argv[1] )
+		{
+			size_t eqpos = strcspn(argv[1], "=");
+			if ( argv[1][eqpos] == '=' )
+			{
+				char* name = strndup(argv[1], eqpos);
+				if ( name )
+				{
+					if ( setenv(name, argv[1] + eqpos + 1, 1) < 0 )
+					{
+						error(0, errno, "export: setenv");
+						internal_status = 1;
+					}
+				}
+				else
+				{
+					error(0, errno, "export: malloc");
+					internal_status = 1;
+				}
+			}
+		}
+		else
+		{
+			for ( size_t i = 0; environ[i]; i++ )
+			{
+				const char* envvar = environ[i];
+				printf("export ");
+				while ( *envvar && *envvar != '=' )
+					putchar((unsigned char) *envvar++);
+				if ( *envvar == '=' )
+					putchar((unsigned char) *envvar++);
+				putchar('\'');
+				while ( *envvar )
+				{
+					if ( *envvar == '\'' )
+					{
+						putchar('\'');
+						putchar('\\');
+						putchar((unsigned char) *envvar++);
+						putchar('\'');
+					}
+					else
+					{
+						putchar((unsigned char) *envvar++);
+					}
+				}
+				putchar('\'');
+				putchar('\n');
+			}
+		}
+
+	}
 	else if ( strcmp(argv[0], "unset") == 0 )
 	{
 		internal = true;
