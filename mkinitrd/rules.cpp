@@ -113,6 +113,13 @@ InclusionRules::~InclusionRules()
 	delete[] rules;
 }
 
+static int search_path(const void* a_ptr, const void* b_ptr)
+{
+	const char* key = (const char*) a_ptr;
+	char* path = *(char**) b_ptr;
+	return strcmp(key, path);
+}
+
 bool InclusionRules::IncludesPath(const char* path) const
 {
 	bool determined = false;
@@ -136,7 +143,12 @@ bool InclusionRules::IncludesPath(const char* path) const
 	}
 	if ( !determined )
 		included = default_inclusion;
-	return included;
+	if ( !included )
+		return false;
+	if ( manifest_used &&
+	     !bsearch(path, manifest, manifest_used, sizeof(char*), search_path) )
+		return false;
+	return true;
 }
 
 bool InclusionRules::ChangeRulesAmount(size_t new_length)
@@ -263,5 +275,51 @@ bool InclusionRules::AddRulesFromFile(FILE* fp, FILE* err, const char* fpname)
 		ChangeRulesAmount(rules_at_start);
 		return false;
 	}
+	return true;
+}
+
+int compare_path(const void* a_ptr, const void* b_ptr)
+{
+	const char* a = *(const char* const*) a_ptr;
+	const char* b = *(const char* const*) b_ptr;
+	return strcmp(a, b);
+}
+
+bool InclusionRules::AddManifestFromFile(FILE* fp, FILE* err, const char* fpname)
+{
+	char* line = NULL;
+	size_t line_size = 0;
+	ssize_t line_len;
+	while ( 0 <= (line_len = getline(&line, &line_size, fp)) )
+	{
+		if ( line_len && line[line_len-1] == '\n' )
+			line[line_len-1] = '\0';
+		if ( manifest_used == manifest_length )
+		{
+			size_t new_length = 2 * manifest_length;
+			if ( new_length == 0 )
+				new_length = 64;
+			size_t new_size = new_length * sizeof(char*);
+			char** new_manifest = (char**) realloc(manifest, new_size);
+			if ( !new_manifest )
+			{
+				free(line);
+				error_fp(err, 0, errno, "malloc");
+				return false;
+			}
+			manifest = new_manifest;
+			manifest_length = new_length;
+		}
+		manifest[manifest_used++] = line;
+		line = NULL;
+		line_size = 0;
+	}
+	free(line);
+	if ( ferror(fp) )
+	{
+		error_fp(err, 0, errno, "%s", fpname);
+		return false;
+	}
+	qsort(manifest, manifest_used, sizeof(char*), compare_path);
 	return true;
 }

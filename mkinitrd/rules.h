@@ -52,6 +52,7 @@ public:
 	bool IncludesPath(const char* path) const;
 	bool AddRule(InclusionRule* rule);
 	bool AddRulesFromFile(FILE* fp, FILE* err, const char* fpname);
+	bool AddManifestFromFile(FILE* fp, FILE* err, const char* fpname);
 	bool ChangeRulesAmount(size_t newnum);
 
 public:
@@ -60,6 +61,9 @@ public:
 	size_t num_rules_allocated;
 	bool default_inclusion;
 	bool default_inclusion_determined;
+	char** manifest;
+	size_t manifest_used;
+	size_t manifest_length;
 
 };
 

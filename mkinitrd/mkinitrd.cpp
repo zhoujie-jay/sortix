@@ -658,6 +658,7 @@ int main(int argc, char* argv[])
 {
 	char* arg_filter = NULL;
 	char* arg_format = strdup(DEFAULT_FORMAT);
+	char* arg_manifest = NULL;
 	char* arg_output = NULL;
 
 	const char* argv0 = argv[0];
@@ -710,6 +711,17 @@ int main(int argc, char* argv[])
 			fclose(fp);
 			free(arg_filter);
 			arg_filter = NULL;
+		}
+		else if ( GET_OPTION_VARIABLE("--manifest", &arg_manifest) )
+		{
+			FILE* fp = fopen(arg_manifest, "r");
+			if ( !fp )
+				error(1, errno, "%s", arg_manifest);
+			if ( !path_filter.AddManifestFromFile(fp, stderr, arg_manifest) )
+				exit(1);
+			fclose(fp);
+			free(arg_manifest);
+			arg_manifest = NULL;
 		}
 		else if ( GET_OPTION_VARIABLE("--format", &arg_format) ) { }
 		else if ( GET_OPTION_VARIABLE("--output", &arg_output) ) { }

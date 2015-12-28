@@ -8,6 +8,7 @@
 .Nm mkinitrd
 .Op Fl \-filter Ns "=" Ns Ar rules-file
 .Op Fl \-format Ns "=" Ns Ar format
+.Op Fl \-manifest Ns "=" Ns Ar manifest-file
 .Fl o Ar destination
 .Ar directory ...
 .Sh DESCRIPTION
@@ -61,6 +62,10 @@ is an alias for the newest format
 will default to a newer format when one is introduced and this allows
 .Nm
 to support old callers during the transitional period.
+.It Fl \-manifest Ns "=" Ns Ar manifest-file
+Include only files and directories during the recursive search whose path
+exactly matches a line in the
+.Ar manifest-file .
 .It Fl o , Fl \-output Ns "=" Ns Ar destination
 Store the produced
 .Xr initrd 7
