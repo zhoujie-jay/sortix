@@ -274,7 +274,7 @@ Simple Makefile
 Unfortunately, there are not enough common conventions on how to write a
 "standard" makefile to the point where Tix can just use most makefiles without
 special `tixbuildinfo` magic. However, Tix does have a plain makefile as a
-buikld system.
+build system.
 
     pkg.build-system=makefile
 
