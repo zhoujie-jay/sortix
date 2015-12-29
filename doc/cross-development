@@ -59,6 +59,7 @@ typically decide to set them up somewhat like this:
   CROSS_PREFIX=/home/user/opt/x86_64-sortix
   SORTIX_SYSROOT=/home/user/sortix/sysroot
   export PATH="/home/user/opt/x86_64-sortix/bin:$PATH"
+  export PATH="/home/user/opt/x86_64-sortix/sbin:$PATH"
 
 The following sections describe these variables in detail.
 
@@ -78,9 +79,10 @@ such as $HOME/opt/$SORTIX_PLATFORM. This allows you to easily dispose of the
 directory and keeps it neatly isolated from the rest of the system. Let's refer
 to that location as $CROSS_PREFIX.
 
-You need to add $CROSS_PREFIX/bin to your $PATH variable:
+You need to add $CROSS_PREFIX/bin and $CROSS_PREFIX/sbin to your $PATH variable:
 
   export PATH="$CROSS_PREFIX/bin:$PATH"
+  export PATH="$CROSS_PREFIX/sbin:$PATH"
 
 This will modify the $PATH variable in this particular shell session. Depending
 on your shell and system configuration you can make this permanent by adding
@@ -102,7 +104,8 @@ commands:
   make distclean
 
 These tools produce platform independent output so you may wish to install them
-into $HOME/bin or /usr/local/bin or where it suits you in your $PATH.
+into $HOME or /usr/local or where it suits you, and add its bin and sbin to your
+$PATH.
 
 Setting up basic system root
 ----------------------------

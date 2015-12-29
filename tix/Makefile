@@ -31,11 +31,11 @@ all: $(PROGRAMS)
 %: %.cpp util.h
 	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@
 
-$(DESTDIR)$(BINDIR):
+$(DESTDIR)$(SBINDIR):
 	mkdir -p $@
 
-install: all $(DESTDIR)$(BINDIR)
-	install $(PROGRAMS) $(DESTDIR)$(BINDIR)
+install: all $(DESTDIR)$(SBINDIR)
+	install $(PROGRAMS) $(DESTDIR)$(SBINDIR)
 
 clean:
 	rm -f $(BINARIES)
