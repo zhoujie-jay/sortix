@@ -54,8 +54,22 @@ Open new file containing output of running
 .It Sy tabsize Ar tab-size
 Select tab size.
 .El
+.Pp
+A subset of these commands can be stored in the
+.Xr editor 5
+configuration file loaded on
+.Nm
+startup.
+.Sh FILES
+.Bl -tag -width "$HOME/.editor" -compact
+.It Pa /etc/editor
+Global configuration.
+.It Pa ~/.editor
+User configuration.
+.El
 .Sh SEE ALSO
-.Xr pager 1
+.Xr pager 1 ,
+.Xr editor 5
 .Sh BUGS
 .Nm
 lacks a number of crucial features, such as undo and redo, ability to open

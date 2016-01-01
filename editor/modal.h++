@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2016.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -47,6 +47,7 @@ void editor_modal_line_numbering(struct editor* editor, const char* truth);
 
 bool is_modal_command(const char* cmd, const char* candidate, const char** rest);
 void editor_modal_command(struct editor* editor, const char* cmd);
+void editor_modal_command_config(struct editor* editor, const char* cmd);
 void editor_modal_character(struct editor* editor, wchar_t c);
 
 #endif

@@ -1,0 +1,26 @@
+.Dd $Mdocdate: January 8 2015 $
+.Dt EDITOR 5
+.Os
+.Sh NAME
+.Nm editor
+.Nd editor configuration
+.Sh SYNOPSIS
+.Nm /etc/editor
+.Nm ~/.editor
+.Sh DESCRIPTION
+.Xr editor 1
+loads these files on startup and executes the commands therein as described in
+.Xr editor 1 .  Only commands applicable as global configuration are executed to
+avoid undesirable side effects.  For instance,
+.Sy popen
+isn't executed as that would open another file than the current one.  Unknown
+commands are silently ignored.
+.Sh FILES
+.Bl -tag -width "$HOME/.editor" -compact
+.It Pa /etc/editor
+Global configuration.
+.It Pa ~/.editor
+User configuration.
+.El
+.Sh SEE ALSO
+.Xr editor 1

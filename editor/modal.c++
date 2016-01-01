@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015, 2016.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -281,6 +281,21 @@ void editor_modal_command(struct editor* editor, const char* cmd)
 	else
 		editor->modal_error = true;
 }
+
+void editor_modal_command_config(struct editor* editor, const char* cmd)
+{
+	while ( *cmd && isspace((unsigned char) *cmd) )
+		cmd++;
+	if ( is_modal_command(cmd, "margin", &cmd) )
+		editor_modal_margin(editor, cmd);
+	else if ( is_modal_command(cmd, "tabsize", &cmd) )
+		editor_modal_tabsize(editor, cmd);
+	else if ( is_modal_command(cmd, "language", &cmd) )
+		editor_modal_language(editor, cmd);
+	else if ( is_modal_command(cmd, "line-numbering", &cmd) )
+		editor_modal_line_numbering(editor, cmd);
+}
+
 
 void editor_modal_character(struct editor* editor, wchar_t c)
 {

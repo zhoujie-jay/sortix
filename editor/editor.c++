@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015, 2016.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -31,6 +31,7 @@
 #include <error.h>
 #include <limits.h>
 #include <locale.h>
+#include <pwd.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,6 +45,7 @@
 #include "editor.h++"
 #include "highlight.h++"
 #include "input.h++"
+#include "modal.h++"
 #include "terminal.h++"
 
 void initialize_editor(struct editor* editor)
@@ -86,6 +88,47 @@ void initialize_editor(struct editor* editor)
 	editor->color_lines_used = 0;
 	editor->color_lines_length = 0;
 	editor->color_lines = NULL;
+}
+
+void editor_load_config_path(struct editor* editor, const char* path)
+{
+	FILE* fp = fopen(path, "r");
+	if ( !fp )
+	{
+		if ( errno != ENOENT )
+			error(0, errno, "%s", path);
+		return;
+	}
+	char* line = NULL;
+	size_t line_size = 0;
+	ssize_t line_length = 0;
+	while ( 0 <= (errno = 0, line_length = getline(&line, &line_size, fp)) )
+	{
+		if ( line[line_length - 1] == '\n' )
+			line[--line_length] = '\0';
+		line_length = strcspn(line, "#");
+		line[line_length] = '\0';
+		editor_modal_command_config(editor, line);
+	}
+	if ( errno != 0 )
+		error(0, errno, "getline: %s", path);
+	fclose(fp);
+}
+
+void editor_load_config(struct editor* editor)
+{
+	editor_load_config_path(editor, "/etc/editor");
+	const char* home = getenv("HOME");
+	if ( !home )
+		return;
+	char* path;
+	if ( asprintf(&path, "%s/.editor", home) < 0 )
+	{
+		error(0, errno, "malloc");
+		return;
+	}
+	editor_load_config_path(editor, path);
+	free(path);
 }
 
 void editor_reset_contents(struct editor* editor)
@@ -241,6 +284,8 @@ int main(int argc, char* argv[])
 
 	struct editor editor;
 	initialize_editor(&editor);
+
+	editor_load_config(&editor);
 
 	if ( 2 <= argc && !editor_load_file(&editor, argv[1]) )
 		error(1, errno, "`%s'", argv[1]);
