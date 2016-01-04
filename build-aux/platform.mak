@@ -40,6 +40,7 @@ endif
 
 # Determine the platform the software will run on.
 HOST?=$(BUILD)
+HOST_MACHINE:=$(shell expr x$(HOST) : 'x\([^-]*\).*')
 
 # Determine the platform the software will target.
 TARGET?=$(HOST)
