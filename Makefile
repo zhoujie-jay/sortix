@@ -264,7 +264,6 @@ clean-ports:
 .PHONY: clean-builds
 clean-builds:
 	rm -rf "$(SORTIX_BUILDS_DIR)"
-	rm -f sortix.bin
 	rm -f sortix.initrd
 	rm -f sortix.iso
 
@@ -332,14 +331,6 @@ release-all-archs:
 	$(MAKE) release HOST=i486-sortix
 	$(MAKE) clean clean-sysroot
 	$(MAKE) release HOST=x86_64-sortix
-
-# Kernel
-
-.PHONY: kernel
-kernel: sysroot
-
-sortix.bin: kernel
-	cp "$(SYSROOT)/boot/sortix.bin" sortix.bin
 
 # Initial ramdisk
 
