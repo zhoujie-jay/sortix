@@ -296,7 +296,7 @@ __ieee754_pow(double x, double y)
 	r  = (z*t1)/(t1-two)-(w+z*w);
 	z  = one-(r-z);
 	GET_HIGH_WORD(j,z);
-	j += (n<<20);
+	j = (int32_t)((uint32_t)j + ((uint32_t)u<<20));
 	if((j>>20)<=0) z = scalbn(z,n);	/* subnormal output */
 	else SET_HIGH_WORD(z,j);
 	return s*z;

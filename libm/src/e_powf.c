@@ -240,7 +240,7 @@ __ieee754_powf(float x, float y)
 	r  = (z*t1)/(t1-two)-(w+z*w);
 	z  = one-(r-z);
 	GET_FLOAT_WORD(j,z);
-	j += (n<<23);
+	j = (int32_t)((uint32_t)j + ((uint32_t)u<<23));
 	if((j>>23)<=0) z = scalbnf(z,n);	/* subnormal output */
 	else SET_FLOAT_WORD(z,j);
 	return s*z;
