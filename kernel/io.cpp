@@ -148,8 +148,8 @@ int sys_dup3(int oldfd, int newfd, int flags)
 	if ( flags & ~(O_CLOEXEC | O_CLOFORK) )
 		return errno = EINVAL, -1;
 	int fd_flags = 0;
-	flags |= flags & O_CLOEXEC ? FD_CLOEXEC : 0;
-	flags |= flags & O_CLOFORK ? FD_CLOFORK : 0;
+	fd_flags |= flags & O_CLOEXEC ? FD_CLOEXEC : 0;
+	fd_flags |= flags & O_CLOFORK ? FD_CLOFORK : 0;
 	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
 	return dtable->Copy(oldfd, newfd, fd_flags);
 }
