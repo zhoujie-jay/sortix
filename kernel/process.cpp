@@ -794,12 +794,7 @@ bool Process::MapSegment(struct segment* result, void* hint, size_t size,
 	// process->segment_lock is held at this point.
 
 	if ( !size )
-	{
-		result->addr = 0x0;
-		result->size = 0x0;
-		result->prot = prot;
-		return true;
-	}
+		size = 1;
 
 	if ( !PlaceSegment(result, this, hint, size, flags) )
 		return false;
@@ -919,9 +914,9 @@ int Process::Execute(const char* programname, const uint8_t* program,
 	kthread_mutex_unlock(&segment_lock);
 	kthread_mutex_unlock(&segment_write_lock);
 
-	char** target_argv = (char**) (arg_segment.addr + 0);
-	char** target_envp = (char**) (arg_segment.addr + argv_size);
-	char* target_strings = (char*) (arg_segment.addr + argv_size + envp_size);
+	char** target_argv = (char**) ((char*) arg_segment.addr + 0);
+	char** target_envp = (char**) ((char*) arg_segment.addr + argv_size);
+	char* target_strings = (char*) ((char*) arg_segment.addr + argv_size + envp_size);
 	size_t target_strings_offset = 0;
 
 	for ( int i = 0; i < argc; i++ )
@@ -1195,7 +1190,7 @@ int sys_execve_kernel(const char* filename,
 		return sys_execve_free(&buffer_alloc), result;
 
 	size_t line_length = 0;
-	while ( line_length < filesize && buffer[2 + line_length] != '\n' )
+	while ( 2 + line_length < filesize && buffer[2 + line_length] != '\n' )
 		line_length++;
 	if ( line_length == filesize )
 		return sys_execve_free(&buffer_alloc), errno = ENOEXEC, -1;
@@ -1228,7 +1223,7 @@ int sys_execve_kernel(const char* filename,
 	if ( INT_MAX - argc <= sb_argc )
 		return delete[] sb_argv, delete[] line, errno = EOVERFLOW, -1;
 
-	if ( !sb_argv[0][0] )
+	if ( !sb_argv[0] || !sb_argv[0][0] )
 		return delete[] sb_argv, delete[] line, errno = ENOENT, -1;
 
 	int new_argc = sb_argc + argc;
