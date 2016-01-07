@@ -79,22 +79,21 @@ bool MapPCIBAR(addralloc_t* allocation, pcibar_t bar, int flags)
 		bool failure = false;
 
 		int prot = PROT_KWRITE | PROT_KREAD;
-		uint64_t physaddr = bar.addr() + i;
 		uintptr_t mapat = allocation->from + i;
 
-		if ( sizeof(void*) <= 4 && 0x100000000 <= physaddr )
+		if ( sizeof(void*) <= 4 && 0x100000000 <= phys_addr + i )
 			errno = EOVERFLOW, failure = true;
 #if defined(__i386__) || defined(__x86_64__)
 		else if ( flags & MAP_PCI_BAR_WRITE_COMBINE )
 		{
 			const addr_t mtype = Memory::PAT_WC;
-			if ( !Memory::MapPAT(physaddr, mapat, prot, mtype) )
+			if ( !Memory::MapPAT(phys_addr + i, mapat, prot, mtype) )
 				failure = true;
 		}
 #endif
 		else
 		{
-			if ( !Memory::Map(physaddr, mapat, prot) )
+			if ( !Memory::Map(phys_addr + i, mapat, prot) )
 				failure = true;
 		}
 
