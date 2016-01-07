@@ -302,7 +302,7 @@ int main(int argc, char* argv[])
 		if ( columns == 1 )
 			rows = lines_used;
 
-		size_t* column_widths = (size_t*) calloc(sizeof(size_t*), columns);
+		size_t* column_widths = (size_t*) calloc(sizeof(size_t), columns);
 		if ( !column_widths )
 			error(1, errno, "calloc column widths");
 
