@@ -403,8 +403,8 @@ int ls(const char* path)
 		{
 			size_t newentrieslen = entrieslen * 2UL;
 			struct dirent** newentries;
-			size_t newentriessize = sizeof(struct dirent*) * newentrieslen;
-			newentries = (struct dirent**) realloc(entries, newentriessize);
+			entriessize = sizeof(struct dirent*) * newentrieslen;
+			newentries = (struct dirent**) realloc(entries, entriessize);
 			if ( !newentries )
 			{
 				ls_error(0, errno, "realloc");
@@ -412,7 +412,6 @@ int ls(const char* path)
 			}
 			entries = newentries;
 			entrieslen = newentrieslen;
-			entriessize = newentriessize;
 		}
 		struct dirent* copy = dirent_dup(entry);
 		if ( !copy )
@@ -423,7 +422,7 @@ int ls(const char* path)
 		entries[entriesused++] = copy;
 	}
 
-#if defined(sortix)
+#if defined(__sortix__)
 	if ( derror(dir) )
 	{
 		ls_error(0, errno, path);
