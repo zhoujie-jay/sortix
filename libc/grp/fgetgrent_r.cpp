@@ -212,7 +212,6 @@ int fgetgrent_r(FILE* restrict fp,
 		goto range_failure;
 
 	result->gr_mem = (char**) (buf + buf_used);
-	buf_used += member_list_bytes;
 
 	char* member_parse_str = member_string;
 	for ( size_t i = 0; i < num_members + 1; i++ )

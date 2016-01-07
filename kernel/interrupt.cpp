@@ -147,6 +147,7 @@ bool ScheduleWork(void (*handler)(void*, void*, size_t),
 	assert(payload || !payload_size);
 
 	struct worker_package package;
+	memset(&package, 0, sizeof(package));
 	package.payload_size = payload_size;
 	package.handler = handler;
 	package.handler_context = handler_context;

@@ -215,6 +215,7 @@ uintptr_t Load(const void* file_ptr, size_t file_size, Auxiliary* aux)
 				if ( available < descsz_aligned )
 					return errno = EINVAL, 0;
 				available -= descsz_aligned;
+				(void) available;
 				notes_offset += note_header_size + namesz_aligned + descsz_aligned;
 
 				const char* name = (const char*) (note + note_header_size);
