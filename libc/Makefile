@@ -578,6 +578,7 @@ unistd/chroot.o \
 unistd/closefrom.o \
 unistd/close.o \
 unistd/confstr.o \
+unistd/crypt_newhash.o \
 unistd/dup2.o \
 unistd/dup3.o \
 unistd/dup.o \

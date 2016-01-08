@@ -548,6 +548,8 @@ size_t getpagesize(void);
 #if __USE_SORTIX
 int chroot(const char*);
 int closefrom(int);
+int crypt_checkpass(const char*, const char*);
+int crypt_newhash(const char*, const char*, char*, size_t);
 int dup3(int, int, int);
 int execvpe(const char*, char* const [], char* const []);
 char* get_current_dir_name(void);
