@@ -157,7 +157,6 @@ Process::Process()
 	// alarm_timer initialized in member constructor.
 	// execute_clock initialized in member constructor.
 	// system_clock initialized in member constructor.
-	// execute_clock initialized in member constructor.
 	// child_execute_clock initialized in member constructor.
 	// child_system_clock initialized in member constructor.
 	Time::InitializeProcessClocks(this);

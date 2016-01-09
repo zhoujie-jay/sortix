@@ -35,6 +35,7 @@
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/scheduler.h>
+#include <sortix/kernel/thread.h>
 #include <sortix/kernel/time.h>
 
 namespace Sortix {
@@ -123,6 +124,15 @@ void InitializeProcessClocks(Process* process)
 	process->child_execute_clock.SetCallableFromInterrupts(true);
 	process->child_system_clock.Set(&nul_time, &tick_period);
 	process->child_system_clock.SetCallableFromInterrupts(true);
+}
+
+void InitializeThreadClocks(Thread* thread)
+{
+	struct timespec nul_time = timespec_nul();
+	thread->execute_clock.SetCallableFromInterrupts(true);
+	thread->execute_clock.Set(&nul_time, &tick_period);
+	thread->system_clock.SetCallableFromInterrupts(true);
+	thread->system_clock.Set(&nul_time, &tick_period);
 }
 
 void Start()

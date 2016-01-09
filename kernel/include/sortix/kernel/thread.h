@@ -32,6 +32,7 @@
 #include <sortix/sigset.h>
 #include <sortix/stack.h>
 
+#include <sortix/kernel/clock.h>
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/registers.h>
 #include <sortix/kernel/scheduler.h>
@@ -83,6 +84,8 @@ public:
 	bool kernelstackmalloced;
 	bool pledged_destruction;
 	bool force_no_signals;
+	Clock execute_clock;
+	Clock system_clock;
 
 public:
 	void HandleSignal(struct interrupt_context* intctx);

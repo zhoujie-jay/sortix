@@ -97,6 +97,9 @@ Thread::Thread()
 	sigemptyset(&signal_mask);
 	memset(&signal_stack, 0, sizeof(signal_stack));
 	signal_stack.ss_flags = SS_DISABLE;
+	// execute_clock initialized in member constructor.
+	// system_clock initialized in member constructor.
+	Time::InitializeThreadClocks(this);
 }
 
 Thread::~Thread()

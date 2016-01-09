@@ -37,6 +37,7 @@
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/syscall.h>
+#include <sortix/kernel/thread.h>
 #include <sortix/kernel/time.h>
 
 namespace Sortix {
@@ -59,6 +60,8 @@ Clock* GetClock(clockid_t clock)
 	case CLOCK_PROCESS_SYSTIME_ID: return &CurrentProcess()->system_clock;
 	case CLOCK_CHILD_CPUTIME_ID: return &CurrentProcess()->child_execute_clock;
 	case CLOCK_CHILD_SYSTIME_ID: return &CurrentProcess()->child_system_clock;
+	case CLOCK_THREAD_CPUTIME_ID: return &CurrentThread()->execute_clock;
+	case CLOCK_THREAD_SYSTIME_ID: return &CurrentThread()->system_clock;
 	default: return errno = ENOTSUP, (Clock*) NULL;
 	}
 }
@@ -79,12 +82,17 @@ void OnTick(struct timespec tick_period, bool system_mode)
 {
 	realtime_clock->Advance(tick_period);
 	uptime_clock->Advance(tick_period);
-	Process* process = CurrentProcess();
+	Thread* thread = CurrentThread();
+	Process* process = thread->process;
+	thread->execute_clock.Advance(tick_period);
 	process->execute_clock.Advance(tick_period);
 	process->child_execute_clock.Advance(tick_period);
 	if ( system_mode )
-		process->system_clock.Advance(tick_period),
+	{
+		thread->system_clock.Advance(tick_period);
+		process->system_clock.Advance(tick_period);
 		process->child_system_clock.Advance(tick_period);
+	}
 }
 
 void Init()
