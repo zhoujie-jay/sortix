@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2016.
 
     This file is part of the Sortix C Library.
 
@@ -24,50 +24,81 @@
 
 #include <sys/select.h>
 
+#include <errno.h>
 #include <poll.h>
+
+static const int READ_EVENTS = POLLIN | POLLRDNORM;
+static const int WRITE_EVENTS = POLLOUT | POLLWRNORM;
+static const int EXCEPT_EVENTS = POLLERR | POLLHUP;
 
 extern "C"
 int select(int nfds, fd_set* restrict readfds, fd_set* restrict writefds,
            fd_set* restrict exceptfds, struct timeval* restrict timeout)
 {
-	const int READ_EVENTS = POLLIN | POLLRDNORM;
-	const int WRITE_EVENTS = POLLOUT | POLLWRNORM;
-	const int EXCEPT_EVENTS = POLLERR | POLLHUP;
+	if ( nfds < 0 || FD_SETSIZE < nfds )
+		return errno = EINVAL, -1;
+	if ( timeout )
+	{
+		if ( timeout->tv_sec < 0 )
+			return errno = EINVAL, -1;
+		if ( timeout->tv_usec < 0 || 1000000 <= timeout->tv_usec )
+			return errno = EINVAL, -1;
+	}
 	struct pollfd fds[FD_SETSIZE];
+	nfds_t fds_count = 0;
 	for ( int i = 0; i < nfds; i++ )
 	{
-		fds[i].fd = i;
-		fds[i].events = fds[i].revents = 0;
-		if ( FD_ISSET(i, readfds) )
-			fds[i].events |= READ_EVENTS;
-		if ( FD_ISSET(i, writefds) )
-			fds[i].events |= WRITE_EVENTS;
-		if ( FD_ISSET(i, exceptfds) )
-			fds[i].events |= EXCEPT_EVENTS;
-		if ( !fds[i].events )
-			fds[i].fd = -1;
+		fds[fds_count].fd = i;
+		fds[fds_count].events = fds[fds_count].revents = 0;
+		if ( readfds && FD_ISSET(i, readfds) )
+		{
+			FD_CLR(i, readfds);
+			fds[fds_count].events |= READ_EVENTS;
+		}
+		if ( writefds && FD_ISSET(i, writefds) )
+		{
+			FD_CLR(i, writefds);
+			fds[fds_count].events |= WRITE_EVENTS;
+		}
+		if ( exceptfds && FD_ISSET(i, exceptfds) )
+		{
+			FD_CLR(i, exceptfds);
+			fds[fds_count].events |= EXCEPT_EVENTS;
+		}
+		if ( fds[fds_count].events )
+			fds_count++;
 	}
 	struct timespec* timeout_tsp = NULL;
 	struct timespec timeout_ts;
 	if ( timeout )
-		timeout_tsp = &timeout_ts,
-		timeout_tsp->tv_sec = timeout->tv_sec,
-		timeout_tsp->tv_nsec = (long) timeout->tv_usec * 1000;
-	int num_occur = ppoll(fds, nfds, timeout_tsp, NULL);
+	{
+		timeout_tsp = &timeout_ts;
+		timeout_tsp->tv_sec = timeout->tv_sec;
+		timeout_tsp->tv_nsec = (long) timeout->tv_usec * 1000L;
+	}
+	int num_occur = ppoll(fds, fds_count, timeout_tsp, NULL);
 	if ( num_occur < 0 )
 		return -1;
-	if ( readfds ) FD_ZERO(readfds);
-	if ( writefds ) FD_ZERO(writefds);
-	if ( exceptfds ) FD_ZERO(exceptfds);
 	int ret = 0;
-	for ( int i = 0; i < nfds; i++ )
+	for ( nfds_t i = 0; i < fds_count; i++ )
 	{
-		if ( !fds[i].events )
-			continue;
+		int fd = fds[i].fd;
 		int events = fds[i].revents;
-		if ( events & READ_EVENTS && readfds ) { FD_SET(i, readfds); ret++; }
-		if ( events & WRITE_EVENTS && writefds ) { FD_SET(i, writefds); ret++; }
-		if ( events & EXCEPT_EVENTS && exceptfds ) { FD_SET(i, exceptfds); ret++; }
+		if ( events & READ_EVENTS && readfds )
+		{
+			FD_SET(fd, readfds);
+			ret++;
+		}
+		if ( events & WRITE_EVENTS && writefds )
+		{
+			FD_SET(fd, writefds);
+			ret++;
+		}
+		if ( events & EXCEPT_EVENTS && exceptfds )
+		{
+			FD_SET(fd, exceptfds);
+			ret++;
+		}
 	}
 	return ret;
 }
