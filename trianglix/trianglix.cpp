@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015, 2016.
 
     This file is part of trianglix.
 
@@ -1720,7 +1720,10 @@ void HandleCodepoint(uint32_t codepoint, struct Desktop* desktop)
 	while ( desktop->command[column] )
 		column++;
 	if ( c == '\b' )
-		desktop->command[column-1] = '\0';
+	{
+		if ( column )
+			desktop->command[column-1] = '\0';
+	}
 	else if ( c == '\n' )
 	{
 		if ( !desktop->command[0] && desktop->num_actions != 0 )
