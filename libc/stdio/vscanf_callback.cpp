@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014, 2016.
 
     This file is part of the Sortix C Library.
 
@@ -199,7 +199,7 @@ int vscanf_callback(void* fp,
 				continue;
 			if ( undoable < UNDO_MAX )
 				undodata[undoable++] = ic;
-			if ( c == '-' && !intunsigned && !negint )
+			if ( !intparsed && c == '-' && !intunsigned && !negint )
 			{
 				negint = true;
 				continue;
