@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015, 2016.
 
     This file is part of Sortix.
 
@@ -301,7 +301,7 @@ int DescriptorTable::CloseFrom(int index)
 		return errno = EBADF, -1;
 	ScopedLock lock(&dtablelock);
 	bool any = false;
-	while ( index < numentries )
+	for ( ; index < numentries; index++ )
 	{
 		if ( !IsGoodEntry(index) )
 			continue;
