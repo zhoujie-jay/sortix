@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2016.
 
     This file is part of the Sortix C Library.
 
@@ -23,12 +23,16 @@
 *******************************************************************************/
 
 #include <netdb.h>
-
-#include <stdio.h>
 #include <stdlib.h>
 
-extern "C" void freeaddrinfo(struct addrinfo*)
+extern "C" void freeaddrinfo(struct addrinfo* ai)
 {
-	fprintf(stderr, "%s is not implemented, aborting.\n", __func__);
-	abort();
+	while ( ai )
+	{
+		struct addrinfo* todelete = ai;
+		ai = ai->ai_next;
+		free(todelete->ai_addr);
+		free(todelete->ai_canonname);
+		free(todelete);
+	}
 }
