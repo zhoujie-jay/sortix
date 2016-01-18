@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2016.
 
     This file is part of the Sortix C Library.
 
@@ -34,7 +34,7 @@ extern "C" {
 #endif
 
 /* Functions from POSIX that is considered obsolete due to bad design. */
-#if __USE_POSIX
+#if __USE_SORTIX || __USE_POSIX
 in_addr_t inet_addr(const char*);
 char* inet_ntoa(struct in_addr);
 #endif
