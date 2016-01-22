@@ -324,7 +324,7 @@ void Clock::TriggerAbsolute() // Lock acquired.
 {
 	while ( Timer* timer = absolute_timer )
 	{
-		if ( timespec_lt(timer->value.it_value, current_time) )
+		if ( timespec_lt(current_time, timer->value.it_value) )
 			break;
 		if ( (absolute_timer = absolute_timer->next_timer) )
 			absolute_timer->prev_timer = NULL;
