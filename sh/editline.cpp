@@ -35,13 +35,6 @@
 #include "editline.h"
 #include "showline.h"
 
-static const unsigned int NORMAL_TERMMODE =
-	TERMMODE_UNICODE |
-	TERMMODE_SIGNAL |
-	TERMMODE_UTF8 |
-	TERMMODE_LINEBUFFER |
-	TERMMODE_ECHO;
-
 void edit_line_show(struct edit_line* edit_state)
 {
 	size_t line_length = 0;
@@ -564,7 +557,7 @@ void edit_line_codepoint(struct edit_line* edit_state, wchar_t wc)
 		return;
 	}
 
-	if ( wc == L'\b' )
+	if ( wc == L'\b' || wc == 127 )
 		return;
 	if ( wc == L'\t' )
 		return;
@@ -617,5 +610,5 @@ void edit_line(struct edit_line* edit_state)
 		show_line_finish(&edit_state->show_state);
 	}
 
-	settermmode(edit_state->in_fd, NORMAL_TERMMODE);
+	settermmode(edit_state->in_fd, TERMMODE_NORMAL);
 }

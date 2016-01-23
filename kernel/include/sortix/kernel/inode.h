@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -36,6 +36,7 @@
 
 struct stat;
 struct statvfs;
+struct termios;
 struct wincurpos;
 struct winsize;
 struct kernel_dirent;
@@ -113,6 +114,13 @@ public:
 	virtual ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count) = 0;
 	virtual ssize_t tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count) = 0;
 	virtual int unmounted(ioctx_t* ctx) = 0;
+	virtual int tcdrain(ioctx_t* ctx) = 0;
+	virtual int tcflow(ioctx_t* ctx, int action) = 0;
+	virtual int tcflush(ioctx_t* ctx, int queue_selector) = 0;
+	virtual int tcgetattr(ioctx_t* ctx, struct termios* tio) = 0;
+	virtual pid_t tcgetsid(ioctx_t* ctx) = 0;
+	virtual int tcsendbreak(ioctx_t* ctx, int duration) = 0;
+	virtual int tcsetattr(ioctx_t* ctx, int actions, const struct termios* tio) = 0;
 
 };
 
@@ -201,6 +209,13 @@ public:
 	virtual ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count);
 	virtual ssize_t tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count);
 	virtual int unmounted(ioctx_t* ctx);
+	virtual int tcdrain(ioctx_t* ctx);
+	virtual int tcflow(ioctx_t* ctx, int action);
+	virtual int tcflush(ioctx_t* ctx, int queue_selector);
+	virtual int tcgetattr(ioctx_t* ctx, struct termios* tio);
+	virtual pid_t tcgetsid(ioctx_t* ctx);
+	virtual int tcsendbreak(ioctx_t* ctx, int duration);
+	virtual int tcsetattr(ioctx_t* ctx, int actions, const struct termios* tio);
 
 };
 

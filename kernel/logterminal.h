@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2014, 2015, 2016.
 
     This file is part of Sortix.
 
@@ -24,6 +24,10 @@
 
 #ifndef SORTIX_LOGTERMINAL_H
 #define SORTIX_LOGTERMINAL_H
+
+#include <wchar.h>
+
+#include <sortix/termios.h>
 
 #include <sortix/kernel/kthread.h>
 #include <sortix/kernel/inode.h>
@@ -56,30 +60,40 @@ public:
 	virtual int poll(ioctx_t* ctx, PollNode* node);
 	virtual ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count);
 	virtual ssize_t tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count);
-
+	virtual int tcdrain(ioctx_t* ctx);
+	virtual int tcflow(ioctx_t* ctx, int action);
+	virtual int tcflush(ioctx_t* ctx, int queue_selector);
+	virtual int tcgetattr(ioctx_t* ctx, struct termios* tio);
+	virtual pid_t tcgetsid(ioctx_t* ctx);
+	virtual int tcsendbreak(ioctx_t* ctx, int duration);
+	virtual int tcsetattr(ioctx_t* ctx, int actions, const struct termios* tio);
 
 public:
 	virtual void OnKeystroke(Keyboard* keyboard, void* user);
 
 private:
 	void ProcessKeystroke(int kbkey);
-	void QueueUnicode(uint32_t unicode);
+	void ProcessString(const char* string);
+	void ProcessUnicode(uint32_t unicode);
+	void ProcessByte(unsigned char byte, uint32_t control_unicode = 0);
 	void CommitLineBuffer();
 	short PollEventStatus();
+	bool CheckForeground();
+	bool RequireForeground(int sig);
+	bool CheckHandledByte(tcflag_t lflags, unsigned char key, unsigned char byte);
 
 private:
 	PollChannel poll_channel;
 	mutable kthread_mutex_t termlock;
 	kthread_cond_t datacond;
-	size_t numwaiting;
+	mbstate_t read_ps;
 	size_t numeofs;
 	Keyboard* keyboard;
 	KeyboardLayoutExecutor* kblayout;
 	LineBuffer linebuffer;
-	size_t partiallywritten;
-	unsigned termmode;
+	struct termios tio;
 	pid_t foreground_pgid;
-	bool control;
+	int modifiers;
 
 };
 

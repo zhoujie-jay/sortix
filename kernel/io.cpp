@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015, 2016.
 
     This file is part of Sortix.
 
@@ -33,6 +33,7 @@
 
 #include <sortix/dirent.h>
 #include <sortix/fcntl.h>
+#include <sortix/ioctl.h>
 #include <sortix/seek.h>
 #include <sortix/socket.h>
 #include <sortix/stat.h>
@@ -370,19 +371,15 @@ int sys_fcntl(int fd, int cmd, uintptr_t arg)
 	return errno = EINVAL, -1;
 }
 
-int sys_ioctl(int fd, int cmd, void* /*ptr*/)
+int sys_ioctl(int fd, int cmd, uintptr_t arg)
 {
-	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
-	if ( !desc )
-		return -1;
-	int ret = -1;
 	switch ( cmd )
 	{
+	case TIOCGWINSZ:
+		return sys_tcgetwinsize(fd, (struct winsize*) arg);
 	default:
-		errno = EINVAL;
-		break;
+		return errno = EINVAL, -1;
 	}
-	return ret;
 }
 
 ssize_t sys_readdirents(int fd, struct kernel_dirent* dirent, size_t size)
@@ -1153,6 +1150,69 @@ int sys_fsm_mountat(int dirfd, const char* path, const struct stat* rootst, int 
 		return errno = errnum, -1;
 	}
 	return ret;
+}
+
+int sys_tcdrain(int fd)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->tcdrain(&ctx);
+}
+
+int sys_tcflow(int fd, int action)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->tcflow(&ctx, action);
+}
+
+int sys_tcflush(int fd, int queue_selector)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->tcflush(&ctx, queue_selector);
+}
+
+int sys_tcgetattr(int fd, struct termios* tio)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->tcgetattr(&ctx, tio);
+}
+
+pid_t sys_tcgetsid(int fd)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->tcgetsid(&ctx);
+}
+
+int sys_tcsendbreak(int fd, int duration)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->tcsendbreak(&ctx, duration);
+}
+
+int sys_tcsetattr(int fd, int actions, const struct termios* tio)
+{
+	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
+	if ( !desc )
+		return -1;
+	ioctx_t ctx; SetupUserIOCtx(&ctx);
+	return desc->tcsetattr(&ctx, actions, tio);
 }
 
 } // namespace Sortix

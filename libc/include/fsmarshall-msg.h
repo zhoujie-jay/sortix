@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This file is part of the Sortix C Library.
 
@@ -33,6 +33,7 @@
 #include <sortix/statvfs.h>
 #include <sortix/termios.h>
 #include <sortix/timespec.h>
+#include <sortix/winsize.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -434,8 +435,66 @@ struct fsm_resp_tcgetwincurpos
 	struct wincurpos pos;
 };
 
+#define FSM_REQ_TCDRAIN 54
+struct fsm_req_tcdrain
+{
+	ino_t ino;
+};
 
-#define FSM_MSG_NUM 53
+#define FSM_REQ_TCFLOW 55
+struct fsm_req_tcflow
+{
+	ino_t ino;
+	int action;
+};
+
+#define FSM_REQ_TCFLUSH 56
+struct fsm_req_tcflush
+{
+	ino_t ino;
+	int queue_selector;
+};
+
+#define FSM_REQ_TCGETATTR 57
+struct fsm_req_tcgetattr
+{
+	ino_t ino;
+};
+
+#define FSM_RESP_TCGETATTR 58
+struct fsm_resp_tcgetattr
+{
+	struct termios tio;
+};
+
+#define FSM_REQ_TCGETSID 59
+struct fsm_req_tcgetsid
+{
+	ino_t ino;
+};
+
+#define FSM_RESP_TCGETSID 60
+struct fsm_resp_tcgetsid
+{
+	pid_t sid;
+};
+
+#define FSM_REQ_TCSENDBREAK 61
+struct fsm_req_tcsendbreak
+{
+	ino_t ino;
+	int duration;
+};
+
+#define FSM_REQ_TCSETATTR 62
+struct fsm_req_tcsetattr
+{
+	ino_t ino;
+	int actions;
+	struct termios tio;
+};
+
+#define FSM_MSG_NUM 63
 
 #ifdef __cplusplus
 } /* extern "C" */

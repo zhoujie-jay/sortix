@@ -36,8 +36,8 @@
 #include <sortix/dirent.h>
 #include <sortix/fcntl.h>
 #include <sortix/stat.h>
-#include <sortix/termios.h>
 #include <sortix/timespec.h>
+#include <sortix/winsize.h>
 
 #include <fsmarshall-msg.h>
 
@@ -255,6 +255,13 @@ public:
 	virtual ssize_t tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t count);
 	virtual ssize_t tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count);
 	virtual int unmounted(ioctx_t* ctx);
+	virtual int tcdrain(ioctx_t* ctx);
+	virtual int tcflow(ioctx_t* ctx, int action);
+	virtual int tcflush(ioctx_t* ctx, int queue_selector);
+	virtual int tcgetattr(ioctx_t* ctx, struct termios* tio);
+	virtual pid_t tcgetsid(ioctx_t* ctx);
+	virtual int tcsendbreak(ioctx_t* ctx, int duration);
+	virtual int tcsetattr(ioctx_t* ctx, int actions, const struct termios* tio);
 
 private:
 	bool SendMessage(Channel* channel, size_t type, void* ptr, size_t size,
@@ -1470,6 +1477,120 @@ int Unode::unmounted(ioctx_t* /*ctx*/)
 {
 	server->Unmount();
 	return 0;
+}
+
+int Unode::tcdrain(ioctx_t* ctx)
+{
+	Channel* channel = server->Connect(ctx);
+	if ( !channel )
+		return -1;
+	int ret = -1;
+	struct fsm_req_tcdrain msg;
+	msg.ino = ino;
+	if ( SendMessage(channel, FSM_REQ_TCDRAIN, &msg, sizeof(msg)) &&
+	     RecvMessage(channel, FSM_RESP_SUCCESS, NULL, 0) )
+		ret = 0;
+	channel->KernelClose();
+	return ret;
+}
+
+int Unode::tcflow(ioctx_t* ctx, int action)
+{
+	Channel* channel = server->Connect(ctx);
+	if ( !channel )
+		return -1;
+	int ret = -1;
+	struct fsm_req_tcflow msg;
+	msg.ino = ino;
+	msg.action = action;
+	if ( SendMessage(channel, FSM_REQ_TCFLOW, &msg, sizeof(msg)) &&
+	     RecvMessage(channel, FSM_RESP_SUCCESS, NULL, 0) )
+		ret = 0;
+	channel->KernelClose();
+	return ret;
+}
+
+int Unode::tcflush(ioctx_t* ctx, int queue_selector)
+{
+	Channel* channel = server->Connect(ctx);
+	if ( !channel )
+		return -1;
+	int ret = -1;
+	struct fsm_req_tcflush msg;
+	msg.ino = ino;
+	msg.queue_selector = queue_selector;
+	if ( SendMessage(channel, FSM_REQ_TCFLUSH, &msg, sizeof(msg)) &&
+	     RecvMessage(channel, FSM_RESP_SUCCESS, NULL, 0) )
+		ret = 0;
+	channel->KernelClose();
+	return ret;
+}
+
+int Unode::tcgetattr(ioctx_t* ctx, struct termios* io_tio)
+{
+	Channel* channel = server->Connect(ctx);
+	if ( !channel )
+		return -1;
+	int ret = -1;
+	struct fsm_req_tcgetattr msg;
+	struct fsm_resp_tcgetattr resp;
+	msg.ino = ino;
+	if ( SendMessage(channel, FSM_REQ_TCGETATTR, &msg, sizeof(msg)) &&
+	     RecvMessage(channel, FSM_RESP_TCGETATTR, &msg, sizeof(msg)) &&
+	     ctx->copy_to_dest(io_tio, &resp.tio, sizeof(resp.tio)) )
+		ret = 0;
+	channel->KernelClose();
+	return ret;
+}
+
+pid_t Unode::tcgetsid(ioctx_t* ctx)
+{
+	Channel* channel = server->Connect(ctx);
+	if ( !channel )
+		return -1;
+	pid_t ret = -1;
+	struct fsm_req_tcgetsid msg;
+	struct fsm_resp_tcgetsid resp;
+	msg.ino = ino;
+	if ( SendMessage(channel, FSM_REQ_TCGETSID, &msg, sizeof(msg)) &&
+	     RecvMessage(channel, FSM_RESP_TCGETSID, &msg, sizeof(msg)) )
+		ret = resp.sid;
+	channel->KernelClose();
+	return ret;
+}
+
+int Unode::tcsendbreak(ioctx_t* ctx, int duration)
+{
+	Channel* channel = server->Connect(ctx);
+	if ( !channel )
+		return -1;
+	int ret = -1;
+	struct fsm_req_tcsendbreak msg;
+	msg.ino = ino;
+	msg.duration = duration;
+	if ( SendMessage(channel, FSM_REQ_TCSENDBREAK, &msg, sizeof(msg)) &&
+	     RecvMessage(channel, FSM_RESP_SUCCESS, NULL, 0) )
+		ret = 0;
+	channel->KernelClose();
+	return ret;
+}
+
+int Unode::tcsetattr(ioctx_t* ctx, int actions, const struct termios* user_tio)
+{
+	struct fsm_req_tcsetattr msg;
+	if ( !ctx->copy_from_src(&msg.tio, user_tio, sizeof(msg.tio)) )
+		return -1;
+	Channel* channel = server->Connect(ctx);
+	if ( !channel )
+		return -1;
+	int ret = -1;
+	msg.ino = ino;
+	msg.actions = actions;
+	if ( SendMessage(channel, FSM_REQ_TCSETATTR, &msg, sizeof(msg)) &&
+	     RecvMessage(channel, FSM_RESP_SUCCESS, NULL, 0) )
+		ret = 0;
+	channel->KernelClose();
+	return ret;
 }
 
 bool Bootstrap(Ref<Inode>* out_root,

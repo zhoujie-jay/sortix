@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -422,6 +422,41 @@ ssize_t Vnode::tcgetblob(ioctx_t* ctx, const char* name, void* buffer, size_t co
 ssize_t Vnode::tcsetblob(ioctx_t* ctx, const char* name, const void* buffer, size_t count)
 {
 	return inode->tcsetblob(ctx, name, buffer, count);
+}
+
+int Vnode::tcdrain(ioctx_t* ctx)
+{
+	return inode->tcdrain(ctx);
+}
+
+int Vnode::tcflow(ioctx_t* ctx, int action)
+{
+	return inode->tcflow(ctx, action);
+}
+
+int Vnode::tcflush(ioctx_t* ctx, int queue_selector)
+{
+	return inode->tcflush(ctx, queue_selector);
+}
+
+int Vnode::tcgetattr(ioctx_t* ctx, struct termios* tio)
+{
+	return inode->tcgetattr(ctx, tio);
+}
+
+pid_t Vnode::tcgetsid(ioctx_t* ctx)
+{
+	return inode->tcgetsid(ctx);
+}
+
+int Vnode::tcsendbreak(ioctx_t* ctx, int duration)
+{
+	return inode->tcsendbreak(ctx, duration);
+}
+
+int Vnode::tcsetattr(ioctx_t* ctx, int actions, const struct termios* tio)
+{
+	return inode->tcsetattr(ctx, actions, tio);
 }
 
 } // namespace Sortix

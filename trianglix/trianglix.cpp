@@ -40,6 +40,7 @@
 #include <math.h>
 #include <poll.h>
 #include <pwd.h>
+#include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -155,7 +156,12 @@ static bool ForkAndWait()
 	{
 		int status;
 		waitpid(child_pid, &status, 0);
+		sigset_t oldset, sigttou;
+		sigemptyset(&sigttou);
+		sigaddset(&sigttou, SIGTTOU);
+		sigprocmask(SIG_BLOCK, &sigttou, &oldset);
 		tcsetpgrp(0, getpgid(0));
+		sigprocmask(SIG_SETMASK, &oldset, NULL);
 		settermmode(0, old_termmode);
 		return false;
 	}
@@ -166,13 +172,18 @@ static bool ForkAndWait()
 	open("/dev/tty", O_WRONLY);
 	open("/dev/tty", O_WRONLY);
 	setpgid(0, 0);
+	sigset_t oldset, sigttou;
+	sigemptyset(&sigttou);
+	sigaddset(&sigttou, SIGTTOU);
+	sigprocmask(SIG_BLOCK, &sigttou, &oldset);
 	tcsetpgrp(0, getpgid(0));
+	sigprocmask(SIG_SETMASK, &oldset, NULL);
 #if 1 /* Magic to somehow fix a weird keyboard-related bug nortti has. */
-	settermmode(0, TERMMODE_UNICODE | TERMMODE_SIGNAL | TERMMODE_UTF8 | TERMMODE_LINEBUFFER | TERMMODE_ECHO | TERMMODE_NONBLOCK);
+	settermmode(0, TERMMODE_NORMAL | TERMMODE_NONBLOCK);
 	char c;
 	while ( 0 <= read(0, &c, sizeof(c)) );
 #endif
-	settermmode(0, TERMMODE_UNICODE | TERMMODE_SIGNAL | TERMMODE_UTF8 | TERMMODE_LINEBUFFER | TERMMODE_ECHO);
+	settermmode(0, TERMMODE_NORMAL);
 	printf("\e[m\e[2J\e[H");
 	fflush(stdout);
 	fsync(0);
@@ -1719,7 +1730,7 @@ void HandleCodepoint(uint32_t codepoint, struct Desktop* desktop)
 	size_t column = 0;
 	while ( desktop->command[column] )
 		column++;
-	if ( c == '\b' )
+	if ( c == '\b' || c == 127 )
 	{
 		if ( column )
 			desktop->command[column-1] = '\0';
@@ -1918,9 +1929,6 @@ static int CreateKeyboardConnection()
 
 int main(int argc, char* argv[])
 {
-	setpgid(0, 0);
-	tcsetpgrp(0, getpgid(0));
-
 	struct stat st;
 	if ( stat("/etc/rune-enable", &st) == 0 )
 		use_runes = true, configured_use_runes = true;

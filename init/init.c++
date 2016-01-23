@@ -25,6 +25,7 @@
 
 #include <sys/mount.h>
 #include <sys/stat.h>
+#include <sys/termmode.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -145,7 +146,17 @@ int child()
 	setenv("INIT_PID", init_pid_str, 1);
 
 	setpgid(0, 0);
-	tcsetpgrp(0, getpid());
+
+	sigset_t oldset, sigs;
+	sigemptyset(&sigs);
+	sigaddset(&sigs, SIGTTOU);
+	sigprocmask(SIG_BLOCK, &sigs, &oldset);
+	tcsetpgrp(0, getpgid(0));
+	sigprocmask(SIG_SETMASK, &oldset, NULL);
+
+	unsigned int termmode = 0;
+	gettermmode(0, &termmode);
+	settermmode(0, termmode & ~TERMMODE_DISABLE);
 
 	const char* default_shell = "sh";
 	const char* default_home = "/root";

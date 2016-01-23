@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2015, 2016.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2015.
 
     This file is part of Sortix.
 
@@ -17,24 +17,36 @@
     You should have received a copy of the GNU General Public License along with
     Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    sortix/termmode.h
-    Defines constants for various terminal modes.
+    sortix/winsize.h
+    Defines values for termios.
 
 *******************************************************************************/
 
-#ifndef SORTIX_TERMMODE_H
-#define SORTIX_TERMMODE_H
+#ifndef INCLUDE_SORTIX_WINSIZE_H
+#define INCLUDE_SORTIX_WINSIZE_H
 
-#define TERMMODE_KBKEY (1U << 0) /* ISORTIX_ENABLE_KBKEY */
-#define TERMMODE_UNICODE (1U << 1) /* !ISORTIX_DISABLE_CHARS */
-#define TERMMODE_SIGNAL (1U << 2) /* ISIG */
-#define TERMMODE_UTF8 (1U << 3) /* !ISORTIX_ENABLE_32BIT */
-#define TERMMODE_LINEBUFFER (1U << 4) /* ICANON */
-#define TERMMODE_ECHO (1U << 5) /* ECHO */
-#define TERMMODE_NONBLOCK (1U << 6) /* ISORTIX_NONBLOCK */
-#define TERMMODE_TERMIOS (1U << 7) /* !ISORTIX_TERMMODE */
-#define TERMMODE_DISABLE (1U << 8) /* !CREAD */
-#define TERMMODE_NORMAL (TERMMODE_UNICODE | TERMMODE_SIGNAL | TERMMODE_UTF8 | \
-                         TERMMODE_LINEBUFFER | TERMMODE_ECHO | TERMMODE_TERMIOS)
+#include <sys/cdefs.h>
+
+#include <sys/__/types.h>
+
+#ifndef __size_t_defined
+#define __size_t_defined
+#define __need_size_t
+#include <stddef.h>
+#endif
+
+struct wincurpos
+{
+	size_t wcp_row;
+	size_t wcp_col;
+};
+
+struct winsize
+{
+	size_t ws_row;
+	size_t ws_col;
+	size_t ws_xpixel;
+	size_t ws_ypixel;
+};
 
 #endif

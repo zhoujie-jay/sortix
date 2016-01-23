@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015, 2016.
 
     This file is part of Sortix.
 
@@ -110,7 +110,7 @@ void PrintChar(char c)
 {
 	if ( c == '\n' )
 		Newline();
-	else if ( c == '\b' )
+	else if ( c == '\b' || c == 127 )
 	{
 		if ( column )
 			column--;
@@ -290,11 +290,11 @@ void ReadCommand(char* buffer, size_t buffer_length)
 			continue;
 
 		// Handle backspace.
-		if ( c == '\b' )
+		if ( c == '\b' || c == 127 )
 		{
 			if ( !written )
 				continue;
-			PrintChar(c);
+			PrintChar('\b');
 			written--;
 			continue;
 		}

@@ -828,4 +828,39 @@ Ref<Descriptor> Descriptor::fsm_mount(ioctx_t* ctx,
 	return result;
 }
 
+int Descriptor::tcdrain(ioctx_t* ctx)
+{
+	return vnode->tcdrain(ctx);
+}
+
+int Descriptor::tcflow(ioctx_t* ctx, int action)
+{
+	return vnode->tcflow(ctx, action);
+}
+
+int Descriptor::tcflush(ioctx_t* ctx, int queue_selector)
+{
+	return vnode->tcflush(ctx, queue_selector);
+}
+
+int Descriptor::tcgetattr(ioctx_t* ctx, struct termios* tio)
+{
+	return vnode->tcgetattr(ctx, tio);
+}
+
+pid_t Descriptor::tcgetsid(ioctx_t* ctx)
+{
+	return vnode->tcgetsid(ctx);
+}
+
+int Descriptor::tcsendbreak(ioctx_t* ctx, int duration)
+{
+	return vnode->tcsendbreak(ctx, duration);
+}
+
+int Descriptor::tcsetattr(ioctx_t* ctx, int actions, const struct termios* tio)
+{
+	return vnode->tcsetattr(ctx, actions, tio);
+}
+
 } // namespace Sortix

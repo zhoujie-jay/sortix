@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -36,6 +36,7 @@
 
 struct stat;
 struct statvfs;
+struct termios;
 struct wincurpos;
 struct winsize;
 struct kernel_dirent;
@@ -109,6 +110,13 @@ public:
 	int fsm_fsbind(ioctx_t* ctx, Ref<Descriptor> target, int flags);
 	Ref<Descriptor> fsm_mount(ioctx_t* ctx, const char* filename,
 	                          const struct stat* rootst, int flags);
+	int tcdrain(ioctx_t* ctx);
+	int tcflow(ioctx_t* ctx, int action);
+	int tcflush(ioctx_t* ctx, int queue_selector);
+	int tcgetattr(ioctx_t* ctx, struct termios* tio);
+	pid_t tcgetsid(ioctx_t* ctx);
+	int tcsendbreak(ioctx_t* ctx, int duration);
+	int tcsetattr(ioctx_t* ctx, int actions, const struct termios* tio);
 
 private:
 	Ref<Descriptor> open_elem(ioctx_t* ctx, const char* filename, int flags,

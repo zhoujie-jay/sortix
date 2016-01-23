@@ -31,12 +31,14 @@
 
 #include <sys/__/types.h>
 
-#if __USE_SORTIX
 #include <sortix/termios.h>
+#if __USE_SORTIX
+#include <sortix/winsize.h>
 #endif
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef __pid_t_defined
+#define __pid_t_defined
+typedef __pid_t pid_t;
 #endif
 
 #if __USE_SORTIX
@@ -45,12 +47,30 @@ extern "C" {
 #define __need_size_t
 #include <stddef.h>
 #endif
+#endif
 
+#if __USE_SORTIX
 #ifndef __ssize_t_defined
 #define __ssize_t_defined
 typedef __ssize_t ssize_t;
 #endif
 #endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+speed_t cfgetispeed(const struct termios*);
+speed_t cfgetospeed(const struct termios*);
+int cfsetispeed(struct termios*, speed_t);
+int cfsetospeed(struct termios*, speed_t);
+int tcdrain(int);
+int tcflow(int, int);
+int tcflush(int, int);
+int tcgetattr(int, struct termios*);
+pid_t tcgetsid(int);
+int tcsendbreak(int, int);
+int tcsetattr(int, int, const struct termios*);
 
 /* Functions that are Sortix extensions. */
 #if __USE_SORTIX

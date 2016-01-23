@@ -47,6 +47,7 @@
 #include <sortix/termios.h>
 #include <sortix/timespec.h>
 #include <sortix/tmns.h>
+#include <sortix/winsize.h>
 
 namespace Sortix {
 
@@ -103,7 +104,7 @@ int sys_getsockopt(int, int, int, void*, size_t*);
 int sys_gettermmode(int, unsigned*);
 uid_t sys_getuid(void);
 mode_t sys_getumask(void);
-int sys_ioctl(int, int, void*);
+int sys_ioctl(int, int, uintptr_t);
 int sys_isatty(int);
 ssize_t sys_kernelinfo(const char*, char*, size_t);
 int sys_kill(pid_t, int);
@@ -154,10 +155,17 @@ int sys_sigpending(sigset_t*);
 int sys_sigprocmask(int, const sigset_t*, sigset_t*);
 int sys_sigsuspend(const sigset_t*);
 int sys_symlinkat(const char*, int, const char*);
+int sys_tcdrain(int);
+int sys_tcflow(int, int);
+int sys_tcflush(int, int);
+int sys_tcgetattr(int, struct termios*);
 ssize_t sys_tcgetblob(int, const char*, void*, size_t);
 int sys_tcgetpgrp(int);
+pid_t sys_tcgetsid(int);
 int sys_tcgetwincurpos(int, struct wincurpos*);
 int sys_tcgetwinsize(int, struct winsize*);
+int sys_tcsendbreak(int, int);
+int sys_tcsetattr(int, int, const struct termios*);
 ssize_t sys_tcsetblob(int, const char*, const void*, size_t);
 int sys_tcsetpgrp(int, pid_t);
 pid_t sys_tfork(int, struct tfork*);

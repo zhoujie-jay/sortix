@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
 
     This file is part of Sortix.
 
@@ -410,6 +410,41 @@ ssize_t AbstractInode::tcsetblob(ioctx_t* /*ctx*/, const char* /*name*/, const v
 int AbstractInode::unmounted(ioctx_t* /*ctx*/)
 {
 	return 0;
+}
+
+int AbstractInode::tcdrain(ioctx_t* /*ctx*/)
+{
+	return errno = ENOTTY, -1;
+}
+
+int AbstractInode::tcflow(ioctx_t* /*ctx*/, int /*action*/)
+{
+	return errno = ENOTTY, -1;
+}
+
+int AbstractInode::tcflush(ioctx_t* /*ctx*/, int /*queue_selector*/)
+{
+	return errno = ENOTTY, -1;
+}
+
+int AbstractInode::tcgetattr(ioctx_t* /*ctx*/, struct termios* /*tio*/)
+{
+	return errno = ENOTTY, -1;
+}
+
+pid_t AbstractInode::tcgetsid(ioctx_t* /*ctx*/)
+{
+	return errno = ENOTTY, -1;
+}
+
+int AbstractInode::tcsendbreak(ioctx_t* /*ctx*/, int /*duration*/)
+{
+	return errno = ENOTTY, -1;
+}
+
+int AbstractInode::tcsetattr(ioctx_t* /*ctx*/, int /*actions*/, const struct termios* /*tio*/)
+{
+	return errno = ENOTTY, -1;
 }
 
 } // namespace Sortix

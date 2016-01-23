@@ -138,4 +138,12 @@ bool LineBuffer::CanBackspace() const
 	return bufferused - bufferfrozen;
 }
 
+void LineBuffer::Flush()
+{
+	bufferoffset = 0;
+	buffercommitted = 0;
+	bufferfrozen = 0;
+	bufferused = 0;
+}
+
 } // namespace Sortix

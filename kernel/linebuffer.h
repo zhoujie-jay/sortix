@@ -46,6 +46,7 @@ public:
 	void Freeze();
 	bool CanPop() const;
 	bool CanBackspace() const;
+	void Flush();
 
 private:
 	uint32_t* buffer;

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2016.
 
     This file is part of the Sortix C Library.
 
@@ -26,6 +26,9 @@
 #define INCLUDE_SYS_IOCTL_H
 
 #include <sys/cdefs.h>
+
+#include <sortix/ioctl.h>
+#include <sortix/winsize.h>
 
 #ifdef __cplusplus
 extern "C" {

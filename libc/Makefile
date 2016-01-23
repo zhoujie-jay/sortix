@@ -241,6 +241,10 @@ string/strverscmp.o \
 string/strxfrm_l.o \
 string/strxfrm.o \
 string/timingsafe_memcmp.o \
+termios/cfgetispeed.o \
+termios/cfgetospeed.o \
+termios/cfsetispeed.o \
+termios/cfsetospeed.o \
 time/asctime.o \
 time/asctime_r.o \
 time/gmtime.o \
@@ -544,9 +548,16 @@ sys/uio/writev.o \
 sys/utsname/uname.o \
 sys/wait/wait.o \
 sys/wait/waitpid.o \
+termios/tcdrain.o \
+termios/tcflow.o \
+termios/tcflush.o \
+termios/tcgetattr.o \
 termios/tcgetblob.o \
+termios/tcgetsid.o \
 termios/tcgetwincurpos.o \
 termios/tcgetwinsize.o \
+termios/tcsendbreak.o \
+termios/tcsetattr.o \
 termios/tcsetblob.o \
 time/clock_getres.o \
 time/clock_gettime.o \
