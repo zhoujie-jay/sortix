@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2014, 2015, 2016.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -28,8 +28,11 @@
 #include <errno.h>
 #include <error.h>
 #include <math.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
+#include <termios.h>
 #include <time.h>
 #include <timespec.h>
 #include <unistd.h>
@@ -369,9 +372,48 @@ void mainloop(struct dispd_window* window)
 	}
 }
 
+// Reset the terminal state when the process terminates.
+static struct termios saved_tio;
+
+static void restore_terminal_on_exit(void)
+{
+	tcsetattr(0, TCSAFLUSH, &saved_tio);
+}
+
+static void restore_terminal_on_signal(int signum)
+{
+	if ( signum == SIGTSTP )
+	{
+		struct termios tio;
+		tcgetattr(0, &tio);
+		tcsetattr(0, TCSAFLUSH, &saved_tio);
+		raise(SIGSTOP);
+		tcgetattr(0, &saved_tio);
+		tcsetattr(0, TCSAFLUSH, &tio);
+		return;
+	}
+	tcsetattr(0, TCSAFLUSH, &saved_tio);
+	raise(signum);
+}
+
 // Create a display context, run the game, and then cleanly exit.
 int main(int argc, char* argv[])
 {
+	if ( !isatty(0) )
+		error(1, errno, "standard input");
+	if ( tcgetattr(0, &saved_tio) < 0 )
+		error(1, errno, "tcsetattr: standard input");
+	if ( atexit(restore_terminal_on_exit) != 0 )
+		error(1, errno, "atexit");
+	struct sigaction sa;
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_handler = restore_terminal_on_signal;
+	sigaction(SIGTSTP, &sa, NULL);
+	sa.sa_flags = SA_RESETHAND;
+	sigaction(SIGINT, &sa, NULL);
+	sigaction(SIGQUIT, &sa, NULL);
+	sigaction(SIGTERM, &sa, NULL);
+
 	if ( !dispd_initialize(&argc, &argv) )
 		error(1, 0, "couldn't initialize dispd library");
 	struct dispd_session* session = dispd_attach_default_session();
