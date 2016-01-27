@@ -1138,6 +1138,8 @@ int sys_fsm_mountat(int dirfd, const char* path, const struct stat* rootst, int 
 		return delete[] pathcopy, -1;
 	Ref<Descriptor> desc = from->fsm_mount(&ctx, pathcopy, rootst, flags);
 	delete[] pathcopy;
+	if ( !desc )
+		return -1;
 	Ref<DescriptorTable> dtable = CurrentProcess()->GetDTable();
 	int ret = dtable->Allocate(desc, fdflags);
 	if ( ret < 0 )
