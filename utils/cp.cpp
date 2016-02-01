@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2016.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -59,11 +59,12 @@ char* AddElemToPath(const char* path, const char* elem)
 	return ret;
 }
 
-const int FLAG_RECURSIVE = 1 << 0;
-const int FLAG_VERBOSE = 1 << 1;
-const int FLAG_TARGET_DIR = 1 << 2;
-const int FLAG_NO_TARGET_DIR = 1 << 3;
-const int FLAG_UPDATE = 1 << 4;
+static const int FLAG_RECURSIVE = 1 << 0;
+static const int FLAG_VERBOSE = 1 << 1;
+static const int FLAG_TARGET_DIR = 1 << 2;
+static const int FLAG_NO_TARGET_DIR = 1 << 3;
+static const int FLAG_UPDATE = 1 << 4;
+static const int FLAG_FORCE = 1 << 5;
 
 enum symbolic_dereference
 {
@@ -359,7 +360,20 @@ bool CopyToDest(int srcdirfd, const char* srcrel, const char* srcpath,
 			}
 		}
 
-		int dstfd = openat(dstdirfd, dstrel, O_WRONLY | O_CREAT, srcst.st_mode & 03777);
+		int oflags = O_WRONLY | O_CREAT;
+		mode_t omode = srcst.st_mode & 03777;
+		int dstfd = openat(dstdirfd, dstrel, oflags, omode);
+		if ( dstfd < 0 &&
+		     (flags & FLAG_FORCE) &&
+		     faccessat(dstdirfd, dstrel, F_OK, AT_SYMLINK_NOFOLLOW) == 0 )
+		{
+			if ( unlinkat(dstdirfd, dstrel, 0) < 0 )
+			{
+				error(0, errno, "%s", dstpath);
+				return close(srcfd), false;
+			}
+			dstfd = openat(dstdirfd, dstrel, oflags, omode);
+		}
 		if ( dstfd < 0 )
 		{
 			error(0, errno, "%s", dstpath);
@@ -477,6 +491,7 @@ int main(int argc, char* argv[])
 			case 'o': if ( *(arg + 1) ) arg = "o"; else if ( i + 1 != argc ) argv[++i] = NULL; break;
 			case 's': /* ignored */ break;
 #endif
+			case 'f': flags |= FLAG_FORCE; break;
 			case 'H': symbolic_dereference = SYMBOLIC_DEREFERENCE_ARGUMENTS; break;
 			case 'L': symbolic_dereference = SYMBOLIC_DEREFERENCE_ALWAYS; break;
 			case 'r':
