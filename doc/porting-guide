@@ -271,105 +271,12 @@ work-around this or add support to `tix-build` for configuration.
 Simple Makefile
 ---------------
 
-Unfortunately, there are not enough common conventions on how to write a
-"standard" makefile to the point where Tix can just use most makefiles without
-special `tixbuildinfo` magic. However, Tix does have a plain makefile as a
-build system.
+Tix can use a conventional Makefile with a default target and an install target.
 
     pkg.build-system=makefile
 
-However, such makefiles *must* follow a common interface and it must respect the
-environmental variables through which Tix expresses its wishes. Here is an
-example makefile that detects installation directories and the compiler
-correctly:
-
-	# Determine where files will be installed at run-tine,
-	PREFIX?=/usr/local
-	EXEC_PREFIX?=$(PREFIX)
-	BINDIR?=$(EXEC_PREFIX)/bin
-	SBINDIR?=$(EXEC_PREFIX)/sbin
-	LIBEXECDIR?=$(EXEC_PREFIX)/libexec
-	BOOTDIR?=$(PREFIX)/boot
-	DATAROOTDIR?=$(PREFIX)/share
-	DATADIR?=$(DATAROOTDIR)
-	SYSCONFDIR?=$(PREFIX)/etc
-	SHAREDSTATEDIR?=$(PREFIX)/com
-	LOCALSTATEDIR?=$(PREFIX)/var
-	RUNSTATEDIR?=$(LOCALSTATEDIR)/run
-	INCLUDEDIR?=$(PREFIX)/include
-	DOCDIR?=$(DATAROOTDIR)/doc
-	INFODIR?=$(DATAROOTDIR)/info
-	HTMLDIR?=$(DOCDIR)
-	DVIDIR?=$(DOCDIR)
-	PSDIR?=$(DOCDIR)
-	PDFDIR?=$(DOCDIR)
-	PSDIR?=$(DOCDIR)
-	LIBDIR?=$(EXEC_PREFIX)/lib
-	LOCALEDIR?=$(DATAROOTDIR/locale
-	MANDIR?=$(DATAROOTDIR)/man
-
-	# An additional prefix during the installation.
-	DESTDIR?=
-
-	# Determine which compilation tools to use.
-	HOST_TOOL_PREFIX?=$(if $(HOST),$(HOST)-,)
-	DEFAULT_CC:=$(HOST_TOOL_PREFIX)gcc
-	DEFAULT_CXX:=$(HOST_TOOL_PREFIX)g++
-	CC?=$(DEFAULT_CC)
-	CXX?=$(DEFAULT_CXX)
-
-	# Defaults for common variables if not set in the environment.
-	CFLAGS?=-O2 -g
-	CXXFLAGS?=-O2 -g
-	CPPFLAGS?=-DNDEBUG
-	LDFLAGS?=
-	LIBS?=
-
-	# Required options in common variables.
-	CFLAGS:=$(CFLAGS) -Wall -Wextra
-	CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra
-	CPPFLAGS:=-Iinclude
-	LDFLAGS:=$(LDFLAGS)
-	LIBS:=$(LIBS) -lqux
-
-	PROGRAMS=foo bar
-
-	all: $(PROGRAMS)
-
-	.PHONY: all install clean distclean
-
-	%: %.c
-		$(CC) $(CPPFLAGS) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
-
-	%: %.c++
-		$(CXX) $(CPPFLAGS) $(CXXFLAGS) $< -o $@ $(LDFLAGS) $(LIBS)
-
-	install: all
-		install $(PROGRAMS) $(DESTDIR)$(BINDIR)
-
-	clean:
-		rm -f $(PROGRAMS)
-
-	distclean: clean
-
-This is a bit verbose. Simply remove the variables you don't need, but keep in
-mind that the logic that determines the remaining variables is important. The
-correct design here is that the makefile respects environmental variables with
-standard names whenever they are present. Default values are assigned to the
-environmental variables using ?= to make sure the defaults takes precedence. The
-logic that determines the compiler is important, as the `HOST` environmental
-variable contains the platform triplet of the platform that the program will run
-on. You should not assume that you can execute the programs you compile, as this
-simple scheme doesn't allow compiling for multiple platforms. In that case, we
-would need additional variables such as `BUILDCC` and `HOSTCC`. Additionally, it
-is important to implement the standard targets here (all, install, clean, and
-distclean).
-
-If everyone sticks to simple programs with makefiles that implement this simple
-interface correctly, then the process of compiling a given project is much
-simpler. Tix will currently compile such a makefile correctly and will continue
-to, but it doesn't set all the environmental variables at this point -- it may
-set then in the future, however.
+The appropriate variables such as CC, CFLAGS, PREFIX, DESTDIR and such will be
+set and must be honored from the environment.
 
 Testing the Port
 ----------------
