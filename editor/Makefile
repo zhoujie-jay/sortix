@@ -36,6 +36,8 @@ $(BINARY): $(OBJS)
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)
 	install $(BINARY) $(DESTDIR)$(BINDIR)
+	mkdir -p $(DESTDIR)$(MANDIR)/man1
+	install editor.1 $(DESTDIR)$(MANDIR)/man1/editor.1
 
 clean:
 	rm -f $(BINARY) $(OBJS) *.o

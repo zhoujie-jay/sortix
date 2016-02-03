@@ -1,0 +1,63 @@
+.Dd $Mdocdate: January 8 2016 $
+.Dt EDITOR 1
+.Os
+.Sh NAME
+.Nm editor
+.Nd text editor
+.Sh SYNOPSIS
+.Nm editor
+.Op Ar file
+.Sh DESCRIPTION
+.Nm
+is a text editor with basic editing functionality.  It generally behaves like
+a GUI editor as opposed to common terminal editors.  The file named by the
+.Ar file
+argument is loaded if specified.  It quits when
+.Sy Ctrl-Q
+is typed.
+.Pp
+Text can be selected by holding the
+.Sy Shift
+key and moving the cursor.
+.Pp
+It supports these keyboard shortcuts:
+.Bl -tag -width "12345768"
+.It Sy Ctrl-C
+Copy.
+.It Sy Ctrl-I
+Go to line.
+.It Sy Ctrl-K
+Cut.
+.It Sy Ctrl-O
+Open file.
+.It Sy Ctrl-Q
+Quit.
+.It Sy Ctrl-S
+Save file.
+.It Sy Ctrl-V
+Paste.
+.El
+.Pp
+These commands than can be entered after pressing
+.Sy ESC :
+.Bl -tag -width "12345768"
+.It Sy language Oo Sy none "|" Sy c "|" Sy c++ "|" Sy diff Oc
+Select syntax highlighting.
+.It Sy line-numbering Oo Sy on "|" Sy off Oc
+Line numbering.
+.It Sy margin Ar column-index
+Display right margin at
+.Ar column-index .
+.It Sy popen Ar shell-command
+Open new file containing output of running
+.Ar shell-command .
+.It Sy tabsize Ar tab-size
+Select tab size.
+.El
+.Sh SEE ALSO
+.Xr pager 1
+.Sh BUGS
+.Nm
+lacks a number of crucial features, such as undo and redo, ability to open
+multiple files at once, and so on.  The syntax highlighting can occasionally be
+inconsistent.
