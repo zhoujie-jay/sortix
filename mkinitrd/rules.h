@@ -53,6 +53,7 @@ public:
 	bool AddRule(InclusionRule* rule);
 	bool AddRulesFromFile(FILE* fp, FILE* err, const char* fpname);
 	bool AddManifestFromFile(FILE* fp, FILE* err, const char* fpname);
+	bool AddManifestPath(const char* path, FILE* err);
 	bool ChangeRulesAmount(size_t newnum);
 
 public:

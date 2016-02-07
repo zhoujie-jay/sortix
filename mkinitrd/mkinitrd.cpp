@@ -176,6 +176,7 @@ Node* RecursiveSearch(const char* real_path, const char* virt_path,
                       uint32_t* ino, Node* parent = NULL)
 {
 	printf("%s\n", virt_path);
+	fflush(stdout);
 
 	if ( virt_path[0] == '/' && !virt_path[1] )
 		virt_path = "";

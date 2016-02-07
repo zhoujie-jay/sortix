@@ -25,6 +25,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <error.h>
+#include <libgen.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -285,6 +286,33 @@ int compare_path(const void* a_ptr, const void* b_ptr)
 	return strcmp(a, b);
 }
 
+bool InclusionRules::AddManifestPath(const char* path, FILE* err)
+{
+	if ( manifest_used == manifest_length )
+	{
+		size_t new_length = 2 * manifest_length;
+		if ( new_length == 0 )
+			new_length = 64;
+		size_t new_size = new_length * sizeof(char*);
+		char** new_manifest = (char**) realloc(manifest, new_size);
+		if ( !new_manifest )
+		{
+			error_fp(err, 0, errno, "malloc");
+			return false;
+		}
+		manifest = new_manifest;
+		manifest_length = new_length;
+	}
+	char* copy = strdup(path);
+	if ( !copy )
+	{
+		error_fp(err, 0, errno, "malloc");
+		return false;
+	}
+	manifest[manifest_used++] = copy;
+	return true;
+}
+
 bool InclusionRules::AddManifestFromFile(FILE* fp, FILE* err, const char* fpname)
 {
 	char* line = NULL;
@@ -294,25 +322,8 @@ bool InclusionRules::AddManifestFromFile(FILE* fp, FILE* err, const char* fpname
 	{
 		if ( line_len && line[line_len-1] == '\n' )
 			line[line_len-1] = '\0';
-		if ( manifest_used == manifest_length )
-		{
-			size_t new_length = 2 * manifest_length;
-			if ( new_length == 0 )
-				new_length = 64;
-			size_t new_size = new_length * sizeof(char*);
-			char** new_manifest = (char**) realloc(manifest, new_size);
-			if ( !new_manifest )
-			{
-				free(line);
-				error_fp(err, 0, errno, "malloc");
-				return false;
-			}
-			manifest = new_manifest;
-			manifest_length = new_length;
-		}
-		manifest[manifest_used++] = line;
-		line = NULL;
-		line_size = 0;
+		if ( !AddManifestPath(line, err) )
+			return false;
 	}
 	free(line);
 	if ( ferror(fp) )
@@ -320,6 +331,28 @@ bool InclusionRules::AddManifestFromFile(FILE* fp, FILE* err, const char* fpname
 		error_fp(err, 0, errno, "%s", fpname);
 		return false;
 	}
+	if ( !AddManifestPath("/", err) ||
+	     !AddManifestPath("/tix", err) ||
+	     !AddManifestPath("/tix/manifest", err) )
+		return false;
+	char* fpname_copy = strdup(fpname);
+	if ( !fpname_copy )
+	{
+		error_fp(err, 0, errno, "malloc");
+		return false;
+	}
+	const char* fpname_basename = basename(fpname_copy);
+	char* manifest_path;
+	if ( asprintf(&manifest_path, "/tix/manifest/%s", fpname_basename) < 0 )
+	{
+		free(fpname_copy);
+		error_fp(err, 0, errno, "malloc");
+		return false;
+	}
+	free(fpname_copy);
+	if ( !AddManifestPath(manifest_path, err) )
+		return free(manifest_path), false;
+	free(manifest_path);
 	qsort(manifest, manifest_used, sizeof(char*), compare_path);
 	return true;
 }
