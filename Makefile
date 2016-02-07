@@ -208,7 +208,7 @@ ifeq ($(SORTIX_INCLUDE_SOURCE),git)
 	git clone --no-hardlinks $(SORTIX_INCLUDE_SOURCE_GIT_CLONE_OPTIONS) -- $(SORTIX_INCLUDE_SOURCE_GIT_REPO) "$(SYSROOT)/src"
 	-cd "$(SYSROOT)/src" && for BRANCH in $(SORTIX_INCLUDE_SOURCE_GIT_BRANCHES); do \
 	  git fetch origin $$BRANCH && \
-	  git branch -f $$BRANCH FETCH_HEAD ; \
+	  (git branch -f $$BRANCH FETCH_HEAD || true) ; \
 	done
 ifneq ($(SORTIX_INCLUDE_SOURCE_GIT_ORIGIN),)
 	cd "$(SYSROOT)/src" && git remote set-url origin $(SORTIX_INCLUDE_SOURCE_GIT_ORIGIN)
@@ -222,6 +222,7 @@ else ifneq ($(SORTIX_INCLUDE_SOURCE),no)
 	cp Makefile -t "$(SYSROOT)/src"
 	cp README -t "$(SYSROOT)/src"
 	cp -RT build-aux "$(SYSROOT)/src/build-aux"
+	cp -RT share "$(SYSROOT)/src/share"
 	(for D in $(MODULES); do (cp -R $$D -t "$(SYSROOT)/src" && $(MAKE) -C "$(SYSROOT)/src/$$D" clean) || exit $$?; done)
 endif
 	(cd "$(SYSROOT)" && find .) | sed 's/\.//' | \
