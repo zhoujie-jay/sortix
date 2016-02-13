@@ -268,7 +268,7 @@ void Init(PS2Device* keyboard, PS2Device* mouse)
 	if ( byte != 0x55 )
 	{
 		Log::PrintF("[PS/2 controller] Self-test failure resulted in "
-		            "0x%02X instead of 0xAA\n", byte);
+		            "0x%02X instead of 0x55\n", byte);
 		return;
 	}
 	if ( dual )
