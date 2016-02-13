@@ -90,7 +90,7 @@ maybe_compressed() {
 }
 
 human_size() {
-  du -bh "$1" | grep -Eo '^[^[:space:]]+'
+  LC_ALL=C du -bh "$1" | grep -Eo '^[^[:space:]]+'
 }
 
 menuentry() {
