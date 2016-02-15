@@ -7,7 +7,6 @@
 .Sh SYNOPSIS
 .Nm init
 .Op Fl \-target Ns "=" Ns Ar init-target
-.Op Fl \-chain Ns "=" Ns Ar path-or-uuid
 .Sh DESCRIPTION
 .Nm
 is the first program run after system startup and is responsible for
@@ -69,24 +68,19 @@ will scan every block device for valid partition tables and create the
 corresponding partition devices in
 .Pa /dev .
 .Ss Chain Initialization
-The chain target triggers a search for the root filesystem.  The
-.Fl \-chain Ns "=" Ns Ar path-or-uuid
-option implies
-.Fl \-target Ns "=" Ns chain
-if it is not set and specifies the method to locate the root filesystem.  The
-.Ar path-or-uuid
-value is either a path to a directory, in which case it is used as the root
-filesystem, or a file that contains a uuid of the root filesystem, or it can be
-a valid uuid of the intended root filesystem.  If the
-.Fl \-chain
-option is not specified, the root filesystem of
+The chain target mounts the root filesystem as in
 .Pa /etc/fstab
-is used as described in
-.Xr fstab 5 .
+(see
+.Xr fstab 5) and runs the next
+.Nm
+program.  This is used by
+.Xr update-initrd 8
+to make a bootstrap
+.Xr initrd 7 .
 .Pp
-Every block device and partition is scanned to determine if it is the filesystem
-by matching the desired uuid.  The root filesystem is checked for consistency
-and mounted at
+Every block device and partition is scanned to determine if it is the root
+filesystem.  It is checked for consistency if nessesary.  It is
+mounted at
 .Pa /tmp/fs.XXXXXX
 and the
 .Pa /dev

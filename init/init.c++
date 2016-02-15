@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015, 2016.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -84,6 +84,8 @@ static char* join_paths(const char* a, const char* b)
 	return result;
 }
 
+static pid_t main_pid;
+
 __attribute__((noreturn))
 __attribute__((format(printf, 1, 2)))
 static void fatal(const char* format, ...)
@@ -95,6 +97,8 @@ static void fatal(const char* format, ...)
 	fprintf(stderr, "\n");
 	fflush(stderr);
 	va_end(ap);
+	if ( getpid() == main_pid )
+		exit(2);
 	_exit(2);
 }
 
@@ -122,11 +126,11 @@ static void note(const char* format, ...)
 	va_end(ap);
 }
 
-struct harddisk** hds = NULL;
-size_t hds_used = 0;
-size_t hds_length = 0;
+static struct harddisk** hds = NULL;
+static size_t hds_used = 0;
+static size_t hds_length = 0;
 
-void prepare_filesystem(const char* path, struct blockdevice* bdev)
+static void prepare_filesystem(const char* path, struct blockdevice* bdev)
 {
 	enum filesystem_error fserr = blockdevice_inspect_filesystem(&bdev->fs, bdev);
 	if ( fserr == FILESYSTEM_ERROR_ABSENT ||
@@ -136,7 +140,7 @@ void prepare_filesystem(const char* path, struct blockdevice* bdev)
 		return warning("probing: %s: %s", path, filesystem_error_string(fserr));
 }
 
-bool prepare_block_device(void* ctx, const char* path)
+static bool prepare_block_device(void* ctx, const char* path)
 {
 	(void) ctx;
 	struct harddisk* hd = harddisk_openat(AT_FDCWD, path, O_RDONLY);
@@ -223,7 +227,7 @@ bool prepare_block_device(void* ctx, const char* path)
 	return true;
 }
 
-void prepare_block_devices()
+static void prepare_block_devices()
 {
 	static bool done = false;
 	if ( done )
@@ -240,9 +244,9 @@ struct device_match
 	struct blockdevice* bdev;
 };
 
-void search_by_uuid(const char* uuid_string,
-                    void (*cb)(void*, struct device_match*),
-                    void* ctx)
+static void search_by_uuid(const char* uuid_string,
+                           void (*cb)(void*, struct device_match*),
+                           void* ctx)
 {
 	unsigned char uuid[16];
 	uuid_from_string(uuid, uuid_string);
@@ -282,7 +286,7 @@ void search_by_uuid(const char* uuid_string,
 	}
 }
 
-void ensure_single_device_match(void* ctx, struct device_match* match)
+static void ensure_single_device_match(void* ctx, struct device_match* match)
 {
 	struct device_match* result = (struct device_match*) ctx;
 	if ( result->path )
@@ -296,7 +300,74 @@ void ensure_single_device_match(void* ctx, struct device_match* match)
 	*result = *match;
 }
 
-void set_hostname()
+struct mountpoint
+{
+	struct fstab entry;
+	char* entry_line;
+	pid_t pid;
+	char* absolute;
+};
+
+static struct mountpoint* mountpoints = NULL;
+static size_t mountpoints_used = 0;
+static size_t mountpoints_length = 0;
+
+static int sort_mountpoint(const void* a_ptr, const void* b_ptr)
+{
+	const struct mountpoint* a = (const struct mountpoint*) a_ptr;
+	const struct mountpoint* b = (const struct mountpoint*) b_ptr;
+	return strcmp(a->entry.fs_file, b->entry.fs_file);
+}
+
+static void load_fstab(void)
+{
+	FILE* fp = fopen("/etc/fstab", "r");
+	if ( !fp )
+	{
+		if ( errno == ENOENT )
+			return;
+		fatal("/etc/fstab: %m");
+	}
+	char* line = NULL;
+	size_t line_size;
+	ssize_t line_length;
+	while ( 0 < (errno = 0, line_length = getline(&line, &line_size, fp)) )
+	{
+		if ( line[line_length - 1] == '\n' )
+			line[--line_length] = '\0';
+		struct fstab fstabent;
+		if ( !scanfsent(line, &fstabent) )
+			continue;
+		if ( mountpoints_used == mountpoints_length )
+		{
+			size_t new_length = 2 * mountpoints_length;
+			if ( !new_length )
+				new_length = 16;
+			struct mountpoint* new_mountpoints = (struct mountpoint*)
+				reallocarray(mountpoints, new_length, sizeof(struct mountpoint));
+			if ( !new_mountpoints )
+				fatal("malloc: %m");
+			mountpoints = new_mountpoints;
+			mountpoints_length = new_length;
+		}
+		struct mountpoint* mountpoint = &mountpoints[mountpoints_used++];
+		memcpy(&mountpoint->entry, &fstabent, sizeof(fstabent));
+		mountpoint->entry_line = line;
+		mountpoint->pid = -1;
+		if ( !(mountpoint->absolute = strdup(mountpoint->entry.fs_file)) )
+			fatal("malloc: %m");
+		line = NULL;
+		line_size = 0;
+	}
+	if ( errno )
+		fatal("/etc/fstab: %m");
+	free(line);
+	fclose(fp);
+	qsort(mountpoints, mountpoints_used, sizeof(struct mountpoint),
+	      sort_mountpoint);
+}
+
+static void set_hostname()
 {
 	FILE* fp = fopen("/etc/hostname", "r");
 	if ( !fp && errno == ENOENT )
@@ -313,7 +384,7 @@ void set_hostname()
 		return warning("unable to set hostname: `%s': %m", hostname);
 }
 
-void set_kblayout()
+static void set_kblayout()
 {
 	FILE* fp = fopen("/etc/kblayout", "r");
 	if ( !fp && errno == ENOENT )
@@ -338,7 +409,7 @@ void set_kblayout()
 	free(kblayout);
 }
 
-void set_videomode()
+static void set_videomode()
 {
 	FILE* fp = fopen("/etc/videomode", "r");
 	if ( !fp && errno == ENOENT )
@@ -384,7 +455,7 @@ void set_videomode()
 		        xres, yres, bpp);
 }
 
-void init_early()
+static void init_early()
 {
 	static bool done = false;
 	if ( done )
@@ -407,18 +478,252 @@ void init_early()
 		fatal("setenv: %m");
 }
 
-int init(const char* target)
+static bool is_chain_init_mountpoint(const struct mountpoint* mountpoint)
 {
-	if ( getenv("INIT_PID") )
-		fatal("System is already managed by an init process");
+	return !strcmp(mountpoint->entry.fs_file, "/");
+}
+
+static struct filesystem* mountpoint_lookup(const struct mountpoint* mountpoint)
+{
+	const char* path = mountpoint->entry.fs_file;
+	const char* spec = mountpoint->entry.fs_spec;
+	if ( strncmp(spec, "UUID=", strlen("UUID=")) == 0 )
+	{
+		const char* uuid = spec + strlen("UUID=");
+		if ( !uuid_validate(uuid) )
+		{
+			warning("%s: `%s' is not a valid uuid", path, uuid);
+			return NULL;
+		}
+		struct device_match match;
+		memset(&match, 0, sizeof(match));
+		search_by_uuid(uuid, ensure_single_device_match, &match);
+		if ( !match.path )
+		{
+			warning("%s: No devices matching uuid %s were found", path, uuid);
+			return NULL;
+		}
+		if ( !match.bdev )
+		{
+			warning("%s: Don't know which particular device to boot with uuid "
+			        "%s", path, uuid);
+			return NULL;
+		}
+		assert(match.bdev->fs);
+		return match.bdev->fs;
+	}
+	// TODO: Lookup by device name.
+	// TODO: Use this function in the chain init case too.
+	warning("%s: Don't know how to resolve `%s' to a filesystem", path, spec);
+	return NULL;
+}
+
+static bool mountpoint_mount(struct mountpoint* mountpoint)
+{
+	struct filesystem* fs = mountpoint_lookup(mountpoint);
+	if ( !fs )
+		return false;
+	// TODO: It would be ideal to get an exclusive lock so that no other
+	//       processes have currently mounted that filesystem.
+	struct blockdevice* bdev = fs->bdev;
+	const char* bdev_path = bdev->p ? bdev->p->path : bdev->hd->path;
+	assert(bdev_path);
+	do if ( fs->flags & (FILESYSTEM_FLAG_FSCK_SHOULD | FILESYSTEM_FLAG_FSCK_MUST) )
+	{
+		assert(fs->fsck);
+		if ( fs->flags & FILESYSTEM_FLAG_FSCK_MUST )
+			note("%s: Repairing filesystem due to inconsistency...", bdev_path);
+		else
+			note("%s: Checking filesystem consistency...", bdev_path);
+		pid_t child_pid = fork();
+		if ( child_pid < 0 )
+		{
+			if ( fs->flags & FILESYSTEM_FLAG_FSCK_MUST )
+			{
+				warning("%s: Mandatory repair failed: fork: %m", bdev_path);
+				return false;
+			}
+			warning("%s: Skipping filesystem check: fork: %m:", bdev_path);
+			break;
+		}
+		if ( child_pid == 0 )
+		{
+			execlp(fs->fsck, fs->fsck, "-fp", "--", bdev_path, (const char*) NULL);
+			note("%s: Failed to load filesystem checker: %s: %m", bdev_path, fs->fsck);
+			_exit(127);
+		}
+		int code;
+		if ( waitpid(child_pid, &code, 0) < 0 )
+			fatal("waitpid: %m");
+		if ( WIFEXITED(code) &&
+		     (WEXITSTATUS(code) == 0 || WEXITSTATUS(code) == 1) )
+		{
+			// Successfully checked filesystem.
+		}
+		else if ( fs->flags & FILESYSTEM_FLAG_FSCK_MUST )
+		{
+			if ( WIFSIGNALED(code) )
+				warning("%s: Mandatory repair failed: %s: %s", bdev_path,
+				        fs->fsck, strsignal(WTERMSIG(code)));
+			else if ( !WIFEXITED(code) )
+				warning("%s: Mandatory repair failed: %s: %s", bdev_path,
+				        fs->fsck, "Unexpected unusual termination");
+			else if ( WEXITSTATUS(code) == 127 )
+				warning("%s: Mandatory repair failed: %s: %s", bdev_path,
+				        fs->fsck, "Filesystem checker is absent");
+			else if ( WEXITSTATUS(code) & 2 )
+				warning("%s: Mandatory repair: %s: %s", bdev_path,
+				        fs->fsck, "System reboot is necessary");
+			else
+				warning("%s: Mandatory repair failed: %s: %s", bdev_path,
+				        fs->fsck, "Filesystem checker was unsuccessful");
+			return false;
+		}
+		else
+		{
+			bool ignore = false;
+			if ( WIFSIGNALED(code) )
+				warning("%s: Filesystem check failed: %s: %s", bdev_path,
+				        fs->fsck, strsignal(WTERMSIG(code)));
+			else if ( !WIFEXITED(code) )
+				warning("%s: Filesystem check failed: %s: %s", bdev_path,
+				        fs->fsck, "Unexpected unusual termination");
+			else if ( WEXITSTATUS(code) == 127 )
+			{
+				warning("%s: Skipping filesystem check: %s: %s", bdev_path,
+				        fs->fsck, "Filesystem checker is absent");
+				ignore = true;
+			}
+			else if ( WEXITSTATUS(code) & 2 )
+				warning("%s: Filesystem check: %s: %s", bdev_path,
+				        fs->fsck, "System reboot is necessary");
+			else
+				warning("%s: Filesystem check failed: %s: %s", bdev_path,
+				        fs->fsck, "Filesystem checker was unsuccessful");
+			if ( !ignore )
+				return false;
+		}
+	} while ( 0 );
+	if ( !fs->driver )
+	{
+		warning("%s: Don't know how to mount a %s filesystem",
+		        bdev_path, fs->fstype_name);
+		return false;
+	}
+	const char* pretend_where = mountpoint->entry.fs_file;
+	const char* where = mountpoint->absolute;
+	struct stat st;
+	if ( stat(where, &st) < 0 )
+	{
+		warning("stat: %s: %m", where);
+		return false;
+	}
+	if ( (mountpoint->pid = fork()) < 0 )
+	{
+		warning("%s: Unable to mount: fork: %m", bdev_path);
+		return false;
+	}
+	// TODO: This design is broken. The filesystem should tell us when it is
+	//       ready instead of having to poll like this.
+	if ( mountpoint->pid == 0 )
+	{
+		execlp(fs->driver, fs->driver, "--foreground", bdev_path, where,
+		       "--pretend-mount-path", pretend_where, (const char*) NULL);
+		warning("%s: Failed to load filesystem driver: %s: %m", bdev_path, fs->driver);
+		_exit(127);
+	}
+	while ( true )
+	{
+		struct stat newst;
+		if ( stat(where, &newst) < 0 )
+		{
+			warning("stat: %s: %m", where);
+			if ( unmount(where, 0) < 0 && errno != ENOMOUNT )
+				warning("unmount: %s: %m", where);
+			else if ( errno == ENOMOUNT )
+				kill(mountpoint->pid, SIGQUIT);
+			int code;
+			waitpid(mountpoint->pid, &code, 0);
+			mountpoint->pid = -1;
+			return false;
+		}
+		if ( newst.st_dev != st.st_dev || newst.st_ino != st.st_ino )
+			break;
+		int code;
+		pid_t child = waitpid(mountpoint->pid, &code, WNOHANG);
+		if ( child < 0 )
+			fatal("waitpid: %m");
+		if ( child != 0 )
+		{
+			mountpoint->pid = -1;
+			if ( WIFSIGNALED(code) )
+				warning("%s: Mount failed: %s: %s", bdev_path, fs->driver,
+				        strsignal(WTERMSIG(code)));
+			else if ( !WIFEXITED(code) )
+				warning("%s: Mount failed: %s: %s", bdev_path, fs->driver,
+				        "Unexpected unusual termination");
+			else if ( WEXITSTATUS(code) == 127 )
+				warning("%s: Mount failed: %s: %s", bdev_path, fs->driver,
+				        "Filesystem driver is absent");
+			else if ( WEXITSTATUS(code) == 0 )
+				warning("%s: Mount failed: %s: Unexpected successful exit",
+				        bdev_path, fs->driver);
+			else
+				warning("%s: Mount failed: %s: Exited with status %i", bdev_path,
+				        fs->driver, WEXITSTATUS(code));
+			return false;
+		}
+		struct timespec delay = timespec_make(0, 50L * 1000L * 1000L);
+		nanosleep(&delay, NULL);
+	}
+	return true;
+}
+
+static void mountpoints_mount(bool is_chain_init)
+{
+	for ( size_t i = 0; i < mountpoints_used; i++ )
+	{
+		struct mountpoint* mountpoint = &mountpoints[i];
+		if ( is_chain_init_mountpoint(mountpoint) != is_chain_init )
+			continue;
+		mountpoint_mount(mountpoint);
+	}
+}
+
+static void mountpoints_unmount(void)
+{
+	for ( size_t n = mountpoints_used; n != 0; n-- )
+	{
+		size_t i = n - 1;
+		struct mountpoint* mountpoint = &mountpoints[i];
+		if ( mountpoint->pid < 0 )
+			continue;
+		if ( unmount(mountpoint->absolute, 0) < 0 && errno != ENOMOUNT )
+			warning("unmount: %s: %m", mountpoint->entry.fs_file);
+		else if ( errno == ENOMOUNT )
+			kill(mountpoint->pid, SIGQUIT);
+		int code;
+		if ( waitpid(mountpoint->pid, &code, 0) < 0 )
+			note("waitpid: %m");
+		mountpoint->pid = -1;
+	}
+}
+
+static int init(const char* target)
+{
 	init_early();
 	set_hostname();
 	set_kblayout();
 	set_videomode();
 	prepare_block_devices();
+	load_fstab();
+	if ( atexit(mountpoints_unmount) != 0 )
+		fatal("atexit: %m");
+	mountpoints_mount(false);
 	sigset_t oldset, sigttou;
 	sigemptyset(&sigttou);
 	sigaddset(&sigttou, SIGTTOU);
+	int result;
 	while ( true )
 	{
 		struct termios tio;
@@ -481,59 +786,77 @@ int init(const char* target)
 		sigprocmask(SIG_SETMASK, &oldset, NULL);
 		const char* back = ": Trying to bring it back up again";
 		if ( WIFEXITED(status) )
-			return WEXITSTATUS(status);
+		{
+			result = WEXITSTATUS(status);
+			break;
+		}
 		else if ( WIFSIGNALED(status) )
 			note("session: %s%s", strsignal(WTERMSIG(status)), back);
 		else
 			note("session: Unexpected unusual termination%s", back);
 	}
+	mountpoints_unmount();
+	return result;
 }
 
-static pid_t chain_init_pid_by_path = -1;
-static char* chain_mount_point_dev = NULL;
-static void init_chain_by_path_unmount(void)
+static bool chain_location_made = false;
+static char chain_location[] = "/tmp/fs.XXXXXX";
+static bool chain_location_dev_made = false;
+static char chain_location_dev[] = "/tmp/fs.XXXXXX/dev";
+static void init_chain_atexit(void)
 {
-	if ( chain_init_pid_by_path != getpid() )
-		return;
-	if ( chain_mount_point_dev )
+	if ( chain_location_dev_made )
 	{
-		unmount(chain_mount_point_dev, 0);
-		free(chain_mount_point_dev);
-		chain_mount_point_dev = NULL;
+		unmount(chain_location_dev, 0);
+		chain_location_dev_made = false;
+	}
+	if ( chain_location_made )
+	{
+		rmdir(chain_location);
+		chain_location_made = false;
 	}
 }
 
-int init_chain_by_path(const char* path)
+static int init_chain(const char* target)
 {
-	struct stat rootst;
-	struct stat pathst;
-	if ( stat("/", &rootst) < 0 )
-		fatal("stat: /: %m");
-	if ( stat(path, &pathst) < 0 )
-		fatal("stat: %s: %m", path);
-	if ( rootst.st_dev == pathst.st_dev && rootst.st_ino == pathst.st_ino )
-	{
-		if ( getenv("INIT_PID") )
-			fatal("System is already managed by an init process");
-	}
 	init_early();
-	chain_init_pid_by_path = getpid();
-	if ( atexit(init_chain_by_path_unmount) != 0 )
+	prepare_block_devices();
+	load_fstab();
+	if ( atexit(init_chain_atexit) != 0 )
 		fatal("atexit: %m");
-	if ( !(chain_mount_point_dev = join_paths(path, "dev")) )
-		fatal("asprintf: %m");
-	if ( mkdir(chain_mount_point_dev, 755) < 0 && errno != EEXIST )
-		fatal("mkdir: %s: %m", chain_mount_point_dev);
+	if ( !mkdtemp(chain_location) )
+		fatal("mkdtemp: /tmp/fs.XXXXXX: %m");
+	chain_location_made = true;
+	bool found_root = false;
+	for ( size_t i = 0; i < mountpoints_used; i++ )
+	{
+		struct mountpoint* mountpoint = &mountpoints[i];
+		if ( !strcmp(mountpoint->entry.fs_file, "/") )
+			found_root = true;
+		char* absolute = join_paths(chain_location, mountpoint->absolute);
+		free(mountpoint->absolute);
+		mountpoint->absolute = absolute;
+	}
+	if ( !found_root )
+		fatal("/etc/fstab: Root filesystem not found in filesystem table");
+	if ( atexit(mountpoints_unmount) != 0 )
+		fatal("atexit: %m");
+	mountpoints_mount(true);
+	snprintf(chain_location_dev, sizeof(chain_location_dev), "%s/dev",
+	         chain_location);
+	if ( mkdir(chain_location_dev, 755) < 0 && errno != EEXIST )
+		fatal("mkdir: %s: %m", chain_location_dev);
 	int old_dev_fd = open("/dev", O_DIRECTORY | O_RDONLY);
 	if ( old_dev_fd < 0 )
 		fatal("%s: %m", "/dev");
-	int new_dev_fd = open(chain_mount_point_dev, O_DIRECTORY | O_RDONLY);
+	int new_dev_fd = open(chain_location_dev, O_DIRECTORY | O_RDONLY);
 	if ( new_dev_fd < 0 )
-		fatal("%s: %m", chain_mount_point_dev);
+		fatal("%s: %m", chain_location_dev);
 	if ( fsm_fsbind(old_dev_fd, new_dev_fd, 0) < 0 )
-		fatal("mount: `%s' onto `%s': %m", "/dev", chain_mount_point_dev);
+		fatal("mount: `%s' onto `%s': %m", "/dev", chain_location_dev);
 	close(new_dev_fd);
 	close(old_dev_fd);
+	int result;
 	while ( true )
 	{
 		pid_t child_pid = fork();
@@ -541,10 +864,11 @@ int init_chain_by_path(const char* path)
 			fatal("fork: %m");
 		if ( !child_pid )
 		{
-			if ( chroot(path) < 0 )
-				fatal("chroot: %s: %m", path);
+			if ( chroot(chain_location) < 0 )
+				fatal("chroot: %s: %m", chain_location);
 			if ( chdir("/") < 0 )
-				fatal("chdir: %s: %m", path);
+				fatal("chdir: %s: %m", chain_location);
+			(void) target;
 			unsetenv("INIT_PID");
 			const char* argv[] = { "init", NULL };
 			execv("/sbin/init", (char* const*) argv);
@@ -555,239 +879,18 @@ int init_chain_by_path(const char* path)
 			fatal("waitpid");
 		const char* back = ": Trying to bring it back up again";
 		if ( WIFEXITED(status) )
-			return WEXITSTATUS(status);
+		{
+			result = WEXITSTATUS(status);
+			break;
+		}
 		else if ( WIFSIGNALED(status) )
 			note("chain init: %s%s", strsignal(WTERMSIG(status)), back);
 		else
 			note("chain init: Unexpected unusual termination%s", back);
 	}
-}
-
-static pid_t chain_init_pid_by_filesystem = -1;
-static char* chain_mount_point = NULL;
-static pid_t chain_mount_pid = -1;
-static void init_chain_by_filesystem_unmount(void)
-{
-	if ( chain_init_pid_by_filesystem != getpid() )
-		return;
-	if ( chain_mount_point )
-	{
-		if ( unmount(chain_mount_point, 0) < 0 && errno != ENOMOUNT )
-			warning("unmount: %s: %m", chain_mount_point);
-		else if ( errno == ENOMOUNT && 0 <= chain_mount_pid )
-			kill(chain_mount_pid, SIGQUIT);
-	}
-	if ( 0 <= chain_mount_pid )
-	{
-		int code;
-		if ( waitpid(chain_mount_pid, &code, 0) < 0 )
-			note("waitpid: %m");
-		chain_mount_pid = -1;
-	}
-	if ( chain_mount_point )
-	{
-		if ( chain_mount_point && rmdir(chain_mount_point) < 0 )
-			warning("rmdir: %s: %m", chain_mount_point);
-		free(chain_mount_point);
-	}
-	chain_mount_point = NULL;
-}
-
-int init_chain_by_filesystem(struct filesystem* fs)
-{
-	// TODO: It would be ideal to get an exclusive lock so that no other
-	//       processes have currently mounted that filesystem.
-	struct blockdevice* bdev = fs->bdev;
-	const char* bdev_path = bdev->p ? bdev->p->path : bdev->hd->path;
-	assert(bdev_path);
-	do if ( fs->flags & (FILESYSTEM_FLAG_FSCK_SHOULD | FILESYSTEM_FLAG_FSCK_MUST) )
-	{
-		assert(fs->fsck);
-		if ( fs->flags & FILESYSTEM_FLAG_FSCK_MUST )
-			note("%s: Repairing filesystem due to inconsistency...", bdev_path);
-		else
-			note("%s: Checking filesystem consistency...", bdev_path);
-		pid_t child_pid = fork();
-		if ( child_pid < 0 )
-		{
-			if ( fs->flags & FILESYSTEM_FLAG_FSCK_MUST )
-				fatal("%s: Mandatory repair failed: fork: %m", bdev_path);
-			warning("%s: Skipping filesystem check: fork: %m:", bdev_path);
-			break;
-		}
-		if ( child_pid == 0 )
-		{
-			execlp(fs->fsck, fs->fsck, "-fp", "--", bdev_path, (const char*) NULL);
-			note("%s: Failed to load filesystem checker: %s: %m", bdev_path, fs->fsck);
-			_Exit(127);
-		}
-		int code;
-		if ( waitpid(child_pid, &code, 0) < 0 )
-			fatal("waitpid: %m");
-		if ( fs->flags & FILESYSTEM_FLAG_FSCK_MUST )
-		{
-			if ( WIFSIGNALED(code) )
-				fatal("%s: Mandatory repair failed: %s: %s", bdev_path,
-				      fs->fsck, strsignal(WTERMSIG(code)));
-			else if ( !WIFEXITED(code) )
-				fatal("%s: Mandatory repair failed: %s: %s", bdev_path,
-				      fs->fsck, "Unexpected unusual termination");
-			else if ( WEXITSTATUS(code) == 127 )
-				fatal("%s: Mandatory repair failed: %s: %s", bdev_path,
-				      fs->fsck, "Filesystem checker is absent");
-			else if ( WEXITSTATUS(code) & 2 )
-				fatal("%s: Mandatory repair: %s: %s", bdev_path,
-				      fs->fsck, "System reboot is necessary");
-			else if ( WEXITSTATUS(code) != 0 && WEXITSTATUS(code) != 1 )
-				fatal("%s: Mandatory repair failed: %s: %s", bdev_path,
-				      fs->fsck, "Filesystem checker was unsuccessful");
-		}
-		else
-		{
-			if ( WIFSIGNALED(code) )
-				fatal("%s: Filesystem check failed: %s: %s", bdev_path,
-				      fs->fsck, strsignal(WTERMSIG(code)));
-			else if ( !WIFEXITED(code) )
-				fatal("%s: Filesystem check failed: %s: %s", bdev_path,
-				      fs->fsck, "Unexpected unusual termination");
-			else if ( WEXITSTATUS(code) == 127 )
-				warning("%s: Skipping filesystem check: %s: %s", bdev_path,
-				        fs->fsck, "Filesystem checker is absent");
-			else if ( WEXITSTATUS(code) & 2 )
-				fatal("%s: Filesystem check: %s: %s", bdev_path,
-				      fs->fsck, "System reboot is necessary");
-			else if ( WEXITSTATUS(code) != 0 && WEXITSTATUS(code) != 1 )
-				fatal("%s: Filesystem check failed: %s: %s", bdev_path,
-				     fs->fsck, "Filesystem checker was unsuccessful");
-		}
-	} while ( 0 );
-	if ( !fs->driver )
-		fatal("%s: Don't know how to mount a %s filesystem",
-		      bdev_path, fs->fstype_name);
-	chain_init_pid_by_filesystem = getpid();
-	if ( atexit(init_chain_by_filesystem_unmount) != 0 )
-		fatal("atexit: %m");
-	if ( !(chain_mount_point = strdup("/tmp/fs.XXXXXX")) )
-		fatal("strdup: %m");
-	if ( !mkdtemp(chain_mount_point) )
-		fatal("mkdtemp: %s: %m", "/tmp/fs.XXXXXX");
-	struct stat st;
-	if ( stat(chain_mount_point, &st) < 0 )
-		fatal("stat: %s: %m", chain_mount_point);
-	if ( (chain_mount_pid = fork()) < 0 )
-		fatal("%s: Unable to mount: fork: %m", bdev_path);
-	// TODO: This design is broken. The filesystem should tell us when it is
-	//       ready instead of having to poll like this.
-	if ( chain_mount_pid == 0 )
-	{
-		execlp(fs->driver, fs->driver, "--foreground", "--pretend-mount-path=/",
-		       bdev_path, chain_mount_point, (const char*) NULL);
-		warning("%s: Failed to load filesystem driver: %s: %m", bdev_path, fs->driver);
-		_exit(127);
-	}
-	while ( true )
-	{
-		struct stat newst;
-		if ( stat(chain_mount_point, &newst) < 0 )
-			fatal("stat: %s: %m", chain_mount_point);
-		if ( newst.st_dev != st.st_dev || newst.st_ino != st.st_ino )
-			break;
-		int code;
-		pid_t child = waitpid(chain_mount_pid, &code, WNOHANG);
-		if ( child < 0 )
-			fatal("waitpid: %m");
-		if ( child != 0 )
-		{
-			chain_mount_pid = -1;
-			if ( WIFSIGNALED(code) )
-				fatal("%s: Mount failed: %s: %s", bdev_path, fs->driver,
-				      strsignal(WTERMSIG(code)));
-			else if ( !WIFEXITED(code) )
-				fatal("%s: Mount failed: %s: %s", bdev_path, fs->driver,
-				      "Unexpected unusual termination");
-			else if ( WEXITSTATUS(code) == 127 )
-				fatal("%s: Mount failed: %s: %s", bdev_path, fs->driver,
-				      "Filesystem driver is absent");
-			else if ( WEXITSTATUS(code) == 0 )
-				fatal("%s: Mount failed: %s: Unexpected successful exit",
-				      bdev_path, fs->driver);
-			else
-				fatal("%s: Mount failed: %s: Exited with status %i", bdev_path,
-				      fs->driver, WEXITSTATUS(code));
-		}
-		struct timespec delay = timespec_make(0, 50L * 1000L * 1000L);
-		nanosleep(&delay, NULL);
-	}
-	int result = init_chain_by_path(chain_mount_point);
-	init_chain_by_filesystem_unmount();
+	mountpoints_unmount();
+	init_chain_atexit();
 	return result;
-}
-
-int init_chain_by_uuid(const char* uuid)
-{
-	init_early();
-	prepare_block_devices();
-	if ( !uuid_validate(uuid) )
-		fatal("`%s' is not a valid uuid", uuid);
-	struct device_match match;
-	memset(&match, 0, sizeof(match));
-	search_by_uuid(uuid, ensure_single_device_match, &match);
-	if ( !match.path )
-		fatal("No devices matching uuid %s were found", uuid);
-	if ( !match.bdev )
-		fatal("Don't know which particular device to boot with uuid %s", uuid);
-	assert(match.bdev->fs);
-	return init_chain_by_filesystem(match.bdev->fs);
-}
-
-int init_chain_by_uuid_file(const char* path)
-{
-	// Find the uuid of the root filesystem.
-	FILE* fp = fopen(path, "r");
-	if ( !fp )
-		fatal("%s: %m", path);
-	char* uuid = read_single_line(fp);
-	if ( !uuid )
-		fatal("read: %s: %m", path);
-	fclose(fp);
-	if ( !uuid_validate(uuid) )
-		fatal("%s: `%s' is not a valid uuid", path, uuid);
-	int result = init_chain_by_uuid(uuid);
-	free(uuid);
-	return result;
-}
-
-int init_chain(const char* parameter)
-{
-	bool parameter_was_null = parameter == NULL;
-	if ( !parameter )
-	{
-		if ( !setfsent() )
-			fatal("/etc/fstab: %m");
-		errno = 0;
-		struct fstab* fs = getfsfile("/");
-		if ( !fs && errno )
-			fatal("/etc/fstab: %m");
-		if ( !fs )
-			fatal("/etc/fstab: Root filesystem not found in filesystem table");
-		parameter = fs->fs_spec;
-		if ( strncmp(parameter, "UUID=", strlen("UUID=")) == 0 )
-			parameter += strlen("UUID=");
-	}
-	if ( uuid_validate(parameter) )
-		return init_chain_by_uuid(parameter);
-	struct stat st;
-	if ( stat(parameter, &st) < 0 )
-		error(2, errno, "%s", parameter);
-	if ( S_ISDIR(st.st_mode) && !parameter_was_null )
-		return init_chain_by_path(parameter);
-	// TODO: Implement this case so it works in /etc/fstab.
-	//else if ( S_ISBLK(st.st_mode) )
-	//	return init_chain_by_device(parameter);
-	else if ( S_ISREG(st.st_mode) && !parameter_was_null )
-		return init_chain_by_uuid_file(parameter);
-	else
-		fatal("%s: Don't how how to chain initialize this", parameter);
 }
 
 static void compact_arguments(int* argc, char*** argv)
@@ -819,9 +922,10 @@ static void version(FILE* fp, const char* argv0)
 
 int main(int argc, char* argv[])
 {
+	main_pid = getpid();
+
 	setlocale(LC_ALL, "");
 
-	const char* chain = NULL;
 	const char* target = NULL;
 
 	const char* argv0 = argv[0];
@@ -842,19 +946,6 @@ int main(int argc, char* argv[])
 				help(stderr, argv0);
 				exit(1);
 			}
-		}
-		else if ( !strncmp(arg, "--chain=", strlen("--chain=")) )
-			chain = arg + strlen("--chain=");
-		else if ( !strcmp(arg, "--chain") )
-		{
-			if ( i + 1 == argc )
-			{
-				error(0, 0, "option '--chain' requires an argument");
-				fprintf(stderr, "Try `%s --help' for more information.\n", argv[0]);
-				exit(125);
-			}
-			chain = argv[i+1];
-			argv[++i] = NULL;
 		}
 		else if ( !strncmp(arg, "--target=", strlen("--target=")) )
 			target = arg + strlen("--target=");
@@ -887,9 +978,7 @@ int main(int argc, char* argv[])
 	if ( !target )
 	{
 		const char* target_path = "/etc/init/target";
-		if ( chain )
-			target = "chain";
-		else if ( access(target_path, F_OK) == 0 )
+		if ( access(target_path, F_OK) == 0 )
 		{
 			FILE* target_fp = fopen(target_path, "r");
 			if ( !target_fp )
@@ -904,14 +993,15 @@ int main(int argc, char* argv[])
 			target = "single-user";
 	}
 
-	int result;
-	if ( !strcmp(target, "chain") )
-		return init_chain(chain);
-	else if ( !strcmp(target, "single-user") ||
-	          !strcmp(target, "multi-user") )
+	if ( getenv("INIT_PID") )
+		fatal("System is already managed by an init process");
+
+	if ( !strcmp(target, "single-user") ||
+	     !strcmp(target, "multi-user") )
 		return init(target);
-	else
-		fatal("Unknown initialization target `%s'", target);
-	free(target_string);
-	return result;
+
+	if ( !strcmp(target, "chain") )
+		return init_chain(target);
+
+	fatal("Unknown initialization target `%s'", target);
 }
