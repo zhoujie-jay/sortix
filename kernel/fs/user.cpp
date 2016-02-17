@@ -660,7 +660,7 @@ Unode::Unode(Ref<Server> server, ino_t ino, mode_t type)
 	SetupKernelIOCtx(&kctx);
 	this->server = server;
 	this->ino = ino;
-	this->dev = (dev_t) server;
+	this->dev = (dev_t) server.Get();
 	this->type = type;
 
 	// Let the remote know that the kernel is using this inode.
@@ -787,7 +787,7 @@ int Unode::stat(ioctx_t* ctx, struct stat* st)
 	msg.ino = ino;
 	if ( SendMessage(channel, FSM_REQ_STAT, &msg, sizeof(msg)) &&
 	     RecvMessage(channel, FSM_RESP_STAT, &resp, sizeof(resp)) &&
-	     (resp.st.st_dev = (dev_t) server, true) &&
+	     (resp.st.st_dev = (dev_t) server.Get(), true) &&
 	     ctx->copy_to_dest(st, &resp.st, sizeof(*st)) )
 		ret = 0;
 	channel->KernelClose();
@@ -805,7 +805,7 @@ int Unode::statvfs(ioctx_t* ctx, struct statvfs* stvfs)
 	msg.ino = ino;
 	if ( SendMessage(channel, FSM_REQ_STATVFS, &msg, sizeof(msg)) &&
 	     RecvMessage(channel, FSM_RESP_STATVFS, &resp, sizeof(resp)) &&
-	     (resp.stvfs.f_fsid = (dev_t) server, true) &&
+	     (resp.stvfs.f_fsid = (dev_t) server.Get(), true) &&
 	     (resp.stvfs.f_flag |= ST_NOSUID, true) &&
 	     ctx->copy_to_dest(stvfs, &resp.stvfs, sizeof(*stvfs)) )
 		ret = 0;
@@ -1034,7 +1034,7 @@ ssize_t Unode::readdirents(ioctx_t* ctx, struct dirent* dirent, size_t size,
 		memset(&entry, 0, sizeof(entry));
 		entry.d_reclen = sizeof(entry) + resp.namelen + 1;
 		entry.d_namlen = resp.namelen;
-		entry.d_dev = (dev_t) server;
+		entry.d_dev = (dev_t) server.Get();
 		entry.d_ino = resp.ino;
 		entry.d_type = resp.type;
 
