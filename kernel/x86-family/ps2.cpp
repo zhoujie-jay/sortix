@@ -284,6 +284,7 @@ void Init(PS2Device* keyboard, PS2Device* mouse)
 	}
 	bool port_1 = true;
 	bool port_2 = dual;
+#if 0 // Disabled due to some emulated PS/2 controllers not handling this well.
 	if ( port_1 )
 	{
 		if ( !TryWriteCommand(REG_COMMAND_TEST_FIRST_PORT) ||
@@ -298,6 +299,7 @@ void Init(PS2Device* keyboard, PS2Device* mouse)
 			return;
 		port_2 = byte == 0x00;
 	}
+#endif
 	size_t port_1_resp_size = 0;
 	uint8_t port_1_resp[2];
 	if ( port_1 && !DetectDevice(1, port_1_resp, &port_1_resp_size) )
