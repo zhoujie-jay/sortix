@@ -91,6 +91,8 @@ extern "C" char* canonicalize_file_name_at(int dirfd, const char* path)
 		{
 			size_t subpath_len = (size_t) (last_slash - path + 1);
 			char* subpath = (char*) malloc((subpath_len + 1) * sizeof(char));
+			if ( !subpath )
+				return NULL;
 			memcpy(subpath, path, subpath_len * sizeof(char));
 			subpath[subpath_len] = '\0';
 			int fd = openat(dirfd, subpath, O_RDONLY | O_DIRECTORY);
