@@ -765,6 +765,16 @@ static int init(const char* target)
 				activate_terminal = true;
 				program = shell;
 			}
+			if ( !strcmp(target, "sysinstall") )
+			{
+				activate_terminal = true;
+				program = "sysinstall";
+			}
+			if ( !strcmp(target, "sysupgrade") )
+			{
+				program = "sysupgrade";
+				activate_terminal = true;
+			}
 			if ( activate_terminal )
 			{
 				tio.c_cflag |= CREAD;
@@ -868,16 +878,40 @@ static int init_chain(const char* target)
 				fatal("chroot: %s: %m", chain_location);
 			if ( chdir("/") < 0 )
 				fatal("chdir: %s: %m", chain_location);
-			(void) target;
-			unsetenv("INIT_PID");
-			const char* argv[] = { "init", NULL };
-			execv("/sbin/init", (char* const*) argv);
-			fatal("Failed to load chain init: %s: %m", argv[0]);
+			if ( !strcmp(target, "chain-merge") )
+			{
+				const char* argv[] = { "sysmerge", "--booting", NULL };
+				execv("/sysmerge/sbin/sysmerge", (char* const*) argv);
+				fatal("Failed to run automatic update: %s: %m", argv[0]);
+			}
+			else
+			{
+				unsetenv("INIT_PID");
+				const char* argv[] = { "init", NULL };
+				execv("/sbin/init", (char* const*) argv);
+				fatal("Failed to load chain init: %s: %m", argv[0]);
+			}
 		}
 		int status;
 		if ( waitpid(child_pid, &status, 0) < 0 )
 			fatal("waitpid");
 		const char* back = ": Trying to bring it back up again";
+		if ( !strcmp(target, "chain-merge") )
+		{
+			if ( WIFEXITED(status) && WEXITSTATUS(status) == 0 )
+			{
+				target = "chain";
+				continue;
+			}
+			if ( WIFEXITED(status) )
+				fatal("Automatic upgrade failed: Exit status %i",
+				      WEXITSTATUS(status));
+			else if ( WIFSIGNALED(status) )
+				fatal("Automatic upgrade failed: %s",
+				      strsignal(WTERMSIG(status)));
+			else
+				fatal("Automatic upgrade failed: Unexpected unusual termination");
+		}
 		if ( WIFEXITED(status) )
 		{
 			result = WEXITSTATUS(status);
@@ -990,17 +1024,20 @@ int main(int argc, char* argv[])
 			fclose(target_fp);
 		}
 		else
-			target = "single-user";
+			fatal("Refusing to initialize because %s doesn't exist", target_path);
 	}
 
 	if ( getenv("INIT_PID") )
 		fatal("System is already managed by an init process");
 
 	if ( !strcmp(target, "single-user") ||
-	     !strcmp(target, "multi-user") )
+	     !strcmp(target, "multi-user") ||
+	     !strcmp(target, "sysinstall") ||
+	     !strcmp(target, "sysupgrade") )
 		return init(target);
 
-	if ( !strcmp(target, "chain") )
+	if ( !strcmp(target, "chain") ||
+	     !strcmp(target, "chain-merge") )
 		return init_chain(target);
 
 	fatal("Unknown initialization target `%s'", target);

@@ -1,0 +1,25 @@
+.Dd $Mdocdate: January 5 2016 $
+.Dt SYSUPGRADE 8
+.Os
+.Sh NAME
+.Nm sysupgrade
+.Nd operating system upgrader
+.Sh SYNOPSIS
+.Nm sysupgrade
+.Sh DESCRIPTION
+.Nm
+is an interactive command line program that upgrades another installation to the
+current operating system.  It asks basic questions, searches for existing
+installations, verifies the upgrade makes sense, and upgrades the target system
+according to
+.Xr upgrade.conf 5
+of the target system.  The upgrade proceeds as described in
+.Xr upgrade 7 .
+.Pp
+.Nm
+must be run as root with stdin, stdout and stderr all pointing to the terminal.
+It is intended to be run from a live environment and not from an actual
+installation.
+.Sh SEE ALSO
+.Xr upgrade 7 ,
+.Xr sysinstall 8

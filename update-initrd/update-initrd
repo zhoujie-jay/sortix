@@ -78,17 +78,27 @@ if [ ! -e "$sysroot/etc/fstab" ]; then
   echo "$0: $sysroot/etc/fstab: Need a filesystem table to make an initrd" >&2
   exit 1
 fi
+sysmerge=false
+exec_prefix="$sysroot"
+if [ -d "$sysroot/sysmerge" ]; then
+  sysmerge=true
+  exec_prefix="$sysroot/sysmerge"
+fi
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT QUIT TERM
 mkdir "$tmp/bin"
 mkdir "$tmp/sbin"
-cp "$sysroot/sbin/init" "$tmp/sbin"
-cp "$sysroot/sbin/extfs" "$tmp/sbin"
-test -f "$sysroot/sbin/fsck.ext2" &&
-cp "$sysroot/sbin/fsck.ext2" "$tmp/sbin"
+cp "$exec_prefix/sbin/init" "$tmp/sbin"
+cp "$exec_prefix/sbin/extfs" "$tmp/sbin"
+test -f "$exec_prefix/sbin/fsck.ext2" &&
+cp "$exec_prefix/sbin/fsck.ext2" "$tmp/sbin"
 mkdir "$tmp/etc"
 cp "$sysroot/etc/fstab" "$tmp/etc/fstab"
 mkdir "$tmp/etc/init"
-echo chain > "$tmp/etc/init/target"
+if $sysmerge; then
+  echo chain-merge > "$tmp/etc/init/target"
+else
+  echo chain > "$tmp/etc/init/target"
+fi
 mkdir -p "$sysroot/boot"
 mkinitrd --format=sortix-initrd-2 "$tmp" -o "$sysroot/boot/sortix.initrd" > /dev/null

@@ -43,6 +43,10 @@ otherwise. Supported targets are:
 .It chain
 mount real root filesystem and run its
 .Nm
+.It chain-merge
+complete a
+.Xr sysmerge 8
+upgrade during a chain boot
 .It multi-user
 boot to
 .Xr login 8
@@ -173,4 +177,5 @@ exits with the same exit status as its target session if it terminates normally.
 .Xr initrd 7 ,
 .Xr kernel 7 ,
 .Xr login 8 ,
+.Xr sysmerge 8 ,
 .Xr update-initrd 8

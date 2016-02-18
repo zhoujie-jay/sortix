@@ -1,0 +1,105 @@
+.Dd $Mdocdate: January 4 2016 $
+.Dt UPGRADE.CONF 5
+.Os
+.Sh NAME
+.Nm upgrade.conf
+.Nd upgrade configuration
+.Sh SYNOPSIS
+.Nm /etc/upgrade.conf
+.Sh DESCRIPTION
+The
+.Nm upgrade.conf
+controls the actions taken by
+.Xr sysupgrade 8
+during a system upgrade as described in
+.Xr upgrade 7 .
+The file allows customizing whether the system itself is replaced, whether new
+ports are installed, whether the new source code is installed and what happens
+to the old source code.  It also records information about the system such as
+how the system is booted. The file is created automatically by
+.Xr sysinstall 8
+as part of
+.Xr installation 7
+to match what was installed.
+.Pp
+Developers may wish to customize what happens to
+.Pa /src
+on a system upgrade. The new source code can be installed or not. If it is
+installed, it can be installed in
+.Pa /newsrc
+or by default in
+.Pa /src .
+Any existing source code will be safely moved inside a subdirectory of
+.Pa /oldsrc .
+.Pp
+It is possible to disable any upgrading whatsoever.  If you do this, except the
+new source code is installed, then you can upgrade to the new system manually as
+described in
+.Xr development 7 .
+Upgrading to the next release from source is not supported.
+.Sh FORMAT
+The file is read line by line. The # character starts a comment and the rest of
+the line is ignored. Lines are supposed to contain assignments to variables.  An
+assignment is the name of the variable, whitespace, an equal character,
+whitespace, the value, whitespace, and then the end of the line.
+.Bl -tag -width "12345678"
+.It Sy grub Ns "=" Ns Oo Sy no "|" yes Oc (default Sy no ) .
+States GRUB is used as the bootloader.  If either the
+.Sy system
+or
+.Sy ports
+are set to
+.Sy yes ,
+then the bootloader is reinstalled
+.Xr ( grub-install 8 )
+and updated
+.Xr ( update-grub 8 ) .
+.It Sy newsrc Ns "=" Ns Oo Sy no "|" yes Oc (default Sy no ) .
+Place the new source code in
+.Pa /newsrc
+and move any existing
+.Pa /newsrc
+into
+.Pa /oldsrc .
+This preserves the current
+.Pa /src
+directory.  This takes precedence over and disables the behavior described under
+.Sy src .
+.It Sy ports Ns "=" Ns Oo Sy no "|" yes Oc (default Sy yes ) .
+Install the new ports.
+.It Sy src Ns "=" Ns Oo Sy no "|" yes Oc (default Sy no ) .
+Place the new source code in
+.Pa /src
+and move any existing
+.Pa /src
+into
+.Pa /oldsrc .
+.It Sy system Ns "=" Ns Oo Sy no "|" yes Oc (default Sy yes ) .
+Install the new system.  This will run
+.Xr update-initrd 8
+and if
+.Sy grub
+is set to
+.Sy no ,
+then regenerate
+.Pa /etc/grub.d/10_sortix.cache .
+.El
+.Pp
+The defaults will be used if
+.Pa /etc/upgrade.conf
+is missing.
+.Sh FILES
+.Bl -tag -width "/etc/upgrade.conf" -compact
+.It Pa /etc/upgrade.conf
+Upgrade configuration.
+.El
+.Sh EXAMPLES
+.Bd -literal
+system = yes
+ports = yes
+src = no
+grub = yes
+.Ed
+.Sh SEE ALSO
+.Xr upgrade 7 ,
+.Xr sysupgrade 8

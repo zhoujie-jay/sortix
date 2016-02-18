@@ -138,3 +138,5 @@ EOF
 }
 
 menuentry "live environment" ''
+menuentry "new installation" '--init="/sbin/init --target=sysinstall"'
+menuentry "upgrade existing installation" '--init="/sbin/init --target=sysupgrade"'

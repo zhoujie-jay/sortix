@@ -9,8 +9,13 @@ Sortix is a small self-hosting Unix-like operating system developed since 2011.
 This document covers matters relevant to new users from other Unix-like
 operating systems.
 .Ss Introduction
-You will be presented a with standard Unix command line environment upon booting
-the live environment.
+The installation process is covered in
+.Xr installation 7 .
+Bootable cdrom releases will offer the options of running a live environment,
+installing the operating system, or upgrading an existing installation.
+.Pp
+You will be presented a with standard Unix command line environment upon login or
+booting the live environment.
 .Ss Shutdown
 .Xr init 8
 spawns a session after boot.  This is
@@ -125,4 +130,6 @@ but it is becoming feasible to build a large number of them natively.
 .Sh SEE ALSO
 .Xr cross-development 7 ,
 .Xr development 7 ,
-.Xr serial-transfer 7
+.Xr installation 7 ,
+.Xr serial-transfer 7 ,
+.Xr upgrade 7

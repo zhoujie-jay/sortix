@@ -24,6 +24,7 @@ mkinitrd \
 regress \
 sf \
 sh \
+sysinstall \
 tix \
 trianglix \
 update-initrd \
@@ -67,37 +68,13 @@ SYSTEM_INITRD:=$(SORTIX_BUILDS_DIR)/$(BUILD_NAME).system.initrd
 .PHONY: all
 all: sysroot
 
-.PHONY: install
-install: sysroot
-	@if test -z '$(INSTALL_ROOTFS)' ; then \
-	  echo "error: You must set INSTALL_ROOTFS to where you want Sortix installed" >&2; \
-	  exit 1; \
-	fi
-	@if test -d '$(INSTALL_ROOTFS)' && test -z '$(STUPIDLY_FORCE_SORTIX_INSTALL_OVERWRITE)'; then \
-	  for ENTRY in $$(ls -A "$(SYSROOT)"); do \
-	    if test -e "$(INSTALL_ROOTFS)/$$ENTRY"; then \
-	      echo "Error: Refusing to corrupt the existing installation at $(INSTALL_ROOTFS)" >&2; \
-	      echo "Use sysmerge to update an existence installation." >&2; \
-	      exit 1; \
-	    fi; \
-	  done; \
-	fi
-	cp -RTv "$(SYSROOT)" "$(INSTALL_ROOTFS)"
-
 .PHONY: sysmerge
 sysmerge: sysroot
-ifeq ($(BUILD_IS_SORTIX),0)
-	if test -z '$(DESTDIR)' || test 'x$(DESTDIR)' = 'x/'; then \
-	  echo "error: Refusing to corrupt the local operating system by sysmerging it with Sortix" >&2 \
-	  exit 1 \
-	fi
-endif
-	for ENTRY in $$(ls -A "$(SYSROOT)" | grep -Ev '^(dev|etc|home|mnt|root|src|tix|tmp|var)$$'); do \
-		cp -RTv "$(SYSROOT)/$$ENTRY" "$(DESTDIR)/$$ENTRY" || exit $$?; \
-	done
-	cp -TPv "$(SYSROOT)/etc/machine" "$(DESTDIR)/etc/machine"
-	cp -TPv "$(SYSROOT)/etc/os-release" "$(DESTDIR)/etc/os-release"
-	cp -TPv "$(SYSROOT)/etc/sortix-release" "$(DESTDIR)/etc/sortix-release"
+	"$(SYSROOT)/sbin/sysmerge" "$(SYSROOT)"
+
+.PHONY: sysmerge-wait
+sysmerge-wait: sysroot
+	"$(SYSROOT)/sbin/sysmerge" --wait "$(SYSROOT)"
 
 .PHONY: clean-build-tools
 clean-build-tools:

@@ -39,7 +39,6 @@ system, run as root:
     cd /src
     make            # build new operating system in /src/sysroot
     make sysmerge   # upgrade current operating system with /src/sysroot
-    update-initrd   # update boot initrd with new files
 .Ed
 .Pp
 The build system creates a minimal root filesystem structure in the
@@ -55,20 +54,22 @@ The
 .Sy sysmerge
 make target ensures a system is built in
 .Pa /src/sysroot
-and then uses it to replace the current operating system.  It ignores
-configuration files and other things that could cause conflicts when merging
-with an existing system.  The new user-space is running on completition, though
-existing processes will be running the old programs. Likewise a reboot is needed
-to run the new kernel.
-.Pp
-The
-.Xr update-initrd 8
-program regenerates the
+and then runs the
+.Xr sysmerge 8
+program which installs the new system files onto the existing system.  It
+updates the system manifest as well all ports installed in the sysroot.  The
 .Xr initrd 7
-by embedding configuration and programs from the root filesystem.  It needs to
-be run when init system files,
-.Xr fstab 5 ,
-filesystem drivers, or filesystem checkers are modified.
+is automatically regenerated using
+.Xr update-initrd 8 .
+The bootloader, if enabled in
+.Xr upgrade.conf 5 ,
+is reinstalled and configured as necessary.  The new user-space is running on
+completion, though existing processes will be running the old programs.
+A reboot is needed to run the new kernel.  If the ABI changed and the current
+kernel isn't able to run the new programs, then the upgrade is delayed and will
+be automatically completed on the next boot.  The
+.Sy sysmerge-wait
+make target forces waiting until the next boot.
 .Ss Root Makefile
 The
 .Pa /src/Makefile
@@ -112,6 +113,10 @@ and place it in the current directory as
 Upgrade the current operating system using the sysroot after making the
 .Sy all
 target.
+.It Sy sysmerge-wait
+Like
+.Sy sysmerge
+but delay the upgrade until the next boot.
 .It Sy sysroot-base-headers
 Create the sysroot and install only the headers of the standard library and
 kernel into it.  This is useful when bootstrapping the runtime libraries of the
@@ -314,6 +319,10 @@ formal online release.
 .Xr git 1 ,
 .Xr make 1 ,
 .Xr cross-development 7 ,
+.Xr installation 7 ,
 .Xr porting-guide 7 ,
 .Xr serial-transfer 7 ,
+.Xr upgrade 7 ,
+.Xr sysinstall 8 ,
+.Xr sysmerge 8 ,
 .Xr update-initrd 8

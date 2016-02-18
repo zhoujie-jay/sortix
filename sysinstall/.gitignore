@@ -1,0 +1,4 @@
+sysinstall
+sysmerge
+sysupgrade
+*.o

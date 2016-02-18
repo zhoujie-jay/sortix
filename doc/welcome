@@ -1,3 +1,7 @@
 You can view the documentation for new users by typing:
 
   man user-guide
+
+You can view the installation instructions by typing:
+
+  man installation

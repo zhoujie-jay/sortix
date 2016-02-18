@@ -1,0 +1,338 @@
+.Dd $Mdocdate: December 25 2015 $
+.Dt INSTALLATION 7
+.Os
+.Sh NAME
+.Nm installation
+.Nd operating system installation instructions
+.Sh DESCRIPTION
+This document describes how to install Sortix on a computer from a cdrom
+release.  Please read it through carefully before beginning the installation so
+you know what to expect and things you need to keep in mind.  The
+.Xr upgrade 7
+manual page covers upgrading an existing installation.
+.Ss Prerequisites
+.Bl -bullet -compact
+.It
+A
+.Pa sortix-x.y-arch.iso
+release for your architecture.
+.It
+A cdrom onto which the release has been burned, or USB portable storage onto
+which the release has been placed at the first byte and onwards.
+.It
+A computer meeting the system requirements.
+.El
+.Ss System Requirements
+.Bl -bullet -compact
+.It
+32-bit x86 CPU with SSE (i486 release), or 64-bit x86 CPU (x86_64 release).
+.It
+1 GiB RAM (recommended) to run iso live environment (including installer) with
+all ports loaded, or significantly less if unimportant ports are not loaded.  An
+installation on a harddisk will require very little RAM to run after
+installation.
+.It
+ATA or AHCI harddisk with at least 1 GiB of unpartitioned space.
+.It
+BIOS firmware, or UEFI firmware in legacy mode.
+.It
+PS/2 keyboard/mouse firmware emulation to use those devices.
+.It
+If you wish to dual boot, you need an existing operating system with a multiboot
+compliant bootloader such as GRUB.
+.El
+.Ss Preparation
+Read this document through before beginning the installation.  The installation
+process is designed to be reasonable, but you need to patient and in an
+emotionally stable place.  It is important you understand the current
+limitations of the system and carefully consider whether you want to go through
+with the installation at this time.
+.Pp
+Before installing any operating system, be sure to have backed up local data in
+the event something goes wrong.  This operating system comes without any
+warranty at all (see the license).
+.Pp
+Consider the partitioning scheme and whether you wish to dual boot.  Consult the
+partitioning instructions below. If dual-booting and there isn't enough
+unpartitioned space, use the native partition editor of the existing operating
+system to shrink its installation.
+.Pp
+Determine how the target machine will boot the release.  If the firmware
+supports usb-iso hybrid images, you can use
+.Xr dd 1
+or such to copy the release physically onto a USB portable storage device.
+If the target machine has a cdrom drive, you can burn the release to a cdrom.
+Insert the installation medium in the computer and power it on.  If needed,
+change the boot order in the firmware to prefer the installation medium over any
+existing operating system installations.
+.Pp
+After the installation is complete, remove the installation medium and restore
+the firmware boot order to prioritize the local harddisk.  Then power the
+computer on normally to run the new operating system.
+.Ss Qemu
+Virtual machines are a well-supported installation target.  For instance, to
+prepare a 1 GiB harddisk and install the operating system onto it, run something
+like:
+.Bd -literal
+qemu-img create sortix.raw 1G
+qemu-system-x86_64 -enable-kvm -m 1024 -vga std -cdrom sortix.iso \\
+                   -drive file=sortix.raw,format=raw
+.Ed
+.Pp
+After the installation is complete, power off the computer and remove the
+.Ar -cdrom
+.Pa sortix.iso
+option.
+.Ss Bootloader Menu
+Booting the release will present you with a GRUB bootloader menu.  You have
+three primary options:
+.Pp
+.Bl -bullet -compact
+.It
+Running a fully-featured temporary live environment.
+.It
+Running the operating system installer
+.Xr ( sysinstall 8 ) .
+.It
+Upgrading an existing installation to this release
+.Xr ( sysupgrade 8 ) .
+.El
+.Pp
+Each of these options are a live environment running exclusively in RAM.  The
+difference is only what program is run after the system has booted.  The
+bootloader will load the whole operating system and ports into memory from the
+installation medium.  This may take a moment.  You need enough memory to store
+the whole system and the runtime usage.  If the system memory is really
+insufficient, then the bootloader may have strange behavior, take a really long
+time to load, or not complete the boot at all.
+.Pp
+You can configure which ports gets loaded using the bootloader menu.  The base
+system is rather lean and can be made quite small.  You need some ports to
+complete an installation.
+.Ss Installer
+This guide assumes you selected the operating system installation option in the
+bootloader.  If not, you can run the installer by running the
+.Xr sysinstall 8
+command.
+.Pp
+The installer is an interactive command line program that asks you questions and
+you answer them.  It provides useful information you shouldn't accidentally
+overlook.  Before answering any question, read all output since your last
+answer.
+.Pp
+You should have this installation guide ready at all times.  You can view this
+.Xr installation 7
+page during the installation by answering
+.Sy '!man'
+to any regular prompt (excluding password prompts).  Likewise you can answer
+.Sy '!'
+to get an interactive shell.  Upon completion, you will be asked the question
+again.
+.Ss Keyboard Layout
+You need to choose the applicable keyboard layout.  By default, a standard US
+keyboard layout is used.  You can view a list of keyboard layouts if you wish.
+This layout is then loaded and the preference will be stored in
+.Xr kblayout 5 .
+.Ss Display Resolution
+If a driver exists for your graphics card, then you will be asked for your
+preferred display resolution by
+.Xr chvideomode 1 .
+The display will then use this resolution and your preference will be stored in
+.Xr videomode 5 .
+.Ss Bootloader
+The
+.Xr kernel 7
+is a multiboot compatible binary that can be loaded by any multiboot
+specification compatible bootloader such as GRUB.  You need to use such a
+bootloader to boot the operating system.  You will be offered the choice of
+installing GRUB as the bootloader.  Note however that this GRUB is not able to
+detect other operating systems and you will have to configure it manually if you
+wish to use it in a dual boot scheme.  The answer will default to yes if no
+existing partitions are found, and will default to no if some are found.
+.Pp
+Single-boot configurations should use the offered bootloader.  Dual-boot
+configurations should refuse it and arrange for bootloading by other means.  The
+installer will generate
+.Pa /etc/grub.d/10_sortix.cache
+which is a fragment of GRUB configuration that offers the menu option of running
+Sortix.  You can splice that into
+.Pa /etc/grub.d/40_custom
+of an existing GRUB installation and run
+.Xr update-grub 8
+to add it as a boot option.
+.Pp
+If you accept the bootloader, you will be asked if you wish to password protect
+the bootloader.  If you don't, anyone able to use the keyboard during system
+bootloading will be trivially able to gain root access using the bootloader
+command line.  If you use this, you should also password protect the firmware and
+prohibit it from booting from anything but the harddisk.  An attacker will then
+need to tamper with the computer itself physically.  The password will be hashed
+and stored in
+.Xr grubpw 5
+and is inserted into the GRUB configuration when
+.Xr update-grub 8
+is run.
+.Ss Partitioning
+You will now need to set up a partition for the root filesystem and other
+filesystems you wish to use.  The installer will give you instructions and run
+the
+.Xr disked 8
+partitioning program.  You can view its man page by typing
+.Sy man
+and you can view this man page by typing
+.Sy man 7 installation .
+.Pp
+.Nm disked
+defaults to the first detected harddisk as the current harddisk.  You can switch
+to another harddisk using the
+.Sy device Ar device-name
+command.  You can view all devices with the
+.Sy devices
+command.
+.Pp
+If the current device does not already have a partition table, you can create a
+.Xr mbr 7
+or
+.Xr gpt 7
+partition table using the
+.Sy mktable
+command.
+.Xr gpt 7
+is the preferred choice for new partition tables as
+.Xr mbr 7 has unfortunate limitations.
+If you are dissatisfied with the current partition table, you can use
+the
+.Sy rmtable
+command which will destroy the partition table and effectively delete all data
+on the harddisk.
+.Pp
+The
+.Sy ls
+command to lists all partitions and unused space on the current device.
+The
+.Sy mkpart
+command creates a partition.  You will be asked interactive questions to
+determine its location.  You will be asked if you wish to format a filesystem.
+.Nm ext2
+is the native filesystem. If applicable, you will be asked if you wish to create
+a mountpoint for it in
+.Xr fstab 5 .
+The
+.Sy rmpart Ar partition-number
+command removes a partition table entry and effectively deletes all data on the
+partition.
+.Pp
+If the device containing the root filesystem uses the GPT partitioning scheme,
+and you accepted the included bootloader, then you must create a
+.Sy biosboot
+partition onto which the bootloader is installed.  It should be at the start of
+the harddisk and a size of 1 MiB will be more than sufficient.
+.Pp
+You need to make a partition containing the root filesystem mounted at
+.Pa / .
+A size of 1 GiB will be comfortable for the base system and ports and basic
+usage.  There is no inherent need for a
+.Pa /home
+partition so you are encouraged to make the root filesystem as large as you
+wish.  Operating systems upgrades will preserve the root filesystem and the
+installer handles installing on top of an existing installation and preserves
+user files and local configuration.
+.Pp
+Type
+.Sy exit
+when you are done to continue the installation.  If the installer detects a
+problem with your partitioning, it will offer to run
+.Xr disked 8
+again.
+.Ss Installation
+The installer will show its installation intentions ask you to confirm the
+installation.  If you answer yes, then the installation will begin.
+.Pp
+The installer will copy the live environment into the target root filesystem
+according to the file lists in
+.Pa /tix/manifest
+and create configuration files matching your earlier choices.  It will generate
+an initrd that locates and boots the root filesystem.  It will install the
+bootloader if desired.  The installation will take a moment.
+.Ss Configuration
+After the installation is complete, a bare system is installed but it lacks
+crucial configuration files and it will refuse to start when booted.
+.Ss Hostname
+You will be asked for the hostname of the new system which be stored in
+.Xr hostname 5 .
+This question is skipped if the file already exits.
+.Ss Root
+You will be asked for the root password.  A root account is made in
+.Xr passwd 5
+and
+.Xr group 5 .
+This question is skipped if the root account already exists.
+.Ss Users
+You will be asked in a loop if you wish to make another user.  Answer
+.Sy no
+when you are done.  Otherwise enter the name of the new account.  If you wish to
+create an account by the name of
+.Li no
+then simply add a space in front as leading spaces are trimmed.
+.Pp
+You will then be asked for the full name and the password for the new user.  A
+user directory will be made in
+.Pa /home .
+The new user is added to
+.Xr passwd 5
+and
+.Xr group 5 .
+.Pp
+Please note that Sortix is not currently secure as a multi-user system and
+filesystem permissions are not enforced.
+.Ss Completion
+This will complete the operating system installation. Upon reboot, the new
+system will start normally. After powering off your system, you need to remove
+the installation medium and if applicable restore boot priorities in your
+firmware. If you did not accept the bootloader, you will need to manually
+configure a bootloader to boot the new operating system.
+.Pp
+You will be given the choice between powering off the system, rebooting it, or
+directly booting the new system. The last option will directly boot the new
+system in a chroot while the live environment remains in the background. If you
+invoked
+.Xr sysinstall 8
+yourself, then you will be returned to your live environment shell. Otherwise
+the computer will power off when the chroot environment terminates.
+.Pp
+Upon boot of the new system it will be configured in multi-user mode and you
+will be presented with a login screen. Authenticate as one of the local users
+and you will be given a shell. To power off the computer login as user
+.Sy poweroff
+and to reboot the computer login as user
+.Sy reboot .
+.Pp
+The
+.Xr user-guide 7
+manual page is a basic overview of the system for new users.
+.Pp
+Congratulations on your new Sortix system.
+.Sh SEE ALSO
+.Xr chkblayout 1 ,
+.Xr chvideomode 1 ,
+.Xr man 1 ,
+.Xr fstab 5 ,
+.Xr group 5 ,
+.Xr grubpw 5 ,
+.Xr kblayout 5 ,
+.Xr passwd 5 ,
+.Xr videomode 5 ,
+.Xr development 7 ,
+.Xr gpt 7 ,
+.Xr initrd 7 ,
+.Xr kernel 7 ,
+.Xr mbr 7 ,
+.Xr upgrade 7 ,
+.Xr user-guide 7 ,
+.Xr disked 8 ,
+.Xr fsck 8 ,
+.Xr init 8 ,
+.Xr sysinstall 8 ,
+.Xr sysupgrade 8 ,
+.Xr update-grub 8 ,
+.Xr update-initrd 8

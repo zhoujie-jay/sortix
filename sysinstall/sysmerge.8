@@ -1,0 +1,123 @@
+.Dd $Mdocdate: February 14 2016 $
+.Dt SYSMERGE 8
+.Os
+.Sh NAME
+.Nm sysmerge
+.Nd upgrade current operating system from a sysroot
+.Sh SYNOPSIS
+.Nm sysmerge
+.Op Fl w
+.Op Fl \-booting
+.Op Fl \-cancel
+.Op Fl \-wait
+.Ar source
+.Sh DESCRIPTION
+.Nm
+upgrades the current operating system by copying the system files from the
+specified
+.Ar source
+directory (usually a sysroot) onto the current root filesystem.  This is meant
+to be used when building the operating system from source as described in
+.Xr development 7 .
+.Pp
+.Nm
+installs the
+.Sy system
+manifest from the tix repository in the
+.Ar source
+directory, as well as all the ports found.  The
+.Xr initrd 7
+is regenerated using
+.Xr update-initrd 8 .
+If grub is enabled in
+.Xr upgrade.conf 5 ,
+then the bootloader is reinstalled and reconfigured as needed.
+.Pp
+.Nm
+is an automatic and non-interactive upgrade.  It is meant to be used as part of
+the development process to upgrade to locally built versions.  It does not
+contain compatibility to help upgrade across larger changes, or to easily handle
+changes to configuration file formats, or other caveats.  It places a burden on
+the system administrator/developer to know the system changes in detail and to
+do any necessary tasks manually.
+.Pp
+The
+.Xr sysupgrade 8
+program is by contrast an interactive program, meant to help upgrading across
+much larger development distances.  It contains compatibility to automatically
+handle changes in configuration files and other larger changes.
+.Pp
+The options are as follows:
+.Bl -tag -width "12345678"
+.It Fl \-booting
+It's boot time, complete the system upgrade that was delayed.  This is meant to
+be used by
+.Xr init 8
+through the
+.Sy chain-merge
+boot target.  This installs the
+.Pa /sysmerge
+directory onto the root filesystem and removes the
+.Pa /sysmerge
+directory.
+.It Fl \-cancel
+Cancel a pending upgrade that would trigger on the next boot.  Remove the
+.Pa /sysmerge
+directory and restore the old
+.Xr kernel 7
+and
+.Xr initrd 7 .
+.It Fl w , Fl \-wait
+Wait until the next boot to complete the upgrade, rather than finishing it now.
+This installs into the
+.Pa /sysmerge
+directory instead and replaces the
+.Xr kernel 7
+with the new kernel
+and
+.Xr initrd 7
+with an initrd that runs
+.Sy /sysmerge/sbin/sysmerge --booting
+on boot through the
+.Sy chain-merge
+.Xr init 8
+boot target.  Backups are made of the
+.Xr kernel 7
+and
+.Xr initrd 7
+such that the operation can be rolled back.
+.El
+.Sh FILES
+.Bl -tag -width "/boot/sortix.initrd.sysmerge.orig" -compact
+.It Pa /boot/sortix.bin
+system
+.Xr kernel 7
+.It Pa /boot/sortix.bin.sysmerge.orig
+system
+.Xr kernel 7
+(backup)
+.It Pa /boot/sortix.initrd
+system
+.Xr initrd 7
+.It Pa /boot/sortix.initrd.sysmerge.orig
+system
+.Xr initrd 7
+(backup)
+.It Pa /etc/machine
+processor platform of this installation
+.It Pa /etc/sortix-release
+the current system release
+.It Pa /etc/upgrade.conf
+controls the bootloader upgrade behavior (see
+.Xr upgrade.conf 5 )
+.It Pa /sysmerge
+pending upgrade is stored here
+.El
+.Sh SEE ALSO
+.Xr development 7 ,
+.Xr initrd 7 ,
+.Xr installation 7 ,
+.Xr kernel 7 ,
+.Xr upgrade 7 ,
+.Xr sysinstall 8 ,
+.Xr sysupgrade 8

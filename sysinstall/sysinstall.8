@@ -1,0 +1,23 @@
+.Dd $Mdocdate: January 5 2016 $
+.Dt SYSINSTALL 8
+.Os
+.Sh NAME
+.Nm sysinstall
+.Nd operating system installer
+.Sh SYNOPSIS
+.Nm sysinstall
+.Sh DESCRIPTION
+.Nm
+is an interactive command line program that creates a new installation of the
+operating system.  It asks basic questions, prepares a new root filesystem,
+makes a copy of the current operating system there and configures it for usage.
+The installation proceeds as described in
+.Xr installation 7 .
+.Pp
+.Nm
+must be run as root with stdin, stdout and stderr all pointing to the terminal.
+It is intended to be run from a live environment and not from an actual
+installation.
+.Sh SEE ALSO
+.Xr installation 7 ,
+.Xr sysupgrade 8

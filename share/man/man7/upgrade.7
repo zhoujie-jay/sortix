@@ -1,0 +1,120 @@
+.Dd $Mdocdate: January 5 2016 $
+.Dt UPGRADE 7
+.Os
+.Sh NAME
+.Nm upgrade
+.Nd operating system upgrade instructions
+.Sh DESCRIPTION
+This document describes how to upgrade an existing Sortix installation to a
+newer release.  The
+.Xr installation 7
+manual page covers creating a new installation.
+.Ss Prerequisites
+You need to prepare a bootable medium with the new release as described in
+.Xr installation 7 .
+Read all the instructions up to Bootloader Menu and continue with this document.
+.Pp
+It is not possible to skip releases. If you want to upgrade to a release, you
+must upgrade first to all releases before that one. If the existing installation
+is a development snapshot, you must either upgrade to a newer development
+snapshot of that version, or a the final release of that version.
+.Ss Bootloader Menu
+Pick the
+.Li upgrade existing installation
+option in the bootloader menu to begin the upgrade.  This will load a live
+environment set to automatically run the
+.Xr sysupgrade 8
+program.
+.Ss Upgrader
+This guide assumes you selected the upgrade option in the bootloader.  If not,
+you can run the installer by running the
+.Xr sysupgrade 8
+command.
+.Pp
+The upgrader is an interactive command line program that asks you questions and
+you answer them.  It provides useful information you shouldn't accidentally
+overlook.  Before answering any question, read all output since your last
+answer.
+.Pp
+You should have this upgrade guide ready at all times.  You can view this
+.Xr upgrade 7
+page during the installation by answering
+.Sy '!man'
+to any regular prompt (excluding password prompts).  Likewise you can answer
+.Sy '!'
+to get an interactive shell.  Upon completion, you will be asked the question
+again.
+.Ss Keyboard Layout
+You need to choose the applicable keyboard layout.  By default, a standard US
+keyboard layout is used.  You can view a list of keyboard layouts if you wish.
+.Ss Display Resolution
+If a driver exists for your graphics card, then you will be asked for your
+preferred display resolution by
+.Xr chvideomode 1 .
+.Ss Installation Search
+The upgrader will search for existing Sortix installations by probing local
+filesystems for
+.Pa /etc/sortix-release .
+You will be asked which installation you wish to upgrade.  Enter the name of the
+root filesystem device.  If none are found, it asks if you want to run
+.Xr sysinstall 8 .  Filesystems will be repaired by
+.Xr fsck 8
+as needed.
+.Ss Confirmation
+The upgrader will warn you if it detects you are not following proper upgrade
+procedure either by downgrading or by skipping a release, neither of which is
+supported.  It will also warn you if it detects an ABI downgrade.
+.Pp
+The upgrade will load the upgrade preferences from
+.Pa /etc/upgrade.conf
+file of the target system as described in
+.Xr upgrade.conf 5 .
+.Pp
+The new release may have a new ABI.  A major ABI change means the new kernel
+will be unable to properly execute old programs.  A minor ABI change means the
+new kernel has new compatible features and will be able to run older programs,
+but older kernels will not be able to run programs using the new ABI.
+.Pp
+A confirmation screen will tell you what actions the upgrader plan on doing.
+Answer
+.Sy yes
+to proceed with the upgrade.  Otherwise you can escape to a shell, edit
+.Xr upgrade.conf 5 ,
+return and answer
+.Sy no
+and the upgrader will reload the configuration.
+.Ss Upgrade
+The upgrader will take the appropriate actions:
+.Pp
+.Bl -bullet -compact
+.It
+Updating the system.
+.It
+Updating the ports.
+.It
+Updating the source code.
+.It
+Updating the initrd.
+.It
+Updating the bootloader.
+.El
+.Ss Completion
+The upgrade is now complete. The new system will run after a reboot.  The
+upgrader will give you an overview of what it has done.  If you upgraded across
+a major ABI change, then you will be told that you need to recompile all local
+programs to use the new ABI.
+.Pp
+Congratulations on your freshly upgraded Sortix system.
+.Sh SEE ALSO
+.Xr chkblayout 1 ,
+.Xr chvideomode 1 ,
+.Xr man 1 ,
+.Xr development 7 ,
+.Xr initrd 7 ,
+.Xr installation 7 ,
+.Xr kernel 7 ,
+.Xr user-guide 7 ,
+.Xr sysinstall 8 ,
+.Xr sysupgrade 8 ,
+.Xr update-grub 8 ,
+.Xr update-initrd 8
