@@ -227,6 +227,13 @@ int main(int argc, char* argv[])
 		return 0;
 	}
 
+	if ( booting )
+	{
+		unlink("/boot/sortix.bin.sysmerge.orig");
+		unlink("/boot/sortix.initrd.sysmerge.orig");
+		execute((const char*[]) { "rm", "-rf", "/sysmerge", NULL }, "");
+	}
+
 	if ( !wait && access_or_die("/etc/fstab", F_OK) == 0 )
 	{
 		printf(" - Creating initrd...\n");
@@ -245,13 +252,6 @@ int main(int argc, char* argv[])
 			printf(" - Creating bootloader fragment...\n");
 			execute((const char*[]) { "/etc/grub.d/10_sortix", NULL }, "_eq");
 		}
-	}
-
-	if ( booting )
-	{
-		unlink("/boot/sortix.bin.sysmerge.orig");
-		unlink("/boot/sortix.initrd.sysmerge.orig");
-		execute((const char*[]) { "rm", "-rf", "/sysmerge", NULL }, "");
 	}
 
 	printf("Successfully upgraded to %s.\n", new_release.pretty_name);
