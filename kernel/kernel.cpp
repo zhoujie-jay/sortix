@@ -63,7 +63,6 @@
 #include <sortix/kernel/scheduler.h>
 #include <sortix/kernel/signal.h>
 #include <sortix/kernel/string.h>
-#include <sortix/kernel/symbol.h>
 #include <sortix/kernel/textbuffer.h>
 #include <sortix/kernel/thread.h>
 #include <sortix/kernel/time.h>

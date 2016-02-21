@@ -43,7 +43,6 @@
 #include <sortix/kernel/memorymanagement.h>
 #include <sortix/kernel/process.h>
 #include <sortix/kernel/segment.h>
-#include <sortix/kernel/symbol.h>
 
 namespace Sortix {
 namespace ELF {
@@ -320,86 +319,6 @@ uintptr_t Load(const void* file_ptr, size_t file_size, Auxiliary* aux)
 
 			kthread_mutex_unlock(&process->segment_lock);
 			kthread_mutex_unlock(&process->segment_write_lock);
-		}
-	}
-
-	// SECURITY: TODO: Insecure.
-	Elf_Shdr* section_string_table_section = (Elf_Shdr*) (file + header->e_shoff + header->e_shstrndx * header->e_shentsize);
-	const char* section_string_table = (const char*) (file + section_string_table_section->sh_offset);
-	//size_t section_string_table_size = section_string_table_section->sh_size;
-
-	const char* string_table = NULL;
-	size_t string_table_size = 0;
-
-	for ( Elf32_Half i = 0; i < header->e_shnum; i++ )
-	{
-		size_t max_shs = (file_size - header->e_shoff) / header->e_shentsize;
-		if ( max_shs <= i )
-			return errno = EINVAL, 0;
-		size_t sheader_offset = header->e_shoff + i * header->e_shentsize;
-		if ( (uintptr_t) (file + sheader_offset) & (alignof(Elf_Shdr) - 1) )
-			return errno = EINVAL, 0;
-		Elf_Shdr* sheader = (Elf_Shdr*) (file + sheader_offset);
-
-		// SECURITY: TODO: Insecure.
-		const char* section_name = section_string_table + sheader->sh_name;
-
-		if ( !strcmp(section_name, ".strtab") )
-		{
-			// SECURITY: TODO: Insecure.
-			string_table = (const char*) (file + sheader->sh_offset);
-			string_table_size = sheader->sh_size;
-		}
-	}
-
-	for ( Elf32_Half i = 0; i < header->e_shnum; i++ )
-	{
-		size_t sheader_offset = header->e_shoff + i * header->e_shentsize;
-		Elf_Shdr* sheader = (Elf_Shdr*) (file + sheader_offset);
-
-		// SECURITY: TODO: Insecure.
-		const char* section_name = section_string_table + sheader->sh_name;
-
-		if ( !strcmp(section_name, ".symtab") )
-		{
-			if ( process->symbol_table )
-				continue;
-
-			// SECURITY: TODO: Insecure.
-			Elf_Sym* symbols = (Elf_Sym*) (file + sheader->sh_offset);
-			size_t symbols_length = sheader->sh_size / sizeof(Elf_Sym);
-
-			if ( symbols_length == 0 )
-				continue;
-
-			symbols++;
-			symbols_length--;
-
-			char* string_table_copy = new char[string_table_size];
-			if ( !string_table_copy )
-				continue;
-			memcpy(string_table_copy, string_table, string_table_size);
-
-			Symbol* symbols_copy = new Symbol[symbols_length];
-			if ( !symbols_copy )
-			{
-				delete[] string_table_copy;
-				continue;
-			}
-
-			for ( size_t i = 0; i < symbols_length; i++ )
-			{
-				memset(&symbols_copy[i], 0, sizeof(symbols_copy[i]));
-				symbols_copy[i].address = symbols[i].st_value;
-				symbols_copy[i].size = symbols[i].st_size;
-				// SECURITY: TODO: Insecure.
-				symbols_copy[i].name = string_table_copy + symbols[i].st_name;
-			}
-
-			process->string_table = string_table_copy;
-			process->string_table_length = string_table_size;
-			process->symbol_table = symbols_copy;
-			process->symbol_table_length = symbols_length;
 		}
 	}
 

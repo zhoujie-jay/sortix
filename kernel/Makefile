@@ -83,7 +83,6 @@ clock.o \
 com.o \
 copy.o \
 $(CPUDIR)/kthread.o \
-debugger.o \
 descriptor.o \
 disk/ahci/ahci.o \
 disk/ahci/hba.o \
@@ -113,7 +112,6 @@ interrupt.o \
 ioctx.o \
 io.o \
 kb/kblayout.o \
-kb/layout/us.o \
 kb/ps2.o \
 kernelinfo.o \
 kernel.o \
@@ -145,7 +143,6 @@ segment.o \
 signal.o \
 sockopt.o \
 string.o \
-symbol.o \
 syscall.o \
 textbuffer.o \
 textterminal.o \

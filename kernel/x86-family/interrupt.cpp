@@ -29,7 +29,6 @@
 #include <string.h>
 
 #include <sortix/kernel/cpu.h>
-#include <sortix/kernel/debugger.h>
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/process.h>
@@ -102,9 +101,6 @@ namespace Sortix {
 namespace Interrupt {
 
 extern "C" { unsigned long asm_is_cpu_interrupted = 0; }
-
-const bool RUN_DEBUGGER_ON_KERNEL_CRASH = false;
-const bool RUN_DEBUGGER_ON_USER_CRASH = false;
 
 const size_t NUM_KNOWN_EXCEPTIONS = 20;
 const char* exception_names[] =
@@ -281,10 +277,6 @@ void KernelCrashHandler(struct interrupt_context* intctx)
 {
 	Scheduler::SaveInterruptedContext(intctx, &CurrentThread()->registers);
 
-	// Possibly switch to the kernel debugger in event of a crash.
-	if ( RUN_DEBUGGER_ON_KERNEL_CRASH )
-		Debugger::Run(false);
-
 	// Panic the kernel with a diagnostic message.
 	PanicF("Unhandled CPU Exception id %zu `%s' at ip=0x%zx (cr2=0x%zx, "
 	       "err_code=0x%zx)", intctx->int_no, ExceptionName(intctx),
@@ -310,10 +302,6 @@ void UserCrashHandler(struct interrupt_context* intctx)
 		if ( handled )
 			return Signal::DispatchHandler(intctx, NULL);
 	}
-
-	// Possibly switch to the kernel debugger in event of a crash.
-	if ( RUN_DEBUGGER_ON_USER_CRASH )
-		Debugger::Run(false);
 
 	// Issue a diagnostic message to the kernel log concerning the crash.
 	Log::PrintF("The current process (pid %ji `%s') crashed and was terminated:\n",

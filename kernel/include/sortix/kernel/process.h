@@ -56,7 +56,6 @@ struct ProcessTimer;
 struct ioctx_struct;
 typedef struct ioctx_struct ioctx_t;
 struct segment;
-struct Symbol;
 
 class Process
 {
@@ -67,10 +66,6 @@ public:
 	~Process();
 
 public:
-	char* string_table;
-	size_t string_table_length;
-	Symbol* symbol_table;
-	size_t symbol_table_length;
 	char* program_image_path;
 	addr_t addrspace;
 	pid_t pid;

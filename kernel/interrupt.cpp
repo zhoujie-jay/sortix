@@ -27,7 +27,6 @@
 #include <string.h>
 
 #include <sortix/kernel/cpu.h>
-#include <sortix/kernel/debugger.h>
 #include <sortix/kernel/interrupt.h>
 #include <sortix/kernel/kernel.h>
 #include <sortix/kernel/process.h>
