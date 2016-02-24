@@ -55,6 +55,7 @@ sort \
 stat \
 tail \
 time \
+touch \
 tr \
 true \
 type \
