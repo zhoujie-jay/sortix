@@ -272,6 +272,7 @@ static void pager_push_wchar(struct pager* pager, wchar_t wc)
 
 	if ( pager->incoming_control_state == CONTROL_STATE_CSI )
 	{
+		pager->incoming_control_state = CONTROL_STATE_NONE;
 		if ( wc == '[' )
 			pager->incoming_control_state = CONTROL_STATE_COMMAND;
 	}
@@ -318,8 +319,7 @@ static void pager_push_wchar(struct pager* pager, wchar_t wc)
 		size_t left = pager->out_fd_winsize.ws_col - pager->incoming_line_width;
 		if ( left < (size_t) width )
 			line = pager_next_line(pager);
-		else
-			pager->incoming_line_width += width;
+		pager->incoming_line_width += width;
 	}
 	else
 	{
@@ -402,7 +402,7 @@ static void pager_control_sequence_finish(struct pager* pager, wchar_t wc)
 	pager_control_sequence_push(pager, wc);
 	if ( pager->control_state == CONTROL_STATE_NONE )
 		return;
-	if ( wc == 'm' )
+	if ( wc == L'm' )
 	{
 		pager->input_set_color = true;
 		return pager_control_sequence_accept(pager);
@@ -502,12 +502,12 @@ static void pager_simple_fd(struct pager* pager, int fd, const char* fdpath)
 
 static bool pager_can_page(struct pager* pager)
 {
-	if ( pager->lines_used <= pager->current_line )
-		return false;
-	struct line* line = &pager->lines[pager->current_line];
-	if ( line->content_used <= pager->current_line_offset )
-		return false;
-	return true;
+	if ( pager->current_line + 1 == pager->lines_used )
+	{
+		struct line* line = &pager->lines[pager->current_line];
+		return pager->current_line_offset < line->content_used;
+	}
+	return pager->current_line + 1 < pager->lines_used;
 }
 
 static void pager_page(struct pager* pager)
@@ -555,16 +555,19 @@ static void pager_push_fd(struct pager* pager, int fd, const char* fdpath)
 	bool eof = false;
 	while ( !pager->quiting )
 	{
-		if ( !pager->skipping_to_end && pager->allowed_lines == 0 )
+		if ( !pager->skipping_to_end )
 		{
-			pager->allowance_ever_exhausted = true;
-			pager_prompt(pager, false);
-			continue;
-		}
-		if ( !pager->skipping_to_end && pager_can_page(pager) )
-		{
-			pager_page(pager);
-			continue;
+			if ( pager->allowed_lines == 0 )
+			{
+				pager->allowance_ever_exhausted = true;
+				pager_prompt(pager, false);
+				continue;
+			}
+			if ( pager_can_page(pager) )
+			{
+				pager_page(pager);
+				continue;
+			}
 		}
 		if ( eof )
 			break;
