@@ -258,12 +258,16 @@ void render_editor(struct editor* editor, struct terminal_state* state)
 		return;
 
 	const char* msg = "";
-	if ( editor->mode == MODE_SAVE )
+	if ( editor->mode == MODE_SAVE ||
+	     editor->mode == MODE_SAVE_LOAD ||
+	     editor->mode == MODE_SAVE_QUIT )
 		msg = "File Name to Write: ";
 	if ( editor->mode == MODE_LOAD )
 		msg = "File Name to Read: ";
+	if ( editor->mode == MODE_ASK_LOAD )
+		msg = "Save modified file? (Y/N): ";
 	if ( editor->mode == MODE_ASK_QUIT )
-		msg = "Exit without saving changes? (Y/N): ";
+		msg = "Save modified file? (Y/N): ";
 	if ( editor->mode == MODE_GOTO_LINE )
 		msg = "Go to line: ";
 	if ( editor->mode == MODE_COMMAND )

@@ -662,7 +662,7 @@ void editor_type_save_as(struct editor* editor)
 
 void editor_type_open(struct editor* editor)
 {
-	editor->mode = MODE_LOAD;
+	editor->mode = editor->dirty ? MODE_ASK_LOAD : MODE_LOAD;
 	editor->modal_used = 0;
 	editor->modal_cursor = 0;
 	editor->modal_error = false;
@@ -670,6 +670,9 @@ void editor_type_open(struct editor* editor)
 
 void editor_type_open_as(struct editor* editor)
 {
+	if ( editor->dirty )
+		return editor_type_open(editor);
+
 	editor->mode = MODE_LOAD;
 
 	free(editor->modal);

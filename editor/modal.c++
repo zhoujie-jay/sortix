@@ -38,6 +38,12 @@
 #include "modal.h++"
 #include "multibyte.h++"
 
+static void editor_reset_modal(struct editor* editor)
+{
+	editor->modal_used = 0;
+	editor->modal_cursor = 0;
+}
+
 bool is_truth_string(const char* truth)
 {
 	return !strcmp(truth, "on") || !strcmp(truth, "off");
@@ -110,11 +116,71 @@ void editor_modal_save(struct editor* editor, const char* path)
 		editor->modal_error = true;
 }
 
+void editor_modal_save_load(struct editor* editor, const char* path)
+{
+	if ( editor_save_file(editor, path) )
+	{
+		editor_reset_modal(editor);
+		editor->mode = MODE_LOAD;
+	}
+	else
+		editor->modal_error = true;
+}
+
+void editor_modal_save_quit(struct editor* editor, const char* path)
+{
+	if ( editor_save_file(editor, path) )
+		editor->mode = MODE_QUIT;
+	else
+		editor->modal_error = true;
+}
+
+void editor_modal_ask_load(struct editor* editor, const char* answer)
+{
+	if ( tolower((unsigned char) answer[0]) == 'y' )
+	{
+		editor_reset_modal(editor);
+		if ( editor->current_file_name )
+		{
+			if ( editor_save_file(editor, editor->current_file_name) )
+			{
+				editor->mode = MODE_LOAD;
+				return;
+			}
+			editor->modal_error = true;
+		}
+		editor->mode = MODE_SAVE_LOAD;
+	}
+	else if ( tolower((unsigned char) answer[0]) == 'n' )
+	{
+		editor_reset_modal(editor);
+		editor->mode = MODE_LOAD;
+	}
+	else if ( !answer[0] )
+		editor_type_edit(editor);
+	else
+		editor->modal_error = true;
+}
+
 void editor_modal_ask_quit(struct editor* editor, const char* answer)
 {
 	if ( tolower((unsigned char) answer[0]) == 'y' )
+	{
+		editor_reset_modal(editor);
+		if ( editor->current_file_name )
+		{
+			if ( editor_save_file(editor, editor->current_file_name) )
+			{
+				editor->mode = MODE_QUIT;
+				return;
+			}
+			editor->modal_error = true;
+		}
+		editor->mode = MODE_SAVE_QUIT;
+	}
+	else if ( tolower((unsigned char) answer[0]) == 'n' )
 		editor->mode = MODE_QUIT;
-	else if ( tolower((unsigned char) answer[0]) == 'n' || !answer[0] )
+	else if ( !answer[0] )
 		editor_type_edit(editor);
 	else
 		editor->modal_error = true;
@@ -321,6 +387,9 @@ void editor_modal_character(struct editor* editor, wchar_t c)
 		{
 		case MODE_LOAD: editor_modal_load(editor, param); break;
 		case MODE_SAVE: editor_modal_save(editor, param); break;
+		case MODE_SAVE_LOAD: editor_modal_save_load(editor, param); break;
+		case MODE_SAVE_QUIT: editor_modal_save_quit(editor, param); break;
+		case MODE_ASK_LOAD: editor_modal_ask_load(editor, param); break;
 		case MODE_ASK_QUIT: editor_modal_ask_quit(editor, param); break;
 		case MODE_GOTO_LINE: editor_modal_goto_line(editor, param); break;
 		case MODE_COMMAND: editor_modal_command(editor, param); break;

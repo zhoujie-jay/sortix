@@ -37,6 +37,9 @@ void editor_modal_delete(struct editor* editor);
 
 void editor_modal_load(struct editor* editor, const char* path);
 void editor_modal_save(struct editor* editor, const char* path);
+void editor_modal_save_load(struct editor* editor, const char* path);
+void editor_modal_save_quit(struct editor* editor, const char* path);
+void editor_modal_ask_load(struct editor* editor, const char* answer);
 void editor_modal_ask_quit(struct editor* editor, const char* answer);
 void editor_modal_goto_line(struct editor* editor, const char* linestr);
 void editor_modal_margin(struct editor* editor, const char* marginstr);
