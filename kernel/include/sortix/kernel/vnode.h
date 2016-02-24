@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015, 2016.
 
     This file is part of Sortix.
 
@@ -69,8 +69,7 @@ public:
 	ssize_t pread(ioctx_t* ctx, uint8_t* buf, size_t count, off_t off);
 	ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
 	ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count, off_t off);
-	int utimens(ioctx_t* ctx, const struct timespec* atime,
-	            const struct timespec* ctime, const struct timespec* mtime);
+	int utimens(ioctx_t* ctx, const struct timespec* times);
 	int isatty(ioctx_t* ctx);
 	ssize_t readdirents(ioctx_t* ctx, struct dirent* dirent, size_t size,
 	                    off_t start);

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013, 2014, 2015, 2016.
 
     This file is part of Sortix.
 
@@ -293,9 +293,10 @@ static void ExtractNode(struct initrd_context* ctx,
 		ExtractDir(ctx, inode, node);
 	if ( INITRD_S_ISREG(inode->mode) )
 		ExtractFile(ctx, inode, node);
-	struct timespec ctime = timespec_make((time_t) inode->ctime, 0);
-	struct timespec mtime = timespec_make((time_t) inode->mtime, 0);
-	if ( node->utimens(&ctx->ioctx, &mtime, &ctime, &mtime) < 0 )
+	struct timespec times[2];
+	times[0] = timespec_make((time_t) inode->mtime, 0);
+	times[1] = timespec_make((time_t) inode->mtime, 0);
+	if ( node->utimens(&ctx->ioctx, times) < 0 )
 		PanicF("initrd: utimens: %m");
 }
 

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015, 2016.
 
     This file is part of Sortix.
 
@@ -213,9 +213,7 @@ public:
 	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
 	virtual ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	                       off_t off);
-	virtual int utimens(ioctx_t* ctx, const struct timespec* atime,
-	                    const struct timespec* ctime,
-	                    const struct timespec* mtime);
+	virtual int utimens(ioctx_t* ctx, const struct timespec* times);
 	virtual int isatty(ioctx_t* ctx);
 	virtual ssize_t readdirents(ioctx_t* ctx, struct dirent* dirent,
 	                            size_t size, off_t start);
@@ -974,10 +972,7 @@ ssize_t Unode::pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count, off_t off)
 	return ret;
 }
 
-int Unode::utimens(ioctx_t* ctx,
-                   const struct timespec* atime,
-                   const struct timespec* /*ctime*/,
-                   const struct timespec* mtime)
+int Unode::utimens(ioctx_t* ctx, const struct timespec* times)
 {
 	Channel* channel = server->Connect(ctx);
 	if ( !channel )
@@ -985,8 +980,8 @@ int Unode::utimens(ioctx_t* ctx,
 	int ret = -1;
 	struct fsm_req_utimens msg;
 	msg.ino = ino;
-	msg.times[0] = atime ? *atime : timespec_nul();
-	msg.times[1] = mtime ? *mtime : timespec_nul();
+	msg.times[0] = times[0];
+	msg.times[1] = times[1];
 	if ( SendMessage(channel, FSM_REQ_UTIMENS, &msg, sizeof(msg)) &&
 	     RecvMessage(channel, FSM_RESP_SUCCESS, NULL, 0) )
 		ret = 0;

@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015, 2016.
 
     This file is part of Sortix.
 
@@ -88,6 +88,9 @@ struct stat
 #define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
 #define S_ISCHR(mode) (((mode) & S_IFMT) == S_IFCHR)
 #define S_ISFIFO(mode) (((mode) & S_IFMT) == S_IFIFO)
+
+#define UTIME_NOW  0x3FFFFFFF
+#define UTIME_OMIT 0x3FFFFFFE
 
 #ifdef __cplusplus
 } /* extern "C" */

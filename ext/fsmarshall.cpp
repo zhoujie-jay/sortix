@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015, 2016.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -243,10 +243,21 @@ void HandleUTimens(int chl, struct fsm_req_utimens* msg, Filesystem* fs)
 	if ( !fs->device->write ) { RespondError(chl, EROFS); return; }
 	Inode* inode = SafeGetInode(fs, msg->ino);
 	if ( !inode ) { RespondError(chl, errno); return; }
-	inode->BeginWrite();
-	inode->data->i_atime = msg->times[0].tv_sec;
-	inode->data->i_mtime = msg->times[1].tv_sec;
-	inode->FinishWrite();
+	if ( msg->times[0].tv_nsec != UTIME_OMIT ||
+	     msg->times[1].tv_nsec != UTIME_OMIT )
+	{
+		time_t now = time(NULL);
+		inode->BeginWrite();
+		if ( msg->times[0].tv_nsec == UTIME_NOW )
+			inode->data->i_atime = now;
+		else if ( msg->times[0].tv_nsec != UTIME_OMIT )
+			inode->data->i_atime = msg->times[0].tv_sec;
+		if ( msg->times[1].tv_nsec == UTIME_NOW )
+			inode->data->i_mtime = now;
+		else if ( msg->times[1].tv_nsec != UTIME_OMIT )
+			inode->data->i_mtime = msg->times[1].tv_sec;
+		inode->FinishWrite();
+	}
 	inode->Unref();
 	RespondSuccess(chl);
 }

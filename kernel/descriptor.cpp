@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015, 2016.
 
     This file is part of Sortix.
 
@@ -337,12 +337,29 @@ ssize_t Descriptor::pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count, off_t
 	return vnode->pwrite(ctx, buf, count, off);
 }
 
-int Descriptor::utimens(ioctx_t* ctx,
-                        const struct timespec* atime,
-                        const struct timespec* ctime,
-                        const struct timespec* mtime)
+static inline bool valid_utimens_timespec(struct timespec ts)
 {
-	return vnode->utimens(ctx, atime, ctime, mtime);
+	return ts.tv_nsec < 1000000000 ||
+	       ts.tv_nsec == UTIME_NOW ||
+	       ts.tv_nsec == UTIME_OMIT;
+}
+
+int Descriptor::utimens(ioctx_t* ctx, const struct timespec* user_times)
+{
+	struct timespec times[2];
+	if ( !user_times )
+	{
+		times[0].tv_sec = 0;
+		times[0].tv_nsec = UTIME_NOW;
+		times[1].tv_sec = 0;
+		times[1].tv_nsec = UTIME_NOW;
+	}
+	else if ( !ctx->copy_from_src(&times, user_times, sizeof(times)) )
+		return -1;
+	if ( !valid_utimens_timespec(times[0]) ||
+	     !valid_utimens_timespec(times[1]) )
+		return errno = EINVAL;
+	return vnode->utimens(ctx, times);
 }
 
 int Descriptor::isatty(ioctx_t* ctx)

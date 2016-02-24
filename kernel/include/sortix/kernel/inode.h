@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015, 2016.
 
     This file is part of Sortix.
 
@@ -72,9 +72,7 @@ public:
 	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count) = 0;
 	virtual ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	                       off_t off) = 0;
-	virtual int utimens(ioctx_t* ctx, const struct timespec* atime,
-	                    const struct timespec* ctime,
-	                    const struct timespec* mtime) = 0;
+	virtual int utimens(ioctx_t* ctx, const struct timespec* times) = 0;
 	virtual int isatty(ioctx_t* ctx) = 0;
 	virtual ssize_t readdirents(ioctx_t* ctx, struct dirent* dirent,
 	                            size_t size, off_t start) = 0;
@@ -167,9 +165,7 @@ public:
 	virtual ssize_t write(ioctx_t* ctx, const uint8_t* buf, size_t count);
 	virtual ssize_t pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count,
 	                       off_t off);
-	virtual int utimens(ioctx_t* ctx, const struct timespec* atime,
-	                    const struct timespec* ctime,
-	                    const struct timespec* mtime);
+	virtual int utimens(ioctx_t* ctx, const struct timespec* times);
 	virtual int isatty(ioctx_t* ctx);
 	virtual ssize_t readdirents(ioctx_t* ctx, struct dirent* dirent,
 	                            size_t size, off_t start);

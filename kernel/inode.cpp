@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015, 2016.
 
     This file is part of Sortix.
 
@@ -180,17 +180,20 @@ ssize_t AbstractInode::pwrite(ioctx_t* /*ctx*/, const uint8_t* /*buf*/,
 	return errno = EBADF, -1;
 }
 
-int AbstractInode::utimens(ioctx_t* /*ctx*/, const struct timespec* atime,
-                           const struct timespec* ctime,
-                           const struct timespec* mtime)
+int AbstractInode::utimens(ioctx_t* /*ctx*/, const struct timespec* times)
 {
 	ScopedLock lock(&metalock);
-	if ( atime )
-		stat_atim = *atime;
-	if ( ctime )
-		stat_ctim = *ctime;
-	if ( mtime )
-		stat_mtim = *mtime;
+	struct timespec now = { 0, 0 };
+	if ( times[0].tv_nsec == UTIME_NOW || times[1].tv_nsec == UTIME_NOW )
+		now = Time::Get(CLOCK_REALTIME);
+	if ( times[0].tv_nsec == UTIME_NOW )
+		stat_atim = now;
+	else if ( times[0].tv_nsec != UTIME_OMIT )
+		stat_atim = times[0];
+	if ( times[1].tv_nsec == UTIME_NOW )
+		stat_mtim = now;
+	else if ( times[1].tv_nsec != UTIME_OMIT )
+		stat_mtim = times[1];
 	return 0;
 }
 

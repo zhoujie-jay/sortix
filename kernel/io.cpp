@@ -507,14 +507,11 @@ int sys_fchmodat(int dirfd, const char* path, mode_t mode, int flags)
 
 int sys_futimens(int fd, const struct timespec* user_times)
 {
-	struct timespec times[2];
-	if ( !CopyFromUser(times, user_times, sizeof(times)) )
-		return -1;
 	Ref<Descriptor> desc = CurrentProcess()->GetDescriptor(fd);
 	if ( !desc )
 		return -1;
 	ioctx_t ctx; SetupUserIOCtx(&ctx);
-	return desc->utimens(&ctx, &times[0], NULL, &times[1]);
+	return desc->utimens(&ctx, user_times);
 }
 
 int sys_utimensat(int dirfd, const char* path,
@@ -522,9 +519,6 @@ int sys_utimensat(int dirfd, const char* path,
 {
 	if ( flags & ~(AT_SYMLINK_NOFOLLOW) )
 		return errno = EINVAL, -1;
-	struct timespec times[2];
-	if ( !CopyFromUser(times, user_times, sizeof(times)) )
-		return -1;
 	char* pathcopy = GetStringFromUser(path);
 	if ( !pathcopy )
 		return -1;
@@ -537,7 +531,7 @@ int sys_utimensat(int dirfd, const char* path,
 	delete[] pathcopy;
 	if ( !desc )
 		return -1;
-	return desc->utimens(&ctx, &times[0], NULL, &times[1]);
+	return desc->utimens(&ctx, user_times);
 }
 
 int sys_linkat(int olddirfd, const char* oldpath,

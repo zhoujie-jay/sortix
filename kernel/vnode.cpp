@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2013, 2014, 2015, 2016.
 
     This file is part of Sortix.
 
@@ -269,11 +269,9 @@ ssize_t Vnode::pwrite(ioctx_t* ctx, const uint8_t* buf, size_t count, off_t off)
 	return inode->pwrite(ctx, buf, count, off);
 }
 
-int Vnode::utimens(ioctx_t* ctx, const struct timespec* atime,
-                   const struct timespec* ctime,
-                   const struct timespec* mtime)
+int Vnode::utimens(ioctx_t* ctx, const struct timespec* times)
 {
-	return inode->utimens(ctx, atime, ctime, mtime);
+	return inode->utimens(ctx, times);
 }
 
 int Vnode::isatty(ioctx_t* ctx)
