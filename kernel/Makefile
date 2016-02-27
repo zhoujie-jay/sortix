@@ -56,7 +56,6 @@ ifdef X86FAMILY
              $(CPUDIR)/syscall.o \
              x86-family/cmos.o \
              x86-family/time.o \
-             x86-family/mtrr.o \
              x86-family/pat.o \
              x86-family/float.o \
              x86-family/ps2.o \
