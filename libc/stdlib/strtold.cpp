@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2016.
 
     This file is part of the Sortix C Library.
 
@@ -25,6 +25,10 @@
 #define STRTOF_FLOAT long double
 #define STRTOF strtold
 #define STRTOF_CHAR char
+#define STRTOF_CTYPE_CHAR unsigned char
 #define STRTOF_L(x) x
+#define STRTOF_ISSPACE isspace
+#define STRTOF_STRNCASECMP strncasecmp
+#define STRTOF_POW pow /* TODO: powl */
 
 #include "strtof.cpp"
