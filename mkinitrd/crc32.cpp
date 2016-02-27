@@ -1,9 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
-    Copyright(C) Krzysztof Dabrowski 1999, 2000.
-    Copyright(C) ElysiuM deeZine 1999, 2000.
-    Based on implementation by Finn Yannick Jacobs.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2016.
 
     This file is part of Sortix.
 
@@ -25,56 +22,22 @@
 
 *******************************************************************************/
 
+// TODO: Remove this file and this feature after releasing Sortix 1.0. Change
+//       the checksum algorithm in the initrd header to say none.
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <errno.h>
 #include <error.h>
+
 #include "crc32.h"
-
-void GenerateCRC32Table(uint32_t tabel[256])
-{
-	uint32_t poly = 0xEDB88320U;
-	for ( uint32_t i = 0; i < 256; i++ )
-	{
-		uint32_t crc = i;
-		for ( uint32_t j = 8; 0 < j; j-- )
-		{
-			if ( crc & 1 ) { crc = (crc >> 1) ^ poly; }
-			else { crc >>= 1; }
-		}
-		tabel[i] = crc;
-	}
-}
-
-uint32_t ContinueCRC32(uint32_t tabel[256], uint32_t crc, uint8_t* block,
-                       size_t size)
-{
-	for ( size_t i = 0; i < size; i++ )
-	{
-		crc = ((crc >> 8) & 0x00FFFFFF) ^ tabel[(crc ^ *block++) & 0xFF];
-	}
-	return crc;
-}
-
-uint32_t FinishCRC32(uint32_t crc)
-{
-	return crc ^ 0xFFFFFFFF;
-}
-
-uint32_t CRC32(uint8_t* block, size_t size)
-{
-	uint32_t tabel[256];
-	GenerateCRC32Table(tabel);
-	return FinishCRC32(ContinueCRC32(tabel, CRC32_START_SEED, block, size));
-}
+#include "zcrc32.h"
 
 bool CRC32File(uint32_t* result, const char* name, int fd, off_t offset,
                off_t length)
 {
-	uint32_t tabel[256];
-	GenerateCRC32Table(tabel);
-	uint32_t crc = CRC32_START_SEED;
+	uint32_t crc = crc32(0, NULL, 0);
 	const size_t BUFFER_SIZE = 16UL * 1024UL;
 	uint8_t buffer[BUFFER_SIZE];
 	off_t sofar = 0;
@@ -83,12 +46,11 @@ bool CRC32File(uint32_t* result, const char* name, int fd, off_t offset,
 	        0 < (amount = pread(fd, buffer, BUFFER_SIZE, offset + sofar)) )
 	{
 		if ( length - sofar < amount ) { amount = length - sofar; }
-		crc = ContinueCRC32(tabel, crc, buffer, amount);
+		crc = crc32(crc, buffer, amount);
 		sofar += amount;
 	}
 	if ( amount < 0 ) { error(0, errno, "read: %s", name); return false; }
 	if ( sofar < length ) { error(0, EIO, "read: %s", name); return false; }
-	crc = FinishCRC32(crc);
 	*result = crc;
 	return true;
 }

@@ -1,9 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2012.
-    Copyright(C) Krzysztof Dabrowski 1999, 2000.
-    Copyright(C) ElysiuM deeZine 1999, 2000.
-    Based on implementation by Finn Yannick Jacobs.
+    Copyright(C) Jonas 'Sortie' Termansen 2012, 2016.
 
     This file is part of Sortix.
 
@@ -28,12 +25,9 @@
 #ifndef CRC32_H
 #define CRC32_H
 
-const uint32_t CRC32_START_SEED = 0xFFFFFFFF;
-void GenerateCRC32Table(uint32_t tabel[256]);
-uint32_t ContinueCRC32(uint32_t tabel[256], uint32_t crc, uint8_t* block,
-                       size_t size);
-uint32_t FinishCRC32(uint32_t crc);
-uint32_t CRC32(uint8_t* block, size_t size);
+// TODO: Remove this file and this feature after releasing Sortix 1.0. Change
+//       the checksum algorithm in the initrd header to say none.
+
 bool CRC32File(uint32_t* result, const char* name, int fd, off_t offset,
                off_t length);
 
