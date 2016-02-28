@@ -886,7 +886,7 @@ static void unscan_partition(struct partition* p)
 	bdev->fs_error = FILESYSTEM_ERROR_NONE;
 }
 
-static void unscan_device()
+static void unscan_device(void)
 {
 	if ( !current_hd )
 		return;
@@ -922,7 +922,7 @@ static void scan_partition(struct partition* p)
 		                      filesystem_error_string(bdev->fs_error));
 }
 
-static void scan_device()
+static void scan_device(void)
 {
 	if ( !current_hd )
 		return;

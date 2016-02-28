@@ -239,7 +239,7 @@ static char etc[] = "/tmp/etc.XXXXXX";
 static bool fs_made = false;
 static char fs[] = "/tmp/fs.XXXXXX";
 
-static void unmount_all_but_root()
+static void unmount_all_but_root(void)
 {
 	for ( size_t n = mountpoints_used; n != 0; n-- )
 	{

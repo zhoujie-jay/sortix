@@ -227,7 +227,7 @@ static bool prepare_block_device(void* ctx, const char* path)
 	return true;
 }
 
-static void prepare_block_devices()
+static void prepare_block_devices(void)
 {
 	static bool done = false;
 	if ( done )
@@ -367,7 +367,7 @@ static void load_fstab(void)
 	      sort_mountpoint);
 }
 
-static void set_hostname()
+static void set_hostname(void)
 {
 	FILE* fp = fopen("/etc/hostname", "r");
 	if ( !fp && errno == ENOENT )
@@ -384,7 +384,7 @@ static void set_hostname()
 		return warning("unable to set hostname: `%s': %m", hostname);
 }
 
-static void set_kblayout()
+static void set_kblayout(void)
 {
 	FILE* fp = fopen("/etc/kblayout", "r");
 	if ( !fp && errno == ENOENT )
@@ -409,7 +409,7 @@ static void set_kblayout()
 	free(kblayout);
 }
 
-static void set_videomode()
+static void set_videomode(void)
 {
 	FILE* fp = fopen("/etc/videomode", "r");
 	if ( !fp && errno == ENOENT )
@@ -455,7 +455,7 @@ static void set_videomode()
 		        xres, yres, bpp);
 }
 
-static void init_early()
+static void init_early(void)
 {
 	static bool done = false;
 	if ( done )
