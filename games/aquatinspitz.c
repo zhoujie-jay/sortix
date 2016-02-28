@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    aquatinspitz.cpp
+    aquatinspitz.c
     Aqua tin spitz!
 
 *******************************************************************************/
@@ -40,13 +40,13 @@
 #include <dispd.h>
 
 // Utility global variables every game will need.
-bool game_running = true;
-size_t game_width = 1280;
-size_t game_height = 720;
-const size_t MAX_KEY_NUMBER = 512UL;
-bool keys_down[MAX_KEY_NUMBER] = { false };
-bool keys_pending[MAX_KEY_NUMBER] = { false };
-struct timespec key_handled_last[MAX_KEY_NUMBER];
+static bool game_running = true;
+static size_t game_width = 1280;
+static size_t game_height = 720;
+#define MAX_KEY_NUMBER 512
+static bool keys_down[MAX_KEY_NUMBER];
+static bool keys_pending[MAX_KEY_NUMBER];
+static struct timespec key_handled_last[MAX_KEY_NUMBER];
 
 // Utility functions every game will need.
 bool pop_is_key_just_down(int abskbkey);
@@ -74,10 +74,10 @@ struct enemy
 };
 
 #define NUM_ENEMIES 256
-struct enemy enemies[NUM_ENEMIES];
+static struct enemy enemies[NUM_ENEMIES];
 
 // Prepare the game state for the first round.
-void init()
+void init(void)
 {
 	player.x = game_width / 2;
 	player.y = game_height / 2;
@@ -314,7 +314,7 @@ bool pop_is_key_just_down(int abskbkey)
 }
 
 // Read input from the keyboard.
-void input()
+void input(void)
 {
 	// Read the keyboard input from the user.
 	unsigned termmode = TERMMODE_KBKEY | TERMMODE_SIGNAL | TERMMODE_NONBLOCK;
