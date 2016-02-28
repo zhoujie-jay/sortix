@@ -15,23 +15,21 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    highlight.c++
+    highlight.c
     Syntax highlighting.
 
 *******************************************************************************/
 
-#define __STDC_CONSTANT_MACROS
-#define __STDC_FORMAT_MACROS
-#define __STDC_LIMIT_MACROS
-
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
 #include <wctype.h>
 
-#include "editor.h++"
-#include "highlight.h++"
+#include "editor.h"
+#include "highlight.h"
 
 enum language language_of_path(const char* path)
 {
@@ -143,8 +141,8 @@ void editor_colorize(struct editor* editor)
 	     editor->highlight_source == LANGUAGE_NONE )
 	{
 		for ( size_t i = 0; i < editor->color_lines_used; i++ )
-			delete[] editor->color_lines[i].data;
-		delete[] editor->color_lines;
+			free(editor->color_lines[i].data);
+		free(editor->color_lines);
 		editor->color_lines_used = 0;
 		editor->color_lines_length = 0;
 		editor->color_lines = NULL;
@@ -155,7 +153,9 @@ void editor_colorize(struct editor* editor)
 
 	if ( !editor->color_lines )
 	{
-		if ( !(editor->color_lines = new struct color_line[editor->lines_used]) )
+		editor->color_lines = (struct color_line*)
+			malloc(sizeof(struct color_line) * editor->lines_used);
+		if ( !editor->color_lines )
 			return;
 		editor->color_lines_used = editor->lines_used;
 		editor->color_lines_length = editor->lines_used;
@@ -169,11 +169,12 @@ void editor_colorize(struct editor* editor)
 		if ( editor->color_lines[i].length == editor->lines[i].used )
 			continue;
 
-		if ( !(editor->color_lines[i].data = new uint8_t[editor->lines[i].used]) )
+		editor->color_lines[i].data = (uint8_t*) malloc(editor->lines[i].used);
+		if ( !editor->color_lines[i].data )
 		{
 			for ( size_t n = 0; n < i; i++ )
-				delete[] editor->color_lines[n].data;
-			delete[] editor->color_lines;
+				free(editor->color_lines[n].data);
+			free(editor->color_lines);
 			editor->color_lines_used = 0;
 			editor->color_lines_length = 0;
 			editor->color_lines = NULL;

@@ -15,28 +15,25 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    input.c++
+    input.c+
     Keyboard input.
 
 *******************************************************************************/
-
-#define __STDC_CONSTANT_MACROS
-#define __STDC_FORMAT_MACROS
-#define __STDC_LIMIT_MACROS
 
 #if defined(__sortix__)
 #include <sys/keycodes.h>
 #include <sys/termmode.h>
 #endif
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <unistd.h>
 
-#include "command.h++"
-#include "editor.h++"
-#include "input.h++"
-#include "modal.h++"
+#include "command.h"
+#include "editor.h"
+#include "input.h"
+#include "modal.h"
 
 void editor_codepoint(struct editor* editor, uint32_t codepoint)
 {
@@ -184,7 +181,8 @@ void editor_input_process(struct editor_input* editor_input,
 	uint32_t input;
 	if ( read(0, &input, sizeof(input)) != sizeof(input) )
 		return;
-	if ( int kbkey = KBKEY_DECODE(input) )
+	int kbkey;
+	if ( (kbkey = KBKEY_DECODE(input)) )
 		editor_kbkey(editor, kbkey);
 	else
 		editor_codepoint(editor, input);

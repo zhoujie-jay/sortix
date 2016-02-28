@@ -15,26 +15,17 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    input.h++
-    Keyboard input.
+    multibyte.h
+    Conversion from multibyte strings to wide strings.
 
 *******************************************************************************/
 
-#ifndef EDITOR_INPUT_HXX
-#define EDITOR_INPUT_HXX
+#ifndef EDITOR_MULTIBYTE_H
+#define EDITOR_MULTIBYTE_H
 
-struct editor;
+#include <stddef.h>
 
-struct editor_input
-{
-#if defined(__sortix__)
-	unsigned int saved_termmode;
-#endif
-};
-
-void editor_input_begin(struct editor_input* editor_input);
-void editor_input_process(struct editor_input* editor_input,
-                          struct editor* editor);
-void editor_input_end(struct editor_input* editor_input);
+wchar_t* convert_mbs_to_wcs(const char* mbs);
+char* convert_wcs_to_mbs(const wchar_t* wcs);
 
 #endif

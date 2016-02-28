@@ -15,16 +15,13 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    terminal.c++
+    terminal.c
     Terminal handling.
 
 *******************************************************************************/
 
-#define __STDC_CONSTANT_MACROS
-#define __STDC_FORMAT_MACROS
-#define __STDC_LIMIT_MACROS
-
 #include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -33,7 +30,7 @@
 #include <wchar.h>
 #include <termios.h>
 
-#include "terminal.h++"
+#include "terminal.h"
 
 void update_terminal_color(FILE* fp, uint8_t desired_color,
                            struct terminal_state* current)

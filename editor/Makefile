@@ -5,10 +5,10 @@ include ../build-aux/version.mak
 include ../build-aux/dirs.mak
 
 OPTLEVEL?=$(DEFAULT_OPTLEVEL)
-CXXFLAGS?=$(OPTLEVEL)
+CFLAGS?=$(OPTLEVEL)
 
 CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\"
-CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
+CFLAGS:=$(CFLAGS) -Wall -Wextra
 
 BINARY=editor
 
@@ -28,10 +28,10 @@ all: $(BINARY)
 .PHONY: all install clean
 
 $(BINARY): $(OBJS)
-	$(CXX) $(OBJS) -o $(BINARY) $(CXXFLAGS) $(LIBS)
+	$(CC) $(CFLAGS) $(OBJS) -o $(BINARY) $(LIBS)
 
-%.o: %.c++
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+%.o: %.c
+	$(CC) -std=gnu11 $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)

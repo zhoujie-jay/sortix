@@ -15,28 +15,25 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    modal.c++
+    modal.c
     Modal commands.
 
 *******************************************************************************/
 
-#define __STDC_CONSTANT_MACROS
-#define __STDC_FORMAT_MACROS
-#define __STDC_LIMIT_MACROS
-
 #include <ctype.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wctype.h>
 
-#include "command.h++"
-#include "cursor.h++"
-#include "editor.h++"
-#include "highlight.h++"
-#include "modal.h++"
-#include "multibyte.h++"
+#include "command.h"
+#include "cursor.h"
+#include "editor.h"
+#include "highlight.h"
+#include "modal.h"
+#include "multibyte.h"
 
 static void editor_reset_modal(struct editor* editor)
 {

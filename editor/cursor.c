@@ -15,21 +15,18 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    cursor.c++
+    cursor.c
     Editor cursor.
 
 *******************************************************************************/
 
-#define __STDC_CONSTANT_MACROS
-#define __STDC_FORMAT_MACROS
-#define __STDC_LIMIT_MACROS
-
 #include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
 
-#include "cursor.h++"
-#include "display.h++"
-#include "editor.h++"
+#include "cursor.h"
+#include "display.h"
+#include "editor.h"
 
 size_t editor_select_column_set(struct editor* editor, size_t x)
 {

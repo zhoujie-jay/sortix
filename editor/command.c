@@ -15,28 +15,25 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    command.c++
+    command.c
     Editor commands.
 
 *******************************************************************************/
 
-#define __STDC_CONSTANT_MACROS
-#define __STDC_FORMAT_MACROS
-#define __STDC_LIMIT_MACROS
-
 #include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
 #include <wctype.h>
 
-#include "command.h++"
-#include "cursor.h++"
-#include "display.h++"
-#include "editor.h++"
-#include "multibyte.h++"
-#include "terminal.h++"
+#include "command.h"
+#include "cursor.h"
+#include "display.h"
+#include "editor.h"
+#include "multibyte.h"
+#include "terminal.h"
 
 void editor_type_newline(struct editor* editor)
 {
@@ -45,10 +42,11 @@ void editor_type_newline(struct editor* editor)
 	if ( editor->lines_used == editor->lines_length )
 	{
 		size_t new_length = editor->lines_length ? 2 * editor->lines_length : 8;
-		struct line* new_lines = new struct line[new_length];
+		struct line* new_lines = (struct line*)
+			malloc(sizeof(struct line) * new_length);
 		for ( size_t i = 0; i < editor->lines_used; i++ )
 			new_lines[i] = editor->lines[i];
-		delete[] editor->lines;
+		free(editor->lines);
 		editor->lines = new_lines;
 		editor->lines_length = new_length;
 	}
@@ -65,19 +63,19 @@ void editor_type_newline(struct editor* editor)
 	struct line* keep_line = &editor->lines[editor->cursor_row];
 	struct line* move_line = &editor->lines[editor->cursor_row+1];
 
-	keep_line->data = new wchar_t[keep_length];
+	keep_line->data = (wchar_t*) malloc(sizeof(wchar_t) * keep_length);
 	keep_line->used = keep_length;
 	keep_line->length = keep_length;
 	memcpy(keep_line->data, old_line.data + 0, sizeof(wchar_t) * keep_length);
 
-	move_line->data = new wchar_t[move_length];
+	move_line->data = (wchar_t*) malloc(sizeof(wchar_t) * move_length);
 	move_line->used = move_length;
 	move_line->length = move_length;
 	memcpy(move_line->data, old_line.data + keep_length, sizeof(wchar_t) * move_length);
 
 	editor_cursor_set(editor, editor->cursor_row+1, 0);
 
-	delete[] old_line.data;
+	free(old_line.data);
 }
 
 void editor_type_delete_selection(struct editor* editor);
@@ -96,7 +94,7 @@ void editor_type_combine_with_last(struct editor* editor)
 	wchar_t* gone_line_data = gone_line->data;
 
 	size_t new_length = keep_line->used + gone_line->used;
-	wchar_t* new_data = new wchar_t[new_length];
+	wchar_t* new_data = (wchar_t*) malloc(sizeof(wchar_t) * new_length);
 
 	memcpy(new_data, keep_line_data, sizeof(wchar_t) * keep_line->used);
 	memcpy(new_data + keep_line->used, gone_line_data, sizeof(wchar_t) * gone_line->used);
@@ -153,7 +151,7 @@ void editor_type_combine_with_next(struct editor* editor)
 	wchar_t* gone_line_data = gone_line->data;
 
 	size_t new_length = keep_line->used + gone_line->used;
-	wchar_t* new_data = new wchar_t[new_length];
+	wchar_t* new_data = (wchar_t*) malloc(sizeof(wchar_t) * new_length);
 
 	memcpy(new_data, keep_line_data, sizeof(wchar_t) * keep_line->used);
 	memcpy(new_data + keep_line->used, gone_line_data, sizeof(wchar_t) * gone_line->used);
@@ -706,10 +704,10 @@ void editor_type_raw_character(struct editor* editor, wchar_t c)
 	if ( current_line->used == current_line->length )
 	{
 		size_t new_length = current_line->length ? 2 * current_line->length : 8;
-		wchar_t* new_data = new wchar_t[new_length];
+		wchar_t* new_data = (wchar_t*) malloc(sizeof(wchar_t) * new_length);
 		for ( size_t i = 0; i < current_line->used; i++ )
 			new_data[i] = current_line->data[i];
-		delete[] current_line->data;
+		free(current_line->data);
 		current_line->data = new_data;
 		current_line->length = new_length;
 	}
@@ -728,7 +726,7 @@ void editor_type_copy(struct editor* editor)
 	     editor->cursor_column == editor->select_column )
 		return;
 
-	delete[] editor->clipboard;
+	free(editor->clipboard);
 
 	size_t start_row;
 	size_t start_column;
@@ -767,7 +765,7 @@ void editor_type_copy(struct editor* editor)
 		}
 	}
 
-	editor->clipboard = new wchar_t[length + 1];
+	editor->clipboard = (wchar_t*) malloc(sizeof(wchar_t) * (length + 1));
 	size_t offset = 0;
 	for ( size_t row = start_row, column = start_column;
 	      is_row_column_lt(row, column, end_row, end_column); )

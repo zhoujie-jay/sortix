@@ -15,13 +15,13 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    display.h++
+    display.h
     Display handling.
 
 *******************************************************************************/
 
-#ifndef EDITOR_DISPLAY_HXX
-#define EDITOR_DISPLAY_HXX
+#ifndef EDITOR_DISPLAY_H
+#define EDITOR_DISPLAY_H
 
 #include <stddef.h>
 #include <stdint.h>

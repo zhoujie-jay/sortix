@@ -15,24 +15,21 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    display.c++
+    display.c
     Display handling.
 
 *******************************************************************************/
 
-#define __STDC_CONSTANT_MACROS
-#define __STDC_FORMAT_MACROS
-#define __STDC_LIMIT_MACROS
-
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
 
-#include "display.h++"
-#include "editor.h++"
-#include "multibyte.h++"
-#include "terminal.h++"
+#include "display.h"
+#include "editor.h"
+#include "multibyte.h"
+#include "terminal.h"
 
 size_t editor_display_column_of_line_offset(struct editor* editor,
                                             const struct line* line,
@@ -93,17 +90,18 @@ struct display_char* expand_tabs(const wchar_t* str, size_t len, uint8_t* colors
                                  size_t tabsize)
 {
 	size_t ret_len = displayed_string_length(str, len, tabsize);
-	struct display_char* ret = new struct display_char[ret_len+1];
+	struct display_char* ret = (struct display_char*)
+		malloc(sizeof(struct display_char) * (ret_len + 1));
 	for ( size_t i = 0, j = 0; i < len; i++ )
 	{
 		uint8_t color = i < colors_len ? colors[i] : 7;
 		if ( str[i] == L'\t' )
-			do ret[j++] = { L' ', color};
+			do ret[j++] = (struct display_char) { L' ', color};
 			while ( j % tabsize );
 		else
-			ret[j++] = { str[i], color };
+			ret[j++] = (struct display_char) { str[i], color };
 	}
-	ret[ret_len] = { L'\0', 0 };
+	ret[ret_len] = (struct display_char) { L'\0', 0 };
 	if ( ret_len_ptr )
 		*ret_len_ptr = ret_len;
 	return ret;
@@ -238,7 +236,7 @@ void render_editor(struct editor* editor, struct terminal_state* state)
 			               is_blank && at_margin ? make_terminal_datum(L'|', 0x01) :
 			               make_terminal_datum(c, color);
 		}
-		delete[] expanded;
+		free(expanded);
 	}
 
 	// Set the rest of the terminal state.

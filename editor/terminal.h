@@ -15,13 +15,13 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    terminal.h++
+    terminal.h
     Terminal handling.
 
 *******************************************************************************/
 
-#ifndef EDITOR_TERMINAL_HXX
-#define EDITOR_TERMINAL_HXX
+#ifndef EDITOR_TERMINAL_H
+#define EDITOR_TERMINAL_H
 
 #include <stddef.h>
 #include <stdint.h>

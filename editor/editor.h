@@ -15,19 +15,19 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    editor.h++
+    editor.h
     Editor.
 
 *******************************************************************************/
 
-#ifndef EDITOR_EDITOR_HXX
-#define EDITOR_EDITOR_HXX
+#ifndef EDITOR_EDITOR_H
+#define EDITOR_EDITOR_H
 
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
-#include "highlight.h++"
+#include "highlight.h"
 
 struct line
 {

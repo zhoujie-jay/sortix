@@ -15,13 +15,13 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    command.h++
+    command.h
     Editor commands.
 
 *******************************************************************************/
 
-#ifndef EDITOR_COMMAND_HXX
-#define EDITOR_COMMAND_HXX
+#ifndef EDITOR_COMMAND_H
+#define EDITOR_COMMAND_H
 
 #include <stddef.h>
 

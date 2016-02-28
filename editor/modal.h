@@ -15,13 +15,13 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    modal.h++
+    modal.h
     Modal commands.
 
 *******************************************************************************/
 
-#ifndef EDITOR_MODAL_HXX
-#define EDITOR_MODAL_HXX
+#ifndef EDITOR_MODAL_H
+#define EDITOR_MODAL_H
 
 struct editor;
 

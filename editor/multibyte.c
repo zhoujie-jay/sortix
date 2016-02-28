@@ -15,22 +15,19 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    multibyte.c++
+    multibyte.c
     Conversion from multibyte strings to wide strings.
 
 *******************************************************************************/
 
-#define __STDC_CONSTANT_MACROS
-#define __STDC_FORMAT_MACROS
-#define __STDC_LIMIT_MACROS
-
 #include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
 
-#include "multibyte.h++"
+#include "multibyte.h"
 
 wchar_t* convert_mbs_to_wcs(const char* mbs)
 {

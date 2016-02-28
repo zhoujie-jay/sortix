@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -15,24 +15,26 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    highlight.h++
-    Syntax highlighting.
+    input.h
+    Keyboard input.
 
 *******************************************************************************/
 
-#ifndef EDITOR_HIGHLIGHT_HXX
-#define EDITOR_HIGHLIGHT_HXX
+#ifndef EDITOR_INPUT_H
+#define EDITOR_INPUT_H
 
 struct editor;
 
-enum language
+struct editor_input
 {
-	LANGUAGE_NONE,
-	LANGUAGE_C_CXX,
-	LANGUAGE_DIFF,
+#if defined(__sortix__)
+	unsigned int saved_termmode;
+#endif
 };
 
-enum language language_of_path(const char* path);
-void editor_colorize(struct editor* editor);
+void editor_input_begin(struct editor_input* editor_input);
+void editor_input_process(struct editor_input* editor_input,
+                          struct editor* editor);
+void editor_input_end(struct editor_input* editor_input);
 
 #endif

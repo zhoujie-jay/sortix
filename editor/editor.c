@@ -15,14 +15,10 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    editor.c++
+    editor.c
     Editor.
 
 *******************************************************************************/
-
-#define __STDC_CONSTANT_MACROS
-#define __STDC_FORMAT_MACROS
-#define __STDC_LIMIT_MACROS
 
 #include <sys/stat.h>
 
@@ -32,6 +28,7 @@
 #include <limits.h>
 #include <locale.h>
 #include <pwd.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,14 +36,14 @@
 #include <wchar.h>
 #include <unistd.h>
 
-#include "command.h++"
-#include "cursor.h++"
-#include "display.h++"
-#include "editor.h++"
-#include "highlight.h++"
-#include "input.h++"
-#include "modal.h++"
-#include "terminal.h++"
+#include "command.h"
+#include "cursor.h"
+#include "display.h"
+#include "editor.h"
+#include "highlight.h"
+#include "input.h"
+#include "modal.h"
+#include "terminal.h"
 
 void initialize_editor(struct editor* editor)
 {
@@ -80,7 +77,8 @@ void initialize_editor(struct editor* editor)
 
 	editor->lines_used = 1;
 	editor->lines_length = 1;
-	editor->lines = new struct line[editor->lines_length];
+	editor->lines =
+		(struct line*) malloc(sizeof(struct line) * editor->lines_length);
 	editor->lines[0].data = NULL;
 	editor->lines[0].used = 0;
 	editor->lines[0].length = 0;
@@ -134,12 +132,13 @@ void editor_load_config(struct editor* editor)
 void editor_reset_contents(struct editor* editor)
 {
 	for ( size_t i = 0; i < editor->lines_used; i++ )
-		delete[] editor->lines[i].data;
-	delete[] editor->lines;
+		free(editor->lines[i].data);
+	free(editor->lines);
 
 	editor->lines_used = 1;
 	editor->lines_length = 1;
-	editor->lines = new struct line[editor->lines_length];
+	editor->lines =
+		(struct line*) malloc(sizeof(struct line) * editor->lines_length);
 	editor->lines[0].data = NULL;
 	editor->lines[0].used = 0;
 	editor->lines[0].length = 0;
@@ -197,7 +196,8 @@ bool editor_load_file_contents(struct editor* editor, FILE* fp)
 
 bool editor_load_file(struct editor* editor, const char* path)
 {
-	if ( FILE* fp = fopen(path, "r") )
+	FILE* fp;
+	if ( (fp = fopen(path, "r")) )
 	{
 		bool success = editor_load_file_contents(editor, fp);
 		fclose(fp);

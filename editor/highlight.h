@@ -1,6 +1,6 @@
 /*******************************************************************************
 
-    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014.
+    Copyright(C) Jonas 'Sortie' Termansen 2013, 2014, 2015.
 
     This program is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by the Free
@@ -15,17 +15,24 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    multibyte.h++
-    Conversion from multibyte strings to wide strings.
+    highlight.h
+    Syntax highlighting.
 
 *******************************************************************************/
 
-#ifndef EDITOR_MULTIBYTE_HXX
-#define EDITOR_MULTIBYTE_HXX
+#ifndef EDITOR_HIGHLIGHT_H
+#define EDITOR_HIGHLIGHT_H
 
-#include <stddef.h>
+struct editor;
 
-wchar_t* convert_mbs_to_wcs(const char* mbs);
-char* convert_wcs_to_mbs(const wchar_t* wcs);
+enum language
+{
+	LANGUAGE_NONE,
+	LANGUAGE_C_CXX,
+	LANGUAGE_DIFF,
+};
+
+enum language language_of_path(const char* path);
+void editor_colorize(struct editor* editor);
 
 #endif

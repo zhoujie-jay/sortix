@@ -15,13 +15,13 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    cursor.h++
+    cursor.h
     Editor cursor.
 
 *******************************************************************************/
 
-#ifndef EDITOR_CURSOR_HXX
-#define EDITOR_CURSOR_HXX
+#ifndef EDITOR_CURSOR_H
+#define EDITOR_CURSOR_H
 
 #include <stddef.h>
 
