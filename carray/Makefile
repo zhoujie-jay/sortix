@@ -4,10 +4,14 @@ include ../build-aux/version.mak
 include ../build-aux/dirs.mak
 
 OPTLEVEL?=$(DEFAULT_OPTLEVEL)
-CXXFLAGS?=$(OPTLEVEL)
+CFLAGS?=$(OPTLEVEL)
 
 CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\"
-CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
+CFLAGS:=$(CFLAGS) -Wall -Wextra
+
+ifeq ($(HOST_IS_SORTIX),0)
+  CPPFLAGS+=-D_GNU_SOURCE
+endif
 
 BINARY:=carray
 
@@ -19,8 +23,8 @@ install: all
 	mkdir -p $(DESTDIR)$(BINDIR)
 	install $(BINARY) $(DESTDIR)$(BINDIR)
 
-%: %.c++
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@
+%: %.c
+	$(CC) -std=gnu11 $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 clean:
 	rm -f $(BINARY) *.o

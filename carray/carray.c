@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    carray.c++
+    carray.c
     Convert a binary file to a C array.
 
 *******************************************************************************/
@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <error.h>
 #include <locale.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -159,7 +160,8 @@ int main(int argc, char* argv[])
 			break;
 		if ( arg[1] != '-' )
 		{
-			while ( char c = *++arg ) switch ( c )
+			char c;
+			while ( (c = *++arg) ) switch ( c )
 			{
 			case 'c': flag_const = true; break;
 			case 'e': flag_extern = true; break;
