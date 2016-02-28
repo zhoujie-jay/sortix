@@ -5,18 +5,18 @@ include ../build-aux/version.mak
 include ../build-aux/dirs.mak
 
 OPTLEVEL?=$(DEFAULT_OPTLEVEL)
-CXXFLAGS?=$(OPTLEVEL)
+CFLAGS?=$(OPTLEVEL)
 
 CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\"
-CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
+CFLAGS:=$(CFLAGS) -Wall -Wextra
 
 BINARIES:=sh sortix-sh
 
 SORTIX_SH_SRCS=\
-editline.cpp \
-sh.cpp \
-showline.cpp \
-util.cpp
+editline.c \
+sh.c \
+showline.c \
+util.c
 
 all: $(BINARIES)
 
@@ -27,10 +27,10 @@ install: all
 	install $(BINARIES) $(DESTDIR)$(BINDIR)
 
 sortix-sh: $(SORTIX_SH_SRCS) *.h
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $(SORTIX_SH_SRCS) -o $@
+	$(CC) -std=gnu11 $(CFLAGS) $(CPPFLAGS) $(SORTIX_SH_SRCS) -o $@
 
-sh: proper-sh.cpp
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@
+sh: proper-sh.c
+	$(CC) -std=gnu11 $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 clean:
 	rm -f $(BINARIES) *.o

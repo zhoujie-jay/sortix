@@ -15,11 +15,12 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    util.cpp
+    util.c
     Utility functions.
 
 *******************************************************************************/
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -30,10 +31,15 @@ char* strdup_safe(const char* string)
 	return string ? strdup(string) : NULL;
 }
 
-const char* getenv_safe(const char* name, const char* def)
+const char* getenv_safe_def(const char* name, const char* def)
 {
 	const char* ret = getenv(name);
 	return ret ? ret : def;
+}
+
+const char* getenv_safe(const char* name)
+{
+	return getenv_safe_def(name, "");
 }
 
 bool array_add(void*** array_ptr,

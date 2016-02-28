@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    editline.cpp
+    editline.c
     Read a line from the terminal.
 
 *******************************************************************************/
@@ -24,6 +24,7 @@
 #include <sys/termmode.h>
 
 #include <assert.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -596,7 +597,8 @@ void edit_line(struct edit_line* edit_state)
 			break;
 		}
 
-		if ( int kbkey = KBKEY_DECODE(codepoint) )
+		int kbkey;
+		if ( (kbkey = KBKEY_DECODE(codepoint)) )
 			edit_line_kbkey(edit_state, kbkey);
 		else
 			edit_line_codepoint(edit_state, (wchar_t) codepoint);

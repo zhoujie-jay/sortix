@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    proper-sh.cpp
+    proper-sh.c
     Forward execution to the best shell.
 
 *******************************************************************************/
@@ -24,12 +24,13 @@
 
 #include <dirent.h>
 #include <fcntl.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-const char* getenv_safe(const char* name, const char* def = "")
+const char* getenv_safe(const char* name, const char* def)
 {
 	const char* ret = getenv(name);
 	return ret ? ret : def;
@@ -56,7 +57,7 @@ bool is_existing_shell(const char* candidate)
 	return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
-char* search_for_proper_shell()
+char* search_for_proper_shell(void)
 {
 	if ( getenv("SORTIX_SH_BACKEND") )
 	{

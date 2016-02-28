@@ -24,7 +24,8 @@
 #define UTIL_H
 
 char* strdup_safe(const char* string);
-const char* getenv_safe(const char* name, const char* def = "");
+const char* getenv_safe_def(const char* name, const char* def);
+const char* getenv_safe(const char* name);
 bool array_add(void*** array_ptr,
                size_t* used_ptr,
                size_t* length_ptr,

@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    sh.cpp
+    sh.c
     Command language interpreter.
 
 *******************************************************************************/
@@ -35,6 +35,7 @@
 #include <locale.h>
 #include <sched.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -90,7 +91,7 @@ static bool is_proper_absolute_path(const char* path)
 	return true;
 }
 
-void update_env()
+void update_env(void)
 {
 	char str[3 * sizeof(size_t)];
 	struct winsize ws;
@@ -349,7 +350,7 @@ bool token_expand_wildcards(void*** out,
 	size_t index = 0;
 	size_t num_escaped_wildcards = 0; // We don't properly support them yet.
 
-	stringbuf buf;
+	struct stringbuf buf;
 	stringbuf_begin(&buf);
 
 	bool escape = false;
@@ -385,9 +386,10 @@ bool token_expand_wildcards(void*** out,
 
 	if ( token[index] != '*' || num_escaped_wildcards )
 	{
+		char* value;
 		free(stringbuf_finish(&buf));
 	just_return_input:
-		char* value = strdup(token);
+		value = strdup(token);
 		if ( !value )
 			return false;
 		if ( !array_add(out, out_used, out_length, value) )
@@ -485,7 +487,8 @@ bool token_expand_wildcards(void*** out,
 		}
 	}
 	size_t num_inserted = 0;
-	while ( struct dirent* entry = readdir(dir) )
+	struct dirent* entry;
+	while ( (entry = readdir(dir)) )
 	{
 		if ( !matches_simple_pattern(entry->d_name, pattern + match_from) )
 			continue;
@@ -867,7 +870,7 @@ struct execute_result
 	bool exited;
 };
 
-struct execute_result execute(const char* const* tokens,
+struct execute_result execute(char** tokens,
                               size_t tokens_count,
                               bool interactive,
                               int pipein,
@@ -1117,7 +1120,7 @@ struct execute_result execute(const char* const* tokens,
 		internal = true;
 		const char* newdir = argv[1];
 		if ( !newdir )
-			newdir = getenv_safe("HOME", "/");
+			newdir = getenv_safe_def("HOME", "/");
 		internal_status = 0;
 		if ( perform_chdir(newdir) < 0 )
 		{
@@ -1308,7 +1311,7 @@ struct execute_result execute(const char* const* tokens,
 	__builtin_unreachable();
 }
 
-int run_tokens(const char* const* tokens,
+int run_tokens(char** tokens,
                size_t tokens_count,
                bool interactive,
                bool exit_on_error,
@@ -1542,12 +1545,13 @@ int run_command(char* command,
 	return result;
 }
 
-bool does_line_editing_need_another_line(void*, const char* line)
+bool does_line_editing_need_another_line(void* ctx, const char* line)
 {
+	(void) ctx;
 	return !is_shell_input_ready(line);
 }
 
-bool is_outermost_shell()
+bool is_outermost_shell(void)
 {
 	const char* shlvl_str = getenv("SHLVL");
 	if ( !shlvl_str )
@@ -1576,10 +1580,12 @@ bool is_usual_char_for_completion(char c)
 size_t do_complete(char*** completions_ptr,
                    size_t* used_before_ptr,
                    size_t* used_after_ptr,
-                   void*,
+                   void* ctx,
                    const char* partial,
                    size_t complete_at)
 {
+	(void) ctx;
+
 	size_t used_before = 0;
 	size_t used_after = 0;
 
@@ -1658,9 +1664,11 @@ size_t do_complete(char*** completions_ptr,
 		char* component;
 		while ( (component = strsep(&path_input, ":")) )
 		{
-			if ( DIR* dir = opendir(component) )
+			DIR* dir;
+			if ( (dir = opendir(component)) )
 			{
-				while ( struct dirent* entry = readdir(dir) )
+				struct dirent* entry;
+				while ( (entry = readdir(dir)) )
 				{
 					if ( strncmp(entry->d_name, partial + complete_at - used_before, used_before) != 0 )
 						continue;
@@ -1716,7 +1724,8 @@ size_t do_complete(char*** completions_ptr,
 			free(dirpath_alloc);
 			break;
 		}
-		while ( struct dirent* entry = readdir(dir) )
+		struct dirent* entry;
+		while ( (entry = readdir(dir)) )
 		{
 			if ( strncmp(entry->d_name, pattern, pattern_length) != 0 )
 				continue;
@@ -1812,7 +1821,7 @@ void read_command_interactive(struct sh_read_command* sh_read_command)
 		strlcpy(hostname, "(none)", sizeof(hostname));
 	const char* print_hostname = hostname;
 	const char* print_dir = current_dir ? current_dir : "?";
-	const char* home_dir = getenv_safe("HOME", "");
+	const char* home_dir = getenv_safe("HOME");
 
 	const char* print_dir_1 = print_dir;
 	const char* print_dir_2 = "";
@@ -2064,7 +2073,8 @@ int main(int argc, char* argv[])
 
 	// TODO: Canonicalize argv[0] if it contains a slash and isn't absolute?
 
-	if ( const char* env_pwd = getenv("PWD") )
+	const char* env_pwd;
+	if ( (env_pwd = getenv("PWD")) )
 	{
 		if ( !is_proper_absolute_path(env_pwd) )
 		{
@@ -2092,7 +2102,8 @@ int main(int argc, char* argv[])
 			break;
 		if ( arg[0] == '+' )
 		{
-			while ( char c = *++arg ) switch ( c )
+			char c;
+			while ( (c = *++arg) ) switch ( c )
 			{
 			case 'e': flag_e_exit_on_error = false; break;
 			default:
@@ -2103,7 +2114,8 @@ int main(int argc, char* argv[])
 		}
 		else if ( arg[1] != '-' )
 		{
-			while ( char c = *++arg ) switch ( c )
+			char c;
+			while ( (c = *++arg) ) switch ( c )
 			{
 			case 'c': flag_c_first_operand_is_command = true; break;
 			case 'e': flag_e_exit_on_error = true; break;
