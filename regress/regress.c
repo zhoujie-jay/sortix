@@ -15,7 +15,7 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    regress.c++
+    regress.c
     Automatically invokes system tests.
 
 *******************************************************************************/
@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <error.h>
 #include <fcntl.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,7 +49,7 @@ bool is_usable_terminal(int fd)
 	       10 <= ws.ws_col;
 }
 
-void tenth_last_column()
+void tenth_last_column(void)
 {
 	struct wincurpos wcp;
 	struct winsize ws;
@@ -153,7 +154,8 @@ int main(int argc, char* argv[])
 			break;
 		if ( arg[1] != '-' )
 		{
-			while ( char c = *++arg ) switch ( c )
+			char c;
+			while ( (c = *++arg) ) switch ( c )
 			{
 			case 'b': buffered = true; break;
 			case 'q': verbosity--; break;

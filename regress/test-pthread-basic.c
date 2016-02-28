@@ -15,8 +15,8 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    test-pthread-tls.c++
-    Tests whether basic tls support works.
+    test-pthread-basic.c
+    Tests whether basic pthread support works.
 
 *******************************************************************************/
 
@@ -24,33 +24,29 @@
 
 #include "test.h"
 
-__thread int tls_variable = 42;
-
-void* thread_routine(void*)
+void* thread_routine(void* cookie)
 {
-	test_assert(tls_variable == 42);
-
-	tls_variable = 9001;
-
-	return NULL;
+	int* test_failure_ptr = (int*) cookie;
+	*test_failure_ptr = 0;
+	return cookie;
 }
 
 int main(void)
 {
 	int errnum;
 
-	test_assert(tls_variable == 42);
-
-	tls_variable = 1337;
+	int test_failure = 1;
 
 	pthread_t thread;
-	if ( (errnum = pthread_create(&thread, NULL, &thread_routine, NULL)) )
+	if ( (errnum = pthread_create(&thread, NULL, &thread_routine, &test_failure)) )
 		test_error(errnum, "pthread_create");
 
-	if ( (errnum = pthread_join(thread, NULL)) )
+	void* thread_result;
+	if ( (errnum = pthread_join(thread, &thread_result)) )
 		test_error(errnum, "pthread_join");
 
-	test_assert(tls_variable == 1337);
+	test_assert(test_failure == 0);
+	test_assert(thread_result == &test_failure);
 
 	return 0;
 }

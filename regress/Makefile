@@ -5,11 +5,11 @@ include ../build-aux/version.mak
 include ../build-aux/dirs.mak
 
 OPTLEVEL?=$(DEFAULT_OPTLEVEL)
-CXXFLAGS?=$(OPTLEVEL)
+CFLAGS?=$(OPTLEVEL)
 TESTDIR?=$(LIBEXECDIR)/test
 
 CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\" -DTESTDIR=\"$(TESTDIR)\"
-CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
+CFLAGS:=$(CFLAGS) -Wall -Wextra
 
 BINARIES:=\
 regress \
@@ -36,8 +36,8 @@ ifneq ($(TESTS),)
 	install $(TESTS) $(DESTDIR)$(TESTDIR)
 endif
 
-%: %.c++
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@
+%: %.c
+	$(CC) -std=gnu11 $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 clean:
 	rm -f $(BINARIES) $(TESTS) *.o

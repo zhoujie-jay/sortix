@@ -15,41 +15,41 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    test-signal-raise.c++
-    Tests whether basic raise() support works.
+    test-pthread-main-join.c
+    Tests whether the main thread can be joined.
 
 *******************************************************************************/
 
-#include <signal.h>
+#include <pthread.h>
 
 #include "test.h"
 
-static int signal_counter = 0;
+pthread_t main_thread;
 
-void signal_handler(int signum, siginfo_t* siginfo, void* ucontext_ptr)
+void* thread_routine(void* expected_result)
 {
-	(void) signum;
-	(void) siginfo;
-	(void) ucontext_ptr;
+	int errnum;
 
-	test_assert(signum == SIGUSR1);
+	void* main_thread_result;
+	if ( (errnum = pthread_join(main_thread, &main_thread_result)) )
+		test_error(errnum, "pthread_join");
 
-	signal_counter++;
+	test_assert(expected_result == &main_thread);
+
+	exit(0);
 }
 
 int main(void)
 {
-	struct sigaction sa;
-	memset(&sa, 0, sizeof(sa));
-	sa.sa_sigaction = signal_handler;
-	sa.sa_flags = SA_SIGINFO;
+	int errnum;
 
-	if ( sigaction(SIGUSR1, &sa, NULL) )
-		test_error(errno, "sigaction(USR1)");
+	main_thread = pthread_self();
 
-	raise(SIGUSR1);
+	void* expected_result = &main_thread;
 
-	test_assert(signal_counter == 1);
+	pthread_t thread;
+	if ( (errnum = pthread_create(&thread, NULL, &thread_routine, expected_result)) )
+		test_error(errnum, "pthread_create");
 
-	return 0;
+	pthread_exit(expected_result);
 }

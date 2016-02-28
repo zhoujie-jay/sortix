@@ -15,8 +15,8 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    test-pthread-main-join.c++
-    Tests whether the main thread can be joined.
+    test-pthread-tls.c
+    Tests whether basic tls support works.
 
 *******************************************************************************/
 
@@ -24,32 +24,35 @@
 
 #include "test.h"
 
-pthread_t main_thread;
+__thread int tls_variable = 42;
 
-void* thread_routine(void* expected_result)
+void* thread_routine(void* ctx)
 {
-	int errnum;
+	(void) ctx;
 
-	void* main_thread_result;
-	if ( (errnum = pthread_join(main_thread, &main_thread_result)) )
-		test_error(errnum, "pthread_join");
+	test_assert(tls_variable == 42);
 
-	test_assert(expected_result == &main_thread);
+	tls_variable = 9001;
 
-	exit(0);
+	return NULL;
 }
 
 int main(void)
 {
 	int errnum;
 
-	main_thread = pthread_self();
+	test_assert(tls_variable == 42);
 
-	void* expected_result = &main_thread;
+	tls_variable = 1337;
 
 	pthread_t thread;
-	if ( (errnum = pthread_create(&thread, NULL, &thread_routine, expected_result)) )
+	if ( (errnum = pthread_create(&thread, NULL, &thread_routine, NULL)) )
 		test_error(errnum, "pthread_create");
 
-	pthread_exit(expected_result);
+	if ( (errnum = pthread_join(thread, NULL)) )
+		test_error(errnum, "pthread_join");
+
+	test_assert(tls_variable == 1337);
+
+	return 0;
 }

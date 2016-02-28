@@ -15,57 +15,46 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    test-pthread-argv.c++
-    Tests if the argument vector and environment dies with the main thread.
+    test-pthread-once.c
+    Tests whether basic pthread_once() support works.
 
 *******************************************************************************/
 
 #include <pthread.h>
-#include <string.h>
 
 #include "test.h"
 
-pthread_t main_thread;
+static int init_counter = 0;
+static pthread_once_t init_counter_once = PTHREAD_ONCE_INIT;
 
-char** global_argv;
-char** global_envp;
-size_t answer = 0;
-
-void* thread_routine(void*)
+void init_counter_increase(void)
 {
-	int errnum;
-
-	if ( (errnum = pthread_join(main_thread, NULL)) )
-		test_error(errnum, "pthread_join");
-
-	size_t recount = 0;
-	for ( int i = 0; global_argv[i]; i++ )
-		recount += strlen(global_argv[i]);
-	for ( int i = 0; global_envp[i]; i++ )
-		recount += strlen(global_envp[i]);
-
-	test_assert(answer == recount);
-
-	exit(0);
+	init_counter++;
 }
 
-int main(int /*argc*/, char* argv[], char* envp[])
+void* thread_routine(void* ctx)
+{
+	(void) ctx;
+
+	pthread_once(&init_counter_once, init_counter_increase);
+
+	return NULL;
+}
+
+int main(void)
 {
 	int errnum;
 
-	for ( int i = 0; argv[i]; i++ )
-		answer += strlen(argv[i]);
-	for ( int i = 0; envp[i]; i++ )
-		answer += strlen(envp[i]);
-
-	global_argv = argv;
-	global_envp = envp;
-
-	main_thread = pthread_self();
+	pthread_once(&init_counter_once, init_counter_increase);
 
 	pthread_t thread;
 	if ( (errnum = pthread_create(&thread, NULL, &thread_routine, NULL)) )
 		test_error(errnum, "pthread_create");
 
-	pthread_exit(NULL);
+	if ( (errnum = pthread_join(thread, NULL)) )
+		test_error(errnum, "pthread_join");
+
+	test_assert(init_counter == 1);
+
+	return 0;
 }

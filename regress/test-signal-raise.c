@@ -15,44 +15,41 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    test-pthread-once.c++
-    Tests whether basic pthread_once() support works.
+    test-signal-raise.c
+    Tests whether basic raise() support works.
 
 *******************************************************************************/
 
-#include <pthread.h>
+#include <signal.h>
 
 #include "test.h"
 
-static int init_counter = 0;
-static pthread_once_t init_counter_once = PTHREAD_ONCE_INIT;
+static int signal_counter = 0;
 
-void init_counter_increase()
+void signal_handler(int signum, siginfo_t* siginfo, void* ucontext_ptr)
 {
-	init_counter++;
-}
+	(void) signum;
+	(void) siginfo;
+	(void) ucontext_ptr;
 
-void* thread_routine(void*)
-{
-	pthread_once(&init_counter_once, init_counter_increase);
+	test_assert(signum == SIGUSR1);
 
-	return NULL;
+	signal_counter++;
 }
 
 int main(void)
 {
-	int errnum;
+	struct sigaction sa;
+	memset(&sa, 0, sizeof(sa));
+	sa.sa_sigaction = signal_handler;
+	sa.sa_flags = SA_SIGINFO;
 
-	pthread_once(&init_counter_once, init_counter_increase);
+	if ( sigaction(SIGUSR1, &sa, NULL) )
+		test_error(errno, "sigaction(USR1)");
 
-	pthread_t thread;
-	if ( (errnum = pthread_create(&thread, NULL, &thread_routine, NULL)) )
-		test_error(errnum, "pthread_create");
+	raise(SIGUSR1);
 
-	if ( (errnum = pthread_join(thread, NULL)) )
-		test_error(errnum, "pthread_join");
-
-	test_assert(init_counter == 1);
+	test_assert(signal_counter == 1);
 
 	return 0;
 }

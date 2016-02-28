@@ -15,44 +15,47 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-    test-pthread-self.c++
-    Tests whether basic pthread_self() support works.
+    test-fmemopen.c
+    Tests basic fmemopen() usage.
 
 *******************************************************************************/
 
-#include <pthread.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "test.h"
 
-static pthread_t child_thread_self;
-
-void* thread_routine(void* main_thread_ptr)
-{
-	pthread_t main_thread = *(pthread_t*) main_thread_ptr;
-
-	test_assert(!pthread_equal(main_thread, pthread_self()));
-
-	child_thread_self = pthread_self();
-
-	return NULL;
-}
-
 int main(void)
 {
-	int errnum;
+	const char* string = "VYl/plYoFGAg2";
+	size_t string_length = strlen(string);
 
-	pthread_t main_thread = pthread_self();
+	FILE* fp;
+	int c;
 
-	pthread_t thread;
-	if ( (errnum = pthread_create(&thread, NULL, &thread_routine, &main_thread)) )
-		test_error(errnum, "pthread_create");
+	unsigned char* buffer = (unsigned char*) string;
+	size_t buffer_size = string_length;
 
-	if ( (errnum = pthread_join(thread, NULL)) )
-		test_error(errnum, "pthread_join");
+	if ( !(fp = fmemopen(buffer, buffer_size, "r")) )
+		test_error(errno, "fmemopen");
 
-	test_assert(!pthread_equal(thread, pthread_self()));
-	test_assert(pthread_equal(thread, child_thread_self));
-	test_assert(!pthread_equal(pthread_self(), child_thread_self));
+	for ( size_t i = 0; i < buffer_size; i++ )
+	{
+		c = fgetc(fp);
+		test_assert(!(c == EOF && feof(fp)));
+		test_assert(!(c == EOF && ferror(fp)));
+		test_assert(c != EOF);
+		test_assert((unsigned char) c == buffer[i]);
+		test_assert(!feof(fp));
+		test_assert(!ferror(fp));
+	}
+
+	c = fgetc(fp);
+	test_assert(c == EOF);
+	test_assert(!ferror(fp));
+	test_assert(feof(fp));
+
+	fclose(fp);
 
 	return 0;
 }
