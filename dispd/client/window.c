@@ -17,7 +17,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with dispd. If not, see <http://www.gnu.org/licenses/>.
 
-    window.cpp
+    window.c
     Handles windows.
 
 *******************************************************************************/
@@ -27,6 +27,7 @@
 
 #include <fcntl.h>
 #include <ioleast.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -39,7 +40,6 @@
 #include "session.h"
 #include "window.h"
 
-extern "C"
 struct dispd_window* dispd_create_window_game_rgba(struct dispd_session* session)
 {
 	if ( session->current_window )
@@ -55,7 +55,7 @@ struct dispd_window* dispd_create_window_game_rgba(struct dispd_session* session
 	return session->current_window = window;
 }
 
-extern "C" bool dispd_destroy_window(struct dispd_window* window)
+bool dispd_destroy_window(struct dispd_window* window)
 {
 	free(window->cached_buffer);
 	free(window);

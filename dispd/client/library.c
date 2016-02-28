@@ -17,11 +17,12 @@
     You should have received a copy of the GNU Lesser General Public License
     along with dispd. If not, see <http://www.gnu.org/licenses/>.
 
-    library.cpp
+    library.c
     Main entry point of the Sortix Display Daemon.
 
 *******************************************************************************/
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -29,7 +30,7 @@
 
 #include "session.h"
 
-extern "C" bool dispd_initialize(int* argc, char*** argv)
+bool dispd_initialize(int* argc, char*** argv)
 {
 	if ( !dispd__session_initialize(argc, argv) )
 		return false;

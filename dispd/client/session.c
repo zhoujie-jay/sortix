@@ -17,7 +17,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with dispd. If not, see <http://www.gnu.org/licenses/>.
 
-    session.cpp
+    session.c
     Handles session management.
 
 *******************************************************************************/
@@ -28,6 +28,7 @@
 
 #include <error.h>
 #include <fcntl.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,13 +39,15 @@
 
 #include "session.h"
 
-const uint64_t ONE_AND_ONLY_DEVICE = 0;
-const uint64_t ONE_AND_ONLY_CONNECTOR = 0;
+static const uint64_t ONE_AND_ONLY_DEVICE = 0;
+static const uint64_t ONE_AND_ONLY_CONNECTOR = 0;
 
 struct dispd_session* global_session = NULL;
 
-bool dispd__session_initialize(int* /*argc*/, char*** /*argv*/)
+bool dispd__session_initialize(int* argc, char*** argv)
 {
+	(void) argc;
+	(void) argv;
 	size_t size = sizeof(struct dispd_session);
 	global_session = (struct dispd_session*) malloc(size);
 	if ( !global_session )

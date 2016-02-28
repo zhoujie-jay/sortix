@@ -41,7 +41,7 @@ struct dispd_framebuffer;
 
 bool dispd_initialize(int* argc, char*** argv);
 
-struct dispd_session* dispd_attach_default_session();
+struct dispd_session* dispd_attach_default_session(void);
 bool dispd_detach_session(struct dispd_session* session);
 
 bool dispd_session_setup_game_rgba(struct dispd_session* session);

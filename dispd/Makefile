@@ -5,9 +5,9 @@ include ../build-aux/version.mak
 include ../build-aux/dirs.mak
 
 OPTLEVEL?=$(DEFAULT_OPTLEVEL)
-CXXFLAGS?=$(OPTLEVEL)
+CFLAGS?=$(OPTLEVEL)
 
-CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
+CFLAGS:=$(CFLAGS) -Wall -Wextra
 CPPFLAGS:=$(CPPFLAGS) -I include
 
 CLIENT_OBJS:=\
@@ -15,16 +15,12 @@ client/library.o \
 client/session.o \
 client/window.o \
 
-SERVER_OBJS:=\
-server/dispd.o \
-
-BINS:=server/dispd client/libdispd.a
+BINS:=client/libdispd.a
 
 all: $(BINS)
 
-.PHONY: all headers client server clean install install-include-dirs \
-        install-headers install-client-dirs install-client install-server-dirs \
-        install-server
+.PHONY: all headers client clean install install-include-dirs \
+        install-headers install-client-dirs install-client
 
 headers:
 
@@ -33,21 +29,16 @@ client: client/libdispd.a
 client/libdispd.a: $(CLIENT_OBJS)
 	$(AR) rcs $@ $(CLIENT_OBJS)
 
-server: server/dispd
-
-server/dispd: $(SERVER_OBJS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SERVER_OBJS) -o $@
-
 clean:
-	rm -f $(CLIENT_OBJS) $(SERVER_OBJS)
+	rm -f $(CLIENT_OBJS)
 	rm -f $(BINS)
-	rm -f *.o client/*.o server/*.o
+	rm -f *.o client/*.o
 
-%.o: %.cpp
-	$(CXX) -std=gnu++11 -c $< -o $@ $(CPPFLAGS) $(CXXFLAGS)
+%.o: %.c
+	$(CC) -std=gnu11 $(CFLAGS) $(CPPFLAGS) -c $< -o $@
 
 # Installation into sysroot
-install: install-headers install-client install-server
+install: install-headers install-client
 
 install-include-dirs: headers
 	mkdir -p $(DESTDIR)$(INCLUDEDIR)
@@ -60,9 +51,3 @@ install-client-dirs:
 
 install-client: install-client-dirs client
 	cp -P client/libdispd.a $(DESTDIR)$(LIBDIR)
-
-install-server-dirs:
-	mkdir -p $(DESTDIR)$(BINDIR)
-
-install-server: install-server-dirs server
-	install server/dispd $(DESTDIR)$(BINDIR)

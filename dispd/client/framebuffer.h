@@ -25,10 +25,6 @@
 #ifndef INCLUDE_DISPD_FRAMEBUFFER_H
 #define INCLUDE_DISPD_FRAMEBUFFER_H
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 struct dispd_framebuffer
 {
 	struct dispd_window* window;
@@ -39,9 +35,5 @@ struct dispd_framebuffer
 	int width;
 	int height;
 };
-
-#if defined(__cplusplus)
-} /* extern "C" */
-#endif
 
 #endif
