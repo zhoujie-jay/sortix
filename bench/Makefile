@@ -5,9 +5,9 @@ include ../build-aux/version.mak
 include ../build-aux/dirs.mak
 
 OPTLEVEL?=$(DEFAULT_OPTLEVEL)
-CXXFLAGS?=$(OPTLEVEL)
+CFLAGS?=$(OPTLEVEL)
 
-CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
+CFLAGS:=$(CFLAGS) -Wall -Wextra
 
 BINARIES:=\
 benchsyscall \
@@ -21,8 +21,8 @@ install: all
 	mkdir -p $(DESTDIR)$(BINDIR)
 	install $(BINARIES) $(DESTDIR)$(BINDIR)
 
-%: %.cpp
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@
+%: %.c
+	$(CC) -std=gnu11 $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 clean:
 	rm -f $(BINARIES) *.o

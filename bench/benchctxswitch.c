@@ -15,14 +15,17 @@
     You should have received a copy of the GNU General Public License along with
     this program. If not, see <http://www.gnu.org/licenses/>.
 
-
-    benchsyscall.cpp
-    Benchmarks the speed of system calls.
+    benchctxswitch.c
+    Benchmarks the speed of context switches.
 
 *******************************************************************************/
 
 #include <err.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
 #include <unistd.h>
 #include <time.h>
 
@@ -35,15 +38,23 @@ static int uptime(uintmax_t* usecs)
 	return 0;
 }
 
-int main(int /*argc*/, char* /*argv*/[])
+int main(void)
 {
+	pid_t slavepid = fork();
+	if ( slavepid < 0 )
+		err(1, "fork");
+	if ( slavepid == 0 ) { while ( true ) { usleep(0); } exit(0); }
+
 	uintmax_t start;
 	if ( uptime(&start) )
 		err(1, "uptime");
 	uintmax_t end = start + 1ULL * 1000ULL * 1000ULL; // 1 second
 	size_t count = 0;
 	uintmax_t now;
-	while ( !uptime(&now) && now < end ) { count++; }
-	printf("Made %zu system calls in 1 second\n", count);
+	while ( !uptime(&now) && now < end ) { usleep(0); count += 2; /* back and forth */ }
+	printf("Made %zu context switches in 1 second\n", count);
+
+	kill(slavepid, SIGKILL);
+
 	return 0;
 }
