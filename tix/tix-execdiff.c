@@ -17,13 +17,10 @@
     You should have received a copy of the GNU General Public License along with
     Tix. If not, see <https://www.gnu.org/licenses/>.
 
-    tix-execdiff.cpp
+    tix-execdiff.c
     Reports which files have had the executable bit changed between two trees.
 
 *******************************************************************************/
-
-#define __STDC_CONSTANT_MACROS
-#define __STDC_LIMIT_MACROS
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -37,6 +34,7 @@
 #include <libgen.h>
 #include <signal.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -78,7 +76,8 @@ void execdiff(int tree_a, const char* tree_a_path,
 	DIR* dir_b = fdopendupdir(tree_b);
 	if ( !dir_b )
 		error(1, errno, "fdopendupdir(`%s`)", tree_b_path);
-	while ( struct dirent* entry = readdir(dir_b) )
+	struct dirent* entry;
+	while ( (entry = readdir(dir_b)) )
 	{
 		if ( !strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..") )
 			continue;
@@ -172,7 +171,8 @@ int main(int argc, char* argv[])
 			break;
 		if ( arg[1] != '-' )
 		{
-			while ( char c = *++arg ) switch ( c )
+			char c;
+			while ( (c = *++arg) ) switch ( c )
 			{
 			default:
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);

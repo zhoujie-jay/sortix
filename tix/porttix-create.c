@@ -17,13 +17,10 @@
     You should have received a copy of the GNU General Public License along with
     Tix. If not, see <https://www.gnu.org/licenses/>.
 
-    porttix-create.cpp
+    porttix-create.c
     Creates a port tix by generating patches using source code and tarballs.
 
 *******************************************************************************/
-
-#define __STDC_CONSTANT_MACROS
-#define __STDC_LIMIT_MACROS
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -37,6 +34,7 @@
 #include <libgen.h>
 #include <signal.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -45,7 +43,7 @@
 
 #include "util.h"
 
-int redirect(const char* path, int flags, mode_t mode = 0)
+int redirect(const char* path, int flags, mode_t mode)
 {
 	int fd = open(path, flags, mode);
 	if ( fd < 0 )
@@ -87,7 +85,8 @@ int main(int argc, char* argv[])
 			break;
 		if ( arg[1] != '-' )
 		{
-			while ( char c = *++arg ) switch ( c )
+			char c;
+			while ( (c = *++arg) ) switch ( c )
 			{
 			default:
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
@@ -362,7 +361,7 @@ int main(int argc, char* argv[])
 
 	// Create the patch between the source tix and the normalized tree.
 	char* patch_path = join_paths(porttix_path, "patch.patch");
-	if ( fork_and_wait_or_death(false) )
+	if ( fork_and_wait_or_death_def(false) )
 	{
 		close(1);
 		if ( open(patch_path, O_WRONLY | O_CREAT | O_TRUNC, 0644) != 1 )
@@ -387,7 +386,7 @@ int main(int argc, char* argv[])
 
 	// Created the execpatch between the source tix and the normalized tree.
 	char* patch_exec_path = join_paths(porttix_path, "patch.execpatch");
-	if ( fork_and_wait_or_death(false) )
+	if ( fork_and_wait_or_death_def(false) )
 	{
 		if ( redirect(patch_exec_path, O_WRONLY | O_CREAT | O_TRUNC, 0644) != 0 )
 			error(1, errno, "`%s'", patch_exec_path);

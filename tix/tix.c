@@ -17,13 +17,10 @@
     You should have received a copy of the GNU General Public License along with
     Tix. If not, see <https://www.gnu.org/licenses/>.
 
-    tix.cpp
+    tix.c
     Front end to the Tix package management system.
 
 *******************************************************************************/
-
-#define __STDC_CONSTANT_MACROS
-#define __STDC_LIMIT_MACROS
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -38,6 +35,7 @@
 #include <limits.h>
 #include <signal.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -110,7 +108,7 @@ string_array_t GetPackageDependencies(params_t* params, const char* pkg_name)
 
 	VerifyTixInformation(&tixinfo, pkg_path);
 
-	const char* deps = dictionary_get(&tixinfo, "pkg.runtime-deps", "");
+	const char* deps = dictionary_get_def(&tixinfo, "pkg.runtime-deps", "");
 	string_array_append_token_string(&ret, deps);
 
 	string_array_reset(&tixinfo);
@@ -193,7 +191,8 @@ int main(int argc, char* argv[])
 			break;
 		if ( arg[1] != '-' )
 		{
-			while ( char c = *++arg ) switch ( c )
+			char c;
+			while ( (c = *++arg) ) switch ( c )
 			{
 			default:
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);

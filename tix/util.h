@@ -84,7 +84,7 @@ typedef struct
 	size_t capacity;
 } string_array_t;
 
-string_array_t string_array_make()
+string_array_t string_array_make(void)
 {
 	string_array_t sa;
 	sa.strings = NULL;
@@ -306,12 +306,17 @@ const char* dictionary_get_entry(string_array_t* sa, const char* key)
 	return sa->strings[index];
 }
 
-const char* dictionary_get(string_array_t* sa, const char* key,
-                           const char* def = NULL)
+const char* dictionary_get_def(string_array_t* sa, const char* key,
+                               const char* def)
 {
 	size_t keylen = strlen(key);
 	const char* entry = dictionary_get_entry(sa, key);
 	return entry ? entry + keylen + 1 : def;
+}
+
+const char* dictionary_get(string_array_t* sa, const char* key)
+{
+	return dictionary_get_def(sa, key, NULL);
 }
 
 void dictionary_normalize_entry(char* entry)
@@ -383,7 +388,7 @@ char* read_single_line(FILE* fp)
 	return ret;
 }
 
-pid_t fork_or_death()
+pid_t fork_or_death(void)
 {
 	pid_t child_pid = fork();
 	if ( child_pid < 0 )
@@ -391,7 +396,7 @@ pid_t fork_or_death()
 	return child_pid;
 }
 
-void waitpid_or_death(pid_t child_pid, bool die_on_error = true)
+void waitpid_or_death_def(pid_t child_pid, bool die_on_error)
 {
 	int status;
 	waitpid(child_pid, &status, 0);
@@ -406,13 +411,23 @@ void waitpid_or_death(pid_t child_pid, bool die_on_error = true)
 	}
 }
 
-bool fork_and_wait_or_death(bool die_on_error = true)
+void waitpid_or_death(pid_t child_pid)
+{
+	return waitpid_or_death_def(child_pid, true);
+}
+
+bool fork_and_wait_or_death_def(bool die_on_error)
 {
 	pid_t child_pid = fork_or_death();
 	if ( !child_pid )
 		return true;
-	waitpid_or_death(child_pid, die_on_error);
+	waitpid_or_death_def(child_pid, die_on_error);
 	return false;
+}
+
+bool fork_and_wait_or_death(void)
+{
+	return fork_and_wait_or_death_def(true);
 }
 
 const char* getenv_def(const char* var, const char* def)
@@ -443,7 +458,7 @@ static void compact_arguments(int* argc, char*** argv)
 	}
 }
 
-char* GetBuildTriplet()
+char* GetBuildTriplet(void)
 {
 #if defined(__sortix__) && defined(__i386__)
 	return strdup("i486-sortix");
@@ -767,13 +782,14 @@ void VerifyTixCollectionConfiguration(string_array_t* info, const char* path)
 static pid_t original_pid;
 
 __attribute__((constructor))
-static void initialize_original_pid()
+static void initialize_original_pid(void)
 {
 	original_pid = getpid();
 }
 
-void cleanup_file_or_directory(int, void* path_ptr)
+void cleanup_file_or_directory(int status, void* path_ptr)
 {
+	(void) status;
 	if ( original_pid != getpid() )
 		return;
 	pid_t pid = fork();
@@ -800,7 +816,7 @@ void cleanup_file_or_directory(int, void* path_ptr)
 	waitpid(pid, &code, 0);
 }
 
-mode_t get_umask_value()
+mode_t get_umask_value(void)
 {
 	mode_t result = umask(0);
 	umask(result);
@@ -859,8 +875,7 @@ enum recovery_state
 };
 
 enum recovery_state
-recovery_configure_state(bool set,
-                         enum recovery_state to_what = RECOVERY_STATE_NONE)
+recovery_configure_state_def(bool set, enum recovery_state to_what)
 {
 	static enum recovery_state recovery_state = RECOVERY_STATE_NONE;
 	if ( set )
@@ -868,7 +883,13 @@ recovery_configure_state(bool set,
 	return recovery_state;
 }
 
-bool recovery_print_attempted_execution()
+enum recovery_state
+recovery_configure_state(bool set)
+{
+	return recovery_configure_state_def(set, RECOVERY_STATE_NONE);
+}
+
+bool recovery_print_attempted_execution(void)
 {
 	pid_t child_pid = fork();
 	if ( child_pid < 0 )
@@ -887,7 +908,7 @@ bool recovery_print_attempted_execution()
 			close(dev_null);
 		}
 
-		recovery_configure_state(true, RECOVERY_STATE_PRINT_COMMAND);
+		recovery_configure_state_def(true, RECOVERY_STATE_PRINT_COMMAND);
 		return true;
 	}
 
@@ -897,7 +918,7 @@ bool recovery_print_attempted_execution()
 	return false;
 }
 
-bool recovery_run_shell()
+bool recovery_run_shell(void)
 {
 	pid_t child_pid = fork();
 	if ( child_pid < 0 )
@@ -905,7 +926,7 @@ bool recovery_run_shell()
 
 	if ( !child_pid )
 	{
-		recovery_configure_state(true, RECOVERY_STATE_RUN_SHELL);
+		recovery_configure_state_def(true, RECOVERY_STATE_RUN_SHELL);
 		return true;
 	}
 
@@ -963,7 +984,7 @@ int recovery_execvp(const char* path, char* const* argv)
 	__builtin_unreachable();
 }
 
-bool fork_and_wait_or_recovery()
+bool fork_and_wait_or_recovery(void)
 {
 	int default_selection = 1;
 

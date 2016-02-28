@@ -4,10 +4,14 @@ include ../build-aux/version.mak
 include ../build-aux/dirs.mak
 
 OPTLEVEL?=$(DEFAULT_OPTLEVEL)
-CXXFLAGS?=$(OPTLEVEL)
+CFLAGS?=$(OPTLEVEL)
 
+CFLAGS:=$(CFLAGS) -Wall -Wextra
 CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\"
-CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
+
+ifeq ($(HOST_IS_SORTIX),0)
+  CPPFLAGS+=-D_GNU_SOURCE
+endif
 
 BINARIES:=\
 porttix-create \
@@ -28,8 +32,8 @@ all: $(PROGRAMS)
 
 .PHONY: all install clean
 
-%: %.cpp util.h
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< -o $@
+%: %.c util.h
+	$(CC) -std=gnu11 $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 $(DESTDIR)$(SBINDIR):
 	mkdir -p $@

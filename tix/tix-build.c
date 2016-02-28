@@ -17,13 +17,10 @@
     You should have received a copy of the GNU General Public License along with
     Tix. If not, see <https://www.gnu.org/licenses/>.
 
-    tix-build.cpp
+    tix-build.c
     Compile a source tix into a tix suitable for installation.
 
 *******************************************************************************/
-
-#define __STDC_CONSTANT_MACROS
-#define __STDC_LIMIT_MACROS
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -38,6 +35,7 @@
 #include <limits.h>
 #include <signal.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -342,9 +340,9 @@ void SetNeedVariableBuildTool(metainfo_t* minfo,
                               const char* value)
 {
 	string_array_t* pkg_info = &minfo->package_info;
-	const char* needed_vars = dictionary_get(pkg_info, "pkg.make.needed-vars", "true");
+	const char* needed_vars = dictionary_get_def(pkg_info, "pkg.make.needed-vars", "true");
 	char* key = print_string("pkg.make.needed-vars.%s", variable);
-	const char* needed_var = dictionary_get(pkg_info, key, needed_vars);
+	const char* needed_var = dictionary_get_def(pkg_info, key, needed_vars);
 	free(key);
 	if ( !parse_boolean(needed_var) )
 		return;
@@ -398,25 +396,25 @@ void SetNeededVariables(metainfo_t* minfo)
 	SetNeedVariableCrossTool(minfo, "STRIP", "strip");
 }
 
-void Configure(metainfo_t* minfo, const char* subdir = NULL)
+void Configure(metainfo_t* minfo, const char* subdir)
 {
 	if ( fork_and_wait_or_recovery() )
 	{
 		string_array_t* pkg_info = &minfo->package_info;
 		const char* configure_raw =
-			dictionary_get(pkg_info, "pkg.configure.cmd", "./configure");
+			dictionary_get_def(pkg_info, "pkg.configure.cmd", "./configure");
 		char* configure;
 		if ( strcmp(minfo->build_dir, minfo->package_dir) == 0 )
 			configure = strdup(configure_raw);
 		else
 			configure = print_string("%s/%s", minfo->package_dir, configure_raw);
 		const char* conf_extra_args =
-			dictionary_get(pkg_info, "pkg.configure.args", "");
+			dictionary_get_def(pkg_info, "pkg.configure.args", "");
 		const char* conf_extra_vars =
-			dictionary_get(pkg_info, "pkg.configure.vars", "");
+			dictionary_get_def(pkg_info, "pkg.configure.vars", "");
 		bool with_sysroot =
-			parse_boolean(dictionary_get(pkg_info, "pkg.configure.with-sysroot",
-			                                        "false"));
+			parse_boolean(dictionary_get_def(pkg_info, "pkg.configure.with-sysroot",
+			                                           "false"));
 		// After releasing Sortix 1.0, remove this and hard-code the default to
 		// false. This allows building Sortix 0.9 with its own ports using this
 		// tix-build version.
@@ -425,11 +423,11 @@ void Configure(metainfo_t* minfo, const char* subdir = NULL)
 		     !strcmp(minfo->package_name, "gcc") )
 			with_sysroot_ld_bug_default = "true";
 		bool with_sysroot_ld_bug =
-			parse_boolean(dictionary_get(pkg_info, "pkg.configure.with-sysroot-ld-bug",
-			                                        with_sysroot_ld_bug_default ));
+			parse_boolean(dictionary_get_def(pkg_info, "pkg.configure.with-sysroot-ld-bug",
+			                                            with_sysroot_ld_bug_default ));
 		bool with_build_sysroot =
-			parse_boolean(dictionary_get(pkg_info, "pkg.configure.with-build-sysroot",
-			                                        "false"));
+			parse_boolean(dictionary_get_def(pkg_info, "pkg.configure.with-build-sysroot",
+			                                           "false"));
 		if ( chdir(minfo->build_dir) != 0 )
 			error(1, errno, "chdir: `%s'", minfo->build_dir);
 		if ( subdir && chdir(subdir) != 0 )
@@ -509,7 +507,7 @@ bool TestDirty(metainfo_t* minfo,
 	return result;
 }
 
-bool IsDirty(metainfo_t* minfo, const char* subdir = NULL)
+bool IsDirty(metainfo_t* minfo, const char* subdir)
 {
 	string_array_t* pkg_info = &minfo->package_info;
 	const char* dirty_file = dictionary_get(pkg_info, "pkg.dirty-file");
@@ -520,18 +518,17 @@ bool IsDirty(metainfo_t* minfo, const char* subdir = NULL)
 	       TestDirty(minfo, subdir, "makefile");
 }
 
-void Make(metainfo_t* minfo, const char* make_target,
-          const char* destdir = NULL, bool die_on_error = true,
-          const char* subdir = NULL)
+void Make(metainfo_t* minfo, const char* make_target, const char* destdir,
+          bool die_on_error, const char* subdir)
 {
-	if ( (!die_on_error && fork_and_wait_or_death(die_on_error)) ||
+	if ( (!die_on_error && fork_and_wait_or_death_def(die_on_error)) ||
 	     (die_on_error && fork_and_wait_or_recovery()) )
 	{
 		string_array_t* pkg_info = &minfo->package_info;
 		char* make = strdup(minfo->make);
 		const char* override_make = dictionary_get(pkg_info, "pkg.make.cmd");
-		const char* make_extra_args = dictionary_get(pkg_info, "pkg.make.args", "");
-		const char* make_extra_vars = dictionary_get(pkg_info, "pkg.make.vars", "");
+		const char* make_extra_args = dictionary_get_def(pkg_info, "pkg.make.args", "");
+		const char* make_extra_vars = dictionary_get_def(pkg_info, "pkg.make.vars", "");
 		if ( override_make )
 		{
 			free(make);
@@ -605,7 +602,7 @@ void BuildPackage(metainfo_t* minfo)
 
 	// Determine whether need to do an out-of-directory build.
 	const char* use_build_dir_var =
-		dictionary_get(pinfo, "pkg.configure.use-build-directory", "false");
+		dictionary_get_def(pinfo, "pkg.configure.use-build-directory", "false");
 	bool use_build_dir = parse_boolean(use_build_dir_var);
 	if ( use_build_dir )
 	{
@@ -620,18 +617,18 @@ void BuildPackage(metainfo_t* minfo)
 	// Reset the build directory if needed.
 	const char* default_clean_target =
 		!strcmp(build_system, "configure") ? "distclean" : "clean";
-	const char* clean_target = dictionary_get(pinfo, "pkg.make.clean-target",
-	                                          default_clean_target);
+	const char* clean_target = dictionary_get_def(pinfo, "pkg.make.clean-target",
+	                                              default_clean_target);
 	const char* ignore_clean_failure_var =
-		dictionary_get(pinfo, "pkg.make.ignore-clean-failure", "true");
+		dictionary_get_def(pinfo, "pkg.make.ignore-clean-failure", "true");
 	bool ignore_clean_failure = parse_boolean(ignore_clean_failure_var);
 
-	const char* subdir = dictionary_get(pinfo, "pkg.subdir", NULL);
+	const char* subdir = dictionary_get(pinfo, "pkg.subdir");
 
 	if ( SHOULD_DO_BUILD_STEP(BUILD_STEP_PRE_CLEAN, minfo) &&
 	     !use_build_dir &&
-	     IsDirty(minfo) )
-		Make(minfo, clean_target, NULL, !ignore_clean_failure);
+	     IsDirty(minfo, NULL) )
+		Make(minfo, clean_target, NULL, !ignore_clean_failure, NULL);
 
 	// Configure the build directory if needed.
 	if ( strcmp(build_system, "configure") == 0 &&
@@ -639,10 +636,10 @@ void BuildPackage(metainfo_t* minfo)
 		Configure(minfo, subdir);
 
 	bool location_independent =
-		parse_boolean(dictionary_get(pinfo, "pkg.location-independent", "false"));
+		parse_boolean(dictionary_get_def(pinfo, "pkg.location-independent", "false"));
 
-	const char* build_target = dictionary_get(pinfo, "pkg.make.build-target", "all");
-	const char* install_target = dictionary_get(pinfo, "pkg.make.install-target", "install");
+	const char* build_target = dictionary_get_def(pinfo, "pkg.make.build-target", "all");
+	const char* install_target = dictionary_get_def(pinfo, "pkg.make.install-target", "install");
 
 	if ( !location_independent && !minfo->prefix )
 		error(1, 0, "error: %s is not location independent and you need to "
@@ -770,7 +767,7 @@ void BuildPackage(metainfo_t* minfo)
 
 	// Clean the build directory after the successful build.
 	if ( SHOULD_DO_BUILD_STEP(BUILD_STEP_POST_CLEAN, minfo) )
-		Make(minfo, clean_target, NULL, !ignore_clean_failure);
+		Make(minfo, clean_target, NULL, !ignore_clean_failure, NULL);
 }
 
 void VerifySourceTixInformation(metainfo_t* minfo)
@@ -797,7 +794,7 @@ void VerifySourceTixInformation(metainfo_t* minfo)
 //       but instead consider them normal characters. This should work as
 //       expected, though, as long as the MAKEFLAGS variable doesn't contain any
 //       quote characters.
-void PurifyMakeflags()
+void PurifyMakeflags(void)
 {
 	const char* makeflags_environment = getenv("MAKEFLAGS");
 	if ( !makeflags_environment )
@@ -872,7 +869,8 @@ int main(int argc, char* argv[])
 			break;
 		if ( arg[1] != '-' )
 		{
-			while ( char c = *++arg ) switch ( c )
+			char c;
+			while ( (c = *++arg) ) switch ( c )
 			{
 			default:
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);
@@ -979,7 +977,8 @@ int main(int argc, char* argv[])
 	minfo.package_info_path = print_string("%s/tixbuildinfo",
 	                                       minfo.package_dir);
 
-	string_array_t* package_info = &(minfo.package_info = string_array_make());
+	minfo.package_info = string_array_make();
+	string_array_t* package_info = &minfo.package_info;
 	if ( !dictionary_append_file_path(package_info, minfo.package_info_path) )
 	{
 		if ( errno == ENOENT )

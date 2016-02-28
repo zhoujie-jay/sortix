@@ -17,13 +17,10 @@
     You should have received a copy of the GNU General Public License along with
     Tix. If not, see <https://www.gnu.org/licenses/>.
 
-    tix-execpatch.cpp
+    tix-execpatch.c
     Patches the executable bits of files in the current source directory.
 
 *******************************************************************************/
-
-#define __STDC_CONSTANT_MACROS
-#define __STDC_LIMIT_MACROS
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -38,6 +35,7 @@
 #include <libgen.h>
 #include <signal.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -203,7 +201,8 @@ int main(int argc, char* argv[])
 			break;
 		if ( arg[1] != '-' )
 		{
-			while ( char c = *++arg ) switch ( c )
+			char c;
+			while ( (c = *++arg) ) switch ( c )
 			{
 			case 'c': check = true; break;
 			default:
