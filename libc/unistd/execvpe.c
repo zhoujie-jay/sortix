@@ -94,7 +94,7 @@ int execvpe_attempt(const char* filename,
 //       as the logic in these files:
 //         * kernel/process.cpp
 //         * libc/unistd/execvpe.c
-//         * utils/which.cpp
+//         * utils/which.c
 
 int execvpe(const char* filename, char* const* argv, char* const* envp)
 {
