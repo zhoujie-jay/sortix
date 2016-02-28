@@ -29,8 +29,7 @@
 
 /* Detect whether we are a core system library. */
 #if defined(__is_sortix_libc) || \
-    defined(__is_sortix_libm) || \
-    defined(__is_sortix_libpthread)
+    defined(__is_sortix_libm)
 #if !defined(__is_sortix_system_library)
 #define __is_sortix_system_library
 #endif

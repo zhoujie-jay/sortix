@@ -399,6 +399,50 @@ netdb/setservent.o \
 poll/poll.o \
 poll/ppoll.o \
 psctl/psctl.o \
+pthread/pthread_attr_destroy.o \
+pthread/pthread_attr_getdetachstate.o \
+pthread/pthread_attr_getstacksize.o \
+pthread/pthread_attr_init.o \
+pthread/pthread_attr_setdetachstate.o \
+pthread/pthread_attr_setstacksize.o \
+pthread/pthread_condattr_destroy.o \
+pthread/pthread_condattr_getclock.o \
+pthread/pthread_condattr_init.o \
+pthread/pthread_condattr_setclock.o \
+pthread/pthread_cond_broadcast.o \
+pthread/pthread_cond_destroy.o \
+pthread/pthread_cond_init.o \
+pthread/pthread_cond_signal.o \
+pthread/pthread_cond_timedwait.o \
+pthread/pthread_cond_wait.o \
+pthread/pthread_create.o \
+pthread/pthread_detach.o \
+pthread/pthread_equal.o \
+pthread/pthread_exit.o \
+pthread/pthread_getspecific.o \
+pthread/pthread_join.o \
+pthread/pthread_key_create.o \
+pthread/pthread_key_delete.o \
+pthread/pthread_keys.o \
+pthread/pthread_mutexattr_destroy.o \
+pthread/pthread_mutexattr_gettype.o \
+pthread/pthread_mutexattr_init.o \
+pthread/pthread_mutexattr_settype.o \
+pthread/pthread_mutex_destroy.o \
+pthread/pthread_mutex_init.o \
+pthread/pthread_mutex_lock.o \
+pthread/pthread_mutex_trylock.o \
+pthread/pthread_mutex_unlock.o \
+pthread/pthread_once.o \
+pthread/pthread_rwlock_destroy.o \
+pthread/pthread_rwlock_init.o \
+pthread/pthread_rwlock_rdlock.o \
+pthread/pthread_rwlock_tryrdlock.o \
+pthread/pthread_rwlock_trywrlock.o \
+pthread/pthread_rwlock_unlock.o \
+pthread/pthread_rwlock_wrlock.o \
+pthread/pthread_self.o \
+pthread/pthread_setspecific.o \
 pwd/bcrypt_newhash.o \
 pwd/endpwent.o \
 pwd/fgetpwent.o \
@@ -413,10 +457,18 @@ pwd/openpw.o \
 pwd/setpwent.o \
 sched/sched_yield.o \
 scram/scram.o \
+semaphore/sem_destroy.o \
+semaphore/sem_getvalue.o \
+semaphore/sem_init.o \
+semaphore/sem_post.o \
+semaphore/sem_timedwait.o \
+semaphore/sem_trywait.o \
+semaphore/sem_wait.o \
 signal/kill.o \
 signal/killpg.o \
 signal/psiginfo.o \
 signal/psignal.o \
+signal/pthread_sigmask.o \
 signal/raise.o \
 signal/sigaction.o \
 signal/sigaltstack.o \
@@ -696,7 +748,7 @@ ifeq ($(HOST),x86_64-sortix)
     LIBK_FLAGS:=$(LIBK_FLAGS) -mno-red-zone -mno-mmx -mno-sse -mno-sse2
 endif
 
-BINS=libc.a libdl.a librt.a $(CRTOBJ)
+BINS=libc.a libdl.a libpthread.a librt.a $(CRTOBJ)
 BINSKERNEL=libk.a
 INSTALLLIBS:=$(addprefix $(DESTDIR)$(LIBDIR)/,$(BINS))
 INSTALLLIBSKERNEL:=$(addprefix $(DESTDIR)$(LIBDIR)/,$(BINSKERNEL))
@@ -720,6 +772,9 @@ libdl.a:
 
 libk.a: $(LIBK_OBJS)
 	$(AR) rcs $@ $(LIBK_OBJS)
+
+libpthread.a:
+	$(AR) rcs $@
 
 librt.a:
 	$(AR) rcs $@

@@ -105,17 +105,17 @@ extern "C" {
 #define _POSIX_SPIN_LOCKS 200809L
 /*TODO: _POSIX_SPORADIC_SERVER - Research what this is. */
 /*TODO: _POSIX_SYNCHRONIZED_IO - Research what this is. */
-/*TODO: _POSIX_THREAD_ATTR_STACKADDR - Research what this is, cooperate with libpthread. */
-/*TODO: _POSIX_THREAD_ATTR_STACKSIZE - Research what this is, cooperate with libpthread. */
+/*TODO: _POSIX_THREAD_ATTR_STACKADDR - Research what this is. */
+/*TODO: _POSIX_THREAD_ATTR_STACKSIZE - Research what this is. */
 #define _POSIX_THREAD_CPUTIME 200809L
-/*TODO: _POSIX_THREAD_PRIO_INHERIT - Research what this is, cooperate with libpthread. */
-/*TODO: _POSIX_THREAD_PRIO_PROTECT - Research what this is, cooperate with libpthread. */
-/*TODO: _POSIX_THREAD_PRIORITY_SCHEDULING - Research what this is, cooperate with libpthread. */
-/*TODO: _POSIX_THREAD_PROCESS_SHARED - Research what this is, cooperate with libpthread. */
-/*TODO: _POSIX_THREAD_ROBUST_PRIO_INHERIT - Research what this is, cooperate with libpthread. */
-/*TODO: _POSIX_THREAD_ROBUST_PRIO_PROTECT - Research what this is, cooperate with libpthread. */
+/*TODO: _POSIX_THREAD_PRIO_INHERIT - Research what this is. */
+/*TODO: _POSIX_THREAD_PRIO_PROTECT - Research what this is. */
+/*TODO: _POSIX_THREAD_PRIORITY_SCHEDULING - Research what this is. */
+/*TODO: _POSIX_THREAD_PROCESS_SHARED - Research what this is. */
+/*TODO: _POSIX_THREAD_ROBUST_PRIO_INHERIT - Research what this is. */
+/*TODO: _POSIX_THREAD_ROBUST_PRIO_PROTECT - Research what this is. */
 #define _POSIX_THREAD_SAFE_FUNCTIONS 200809L
-/*TODO: _POSIX_THREAD_SPORADIC_SERVER - Research what this is, cooperate with libpthread. */
+/*TODO: _POSIX_THREAD_SPORADIC_SERVER - Research what this is. */
 #define _POSIX_THREADS 200809L
 #define _POSIX_TIMEOUTS 200809L
 #define _POSIX_TIMERS 200809L

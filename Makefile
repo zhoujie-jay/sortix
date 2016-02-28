@@ -7,7 +7,6 @@ MODULES=\
 doc \
 libc \
 libm \
-libpthread \
 dispd \
 libmount \
 bench \
@@ -126,7 +125,7 @@ sysroot-fsh:
 .PHONY: sysroot-base-headers
 sysroot-base-headers: sysroot-fsh
 	export SYSROOT="$(SYSROOT)" && \
-	(for D in libc libm libpthread kernel; do ($(MAKE) -C $$D install-headers DESTDIR="$(SYSROOT)") || exit $$?; done)
+	(for D in libc libm kernel; do ($(MAKE) -C $$D install-headers DESTDIR="$(SYSROOT)") || exit $$?; done)
 
 .PHONY: sysroot-system
 sysroot-system: sysroot-fsh sysroot-base-headers
