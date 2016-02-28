@@ -43,8 +43,8 @@ char* basename_dup(const char* path)
 	return result;
 }
 
-const int FLAG_VERBOSE = 1 << 0;
-const int FLAG_ASK_OVERWRITE = 1 << 1;
+static const int FLAG_VERBOSE = 1 << 0;
+static const int FLAG_ASK_OVERWRITE = 1 << 1;
 
 bool mv(int src_dirfd, const char* src_rel, const char* src_path,
         int dst_dirfd, const char* dst_rel, const char* dst_path,

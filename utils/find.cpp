@@ -47,8 +47,8 @@ char* AddElemToPath(const char* path, const char* elem)
 	return ret;
 }
 
-const int TYPE_FILE = 1 << 0;
-const int TYPE_DIR = 1 << 1;
+static const int TYPE_FILE = 1 << 0;
+static const int TYPE_DIR = 1 << 1;
 
 bool Find(int dirfd, const char* relpath, const char* path, int types)
 {

@@ -72,8 +72,8 @@ typedef struct __FILE FILE;
 
 #define _FILE_MAX_PUSHBACK 8
 
-/* Note stdio/stdio.cpp's declarations of stdin/stdout/stderr also needs to be
-   changed if you make changes to this structure. */
+/* Note libc's declarations of stdin/stdout/stderr also needs to be changed if
+   you make changes to this structure. */
 struct __FILE
 {
 	unsigned char* buffer;

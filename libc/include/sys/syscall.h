@@ -88,7 +88,7 @@ syscall_type syscall_name syscall_formals;
 
 /* System call accepting no parameters. */
 #define DEFN_SYSCALL0(type, fn, num) \
-DEFINE_SYSCALL(type, fn, num, ())
+DEFINE_SYSCALL(type, fn, num, (void))
 
 /* System call accepting 1 parameter. */
 #define DEFN_SYSCALL1(type, fn, num, t1) \

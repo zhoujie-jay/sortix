@@ -36,15 +36,15 @@
 #include <string.h>
 #include <unistd.h>
 
-const int FLAG_ALL = 1 << 0;
-const int FLAG_SUMMARIZE = 1 << 1;
-const int FLAG_SAME_DEVICE = 1 << 2;
-const int FLAG_APPARENT_SIZE = 1 << 3;
-const int FLAG_TOTAL = 1 << 4;
-const int FLAG_HUMAN_READABLE = 1 << 5;
-const int FLAG_SI = 1 << 6;
-const int FLAG_SEPARATE_DIRS = 1 << 7;
-const int FLAG_IS_OPERAND = 1 << 8;
+static const int FLAG_ALL = 1 << 0;
+static const int FLAG_SUMMARIZE = 1 << 1;
+static const int FLAG_SAME_DEVICE = 1 << 2;
+static const int FLAG_APPARENT_SIZE = 1 << 3;
+static const int FLAG_TOTAL = 1 << 4;
+static const int FLAG_HUMAN_READABLE = 1 << 5;
+static const int FLAG_SI = 1 << 6;
+static const int FLAG_SEPARATE_DIRS = 1 << 7;
+static const int FLAG_IS_OPERAND = 1 << 8;
 
 enum symbolic_dereference
 {

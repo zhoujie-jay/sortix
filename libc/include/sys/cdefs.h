@@ -54,10 +54,6 @@
 
 /* Macro to declare a weak alias. */
 #if defined(__is_sortix_libc)
-#ifdef __cplusplus
-#define weak_alias_cxx(old, new, mangled) \
-	extern "C" { extern __typeof(old) new __attribute__((weak, alias(mangled))); }
-#endif
 #define weak_alias(old, new) \
 	extern __typeof(old) new __attribute__((weak, alias(#old)))
 #endif

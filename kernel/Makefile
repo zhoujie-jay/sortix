@@ -116,6 +116,7 @@ kernelinfo.o \
 kernel.o \
 kthread.o \
 lfbtextbuffer.o \
+libk.o \
 linebuffer.o \
 log.o \
 logterminal.o \

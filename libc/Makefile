@@ -11,7 +11,7 @@ CPUDIR:=$(CPU)
 CPPINCLUDES=-Iinclude
 CPPFLAGS=-D__is_sortix_libc $(CPPINCLUDES)
 FLAGS=-Wall -Wextra $(OPTLEVEL)
-CFLAGS=-std=gnu99
+CFLAGS=-std=gnu11 -Wstrict-prototypes -Werror=implicit-function-declaration
 CXXFLAGS=-std=gnu++11 -fno-exceptions -fno-rtti
 ASFLAGS=
 
@@ -688,7 +688,7 @@ $(CRTOBJ) \
 HEADERS:=$(shell find include -type f)
 
 LIBK_OBJS:=$(FREEOBJS:.o=.libk.o)
-LIBK_CPPFLAGS:=$(CPPFLAGS) -D__is_sortix_kernel
+LIBK_CPPFLAGS:=$(CPPFLAGS) -D__is_sortix_libk
 LIBK_FLAGS:=$(FLAGS) -ffreestanding
 LIBK_CFLAGS:=$(CFLAGS)
 LIBK_CXXFLAGS:=$(CXXFLAGS)
@@ -745,17 +745,17 @@ headers:
 %.o: %.c
 	$(CC) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CFLAGS)
 
-%.o: %.cpp
+%.o: %.c++
 	$(CXX) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CXXFLAGS)
 
 %.o: %.S
-	$(CXX) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CFLAGS)
+	$(CC) -c $< -o $@ $(CPPFLAGS) $(FLAGS) $(CFLAGS)
 
 # libk
 %.libk.o: %.c
 	$(CC) -c $< -o $@ $(LIBK_CPPFLAGS) $(LIBK_FLAGS) $(LIBK_CFLAGS)
 
-%.libk.o: %.cpp
+%.libk.o: %.c++
 	$(CXX) -c $< -o $@ $(LIBK_CPPFLAGS) $(LIBK_FLAGS) $(LIBK_CXXFLAGS)
 
 %.libk.o: %.S

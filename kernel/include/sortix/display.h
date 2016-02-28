@@ -34,9 +34,9 @@
 extern "C" {
 #endif
 
-const uint32_t DISPMSG_CONTROL_VALID = 1 << 0;
-const uint32_t DISPMSG_CONTROL_VGA = 1 << 1;
-const uint32_t DISPMSG_CONTROL_OTHER_RESOLUTIONS = 1 << 2;
+static const uint32_t DISPMSG_CONTROL_VALID = 1 << 0;
+static const uint32_t DISPMSG_CONTROL_VGA = 1 << 1;
+static const uint32_t DISPMSG_CONTROL_OTHER_RESOLUTIONS = 1 << 2;
 
 struct dispmsg_string
 {

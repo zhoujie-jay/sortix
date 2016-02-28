@@ -35,7 +35,7 @@
 //       can be shared somehow, you need to keep this comment in sync as well
 //       as the logic in these files:
 //         * kernel/process.cpp
-//         * libc/unistd/execvpe.cpp
+//         * libc/unistd/execvpe.c
 //         * utils/which.cpp
 // NOTE: See comments in execvpe() for algorithmic commentary.
 

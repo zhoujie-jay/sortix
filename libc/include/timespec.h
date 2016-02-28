@@ -101,7 +101,7 @@ static __inline struct timespec timespec_neg(struct timespec t)
 	return timespec_make(-t.tv_sec, 0);
 }
 
-static __inline struct timespec timespec_nul()
+static __inline struct timespec timespec_nul(void)
 {
 	return timespec_make(0, 0);
 }
