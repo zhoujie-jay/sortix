@@ -17,7 +17,7 @@
     You should have received a copy of the GNU General Public License along
     with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    rules.cpp
+    rules.c
     Determines whether a given path is included in the filesystem.
 
 *******************************************************************************/
@@ -27,6 +27,7 @@
 #include <error.h>
 #include <libgen.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -34,21 +35,14 @@
 
 #include "rules.h"
 
-static void error_fp(FILE* fp, int status, int errnum, const char* format, ...)
-{
-	fprintf(fp, "%s: ", program_invocation_name);
-
-	va_list list;
-	va_start(list, format);
-	vfprintf(fp, format, list);
-	va_end(list);
-
-	if ( errnum )
-		fprintf(fp, ": %s", strerror(errnum));
-	fprintf(fp, "\n");
-	if ( status )
-		exit(status);
-}
+static struct InclusionRule** rules;
+static size_t num_rules;
+static size_t num_rules_allocated;
+static bool default_inclusion = true;
+static bool default_inclusion_determined;
+static char** manifest;
+static size_t manifest_used;
+static size_t manifest_length;
 
 static const char* SkipCharacters(const char* str, char c)
 {
@@ -84,36 +78,6 @@ static bool PathMatchesPattern(const char* path, const char* pattern)
 	}
 }
 
-InclusionRule::InclusionRule(const char* pattern, InclusionRuleType rule)
-{
-	this->pattern = strdup(pattern);
-	this->rule = rule;
-}
-
-InclusionRule::~InclusionRule()
-{
-	free(pattern);
-}
-
-bool InclusionRule::MatchesPath(const char* path) const
-{
-	return PathMatchesPattern(path, pattern);
-}
-
-InclusionRules::InclusionRules()
-{
-	rules = NULL;
-	num_rules = num_rules_allocated = 0;
-	default_inclusion = true;
-}
-
-InclusionRules::~InclusionRules()
-{
-	for ( size_t i = 0; i < num_rules; i++ )
-		delete rules[i];
-	delete[] rules;
-}
-
 static int search_path(const void* a_ptr, const void* b_ptr)
 {
 	const char* key = (const char*) a_ptr;
@@ -121,14 +85,14 @@ static int search_path(const void* a_ptr, const void* b_ptr)
 	return strcmp(key, path);
 }
 
-bool InclusionRules::IncludesPath(const char* path) const
+bool IncludesPath(const char* path)
 {
 	bool determined = false;
 	bool included = false;
 	for ( size_t i = 0; i < num_rules; i++ )
 	{
-		InclusionRule* rule = rules[i];
-		if ( !rule->MatchesPath(path) )
+		struct InclusionRule* rule = rules[i];
+		if ( !PathMatchesPattern(path, rule->pattern) )
 			continue;
 		switch ( rules[i]->rule )
 		{
@@ -152,21 +116,25 @@ bool InclusionRules::IncludesPath(const char* path) const
 	return true;
 }
 
-bool InclusionRules::ChangeRulesAmount(size_t new_length)
+bool ChangeRulesAmount(size_t new_length)
 {
 	size_t new_num_rules = new_length < num_rules ? new_length : num_rules;
 	for ( size_t i = new_num_rules; i < num_rules; i++ )
-		delete rules[i];
+	{
+		free(rules[i]->pattern);
+		free(rules[i]);
+	}
 	num_rules = new_num_rules;
-	InclusionRule** new_rules = new InclusionRule*[new_length];
+	struct InclusionRule** new_rules = (struct InclusionRule**)
+		malloc(sizeof(struct InclusionRule*) * new_length);
 	for ( size_t i = 0; i < new_length && i < num_rules; i++ )
 		new_rules[i] = rules[i];
-	delete[] rules; rules = new_rules;
+	free(rules); rules = new_rules;
 	num_rules_allocated = new_length;
 	return true;
 }
 
-bool InclusionRules::AddRule(InclusionRule* rule)
+bool AddRule(struct InclusionRule* rule)
 {
 	if ( num_rules == num_rules_allocated )
 	{
@@ -183,11 +151,6 @@ static const char* SkipWhitespace(const char* line)
 	while ( *line && isspace((unsigned char) *line) )
 		line++;
 	return line;
-}
-
-static char* SkipWhitespace(char* line)
-{
-	return (char*) SkipWhitespace((const char*) line);
 }
 
 static bool IsLineComment(const char* line)
@@ -209,7 +172,7 @@ static const char* IsLineCommand(const char* line, const char* command)
 	return line + cmdlen;
 }
 
-bool InclusionRules::AddRulesFromFile(FILE* fp, FILE* err, const char* fpname)
+bool AddRulesFromFile(FILE* fp, const char* fpname)
 {
 	size_t rules_at_start = num_rules;
 	size_t line_size;
@@ -222,7 +185,7 @@ bool InclusionRules::AddRulesFromFile(FILE* fp, FILE* err, const char* fpname)
 		line_num++;
 		if ( line_len && line[line_len-1] == '\n' )
 			line[line_len-1] = '\0';
-		line = SkipWhitespace(line);
+		line = (char*) SkipWhitespace((char*) line);
 		if ( IsLineComment(line) )
 			continue;
 		const char* parameter;
@@ -235,7 +198,7 @@ bool InclusionRules::AddRulesFromFile(FILE* fp, FILE* err, const char* fpname)
 				value = false;
 			else
 			{
-				error_fp(err, 0, 0, "%s:%zu: not a boolean '%s'", fpname,
+				error(0, 0, "%s:%zu: not a boolean '%s'", fpname,
 				         line_num, parameter);
 				goto error_out;
 			}
@@ -250,19 +213,22 @@ bool InclusionRules::AddRulesFromFile(FILE* fp, FILE* err, const char* fpname)
 		{
 			if ( !*parameter )
 			{
-				error_fp(err, 0, 0, "%s:%zu: no parameter given", fpname,
+				error(0, 0, "%s:%zu: no parameter given", fpname,
 				         line_num);
 				goto error_out;
 			}
 			const char* pattern = parameter;
-			InclusionRuleType type = line[0] == 'e' ? RULE_EXCLUDE : RULE_INCLUDE;
-			InclusionRule* rule = new InclusionRule(pattern, type);
+			enum InclusionRuleType type = line[0] == 'e' ? RULE_EXCLUDE : RULE_INCLUDE;
+			struct InclusionRule* rule =
+				(struct InclusionRule*) malloc(sizeof(struct InclusionRule));
+			rule->pattern = strdup(pattern);
+			rule->rule = type;
 			if ( !AddRule(rule) )
 				goto error_out_errno;
 		}
 		else
 		{
-			error_fp(err, 0, 0, "%s:%zu: line not understood: '%s'", fpname,
+			error(0, 0, "%s:%zu: line not understood: '%s'", fpname,
 			         line_num, line);
 			goto error_out;
 		}
@@ -271,7 +237,7 @@ bool InclusionRules::AddRulesFromFile(FILE* fp, FILE* err, const char* fpname)
 	if ( ferror(fp) )
 	{
 	error_out_errno:
-		error_fp(err, 0, errno, "%s", fpname);
+		error(0, errno, "%s", fpname);
 	error_out:
 		ChangeRulesAmount(rules_at_start);
 		return false;
@@ -286,7 +252,7 @@ int compare_path(const void* a_ptr, const void* b_ptr)
 	return strcmp(a, b);
 }
 
-bool InclusionRules::AddManifestPath(const char* path, FILE* err)
+bool AddManifestPath(const char* path)
 {
 	if ( manifest_used == manifest_length )
 	{
@@ -297,7 +263,7 @@ bool InclusionRules::AddManifestPath(const char* path, FILE* err)
 		char** new_manifest = (char**) realloc(manifest, new_size);
 		if ( !new_manifest )
 		{
-			error_fp(err, 0, errno, "malloc");
+			error(0, errno, "malloc");
 			return false;
 		}
 		manifest = new_manifest;
@@ -306,14 +272,14 @@ bool InclusionRules::AddManifestPath(const char* path, FILE* err)
 	char* copy = strdup(path);
 	if ( !copy )
 	{
-		error_fp(err, 0, errno, "malloc");
+		error(0, errno, "malloc");
 		return false;
 	}
 	manifest[manifest_used++] = copy;
 	return true;
 }
 
-bool InclusionRules::AddManifestFromFile(FILE* fp, FILE* err, const char* fpname)
+bool AddManifestFromFile(FILE* fp, const char* fpname)
 {
 	char* line = NULL;
 	size_t line_size = 0;
@@ -322,23 +288,23 @@ bool InclusionRules::AddManifestFromFile(FILE* fp, FILE* err, const char* fpname
 	{
 		if ( line_len && line[line_len-1] == '\n' )
 			line[line_len-1] = '\0';
-		if ( !AddManifestPath(line, err) )
+		if ( !AddManifestPath(line) )
 			return false;
 	}
 	free(line);
 	if ( ferror(fp) )
 	{
-		error_fp(err, 0, errno, "%s", fpname);
+		error(0, errno, "%s", fpname);
 		return false;
 	}
-	if ( !AddManifestPath("/", err) ||
-	     !AddManifestPath("/tix", err) ||
-	     !AddManifestPath("/tix/manifest", err) )
+	if ( !AddManifestPath("/") ||
+	     !AddManifestPath("/tix") ||
+	     !AddManifestPath("/tix/manifest") )
 		return false;
 	char* fpname_copy = strdup(fpname);
 	if ( !fpname_copy )
 	{
-		error_fp(err, 0, errno, "malloc");
+		error(0, errno, "malloc");
 		return false;
 	}
 	const char* fpname_basename = basename(fpname_copy);
@@ -346,11 +312,11 @@ bool InclusionRules::AddManifestFromFile(FILE* fp, FILE* err, const char* fpname
 	if ( asprintf(&manifest_path, "/tix/manifest/%s", fpname_basename) < 0 )
 	{
 		free(fpname_copy);
-		error_fp(err, 0, errno, "malloc");
+		error(0, errno, "malloc");
 		return false;
 	}
 	free(fpname_copy);
-	if ( !AddManifestPath(manifest_path, err) )
+	if ( !AddManifestPath(manifest_path) )
 		return free(manifest_path), false;
 	free(manifest_path);
 	qsort(manifest, manifest_used, sizeof(char*), compare_path);

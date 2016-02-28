@@ -17,7 +17,7 @@
     You should have received a copy of the GNU General Public License along
     with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    crc32.cpp
+    crc32.c
     Calculates a CRC32 Checksum on binary data.
 
 *******************************************************************************/
@@ -25,6 +25,7 @@
 // TODO: Remove this file and this feature after releasing Sortix 1.0. Change
 //       the checksum algorithm in the initrd header to say none.
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>

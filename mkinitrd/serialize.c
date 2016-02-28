@@ -17,7 +17,7 @@
     You should have received a copy of the GNU General Public License along
     with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    serialize.cpp
+    serialize.c
     Import and export binary data structures
 
 *******************************************************************************/

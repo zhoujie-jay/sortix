@@ -31,41 +31,17 @@ enum InclusionRuleType
 	RULE_EXCLUDE,
 };
 
-class InclusionRule
+struct InclusionRule
 {
-public:
-	InclusionRule(const char* pattern, InclusionRuleType rule);
-	~InclusionRule();
-	bool MatchesPath(const char* path) const;
-
-public:
 	char* pattern;
-	InclusionRuleType rule;
-
+	enum InclusionRuleType rule;
 };
 
-class InclusionRules
-{
-public:
-	InclusionRules();
-	~InclusionRules();
-	bool IncludesPath(const char* path) const;
-	bool AddRule(InclusionRule* rule);
-	bool AddRulesFromFile(FILE* fp, FILE* err, const char* fpname);
-	bool AddManifestFromFile(FILE* fp, FILE* err, const char* fpname);
-	bool AddManifestPath(const char* path, FILE* err);
-	bool ChangeRulesAmount(size_t newnum);
-
-public:
-	InclusionRule** rules;
-	size_t num_rules;
-	size_t num_rules_allocated;
-	bool default_inclusion;
-	bool default_inclusion_determined;
-	char** manifest;
-	size_t manifest_used;
-	size_t manifest_length;
-
-};
+bool IncludesPath(const char* path);
+bool AddRule(struct InclusionRule* rule);
+bool AddRulesFromFile(FILE* fp, const char* fpname);
+bool AddManifestFromFile(FILE* fp, const char* fpname);
+bool AddManifestPath(const char* path);
+bool ChangeRulesAmount(size_t newnum);
 
 #endif

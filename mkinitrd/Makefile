@@ -4,12 +4,16 @@ include ../build-aux/version.mak
 include ../build-aux/dirs.mak
 
 OPTLEVEL?=$(DEFAULT_OPTLEVEL)
-CXXFLAGS?=$(OPTLEVEL)
+CFLAGS?=$(OPTLEVEL)
 
 SORTIXKERNEL=../kernel
 
 CPPFLAGS:=$(CPPFLAGS) -DVERSIONSTR=\"$(VERSION)\" -I$(SORTIXKERNEL)/include -I.
-CXXFLAGS:=$(CXXFLAGS) -Wall -Wextra -fno-exceptions -fno-rtti
+CFLAGS:=$(CFLAGS) -Wall -Wextra
+
+ifeq ($(HOST_IS_SORTIX),0)
+  CPPFLAGS+=-D_GNU_SOURCE
+endif
 
 BINARIES=mkinitrd initrdfs
 
@@ -17,8 +21,8 @@ all: $(BINARIES)
 
 .PHONY: all install clean
 
-%: %.cpp crc32.cpp rules.cpp serialize.cpp zcrc32.c
-	$(CXX) -std=gnu++11 $(CPPFLAGS) $(CXXFLAGS) $< crc32.cpp rules.cpp serialize.cpp zcrc32.c -o $@
+%: %.c crc32.c rules.c serialize.c zcrc32.c
+	$(CC) -std=gnu11 $(CFLAGS) $(CPPFLAGS) $< crc32.c rules.c serialize.c zcrc32.c -o $@
 
 clean:
 	rm -f $(BINARIES)

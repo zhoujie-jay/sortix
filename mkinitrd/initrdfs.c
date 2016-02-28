@@ -17,7 +17,7 @@
     You should have received a copy of the GNU General Public License along
     with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    initrdfs.cpp
+    initrdfs.c
     Provides access to filesystems in the Sortix kernel initrd format.
 
 *******************************************************************************/
@@ -27,6 +27,7 @@
 #include <error.h>
 #include <fcntl.h>
 #include <ioleast.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -112,8 +113,8 @@ bool ReadInodeData(int fd, initrd_superblock_t* sb, initrd_inode_t* inode,
 	return preadall(fd, dest, size, inode->dataoffset) == size;
 }
 
-uint8_t* GetInodeData(int fd, initrd_superblock_t* sb, initrd_inode_t* inode,
-                      size_t size)
+uint8_t* GetInodeDataSize(int fd, initrd_superblock_t* sb,
+                          initrd_inode_t* inode, size_t size)
 {
 	uint8_t* buf = (uint8_t*) malloc(size);
 	if ( !buf ) { return NULL; }
@@ -123,7 +124,7 @@ uint8_t* GetInodeData(int fd, initrd_superblock_t* sb, initrd_inode_t* inode,
 
 uint8_t* GetInodeData(int fd, initrd_superblock_t* sb, initrd_inode_t* inode)
 {
-	return GetInodeData(fd, sb, inode, inode->size);
+	return GetInodeDataSize(fd, sb, inode, inode->size);
 }
 
 uint32_t Traverse(int fd, initrd_superblock_t* sb, initrd_inode_t* inode,
@@ -280,7 +281,8 @@ int main(int argc, char* argv[])
 			break;
 		if ( arg[1] != '-' )
 		{
-			while ( char c = *++arg ) switch ( c )
+			char c;
+			while ( (c = *++arg) ) switch ( c )
 			{
 			default:
 				fprintf(stderr, "%s: unknown option -- '%c'\n", argv0, c);

@@ -17,7 +17,7 @@
     You should have received a copy of the GNU General Public License along
     with Sortix. If not, see <http://www.gnu.org/licenses/>.
 
-    mkinitrd.cpp
+    mkinitrd.c
     Produces a simple ramdisk filesystem readable by the Sortix kernel.
 
 *******************************************************************************/
@@ -32,6 +32,8 @@
 #include <error.h>
 #include <fcntl.h>
 #include <ioleast.h>
+#include <stdalign.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -80,18 +82,18 @@ struct DirEntry;
 struct DirEntry
 {
 	char* name;
-	Node* node;
+	struct Node* node;
 };
 
-int DirEntryCompare(const DirEntry* a, const DirEntry* b)
+int DirEntryCompare(const struct DirEntry* a, const struct DirEntry* b)
 {
 	return strcmp(a->name, b->name);
 }
 
 int DirEntryCompareIndirect(const void* a_ptr, const void* b_ptr)
 {
-	const DirEntry* a = (const DirEntry*) a_ptr;
-	const DirEntry* b = (const DirEntry*) b_ptr;
+	const struct DirEntry* a = (const struct DirEntry*) a_ptr;
+	const struct DirEntry* b = (const struct DirEntry*) b_ptr;
 	return DirEntryCompare(a, b);
 }
 
@@ -102,7 +104,7 @@ struct Node
 	uint32_t nlink;
 	size_t direntsused;
 	size_t direntslength;
-	DirEntry* dirents;
+	struct DirEntry* dirents;
 	mode_t mode;
 	time_t ctime;
 	time_t mtime;
@@ -110,14 +112,14 @@ struct Node
 	size_t refcount;
 };
 
-void FreeNode(Node* node)
+void FreeNode(struct Node* node)
 {
 	if ( !node )
 		return;
 	if ( 1 < node->nlink ) { node->nlink--; return; }
 	for ( size_t i = 0; i < node->direntsused; i++ )
 	{
-		DirEntry* entry = node->dirents + i;
+		struct DirEntry* entry = node->dirents + i;
 		if ( !entry->name )
 			continue;
 		if ( strcmp(entry->name, ".") != 0 && strcmp(entry->name, "..") != 0 )
@@ -136,16 +138,14 @@ struct CacheEntry
 {
 	ino_t ino;
 	dev_t dev;
-	Node* node;
+	struct Node* node;
 };
 
-size_t cacheused = 0;
-size_t cachelen = 0;
-CacheEntry* cache = NULL;
+static size_t cacheused = 0;
+static size_t cachelen = 0;
+static struct CacheEntry* cache = NULL;
 
-InclusionRules path_filter;
-
-Node* LookupCache(dev_t dev, ino_t ino)
+struct Node* LookupCache(dev_t dev, ino_t ino)
 {
 	for ( size_t i = 0; i < cacheused; i++ )
 		if ( cache[i].dev == dev && cache[i].ino == ino )
@@ -153,13 +153,14 @@ Node* LookupCache(dev_t dev, ino_t ino)
 	return NULL;
 }
 
-bool AddToCache(Node* node, dev_t dev, ino_t ino)
+bool AddToCache(struct Node* node, dev_t dev, ino_t ino)
 {
 	if ( cacheused == cachelen )
 	{
 		size_t newcachelen = cachelen ? 2 * cachelen : 256;
-		size_t newcachesize = newcachelen * sizeof(CacheEntry);
-		CacheEntry* newcache = (CacheEntry*) realloc(cache, newcachesize);
+		size_t newcachesize = newcachelen * sizeof(struct CacheEntry);
+		struct CacheEntry* newcache =
+			(struct CacheEntry*) realloc(cache, newcachesize);
 		if ( !newcache )
 			return false;
 		cache = newcache;
@@ -172,8 +173,8 @@ bool AddToCache(Node* node, dev_t dev, ino_t ino)
 	return true;
 }
 
-Node* RecursiveSearch(const char* real_path, const char* virt_path,
-                      uint32_t* ino, Node* parent = NULL)
+struct Node* RecursiveSearch(const char* real_path, const char* virt_path,
+                             uint32_t* ino, struct Node* parent)
 {
 	printf("%s\n", virt_path);
 	fflush(stdout);
@@ -190,12 +191,12 @@ Node* RecursiveSearch(const char* real_path, const char* virt_path,
 
 	if ( !S_ISDIR(st.st_mode) && 2 <= st.st_nlink )
 	{
-		Node* cached = LookupCache(st.st_dev, st.st_ino);
+		struct Node* cached = LookupCache(st.st_dev, st.st_ino);
 		if ( cached )
 			return cached->nlink++, cached->refcount++, cached;
 	}
 
-	Node* node = (Node*) calloc(1, sizeof(Node));
+	struct Node* node = (struct Node*) calloc(1, sizeof(struct Node));
 	if ( !node )
 		return NULL;
 
@@ -256,7 +257,7 @@ Node* RecursiveSearch(const char* real_path, const char* virt_path,
 
 		if ( strcmp(entry->d_name, ".") != 0 &&
 		     strcmp(entry->d_name, "..") != 0 &&
-		     !path_filter.IncludesPath(virt_subpath) )
+		     !IncludesPath(virt_subpath) )
 		{
 			free(virt_subpath);
 			continue;
@@ -273,7 +274,7 @@ Node* RecursiveSearch(const char* real_path, const char* virt_path,
 		}
 		stpcpy(stpcpy(stpcpy(real_subpath, real_path), "/"), entry->d_name);
 
-		Node* child = NULL;
+		struct Node* child = NULL;
 		if ( !strcmp(entry->d_name, ".") )
 			child = node;
 		if ( !strcmp(entry->d_name, "..") )
@@ -292,8 +293,8 @@ Node* RecursiveSearch(const char* real_path, const char* virt_path,
 		{
 			size_t oldlength = node->direntslength;
 			size_t newlength = oldlength ? 2 * oldlength : 8;
-			size_t newsize = sizeof(DirEntry) * newlength;
-			DirEntry* newdirents = (DirEntry*) realloc(node->dirents, newsize);
+			size_t newsize = sizeof(struct DirEntry) * newlength;
+			struct DirEntry* newdirents = (struct DirEntry*) realloc(node->dirents, newsize);
 			if ( !newdirents )
 			{
 				error(0, errno, "realloc");
@@ -312,7 +313,7 @@ Node* RecursiveSearch(const char* real_path, const char* virt_path,
 			break;
 		}
 
-		DirEntry* entry = node->dirents + node->direntsused++;
+		struct DirEntry* entry = node->dirents + node->direntsused++;
 
 		entry->name = nameclone;
 		entry->node = child;
@@ -324,12 +325,12 @@ Node* RecursiveSearch(const char* real_path, const char* virt_path,
 		FreeNode(node);
 		return NULL;
 	}
-	qsort(node->dirents, node->direntsused, sizeof(DirEntry),
+	qsort(node->dirents, node->direntsused, sizeof(struct DirEntry),
 	      DirEntryCompareIndirect);
 	return node;
 }
 
-Node* MergeNodes(Node* a, Node* b)
+struct Node* MergeNodes(struct Node* a, struct Node* b)
 {
 	if ( !S_ISDIR(a->mode) || !S_ISDIR(b->mode) )
 	{
@@ -338,7 +339,8 @@ Node* MergeNodes(Node* a, Node* b)
 	}
 	size_t dirents_used = 0;
 	size_t dirents_length = a->direntsused + b->direntsused;
-	DirEntry* dirents = (DirEntry*) malloc(sizeof(DirEntry) * dirents_length);
+	struct DirEntry* dirents = (struct DirEntry*)
+		malloc(sizeof(struct DirEntry) * dirents_length);
 	if ( !dirents )
 	{
 		error(0, errno, "malloc");
@@ -406,12 +408,12 @@ Node* MergeNodes(Node* a, Node* b)
 	b->direntsused = 0;
 	FreeNode(b);
 	if ( failure )
-		return FreeNode(b), (Node*) NULL;
+		return FreeNode(b), (struct Node*) NULL;
 	return a;
 }
 
 bool WriteNode(struct initrd_superblock* sb, int fd, const char* outputname,
-               Node* node)
+               struct Node* node)
 {
 	if ( node->written )
 		return true;
@@ -459,7 +461,7 @@ bool WriteNode(struct initrd_superblock* sb, int fd, const char* outputname,
 	{
 		for ( size_t i = 0; i < node->direntsused; i++ )
 		{
-			DirEntry* entry = node->dirents + i;
+			struct DirEntry* entry = node->dirents + i;
 			const char* name = entry->name;
 			size_t namelen = strlen(entry->name);
 			struct initrd_dirent dirent;
@@ -513,7 +515,7 @@ bool WriteNode(struct initrd_superblock* sb, int fd, const char* outputname,
 }
 
 bool WriteNodeRecursive(struct initrd_superblock* sb, int fd,
-                        const char* outputname, Node* node)
+                        const char* outputname, struct Node* node)
 {
 	if ( !WriteNode(sb, fd, outputname, node) )
 		return false;
@@ -523,9 +525,9 @@ bool WriteNodeRecursive(struct initrd_superblock* sb, int fd,
 
 	for ( size_t i = 0; i < node->direntsused; i++ )
 	{
-		DirEntry* entry = node->dirents + i;
+		struct DirEntry* entry = node->dirents + i;
 		const char* name = entry->name;
-		Node* child = entry->node;
+		struct Node* child = entry->node;
 		if ( !strcmp(name, ".") || !strcmp(name, ".." ) )
 			continue;
 		if ( !WriteNodeRecursive(sb, fd, outputname, child) )
@@ -535,14 +537,15 @@ bool WriteNodeRecursive(struct initrd_superblock* sb, int fd,
 	return true;
 }
 
-bool Format(const char* outputname, int fd, uint32_t inodecount, Node* root)
+bool FormatFD(const char* outputname, int fd, uint32_t inodecount,
+              struct Node* root)
 {
 	struct initrd_superblock sb;
 	memset(&sb, 0, sizeof(sb));
 	strncpy(sb.magic, "sortix-initrd-2", sizeof(sb.magic));
 	sb.revision = 0;
 	sb.fssize = sizeof(sb);
-	sb.inodesize = sizeof(initrd_inode);
+	sb.inodesize = sizeof(struct initrd_inode);
 	sb.inodeoffset = sizeof(sb);
 	sb.inodecount = inodecount;
 	sb.root = root->ino;
@@ -587,10 +590,10 @@ bool Format(const char* outputname, int fd, uint32_t inodecount, Node* root)
 	return true;
 }
 
-bool Format(const char* pathname, uint32_t inodecount, Node* root)
+bool Format(const char* pathname, uint32_t inodecount, struct Node* root)
 {
 	int fd = open(pathname, O_RDWR | O_CREAT | O_TRUNC, 0666);
-	bool result = Format(pathname, fd, inodecount, root);
+	bool result = FormatFD(pathname, fd, inodecount, root);
 	close(fd);
 	return result;
 }
@@ -673,7 +676,8 @@ int main(int argc, char* argv[])
 			break;
 		if ( arg[1] != '-' )
 		{
-			while ( char c = *++arg ) switch ( c )
+			char c;
+			while ( (c = *++arg) ) switch ( c )
 			{
 			case 'o':
 				free(arg_output);
@@ -707,7 +711,7 @@ int main(int argc, char* argv[])
 			FILE* fp = fopen(arg_filter, "r");
 			if ( !fp )
 				error(1, errno, "%s", arg_filter);
-			if ( !path_filter.AddRulesFromFile(fp, stderr, arg_filter) )
+			if ( !AddRulesFromFile(fp, arg_filter) )
 				exit(1);
 			fclose(fp);
 			free(arg_filter);
@@ -718,7 +722,7 @@ int main(int argc, char* argv[])
 			FILE* fp = fopen(arg_manifest, "r");
 			if ( !fp )
 				error(1, errno, "%s", arg_manifest);
-			if ( !path_filter.AddManifestFromFile(fp, stderr, arg_manifest) )
+			if ( !AddManifestFromFile(fp, arg_manifest) )
 				exit(1);
 			fclose(fp);
 			free(arg_manifest);
@@ -769,10 +773,10 @@ int main(int argc, char* argv[])
 	}
 
 	uint32_t inodecount = 1;
-	Node* root = NULL;
+	struct Node* root = NULL;
 	for ( int i = 1; i < argc; i++ )
 	{
-		Node* node = RecursiveSearch(argv[i], "/", &inodecount);
+		struct Node* node = RecursiveSearch(argv[i], "/", &inodecount, NULL);
 		if ( !node )
 			exit(1);
 		if ( root )
