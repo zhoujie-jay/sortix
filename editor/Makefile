@@ -37,9 +37,9 @@ install: all
 	mkdir -p $(DESTDIR)$(BINDIR)
 	install $(BINARY) $(DESTDIR)$(BINDIR)
 	mkdir -p $(DESTDIR)$(MANDIR)/man1
-	install editor.1 $(DESTDIR)$(MANDIR)/man1/editor.1
+	cp editor.1 $(DESTDIR)$(MANDIR)/man1/editor.1
 	mkdir -p $(DESTDIR)$(MANDIR)/man5
-	install editor.5 $(DESTDIR)$(MANDIR)/man5/editor.5
+	cp editor.5 $(DESTDIR)$(MANDIR)/man5/editor.5
 
 clean:
 	rm -f $(BINARY) $(OBJS) *.o

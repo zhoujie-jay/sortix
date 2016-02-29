@@ -44,9 +44,9 @@ install: all
 	install sysmerge $(DESTDIR)$(SBINDIR)
 	install sysupgrade $(DESTDIR)$(SBINDIR)
 	mkdir -p $(DESTDIR)$(MANDIR)/man8
-	install sysinstall.8 $(DESTDIR)$(MANDIR)/man8/sysinstall.8
-	install sysmerge.8 $(DESTDIR)$(MANDIR)/man8/sysmerge.8
-	install sysupgrade.8 $(DESTDIR)$(MANDIR)/man8/sysupgrade.8
+	cp sysinstall.8 $(DESTDIR)$(MANDIR)/man8/sysinstall.8
+	cp sysmerge.8 $(DESTDIR)$(MANDIR)/man8/sysmerge.8
+	cp sysupgrade.8 $(DESTDIR)$(MANDIR)/man8/sysupgrade.8
 
 sysinstall: $(SYSINSTALL_OBJS)
 	$(CC) $(SYSINSTALL_OBJS) -o $@ -lmount

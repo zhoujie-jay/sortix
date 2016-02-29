@@ -21,9 +21,9 @@ install: all
 	install sfnc $(DESTDIR)$(BINDIR)
 	install sfncd $(DESTDIR)$(BINDIR)
 	mkdir -p $(DESTDIR)$(MANDIR)/man1
-	install sf.1 $(DESTDIR)$(MANDIR)/man1/sf.1
-	install sfnc.1 $(DESTDIR)$(MANDIR)/man1/sfnc.1
-	install sfncd.1 $(DESTDIR)$(MANDIR)/man1/sfncd.1
+	cp sf.1 $(DESTDIR)$(MANDIR)/man1/sf.1
+	cp sfnc.1 $(DESTDIR)$(MANDIR)/man1/sfnc.1
+	cp sfncd.1 $(DESTDIR)$(MANDIR)/man1/sfncd.1
 
 $(BINARY): $(BINARY).c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -std=gnu11 $< -o $@
