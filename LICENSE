@@ -1,0 +1,36 @@
+Copyright 2011-2016 Jonas 'Sortie' Termansen and contributors.
+
+Permission to use, copy, modify, and distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+--
+
+See the individual files for copyright notices and license terms.
+
+The above license covers works original to the Sortix project. Sortix contains
+derivative works from other projects that remain under their original licenses.
+Such files contain copyright notices detailing their origin and license. If a
+file has no copyright statement and is original to the Sortix project, the above
+license applies. The Sortix base system contains only permissively licensed free
+software. There is no code under the GNU GPL or variants.
+
+The Sortix ports collection contains third party code which is licensed
+independently of the Sortix base systems. Such code may have licenses that
+impose restrictions, such as requiring also providing the corresponding source
+code when providing compiled program code to others.
+
+Official Sortix releases contain the binary packages from the ports collection
+and thus may contain code whose licenses impose restrictions. Official Sortix
+releases are intended to be usable for any purpose, with or without fee, and
+redistributable as long as the corresponding ports source code is also provided.
+
+The Sortix math library (libm) is licensed as described in the libm/LEGAL file.

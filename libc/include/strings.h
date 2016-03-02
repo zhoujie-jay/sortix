@@ -1,27 +1,22 @@
-/*******************************************************************************
-
-    Copyright(C) Jonas 'Sortie' Termansen 2011, 2012, 2013.
-
-    This file is part of the Sortix C Library.
-
-    The Sortix C Library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at your
-    option) any later version.
-
-    The Sortix C Library is distributed in the hope that it will be useful, but
-    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-    or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public
-    License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with the Sortix C Library. If not, see <http://www.gnu.org/licenses/>.
-
-    strings.h
-    Deprecated header providing previously non-standard functions that have now
-    either been obsoleted or merged into string.h.
-
-*******************************************************************************/
+/*
+ * Copyright (c) 2011, 2012, 2013 Jonas 'Sortie' Termansen.
+ *
+ * Permission to use, copy, modify, and distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * strings.h
+ * Deprecated header providing previously non-standard functions that have now
+ * either been obsoleted or merged into string.h.
+ */
 
 #ifndef INCLUDE_STRINGS_H
 #define INCLUDE_STRINGS_H

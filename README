@@ -58,32 +58,7 @@ You can view the cross-development(7) manual page with this command:
 License
 -------
 
-Copyright(C) Jonas 'Sortie' Termansen <sortie@maxsi.org> and contributors 2011,
-2012, 2013, 2014, 2015, 2016.
+Copyright 2011-2016 Jonas 'Sortie' Termansen and contributors.
 
-Sortix is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE. See the COPYING-GPL and COPYING-LGPL files for more
-information.
-
-See the individual files for copyright terms. If a file does not contain a
-license header, you can assume it is released under the GNU General Public
-Licenser, either version 3 or (at your option) any later version. This includes
-Sortix-related experimental branches and repositories found on Gitlab: these
-things are so experimental that I might not have added copyright statements.
-
-The build scripts might not contain a copyright license in which case they are
-covered by the standard license for the software component they relate to.
-
-Unless the license header in the source code states otherwise, the Sortix
-kernel, the filesystem servers, the initrd tools, the utilities, the games, the
-benchmark programs, regression tests, base programs, editors, shell, init, and
-the tix package management programs are licensed under the GNU General Public
-License, either version 3 or (at your option) any later version.
-
-Unless the license header in the source code states otherwise, the libc library,
-the libpthread library, and the libdispd library are licensed under the GNU
-Lesser General Public License, either version 3 or (at your option) any later
-version.
-
-The Sortix math library (libm) is licensed as described in the libm/LEGAL file.
+Sortix is free software licensed under the ISC license as described in the
+LICENSE file. It also contains permissively licensed code from other projects.

@@ -194,8 +194,7 @@ else
 endif
 else ifneq ($(SORTIX_INCLUDE_SOURCE),no)
 	cp .gitignore -t "$(SYSROOT)/src"
-	cp COPYING-GPL -t "$(SYSROOT)/src"
-	cp COPYING-LGPL -t "$(SYSROOT)/src"
+	cp LICENSE -t "$(SYSROOT)/src"
 	cp Makefile -t "$(SYSROOT)/src"
 	cp README -t "$(SYSROOT)/src"
 	cp -RT build-aux "$(SYSROOT)/src/build-aux"
