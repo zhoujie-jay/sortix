@@ -268,21 +268,16 @@ void editor_modal_tabsize(struct editor* editor, const char* tabsizestr)
 void editor_modal_language(struct editor* editor, const char* language)
 {
 	if ( !language[0] || !strcmp(language, "none") )
-	{
 		editor->highlight_source = LANGUAGE_NONE;
-		return;
-	}
-	if ( !strcmp(language, "c") || !strcmp(language, "c++") )
-	{
+	else if ( !strcmp(language, "c") || !strcmp(language, "c++") )
 		editor->highlight_source = LANGUAGE_C_CXX;
-		return;
-	}
-	if ( !strcmp(language, "diff") || !strcmp(language, "patch") )
-	{
+	else if ( !strcmp(language, "diff") || !strcmp(language, "patch") )
 		editor->highlight_source = LANGUAGE_DIFF;
+	else
+	{
+		editor->modal_error = true;
 		return;
 	}
-	editor->modal_error = true;
 	editor_type_edit(editor);
 }
 
