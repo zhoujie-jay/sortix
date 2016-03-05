@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Jonas 'Sortie' Termansen.
+ * Copyright (c) 2013, 2014, 2016 Jonas 'Sortie' Termansen.
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -749,6 +749,7 @@ void editor_type_copy(struct editor* editor)
 	for ( size_t row = start_row, column = start_column;
 	      is_row_column_lt(row, column, end_row, end_column); )
 	{
+		struct line* line = &editor->lines[row];
 		if ( row == end_row )
 		{
 			length += end_column - column;
@@ -756,7 +757,7 @@ void editor_type_copy(struct editor* editor)
 		}
 		else
 		{
-			length += editor->lines[row].used + 1 /*newline*/;
+			length += (line->used - column) + 1 /*newline*/;
 			column = 0;
 			row++;
 		}
@@ -770,15 +771,17 @@ void editor_type_copy(struct editor* editor)
 		struct line* line = &editor->lines[row];
 		if ( row == end_row )
 		{
-			memcpy(editor->clipboard + offset, line->data + column, sizeof(wchar_t) * (end_column - column));
+			memcpy(editor->clipboard + offset, line->data + column,
+			       sizeof(wchar_t) * (end_column - column));
 			offset += end_column - column;
 			column = end_column;
 		}
 		else
 		{
-			memcpy(editor->clipboard + offset, line->data, sizeof(wchar_t) * line->used);
-			editor->clipboard[offset + line->used] = L'\n';
-			offset += line->used + 1 /*newline*/;
+			memcpy(editor->clipboard + offset, line->data + column,
+			       sizeof(wchar_t) * (line->used - column));
+			editor->clipboard[offset + (line->used - column)] = L'\n';
+			offset += (line->used - column) + 1 /*newline*/;
 			column = 0;
 			row++;
 		}
