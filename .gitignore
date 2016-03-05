@@ -4,12 +4,10 @@
 /*.iso
 /*.so
 /*.a
-libmaxsi
 builds
 sysroot
 sysroot.destdir
 sysroot-overlay
-initrd
 release
 ports
 repository
