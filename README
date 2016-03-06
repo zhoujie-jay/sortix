@@ -1,48 +1,31 @@
 The Sortix Operating System
 ===========================
 
-Sortix is a small self-hosting Unix-like operating system developed since 2011
-aiming to be a clean and modern POSIX implementation. There's a lot of technical
-debt that needs to be paid, but it's getting better. Traditional design mistakes
-are avoided or aggressively deprecated by updating the base system and ports as
-needed. The Sortix kernel, standard libraries, and most utilities were written
-entirely from scratch. The system is halfway through becoming multi-user and
-while security vulnerabilities are recognized as bugs, it should be considered
-insecure at this time.
+Sortix is a small self-hosting operating-system aiming to be a clean and modern
+POSIX implementation.  It is a hobbyist operating system written from scratch
+with its own base system, including kernel and standard library, as well as
+ports of third party software.  It has a straightforward installer and is can be
+developed under itself.  Releases come with the source code in /src, ready for
+tinkering.
 
-Links
------
-
-For more information, documentation and news, please visit the official website:
-
-  https://sortix.org/
-
-You can also download the newest release and cutting edge nightly builds at:
-
-  https://users-cs.au.dk/sortie/sortix/release/
-
-You can retrieve the current git master from our project page at:
-
-  https://gitlab.com/sortix/sortix
-
-System Requirements
--------------------
-
-Sortix has low system requirements. It also works well under virtual machines
-such as VirtualBox and Qemu:
-
-* A 32-bit x86 (with SSE) or 64-bit x86_64 CPU.
-* A few dozen megabytes of RAM - or if you are using a cdrom release with ports
-  then you likely need at least twice the size of the cdrom image.
-* A harddisk or cdrom drive or support for booting from USB.
-* A multiboot compliant bootloader if booting from harddisk.
-* ATA or AHCI harddisk.
+It has been in development since 2011 by a single developer and contributors.
+Though the system is stable and capable right now, it is still early in
+development, and a number of crucial features haven't been made yet.  Releases
+are made yearly and future releases will add features such as networking, SMP,
+and USB that were skipped in favor of becoming self-hosting now.
 
 Documentation
 -------------
 
 The system is documented as manual pages.  Introductory system usage is covered
 in the user-guide(7) manual page.
+
+Links
+-----
+
+For more information, please visit the official website:
+
+  https://sortix.org/
 
 Building Sortix
 ---------------
@@ -61,4 +44,4 @@ License
 Copyright 2011-2016 Jonas 'Sortie' Termansen and contributors.
 
 Sortix is free software licensed under the ISC license as described in the
-LICENSE file. It also contains permissively licensed code from other projects.
+LICENSE file.  It also contains permissively licensed code from other projects.
