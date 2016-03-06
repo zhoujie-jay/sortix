@@ -31,7 +31,7 @@ ifeq ($(HOST_IS_SORTIX),0)
 software_meant_for_sortix:
 	@echo This software is meant to work under Sortix, not $(HOST)
 	@echo Attempt was $(MAKE) $(MAKEFLAGS)
-	@echo Try: $(MAKE) $(MAKEFLAGS) HOST=$(UNAME_PLATFORM)-sortix
+	@echo Try: $(MAKE) $(MAKEFLAGS) HOST=$(UNAME_MACHINE)-sortix
 	@exit 1
   endif
 endif
@@ -40,8 +40,20 @@ endif
 is_unset_or_default = $(filter undefined default,$(origin $(1)))
 
 # Provide deprecated CPU variable so makefiles can select CPU-specific dirs.
+ifeq ($(HOST),i386-sortix)
+    MACHINE:=i386
+    CPU:=x86
+endif
 ifeq ($(HOST),i486-sortix)
     MACHINE:=i486
+    CPU:=x86
+endif
+ifeq ($(HOST),i586-sortix)
+    MACHINE:=i586
+    CPU:=x86
+endif
+ifeq ($(HOST),i686-sortix)
+    MACHINE:=i686
     CPU:=x86
 endif
 ifeq ($(HOST),x86_64-sortix)

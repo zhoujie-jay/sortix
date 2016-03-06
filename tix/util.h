@@ -456,7 +456,15 @@ static void compact_arguments(int* argc, char*** argv)
 char* GetBuildTriplet(void)
 {
 #if defined(__sortix__) && defined(__i386__)
-	return strdup("i486-sortix");
+#if defined(__i686__)
+	return "i686-sortix";
+#elif defined(__i586__)
+	return "i586-sortix";
+#elif defined(__i486__)
+	return "i486-sortix";
+#else
+	return "i386-sortix";
+#endif
 #elif defined(__sortix__) && defined(__x86_64__)
 	return strdup("x86_64-sortix");
 #elif defined(__sortix__)

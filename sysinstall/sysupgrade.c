@@ -732,6 +732,16 @@ int main(void)
 	if ( upgrade_pid == 0 )
 	{
 		umask(0022);
+		// TODO: Remove after releasing Sortix 1.0.
+		if ( target_release->version_major == 1 &&
+			 target_release->version_minor == 0 &&
+			 target_release->version_dev &&
+			 strcmp(uts.machine, "i686") == 0 )
+		{
+			system("sed -i 's/i486-sortix/i686-sortix/g' tix/collection.conf");
+			if ( access_or_die("tix/tixinfo", F_OK) == 0 )
+				system("sed -i 's/i486-sortix/i686-sortix/g' tix/tixinfo/*");
+		}
 		// TODO: Use an upgrade manifest system that notices files that are now
 		//       untracked or moved from one manifest to another.
 		if ( conf.system )
