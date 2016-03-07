@@ -321,7 +321,7 @@ $(LIVE_INITRD): sysroot
 	mkdir -p $(LIVE_INITRD).d/root -m 700
 	cp -RT "$(SYSROOT)/etc/skel" $(LIVE_INITRD).d/root
 	cp doc/welcome $(LIVE_INITRD).d/root
-	tix-collection $(LIVE_INITRD).d create --platform=$HOST --prefix= --disable-multiarch --generation=2
+	tix-collection $(LIVE_INITRD).d create --platform=$(HOST) --prefix= --disable-multiarch --generation=2
 	mkinitrd --format=sortix-initrd-2 $(LIVE_INITRD).d -o $(LIVE_INITRD)
 	rm -rf $(LIVE_INITRD).d
 
