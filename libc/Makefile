@@ -47,6 +47,8 @@ inttypes/strtoimax.o \
 inttypes/strtoumax.o \
 inttypes/wcstoimax.o \
 inttypes/wcstoumax.o \
+libgen/basename.o \
+libgen/dirname.o \
 malloc/__heap_expand_current_part.o \
 malloc/heap_get_paranoia.o \
 malloc/heap_init.o \
@@ -371,8 +373,6 @@ ioleast/readall.o \
 ioleast/readleast.o \
 ioleast/writeall.o \
 ioleast/writeleast.o \
-libgen/basename.o \
-libgen/dirname.o \
 locale/localeconv.o \
 locale/setlocale.o \
 msr/rdmsr.o \
