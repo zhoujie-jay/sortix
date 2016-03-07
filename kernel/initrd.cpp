@@ -21,6 +21,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <libgen.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -663,11 +664,69 @@ static void ExtractTix(Ref<Descriptor> desc, struct initrd_context* ctx)
 	free(pkg_name);
 }
 
+static int ExtractTo_mkdir(Ref<Descriptor> desc, ioctx_t* ctx,
+                           const char* path, mode_t mode)
+{
+	int saved_errno = errno;
+	if ( !desc->mkdir(ctx, path, mode) )
+		return 0;
+	if ( errno == ENOENT )
+	{
+		char* prev = strdup(path);
+		if ( !prev )
+			return -1;
+		int status = ExtractTo_mkdir(desc, ctx, dirname(prev), mode | 0500);
+		free(prev);
+		if ( status < 0 )
+			return -1;
+		errno = saved_errno;
+		if ( !desc->mkdir(ctx, path, mode) )
+			return 0;
+	}
+	if ( errno == EEXIST )
+		return errno = saved_errno, 0;
+	return -1;
+}
+
+static void ExtractTo(Ref<Descriptor> desc,
+                      struct initrd_context* ctx,
+                      const char* path)
+{
+	int oflags = O_WRITE | O_CREATE | O_TRUNC;
+	Ref<Descriptor> file(desc->open(&ctx->ioctx, path, oflags, 0644));
+	if ( !file && errno == ENOENT )
+	{
+		char* prev = strdup(path);
+		if ( !prev )
+			PanicF("%s: strdup: %m", path);
+		if ( ExtractTo_mkdir(desc, &ctx->ioctx, dirname(prev), 755) < 0 )
+			PanicF("%s: mkdir -p: %s: %m", path, prev);
+		free(prev);
+		file = desc->open(&ctx->ioctx, path, oflags, 0644);
+	}
+	if ( !file )
+		PanicF("%s: %m", path);
+	if ( file->truncate(&ctx->ioctx, ctx->initrd_size) != 0 )
+		PanicF("truncate: %s: %m", path);
+	size_t sofar = 0;
+	while ( sofar < ctx->initrd_size )
+	{
+		size_t left = ctx->initrd_size - sofar;
+		size_t chunk = 1024 * 1024;
+		size_t count = left < chunk ? left : chunk;
+		ssize_t numbytes = file->write(&ctx->ioctx, ctx->initrd + sofar, count);
+		if ( numbytes <= 0 )
+			PanicF("write: %s: %m", path);
+		sofar += numbytes;
+	}
+}
+
 static void ExtractModule(struct multiboot_mod_list* module,
                           Ref<Descriptor> desc,
                           struct initrd_context* ctx)
 {
 	size_t mod_size = module->mod_end - module->mod_start;
+	const char* cmdline = (const char*) (uintptr_t) module->cmdline;
 
 	// Allocate the needed kernel virtual address space.
 	addralloc_t initrd_addr_alloc;
@@ -689,22 +748,30 @@ static void ExtractModule(struct multiboot_mod_list* module,
 	ctx->initrd_unmap_start = module->mod_start;
 	ctx->initrd_unmap_end = Page::AlignDown(module->mod_end);
 
-	if ( sizeof(struct initrd_superblock) <= ctx->initrd_size &&
-	     !memcmp(ctx->initrd, "sortix-initrd-2", strlen("sortix-initrd-2")) )
+	if ( !strncmp(cmdline, "--to ", strlen("--to ")) )
+	{
+		ExtractTo(desc, ctx, cmdline + strlen("--to "));
+	}
+	else if ( sizeof(struct initrd_superblock) <= ctx->initrd_size &&
+	          !memcmp(ctx->initrd, "sortix-initrd-2", strlen("sortix-initrd-2")) )
 	{
 		ExtractInitrd(desc, ctx);
 	}
 	else if ( sizeof(struct tar) <= ctx->initrd_size &&
 	          !memcmp(ctx->initrd + offsetof(struct tar, magic), "ustar", 5) )
 	{
-		if ( TarIsTix(ctx) )
+		if ( !strcmp(cmdline, "--tar") )
+			ExtractTar(desc, ctx);
+		else if ( !strcmp(cmdline, "--tix") )
+			ExtractTix(desc, ctx);
+		else if ( TarIsTix(ctx) )
 			ExtractTix(desc, ctx);
 		else
 			ExtractTar(desc, ctx);
 	}
 	else
 	{
-		Panic("Unsupported initrd format");
+		Panic("Unsupported initrd format, or try the --to <path> option");
 	}
 
 	// Unmap the pages and return the physical frames for reallocation.
